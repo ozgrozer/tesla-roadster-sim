@@ -7,7 +7,7 @@ A Three.js stunt simulation of the Oct 15, 2026 Roadster reveal at McGregor, Tex
 3. **Fly.** Full power up the wall and over the top without slowing, rear thrusters along the lip, then a push-off with the bottom ones. Roll upright and free-fall with the thrusters idle, then fire full bottom thrust a few metres off the floor (about 3 G) and settle through the vapor cloud. No flips, as at the event.
 4. **The lineup.** A long run down the pad on the main thrusters to 180 km/h, then full lift thrust over the parked Cybercab, Cybertruck, Semi, Model Y and Model 3 with a kickflip (a 360° roll, as at the event), the same last-moment landing burn, then brake to a stop.
 
-**The city.** Press **City** at the top (or `C`) to take the Roadster to a free-roam city: a 10 × 10 block downtown grid at golden hour, with glass towers, brick and stucco blocks, storefronts, palm boulevards, parks and parking lots. Two lanes each way, a signal on every corner, and live traffic that keeps its distance, changes lanes, stops for red lights and gives way when turning left. Bump a car and it gets knocked loose; hit anything hard and the Roadster tumbles, then carries on from the nearest lane. Street lights fold over when you hit them. The thrusters work here too, and one block of the central avenue, straight ahead of where you arrive, is gridlocked solid both ways for jumping (the gold blip on the radar). Press `P` in the city for **Autopilot**: the Roadster drives itself through traffic until you touch a drive key. `C` (or **Test site**) goes back to the reveal.
+**The city.** Press **City** at the top (or `C`) to take the Roadster to a free-roam city: a 10 × 10 block downtown grid at golden hour, with glass towers, brick and stucco blocks, storefronts, palm boulevards, parks and parking lots. Two lanes each way, a signal on every corner, and live traffic that keeps its distance, changes lanes, stops for red lights and gives way when turning left. Bump a car and it gets knocked loose; hit anything hard and the Roadster tumbles. Street lights fold over when you hit them. The thrusters work here too, and one block of the central avenue, straight ahead of where you arrive, is gridlocked solid both ways for jumping (the gold blip on the radar). Press `P` in the city for **Autopilot**: the Roadster drives itself through traffic until you touch a drive key. `C` (or **Test site**) goes back to the reveal.
 
 Fan-made, built from press coverage. Not affiliated with Tesla or SpaceX.
 
@@ -22,7 +22,7 @@ A local server still works if you prefer one: `npm start`, or double-click `star
 | Key | On the ground / wall | In the air |
 | --- | --- | --- |
 | W / S | Throttle / brake, then reverse (also back down the wall) | Pitch down / up |
-| A / D | Steer | Roll |
+| A / D | Steer; after a crash, roll it back onto its wheels | Roll |
 | Q / E | — | Yaw |
 | B | E-brake (locks the rears: drifts, parking) | — |
 | Shift | Main thrusters (boost) | Main thrusters |
@@ -30,7 +30,7 @@ A local server still works if you prefer one: `npm start`, or double-click `star
 | X / K | — | Auto backflip / kickflip |
 | F | Suction fan: auto, on, off | |
 
-Other keys: `C` city / test site, `P` autopilot demo (Autopilot in the city), `M` manual, `R` reset, `1` `2` `3` start line / wall top / lineup, `V` camera, `T` slow-mo, `N` sound, `H` hide the key panel. Release the throttle and the car coasts down on regen, like a Tesla. Keys still held when the car leaves the ground (W for the run-up, A/D) don't fly it until you press them again, so holding W through a jump doesn't pitch the nose down.
+Other keys: `C` city / test site, `P` autopilot demo (Autopilot in the city), `M` manual, `R` reset, `1` `2` `3` start line / wall top / lineup, `V` camera, `T` slow-mo, `N` sound, `H` hide the key panel. Release the throttle and the car coasts down on regen, like a Tesla. After a crash the wreck stays where it stops, like GTA: on its roof or side, `A` or `D` rolls it back onto its wheels, and once it is on them any drive key carries on (`R` still resets). Keys still held when the car leaves the ground (W for the run-up, A/D) don't fly it until you press them again, so holding W through a jump doesn't pitch the nose down.
 
 In the city a radar at the bottom left turns with the camera, zooming out with speed; traffic shows as dots and wrecks in amber. The follow camera pulls in rather than sit inside a building.
 
@@ -86,7 +86,7 @@ No dependencies to install: the bundler is a single file with no packages. `npm 
 npm test
 ```
 
-These run the full autopilot sequence, plus coast-down, braking, e-brake, drift, stability and crash checks, headless in Node against the same sim code the browser uses. The city tests check that the lane graph joins up, that traffic never runs a red light or drives through another car, that the Roadster bounces off (or crashes into) buildings and shunts cars, that Autopilot gets round town cleanly, that nobody drives into the jammed street and a jump clears it, and that random driving never ends in NaN. An input test checks that W held through a lift-off doesn't pitch the car into the ground. One more test checks that the bundle matches the sources.
+These run the full autopilot sequence, plus coast-down, braking, e-brake, drift, stability crash and crash-recovery checks, headless in Node against the same sim code the browser uses. The city tests check that the lane graph joins up, that traffic never runs a red light or drives through another car, that the Roadster bounces off (or crashes into) buildings and shunts cars, that Autopilot gets round town cleanly, that nobody drives into the jammed street and a jump clears it, and that random driving never ends in NaN. An input test checks that W held through a lift-off doesn't pitch the car into the ground. One more test checks that the bundle matches the sources.
 
 ## Licenses
 
