@@ -8,8 +8,8 @@ import { clamp } from '../sim/constants.js'
 export const STREET = {
   buildStreet () {
     const { ctx, n, gain, filt, loop } = this
-    // the echo taps the whole mix after the master gain and goes on past it, so it never feeds back
-    // into itself
+    // the echo taps the whole mix after the master gain and goes on past it (through the canopy,
+    // when the camera is inside), so it never feeds back into itself
     n.echo = [-1, 1].map(side => {
       const d = ctx.createDelay(0.6),
         g = gain(0),
@@ -22,7 +22,7 @@ export const STREET = {
         .connect(filt('highpass', 160, 0.5))
         .connect(g)
         .connect(p)
-        .connect(this.comp)
+        .connect(this.cabin)
       return { d, g }
     })
     // the surf: a low roar and the hiss of the wash, swelling as each wave breaks
