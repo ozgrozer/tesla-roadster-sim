@@ -47,6 +47,7 @@ Cameras (`V`): **Director** (the autopilot's shots), **Follow** (GTA-style: sits
 index.html            markup only; loads css/ and dist/roadster.js
 css/                  fonts.css (self-hosted), base.css, hud.css, panels.css
 js/main.js            boot, game state, sim events, main loop
+js/events.js          what the sim reports, turned into popups, sounds, shake and particles
 js/sim/               physics, no DOM: runs in Node for tests
   constants.js        spec sheet (CAR), math helpers, controls
   track.js            wall profile, lineup, solid obstacles
@@ -59,15 +60,24 @@ js/sim/               physics, no DOM: runs in Node for tests
   collide.js          2-D contacts and impulses: the Roadster against the city and traffic
   breakables.js       street lights, signals, trees and palms: what it takes to snap them
   traffic.js          traffic drivers: lane following, gaps, signals, lane changes
+  manners.js          indicators, honking at the Roadster, moving over when it honks
+  sight.js            what a driver sees: the car ahead, things in the way, oncoming traffic
   wrecks.js           cars knocked out of their lane: hits, sliding, rejoining
   jam.js              the jammed street: lanes closed to traffic, packed with cars to jump
   roofs.js            roofs to land and drive on: the roof under the car, rooftop plant
   cityPilot.js        Autopilot on the city's streets, through normal controls
+  cityHop.js          its way out of a jam: the route to the gridlock, a spot to land, the hop
 js/render/            scene, wall, lineup, roadster, effects, skids, camera
+  roadster*.js        the Roadster: body, canopy, doors, cabin; its tail and active wing
+  tween.js            each frame drawn between the last two physics steps, so nothing judders
+  loft.js             lofted bodies with smooth panels and crisp creases (Roadster and traffic)
+  optimus.js          Optimus, the driver; intro.js, the city's opening scene
   smoke.js            vapor, tyre smoke and dust: carried by the air, lit by the sun
-  city*.js, geo.js    the city's ground, buildings, props and signals, sky; merge helpers
-  traffic.js          instanced traffic cars
-js/audio/sound.js     Web Audio synthesis (no sound files)
+  city*.js, geo.js    the city's ground, buildings, props and signals, sky, sea; merge helpers
+  facade.js           window-by-window facades: lights, blinds, glass panes
+  traffic.js          instanced traffic cars; carShapes.js, their bodies
+js/audio/             Web Audio synthesis (no sound files): sound.js, shots.js (one-shots),
+                      mix.js (what the camera hears: distance, pan, doppler)
 js/ui/                hud.js, input.js, minimap.js (the city's radar)
 vendor/               three.js r170 + addons, fonts (with licenses)
 dist/roadster.js      generated bundle (do not edit)
