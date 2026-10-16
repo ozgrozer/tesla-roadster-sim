@@ -82,6 +82,8 @@ export class Sim {
     this.crashSettled = false
     this.righting = null
     this.crashTime = 0
+    this.floor = 0 // height of what the car is on or over: the street, or a roof (this.roof)
+    this.roof = null
     this.crashReason = ''
     this.accLong = 0
     this.latAcc = 0
@@ -155,7 +157,7 @@ export class Sim {
   syncPose () {
     if (this.mode === 'ground') {
       this.quat.setFromAxisAngle(AX_Y, this.yaw)
-      this.pos.y = 0
+      this.pos.y = this.floor
       this.vel.y = 0
     } else if (this.mode === 'ramp') {
       const P1 = TRACK.point(this.s - CAR.halfWB, _p1),
@@ -376,7 +378,10 @@ export class Sim {
     }
   }
 
-  land () {
+  // roof: the building top it comes down on (null for the street)
+  land (roof = null) {
+    this.roof = roof
+    this.floor = roof ? roof.y1 : 0
     const f = this.fwd(_a)
     const vy = this.vel.y
     // (a nose pointing nearly straight down: face the way the car is going)
