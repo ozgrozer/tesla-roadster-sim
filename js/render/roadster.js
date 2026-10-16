@@ -448,7 +448,7 @@ export function updateRoadster (RS, sim, ctl, dt) {
   updateWing(RS.wing, sim, ctl, dt)
   // the driver's door swings up and out about its hinge (RS.door: set by the intro)
   const k = RS.door * RS.door * (3 - 2 * RS.door)
-  RS.doors[-1].rotation.set(-0.5 * k, 0, -1.2 * k)
+  RS.doors[-1].rotation.set(-0.5 * k, 0, -1.4 * k)
   // the driver looks into the turns
   if (RS.seated !== false)
     RS.optimus.head.rotation.y +=
