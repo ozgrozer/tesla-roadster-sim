@@ -1,7 +1,8 @@
 // Free flight: gravity, cold-gas thrust, attitude control (manoeuvres + stability assist) and contacts.
 import * as THREE from 'three'
 import { TRACK, SOLIDS } from './track.js'
-import { crashName, bumpCars, collideAir } from './collide.js'
+import { roofAt } from './roofs.js'
+import { bumpCars, collideAir } from './collide.js'
 import {
   G,
   CAR,
@@ -131,24 +132,25 @@ export function stepAir (s, dt, c, main, lift) {
     minY = Math.min(minY, _a.y)
     maxY = Math.max(maxY, _a.y)
   }
+  // what it would come down on: the street, or in the city a roof underneath
+  const roof = s.world === 'city' ? roofAt(s.com.x, s.com.z, s.com.y) : null
+  s.floor = roof ? roof.y1 : 0
   const upY = s.up(_b).y
-  if (minY <= 0 && s.vel.y > 0 && upY > 0.72) {
+  if (minY <= s.floor && s.vel.y > 0 && upY > 0.72) {
     // a corner dipped to the floor while the thrusters still lift the car: it scrapes, it doesn't
     // land (landing would hand it back to the ground, and the lift would throw it straight up again)
-    s.com.y -= minY
+    s.com.y -= minY - s.floor
     s.syncPose()
-  } else if (minY <= 0) {
+  } else if (minY <= s.floor) {
     // like GTA, a landing never takes the wheel away, however hard: anything short of its side or
     // roof comes down on its wheels. On its side or roof it tumbles (and A/D rolls it back: crash.js)
-    if (upY > LAND_UP) s.land()
+    if (upY > LAND_UP) s.land(roof)
     else s.toCrash(upY > -0.4 ? 'Landed on its side' : 'Landed on its roof')
     return
   }
   if (s.world === 'city') {
-    // the side of a building, a post or the barrier bounces the car off; dropping onto a roof crashes
-    const top = collideAir(s, minY, maxY)
-    if (top)
-      s.toCrash(top.kind === 'building' ? 'Landed on a roof' : crashName(top.kind))
+    // the side of a building, a post or the barrier bounces the car off
+    collideAir(s, minY, maxY)
     return
   }
   bumpCars(s, SOLIDS)
