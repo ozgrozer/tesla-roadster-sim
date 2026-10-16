@@ -1,5 +1,7 @@
 // GTA-style radar for the city: the street map turns under a fixed arrow, heading-up with the
-// camera, zooming out with speed; traffic shows as dots, wrecks in amber.
+// camera, zooming out with speed; traffic shows as dots, wrecks in amber, the jammed street as a
+// gold blip.
+import { JAM_AT } from '../sim/jam.js'
 import {
   BLOCKS,
   BUILDINGS,
@@ -78,6 +80,34 @@ export class Minimap {
       g.fillStyle = car.loose ? '#e0a92a' : car.parked ? '#6d747e' : '#d6dbe2'
       g.fillRect(car.x - 1.8, car.z - 1.8, 3.6, 3.6)
     }
+    g.restore()
+    // the jammed street: a gold blip with a jump chevron, held on the rim while it is off the map
+    const k = size / 172,
+      ang = heading - Math.PI / 2,
+      dx = JAM_AT.x - p.x,
+      dz = JAM_AT.z - p.z
+    let bx = (dx * Math.cos(ang) - dz * Math.sin(ang)) * this.zoom,
+      by = (dx * Math.sin(ang) + dz * Math.cos(ang)) * this.zoom + c * 0.18
+    const rim = c - 12 * k,
+      d = Math.hypot(bx, by)
+    if (d > rim) {
+      bx *= rim / d
+      by *= rim / d
+    }
+    g.save()
+    g.translate(c + bx, c + by)
+    g.fillStyle = '#d6a84e'
+    g.strokeStyle = 'rgba(10,12,18,0.9)'
+    g.lineWidth = 1.5 * k
+    g.beginPath()
+    g.arc(0, 0, 6.5 * k, 0, Math.PI * 2)
+    g.fill()
+    g.stroke()
+    g.beginPath()
+    g.moveTo(-3 * k, 1.8 * k)
+    g.lineTo(0, -1.6 * k)
+    g.lineTo(3 * k, 1.8 * k)
+    g.stroke()
     g.restore()
     // the Roadster: an arrow at the centre, turned by how far it points from the camera
     const yaw = Math.atan2(-sim.fwd().z, sim.fwd().x)
