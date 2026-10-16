@@ -55074,7 +55074,7 @@ for (const c of LINEUP)
 const LINEUP_FIRST = Math.max(...LINEUP.map(c => c.box.x1))
 const LINEUP_LAST = Math.min(...LINEUP.map(c => c.box.x0))
 const SOLIDS = [
-  ...LINEUP.map(c => ({ ...c.box, name: c.name })),
+  ...LINEUP.map(c => ({ ...c.box, name: c.name, kind: 'car' })),
   {
     name: 'tower',
     x0: TRACK.towerX0,
@@ -55597,28 +55597,114 @@ function onRoad (x, z) {
     (near(x) || near(z))
   )
 }
-__export(__exports, { "N": () => N, "PITCH": () => PITCH, "LANE_W": () => LANE_W, "ROAD_HW": () => ROAD_HW, "WALK": () => WALK, "CURB_H": () => CURB_H, "CURB_R": () => CURB_R, "STOP": () => STOP, "HALF": () => HALF, "EDGE": () => EDGE, "OUTER": () => OUTER, "ROADS": () => ROADS, "LANE_OFF": () => LANE_OFF, "DIRS": () => DIRS, "SPAWN": () => SPAWN, "rng": () => rng, "RED": () => RED, "YELLOW": () => YELLOW, "GREEN": () => GREEN, "SIGNAL": () => SIGNAL, "CYCLE": () => CYCLE, "signal": () => signal, "NODES": () => NODES, "EDGES": () => EDGES, "LANES": () => LANES, "nodeAt": () => nodeAt, "pointAt": () => pointAt, "BLOCKS": () => BLOCKS, "BUILDINGS": () => BUILDINGS, "TREES": () => TREES, "PALMS": () => PALMS, "LAMPS": () => LAMPS, "POLES": () => POLES, "STALLS": () => STALLS, "COLLIDERS": () => COLLIDERS, "BARRIER": () => BARRIER, "standUp": () => standUp, "query": () => query, "raycast": () => raycast, "nearestLane": () => nearestLane, "onRoad": () => onRoad })
+__export(__exports, { "N": () => N, "PITCH": () => PITCH, "LANE_W": () => LANE_W, "ROAD_HW": () => ROAD_HW, "WALK": () => WALK, "CURB_H": () => CURB_H, "CURB_R": () => CURB_R, "STOP": () => STOP, "HALF": () => HALF, "EDGE": () => EDGE, "OUTER": () => OUTER, "ROADS": () => ROADS, "LANE_OFF": () => LANE_OFF, "DIRS": () => DIRS, "SPAWN": () => SPAWN, "rng": () => rng, "RED": () => RED, "YELLOW": () => YELLOW, "GREEN": () => GREEN, "SIGNAL": () => SIGNAL, "CYCLE": () => CYCLE, "signal": () => signal, "NODES": () => NODES, "EDGES": () => EDGES, "LANES": () => LANES, "nodeAt": () => nodeAt, "pointAt": () => pointAt, "BLOCKS": () => BLOCKS, "BUILDINGS": () => BUILDINGS, "TREES": () => TREES, "PALMS": () => PALMS, "LAMPS": () => LAMPS, "POLES": () => POLES, "STALLS": () => STALLS, "COLLIDERS": () => COLLIDERS, "addCollider": () => addCollider, "BARRIER": () => BARRIER, "standUp": () => standUp, "query": () => query, "raycast": () => raycast, "nearestLane": () => nearestLane, "onRoad": () => onRoad })
+})
+
+// ---- js/sim/roofs.js
+__define(5, function (__exports) {
+// Roofs: the flat top of every building tier is somewhere to land and drive, walled in by its parapet,
+// with plant on the top tier (a stair and lift housing, air-handling units and sometimes a mast) to
+// steer round. To get down, hop the parapet on the lift thrusters.
+const { BUILDINGS, rng, query, addCollider } = __require(4)
+const PARAPET = 0.3 // m thick
+const PARAPET_H = 0.9 // m above the roof
+
+// plant, kept on each building as b.plant for the renderer
+const R = rng(4242)
+for (const b of BUILDINGS) {
+  const t = b.tiers[b.tiers.length - 1],
+    w = t.x1 - t.x0,
+    d = t.z1 - t.z0
+  b.plant = []
+  const box = (x0, x1, z0, z1, h) =>
+    b.plant.push(
+      addCollider({ x0, x1, z0, z1, y0: t.y1, y1: t.y1 + h, kind: 'plant' })
+    )
+  if (w > 10 && d > 10) {
+    const hx = t.x0 + 3 + R() * (w - 10),
+      hz = t.z0 + 3 + R() * (d - 10)
+    box(hx, hx + 4 + R() * 2, hz, hz + 3 + R() * 2, 3.2)
+    for (let i = 0; i < 3; i++) {
+      const ax = t.x0 + 2 + R() * (w - 6),
+        az = t.z0 + 2 + R() * (d - 6)
+      box(ax, ax + 1.6 + R() * 1.4, az, az + 1.2 + R(), 1.1 + R() * 0.8)
+    }
+  }
+  if (b.antenna) {
+    const cx = (t.x0 + t.x1) / 2,
+      cz = (t.z0 + t.z1) / 2
+    addCollider({
+      x0: cx - 0.3,
+      x1: cx + 0.3,
+      z0: cz - 0.3,
+      z1: cz + 0.3,
+      y0: t.y1,
+      y1: t.y1 + 14,
+      x: cx,
+      z: cz,
+      r: 0.3,
+      kind: 'mast'
+    })
+  }
+}
+
+const near = []
+// The roof a car at height y over (x, z) stands or comes down on: the highest building top there
+// no higher than y. null over the street.
+function roofAt (x, z, y) {
+  let best = null
+  for (const c of query(x, z, x, z, near))
+    if (
+      c.kind === 'building' &&
+      c.y1 <= y &&
+      x > c.x0 &&
+      x < c.x1 &&
+      z > c.z0 &&
+      z < c.z1 &&
+      !(best && best.y1 >= c.y1)
+    )
+      best = c
+  return best
+}
+
+// a roof's parapet, as four low walls along its edges
+function parapets (roof) {
+  if (!roof.parapets) {
+    const { x0, x1, z0, z1, y1 } = roof,
+      p = PARAPET
+    roof.parapets = [
+      [x0, x1, z0, z0 + p],
+      [x0, x1, z1 - p, z1],
+      [x0, x0 + p, z0, z1],
+      [x1 - p, x1, z0, z1]
+    ].map(([a, b, c, d]) => ({
+      x0: a,
+      x1: b,
+      z0: c,
+      z1: d,
+      y0: y1,
+      y1: y1 + PARAPET_H,
+      kind: 'parapet'
+    }))
+  }
+  return roof.parapets
+}
+__export(__exports, { "PARAPET": () => PARAPET, "PARAPET_H": () => PARAPET_H, "roofAt": () => roofAt, "parapets": () => parapets })
 })
 
 // ---- js/sim/collide.js
-__define(5, function (__exports) {
+__define(6, function (__exports) {
 // Contacts in the ground plane: oriented boxes (cars, building footprints) and posts (lamps, palms,
 // signal masts), resolved with impulses (restitution, friction, spin) so cars bounce off each other
-// and off the city. A hard enough hit hands the Roadster over to the tumbling crash model.
+// and off the city. No hit tumbles the Roadster, on the road or flying, as in GTA: it bounces off
+// and the driver keeps the wheel.
 const { CAR, clamp } = __require(1)
 const { query, OUTER } = __require(4)
-const CRASH_SPEED = 20 // m/s into something solid before the Roadster tumbles
+const { parapets } = __require(5)
+// The most yaw rate (rad/s) a knock adds on the ground: the tyres on the road soak up the rest, so a
+// clipped car or wall corner twitches the Roadster instead of spinning it out of the driver's hands.
+const KNOCK_SPIN = 1.8
 const KNOCK_SPEED = 3 // m/s into a street light to knock it flat
-const NAMES = {
-  building: 'Hit a building',
-  lamp: 'Hit a street light',
-  palm: 'Hit a palm tree',
-  tree: 'Hit a tree',
-  signal: 'Hit a traffic light',
-  barrier: 'Hit the barrier',
-  car: 'Hit a car'
-}
-const crashName = kind => NAMES[kind] || 'Crashed'
 
 // Rectangles are { x, z, fx, fz, hl, hw }: centre, unit forward axis, half length and half width.
 // The side axis is (-fz, fx).
@@ -55797,11 +55883,11 @@ function loadBody (s) {
   BODY.w = s.mode === 'ground' ? s.yawRate : 0
   return BODY
 }
-function storeBody (s) {
+function storeBody (s, w0 = s.yawRate) {
   s.vel.x = BODY.vx
   s.vel.z = BODY.vz
   if (s.mode !== 'ground') return
-  s.yawRate = BODY.w
+  s.yawRate = w0 + clamp(BODY.w - w0, -KNOCK_SPIN, KNOCK_SPIN)
   s.speed = s.vel.x * Math.cos(s.yaw) - s.vel.z * Math.sin(s.yaw)
 }
 function nudge (s, dx, dz) {
@@ -55810,24 +55896,18 @@ function nudge (s, dx, dz) {
   p.z += dz
 }
 
-// Over it goes: a hop and a tumble away from whatever the car hit, then the crash model takes over.
-function crashInto (s, hit, impact, reason) {
-  const f = playerRect(s)
-  const nF = hit.nx * f.fx + hit.nz * f.fz,
-    nS = hit.nz * f.fx - hit.nx * f.fz
-  const k = clamp(impact * 0.12, 1, 4)
-  s.vel.y = Math.max(s.vel.y, Math.min(6, impact * 0.18))
-  s.omega.set(-nS * k, s.mode === 'ground' ? s.yawRate : s.omega.y, nF * k)
-  s.toCrash(reason)
-}
 
 const hits = []
-// Ground mode: keep the Roadster out of buildings, posts and the barrier.
+// Ground mode: keep the Roadster out of buildings, posts and the barrier (and on a roof, inside its
+// parapet and clear of its plant).
 function collideCity (s) {
-  const me = playerRect(s)
+  const me = playerRect(s),
+    fl = s.pos.y
   query(me.x - 4, me.z - 4, me.x + 4, me.z + 4, hits)
+  if (s.roof) hits.push(...parapets(s.roof))
   for (const c of hits) {
-    if (c.y0 > 1.2 || c.down) continue // upper storeys are out of reach from the street
+    // out of reach above (upper storeys), or under the wheels (the roof the car is on)
+    if (c.down || c.y0 > fl + 1.2 || c.y1 <= fl + 0.05) continue
     const hit = c.r ? rectPost(me, c) : rectRect(me, boxRect(c))
     if (!hit) continue
     if (
@@ -55841,11 +55921,6 @@ function collideCity (s) {
     const impact = impulse(loadBody(s), null, hit, 0.2, 0.35)
     storeBody(s)
     if (impact > 0.6) s.emit('bump', { impact, what: c.kind })
-    if (impact > CRASH_SPEED) {
-      s.syncPose()
-      crashInto(s, hit, impact, crashName(c.kind))
-      return
-    }
   }
   // the open ground ends a little way past the city's barrier
   for (const k of ['x', 'z'])
@@ -55865,6 +55940,51 @@ function knock (s, c, impact) {
   s.vel.z *= 0.9
   s.emit('knock', { i: c.i, x: c.x, z: c.z, dx: s.vel.x, dz: s.vel.z, impact })
   return true
+}
+
+// In the air over the city: the side of a building, a post or the barrier bounces the car off as it
+// would on the road (a street light still folds over). Coming down on a roof is a landing (flight.js);
+// clipping a roof's edge on the way past pushes the car off it. bottom and top: the car's lowest and
+// highest corners.
+function collideAir (s, bottom, top) {
+  const me = playerRect(s)
+  query(me.x - 4, me.z - 4, me.x + 4, me.z + 4, hits)
+  for (const c of hits) {
+    if (c.down || bottom >= c.y1 || top <= c.y0) continue
+    const hit = c.r ? rectPost(me, c) : rectRect(me, boxRect(c))
+    if (!hit) continue
+    if (
+      c.kind === 'lamp' &&
+      knock(s, c, -(s.vel.x * hit.nx + s.vel.z * hit.nz))
+    )
+      continue
+    nudge(s, hit.nx * hit.depth, hit.nz * hit.depth)
+    const impact = impulse(loadBody(s), null, hit, 0.2, 0.35)
+    storeBody(s)
+    me.x = BODY.x
+    me.z = BODY.z
+    if (impact > 0.6) s.emit('bump', { impact, what: c.kind })
+  }
+  s.syncPose()
+}
+
+// The test site's parked lineup: cars to bounce off, on the ground or low in the air, like the
+// city's traffic (they are too heavy to shove). Hitting a car never takes the wheel away.
+function bumpCars (s, solids) {
+  const me = playerRect(s)
+  const bottom = s.mode === 'ground' ? 0 : s.com.y - 0.9
+  for (const c of solids) {
+    if (c.kind !== 'car' || bottom > c.y1) continue
+    const hit = rectRect(me, boxRect(c))
+    if (!hit) continue
+    nudge(s, hit.nx * hit.depth, hit.nz * hit.depth)
+    const impact = impulse(loadBody(s), null, hit, 0.25, 0.3)
+    storeBody(s)
+    me.x = BODY.x
+    me.z = BODY.z
+    if (impact > 0.6) s.emit('bump', { impact, what: 'car' })
+  }
+  s.syncPose()
 }
 
 // A tumbling or airborne body whose centre is inside a building: lift it out by the nearest face.
@@ -55901,15 +56021,16 @@ function bounceCity (s) {
       pushOut(s, c, 1)
   }
 }
-__export(__exports, { "CRASH_SPEED": () => CRASH_SPEED, "KNOCK_SPEED": () => KNOCK_SPEED, "crashName": () => crashName, "rectRect": () => rectRect, "rectPost": () => rectPost, "boxRect": () => boxRect, "carRect": () => carRect, "impulse": () => impulse, "BODY": () => BODY, "playerRect": () => playerRect, "loadBody": () => loadBody, "storeBody": () => storeBody, "nudge": () => nudge, "crashInto": () => crashInto, "collideCity": () => collideCity, "knock": () => knock, "pushOut": () => pushOut, "bounceCity": () => bounceCity })
+__export(__exports, { "KNOCK_SPEED": () => KNOCK_SPEED, "rectRect": () => rectRect, "rectPost": () => rectPost, "boxRect": () => boxRect, "carRect": () => carRect, "impulse": () => impulse, "BODY": () => BODY, "playerRect": () => playerRect, "loadBody": () => loadBody, "storeBody": () => storeBody, "nudge": () => nudge, "collideCity": () => collideCity, "knock": () => knock, "collideAir": () => collideAir, "bumpCars": () => bumpCars, "pushOut": () => pushOut, "bounceCity": () => bounceCity })
 })
 
 // ---- js/sim/flight.js
-__define(6, function (__exports) {
+__define(7, function (__exports) {
 // Free flight: gravity, cold-gas thrust, attitude control (manoeuvres + stability assist) and contacts.
 const THREE = __require(0)
-const { TRACK } = __require(3)
-const { crashName } = __require(5)
+const { TRACK, SOLIDS } = __require(3)
+const { roofAt } = __require(5)
+const { bumpCars, collideAir } = __require(6)
 const { G, CAR, AX_X, AX_Y, AX_Z, clamp, CORNERS, LIFT_ACC } = __require(1)
 const _a = new THREE.Vector3(),
   _b = new THREE.Vector3(),
@@ -55917,6 +56038,7 @@ const _a = new THREE.Vector3(),
   _d = new THREE.Vector3()
 const _q = new THREE.Quaternion(),
   _q2 = new THREE.Quaternion()
+const LAND_UP = 0.25 // tilted less than this from on its side, the car comes down on its wheels
 
 function stepAir (s, dt, c, main, lift) {
   const m = CAR.mass,
@@ -56019,37 +56141,42 @@ function stepAir (s, dt, c, main, lift) {
   s.syncPose()
 
   // ground contact
-  let minY = Infinity
+  let minY = Infinity,
+    maxY = -Infinity
   for (const p of CORNERS) {
     _a.set(p.x, p.y - CAR.comH, p.z)
       .applyQuaternion(q)
       .add(s.com)
-    if (_a.y < minY) minY = _a.y
+    minY = Math.min(minY, _a.y)
+    maxY = Math.max(maxY, _a.y)
   }
+  // what it would come down on: the street, or in the city a roof underneath
+  const roof = s.world === 'city' ? roofAt(s.com.x, s.com.z, s.com.y) : null
+  s.floor = roof ? roof.y1 : 0
   const upY = s.up(_b).y
-  if (minY <= 0 && s.vel.y > 0 && upY > 0.72) {
+  if (minY <= s.floor && s.vel.y > 0 && upY > 0.72) {
     // a corner dipped to the floor while the thrusters still lift the car: it scrapes, it doesn't
     // land (landing would hand it back to the ground, and the lift would throw it straight up again)
-    s.com.y -= minY
+    s.com.y -= minY - s.floor
     s.syncPose()
-  } else if (minY <= 0) {
-    if (upY > 0.72 && s.vel.y > -13) s.land()
-    else
-      s.toCrash(upY <= 0.72 ? 'Landed on its side' : 'Hit the ground too hard')
+  } else if (minY <= s.floor) {
+    // like GTA, a landing never takes the wheel away, however hard: anything short of its side or
+    // roof comes down on its wheels. On its side or roof it tumbles (and A/D rolls it back: crash.js)
+    if (upY > LAND_UP) s.land(roof)
+    else s.toCrash(upY > -0.4 ? 'Landed on its side' : 'Landed on its roof')
     return
   }
-  const hit = s.hitSolid()
-  if (hit) {
-    s.toCrash(
-      s.world === 'site'
-        ? 'Mid-air collision'
-        : hit.kind === 'building'
-        ? 'Flew into a building'
-        : crashName(hit.kind)
-    )
+  if (s.world === 'city') {
+    // the side of a building, a post or the barrier bounces the car off
+    collideAir(s, minY, maxY)
     return
   }
-  if (s.world === 'site') checkRampContact(s)
+  bumpCars(s, SOLIDS)
+  if (s.hitSolid()) {
+    s.toCrash('Mid-air collision')
+    return
+  }
+  checkRampContact(s)
 }
 
 function checkRampContact (s) {
@@ -56117,9 +56244,10 @@ __export(__exports, { "stepAir": () => stepAir, "checkRampContact": () => checkR
 })
 
 // ---- js/sim/ground.js
-__define(7, function (__exports) {
-const { TRACK } = __require(3)
-const { collideCity } = __require(5)
+__define(8, function (__exports) {
+const { TRACK, SOLIDS } = __require(3)
+const { roofAt } = __require(5)
+const { collideCity, bumpCars } = __require(6)
 const { G, CAR, LIFT_ACC, clamp, wrapPi } = __require(1)
 // Planar two-axle tyre model: slip angles, friction circle, AWD split, load transfer,
 // rolling resistance, aero drag, coast regen and a rear-locking e-brake.
@@ -56318,6 +56446,11 @@ function stepGround (s, dt, c, main, lift) {
   s.syncPose()
   if (s.world === 'city') {
     collideCity(s)
+    // pushed (or hopped) off the edge of a roof: down it goes
+    if (s.floor > 0) {
+      const r = roofAt(s.pos.x, s.pos.z, s.floor + 0.3)
+      if ((r ? r.y1 : 0) < s.floor - 0.3) s.toAir(0.4)
+    }
     return
   }
 
@@ -56356,18 +56489,20 @@ function stepGround (s, dt, c, main, lift) {
     v.z *= 0.5
     s.syncPose()
   }
-  if (s.hitSolid()) s.toCrash('Hit the lineup')
+  bumpCars(s, SOLIDS)
+  if (s.hitSolid()) s.toCrash('Hit the tower')
 }
 __export(__exports, { "stepGround": () => stepGround })
 })
 
 // ---- js/sim/crash.js
-__define(8, function (__exports) {
+__define(9, function (__exports) {
 // Crashes: a rigid box tumbling on the ground with impulse-based contact and friction, and getting
 // back on the road afterwards, GTA-style.
 const THREE = __require(0)
-const { G, TAU, CAR, AX_Y, CORNERS } = __require(1)
-const { pushOut, bounceCity } = __require(5)
+const { G, TAU, CAR, AX_Y, CORNERS, clamp } = __require(1)
+const { roofAt } = __require(5)
+const { pushOut, bounceCity } = __require(6)
 const _a = new THREE.Vector3(),
   _b = new THREE.Vector3(),
   _c = new THREE.Vector3(),
@@ -56409,21 +56544,26 @@ function enterCrash (s, reason) {
   s.emit('crash', { reason, speed: s.vel.length() })
 }
 
-// c: the driver's controls. Once the wreck comes to rest, steering rolls it back onto its wheels
-// (A one way, D the other; from its side it always goes the short way), and if it is already on
-// them, any drive key carries on from there. The autopilots never steer a wreck: they restart.
+// c: the driver's controls. Once the wreck is down on the road and no longer whirling, a wreck on
+// its wheels drives on with any drive key, still moving; one on its side or roof rolls back onto
+// them when the driver steers, once it has slowed (A one way, D the other; from its side it always
+// goes the short way). The autopilots never steer a wreck: they restart.
 function stepCrash (s, dt, c) {
   s.crashTime += dt
+  // the street, or the roof the wreck is on
+  s.roof = s.world === 'city' ? roofAt(s.com.x, s.com.z, s.com.y) : null
+  s.floor = s.roof ? s.roof.y1 : 0
   if (s.righting) return stepRighting(s, dt)
   if (
     c &&
-    s.crashTime > 0.5 &&
-    s.vel.length() < 1.5 &&
-    s.omegaW.length() < 1.5
+    s.crashTime > 0.4 &&
+    s.com.y - s.floor < 1.4 &&
+    s.omegaW.length() < 3
   ) {
-    if (s.up(_a).y > 0.95) {
-      if (c.throttle || c.brake || c.reverse || c.steer) return recover(s)
-    } else if (c.steer) return startRighting(s, -Math.sign(c.steer))
+    if (s.up(_a).y > 0.9) {
+      if (c.throttle || c.brake || c.reverse || c.steer) return recover(s, true)
+    } else if (c.steer && s.vel.length() < 5)
+      return startRighting(s, -Math.sign(c.steer))
   }
   s.vel.y -= G * dt
   s.com.addScaledVector(s.vel, dt)
@@ -56441,7 +56581,7 @@ function stepCrash (s, dt, c) {
     dy = 0
   for (const p of CORNERS) {
     const r = _b.set(p.x, p.y - CAR.comH, p.z).applyQuaternion(s.quat)
-    const y = s.com.y + r.y
+    const y = s.com.y + r.y - s.floor
     if (y < dy) {
       dy = y
       deepest = r.clone()
@@ -56525,6 +56665,7 @@ function startRighting (s, dir) {
     dur: 0.55 + 0.3 * k,
     hop: 0.9 + 0.5 * k,
     y0: s.com.y,
+    y1: s.floor + CAR.comH,
     roll,
     axis,
     q0,
@@ -56540,19 +56681,22 @@ function stepRighting (s, dt) {
     e = u * u * (3 - 2 * u)
   _q.setFromAxisAngle(r.axis, r.roll * e).multiply(r.q0)
   s.quat.copy(_q2.identity().slerp(r.fix, e)).multiply(_q)
-  s.com.y = r.y0 + (CAR.comH - r.y0) * e + r.hop * Math.sin(Math.PI * u)
+  s.com.y = r.y0 + (r.y1 - r.y0) * e + r.hop * Math.sin(Math.PI * u)
   s.pos.copy(s.com).sub(s.up(_a).multiplyScalar(CAR.comH))
   if (u >= 1) recover(s)
 }
-// Back on the road at a standstill, where the wreck lies.
-function recover (s) {
+// Back on the road where the wreck lies: at a standstill, or still sliding along (moving).
+function recover (s, moving = false) {
   const f = s.fwd(_a)
   s.yaw = Math.atan2(-f.z, f.x)
-  s.pos.set(s.com.x, 0, s.com.z)
-  s.vel.set(0, 0, 0)
+  s.pos.set(s.com.x, s.floor, s.com.z)
+  s.yawRate = moving ? clamp(s.omegaW.y, -2, 2) : 0
+  if (moving) s.vel.y = 0
+  else s.vel.set(0, 0, 0)
   s.omega.set(0, 0, 0)
   s.omegaW.set(0, 0, 0)
-  s.speed = s.yawRate = s.steerAng = s.accLong = s.latAcc = 0
+  s.speed = s.vel.x * Math.cos(s.yaw) - s.vel.z * Math.sin(s.yaw)
+  s.steerAng = s.accLong = s.latAcc = 0
   s.righting = null
   s.crashSettled = false
   s.setMode('ground')
@@ -56572,16 +56716,16 @@ __export(__exports, { "enterCrash": () => enterCrash, "stepCrash": () => stepCra
 })
 
 // ---- js/sim/sim.js
-__define(9, function (__exports) {
+__define(10, function (__exports) {
 // The vehicle simulation: state, mode switching (ground / ramp / air / crash), the wall ride and scoring.
 // Uses only THREE math types, so it runs headless in Node for tests.
 const THREE = __require(0)
-const { stepAir } = __require(6)
-const { stepGround } = __require(7)
+const { stepAir } = __require(7)
+const { stepGround } = __require(8)
 const { TRACK, SOLIDS } = __require(3)
 const { SPAWN, query } = __require(4)
-const { knock } = __require(5)
-const { enterCrash, stepCrash } = __require(8)
+const { knock } = __require(6)
+const { enterCrash, stepCrash } = __require(9)
 const { G, DEG, TAU, CAR, AX_X, AX_Y, AX_Z, clamp, wrapPi, clamp01, CORNERS, LIFT_ACC } = __require(1)
 const _a = new THREE.Vector3(),
   _b = new THREE.Vector3(),
@@ -56643,6 +56787,8 @@ class Sim {
     this.crashSettled = false
     this.righting = null
     this.crashTime = 0
+    this.floor = 0 // height of what the car is on or over: the street, or a roof (this.roof)
+    this.roof = null
     this.crashReason = ''
     this.accLong = 0
     this.latAcc = 0
@@ -56716,7 +56862,7 @@ class Sim {
   syncPose () {
     if (this.mode === 'ground') {
       this.quat.setFromAxisAngle(AX_Y, this.yaw)
-      this.pos.y = 0
+      this.pos.y = this.floor
       this.vel.y = 0
     } else if (this.mode === 'ramp') {
       const P1 = TRACK.point(this.s - CAR.halfWB, _p1),
@@ -56937,11 +57083,21 @@ class Sim {
     }
   }
 
-  land () {
+  // roof: the building top it comes down on (null for the street)
+  land (roof = null) {
+    this.roof = roof
+    this.floor = roof ? roof.y1 : 0
     const f = this.fwd(_a)
     const vy = this.vel.y
-    this.yaw = Math.atan2(-f.z, f.x)
-    this.yawRate = _b.copy(this.omega).applyQuaternion(this.quat).y
+    // (a nose pointing nearly straight down: face the way the car is going)
+    if (Math.hypot(f.x, f.z) > 0.25) this.yaw = Math.atan2(-f.z, f.x)
+    else if (Math.hypot(this.vel.x, this.vel.z) > 1)
+      this.yaw = Math.atan2(-this.vel.z, this.vel.x)
+    this.yawRate = clamp(
+      _b.copy(this.omega).applyQuaternion(this.quat).y,
+      -3,
+      3
+    )
     this.vel.y = 0
     this.speed =
       this.vel.x * Math.cos(this.yaw) - this.vel.z * Math.sin(this.yaw)
@@ -56999,7 +57155,8 @@ class Sim {
         .applyQuaternion(q)
         .add(P)
       for (const b of solids) {
-        if (b.down || _a.y <= b.y0 || _a.y >= b.y1) continue
+        // (the lineup's cars bounce the car off instead: bumpCars)
+        if (b.down || b.kind === 'car' || _a.y <= b.y0 || _a.y >= b.y1) continue
         if (
           b.r
             ? Math.hypot(_a.x - b.x, _a.z - b.z) < b.r
@@ -57025,7 +57182,7 @@ __export(__exports, { "Sim": () => Sim })
 })
 
 // ---- js/ui/input.js
-__define(10, function (__exports) {
+__define(11, function (__exports) {
 // Keyboard and touch input: held drive keys, one-shot command keys, and the manual control mapping.
 const { TRACK } = __require(3)
 const { makeControls } = __require(1)
@@ -57143,7 +57300,7 @@ __export(__exports, { "DRIVE_KEYS": () => DRIVE_KEYS, "Input": () => Input })
 })
 
 // ---- js/sim/jam.js
-__define(11, function (__exports) {
+__define(12, function (__exports) {
 // The jammed street: one block of the central avenue, straight ahead of the city's spawn point,
 // stands gridlocked both ways, nose to tail, for the Roadster to jump. Its lanes are closed:
 // traffic and Autopilot go round, and a wrecked Roadster is never put back inside it.
@@ -57158,11 +57315,11 @@ __export(__exports, { "JAM": () => JAM, "JAM_AT": () => JAM_AT })
 })
 
 // ---- js/ui/minimap.js
-__define(12, function (__exports) {
+__define(13, function (__exports) {
 // GTA-style radar for the city: the street map turns under a fixed arrow, heading-up with the
 // camera, zooming out with speed; traffic shows as dots, wrecks in amber, the jammed street as a
 // gold blip.
-const { JAM_AT } = __require(11)
+const { JAM_AT } = __require(12)
 const { BLOCKS, BUILDINGS, HALF, ROAD_HW, BARRIER, CURB_R } = __require(4)
 class Minimap {
   constructor (canvas) {
@@ -57299,12 +57456,12 @@ __export(__exports, { "Minimap": () => Minimap })
 })
 
 // ---- js/sim/wrecks.js
-__define(13, function (__exports) {
+__define(14, function (__exports) {
 // Traffic knocked out of its lane: the Roadster's hits on cars, the slide to a stop on locked-up
 // tyres (off walls and posts), and pulling back into the lane when a car was only nudged.
 const { CAR } = __require(1)
 const { query } = __require(4)
-const { BODY, nudge, impulse, carRect, rectRect, rectPost, boxRect, loadBody, storeBody, crashInto, playerRect, CRASH_SPEED } = __require(5)
+const { BODY, nudge, impulse, carRect, rectRect, rectPost, boxRect, loadBody, storeBody, playerRect } = __require(6)
 const near = []
 
 // knocked out of its lane: slide on locked-up tyres until it stops
@@ -57366,11 +57523,12 @@ function rejoin (tr, car) {
   tr.place(car)
 }
 
-// the Roadster against the traffic: push apart by mass, trade momentum, knock the car loose
+// the Roadster against the traffic: push apart by mass, trade momentum, knock the car loose. However
+// hard the hit, the Roadster stays drivable: it's a shove, not a crash.
 function collidePlayer (tr, sim) {
   if (sim.mode === 'ramp') return
   const me = playerRect(sim)
-  const bottom = sim.mode === 'ground' ? 0 : sim.com.y - 0.9
+  const bottom = sim.mode === 'ground' ? sim.pos.y : sim.com.y - 0.9
   for (const car of tr.cars) {
     if (Math.abs(car.x - me.x) > 9 || Math.abs(car.z - me.z) > 9) continue
     if (bottom > car.hgt) continue
@@ -57387,11 +57545,6 @@ function collidePlayer (tr, sim) {
     me.x = BODY.x
     me.z = BODY.z
     if (impact > 0.6) sim.emit('bump', { impact, what: 'car' })
-    if (impact > CRASH_SPEED && sim.mode === 'ground') {
-      sim.syncPose()
-      crashInto(sim, hit, impact, 'Hit a car')
-      return
-    }
   }
   if (sim.mode === 'ground') sim.syncPose()
 }
@@ -57399,14 +57552,14 @@ __export(__exports, { "slide": () => slide, "collidePlayer": () => collidePlayer
 })
 
 // ---- js/sim/traffic.js
-__define(14, function (__exports) {
+__define(15, function (__exports) {
 // City traffic: drivers follow the lane graph, keep their distance (intelligent driver model), stop
 // for red lights, slow for corners and for the Roadster, and get knocked loose when it hits them.
 // Traffic lives in a bubble round the player: cars far behind are recycled into the streets ahead.
 const { CAR, clamp } = __require(1)
 const { NODES, EDGES, LANES, STALLS, LANE_OFF, GREEN, YELLOW, rng, signal, pointAt } = __require(4)
-const { JAM } = __require(11)
-const { slide, collidePlayer } = __require(13)
+const { JAM } = __require(12)
+const { slide, collidePlayer } = __require(14)
 const TYPES = [
   { name: 'sedan', len: 4.7, wid: 1.85, hgt: 1.45, m: 1600, share: 30 },
   { name: 'hatch', len: 4.1, wid: 1.78, hgt: 1.5, m: 1300, share: 16 },
@@ -57856,7 +58009,7 @@ __export(__exports, { "TYPES": () => TYPES, "Traffic": () => Traffic })
 })
 
 // ---- js/sim/autopilot.js
-__define(15, function (__exports) {
+__define(16, function (__exports) {
 // Autopilot: flies the reveal-night sequence through the same controls a player uses.
 //  Stunt 1: from the foot of the wall, climb and hang inverted, reverse back to the start, then a
 //           full-speed run off the lip, roll upright and come straight down on the thrusters.
@@ -58195,7 +58348,7 @@ __export(__exports, { "CAPS": () => CAPS, "Autopilot": () => Autopilot })
 })
 
 // ---- js/sim/cityPilot.js
-__define(16, function (__exports) {
+__define(17, function (__exports) {
 // Autopilot in the city: drives the Roadster round the streets through the normal controls, on
 // the same lane graph as the traffic. It steers by pure pursuit along its lane, keeps its distance
 // to the cars ahead, slows for corners, stops for red lights and gives way when turning left.
@@ -58253,7 +58406,7 @@ class CityPilot {
         best = e
       }
     }
-    if (!best || s.mode !== 'ground') return false
+    if (!best || s.mode !== 'ground' || s.floor > 0) return false // (not from a roof)
     this.edge = best
     this.next = this.traffic.choose(best, DRIVER)
     this.go = null
@@ -58394,7 +58547,7 @@ __export(__exports, { "CITY_CAPS": () => CITY_CAPS, "CityPilot": () => CityPilot
 })
 
 // ---- js/audio/sound.js
-__define(17, function (__exports) {
+__define(18, function (__exports) {
 // Sound, synthesised with Web Audio (nothing to download): motor whine, tyres, wind, thrusters, fan, one-shots.
 const { clamp } = __require(1)
 class SoundEngine {
@@ -58642,7 +58795,7 @@ __export(__exports, { "SoundEngine": () => SoundEngine })
 })
 
 // ---- vendor/three/addons/environments/RoomEnvironment.js
-__define(18, function (__exports) {
+__define(19, function (__exports) {
 /**
  * https://github.com/google/model-viewer/blob/master/packages/model-viewer/src/three-components/EnvironmentScene.ts
  */
@@ -58781,12 +58934,12 @@ __export(__exports, { "RoomEnvironment": () => RoomEnvironment })
 })
 
 // ---- js/render/scene.js
-__define(19, function (__exports) {
+__define(20, function (__exports) {
 // Renderer, scene, procedural textures, shared materials, lights and the test-site surroundings.
 // Everything that belongs to the test site hangs off `site`, so it can be hidden for the city.
 const THREE = __require(0)
 const { TAU } = __require(1)
-const { RoomEnvironment } = __require(18)
+const { RoomEnvironment } = __require(19)
 const canvas = document.getElementById('c')
 let renderer
 try {
@@ -59129,10 +59282,10 @@ __export(__exports, { "canvas": () => canvas, "renderer": () => renderer, "scene
 })
 
 // ---- js/render/lineup.js
-__define(20, function (__exports) {
+__define(21, function (__exports) {
 // The parked Tesla lineup for stunt 2: extruded low-poly profiles, parked broadside to the jump.
 const THREE = __require(0)
-const { site, MAT } = __require(19)
+const { site, MAT } = __require(20)
 const { LINEUP } = __require(3)
 // ---------- parked lineup ----------
 function extrudeProfile (pts, depth, mat, bevel = 0.05) {
@@ -59321,7 +59474,7 @@ __export(__exports, { "buildLineup": () => buildLineup })
 })
 
 // ---- vendor/three/addons/controls/OrbitControls.js
-__define(21, function (__exports) {
+__define(22, function (__exports) {
 const { Controls, MOUSE, Quaternion, Spherical, TOUCH, Vector2, Vector3, Plane, Ray, MathUtils } = __require(0)
 
 // OrbitControls performs orbiting, dollying (zooming), and panning.
@@ -60836,12 +60989,12 @@ __export(__exports, { "OrbitControls": () => OrbitControls })
 })
 
 // ---- js/render/camera.js
-__define(22, function (__exports) {
+__define(23, function (__exports) {
 // Cameras: the autopilot's director shots, a GTA-style follow camera, chase, side and free orbit.
 const THREE = __require(0)
 const { clamp, wrapPi } = __require(1)
 const { TRACK, LINEUP_FIRST, LINEUP_LAST } = __require(3)
-const { OrbitControls } = __require(21)
+const { OrbitControls } = __require(22)
 const CAM_MODES = ['director', 'follow', 'chase', 'side', 'free']
 const CAM_NAMES = {
   director: 'Director',
@@ -60853,6 +61006,7 @@ const CAM_NAMES = {
 
 const lerpK = (k, dt) => 1 - Math.exp(-k * dt)
 const BLEND_TIME = 1.8 // s to ease from one shot into the next (cuts skip it)
+const SWING = 2.6 // rad/s: the fastest the follow camera swings round behind the car
 const _p = new THREE.Vector3(),
   _f = new THREE.Vector3(),
   _u = new THREE.Vector3(),
@@ -60902,6 +61056,7 @@ class CameraRig {
       yawOff: 0,
       pitchOff: 0,
       dist: 8.5,
+      reach: 0, // how far the arm lets out with speed, eased so a sudden stop doesn't yank it in
       elev: 1,
       idle: 99,
       target: new THREE.Vector3()
@@ -60959,13 +61114,29 @@ class CameraRig {
   }
 
   // GTA-style: sit behind the car's heading (not its velocity), ignore pitch and roll so flips never
-  // throw the camera, and hold the heading through the wall ride and any manoeuvre.
+  // throw the camera, and hold the heading through the wall ride and any manoeuvre. A car spun round
+  // by a knock, sliding sideways or tumbling is followed the way it is going instead: chasing its
+  // whirling nose would whip the camera round and round it.
   follow (dt, sim, P) {
     const f = this.f,
       fw = sim.fwd(_f),
-      up = sim.up(_u)
-    if (up.y > 0.55 && Math.hypot(fw.x, fw.z) > 0.3 && sim.mode !== 'ramp')
-      f.targetHeading = Math.atan2(-fw.z, fw.x)
+      up = sim.up(_u),
+      v = sim.vel,
+      hv = Math.hypot(v.x, v.z)
+    const nose = Math.atan2(-fw.z, fw.x),
+      slip = Math.cos(Math.atan2(-v.z, v.x) - nose)
+    const wild =
+      sim.mode === 'crash' ||
+      (sim.mode === 'ground' &&
+        (Math.abs(sim.yawRate) > 2.5 || (hv > 4 && slip < 0.8 && slip > -0.3)))
+    if (wild) {
+      if (hv > 3) f.targetHeading = Math.atan2(-v.z, v.x)
+    } else if (
+      up.y > 0.55 &&
+      Math.hypot(fw.x, fw.z) > 0.3 &&
+      sim.mode !== 'ramp'
+    )
+      f.targetHeading = nose
     if (!f.init) {
       const v = sim.vel
       if (!(up.y > 0.55) && Math.hypot(v.x, v.z) > 1)
@@ -60974,8 +61145,13 @@ class CameraRig {
       f.heading = f.targetHeading
       f.target.copy(P)
       f.elev = sim.mode === 'ramp' ? up.y : 1
+      f.reach = Math.min(4, sim.groundSpeed() * 0.05)
     }
-    f.heading += wrapPi(f.targetHeading - f.heading) * lerpK(3.2, dt)
+    f.heading += clamp(
+      wrapPi(f.targetHeading - f.heading) * lerpK(3.2, dt),
+      -SWING * dt,
+      SWING * dt
+    )
     f.idle += dt
     if (f.idle > 1.5 && !this.drag) {
       const k = lerpK(2, dt)
@@ -60985,7 +61161,8 @@ class CameraRig {
     // on the wall the arm follows the car's up vector, so it drops below the car when it hangs inverted
     f.elev += ((sim.mode === 'ramp' ? up.y : 1) - f.elev) * lerpK(3, dt)
     const speed = sim.groundSpeed()
-    const dist = f.dist + Math.min(4, speed * 0.05)
+    f.reach += (Math.min(4, speed * 0.05) - f.reach) * lerpK(1.5, dt)
+    const dist = f.dist + f.reach
     const yaw = f.heading + f.yawOff,
       pitch = 0.2 + f.pitchOff
     f.target.x += (P.x - f.target.x) * lerpK(12, dt)
@@ -61220,8 +61397,9 @@ class CameraRig {
     cam.up.set(0, 1, 0)
     cam.lookAt(this.look)
     if (this.shakeAmt > 0.001) {
-      cam.position.x += (Math.random() - 0.5) * this.shakeAmt
-      cam.position.y += (Math.random() - 0.5) * this.shakeAmt
+      // a quick judder that dies away, not a fresh random jump every frame
+      cam.position.x += 0.5 * this.shakeAmt * Math.sin(t * 43)
+      cam.position.y += 0.5 * this.shakeAmt * Math.sin(t * 37 + 1.3)
       this.shakeAmt *= Math.exp(-dt * 6)
     }
   }
@@ -61230,17 +61408,17 @@ __export(__exports, { "CAM_MODES": () => CAM_MODES, "CAM_NAMES": () => CAM_NAMES
 })
 
 // ---- js/render/skids.js
-__define(23, function (__exports) {
+__define(24, function (__exports) {
 // Skid marks: one continuous rubber ribbon per sliding tyre. The ribbon is as wide as the tyre's
 // footprint across its path (full tread width in a straight lock-up, the short contact patch when it
 // slides sideways), darkens with how hard the tyre slides and fades in and out at each end.
 const THREE = __require(0)
-const { scene } = __require(19)
+const { scene } = __require(20)
 const MAX_SEG = 3000 // ring buffer of ribbon segments (oldest marks are overwritten)
 const STEP = 0.14 // m between ribbon samples
 const TREAD = 0.3 // tyre width
 const PATCH = 0.17 // contact patch length
-const Y = 0.022 // just above the pad
+const Y = 0.022 // just above the pad (or roof)
 
 // fine streaks along the mark: the tread grooves dragged across the concrete
 function streakTexture () {
@@ -61307,7 +61485,9 @@ const _q = new THREE.Quaternion()
 
 function addSegment (a, b) {
   const v = head * 4
-  pos.set([a.lx, Y, a.lz, a.rx, Y, a.rz, b.lx, Y, b.lz, b.rx, Y, b.rz], v * 3)
+  const ya = a.y + Y,
+    yb = b.y + Y
+  pos.set([a.lx, ya, a.lz, a.rx, ya, a.rz, b.lx, yb, b.lz, b.rx, yb, b.rz], v * 3)
   col[v * 4 + 3] = col[(v + 1) * 4 + 3] = a.alpha
   col[(v + 2) * 4 + 3] = col[(v + 3) * 4 + 3] = b.alpha
   uv.set([0, a.u, 1, a.u, 0, b.u, 1, b.u], v * 2)
@@ -61336,6 +61516,7 @@ function updateSkids (RS, sim) {
     if (!last) {
       trail[i] = {
         x: _c.x,
+        y: sim.pos.y,
         z: _c.z,
         lx: _c.x,
         lz: _c.z,
@@ -61363,6 +61544,7 @@ function updateSkids (RS, sim) {
     const nz = tx * width * 0.5
     const next = {
       x: _c.x,
+      y: sim.pos.y,
       z: _c.z,
       lx: _c.x + nx,
       lz: _c.z + nz,
@@ -61379,10 +61561,10 @@ __export(__exports, { "clearSkids": () => clearSkids, "updateSkids": () => updat
 })
 
 // ---- js/render/wall.js
-__define(24, function (__exports) {
+__define(25, function (__exports) {
 // The curved wall (slab, LED edges that turn white behind the car, centre line) and its steel truss.
 const THREE = __require(0)
-const { site, MAT } = __require(19)
+const { site, MAT } = __require(20)
 const { TRACK } = __require(3)
 const { AX_Y } = __require(1)
 // ---------- the wall ----------
@@ -61634,12 +61816,12 @@ __export(__exports, { "LED_MAT": () => LED_MAT, "buildWall": () => buildWall, "b
 })
 
 // ---- js/render/citySky.js
-__define(25, function (__exports) {
+__define(26, function (__exports) {
 // The city's evening: a sunset sky dome with streaky cloud, hazy hills round the horizon, a matching
 // environment map for reflections, and the switch between the night test site and the city's light.
 const THREE = __require(0)
 const { rng } = __require(4)
-const { scene, pmrem, renderer, hemi, key, keyOffset } = __require(19)
+const { scene, pmrem, renderer, hemi, key, keyOffset } = __require(20)
 const SUN = new THREE.Vector3(-66, 30, 28) // where the low sun sits relative to the car
 const HAZE = new THREE.Color(0.86, 0.6, 0.48)
 
@@ -61789,7 +61971,7 @@ __export(__exports, { "Sky": () => Sky })
 })
 
 // ---- js/render/geo.js
-__define(26, function (__exports) {
+__define(27, function (__exports) {
 // Geometry helpers for the city: merging thousands of small pieces into a handful of buffers (so a
 // whole district draws in a few calls), vertex tints, and instanced flat marks for road paint.
 const THREE = __require(0)
@@ -61865,13 +62047,13 @@ __export(__exports, { "merge": () => merge, "tint": () => tint, "box": () => box
 })
 
 // ---- js/render/traffic.js
-__define(27, function (__exports) {
+__define(28, function (__exports) {
 // Traffic cars: seven body types extruded from side profiles, instanced per type, with paint per
 // car, spinning wheels, headlights, and tail lights that brighten under braking.
 const THREE = __require(0)
-const { hdr, MAT } = __require(19)
-const { TYPES } = __require(14)
-const { merge, box, tint } = __require(26)
+const { hdr, MAT } = __require(20)
+const { TYPES } = __require(15)
+const { merge, box, tint } = __require(27)
 // side profiles (x forward, y up, metres) for the body and the glasshouse, wheel radius and
 // positions, and the heights of the head and tail lights
 const SHAPES = {
@@ -62178,12 +62360,12 @@ __export(__exports, { "TrafficView": () => TrafficView })
 })
 
 // ---- js/render/cityProps.js
-__define(28, function (__exports) {
+__define(29, function (__exports) {
 // Street furniture: street lights, palms on the boulevards, park trees and a signal mast on every
 // corner whose red, yellow and green lamps follow the intersection's signal plan. All instanced.
 const THREE = __require(0)
-const { hdr } = __require(19)
-const { merge, box, tint } = __require(26)
+const { hdr } = __require(20)
+const { merge, box, tint } = __require(27)
 const { NODES, LAMPS, PALMS, TREES, POLES, DIRS, RED, YELLOW, GREEN, ROAD_HW, LANE_OFF, signal, rng } = __require(4)
 const R = rng(99)
 const _m = new THREE.Matrix4(),
@@ -62471,12 +62653,12 @@ __export(__exports, { "Signals": () => Signals, "buildProps": () => buildProps }
 })
 
 // ---- js/render/cityGround.js
-__define(29, function (__exports) {
+__define(30, function (__exports) {
 // The city's ground: open land, asphalt, kerbed blocks with sidewalks and rounded corners, lane
 // paint, stop lines and zebra crossings, parks, parking lots and the barrier round the ring road.
 const THREE = __require(0)
-const { merge, marks, box } = __require(26)
-const { canvasTex, speckle } = __require(19)
+const { merge, marks, box } = __require(27)
+const { canvasTex, speckle } = __require(20)
 const { N, ROADS, ROAD_HW, WALK, CURB_H, CURB_R, STOP, HALF, LANE_W, BARRIER, BLOCKS, NODES, DIRS, STALLS } = __require(4)
 // ---------- textures (UVs are in metres, so each texture's repeat is 1 / its tile size) ----------
 function blotches (g, S, n, dark, light, rMin, rMax) {
@@ -62750,13 +62932,14 @@ __export(__exports, { "buildGround": () => buildGround })
 })
 
 // ---- js/render/cityBuildings.js
-__define(30, function (__exports) {
+__define(31, function (__exports) {
 // City buildings: procedural facades (glass curtain wall, office, brick, stucco) with windows lit for
 // the evening, storefronts along the street, setbacks, parapets, rooftop plant and antenna beacons.
 // Each style is one merged mesh, so seven hundred buildings draw in a few calls.
 const THREE = __require(0)
 const { BUILDINGS, rng } = __require(4)
-const { canvasTex, speckle, hdr } = __require(19)
+const { PARAPET, PARAPET_H } = __require(5)
+const { canvasTex, speckle, hdr } = __require(20)
 const COL = 3 // m per window bay
 const FLOOR = 3.5 // m per storey
 const CELLS = 8 // bays and storeys in one texture tile
@@ -63064,37 +63247,19 @@ function buildBuildings (group) {
       })
       roofs.top(t.x0, t.x1, t.z0, t.z1, t.y1, roofCol)
       // parapet round the roof edge
-      const p = 0.3,
-        h = t.y1 + 0.9
+      const p = PARAPET,
+        h = t.y1 + PARAPET_H
       roofs.cuboid(t.x0, t.x1, t.z0, t.z0 + p, t.y1, h, col)
       roofs.cuboid(t.x0, t.x1, t.z1 - p, t.z1, t.y1, h, col)
       roofs.cuboid(t.x0, t.x0 + p, t.z0, t.z1, t.y1, h, col)
       roofs.cuboid(t.x1 - p, t.x1, t.z0, t.z1, t.y1, h, col)
     })
-    // rooftop plant on the top tier: a stair and lift housing and a few air-handling units
+    // rooftop plant on the top tier (solid, so laid out by the sim: roofs.js)
     const t = b.tiers[b.tiers.length - 1],
-      w = t.x1 - t.x0,
-      d = t.z1 - t.z0,
       y = t.y1
     const grey = new THREE.Color().setScalar(0.55 + R() * 0.25)
-    if (w > 10 && d > 10) {
-      const hx = t.x0 + 3 + R() * (w - 10),
-        hz = t.z0 + 3 + R() * (d - 10)
-      roofs.cuboid(hx, hx + 4 + R() * 2, hz, hz + 3 + R() * 2, y, y + 3.2, grey)
-      for (let i = 0; i < 3; i++) {
-        const ax = t.x0 + 2 + R() * (w - 6),
-          az = t.z0 + 2 + R() * (d - 6)
-        roofs.cuboid(
-          ax,
-          ax + 1.6 + R() * 1.4,
-          az,
-          az + 1.2 + R(),
-          y,
-          y + 1.1 + R() * 0.8,
-          grey
-        )
-      }
-    }
+    for (const p of b.plant)
+      roofs.cuboid(p.x0, p.x1, p.z0, p.z1, p.y0, p.y1, grey)
     if (b.antenna) {
       const cx = (t.x0 + t.x1) / 2,
         cz = (t.z0 + t.z1) / 2,
@@ -63162,18 +63327,18 @@ __export(__exports, { "BEACON": () => BEACON, "buildBuildings": () => buildBuild
 })
 
 // ---- js/render/city.js
-__define(31, function (__exports) {
+__define(32, function (__exports) {
 // The city view: builds the city's meshes the first time it is visited (so the test site loads as
 // fast as ever), shows it in place of the test site, and keeps the traffic, signals, sky and
 // antenna beacons moving.
 const THREE = __require(0)
-const { Sky } = __require(25)
-const { scene, site } = __require(19)
+const { Sky } = __require(26)
+const { scene, site } = __require(20)
 const { raycast } = __require(4)
-const { TrafficView } = __require(27)
-const { buildProps } = __require(28)
-const { buildGround } = __require(29)
-const { buildBuildings, BEACON } = __require(30)
+const { TrafficView } = __require(28)
+const { buildProps } = __require(29)
+const { buildGround } = __require(30)
+const { buildBuildings, BEACON } = __require(31)
 class CityView {
   constructor () {
     this.group = null
@@ -63227,12 +63392,12 @@ __export(__exports, { "CityView": () => CityView, "clipCamera": () => clipCamera
 })
 
 // ---- js/render/wheels.js
-__define(32, function (__exports) {
+__define(33, function (__exports) {
 // Wheels and wheel wells: arch openings cut into the body shell with dark well liners, tyres with
 // rounded sidewalls round flat aero discs (as on the car at the reveal), Ackermann steering and
 // free-spinning wheels in the air.
 const THREE = __require(0)
-const { MAT } = __require(19)
+const { MAT } = __require(20)
 const { CAR } = __require(1)
 const ARCH_R = 0.4 // arch opening radius around each axle (tyre radius 0.36)
 const WELL_IN = 0.5 // inner wall of the wheel well, from the centre line
@@ -63411,7 +63576,7 @@ __export(__exports, { "ARCH_R": () => ARCH_R, "withWheelArches": () => withWheel
 })
 
 // ---- js/render/roadster.js
-__define(33, function (__exports) {
+__define(34, function (__exports) {
 // The Roadster model, measured off the Oct 15, 2026 reveal photos (a side-on shot at the event sets the
 // proportions): a faceted wedge in satin Ano White with a tall blunt nose, sloped fender facets either
 // side of a short hood, squinting triangular headlights, one dark gold-tinted canopy from a far-forward
@@ -63420,9 +63585,9 @@ __define(33, function (__exports) {
 // over 4 fans, a closed, flush tail deck, underfloor suction fan, skirts and flat aero-disc wheels;
 // plus per-frame pose and animation.
 const THREE = __require(0)
-const { scene, MAT } = __require(19)
+const { scene, MAT } = __require(20)
 const { TAU, clamp } = __require(1)
-const { buildWheels, updateWheels, withWheelArches } = __require(32)
+const { buildWheels, updateWheels, withWheelArches } = __require(33)
 const _a = new THREE.Vector3()
 
 // ---------- lofting ----------
@@ -63833,16 +63998,37 @@ function buildRoadster () {
     nozzles,
     fans,
     skirts,
-    taillight: rear.material
+    taillight: rear.material,
+    settle: { mode: null, k: 0, dy: 0, dq: new THREE.Quaternion() }
   }
 }
 
 const lerpK = (k, dt) => 1 - Math.exp(-k * dt)
+const _sq = new THREE.Quaternion()
+
+// Landing (or getting back on the wheels after a crash) puts the sim's car flat on the road at once,
+// however it came down; the model eases down onto its wheels from the pose it was in instead.
+function settle (RS, sim, dt) {
+  const st = RS.settle
+  if (sim.mode === 'ground' && st.mode && st.mode !== 'ground') {
+    st.dy = RS.car.position.y - sim.pos.y
+    st.dq.copy(RS.car.quaternion).multiply(_sq.copy(sim.quat).invert())
+    // (not across a reset to somewhere else)
+    st.k = RS.car.position.distanceTo(sim.pos) < 6 ? 1 : 0
+  }
+  st.mode = sim.mode
+  st.k *= Math.exp(-12 * dt)
+}
 
 // Pose the model from the sim and animate wheels, suspension, body roll/pitch, fans, skirts and brake light.
 function updateRoadster (RS, sim, ctl, dt) {
+  settle(RS, sim, dt)
   RS.car.position.copy(sim.pos)
   RS.car.quaternion.copy(sim.quat)
+  if (RS.settle.k > 0.002) {
+    RS.car.position.y += RS.settle.dy * RS.settle.k
+    RS.car.quaternion.premultiply(_sq.identity().slerp(RS.settle.dq, RS.settle.k))
+  }
   RS.body.position.y = clamp(sim.susp, -0.12, 0.06) * 0.6
   const onGround = sim.mode === 'ground'
   const pitchVis = onGround ? clamp(-sim.accLong * 0.0022, -0.035, 0.035) : 0
@@ -63860,7 +64046,7 @@ __export(__exports, { "buildRoadster": () => buildRoadster, "updateRoadster": ()
 })
 
 // ---- vendor/three/addons/postprocessing/Pass.js
-__define(34, function (__exports) {
+__define(35, function (__exports) {
 const { BufferGeometry, Float32BufferAttribute, OrthographicCamera, Mesh } = __require(0)
 
 class Pass {
@@ -63953,7 +64139,7 @@ __export(__exports, { "Pass": () => Pass, "FullScreenQuad": () => FullScreenQuad
 })
 
 // ---- vendor/three/addons/shaders/OutputShader.js
-__define(35, function (__exports) {
+__define(36, function (__exports) {
 const OutputShader = {
 
 	name: 'OutputShader',
@@ -64041,10 +64227,10 @@ __export(__exports, { "OutputShader": () => OutputShader })
 })
 
 // ---- vendor/three/addons/postprocessing/OutputPass.js
-__define(36, function (__exports) {
+__define(37, function (__exports) {
 const { ColorManagement, RawShaderMaterial, UniformsUtils, LinearToneMapping, ReinhardToneMapping, CineonToneMapping, AgXToneMapping, ACESFilmicToneMapping, NeutralToneMapping, SRGBTransfer } = __require(0)
-const { Pass, FullScreenQuad } = __require(34)
-const { OutputShader } = __require(35)
+const { Pass, FullScreenQuad } = __require(35)
+const { OutputShader } = __require(36)
 
 class OutputPass extends Pass {
 
@@ -64130,9 +64316,9 @@ __export(__exports, { "OutputPass": () => OutputPass })
 })
 
 // ---- vendor/three/addons/postprocessing/RenderPass.js
-__define(37, function (__exports) {
+__define(38, function (__exports) {
 const { Color } = __require(0)
-const { Pass } = __require(34)
+const { Pass } = __require(35)
 
 class RenderPass extends Pass {
 
@@ -64230,7 +64416,7 @@ __export(__exports, { "RenderPass": () => RenderPass })
 })
 
 // ---- vendor/three/addons/shaders/CopyShader.js
-__define(38, function (__exports) {
+__define(39, function (__exports) {
 /**
  * Full-screen textured quad shader
  */
@@ -64278,9 +64464,9 @@ __export(__exports, { "CopyShader": () => CopyShader })
 })
 
 // ---- vendor/three/addons/postprocessing/ShaderPass.js
-__define(39, function (__exports) {
+__define(40, function (__exports) {
 const { ShaderMaterial, UniformsUtils } = __require(0)
-const { Pass, FullScreenQuad } = __require(34)
+const { Pass, FullScreenQuad } = __require(35)
 
 class ShaderPass extends Pass {
 
@@ -64355,8 +64541,8 @@ __export(__exports, { "ShaderPass": () => ShaderPass })
 })
 
 // ---- vendor/three/addons/postprocessing/MaskPass.js
-__define(40, function (__exports) {
-const { Pass } = __require(34)
+__define(41, function (__exports) {
+const { Pass } = __require(35)
 
 class MaskPass extends Pass {
 
@@ -64462,12 +64648,12 @@ __export(__exports, { "MaskPass": () => MaskPass, "ClearMaskPass": () => ClearMa
 })
 
 // ---- vendor/three/addons/postprocessing/EffectComposer.js
-__define(41, function (__exports) {
+__define(42, function (__exports) {
 const { Clock, HalfFloatType, NoBlending, Vector2, WebGLRenderTarget } = __require(0)
-const { CopyShader } = __require(38)
-const { ShaderPass } = __require(39)
-const { MaskPass } = __require(40)
-const { ClearMaskPass } = __require(40)
+const { CopyShader } = __require(39)
+const { ShaderPass } = __require(40)
+const { MaskPass } = __require(41)
+const { ClearMaskPass } = __require(41)
 
 class EffectComposer {
 
@@ -64690,7 +64876,7 @@ __export(__exports, { "EffectComposer": () => EffectComposer })
 })
 
 // ---- vendor/three/addons/shaders/LuminosityHighPassShader.js
-__define(42, function (__exports) {
+__define(43, function (__exports) {
 const { Color } = __require(0)
 
 /**
@@ -64755,11 +64941,11 @@ __export(__exports, { "LuminosityHighPassShader": () => LuminosityHighPassShader
 })
 
 // ---- vendor/three/addons/postprocessing/UnrealBloomPass.js
-__define(43, function (__exports) {
+__define(44, function (__exports) {
 const { AdditiveBlending, Color, HalfFloatType, MeshBasicMaterial, ShaderMaterial, UniformsUtils, Vector2, Vector3, WebGLRenderTarget } = __require(0)
-const { Pass, FullScreenQuad } = __require(34)
-const { CopyShader } = __require(38)
-const { LuminosityHighPassShader } = __require(42)
+const { Pass, FullScreenQuad } = __require(35)
+const { CopyShader } = __require(39)
+const { LuminosityHighPassShader } = __require(43)
 
 /**
  * UnrealBloomPass is inspired by the bloom pass of Unreal Engine. It creates a
@@ -65163,10 +65349,10 @@ __export(__exports, { "UnrealBloomPass": () => UnrealBloomPass })
 })
 
 // ---- js/render/effects.js
-__define(44, function (__exports) {
+__define(45, function (__exports) {
 // Particles (cold-gas vapor, jet cores, sparks), supersonic shock-diamond jets and thruster emission.
 const THREE = __require(0)
-const { scene, softTex } = __require(19)
+const { scene, softTex } = __require(20)
 const { TAU, clamp01 } = __require(1)
 class Particles {
   constructor (
@@ -65396,7 +65582,7 @@ function emitThrusters (RS, sim, dt, clock) {
     _wd.copy(nz.dir).applyQuaternion(_wq)
     const big = nz.kind === 'main' || nz.kind === 'lift' ? 1 : 0.45
     // a downward jet close to the pad throws up a far bigger, longer-lived cloud
-    const near = _wd.y < -0.5 ? clamp01(1 - _wp.y / 8) : 0
+    const near = _wd.y < -0.5 ? clamp01(1 - (_wp.y - sim.floor) / 8) : 0
     nz.carry += 105 * lv * big * (1 + 2.4 * near) * dt
     while (nz.carry >= 1) {
       nz.carry -= 1
@@ -65451,7 +65637,7 @@ function emitTireSmoke (RS, sim, dt) {
       w.pivot.getWorldPosition(_tw)
       vapor.spawn(
         _tw.x + (Math.random() - 0.5) * 0.3,
-        0.25,
+        sim.pos.y + 0.25,
         _tw.z + (Math.random() - 0.5) * 0.3,
         sim.vel.x * 0.25 + (Math.random() - 0.5) * 1.2,
         0.5 + Math.random() * 0.8,
@@ -65466,13 +65652,14 @@ function emitTireSmoke (RS, sim, dt) {
   })
 }
 
-function burst (x, z, n, speed) {
+// y: the ground it kicks up from (a roof, or the street)
+function burst (x, z, n, speed, y = 0) {
   for (let i = 0; i < n; i++) {
     const a = Math.random() * TAU,
       s = speed * (0.4 + Math.random() * 0.8)
     vapor.spawn(
       x + Math.cos(a) * 1.2,
-      0.3 + Math.random() * 0.6,
+      y + 0.3 + Math.random() * 0.6,
       z + Math.sin(a) * 1.2,
       Math.cos(a) * s,
       0.6 + Math.random() * 2.2,
@@ -65509,31 +65696,31 @@ __export(__exports, { "ALL_PARTICLES": () => ALL_PARTICLES, "attachDiamonds": ()
 })
 
 // ---- js/main.js
-__define(45, function (__exports) {
+__define(46, function (__exports) {
 // Tesla Roadster Sim: boot, game state, sim events and the main loop.
 const THREE = __require(0)
 const { Hud } = __require(2)
-const { Sim } = __require(9)
-const { Input } = __require(10)
-const { Minimap } = __require(12)
-const { Traffic } = __require(14)
+const { Sim } = __require(10)
+const { Input } = __require(11)
+const { Minimap } = __require(13)
+const { Traffic } = __require(15)
 const { nearestLane, standUp } = __require(4)
-const { Autopilot } = __require(15)
-const { CityPilot } = __require(16)
-const { SoundEngine } = __require(17)
-const { buildLineup } = __require(20)
-const { CameraRig, CAM_NAMES } = __require(22)
-const { updateSkids, clearSkids } = __require(23)
-const { LED_MAT, buildWall, buildTruss } = __require(24)
+const { Autopilot } = __require(16)
+const { CityPilot } = __require(17)
+const { SoundEngine } = __require(18)
+const { buildLineup } = __require(21)
+const { CameraRig, CAM_NAMES } = __require(23)
+const { updateSkids, clearSkids } = __require(24)
+const { LED_MAT, buildWall, buildTruss } = __require(25)
 const { DEG, TAU, clamp, makeControls } = __require(1)
-const { CityView, clipCamera } = __require(31)
-const { buildRoadster, updateRoadster } = __require(33)
-const { OutputPass } = __require(36)
-const { RenderPass } = __require(37)
-const { EffectComposer } = __require(41)
-const { UnrealBloomPass } = __require(43)
-const { MAT, scene, camera, canvas, renderer, followKeyLight } = __require(19)
-const { burst, sparkBurst, ALL_PARTICLES, updateNozzles, emitThrusters, emitTireSmoke, attachDiamonds } = __require(44)
+const { CityView, clipCamera } = __require(32)
+const { buildRoadster, updateRoadster } = __require(34)
+const { OutputPass } = __require(37)
+const { RenderPass } = __require(38)
+const { EffectComposer } = __require(42)
+const { UnrealBloomPass } = __require(44)
+const { MAT, scene, camera, canvas, renderer, followKeyLight } = __require(20)
+const { burst, sparkBurst, ALL_PARTICLES, updateNozzles, emitThrusters, emitTireSmoke, attachDiamonds } = __require(45)
 // ---------- world ----------
 buildWall()
 buildTruss()
@@ -65771,7 +65958,8 @@ function handleEvents () {
         sim.pos.x,
         sim.pos.z,
         90 + Math.min(120, Math.abs(e.vy) * 20),
-        7 + Math.abs(e.vy)
+        7 + Math.abs(e.vy),
+        sim.pos.y
       )
       rig.shake(Math.min(0.6, 0.05 + Math.abs(e.vy) * 0.04))
       sound.thump(e.g)
@@ -65781,7 +65969,7 @@ function handleEvents () {
       if (e.impact > 1.2 && clock - app.lastBump > 0.15) {
         app.lastBump = clock
         sound.bump(e.impact)
-        rig.shake(Math.min(0.45, e.impact * 0.035))
+        rig.shake(Math.min(0.3, e.impact * 0.025))
         if (e.impact > 6) sparkBurst(sim.pos, Math.min(60, e.impact * 4))
       }
     } else if (e.type === 'knock') {
@@ -65791,13 +65979,13 @@ function handleEvents () {
       rig.shake(0.12)
     } else if (e.type === 'righted') {
       // rolled back onto its wheels after a crash
-      burst(sim.pos.x, sim.pos.z, 60, 5)
+      burst(sim.pos.x, sim.pos.z, 60, 5, sim.pos.y)
       rig.shake(0.15)
       sound.thump(1.4)
     } else if (e.type === 'crash') {
       sparkBurst(sim.com, 120)
-      burst(sim.com.x, sim.com.z, 80, 8)
-      rig.shake(0.9)
+      burst(sim.com.x, sim.com.z, 80, 8, sim.floor)
+      rig.shake(0.5)
       app.restHint = false
       sound.crash()
       hud.popup(`Crash · ${e.reason}`, 2600)
@@ -65960,5 +66148,5 @@ window.__roadster = {
 }
 __export(__exports, {  })
 })
-__require(45)
+__require(46)
 })()
