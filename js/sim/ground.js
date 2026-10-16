@@ -1,4 +1,5 @@
 import { roofAt, STEP } from './roofs.js'
+import { feel, gripOf, dragOf } from './street.js'
 import { TRACK, SOLIDS } from './track.js'
 import { collideCity, bumpCars } from './collide.js'
 import { G, CAR, LIFT_ACC, clamp, wrapPi } from './constants.js'
@@ -28,7 +29,7 @@ export function stepGround (s, dt, c, main, lift) {
     r = s.yawRate
   const a = CAR.halfWB,
     b = CAR.halfWB,
-    mu = CAR.tireMu
+    mu = CAR.tireMu * gripOf(s) // (less on grass and sand: street.js)
   const dN = clamp(
     (m * s.accLong * CAR.comH) / CAR.wheelbase,
     -0.2 * Ntot,
@@ -155,7 +156,8 @@ export function stepGround (s, dt, c, main, lift) {
   // rolling resistance + aero drag oppose the motion
   const spd = Math.hypot(u, w)
   const Fres =
-    CAR.rollRes * Ntot * Math.min(1, spd / 0.5) + m * CAR.dragK * spd * spd
+    (CAR.rollRes + dragOf(s)) * Ntot * Math.min(1, spd / 0.5) +
+    m * CAR.dragK * spd * spd
   if (spd > 1e-4) {
     Fu -= (Fres * u) / spd
     Fw -= (Fres * w) / spd
@@ -227,6 +229,7 @@ export function stepGround (s, dt, c, main, lift) {
     Math.min(1, dt * 10)
   s.syncPose()
   if (s.world === 'city') {
+    feel(s) // the kerb, manholes and the surface underfoot
     collideCity(s)
     // on a roof: driven off its edge, down it goes; onto the next roof at about the same height (the
     // building next door, or the other half of a split block), it carries on there
