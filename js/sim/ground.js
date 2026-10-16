@@ -1,4 +1,5 @@
 import { TRACK } from './track.js'
+import { collideCity } from './collide.js'
 import { G, CAR, LIFT_ACC, clamp, wrapPi } from './constants.js'
 
 // Planar two-axle tyre model: slip angles, friction circle, AWD split, load transfer,
@@ -196,6 +197,10 @@ export function stepGround (s, dt, c, main, lift) {
       s.gLoad) *
     Math.min(1, dt * 10)
   s.syncPose()
+  if (s.world === 'city') {
+    collideCity(s)
+    return
+  }
 
   // enter the wall
   const T = TRACK,
