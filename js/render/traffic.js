@@ -1,12 +1,20 @@
 // Traffic cars: seven body types lofted with rounded bodies, glass cabins and open wheel arches
-// (carShapes.js), instanced per type, with paint per car, spinning wheels, headlights, tail lights
-// that brighten under braking, and amber indicators that blink for lane changes and turns (and both
-// at once, hazards, for a car knocked out of its lane).
+// (carShapes.js), instanced per type, with paint per car, wheels with tyres and alloy or steel rims
+// (carWheels.js) that roll with the distance driven and steer through the turns, bodies that ride on
+// their springs (nose down under braking, squatting as they pull away, leaning out of a corner),
+// headlights, tail lights that brighten under braking, and amber indicators that blink for lane
+// changes and turns (and both at once, hazards, for a car knocked out of its lane).
 import * as THREE from 'three'
 import { hdr } from './scene.js'
-import { merge, tint } from './geo.js'
+import { clamp, wrapPi } from '../sim/constants.js'
 import { TYPES } from '../sim/traffic.js'
 import { carShape, archMaterial } from './carShapes.js'
+import {
+  RIM_FINISH,
+  rimMaterial,
+  rimGeometry,
+  tyreGeometry
+} from './carWheels.js'
 
 // paint by type: realistic street colours, yellow cabs, white buses and vans
 const PALETTE = [
@@ -22,27 +30,16 @@ const FIXED = {
     new THREE.Color(0x2b3a52)
   ]
 }
-
-// a wheel of radius 1 and width 1 along z: a tyre with a silver hub cap on each face
-function wheelGeometry () {
-  const tyre = new THREE.CylinderGeometry(1, 1, 1, 18).rotateX(Math.PI / 2)
-  const parts = [tint(tyre, 0x141416)]
-  for (const s of [-1, 1]) {
-    const hub = new THREE.CylinderGeometry(0.64, 0.64, 0.04, 18)
-      .rotateX(Math.PI / 2)
-      .translate(0, 0, s * 0.5)
-    parts.push(tint(hub, 0xb4b8bd))
-    const cap = new THREE.CylinderGeometry(0.18, 0.18, 0.06, 10)
-      .rotateX(Math.PI / 2)
-      .translate(0, 0, s * 0.52)
-    parts.push(tint(cap, 0x55595f))
-  }
-  return merge(parts)
-}
+// cabs, vans and buses run on steel wheels, everyone else on alloys
+const STEEL = new Set(['taxi', 'van', 'bus'])
 
 const _m = new THREE.Matrix4(),
+  _b = new THREE.Matrix4(),
   _w = new THREE.Matrix4(),
+  _t = new THREE.Matrix4(),
   _q = new THREE.Quaternion(),
+  _r = new THREE.Quaternion(),
+  _e = new THREE.Euler(),
   _p = new THREE.Vector3(),
   _s = new THREE.Vector3(1, 1, 1),
   _y = new THREE.Vector3(0, 1, 0),
@@ -53,6 +50,41 @@ const TAIL = hdr(1.6, 0.04, 0.03),
   AMBER = hdr(3, 1.1, 0.05),
   AMBER_OFF = hdr(0.25, 0.1, 0.02)
 
+// The body on its springs: a damped spring each for pitch and roll, about 1.4 Hz and a little
+// under-damped, so a car settles back with a slight bob after it stops. Pitch follows the car's
+// acceleration (about 1.5 degrees under ordinary braking), roll its cornering (more for the tall
+// ones); the front wheels steer to the curve it is on.
+const SPRING = 78,
+  DAMP = 8.5
+function ride (car, T, S, dt) {
+  const sp = car.loose ? Math.hypot(car.vx, car.vz) : car.v
+  if (car.rv === undefined) {
+    car.rv = sp
+    car.ryaw = car.yaw
+    car.pitch = car.pitchV = car.roll = car.rollV = car.steer = 0
+  }
+  if (dt <= 0) return
+  const h = Math.min(dt, 1 / 30)
+  const acc = clamp((sp - car.rv) / dt, -12, 6)
+  let rate = wrapPi(car.yaw - car.ryaw) / dt
+  if (Math.abs(rate) > 4) rate = 0 // (a car recycled somewhere else)
+  car.rv = sp
+  car.ryaw = car.yaw
+  const tall = T.hgt / 1.5
+  const pitchT = clamp(acc * 0.0055, -0.045, 0.03)
+  const rollT = car.loose ? 0 : clamp(sp * rate * 0.009 * tall, -0.07, 0.07)
+  car.pitchV += (SPRING * (pitchT - car.pitch) - DAMP * car.pitchV) * h
+  car.pitch += car.pitchV * h
+  car.rollV += (SPRING * (rollT - car.roll) - DAMP * car.rollV) * h
+  car.roll += car.rollV * h
+  const wb = S.axles[0] - S.axles[1]
+  const steerT =
+    car.loose || sp < 0.5
+      ? car.steer
+      : clamp(Math.atan((wb * rate) / sp), -0.6, 0.6)
+  car.steer += (steerT - car.steer) * Math.min(1, h * 10)
+}
+
 export class TrafficView {
   constructor (group, max = 420) {
     const paint = new THREE.MeshPhysicalMaterial({
@@ -61,11 +93,14 @@ export class TrafficView {
       clearcoat: 0.9,
       clearcoatRoughness: 0.12
     })
+    // clear glass over a dark cabin: nearly black head on, the sky in it at a glancing angle
     const glass = new THREE.MeshPhysicalMaterial({
-      color: 0x0b0f14,
-      roughness: 0.05,
-      metalness: 0.75,
-      envMapIntensity: 1.5
+      color: 0x10161c,
+      roughness: 0.04,
+      metalness: 0,
+      clearcoat: 1,
+      clearcoatRoughness: 0.02,
+      envMapIntensity: 2.2
     })
     const trim = new THREE.MeshStandardMaterial({
       vertexColors: true,
@@ -89,14 +124,20 @@ export class TrafficView {
         trim: mesh(sh.trim, trim)
       }
       parts.body.setColorAt(0, PALETTE[0]) // allocates the per-car paint
-      return { T, S: sh.S, ...parts }
+      return { T, S: sh.S, steel: STEEL.has(T.name), ...parts }
     })
-    this.wheels = mesh(
-      wheelGeometry(),
-      new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.6 }),
+    this.tyres = mesh(
+      tyreGeometry(),
+      new THREE.MeshStandardMaterial({ color: 0x17181a, roughness: 0.88 }),
       max * 4,
       false
     )
+    this.rims = {}
+    for (const kind of ['alloy', 'steel']) {
+      const m = mesh(rimGeometry(), rimMaterial(kind), max * 4, false)
+      m.setColorAt(0, RIM_FINISH[kind][0])
+      this.rims[kind] = m
+    }
     const lamp = new THREE.BoxGeometry(0.05, 0.11, 0.34)
     const lit = () => new THREE.MeshBasicMaterial({ toneMapped: false })
     this.heads = mesh(lamp, lit(), max * 2, false)
@@ -113,8 +154,9 @@ export class TrafficView {
     this.max = max
   }
 
-  update (traffic) {
+  update (traffic, dt = 0) {
     const counts = this.types.map(() => 0)
+    const rimN = { alloy: 0, steel: 0 }
     let w = 0,
       l = 0,
       b = 0
@@ -126,33 +168,52 @@ export class TrafficView {
       if (i >= this.max) continue
       counts[car.type]++
       const { T, S } = ty
+      if (!car.parked) ride(car, T, S, dt)
+      // the car where it stands, and its body tipped on its springs about the axles' height
       _q.setFromAxisAngle(_y, car.yaw)
       _m.compose(_p.set(car.x, 0, car.z), _q, _s)
-      ty.body.setMatrixAt(i, _m)
-      ty.trim.setMatrixAt(i, _m)
-      ty.glass.setMatrixAt(i, _m)
+      _b.copy(_m)
+      if (!car.parked) {
+        _e.set(car.roll || 0, 0, car.pitch || 0)
+        _t.makeRotationFromEuler(_e)
+        _t.setPosition(_p.set(0, S.r, 0).sub(_sc.set(0, S.r, 0).applyEuler(_e)))
+        _b.multiply(_t)
+      }
+      ty.body.setMatrixAt(i, _b)
+      ty.trim.setMatrixAt(i, _b)
+      ty.glass.setMatrixAt(i, _b)
       const fixed = FIXED[T.name]
       const col = fixed
         ? fixed[Math.floor(car.paint * fixed.length)]
         : PALETTE[Math.floor(car.paint * PALETTE.length)]
       ty.body.setColorAt(i, col)
-      // wheels, turning with the distance driven
+      // wheels, turning with the distance driven, the fronts steering
+      const kind = ty.steel ? 'steel' : 'alloy',
+        rims = this.rims[kind],
+        finish = RIM_FINISH[kind]
+      const rimCol = finish[Math.floor(((car.paint * 7.7) % 1) * finish.length)]
       const spin = -car.odo / S.r
       for (const ax of S.axles)
         for (const side of [-1, 1]) {
+          _q.setFromAxisAngle(_z, spin)
+          if (ax > 0 && car.steer)
+            _q.premultiply(_r.setFromAxisAngle(_y, car.steer))
           _w.compose(
             _p.set(ax, S.r, side * (T.wid / 2 - 0.17)),
-            _q.setFromAxisAngle(_z, spin),
+            _q,
             _sc.set(S.r, S.r, 0.24)
           )
-          this.wheels.setMatrixAt(w++, _w.premultiply(_m))
+          _w.premultiply(_m)
+          this.tyres.setMatrixAt(w++, _w)
+          rims.setMatrixAt(rimN[kind], _w)
+          rims.setColorAt(rimN[kind]++, rimCol)
         }
       for (const side of [-1, 1]) {
         const z = side * (T.wid / 2 - 0.3)
         _w.makeTranslation(T.len / 2 + 0.01, S.lights[0], z)
-        this.heads.setMatrixAt(l, _w.premultiply(_m))
+        this.heads.setMatrixAt(l, _w.premultiply(_b))
         _w.makeTranslation(-T.len / 2 - 0.01, S.lights[1], z)
-        this.tails.setMatrixAt(l, _w.premultiply(_m))
+        this.tails.setMatrixAt(l, _w.premultiply(_b))
         this.tails.setColorAt(l, car.brake ? BRAKE : TAIL)
         l++
         // indicators at each corner: side -1 is the car's left
@@ -167,7 +228,7 @@ export class TrafficView {
             S.lights[end > 0 ? 0 : 1] - 0.03,
             side * (T.wid / 2 - 0.1)
           )
-          this.blinkers.setMatrixAt(b, _w.premultiply(_m))
+          this.blinkers.setMatrixAt(b, _w.premultiply(_b))
           this.blinkers.setColorAt(b++, on ? AMBER : AMBER_OFF)
         }
       }
@@ -179,10 +240,15 @@ export class TrafficView {
       }
       ty.body.instanceColor.needsUpdate = true
     })
-    this.wheels.count = w
+    this.tyres.count = w
+    for (const [kind, m] of Object.entries(this.rims)) {
+      m.count = rimN[kind]
+      m.instanceMatrix.needsUpdate = true
+      m.instanceColor.needsUpdate = true
+    }
     this.heads.count = this.tails.count = l
     this.blinkers.count = b
-    for (const m of [this.wheels, this.heads, this.tails, this.blinkers])
+    for (const m of [this.tyres, this.heads, this.tails, this.blinkers])
       m.instanceMatrix.needsUpdate = true
     this.tails.instanceColor.needsUpdate = true
     this.blinkers.instanceColor.needsUpdate = true
