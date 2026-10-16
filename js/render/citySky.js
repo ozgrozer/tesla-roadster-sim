@@ -1,18 +1,22 @@
 // The city's evening: a sunset sky dome with streaky cloud, hazy hills round the horizon, a matching
 // environment map for reflections, and the switch between the night test site and the city's light.
+// At night (L), the same dome turns deep blue with stars, a moon low where the sun was (so the city's
+// shadows still fall the same way, only faintly), and the city's own glow along the horizon.
 import * as THREE from 'three'
 import { rng } from '../sim/city.js'
 import { scene, pmrem, renderer, hemi, key, keyOffset } from './scene.js'
 
 export const SUN = new THREE.Vector3(-66, 30, 28) // where the low sun sits relative to the car
 const HAZE = new THREE.Color(0.86, 0.6, 0.48)
+const NIGHT_HAZE = new THREE.Color(0.035, 0.04, 0.065)
 
 function skyMaterial () {
   return new THREE.ShaderMaterial({
-    uniforms: { uSun: { value: SUN.clone().normalize() } },
+    uniforms: { uSun: { value: SUN.clone().normalize() }, uNight: { value: 0 } },
     vertexShader: `varying vec3 vDir;
       void main(){ vDir = position; vec4 p = modelViewMatrix * vec4(position, 1.0); gl_Position = projectionMatrix * p; }`,
-    fragmentShader: `uniform vec3 uSun; varying vec3 vDir;
+    fragmentShader: `uniform vec3 uSun; uniform float uNight; varying vec3 vDir;
+      float hash3(vec3 p){ return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
       float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
       float noise(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
         return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y); }
@@ -33,7 +37,19 @@ function skyMaterial () {
         vec3 cloud = mix(vec3(0.55, 0.32, 0.38), vec3(1.0, 0.62, 0.42), pow(s, 2.0));
         col = mix(col, cloud, c * 0.8);
         col = mix(col, vec3(${HAZE.r}, ${HAZE.g}, ${HAZE.b}) * 0.8, smoothstep(0.0, -0.08, h));
-        gl_FragColor = vec4(col, 1.0);
+        // night: deep blue overhead, the city's glow along the horizon, stars, the moon and its halo,
+        // the clouds dark against the sky but for where the moon is behind them
+        vec3 night = mix(vec3(0.05, 0.046, 0.062), vec3(0.004, 0.008, 0.024), smoothstep(0.0, 0.45, h));
+        night += vec3(0.2, 0.11, 0.06) * exp(-max(h, 0.0) * 16.0) * 0.5;
+        vec3 sc = d * 420.0, cell = floor(sc);
+        float star = step(0.9972, hash3(cell)) * smoothstep(0.45, 0.0, length(fract(sc) - 0.5));
+        star *= (0.4 + 0.6 * hash3(cell + 3.1)) * smoothstep(0.06, 0.2, h) * (1.0 - c);
+        night += vec3(0.8, 0.85, 1.0) * star * 1.4;
+        night += vec3(0.6, 0.65, 0.8) * (pow(s, 300.0) * 0.25 + pow(s, 30.0) * 0.05);
+        night += vec3(1.6, 1.62, 1.7) * smoothstep(0.99985, 0.99992, s);
+        night = mix(night, vec3(0.03, 0.03, 0.045) + vec3(0.12, 0.12, 0.14) * pow(s, 12.0), c * 0.75);
+        night = mix(night, vec3(${NIGHT_HAZE.r}, ${NIGHT_HAZE.g}, ${NIGHT_HAZE.b}), smoothstep(0.0, -0.08, h));
+        gl_FragColor = vec4(mix(col, night, uNight), 1.0);
       }`,
     side: THREE.BackSide,
     depthWrite: false,
@@ -91,17 +107,32 @@ function hills () {
 
 export class Sky {
   constructor (group) {
-    const mat = skyMaterial()
+    const mat = (this.mat = skyMaterial())
     this.dome = new THREE.Mesh(new THREE.SphereGeometry(1800, 32, 16), mat)
     this.dome.renderOrder = -1
     this.dome.frustumCulled = false
     this.hills = hills()
     group.add(this.dome, this.hills)
-    // reflections come from the same sky, rendered once into an environment map
-    const envScene = new THREE.Scene()
-    envScene.add(new THREE.Mesh(new THREE.SphereGeometry(50, 32, 16), mat))
-    this.env = pmrem.fromScene(envScene, 0.02, 0.1, 200).texture
+    // reflections come from the same sky, rendered once into an environment map (and once more at
+    // night, the first time it falls)
+    this.envScene = new THREE.Scene()
+    this.envScene.add(new THREE.Mesh(new THREE.SphereGeometry(50, 32, 16), mat))
+    this.env = pmrem.fromScene(this.envScene, 0.02, 0.1, 200).texture
+    this.envNight = null
+    this.night = false
+    this.on = false
     this.saved = null
+  }
+  // golden hour or night (in the city; the test site keeps its own night)
+  setNight (night) {
+    this.night = night
+    if (night && !this.envNight) {
+      this.mat.uniforms.uNight.value = 1
+      this.envNight = pmrem.fromScene(this.envScene, 0.02, 0.1, 200).texture
+    }
+    this.mat.uniforms.uNight.value = night ? 1 : 0
+    this.hills.material.color.setRGB(...(night ? [0.03, 0.035, 0.06] : [1, 1, 1]))
+    if (this.on) this.light()
   }
   follow (camera) {
     this.dome.position.copy(camera.position)
@@ -120,21 +151,9 @@ export class Sky {
         key: [key.color.clone(), key.intensity],
         offset: keyOffset.clone()
       }
-    if (on) {
-      scene.background = HAZE.clone()
-      scene.fog = new THREE.FogExp2(HAZE.clone().multiplyScalar(0.92), 0.00105)
-      // a strong, warm low sun, and the shade lit only by the cooler sky (the whole city throws its
-      // shadows now: sunShadow.js), for golden hour's contrast
-      scene.environment = this.env
-      scene.environmentIntensity = 0.5
-      renderer.toneMappingExposure = 1.05
-      hemi.color.setRGB(0.72, 0.76, 0.92)
-      hemi.groundColor.setRGB(0.36, 0.3, 0.26)
-      hemi.intensity = 0.7
-      key.color.setRGB(1, 0.72, 0.48)
-      key.intensity = 4.6
-      keyOffset.copy(SUN)
-    } else if (this.saved) {
+    this.on = on
+    if (on) this.light()
+    else if (this.saved) {
       const s = this.saved
       scene.background = s.background
       scene.fog = s.fog
@@ -149,5 +168,35 @@ export class Sky {
       keyOffset.copy(s.offset)
       this.saved = null
     }
+  }
+  // the city's light: golden hour, or night
+  light () {
+    keyOffset.copy(SUN)
+    hemi.groundColor.setRGB(0.36, 0.3, 0.26)
+    if (!this.night) {
+      scene.background = HAZE.clone()
+      scene.fog = new THREE.FogExp2(HAZE.clone().multiplyScalar(0.92), 0.00105)
+      // a strong, warm low sun, and the shade lit only by the cooler sky (the whole city throws its
+      // shadows now: sunShadow.js), for golden hour's contrast
+      scene.environment = this.env
+      scene.environmentIntensity = 0.5
+      renderer.toneMappingExposure = 1.05
+      hemi.color.setRGB(0.72, 0.76, 0.92)
+      hemi.intensity = 0.7
+      key.color.setRGB(1, 0.72, 0.48)
+      key.intensity = 4.6
+      return
+    }
+    // night: a cold, faint moon and a dark sky; the light is the city's own
+    scene.background = NIGHT_HAZE.clone()
+    scene.fog = new THREE.FogExp2(NIGHT_HAZE.clone(), 0.0013)
+    scene.environment = this.envNight
+    scene.environmentIntensity = 0.9
+    renderer.toneMappingExposure = 1.2
+    hemi.color.setRGB(0.18, 0.22, 0.36)
+    hemi.groundColor.setRGB(0.06, 0.05, 0.045)
+    hemi.intensity = 0.45
+    key.color.setRGB(0.62, 0.7, 0.95)
+    key.intensity = 0.45
   }
 }
