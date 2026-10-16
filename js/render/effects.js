@@ -1,5 +1,5 @@
-// Particles (jet cores, sparks), supersonic shock-diamond jets, and what the car throws up:
-// thruster vapor, tyre smoke and dust (smoke.js).
+// Particles (jet cores, sparks, leaves), supersonic shock-diamond jets, and what the car throws up:
+// thruster vapor, tyre smoke and dust (smoke.js), and the debris of whatever it knocks over.
 import * as THREE from 'three'
 import { scene, softTex } from './scene.js'
 import { TAU, clamp01 } from '../sim/constants.js'
@@ -159,7 +159,13 @@ const sparks = new Particles(500, {
   colB: new THREE.Color(4, 2.4, 0.8),
   gravity: 9.81
 })
-export const ALL_PARTICLES = [smoke, jets, sparks]
+// leaves shaken out of a tree that goes over: they flutter down slowly
+const leaves = new Particles(900, {
+  colA: new THREE.Color(0.07, 0.14, 0.04),
+  colB: new THREE.Color(0.2, 0.32, 0.08),
+  gravity: 9.81
+})
+export const ALL_PARTICLES = [smoke, jets, sparks, leaves]
 
 // supersonic jets with shock diamonds, one per nozzle
 const diamondGeo = new THREE.CylinderGeometry(0.028, 0.058, 1, 12, 1, true)
@@ -350,4 +356,48 @@ export function sparkBurst (p, n, floor = 0) {
       floor
     )
   }
+}
+// What flies off whatever the car snapped (the sim's 'knock' event): leaves shaken out of a tree's
+// crown, sparks off a steel pole, and dust and grit from its foot, thrown the way the car was going.
+export function knockFx (e) {
+  const tree = e.kind === 'tree' || e.kind === 'palm'
+  const top = e.kind === 'palm' ? 10 : e.kind === 'tree' ? 4.4 : 7
+  const v = Math.min(20, e.impact)
+  if (tree)
+    for (let i = 0; i < 70 + v * 6; i++) {
+      const a = Math.random() * TAU,
+        r = Math.random() * 2.2,
+        s = 1 + Math.random() * 3
+      leaves.spawn(
+        e.x + Math.cos(a) * r,
+        top + (Math.random() - 0.3) * 2,
+        e.z + Math.sin(a) * r,
+        e.dx * v * 0.3 + Math.cos(a) * s,
+        Math.random() * 3,
+        e.dz * v * 0.3 + Math.sin(a) * s,
+        2.5 + Math.random() * 3,
+        0.16,
+        0.12,
+        0.95,
+        3.2
+      )
+    }
+  else sparkBurst({ x: e.x, y: 0.4, z: e.z }, 20 + v * 2)
+  for (let i = 0; i < 10; i++)
+    smoke.spawn(
+      DUST,
+      e.x + (Math.random() - 0.5),
+      0.4,
+      e.z + (Math.random() - 0.5),
+      e.dx * v * 0.4 + (Math.random() - 0.5) * 3,
+      0.5 + Math.random(),
+      e.dz * v * 0.4 + (Math.random() - 0.5) * 3,
+      0,
+      0.5
+    )
+}
+// A fallen pole or tree hits the ground at (x, z): a puff of dust where it lands.
+export function fallFx (x, z, kind) {
+  const tree = kind === 'tree' || kind === 'palm'
+  burst(x, z, tree ? 16 : 10, tree ? 3 : 4, 0, tree ? 0.7 : 0.45)
 }
