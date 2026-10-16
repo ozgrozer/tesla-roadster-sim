@@ -266,3 +266,57 @@ test('Autopilot drives the city without a scrape or a red light', () => {
   assert.ok(dist > 500, `drove ${dist.toFixed(0)} m`)
   assert.ok(turns > 0, 'takes turns as well as going straight on')
 })
+
+test('wild driving in the city never ends in NaN or inside a building', () => {
+  let seed = 9
+  const rand = () => (seed = (seed * 16807) % 2147483647) / 2147483647
+  for (let run = 0; run < 4; run++) {
+    const sim = new Sim()
+    sim.reset('city')
+    const tr = new Traffic({ seed: run })
+    tr.reset(sim.pos.x, sim.pos.z)
+    let c = makeControls()
+    for (let i = 0; i < 60 / H; i++) {
+      if (i % 90 === 0) {
+        // a new handful of inputs every 0.75 s: full throttle, boost, lift-offs, flips, the e-brake
+        c = makeControls()
+        c.fan = false
+        c.throttle = rand() < 0.7 ? 1 : 0
+        c.brake = rand() < 0.15 ? 1 : 0
+        c.steer = rand() * 2 - 1
+        c.main = rand() < 0.3 ? 1 : 0
+        c.lift = rand() < 0.15 ? 1 : 0
+        c.ebrake = rand() < 0.1
+        c.pitch = rand() * 2 - 1
+        c.roll = rand() * 2 - 1
+      }
+      sim.step(H, c)
+      tr.step(H, sim)
+      sim.events.length = 0
+      if (sim.mode === 'crash' && sim.crashSettled) sim.reset('city')
+    }
+    const p = sim.mode === 'ground' ? sim.pos : sim.com
+    assert.ok(
+      Number.isFinite(p.x + p.y + p.z + sim.quat.w),
+      `run ${run}: finite`
+    )
+    for (const b of BUILDINGS) {
+      const t = b.tiers[0]
+      assert.ok(
+        !(
+          p.x > t.x0 + 0.3 &&
+          p.x < t.x1 - 0.3 &&
+          p.z > t.z0 + 0.3 &&
+          p.z < t.z1 - 0.3 &&
+          p.y < t.y1
+        ),
+        `run ${run}: ended inside a building`
+      )
+    }
+    for (const car of tr.cars)
+      assert.ok(
+        Number.isFinite(car.x + car.z + car.yaw),
+        `run ${run}: traffic finite`
+      )
+  }
+})
