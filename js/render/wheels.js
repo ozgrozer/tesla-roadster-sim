@@ -1,6 +1,6 @@
 // Wheels and wheel wells: arch openings cut into the body shell with dark well liners, tyres with
-// rounded sidewalls round flat aero discs (as on the car at the reveal), Ackermann steering and
-// free-spinning wheels in the air.
+// rounded sidewalls round the reveal car's wheels (six black twin spokes over white aero inserts),
+// Ackermann steering and free-spinning wheels in the air.
 import * as THREE from 'three'
 import { MAT } from './scene.js'
 import { CAR } from '../sim/constants.js'
@@ -56,6 +56,59 @@ const TYRE_PROFILE = [
 ].map(([r, y]) => new THREE.Vector2(r, y))
 const RIM_R = 0.285
 
+// the wheel face: white aero inserts between six black twin spokes, a dark gap down each pair, a
+// black lip and centre cap (drawn once, mapped onto each disc)
+function faceTexture () {
+  const S = 512,
+    c = S / 2
+  const cv = document.createElement('canvas')
+  cv.width = cv.height = S
+  const g = cv.getContext('2d')
+  g.fillStyle = '#121316'
+  g.fillRect(0, 0, S, S)
+  const gr = g.createRadialGradient(c, c, 40, c, c, c * 0.95)
+  gr.addColorStop(0, '#c9ccd0')
+  gr.addColorStop(0.6, '#eceef0')
+  gr.addColorStop(1, '#d9dce0')
+  g.fillStyle = gr
+  g.beginPath()
+  g.arc(c, c, c * 0.93, 0, Math.PI * 2)
+  g.fill()
+  const at = (a, r) => [c + Math.cos(a) * r, c + Math.sin(a) * r]
+  const wedge = (a0, a1, b0, b1, r0, r1, fill) => {
+    g.fillStyle = fill
+    g.beginPath()
+    g.moveTo(...at(a0, r0))
+    g.lineTo(...at(b0, r1))
+    g.lineTo(...at(b1, r1))
+    g.lineTo(...at(a1, r0))
+    g.closePath()
+    g.fill()
+  }
+  for (let i = 0; i < 6; i++) {
+    const a = (i * Math.PI) / 3
+    // the pair: one black blade narrow at the hub, fanning out to the rim, with a slot down its middle
+    wedge(a - 0.09, a + 0.09, a - 0.2, a + 0.2, c * 0.2, c * 0.95, '#141518')
+    wedge(a - 0.02, a + 0.02, a - 0.08, a + 0.08, c * 0.34, c * 0.9, '#050506')
+    // a machined edge catching the light on one side of each blade
+    wedge(a + 0.075, a + 0.09, a + 0.18, a + 0.2, c * 0.22, c * 0.93, '#4a4e55')
+  }
+  g.fillStyle = '#0d0e10'
+  g.beginPath()
+  g.arc(c, c, c * 0.2, 0, Math.PI * 2)
+  g.fill()
+  g.strokeStyle = '#2b2e33'
+  g.lineWidth = 6
+  g.stroke()
+  g.fillStyle = '#9a9ea5' // the T on the centre cap
+  g.fillRect(c - 22, c - 20, 44, 8)
+  g.fillRect(c - 4, c - 14, 8, 36)
+  const t = new THREE.CanvasTexture(cv)
+  t.colorSpace = THREE.SRGBColorSpace
+  t.anisotropy = 8
+  return t
+}
+
 const liner = new THREE.MeshStandardMaterial({
   color: 0x0a0b0d,
   roughness: 0.95,
@@ -109,10 +162,11 @@ export function buildWheels (car, body) {
     32
   ).rotateX(Math.PI / 2)
   const lipGeo = new THREE.RingGeometry(RIM_R - 0.014, RIM_R, 32)
-  const grooveGeo = new THREE.RingGeometry(0.212, 0.22, 48)
-  const capGeo = new THREE.CylinderGeometry(0.045, 0.045, 0.016, 16).rotateX(
-    Math.PI / 2
-  )
+  const faceMat = new THREE.MeshStandardMaterial({
+    map: faceTexture(),
+    roughness: 0.32,
+    metalness: 0.25
+  })
   const axles = {
     front: { rate: 0, angle: 0 },
     rear: { rate: 0, angle: 0 }
@@ -127,24 +181,15 @@ export function buildWheels (car, body) {
       const tyre = new THREE.Mesh(tyreGeo, MAT.tire)
       tyre.castShadow = true
       spin.add(tyre, new THREE.Mesh(barrelGeo, MAT.darkMetal))
-      // flat silver disc recessed ~3 cm inside the sidewall on both sides: dark lip, one groove
-      // ring, small dark hub
+      // the wheel face recessed ~3 cm inside the sidewall on both sides, with a dark lip
       for (const side of [-1, 1]) {
-        const face = new THREE.Mesh(faceGeo, MAT.aero)
+        const face = new THREE.Mesh(faceGeo, faceMat)
         face.position.z = side * 0.112
         spin.add(face)
-        for (const [geo, z] of [
-          [lipGeo, 0.1185],
-          [grooveGeo, 0.119]
-        ]) {
-          const ring = new THREE.Mesh(geo, MAT.rim)
-          ring.position.z = side * z
-          if (side < 0) ring.rotation.y = Math.PI
-          spin.add(ring)
-        }
-        const cap = new THREE.Mesh(capGeo, MAT.darkMetal)
-        cap.position.z = side * 0.124
-        spin.add(cap)
+        const ring = new THREE.Mesh(lipGeo, MAT.rim)
+        ring.position.z = side * 0.1185
+        if (side < 0) ring.rotation.y = Math.PI
+        spin.add(ring)
       }
       pivot.add(spin)
       car.add(pivot)
