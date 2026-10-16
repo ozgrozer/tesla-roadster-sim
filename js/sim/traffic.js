@@ -133,15 +133,16 @@ export class Traffic {
     this.setYaw(car, st.yaw)
   }
   // a lane of the jammed street: nose to tail, a little out of line, brake lights on (and buses
-  // only in the kerb lane)
+  // only in the kerb lane). The queue's tail stands a car's length and a bit in from the junction,
+  // so whoever joins it (Autopilot, on its way to fly over it) is in the street, clear of the box.
   jam (e) {
     const R = this.R
-    for (let s = 0.8 + R(); ; ) {
+    for (let s = 7.5 + R() * 1.5; ; ) {
       const type = this.pickType(e.lane === 0),
         len = TYPES[type].len
       if (s + len > e.len - 0.5) break
       const car = this.make(type)
-      car.parked = car.brake = true
+      car.parked = car.brake = car.jam = true
       pointAt(e, s + len / 2, P)
       const lat = (R() - 0.5) * 0.5
       car.x = P.x - P.hz * lat
