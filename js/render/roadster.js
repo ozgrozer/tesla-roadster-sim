@@ -420,16 +420,37 @@ export function buildRoadster () {
     nozzles,
     fans,
     skirts,
-    taillight: rear.material
+    taillight: rear.material,
+    settle: { mode: null, k: 0, dy: 0, dq: new THREE.Quaternion() }
   }
 }
 
 const lerpK = (k, dt) => 1 - Math.exp(-k * dt)
+const _sq = new THREE.Quaternion()
+
+// Landing (or getting back on the wheels after a crash) puts the sim's car flat on the road at once,
+// however it came down; the model eases down onto its wheels from the pose it was in instead.
+function settle (RS, sim, dt) {
+  const st = RS.settle
+  if (sim.mode === 'ground' && st.mode && st.mode !== 'ground') {
+    st.dy = RS.car.position.y - sim.pos.y
+    st.dq.copy(RS.car.quaternion).multiply(_sq.copy(sim.quat).invert())
+    // (not across a reset to somewhere else)
+    st.k = RS.car.position.distanceTo(sim.pos) < 6 ? 1 : 0
+  }
+  st.mode = sim.mode
+  st.k *= Math.exp(-12 * dt)
+}
 
 // Pose the model from the sim and animate wheels, suspension, body roll/pitch, fans, skirts and brake light.
 export function updateRoadster (RS, sim, ctl, dt) {
+  settle(RS, sim, dt)
   RS.car.position.copy(sim.pos)
   RS.car.quaternion.copy(sim.quat)
+  if (RS.settle.k > 0.002) {
+    RS.car.position.y += RS.settle.dy * RS.settle.k
+    RS.car.quaternion.premultiply(_sq.identity().slerp(RS.settle.dq, RS.settle.k))
+  }
   RS.body.position.y = clamp(sim.susp, -0.12, 0.06) * 0.6
   const onGround = sim.mode === 'ground'
   const pitchVis = onGround ? clamp(-sim.accLong * 0.0022, -0.035, 0.035) : 0
