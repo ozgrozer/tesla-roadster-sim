@@ -1,30 +1,30 @@
 // Headless checks of the city: layout, lane graph, signals, traffic and the Roadster's collisions.
 import { test } from 'node:test'
-import assert from 'node:assert/strict'
 import { Sim } from '../js/sim/sim.js'
+import assert from 'node:assert/strict'
+import { roofAt } from '../js/sim/roofs.js'
+import { Traffic } from '../js/sim/traffic.js'
+import { JAM, JAM_AT } from '../js/sim/jam.js'
+import { CityPilot } from '../js/sim/cityPilot.js'
 import { makeControls } from '../js/sim/constants.js'
 import { rectRect, carRect } from '../js/sim/collide.js'
-import { Traffic } from '../js/sim/traffic.js'
-import { CityPilot } from '../js/sim/cityPilot.js'
-import { JAM, JAM_AT } from '../js/sim/jam.js'
-import { roofAt } from '../js/sim/roofs.js'
 import {
   RED,
   WALK,
   NODES,
   EDGES,
   LANES,
-  BLOCKS,
-  SIGNAL,
   CYCLE,
-  BUILDINGS,
   LAMPS,
   POLES,
   TREES,
   PALMS,
+  BLOCKS,
+  SIGNAL,
   signal,
   pointAt,
   standUp,
+  BUILDINGS,
   nearestLane
 } from '../js/sim/city.js'
 
@@ -179,7 +179,10 @@ test('the Roadster bounces off buildings, even at speed, and keeps the wheel', (
   )
   assert.ok(slow.events.some(e => e.type === 'bump'))
   const fast = driveInto(target.x0 - 30, z, 32, 3)
-  assert.ok(!fast.events.some(e => e.type === 'crash'), 'a 115 km/h hit bounces')
+  assert.ok(
+    !fast.events.some(e => e.type === 'crash'),
+    'a 115 km/h hit bounces'
+  )
   assert.equal(fast.sim.mode, 'ground')
   assert.ok(fast.events.some(e => e.type === 'bump' && e.impact > 20))
   assert.ok(
@@ -206,7 +209,10 @@ test('flying into the side of a building bounces off without a crash', () => {
     events.push(...sim.events)
     sim.events.length = 0
   }
-  assert.ok(events.some(e => e.type === 'bump' && e.impact > 20), 'a hard hit')
+  assert.ok(
+    events.some(e => e.type === 'bump' && e.impact > 20),
+    'a hard hit'
+  )
   assert.ok(!events.some(e => e.type === 'crash'), 'that bounces off')
   assert.equal(sim.mode, 'ground', 'and it comes down on its wheels')
   assert.ok(sim.pos.x + 2.22 < target.x0 + 0.05, 'outside the wall')
@@ -241,11 +247,17 @@ test('a hard hit on a car is a shove, not a crash: the Roadster stays drivable',
     sim.events.length = 0
     spin = Math.max(spin, Math.abs(sim.yawRate))
   }
-  assert.ok(events.some(e => e.type === 'bump' && e.impact > 20), 'a hard hit')
+  assert.ok(
+    events.some(e => e.type === 'bump' && e.impact > 20),
+    'a hard hit'
+  )
   assert.ok(!events.some(e => e.type === 'crash'), 'that never crashes')
   assert.equal(sim.mode, 'ground')
   assert.ok(car.loose, 'the car is knocked loose')
-  assert.ok(spin < 4, `the Roadster twitches (${spin.toFixed(1)} rad/s), no spin-out`)
+  assert.ok(
+    spin < 4,
+    `the Roadster twitches (${spin.toFixed(1)} rad/s), no spin-out`
+  )
 })
 
 test('the Roadster shunts a stopped car out of its lane', () => {
@@ -445,9 +457,11 @@ test('a 180 km/h jump clears the jammed street', () => {
     const c = makeControls()
     c.fan = false
     // lift off 45 m short of the first car and climb to 4.5 m on the thrusters
-    c.lift = (sim.mode === 'ground'
-    ? sim.pos.x > lane.x0 - 45
-    : sim.com.y < 4.5 && sim.vel.y >= 0)
+    c.lift = (
+      sim.mode === 'ground'
+        ? sim.pos.x > lane.x0 - 45
+        : sim.com.y < 4.5 && sim.vel.y >= 0
+    )
       ? 1
       : 0
     sim.step(H, c)
