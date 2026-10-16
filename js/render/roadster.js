@@ -4,13 +4,14 @@
 // squinting triangular headlights, one bronze-tinted canopy from a windshield nearly as wide as the car
 // over the roof to a narrow tip at the tail, flanked by buttresses that run out to the tail corners, a
 // black sill that rises to the rear, full-width light bars, the black tail with 4 nozzles over 4 fans
-// (roadsterRear.js), an active rear wing, underfloor suction fan, skirts and twin-spoke aero wheels;
-// plus per-frame pose and animation.
+// (roadsterRear.js), an active rear wing, underfloor suction fan, skirts and twin-spoke aero wheels,
+// the cabin with its yoke and touchscreen (roadsterCabin.js); plus per-frame pose and animation.
 import * as THREE from 'three'
 import { scene, MAT } from './scene.js'
 import { CURB_H } from '../sim/city.js'
 import { CAR, clamp, AX_Z } from '../sim/constants.js'
-import { buildOptimus, poseOptimus, ANKLE_UP } from './optimus.js'
+import { buildOptimus, poseOptimus } from './optimus.js'
+import { DRIVER, buildCabin, updateCabin } from './roadsterCabin.js'
 import { loft, loftGeos, at, seam, withStations } from './loft.js'
 import { buildWheels, updateWheels, withWheelArches } from './wheels.js'
 import { buildTail, buildWing, updateWing, fanUnit } from './roadsterRear.js'
@@ -123,72 +124,15 @@ const DOOR_INSIDE = new THREE.MeshStandardMaterial({
   roughness: 0.75,
   side: THREE.BackSide
 })
-// The yoke, its grips either side of the hub, and the driver: Optimus sat back in the bucket seat, feet
-// on the floor and hands round the grips
-export const YOKE = [-0.02, 0.7, -0.36]
-export const DRIVER = {
-  root: [-0.44, 0.33, -0.36],
-  lean: -0.26,
-  nod: 0.2,
-  feet: [-0.13, 0.13].map(dz => ({
-    at: [0.38, 0.165 + ANKLE_UP, YOKE[2] + dz]
-  })),
-  hands: [-0.18, 0.18].map(dz => ({ at: [YOKE[0], YOKE[1], YOKE[2] + dz] }))
-}
-
-// The cabin, seen through the glass and the open doors: a black tub with two bucket seats, the
-// console between them, dark linings behind the doors, the dash under the windshield and the yoke.
-function buildCabin (body) {
-  const dark = new THREE.MeshStandardMaterial({
-    color: 0x18191c,
-    roughness: 0.8
-  })
-  const seat = new THREE.MeshStandardMaterial({
-    color: 0x2a2b2f,
-    roughness: 0.6
-  })
-  const add = (w, h, d, mat, x, y, z, rz = 0) => {
-    const m = box(w, h, d, mat, x, y, z)
-    m.rotation.z = rz
-    body.add(m)
-  }
-  add(2.1, 0.03, 1.64, dark, 0.1, 0.15, 0) // floor
-  for (const sg of [-1, 1]) {
-    add(1.16, 0.2, 0.1, dark, 0.27, 0.24, sg * 0.84) // the sill under the door
-    add(0.5, 0.07, 0.48, seat, -0.32, 0.205, sg * 0.36) // seat base
-    add(0.11, 0.66, 0.46, seat, -0.66, 0.56, sg * 0.36, 0.3) // backrest
-    add(0.12, 0.08, 0.3, seat, -0.84, 0.92, sg * 0.36, 0.3) // head rest
-    add(0.64, 0.72, 0.04, dark, -0.62, 0.525, sg * 0.86) // lining behind the door
-  }
-  add(1.2, 0.2, 0.22, dark, 0.05, 0.26, 0) // console
-  add(0.08, 0.85, 1.64, dark, -0.98, 0.55, 0) // bulkhead behind the seats
-  add(0.55, 0.16, 1.56, dark, 0.92, 0.6, 0) // dash
-  // the yoke, open at the top, its rim leaning a little forward, on a hub and a column that runs
-  // down into the dash
-  const yoke = new THREE.Group()
-  yoke.position.set(...YOKE)
-  yoke.rotation.z = -0.2
-  const rim = new THREE.Mesh(
-    new THREE.TorusGeometry(0.15, 0.018, 8, 24, Math.PI * 1.2),
-    MAT.trim
-  )
-  rim.rotation.set(0, Math.PI / 2, Math.PI * 0.9, 'YXZ')
-  yoke.add(rim, box(0.03, 0.03, 0.28, MAT.trim, 0.01, 0, 0))
-  yoke.add(box(0.05, 0.08, 0.1, dark, 0.03, 0, 0))
-  body.add(yoke)
-  const col = [0.645 - YOKE[0], 0.58 - YOKE[1]]
-  add(
-    Math.hypot(...col),
-    0.05,
-    0.05,
-    dark,
-    YOKE[0] + col[0] / 2,
-    YOKE[1] + col[1] / 2,
-    YOKE[2],
-    Math.atan2(col[1], col[0])
-  )
-}
-
+// the canopy from inside: the bronze tint over everything outside, like sunglasses (what is seen
+// through it is multiplied by its colour)
+const GLASS_INSIDE = new THREE.MeshBasicMaterial({
+  color: new THREE.Color(0.78, 0.6, 0.42),
+  transparent: true,
+  blending: THREE.MultiplyBlending,
+  side: THREE.BackSide,
+  depthWrite: false
+})
 export function buildRoadster () {
   const car = new THREE.Group()
   const body = new THREE.Group()
@@ -227,6 +171,7 @@ export function buildRoadster () {
         const m = new THREE.Mesh(g, key)
         m.castShadow = m.receiveShadow = true
         body.add(m)
+        if (key === MAT.glass) body.add(new THREE.Mesh(g, GLASS_INSIDE))
         continue
       }
       const sg = key.endsWith('-1') ? -1 : 1,
@@ -235,13 +180,14 @@ export function buildRoadster () {
       const m = new THREE.Mesh(g, DOOR_MATS[key.replace(/-?1$/, '')])
       m.castShadow = true
       pivot.add(m)
-      // the inside of the door, dark, seen once it is up
+      // the inside of the door, dark, seen once it is up; and of its window, tinted
       if (key.startsWith('door')) pivot.add(new THREE.Mesh(g, DOOR_INSIDE))
+      if (key.startsWith('pane')) pivot.add(new THREE.Mesh(g, GLASS_INSIDE))
     }
   }
   place(loftGeos(withStations(BODY, DOOR), bodyMat, shellTrim, 30))
   place(loftGeos(withStations(GLASS, DOOR), glassMat, undefined, 40))
-  buildCabin(body)
+  const cabin = buildCabin(body)
 
   // Optimus in the driver's seat
   const optimus = buildOptimus()
@@ -398,6 +344,7 @@ export function buildRoadster () {
     doors,
     door: 0, // how far the driver's door is open, 0 to 1
     optimus,
+    cabin,
     settle: { mode: null, k: 0, dy: 0, dq: new THREE.Quaternion() },
     // body pitch and roll on their springs (rad) and how fast they are moving
     lean: { p: 0, pv: 0, r: 0, rv: 0 },
@@ -471,10 +418,9 @@ export function updateRoadster (RS, sim, ctl, dt) {
   // the driver's door swings up and out about its hinge (RS.door: set by the intro)
   const k = RS.door * RS.door * (3 - 2 * RS.door)
   RS.doors[-1].rotation.set(-0.5 * k, 0, -1.4 * k)
-  // the driver looks into the turns
-  if (RS.seated !== false)
-    RS.optimus.head.rotation.y +=
-      (sim.steerAng * 1.4 - RS.optimus.head.rotation.y) * Math.min(1, dt * 4)
+  // the yoke turning with the steering, the driver's hands with it and head into the turn, and the
+  // touchscreen
+  updateCabin(RS.cabin, RS.optimus, sim, RS.seated !== false, dt)
   for (const f of RS.fans) f.rotation.y += sim.suction * dt * 60
   for (const sk of RS.skirts) sk.position.y = 0.1 - 0.05 * sim.suction
   const spd = sim.groundSpeed()
