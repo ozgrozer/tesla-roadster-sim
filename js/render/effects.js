@@ -1,5 +1,6 @@
 // Particles (jet cores, sparks, leaves), supersonic shock-diamond jets, and what the car throws up:
-// thruster vapor, tyre smoke and dust (smoke.js), and the debris of whatever it knocks over.
+// thruster vapor, tyre smoke, dust and the beach's sand (smoke.js), and the debris of whatever it
+// knocks over.
 import * as THREE from 'three'
 import { scene, softTex } from './scene.js'
 import { TAU, clamp01 } from '../sim/constants.js'
@@ -291,10 +292,44 @@ export function emitThrusters (RS, sim, dt, clock) {
 // heats its rubber in proportion to the power it rubs away, so the smoke comes thicker with how hard
 // it slides and how fast; it pours out of the contact patch, hot, and climbs as it trails behind.
 const _tw = new THREE.Vector3()
+// sand thrown up off the tyres on the beach: low, quick puffs that fall back
+const SAND = {
+  ...DUST,
+  col: [0.86, 0.76, 0.57],
+  life: [0.8, 1.7],
+  s0: 0.35,
+  s1: [1.4, 2.8],
+  alpha: 0.34,
+  buoy: -1.4,
+  spread: 0.8
+}
 export function emitTireSmoke (RS, sim, dt) {
   if (dt <= 0 || sim.mode !== 'ground') return
   const speed = sim.groundSpeed()
   if (speed < 2.5) return
+  if (sim.surface === 'sand')
+    RS.wheels.forEach(w => {
+      // a rooster tail off each tyre, heavier off the driven, slipping rears
+      const slip = w.front ? sim.skidF : sim.skidR
+      w.sand =
+        (w.sand || 0) +
+        (w.front ? 9 : 16) * Math.min(1.6, speed / 14) * (1 + 2 * slip) * dt
+      while (w.sand >= 1) {
+        w.sand -= 1
+        w.pivot.getWorldPosition(_tw)
+        smoke.spawn(
+          SAND,
+          _tw.x + (Math.random() - 0.5) * 0.3,
+          sim.pos.y + 0.15,
+          _tw.z + (Math.random() - 0.5) * 0.3,
+          sim.vel.x * 0.25 + (Math.random() - 0.5) * 2,
+          1 + Math.random() * 2.2,
+          sim.vel.z * 0.25 + (Math.random() - 0.5) * 2,
+          sim.pos.y,
+          0.7 + Math.random() * 0.5
+        )
+      }
+    })
   RS.wheels.forEach(w => {
     const amt = w.front ? sim.skidF : sim.skidR
     if (amt < 0.3) return
