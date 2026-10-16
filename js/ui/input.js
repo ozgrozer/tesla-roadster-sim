@@ -9,7 +9,7 @@ export const DRIVE_KEYS = new Set([
   'KeyD',
   'KeyQ',
   'KeyE',
-  'KeyB',
+  'KeyF',
   'ArrowUp',
   'ArrowDown',
   'ArrowLeft',
@@ -20,13 +20,16 @@ export const DRIVE_KEYS = new Set([
 ])
 
 export class Input {
-  // onDrive(code, firstPress) fires for held driving keys, onCommand(code) for everything else
-  constructor ({ onDrive, onCommand }) {
+  // onDrive(code, firstPress) fires for held driving keys, onCommand(code) for everything else, and
+  // onRelease(code) when any key comes back up (the horn sounds for as long as H is held)
+  constructor ({ onDrive, onCommand, onRelease = () => {} }) {
     this.keys = new Set()
     this.stale = new Set() // held since before lift-off: they don't fly the car until pressed again
     this.wasAir = false
     this.lastT = -1
+    this.down = new Set() // every key held, drive or not
     const press = code => {
+      this.down.add(code)
       if (DRIVE_KEYS.has(code)) {
         const first = !this.keys.has(code)
         this.keys.add(code)
@@ -39,8 +42,15 @@ export class Input {
       if (DRIVE_KEYS.has(e.code)) e.preventDefault()
       if (!e.repeat) press(e.code)
     })
-    window.addEventListener('keyup', e => this.keys.delete(e.code))
-    window.addEventListener('blur', () => this.keys.clear())
+    const release = code => {
+      this.keys.delete(code)
+      if (this.down.delete(code)) onRelease(code)
+    }
+    window.addEventListener('keyup', e => release(e.code))
+    window.addEventListener('blur', () => {
+      for (const code of this.down) release(code)
+      this.keys.clear()
+    })
     // on-screen pad for touch screens: each button behaves like its key
     for (const b of document.querySelectorAll('.tb')) {
       const code = b.dataset.key
@@ -52,7 +62,7 @@ export class Input {
       }
       const up = () => {
         b.classList.remove('active')
-        this.keys.delete(code)
+        release(code)
       }
       b.addEventListener('pointerdown', down)
       b.addEventListener('pointerup', up)
@@ -92,9 +102,10 @@ export class Input {
     c.fan =
       fanMode === 'on' ||
       (fanMode === 'auto' && (sim.mode === 'ramp' || nearWall))
-    c.ebrake = this.keys.has('KeyB')
+    // Space is the handbrake, as in GTA; F (fly) fires the lift thrusters
+    c.ebrake = this.keys.has('Space')
     c.main = this.held('ShiftLeft', 'ShiftRight') ? 1 : 0
-    c.lift = this.keys.has('Space') ? 1 : 0
+    c.lift = this.keys.has('KeyF') ? 1 : 0
     if (air) {
       c.pitch = (S ? 1 : 0) - (W ? 1 : 0)
       c.roll = (D ? 1 : 0) - (A ? 1 : 0)
