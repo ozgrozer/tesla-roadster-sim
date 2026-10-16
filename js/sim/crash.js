@@ -1,13 +1,15 @@
-// Crashes: a rigid box tumbling on the ground with impulse-based contact and friction.
+// Crashes: a rigid box tumbling on the ground with impulse-based contact and friction, and getting
+// back on the road afterwards, GTA-style.
 import * as THREE from 'three'
-import { G, CAR, CORNERS } from './constants.js'
+import { G, TAU, CAR, AX_Y, CORNERS } from './constants.js'
 import { pushOut, bounceCity } from './collide.js'
 
 const _a = new THREE.Vector3(),
   _b = new THREE.Vector3(),
   _c = new THREE.Vector3(),
   _d = new THREE.Vector3()
-const _q = new THREE.Quaternion()
+const _q = new THREE.Quaternion(),
+  _q2 = new THREE.Quaternion()
 
 export function enterCrash (s, reason) {
   if (s.mode === 'crash') return
@@ -34,6 +36,7 @@ export function enterCrash (s, reason) {
     s.com.x = s.com.x > cx ? hit.x1 + 1.3 : hit.x0 - 1.3
   }
   s.setMode('crash')
+  s.righting = null
   s.man = null
   s.stunt = null
   s.crashReason = reason
@@ -42,8 +45,22 @@ export function enterCrash (s, reason) {
   s.emit('crash', { reason, speed: s.vel.length() })
 }
 
-export function stepCrash (s, dt) {
+// c: the driver's controls. Once the wreck comes to rest, steering rolls it back onto its wheels
+// (A one way, D the other; from its side it always goes the short way), and if it is already on
+// them, any drive key carries on from there. The autopilots never steer a wreck: they restart.
+export function stepCrash (s, dt, c) {
   s.crashTime += dt
+  if (s.righting) return stepRighting(s, dt)
+  if (
+    c &&
+    s.crashTime > 0.5 &&
+    s.vel.length() < 1.5 &&
+    s.omegaW.length() < 1.5
+  ) {
+    if (s.up(_a).y > 0.95) {
+      if (c.throttle || c.brake || c.reverse || c.steer) return recover(s)
+    } else if (c.steer) return startRighting(s, -Math.sign(c.steer))
+  }
   s.vel.y -= G * dt
   s.com.addScaledVector(s.vel, dt)
   s.omegaW.multiplyScalar(1 - 0.3 * dt)
@@ -107,4 +124,83 @@ export function stepCrash (s, dt) {
   s.gLoad += (0 - s.gLoad) * Math.min(1, dt * 4)
   if (s.crashTime > 1.2 && s.vel.length() < 0.8 && s.omegaW.length() < 0.8)
     s.crashSettled = true
+}
+
+// Roll the wreck over about its long axis (dir +1 clockwise seen from behind, -1 the other way)
+// with a little hop, onto its wheels, facing the way it points.
+function startRighting (s, dir) {
+  const f = s.fwd(_a),
+    u = s.up(_b)
+  let hx = f.x,
+    hz = f.z
+  if (Math.hypot(hx, hz) < 0.3) {
+    hx = Math.cos(s.yaw)
+    hz = -Math.sin(s.yaw)
+  }
+  // the roll that brings the roof up (none if the car stands on its nose or tail: it just tips)
+  let roll = 0
+  if (Math.abs(f.y) < 0.8) {
+    const py = _c.set(0, 1, 0).addScaledVector(f, -f.y)
+    roll = Math.atan2(_d.copy(u).cross(py).dot(f), u.dot(py))
+    if (Math.abs(roll) > 2.6 && Math.sign(roll) !== dir)
+      roll -= Math.sign(roll) * TAU // on its roof: the way the player steered
+  }
+  const q0 = s.quat.clone(),
+    axis = f.clone()
+  const level = new THREE.Quaternion().setFromAxisAngle(
+    AX_Y,
+    Math.atan2(-hz, hx)
+  )
+  // what the roll alone leaves over (a nose a little up or down), eased out along the way
+  const fix = level.multiply(
+    _q.setFromAxisAngle(axis, roll).multiply(q0).invert()
+  )
+  const k = Math.abs(roll) / Math.PI
+  s.righting = {
+    t: 0,
+    dur: 0.55 + 0.3 * k,
+    hop: 0.9 + 0.5 * k,
+    y0: s.com.y,
+    roll,
+    axis,
+    q0,
+    fix
+  }
+  s.vel.set(0, 0, 0)
+  s.omegaW.set(0, 0, 0)
+}
+function stepRighting (s, dt) {
+  const r = s.righting
+  r.t += dt
+  const u = Math.min(1, r.t / r.dur),
+    e = u * u * (3 - 2 * u)
+  _q.setFromAxisAngle(r.axis, r.roll * e).multiply(r.q0)
+  s.quat.copy(_q2.identity().slerp(r.fix, e)).multiply(_q)
+  s.com.y = r.y0 + (CAR.comH - r.y0) * e + r.hop * Math.sin(Math.PI * u)
+  s.pos.copy(s.com).sub(s.up(_a).multiplyScalar(CAR.comH))
+  if (u >= 1) recover(s)
+}
+// Back on the road at a standstill, where the wreck lies.
+function recover (s) {
+  const f = s.fwd(_a)
+  s.yaw = Math.atan2(-f.z, f.x)
+  s.pos.set(s.com.x, 0, s.com.z)
+  s.vel.set(0, 0, 0)
+  s.omega.set(0, 0, 0)
+  s.omegaW.set(0, 0, 0)
+  s.speed = s.yawRate = s.steerAng = s.accLong = s.latAcc = 0
+  s.righting = null
+  s.crashSettled = false
+  s.setMode('ground')
+  s.suspV = -1.2
+  s.syncPose()
+  // at the test site, clear of the parked lineup and the tower it may have come to rest against
+  for (let i = 0; i < 3 && s.world === 'site'; i++) {
+    const b = s.hitSolid()
+    if (!b) break
+    s.pos.x =
+      s.pos.x > (b.x0 + b.x1) / 2 ? b.x1 + CAR.halfL + 0.3 : b.x0 - CAR.halfL - 0.3
+    s.syncPose()
+  }
+  s.emit('righted')
 }
