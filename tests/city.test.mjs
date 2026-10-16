@@ -16,8 +16,10 @@ import {
   SIGNAL,
   CYCLE,
   BUILDINGS,
+  LAMPS,
   signal,
-  pointAt
+  pointAt,
+  standUp
 } from '../js/sim/city.js'
 
 const H = 1 / 120
@@ -205,6 +207,23 @@ test('the Roadster shunts a stopped car out of its lane', () => {
     hw: 0.99
   }
   assert.ok(!(rectRect(me, a)?.depth > 0.05), 'no overlap afterwards')
+})
+
+test('street lights fold over when the Roadster hits them hard', () => {
+  // a light on a sidewalk that runs along x, with the Roadster lined up on it
+  const l = LAMPS.find(k => k.az !== 0 && k.x > 0)
+  standUp()
+  const fast = driveInto(l.x - 8, l.z, 15, 2)
+  assert.ok(
+    fast.events.some(e => e.type === 'knock'),
+    'knocked down'
+  )
+  assert.ok(!fast.events.some(e => e.type === 'crash'), 'without a crash')
+  assert.ok(fast.sim.pos.x > l.x + 3, 'and drove on through')
+  standUp()
+  const slow = driveInto(l.x - 6, l.z, 2, 3)
+  assert.ok(!slow.events.some(e => e.type === 'knock'), 'a nudge leaves it up')
+  assert.ok(slow.sim.pos.x + 2.22 < l.x + 0.1, 'and stops the car')
 })
 
 test('the city never rides the test-site wall that shares its coordinates', () => {
