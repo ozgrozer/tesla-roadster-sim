@@ -58,6 +58,8 @@ const SILL = 1,
 // top of the front edge, swinging up and out
 const DOOR = [-0.3, 0.84]
 const HINGE = [0.84, 0.97, 0.76] // x, y, |z|
+// the cabin's length under the canopy, open from the floor to the glass
+const CABIN = [-0.8, 0.7]
 
 // Canopy stations, tail to windshield foot: where the side glass meets the shoulder (or, at the rear,
 // the buttress), the roof rail (the windshield's edge up front) and the centre line. Seen from above
@@ -121,7 +123,7 @@ const DOOR_INSIDE = new THREE.MeshStandardMaterial({
   side: THREE.BackSide
 })
 // The cabin, seen through the glass and the open doors: a black tub with two bucket seats, the
-// console between them, the dash under the windshield and the yoke.
+// console between them, dark linings behind the doors, the dash under the windshield and the yoke.
 function buildCabin (body) {
   const dark = new THREE.MeshStandardMaterial({
     color: 0x18191c,
@@ -142,6 +144,7 @@ function buildCabin (body) {
     add(0.5, 0.1, 0.48, seat, -0.32, 0.24, sg * 0.36) // seat base
     add(0.11, 0.66, 0.46, seat, -0.66, 0.56, sg * 0.36, 0.3) // backrest
     add(0.12, 0.08, 0.3, seat, -0.84, 0.92, sg * 0.36, 0.3) // head rest
+    add(0.64, 0.72, 0.04, dark, -0.62, 0.525, sg * 0.86) // lining behind the door
   }
   add(1.2, 0.2, 0.22, dark, 0.05, 0.26, 0) // console
   add(0.08, 0.85, 1.64, dark, -0.98, 0.55, 0) // bulkhead behind the seats
@@ -172,6 +175,7 @@ export function buildRoadster () {
     const x = (xA + xB) / 2
     if (j <= SILL) return shellTrim
     if (j <= WALL - 1 && j > SILL && inDoor(x)) return `door${sg}`
+    if ((j === WALL || j === DECK) && x > CABIN[0] && x < CABIN[1]) return null
     if (j === WALL && x > -1.0 && x < 1.3) return shellTrim
     if (j === DECK && x > -1.96 && x < 1.5) return shellTrim
     return shell
