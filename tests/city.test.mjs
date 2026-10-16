@@ -442,6 +442,40 @@ test('the jammed street is packed nose to tail, and traffic and Autopilot keep o
   )
 })
 
+test('Autopilot drives to the gridlock, honks, flies over it and drives on', () => {
+  const sim = new Sim()
+  sim.reset('city')
+  const tr = new Traffic({ seed: 5 })
+  tr.reset(sim.pos.x, sim.pos.z)
+  const pilot = new CityPilot(sim, tr)
+  assert.ok(pilot.join(), 'finds its lane at the spawn point')
+  const events = []
+  let honked = false,
+    flew = false,
+    maxY = 0
+  for (let i = 0; i < 60 / H; i++) {
+    sim.step(H, pilot.update(H))
+    tr.step(H, sim)
+    events.push(...sim.events)
+    sim.events.length = 0
+    honked ||= pilot.horn
+    if (sim.mode === 'air') {
+      flew = true
+      maxY = Math.max(maxY, sim.com.y)
+    }
+    if (flew && sim.mode === 'ground' && !pilot.hop && sim.speed > 5) break
+  }
+  assert.ok(honked, 'leans on the horn in the jam')
+  assert.ok(flew && maxY > 6, `flies over it (${maxY.toFixed(1)} m up)`)
+  assert.equal(sim.mode, 'ground', 'and comes down on its wheels')
+  assert.ok(
+    sim.pos.x > JAM_AT.x + 50 && !pilot.edge.closed,
+    'past the gridlock, on an open lane'
+  )
+  const hits = events.filter(e => e.type === 'bump' || e.type === 'crash')
+  assert.deepEqual(hits, [], 'touching nothing on the way')
+})
+
 test('a 180 km/h jump clears the jammed street', () => {
   const lane = JAM.find(e => e.dx === 1 && e.lane === 1)
   const sim = new Sim()
