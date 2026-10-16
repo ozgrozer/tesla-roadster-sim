@@ -6,7 +6,8 @@
 // in it moves: a post knocked down, the city shown or hidden), with the cars left out of it. It
 // gives no light of its own; instead every material takes the darker of the two maps for the sun's
 // light, so a tower throws its shadow two hundred metres down the avenue, and the car still casts
-// its own sharp one in it.
+// its own sharp one in it. The city's map is coarse (a third of a metre to a texel), so it is read
+// with four taps blended, not the sixteen of the car's: it looks the same, at a quarter of the cost.
 import * as THREE from 'three'
 
 // The sun's own shadow (light 0) is the darker of its own and the city map's (light 1), and the city
@@ -15,12 +16,28 @@ const OWN = `directLight.color *= ( directLight.visible && receiveShadow ) ? get
 const chunk = THREE.ShaderChunk.lights_fragment_begin
 if (!chunk.includes(OWN))
   throw new Error('sunShadow.js: three.js lights_fragment_begin has changed')
+// the city's map, four texels blended (shadowmap_pars_fragment, where three.js's own getShadow is)
+THREE.ShaderChunk.shadowmap_pars_fragment += `
+#if defined( USE_SHADOWMAP ) && NUM_DIR_LIGHT_SHADOWS > 1
+	float cityShadowAt( sampler2D map, vec2 size, float intensity, float bias, vec4 at ) {
+		at.xyz /= at.w;
+		at.z += bias;
+		if ( at.x < 0.0 || at.x > 1.0 || at.y < 0.0 || at.y > 1.0 || at.z > 1.0 ) return 1.0;
+		vec2 t = at.xy * size - 0.5, f = fract( t ), d = 1.0 / size, b = ( floor( t ) + 0.5 ) * d;
+		float s = mix(
+			mix( texture2DCompare( map, b, at.z ), texture2DCompare( map, b + vec2( d.x, 0.0 ), at.z ), f.x ),
+			mix( texture2DCompare( map, b + vec2( 0.0, d.y ), at.z ), texture2DCompare( map, b + d, at.z ), f.x ),
+			f.y );
+		return mix( 1.0, s, intensity );
+	}
+#endif
+`
 THREE.ShaderChunk.lights_fragment_begin = chunk
   .replace(
     '#if ( NUM_DIR_LIGHTS > 0 ) && defined( RE_Direct )',
     `float cityShadow = 1.0;
 #if defined( USE_SHADOWMAP ) && NUM_DIR_LIGHT_SHADOWS > 1
-	cityShadow = receiveShadow ? getShadow( directionalShadowMap[ 1 ], directionalLightShadows[ 1 ].shadowMapSize, directionalLightShadows[ 1 ].shadowIntensity, directionalLightShadows[ 1 ].shadowBias, directionalLightShadows[ 1 ].shadowRadius, vDirectionalShadowCoord[ 1 ] ) : 1.0;
+	cityShadow = receiveShadow ? cityShadowAt( directionalShadowMap[ 1 ], directionalLightShadows[ 1 ].shadowMapSize, directionalLightShadows[ 1 ].shadowIntensity, directionalLightShadows[ 1 ].shadowBias, vDirectionalShadowCoord[ 1 ] ) : 1.0;
 #endif
 #if ( NUM_DIR_LIGHTS > 0 ) && defined( RE_Direct )`
   )
