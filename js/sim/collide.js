@@ -5,11 +5,14 @@
 import { STEP } from './roofs.js'
 import { snap } from './breakables.js'
 import { query, OUTER } from './city.js'
-import { CAR, clamp } from './constants.js'
+import { G, CAR, clamp } from './constants.js'
 
 // The most yaw rate (rad/s) a knock adds on the ground: the tyres on the road soak up the rest, so a
 // clipped car or wall corner twitches the Roadster instead of spinning it out of the driver's hands.
 const KNOCK_SPIN = 1.8
+// A building the car only dips this far into from above (m), it rides on the edge of rather than
+// being shoved off sideways: the roof it is driving off, or one it is coming down onto.
+const EDGE = 0.35
 
 // Rectangles are { x, z, fx, fz, hl, hw }: centre, unit forward axis, half length and half width.
 // The side axis is (-fz, fx).
@@ -248,9 +251,10 @@ export function knock (s, c, nx, nz) {
 
 // In the air over the city: the side of a building, a post or the barrier bounces the car off as it
 // would on the road (a hard enough hit still snaps a street light, signal or tree). Coming down on a
-// roof is a landing (flight.js); clipping a roof's edge on the way past pushes the car off it. bottom
-// and top: the car's lowest and highest corners.
-export function collideAir (s, bottom, top) {
+// roof is a landing (flight.js). Over a roof's edge, with its centre already past it, the car rides
+// the edge and tips off it (the roof it drove off, or one it only just reached). bottom and top: the
+// car's lowest and highest corners.
+export function collideAir (s, bottom, top, dt) {
   const me = playerRect(s)
   query(me.x - 4, me.z - 4, me.x + 4, me.z + 4, hits)
   for (const c of hits) {
@@ -258,6 +262,15 @@ export function collideAir (s, bottom, top) {
     const hit = c.r ? rectPost(me, c) : rectRect(me, boxRect(c))
     if (!hit) continue
     if (c.breakAt && knock(s, c, hit.nx, hit.nz)) continue
+    const dip = c.y1 - bottom
+    if (!c.r && dip < EDGE && dip < hit.depth && s.vel.y <= 0) {
+      // held up by the edge, and sliding off it the way it overhangs
+      s.com.y += dip
+      s.vel.y = 0
+      s.vel.x += hit.nx * G * 0.5 * dt
+      s.vel.z += hit.nz * G * 0.5 * dt
+      continue
+    }
     nudge(s, hit.nx * hit.depth, hit.nz * hit.depth)
     const impact = impulse(loadBody(s), null, hit, 0.2, 0.35)
     storeBody(s)
