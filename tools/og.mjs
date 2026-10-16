@@ -34,7 +34,7 @@ const SHOT = `(() => {
   const cam = r.rig.camera
   cam.fov = 38
   cam.updateProjectionMatrix()
-  key('Space', true)
+  key('KeyF', true)
   ;(function tick () {
     if (window.ogDone) return
     requestAnimationFrame(tick)
