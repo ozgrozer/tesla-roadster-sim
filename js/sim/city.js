@@ -49,8 +49,48 @@ export const YELLOW = 1
 export const GREEN = 2
 export const SIGNAL = { green: 13, yellow: 3, clear: 1.2 }
 export const CYCLE = 2 * (SIGNAL.green + SIGNAL.yellow + SIGNAL.clear)
-// State of the light for traffic travelling `dir` into `node` at time t.
+// State of the light for traffic travelling `dir` into `node` at time t (held, or on its cycle).
 export function signal (node, dir, t) {
+  const h = node.hold
+  if (h)
+    return (dir & 1) === h.axis
+      ? t >= h.t0 + h.wait
+        ? GREEN
+        : RED
+      : t < h.yellowEnd
+      ? YELLOW
+      : RED
+  return cycle(node, dir, t)
+}
+// A light held green one way (axis 0 east-west, 1 north-south) from t, for as long as it is held:
+// Autopilot's green wave on its way to the gridlock, and the red that holds the gridlock up. The
+// other way finishes its green on a (short) yellow and an all-red first.
+const HOLD = { yellow: 2, clear: 0.6 }
+export function holdLight (node, axis, t) {
+  if (node.hold?.axis === axis) return
+  node.hold = null
+  const mine = cycle(node, axis, t),
+    theirs = cycle(node, axis ^ 1, t)
+  let yellowEnd = t
+  if (theirs === GREEN) yellowEnd = t + HOLD.yellow
+  else if (theirs === YELLOW) {
+    // what is left of their yellow
+    let u = (((t + node.offset) % CYCLE) + CYCLE) % CYCLE
+    u -= ((axis ^ 1) * CYCLE) / 2
+    yellowEnd = t + Math.min(HOLD.yellow, SIGNAL.green + SIGNAL.yellow - u)
+  }
+  const wait = mine === RED ? yellowEnd - t + HOLD.clear : 0
+  node.hold = { axis, t0: t, wait, yellowEnd }
+}
+// Back to its cycle, picking it up at the start of a green for the way it was held, so nothing
+// changes in front of anyone the moment it lets go.
+export function releaseLight (node, t) {
+  const h = node.hold
+  if (!h) return
+  node.hold = null
+  node.offset = ((((h.axis * CYCLE) / 2 - t) % CYCLE) + CYCLE) % CYCLE
+}
+function cycle (node, dir, t) {
   let u = (((t + node.offset) % CYCLE) + CYCLE) % CYCLE
   const axis = u < CYCLE / 2 ? 0 : 1 // 0 east-west, 1 north-south
   if ((dir & 1) !== axis) return RED
