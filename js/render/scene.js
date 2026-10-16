@@ -121,12 +121,13 @@ export const softTex = (() => {
 // ---------- materials ----------
 export const hdr = (r, g, b) => new THREE.Color(r, g, b)
 export const MAT = {
+  // Ano White: a satin silver-white, so every facet catches the light differently
   paint: new THREE.MeshPhysicalMaterial({
-    color: 0xeef0f2,
-    roughness: 0.4,
-    metalness: 0.0,
-    clearcoat: 0.6,
-    clearcoatRoughness: 0.22
+    color: 0xe3e6ea,
+    roughness: 0.32,
+    metalness: 0.35,
+    clearcoat: 0.3,
+    clearcoatRoughness: 0.3
   }),
   trim: new THREE.MeshStandardMaterial({
     color: 0x0c0d10,
