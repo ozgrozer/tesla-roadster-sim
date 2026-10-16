@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Tesla Roadster Sim</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="css/fonts.css" />
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/hud.css" />
+    <link rel="stylesheet" href="css/panels.css" />
+  </head>
+  <body>
+    <canvas id="c"></canvas>
+    <div class="loading" id="loading"><div>Rolling out the Roadster…</div></div>
+
+    <div class="hud" id="hud">
+      <div class="top">
+        <div class="brand">
+          <h1>Tesla Roadster Sim</h1>
+          <p>170° inverted wall · 10 cold-gas thrusters · McGregor test site</p>
+        </div>
+        <div class="controls-top">
+          <button class="btn mode-pill" id="btnMode" type="button">
+            <span class="dot"></span><span id="modeLabel">Autopilot</span>
+          </button>
+          <button class="btn" id="btnCam" type="button">
+            Cam: <span id="camLabel">Director</span>
+          </button>
+          <button class="btn" id="btnSound" type="button" aria-pressed="false">
+            Sound: off
+          </button>
+          <button class="btn" id="btnSlow" type="button" aria-pressed="false">
+            Slow-mo
+          </button>
+          <button class="btn" id="btnHelp" type="button" aria-pressed="true">
+            Keys
+          </button>
+        </div>
+      </div>
+      <div class="credit">
+        Fan-made simulation built from press coverage of the Oct 15, 2026
+        Roadster reveal. Not affiliated with Tesla or SpaceX.
+      </div>
+
+      <aside class="help" id="help">
+        <h2>Drive</h2>
+        <ul>
+          <li><kbd>W</kbd><kbd>S</kbd> throttle / brake · reverse</li>
+          <li><kbd>B</kbd> e-brake (hold) · lift off to coast</li>
+          <li><kbd>A</kbd><kbd>D</kbd> steer</li>
+          <li><kbd>Shift</kbd> main thrusters (boost)</li>
+          <li><kbd>Space</kbd> lift thrusters (fly)</li>
+          <li><kbd>F</kbd> suction fan auto / on / off</li>
+        </ul>
+        <h2>Fly</h2>
+        <ul>
+          <li>
+            <kbd>W</kbd><kbd>S</kbd> pitch · <kbd>A</kbd><kbd>D</kbd> roll ·
+            <kbd>Q</kbd><kbd>E</kbd> yaw
+          </li>
+          <li><kbd>X</kbd> auto backflip · <kbd>K</kbd> auto kickflip</li>
+        </ul>
+        <h2>Sim</h2>
+        <ul>
+          <li><kbd>P</kbd> autopilot demo · <kbd>M</kbd> manual</li>
+          <li>
+            <kbd>R</kbd> reset · <kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> start /
+            wall top / lineup
+          </li>
+          <li>
+            <kbd>V</kbd> camera · <kbd>T</kbd> slow-mo · <kbd>N</kbd> sound
+          </li>
+          <li><kbd>H</kbd> hide this panel</li>
+        </ul>
+        <p class="note">Any drive key during the demo hands you the wheel.</p>
+      </aside>
+
+      <div class="caption" id="caption">
+        <div class="eyebrow" id="capEyebrow">Stunt 1</div>
+        <div class="title" id="capTitle">The Wall</div>
+        <div class="sub" id="capSub">
+          21 m curved wall · 170° pitch at the top
+        </div>
+      </div>
+      <div class="countdown" id="countdown">3</div>
+      <div class="popups" id="popups"></div>
+
+      <div class="score" id="scoreBox">
+        <span class="k">STUNT SCORE</span>
+        <span class="v" id="score">0</span>
+      </div>
+
+      <div class="schematic" aria-label="Thruster status">
+        <div class="k">
+          <span>Thrusters</span><span id="thrTotal">0 kN</span>
+        </div>
+        <svg
+          viewBox="0 0 120 150"
+          id="thrSvg"
+          role="img"
+          aria-label="Top-down view of the car with ten thruster positions"
+        >
+          <path
+            d="M40 10 L80 10 L94 40 L96 118 L88 140 L32 140 L24 118 L26 40 Z"
+            fill="none"
+            stroke="rgba(238,240,242,.35)"
+            stroke-width="1.2"
+          />
+          <path
+            d="M44 46 L76 46 L80 84 L40 84 Z"
+            fill="rgba(214,168,78,.12)"
+            stroke="rgba(214,168,78,.45)"
+            stroke-width="1"
+          />
+          <line
+            x1="34"
+            y1="12"
+            x2="86"
+            y2="12"
+            stroke="#eef0f2"
+            stroke-width="2"
+            opacity=".8"
+          />
+          <line
+            x1="30"
+            y1="138"
+            x2="90"
+            y2="138"
+            stroke="#ff3b3b"
+            stroke-width="2"
+            opacity=".8"
+          />
+          <g id="thrDots"></g>
+        </svg>
+        <div class="legend">
+          4 main · 4 lift · 2 side<br /><span id="thrAir"
+            >250 kg air · 380 bar</span
+          >
+        </div>
+      </div>
+
+      <div class="context-hint" id="hint">
+        Autopilot demo running · press any drive key to take over
+      </div>
+
+      <div class="telemetry" role="status" aria-live="off">
+        <div class="cell speed">
+          <span class="k">km/h <em class="tag" id="tTag"></em></span
+          ><span class="v" id="tSpeed">0</span>
+        </div>
+        <div class="cell">
+          <span class="k">Pitch</span><span class="v" id="tPitch">0°</span>
+        </div>
+        <div class="cell">
+          <span class="k">Load</span
+          ><span class="v" id="tG">1.00<small>G</small></span>
+        </div>
+        <div class="cell">
+          <span class="k">Alt</span
+          ><span class="v" id="tAlt">0.0<small>m</small></span>
+        </div>
+        <div class="cell hide-sm">
+          <span class="k">Power</span
+          ><span class="v" id="tPow">0<small>kW</small></span>
+        </div>
+        <div class="cell hide-sm">
+          <span class="k">Suction</span><span class="v" id="tSuck">OFF</span>
+        </div>
+        <div class="cell">
+          <span class="k">Air</span
+          ><span class="v" id="tAir">250<small>kg</small></span>
+          <div class="bar"><i id="tAirBar"></i></div>
+        </div>
+        <div class="cell hide-sm">
+          <span class="k">0–60</span><span class="v" id="t060">–</span>
+        </div>
+      </div>
+
+      <div class="touch" id="touch">
+        <div class="cluster">
+          <span></span
+          ><button class="tb" data-key="KeyW" type="button">▲</button
+          ><span></span>
+          <button class="tb" data-key="KeyA" type="button">◀</button
+          ><button class="tb" data-key="KeyS" type="button">▼</button
+          ><button class="tb" data-key="KeyD" type="button">▶</button>
+        </div>
+        <div class="cluster">
+          <button class="tb" data-key="KeyX" type="button">FLIP</button
+          ><button class="tb" data-key="KeyK" type="button">KICK</button
+          ><button class="tb" data-key="KeyB" type="button">E-BRK</button>
+          <button class="tb" data-key="ShiftLeft" type="button">BOOST</button
+          ><button class="tb" data-key="Space" type="button">LIFT</button
+          ><button class="tb" data-key="KeyF" type="button">FAN</button>
+        </div>
+      </div>
+    </div>
+    <!-- One self-contained script built from js/ (npm run build), so this page opens straight from disk. -->
+    <script src="dist/roadster.js"></script>
+    <script>
+      // If the 3D engine never starts (WebGL off, very old browser), say so instead of a blank screen.
+      setTimeout(function () {
+        var l = document.getElementById("loading");
+        if (l && getComputedStyle(l).opacity !== "0")
+          l.firstElementChild.textContent =
+            "The game did not start. Check that WebGL is enabled, then reload.";
+      }, 15000);
+    </script>
+  </body>
+</html>
