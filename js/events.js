@@ -1,11 +1,11 @@
-// What the sim reports (scores, landings, knocks, honks, crashes), turned into popups, sounds,
-// camera shake and particles.
+// What the sim reports (scores, landings, knocks, kerbs, honks, crashes), turned into popups, sounds,
+// camera shake, a gamepad's rumble and particles.
 import { HORNS } from './audio/sound.js'
 import { hearing, panOf } from './audio/mix.js'
 import { burst, knockFx, sparkBurst } from './render/effects.js'
 
 export function handleEvents (g) {
-  const { sim, app, hud, sound, rig, cityView, ap, clock } = g
+  const { sim, app, hud, sound, rig, cityView, ap, clock, pad } = g
   for (const e of sim.events) {
     if (e.type === 'z60') {
       hud.popup(`0–60 mph · <b>${e.t.toFixed(2)} s</b>`)
@@ -33,13 +33,15 @@ export function handleEvents (g) {
       )
       rig.shake(Math.min(0.6, 0.05 + Math.abs(e.vy) * 0.04))
       sound.thump(e.g)
+      pad?.rumble(Math.min(1, e.g / 4), 0.6, 240)
       if (app.auto) ap.cap[2] = `Touchdown at ${e.g.toFixed(1)} G`
     } else if (e.type === 'bump') {
       // knocks against cars, posts and walls in the city (a scrape fires every step: throttle it)
       if (e.impact > 1.2 && clock - app.lastBump > 0.15) {
         app.lastBump = clock
-        sound.bump(e.impact)
+        sound.bump(e.impact, e.what)
         rig.shake(Math.min(0.3, e.impact * 0.025))
+        pad?.rumble(e.impact / 12, e.impact / 8, 160)
         if (e.impact > 6)
           sparkBurst(sim.pos, Math.min(60, e.impact * 4), sim.floor)
       }
@@ -53,7 +55,18 @@ export function handleEvents (g) {
         e.impact * (mine ? 1 : hearing(e.x, e.z)),
         panOf(e.x, e.z)
       )
-      if (mine) rig.shake(Math.min(0.35, 0.06 + e.impact * 0.012))
+      if (mine) {
+        rig.shake(Math.min(0.35, 0.06 + e.impact * 0.012))
+        pad?.rumble(0.5, 0.6, 150)
+      }
+    } else if (e.type === 'kerb') {
+      // up onto the kerb or down off it (and off the promenade onto the sand)
+      sound.kerb(e.v, e.up)
+      rig.shake(Math.min(0.1, 0.015 + e.v * 0.003))
+      pad?.rumble(0.2 + e.v * 0.01, 0.35, 90)
+    } else if (e.type === 'manhole') {
+      sound.clunk(e.v)
+      pad?.rumble(0.05, 0.3, 50)
     } else if (e.type === 'righted') {
       // rolled back onto its wheels after a crash
       burst(sim.pos.x, sim.pos.z, 60, 5, sim.pos.y)
@@ -75,6 +88,7 @@ export function handleEvents (g) {
       rig.shake(0.5)
       app.restHint = false
       sound.crash()
+      pad?.rumble(1, 1, 500)
       hud.popup(`Crash · ${e.reason}`, 2600)
     }
   }
