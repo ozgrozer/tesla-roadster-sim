@@ -6,11 +6,12 @@ import { TAU, clamp01 } from '../sim/constants.js'
 import { smoke, VAPOR, TYRE, DUST } from './smoke.js'
 
 class Particles {
+  // splash: whether it skips off the ground (sparks, leaves) or is gone when it gets there (jet cores)
   constructor (
     max,
-    { additive = false, colA, colB, gravity = 0, buoyancy = 0 }
+    { additive = false, colA, colB, gravity = 0, buoyancy = 0, splash = true }
   ) {
-    Object.assign(this, { max, n: 0, gravity, buoyancy })
+    Object.assign(this, { max, n: 0, gravity, buoyancy, splash })
     this.pos = new Float32Array(max * 3)
     this.vel = new Float32Array(max * 3)
     this.age = new Float32Array(max)
@@ -19,6 +20,7 @@ class Particles {
     this.s1 = new Float32Array(max)
     this.a0 = new Float32Array(max)
     this.drag = new Float32Array(max)
+    this.floor = new Float32Array(max)
     this.size = new Float32Array(max)
     this.alpha = new Float32Array(max)
     this.heat = new Float32Array(max)
@@ -63,7 +65,8 @@ class Particles {
     this.geo = g
     scene.add(this.points)
   }
-  spawn (x, y, z, vx, vy, vz, life, s0, s1, a0, drag) {
+  // floor: the height of the ground under it (a roof, or the street)
+  spawn (x, y, z, vx, vy, vz, life, s0, s1, a0, drag, floor = 0) {
     if (this.n >= this.max) return
     const i = this.n++,
       j = i * 3
@@ -79,6 +82,7 @@ class Particles {
     this.s1[i] = s1
     this.a0[i] = a0
     this.drag[i] = drag
+    this.floor[i] = floor
   }
   kill (i) {
     const l = --this.n
@@ -93,6 +97,7 @@ class Particles {
     this.s1[i] = this.s1[l]
     this.a0[i] = this.a0[l]
     this.drag[i] = this.drag[l]
+    this.floor[i] = this.floor[l]
   }
   update (dt) {
     let i = 0
@@ -111,9 +116,13 @@ class Particles {
       this.pos[j] += this.vel[j] * dt
       this.pos[j + 1] += this.vel[j + 1] * dt
       this.pos[j + 2] += this.vel[j + 2] * dt
-      if (this.pos[j + 1] < 0.12) {
-        // hit the pad: spread sideways
-        this.pos[j + 1] = 0.12
+      if (this.pos[j + 1] < this.floor[i] + 0.12) {
+        if (!this.splash) {
+          this.kill(i)
+          continue
+        }
+        // hit the ground: spread sideways
+        this.pos[j + 1] = this.floor[i] + 0.12
         if (this.vel[j + 1] < 0) {
           const h = -this.vel[j + 1] * (this.gravity ? 0.3 : 0.85),
             a = Math.random() * TAU
@@ -140,6 +149,7 @@ class Particles {
 }
 const jets = new Particles(1200, {
   additive: true,
+  splash: false,
   colA: new THREE.Color(0.5, 0.7, 0.95),
   colB: new THREE.Color(2.4, 2.8, 3.2)
 })
@@ -261,11 +271,12 @@ export function emitThrusters (RS, sim, dt, clock) {
         vx + _wd.x * sp,
         vy + _wd.y * sp,
         vz + _wd.z * sp,
-        0.1 + Math.random() * 0.1,
+        0.035 + Math.random() * 0.035, // the supersonic core is only a couple of metres long
         0.14 * big + 0.04,
         0.55 * big + 0.1,
         0.75,
-        3.0
+        3.0,
+        sim.floor
       )
     }
   }
@@ -318,7 +329,8 @@ export function burst (x, z, n, speed, y = 0, size = 1) {
     )
   }
 }
-export function sparkBurst (p, n) {
+// floor: the ground the sparks bounce on
+export function sparkBurst (p, n, floor = 0) {
   for (let i = 0; i < n; i++) {
     const a = Math.random() * TAU,
       e = Math.random() * 1.2,
@@ -334,7 +346,8 @@ export function sparkBurst (p, n) {
       0.12,
       0.05,
       1,
-      0.6
+      0.6,
+      floor
     )
   }
 }
