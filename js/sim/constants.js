@@ -43,7 +43,7 @@ export const CAR = {
   rollRes: 0.015, // rolling resistance coefficient
   regenAccel: 1.3, // lift-off regen (one-pedal driving), m/s^2
   regenPowerW: 250000,
-  ebrakeMu: 0.85, // locked rear tyres slide at 85% of peak grip
+  ebrakeMu: 0.95, // locked rear tyres slide at 95% of peak grip
   suctionG: 2.1, // fan suction, ~4,600 kg of downforce
   dragK: 1.6e-4,
   pitchAcc: 14,
