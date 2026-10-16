@@ -68,6 +68,7 @@ export class CameraRig {
       reach: 0, // how far the arm lets out with speed, eased so a sudden stop doesn't yank it in
       elev: 1,
       idle: 99,
+      kick: 0,
       target: new THREE.Vector3()
     }
     this.drag = null
@@ -185,7 +186,9 @@ export class CameraRig {
     )
     this.pos.y = Math.max(this.pos.y, 0.7)
     this.aim.set(f.target.x, f.target.y + 1.0 * f.elev, f.target.z)
-    return 55 + Math.min(14, speed * 0.12)
+    // wider with speed, and a kick wider still while the main thrusters fire
+    f.kick += (sim.thrMain - f.kick) * lerpK(4, dt)
+    return 55 + Math.min(14, speed * 0.12) + 8 * f.kick
   }
 
   // velocity-led action camera
