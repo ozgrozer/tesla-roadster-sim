@@ -8,7 +8,8 @@
 // plus per-frame pose and animation.
 import * as THREE from 'three'
 import { scene, MAT } from './scene.js'
-import { clamp } from '../sim/constants.js'
+import { CURB_H } from '../sim/city.js'
+import { CAR, clamp, AX_Z } from '../sim/constants.js'
 import { buildOptimus, poseOptimus, ANKLE_UP } from './optimus.js'
 import { loft, loftGeos, at, seam, withStations } from './loft.js'
 import { buildWheels, updateWheels, withWheelArches } from './wheels.js'
@@ -399,11 +400,31 @@ export function buildRoadster () {
     optimus,
     settle: { mode: null, k: 0, dy: 0, dq: new THREE.Quaternion() },
     // body pitch and roll on their springs (rad) and how fast they are moving
-    lean: { p: 0, pv: 0, r: 0, rv: 0 }
+    lean: { p: 0, pv: 0, r: 0, rv: 0 },
+    // how far up each axle is: on a raised pavement or parking lot, front and rear
+    kerb: { f: 0, r: 0 }
   }
 }
 
-const _sq = new THREE.Quaternion()
+const _sq = new THREE.Quaternion(),
+  _kq = new THREE.Quaternion()
+
+// The city's pavements, parking lots and parks are a kerb's height up from the road (the sim drives
+// on one flat ground, and feels the kerb: street.js); the model rides up onto them, each axle as it
+// mounts the kerb, so the car tips up onto it and back down off it.
+function kerb (RS, sim, dt) {
+  const K = RS.kerb,
+    ft = sim.feel?.kerb,
+    on = sim.world === 'city' && sim.mode === 'ground' && sim.floor === 0
+  const k = 1 - Math.exp(-dt * 30)
+  K.f += ((on && ft && !ft[0] ? CURB_H : 0) - K.f) * k
+  K.r += ((on && ft && !ft[1] ? CURB_H : 0) - K.r) * k
+  if (K.f + K.r < 1e-4) return
+  RS.car.position.y += (K.f + K.r) / 2
+  RS.car.quaternion.multiply(
+    _kq.setFromAxisAngle(AX_Z, Math.atan2(K.f - K.r, CAR.wheelbase))
+  )
+}
 
 // Landing (or getting back on the wheels after a crash) puts the sim's car flat on the road at once,
 // however it came down; the model eases down onto its wheels from the pose it was in instead.
@@ -426,6 +447,7 @@ export function updateRoadster (RS, sim, ctl, dt) {
   settle(RS, sim, dt)
   RS.car.position.copy(sim.pos)
   RS.car.quaternion.copy(sim.quat)
+  kerb(RS, sim, dt)
   if (RS.settle.k > 0.002) {
     RS.car.position.y += RS.settle.dy * RS.settle.k
     RS.car.quaternion.premultiply(
