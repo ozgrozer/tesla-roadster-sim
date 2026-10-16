@@ -371,25 +371,9 @@ export function addCollider (c) {
     for (let i = cell(c.x0); i <= cell(c.x1); i++) grid[j * GN + i].push(c)
   return c
 }
-const post = (x, z, r, h, kind) =>
-  addCollider({
-    x0: x - r,
-    x1: x + r,
-    z0: z - r,
-    z1: z + r,
-    y0: 0,
-    y1: h,
-    x,
-    z,
-    r,
-    kind
-  })
 for (const b of BUILDINGS)
   for (const t of b.tiers) addCollider({ ...t, kind: 'building' })
-LAMPS.forEach((l, i) => (post(l.x, l.z, 0.16, 8, 'lamp').i = i))
-for (const p of PALMS) post(p.x, p.z, 0.28, p.h, 'palm')
-for (const t of TREES) post(t.x, t.z, 0.3, 6, 'tree')
-for (const p of POLES) post(p.x, p.z, 0.2, 7, 'signal')
+// (street lights, palms, trees and signal masts: breakables.js)
 // a low concrete barrier round the outside of the ring road, and the end of the open ground
 const BW = EDGE + 1.5
 for (const [x0, x1, z0, z1] of [
@@ -400,7 +384,8 @@ for (const [x0, x1, z0, z1] of [
 ])
   addCollider({ x0, x1, z0, z1, y0: 0, y1: 1.1, kind: 'barrier' })
 export const BARRIER = BW
-// Street lights go down when the Roadster hits them (collider.down); this stands them all back up.
+// Street lights, signals and trees go down when they are hit hard (collider.down); this stands them
+// all back up.
 export function standUp () {
   for (const c of COLLIDERS) c.down = false
 }
