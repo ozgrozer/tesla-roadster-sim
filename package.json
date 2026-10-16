@@ -1,0 +1,17 @@
+{
+  "private": true,
+  "version": "1.2.0",
+  "name": "tesla-roadster-sim",
+  "description": "Three.js stunt simulation of the Oct 15, 2026 Roadster reveal: wall ride, inverted hang, cold-gas flight, backflip and kickflip.",
+  "type": "module",
+  "scripts": {
+    "build": "node tools/build.mjs",
+    "start": "node tools/serve.mjs --open",
+    "watch": "node tools/build.mjs --watch",
+    "test": "node --import ./tools/node-loader/register.mjs --test tests/*.test.mjs",
+    "format": "prettier-standard \"js/**/*.js\" \"tests/*.mjs\" \"tools/**/*.mjs\" --format"
+  },
+  "engines": {
+    "node": ">=20.6"
+  }
+}
