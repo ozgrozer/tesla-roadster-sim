@@ -403,8 +403,9 @@ export class CameraRig {
     cam.up.set(0, 1, 0)
     cam.lookAt(this.look)
     if (this.shakeAmt > 0.001) {
-      cam.position.x += (Math.random() - 0.5) * this.shakeAmt
-      cam.position.y += (Math.random() - 0.5) * this.shakeAmt
+      // a quick judder that dies away, not a fresh random jump every frame
+      cam.position.x += 0.5 * this.shakeAmt * Math.sin(t * 43)
+      cam.position.y += 0.5 * this.shakeAmt * Math.sin(t * 37 + 1.3)
       this.shakeAmt *= Math.exp(-dt * 6)
     }
   }
