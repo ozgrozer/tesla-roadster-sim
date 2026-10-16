@@ -80,6 +80,7 @@ export class Sim {
     this.stunt = null
     this.invertedTime = 0
     this.crashSettled = false
+    this.righting = null
     this.crashTime = 0
     this.crashReason = ''
     this.accLong = 0
@@ -209,7 +210,7 @@ export class Sim {
     if (this.mode === 'ground') stepGround(this, dt, c, main, lift)
     else if (this.mode === 'ramp') this.stepRamp(dt, c, main, lift)
     else if (this.mode === 'air') stepAir(this, dt, c, main, lift)
-    else stepCrash(this, dt)
+    else stepCrash(this, dt, c)
 
     // visual suspension spring
     this.suspV += (-120 * this.susp - 14 * this.suspV) * dt
