@@ -317,12 +317,20 @@ export function pushOut (s, b, margin = 1.3) {
   p[k] += d
   if (v[k] * sg < 0) v[k] *= -0.3
 }
-// Crash mode: the tumbling Roadster bounces off buildings instead of passing through them.
+// Crash mode: the tumbling Roadster bounces off buildings instead of passing through them, and mows
+// down any post it is going fast enough to snap.
 export function bounceCity (s) {
   const p = s.com
   query(p.x - 3, p.z - 3, p.x + 3, p.z + 3, hits)
   for (const c of hits) {
-    if (c.r) continue
+    if (c.r) {
+      const dx = p.x - c.x,
+        dz = p.z - c.z,
+        d = Math.hypot(dx, dz)
+      if (c.breakAt && d > 1e-6 && d < c.r + 1.2 && p.y - 1 < c.y1)
+        knock(s, c, dx / d, dz / d)
+      continue
+    }
     if (
       p.x > c.x0 - 1 &&
       p.x < c.x1 + 1 &&
