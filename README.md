@@ -68,7 +68,9 @@ js/audio/sound.js     Web Audio synthesis (no sound files)
 js/ui/                hud.js, input.js, minimap.js (the city's radar)
 vendor/               three.js r170 + addons, fonts (with licenses)
 dist/roadster.js      generated bundle (do not edit)
-tools/                build.mjs (bundler), serve.mjs (optional server), Node loader for tests
+tools/                build.mjs (bundler), serve.mjs (optional server), og.mjs (link preview
+                      image), Node loader for tests
+og-image.png          the card social sites show for a shared link (npm run og)
 tests/                headless physics and input tests + bundle freshness check
 ```
 
@@ -84,6 +86,8 @@ npm run watch     # rebuild on every save
 ```
 
 No dependencies to install: the bundler is a single file with no packages. `npm test` fails if `dist/roadster.js` is out of date.
+
+`npm run og` renders `og-image.png`, the 1200 × 630 link preview, from the game itself in headless Chrome (it needs Chrome and Node 22; set `CHROME` to use another browser binary). The page's Open Graph tags point at the copy on GitHub Pages.
 
 ## Tests
 
