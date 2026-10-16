@@ -70,12 +70,10 @@ export function stepAir (s, dt, c, main, lift) {
     _q2.setFromAxisAngle(AX_Z, c.flare || 0)
     _q.multiply(_q2)
     if (c.latHold) {
-      // bank like a drone to hold the lane centre (z = 0 along the runway)
-      const zx = Math.sin(yawD),
-        zz = Math.cos(yawD)
-      const vLat = s.vel.x * zx + s.vel.z * zz,
-        eLat = s.com.x * zx * 0 + s.com.z * zz
-      const bank = clamp(-0.07 * (vLat + 0.6 * eLat), -0.25, 0.25)
+      // bank like a drone to hold the lane centre (z = 0 along the runway). Drift is measured
+      // across the runway, not across the nose: the nose points along any drift and would hide it.
+      const zz = Math.cos(yawD)
+      const bank = clamp(-0.07 * zz * (s.vel.z + 0.6 * s.com.z), -0.25, 0.25)
       _q.multiply(_q2.setFromAxisAngle(AX_X, bank))
     } // desired
     _q2.copy(q).invert()
