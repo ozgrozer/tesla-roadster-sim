@@ -398,3 +398,40 @@ test('the parked lineup bounces the Roadster off instead of crashing it', () => 
   const cab = LINEUP.find(c => c.kind === 'cab')
   assert.ok(sim.pos.x - 2.22 > cab.box.x1 - 0.05, 'and stays clear of it')
 })
+
+// Drop the car onto open ground beside the runway, rolled `roll` and falling at `vy`, going 30 m/s.
+function drop (roll, vy) {
+  const sim = new Sim()
+  sim.pos.set(-150, 0, 40)
+  sim.syncPose()
+  sim.setMode('air')
+  sim.quat.setFromAxisAngle(AX_X, roll)
+  sim.com.set(-150, 2.5, 40)
+  sim.vel.set(30, vy, 0)
+  const events = []
+  for (let i = 0; i < 120; i++) {
+    sim.step(H, makeControls())
+    events.push(...sim.events)
+    sim.events.length = 0
+  }
+  return { sim, events }
+}
+
+test('hard and tilted landings come down on the wheels, and the car drives on', () => {
+  for (const [roll, vy] of [
+    [0, -30],
+    [0.9, -12],
+    [-1.2, -20]
+  ]) {
+    const { sim, events } = drop(roll, vy)
+    assert.ok(!events.some(e => e.type === 'crash'), `no crash at ${vy} m/s`)
+    assert.ok(events.some(e => e.type === 'touchdown'), 'a touchdown')
+    assert.equal(sim.mode, 'ground')
+    assert.ok(driveOff(sim) > 15, 'and drives on')
+  }
+  const roof = drop(Math.PI, -5)
+  assert.ok(
+    roof.events.some(e => e.type === 'crash'),
+    'coming down on its roof still tumbles (A/D rolls it back)'
+  )
+})
