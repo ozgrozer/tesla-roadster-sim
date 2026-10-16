@@ -3,7 +3,8 @@
 // from each one's stride (its phase and length), so a whole crowd walks in one draw call. Legs swing
 // from the hips with the knee bending as each comes through, arms swing against them, the body bobs
 // with each step; diving out of the Roadster's way, arms fly up and they hop. Each wears their own
-// shirt and trousers, with their own skin and hair, and stands their own height.
+// shirt and trousers, with their own skin and hair, and stands their own height. Only those the
+// camera can see (or whose shadows it can) are drawn.
 import * as THREE from 'three'
 import { merge } from './geo.js'
 import { CURB_H } from '../sim/city.js'
@@ -144,6 +145,8 @@ const PANTS = [
   0x2f4a6e, 0x16171a, 0xa8957a, 0x55595f, 0x3b3f46, 0xe6e2da, 0x6e4f3a
 ].map(c => new THREE.Color(c))
 
+const _sp = new THREE.Sphere()
+
 export class PedView {
   constructor (group, max = 300) {
     const g = figure()
@@ -185,7 +188,8 @@ export class PedView {
     group.add(this.mesh)
     this.max = max
   }
-  update (peds) {
+  // view: a THREE.Frustum of what the camera sees (none: draw everyone)
+  update (peds, view = null) {
     const m = new THREE.Matrix4(),
       q = new THREE.Quaternion(),
       p = new THREE.Vector3(),
@@ -194,6 +198,11 @@ export class PedView {
     let i = 0
     for (const d of peds.list) {
       if (i >= this.max) break
+      if (view) {
+        _sp.center.set(d.x, 0.9, d.z)
+        _sp.radius = 4.5 // (and their shadow, a few metres long)
+        if (!view.intersectsSphere(_sp)) continue
+      }
       const k = d.look
       // up on the pavement, down in the road
       const h = kerbDist(d.x, d.z) > 0 ? 0 : CURB_H
