@@ -184,6 +184,30 @@ test('the Roadster bounces off buildings, even at speed, and keeps the wheel', (
   )
 })
 
+test('flying into the side of a building bounces off without a crash', () => {
+  const sim = new Sim()
+  sim.reset('city')
+  sim.setMode('air')
+  sim.com.set(target.x0 - 20, 4, (target.z0 + target.z1) / 2)
+  sim.vel.set(30, 0, 0)
+  sim.syncPose()
+  const tr = new Traffic({ count: 0 })
+  tr.reset(sim.com.x, sim.com.z)
+  const events = []
+  for (let i = 0; i < 2 / H; i++) {
+    const c = makeControls()
+    c.fan = false
+    sim.step(H, c)
+    tr.step(H, sim)
+    events.push(...sim.events)
+    sim.events.length = 0
+  }
+  assert.ok(events.some(e => e.type === 'bump' && e.impact > 20), 'a hard hit')
+  assert.ok(!events.some(e => e.type === 'crash'), 'that bounces off')
+  assert.equal(sim.mode, 'ground', 'and it comes down on its wheels')
+  assert.ok(sim.pos.x + 2.22 < target.x0 + 0.05, 'outside the wall')
+})
+
 test('a hard hit on a car is a shove, not a crash: the Roadster stays drivable', () => {
   const lane = LANES.find(e => e.dx === 1 && e.lane === 1)
   let car
