@@ -70,18 +70,82 @@ export const ONE_SHOTS = {
     // the suspension hitting its bump stops, and the body shell flexing
     this.tone(260, 180, 0.12, 'triangle', 0.05 * k, 0.02)
   },
-  // a knock against a car, a post or a wall: a dull thud with a crunch of metal on top, pitched a
-  // little differently every time
-  bump (v) {
+  // a knock against a car, a post or a wall (what: the sim's kind for it): a dull thud with a
+  // crunch on top, pitched a little differently every time. Into a car, its panels ring as they
+  // buckle; into a wall, the thud is heavier and grit rattles down after it.
+  bump (v, what = 'car') {
     const k = clamp(v / 10, 0.15, 1),
       r = 0.85 + Math.random() * 0.3
-    this.tone(150 * r, 50, 0.25, 'sine', 0.5 * k)
-    this.noise(0.22, 0.4 * k, 'bandpass', 2400 * r, 900)
+    const wall = what === 'building' || what === 'plant'
+    this.tone((wall ? 110 : 150) * r, wall ? 38 : 50, 0.28, 'sine', 0.55 * k)
+    this.noise(0.22, 0.4 * k, 'bandpass', (wall ? 1500 : 2400) * r, 700)
+    if (what === 'car' && v > 2.5)
+      // sheet steel: a few inharmonic modes, each dying away at its own rate
+      for (const [f, d] of [
+        [430, 0.22],
+        [690, 0.16],
+        [1040, 0.12],
+        [1580, 0.09]
+      ])
+        this.tone(f * r, f * r * 0.97, d, 'triangle', 0.035 * k, 0.005)
+    if (wall && v > 4)
+      for (let i = 0; i < 4; i++)
+        this.noise(0.05, 0.05 * k, 'bandpass', 3000, 2000, 0.08 + i * 0.07)
     if (v > 6) {
       // panels buckling and glass going
       this.noise(0.5, 0.18 * k, 'highpass', 5000, 2500, 0.03)
       this.tone(640 * r, 600 * r, 0.3, 'triangle', 0.04 * k, 0.01)
     }
+  },
+  // the tyres hitting the kerb going up it (a sharp slap and a thump through the car), or dropping
+  // off it (a softer one)
+  kerb (v, up) {
+    const k = clamp(v / 15, 0.15, 1) * (up ? 1 : 0.6)
+    this.tone(95, 42, 0.22, 'sine', 0.5 * k, 0, { verb: 0.1 })
+    this.noise(0.09, 0.3 * k, 'bandpass', 900, 350, 0, { verb: 0.1 })
+    if (up) this.noise(0.04, 0.16 * k, 'highpass', 2600, 1800, 0, { verb: 0.1 })
+    this.tone(220, 170, 0.08, 'triangle', 0.04 * k, 0.015, { verb: 0 })
+  },
+  // a wheel over a manhole's lid: the iron rocking in its frame, a "clank" over a dull thud
+  clunk (v) {
+    const k = clamp(v / 20, 0.2, 1)
+    this.tone(70, 45, 0.15, 'sine', 0.3 * k, 0, { verb: 0.1 })
+    this.tone(330, 318, 0.16, 'triangle', 0.05 * k, 0.004, { verb: 0.2 })
+    this.tone(910, 890, 0.08, 'triangle', 0.025 * k, 0.004, { verb: 0.2 })
+    this.noise(0.05, 0.12 * k, 'bandpass', 1400, 700, 0, { verb: 0.1 })
+  },
+  // something flashing past close by (v: how fast, pan: which side, d: how close, m): the air torn
+  // by a post or a tree, or by a car or a bus, a longer, lower rush; the band falls as it goes by,
+  // like a doppler
+  whoosh (v, pan, big, d = 2) {
+    const k = clamp((v - 8) / 35, 0, 1) * clamp(2.2 / Math.max(d, 1), 0.25, 1),
+      dur = (big ? 0.5 : 0.24) * clamp(25 / v, 0.6, 1.4)
+    const o = { pan, verb: 0.12, attack: dur * 0.4 }
+    if (big) {
+      this.noise(dur, 0.3 * k, 'bandpass', 1100, 320, 0, o)
+      this.noise(dur, 0.22 * k, 'lowpass', 420, 110, 0, { ...o, brown: true })
+    } else this.noise(dur, 0.17 * k, 'bandpass', 1700, 600, 0, o)
+  },
+  // a bus pulling up: the air brakes' "pssht", from somewhere left or right
+  airbrake (vol, pan = 0) {
+    this.noise(0.03, 0.4 * vol, 'highpass', 3000, 3000, 0, { pan, verb: 0.3 })
+    this.noise(0.9, 0.5 * vol, 'highpass', 4200, 2400, 0.02, {
+      pan,
+      verb: 0.4,
+      attack: 0.03
+    })
+  },
+  // a gull's cry, a few falling "kyow"s, off over the water
+  gull (vol, pan) {
+    const n = 2 + Math.floor(Math.random() * 3),
+      f = 1300 + Math.random() * 500
+    for (let i = 0; i < n; i++)
+      this.tone(f * (1 - i * 0.04), f * 0.68, 0.26, 'sawtooth', vol, i * 0.32, {
+        pan,
+        verb: 0.5,
+        attack: 0.04,
+        filter: ['bandpass', 1700, 1.6]
+      })
   },
   // a post snapping off at its foot (v: how hard it was hit, already scaled for distance): the crack
   // of a splitting trunk and a rustle of leaves, or the clang of a steel pole shearing
