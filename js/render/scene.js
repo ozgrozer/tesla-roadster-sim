@@ -1,4 +1,5 @@
 // Renderer, scene, procedural textures, shared materials, lights and the test-site surroundings.
+// Everything that belongs to the test site hangs off `site`, so it can be hidden for the city.
 import * as THREE from 'three'
 import { TAU } from '../sim/constants.js'
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
@@ -26,9 +27,11 @@ renderer.toneMappingExposure = 1.05
 export const scene = new THREE.Scene()
 scene.background = new THREE.Color(0x040509)
 scene.fog = new THREE.FogExp2(0x05060a, 0.0042)
-const pmrem = new THREE.PMREMGenerator(renderer)
+export const pmrem = new THREE.PMREMGenerator(renderer)
 scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture
 scene.environmentIntensity = 0.32
+export const site = new THREE.Group()
+scene.add(site)
 
 export const camera = new THREE.PerspectiveCamera(
   50,
@@ -39,11 +42,12 @@ export const camera = new THREE.PerspectiveCamera(
 camera.position.set(-80, 4, 14)
 
 // ---------- procedural textures ----------
-function canvasTex (size, draw, repeat = 1) {
+export function canvasTex (size, draw, repeat = 1, height = size) {
   const cv = document.createElement('canvas')
-  cv.width = cv.height = size
+  cv.width = size
+  cv.height = height
   const g = cv.getContext('2d')
-  draw(g, size)
+  draw(g, size, height)
   const t = new THREE.CanvasTexture(cv)
   t.wrapS = t.wrapT = THREE.RepeatWrapping
   t.repeat.set(repeat, repeat)
@@ -51,7 +55,7 @@ function canvasTex (size, draw, repeat = 1) {
   t.anisotropy = renderer.capabilities.getMaxAnisotropy()
   return t
 }
-function speckle (g, n, size, alpha, light) {
+export function speckle (g, n, size, alpha, light) {
   for (let i = 0; i < n; i++) {
     const v = light ? 255 : 0
     g.fillStyle = `rgba(${v},${v},${v},${Math.random() * alpha})`
@@ -212,7 +216,8 @@ export const MAT = {
 }
 
 // ---------- lights ----------
-scene.add(new THREE.HemisphereLight(0x8394b8, 0x0b0b0d, 0.28))
+export const hemi = new THREE.HemisphereLight(0x8394b8, 0x0b0b0d, 0.28)
+scene.add(hemi)
 export const key = new THREE.DirectionalLight(0xe4ebff, 1.15)
 key.castShadow = true
 key.shadow.mapSize.set(2048, 2048)
@@ -232,7 +237,7 @@ function flood (x, y, z, tx, ty, tz, intensity, angle = 0.42) {
   const sp = new THREE.SpotLight(0xf3f1ea, intensity, 0, angle, 0.65, 1.6)
   sp.position.set(x, y, z)
   sp.target.position.set(tx, ty, tz)
-  scene.add(sp, sp.target)
+  site.add(sp, sp.target)
   const head = new THREE.Group()
   const box = new THREE.Mesh(
     new THREE.BoxGeometry(0.9, 0.6, 0.35),
@@ -248,7 +253,7 @@ function flood (x, y, z, tx, ty, tz, intensity, angle = 0.42) {
     MAT.darkMetal
   )
   pole.position.set(x, y / 2, z)
-  scene.add(head, pole)
+  site.add(head, pole)
   return sp
 }
 flood(-34, 2.2, 15, 4, 12, 0, 380)
@@ -265,16 +270,16 @@ flood(-440, 10, -18, -440, 0, 0, 380, 0.7)
 const ground = new THREE.Mesh(new THREE.PlaneGeometry(1600, 1600), MAT.ground)
 ground.rotation.x = -Math.PI / 2
 ground.receiveShadow = true
-scene.add(ground)
+site.add(ground)
 const pad = new THREE.Mesh(new THREE.PlaneGeometry(570, 18), MAT.pad)
 pad.rotation.x = -Math.PI / 2
 pad.position.set(-265, 0.01, 0)
 pad.receiveShadow = true
-scene.add(pad)
+site.add(pad)
 for (const zz of [-8.4, 8.4]) {
   const led = new THREE.Mesh(new THREE.BoxGeometry(550, 0.04, 0.07), MAT.ledRed)
   led.position.set(-273, 0.03, zz)
-  scene.add(led)
+  site.add(led)
 }
 for (let x = -545; x < -8; x += 6) {
   // centre dashes
@@ -282,7 +287,7 @@ for (let x = -545; x < -8; x += 6) {
   d.rotation.x = -Math.PI / 2
   d.position.set(x, 0.02, 0)
   d.receiveShadow = true
-  scene.add(d)
+  site.add(d)
 }
 
 // distant test stands with aviation beacons, plus faint stars
@@ -297,10 +302,10 @@ export const beacons = []
 ].forEach(([x, h, z]) => {
   const t = new THREE.Mesh(new THREE.BoxGeometry(8, h, 8), MAT.darkMetal)
   t.position.set(x, h / 2, z)
-  scene.add(t)
+  site.add(t)
   const b = new THREE.Mesh(new THREE.SphereGeometry(1.2, 8, 6), MAT.beacon)
   b.position.set(x, h + 1.5, z)
-  scene.add(b)
+  site.add(b)
   beacons.push(b)
 })
 {
@@ -315,7 +320,7 @@ export const beacons = []
   }
   const g = new THREE.BufferGeometry()
   g.setAttribute('position', new THREE.BufferAttribute(p, 3))
-  scene.add(
+  site.add(
     new THREE.Points(
       g,
       new THREE.PointsMaterial({
@@ -331,8 +336,9 @@ export const beacons = []
 }
 
 // The shadow-casting key light rides along with the car so its shadow stays sharp anywhere on the site.
-const _kOff = new THREE.Vector3(-26, 42, 30)
+// keyOffset is where the light sits relative to the car (the city moves it to a low sun).
+export const keyOffset = new THREE.Vector3(-26, 42, 30)
 export function followKeyLight (pos) {
-  key.position.copy(pos).add(_kOff)
+  key.position.copy(pos).add(keyOffset)
   key.target.position.copy(pos)
 }
