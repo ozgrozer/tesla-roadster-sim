@@ -1,7 +1,7 @@
 // Crashes: a rigid box tumbling on the ground with impulse-based contact and friction, and getting
 // back on the road afterwards, GTA-style.
 import * as THREE from 'three'
-import { G, TAU, CAR, AX_Y, CORNERS } from './constants.js'
+import { G, TAU, CAR, AX_Y, CORNERS, clamp } from './constants.js'
 import { pushOut, bounceCity } from './collide.js'
 
 const _a = new THREE.Vector3(),
@@ -45,21 +45,18 @@ export function enterCrash (s, reason) {
   s.emit('crash', { reason, speed: s.vel.length() })
 }
 
-// c: the driver's controls. Once the wreck comes to rest, steering rolls it back onto its wheels
-// (A one way, D the other; from its side it always goes the short way), and if it is already on
-// them, any drive key carries on from there. The autopilots never steer a wreck: they restart.
+// c: the driver's controls. Once the wreck is down on the road and no longer whirling, a wreck on
+// its wheels drives on with any drive key, still moving; one on its side or roof rolls back onto
+// them when the driver steers, once it has slowed (A one way, D the other; from its side it always
+// goes the short way). The autopilots never steer a wreck: they restart.
 export function stepCrash (s, dt, c) {
   s.crashTime += dt
   if (s.righting) return stepRighting(s, dt)
-  if (
-    c &&
-    s.crashTime > 0.5 &&
-    s.vel.length() < 1.5 &&
-    s.omegaW.length() < 1.5
-  ) {
-    if (s.up(_a).y > 0.95) {
-      if (c.throttle || c.brake || c.reverse || c.steer) return recover(s)
-    } else if (c.steer) return startRighting(s, -Math.sign(c.steer))
+  if (c && s.crashTime > 0.4 && s.com.y < 1.4 && s.omegaW.length() < 3) {
+    if (s.up(_a).y > 0.9) {
+      if (c.throttle || c.brake || c.reverse || c.steer) return recover(s, true)
+    } else if (c.steer && s.vel.length() < 5)
+      return startRighting(s, -Math.sign(c.steer))
   }
   s.vel.y -= G * dt
   s.com.addScaledVector(s.vel, dt)
@@ -180,15 +177,18 @@ function stepRighting (s, dt) {
   s.pos.copy(s.com).sub(s.up(_a).multiplyScalar(CAR.comH))
   if (u >= 1) recover(s)
 }
-// Back on the road at a standstill, where the wreck lies.
-function recover (s) {
+// Back on the road where the wreck lies: at a standstill, or still sliding along (moving).
+function recover (s, moving = false) {
   const f = s.fwd(_a)
   s.yaw = Math.atan2(-f.z, f.x)
   s.pos.set(s.com.x, 0, s.com.z)
-  s.vel.set(0, 0, 0)
+  s.yawRate = moving ? clamp(s.omegaW.y, -2, 2) : 0
+  if (moving) s.vel.y = 0
+  else s.vel.set(0, 0, 0)
   s.omega.set(0, 0, 0)
   s.omegaW.set(0, 0, 0)
-  s.speed = s.yawRate = s.steerAng = s.accLong = s.latAcc = 0
+  s.speed = s.vel.x * Math.cos(s.yaw) - s.vel.z * Math.sin(s.yaw)
+  s.steerAng = s.accLong = s.latAcc = 0
   s.righting = null
   s.crashSettled = false
   s.setMode('ground')
