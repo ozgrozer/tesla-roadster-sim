@@ -1,14 +1,44 @@
 // Autopilot in the city: drives the Roadster round the streets through the normal controls, on
 // the same lane graph as the traffic. It steers by pure pursuit along its lane, keeps its distance
 // to the cars ahead, slows for corners, stops for red lights and gives way when turning left.
+// Started, it heads for the gridlock downtown, sits in it, leans on the horn and then flies over it
+// (cityHop.js); after that it drives on, and hops over any other jam it gets stuck in.
+import { Hop, landingSpot, routeToJam } from './cityHop.js'
 import { CAR, clamp, wrapPi, makeControls } from './constants.js'
-import { LANES, NODES, GREEN, YELLOW, signal, pointAt } from './city.js'
+import {
+  LANES,
+  NODES,
+  GREEN,
+  YELLOW,
+  signal,
+  pointAt,
+  holdLight,
+  releaseLight
+} from './city.js'
 
-export const CITY_CAPS = [
-  'Autopilot · City',
-  'Driving itself downtown',
-  'Stops for red lights · gives way · keeps its distance'
-]
+const CAPS = {
+  jam: [
+    'Autopilot · City',
+    'Heading for the gridlock',
+    'Downtown, where nothing moves'
+  ],
+  stuck: ['Autopilot · City', 'Stuck in traffic', 'Nobody is going anywhere'],
+  red: [
+    'Autopilot · City',
+    'Stuck in the gridlock',
+    'Red light ahead · nobody is going anywhere'
+  ],
+  hop: [
+    'Autopilot · City',
+    'Over the traffic',
+    'Lift thrusters up, main thrusters along'
+  ],
+  free: ['Autopilot · City', 'Back on the road', 'Stuck again? It flies over']
+}
+const STUCK = 8 // s stopped in traffic before it takes off
+const HONK = [0.5, 0.75, 0.95, 1.2, 1.4, 2.4] // horn on, off, on, off, on, off (s into the wait)
+const HOP_AIR = 170 // kg of air it wants in the tanks before a hop
+let PLAN = null // the route to the gridlock (the same for every run, so worked out once)
 const CRUISE = 15 // m/s, a little over 50 km/h
 const A = 2.5 // comfortable acceleration and braking, m/s^2
 const B = 3.5
@@ -22,17 +52,28 @@ export class CityPilot {
     this.traffic = traffic
     this.reset()
   }
-  // the same fields the test-site autopilot exposes to the main loop and the HUD
+  // the same fields the test-site autopilot exposes to the main loop and the HUD, plus the horn
   reset () {
+    this.releaseLights()
     this.edge = null
     this.next = null
     this.go = null
     this.s = 0
-    this.cap = CITY_CAPS.slice()
+    this.cap = CAPS.jam.slice()
     this.shot = null
     this.countdown = null
     this.slow = 1
     this.restart = false
+    this.horn = false
+    this.acc = 0 // the acceleration it asks for, smoothed so the pedals don't flicker
+    this.stuckT = 0
+    this.hop = null
+    this.plan = PLAN || (PLAN = routeToJam()) // until it has flown over the gridlock
+  }
+  // where to go at the end of lane e: towards the gridlock while it is still heading there
+  pick (e, own = false) {
+    const c = this.plan && (this.plan.get(e) || (!own && this.plan.get(e.twin)))
+    return c || this.traffic.choose(e, DRIVER, own)
   }
 
   // Join the nearest lane that runs the way the car faces. False if there is none close by.
@@ -58,7 +99,7 @@ export class CityPilot {
     }
     if (!best || s.mode !== 'ground' || s.floor > 0) return false // (not from a roof)
     this.edge = best
-    this.next = this.traffic.choose(best, DRIVER)
+    this.next = this.pick(best)
     this.go = null
     return true
   }
@@ -68,10 +109,16 @@ export class CityPilot {
     return wrapPi(Math.atan2(z - e.cz, x - e.cx) - e.a0) * e.sg * e.r
   }
 
-  update () {
-    const sim = this.sim,
-      c = makeControls()
+  update (dt = 1 / 120) {
+    const sim = this.sim
+    if (this.hop) {
+      const c = this.hop.update(dt)
+      if (this.hop.done) this.landed()
+      return c
+    }
+    const c = makeControls()
     c.fan = false
+    this.horn = false
     if (sim.mode === 'crash') {
       if (sim.crashSettled) this.restart = true
       return c
@@ -85,7 +132,7 @@ export class CityPilot {
     this.s = this.project(this.edge, x, z)
     while (this.s > this.edge.len && this.next) {
       this.edge = this.next
-      this.next = this.traffic.choose(this.edge, DRIVER)
+      this.next = this.pick(this.edge)
       this.go = null
       this.s = this.project(this.edge, x, z)
     }
@@ -102,10 +149,10 @@ export class CityPilot {
       ) {
         this.edge = cur.twin
         this.s = this.project(this.edge, x, z)
-      } else if (this.s >= cur.len - 25)
-        this.next = this.traffic.choose(cur, DRIVER, true)
+      } else if (this.s >= cur.len - 25) this.next = this.pick(cur, true)
     }
 
+    this.lights(this.edge)
     // steer for a point a little way up the lane: further at speed, closer through a corner
     const turning =
       this.edge.kind === 1 ||
@@ -128,19 +175,21 @@ export class CityPilot {
     const hx = Math.cos(sim.yaw),
       hz = -Math.sin(sim.yaw)
     let gap = Infinity,
-      vl = 0
+      vl = 0,
+      red = false
     for (const o of this.traffic.cars) {
-      if (o.parked && !o.loose) continue
+      if (o.parked && !o.loose && !o.jam) continue // (parked in a lot, not queued in the jam)
       const dx = o.x - x,
         dz = o.z - z
       if (Math.abs(dx) > LOOK || Math.abs(dz) > LOOK) continue
       const along = dx * hx + dz * hz
-      if (
-        along <= 0 ||
-        Math.abs(dz * hx - dx * hz) > o.wid / 2 + CAR.halfW + 0.5
-      )
-        continue
-      const g = along - CAR.halfL - o.len / 2
+      if (along <= 0) continue
+      // the whole of a car counts, so one turning across in front blocks the lane with its tail too
+      const cos = Math.abs(o.hx * hx + o.hz * hz),
+        sin = Math.abs(o.hx * hz - o.hz * hx)
+      const across = (o.len / 2) * sin + (o.wid / 2) * cos
+      if (Math.abs(dz * hx - dx * hz) > CAR.halfW + 0.5 + across) continue
+      const g = along - CAR.halfL - (o.len / 2) * cos - (o.wid / 2) * sin
       if (g < gap) {
         gap = g
         vl = Math.max(
@@ -150,6 +199,8 @@ export class CityPilot {
       }
     }
     const lane = this.edge
+    // on its way to the gridlock it waits at the light like anyone else, then on the green drives on
+    // into the jammed street and pulls up behind the last car in the queue (lane.closed: in it)
     if (lane.road && this.next && this.go !== lane) {
       const toLine = lane.len - this.s - CAR.halfL
       if (toLine < LOOK && toLine > -1) {
@@ -165,6 +216,7 @@ export class CityPilot {
         if (stop && toLine - 1.4 < gap) {
           gap = toLine - 1.4
           vl = 0
+          red = true
         }
       }
     }
@@ -183,13 +235,101 @@ export class CityPilot {
         2.5 + Math.max(0, v * 1.3 + (v * (v - vl)) / (2 * Math.sqrt(A * B)))
       acc -= A * (ss / Math.max(gap, 0.2)) ** 2
     }
-    // pedals: throttle to speed up or hold, lift off and let regen slow it, brake for more
-    if (acc > -0.4) c.throttle = clamp(0.02 + acc / 13, 0, 1)
-    else if (acc < -1.4) c.brake = clamp(-acc / 13, 0, 1)
+    // Pedals that follow the asked-for acceleration smoothly: a touch of throttle holds the speed,
+    // the brake (never the on-off step of regen) slows it. Snapping between throttle, regen and brake
+    // every few frames is what rocked the car on its springs.
+    acc = clamp(acc, -9, A)
+    this.acc +=
+      (acc - this.acc) * (1 - Math.exp(-dt * (acc < this.acc ? 10 : 4)))
+    if (this.acc > -0.25) c.throttle = clamp((this.acc + 0.25) / 15, 0.001, 1)
+    else c.brake = clamp((-this.acc - 0.25) / 12, 0.002, 1)
     if (v < 0.3 && gap < 8) {
       c.throttle = 0
       c.brake = 1 // hold at a standstill
     }
+    // stuck: in the gridlock at once, elsewhere after a long wait in traffic (not at a red light)
+    const inJam = lane.closed
+    const held = v < 0.3 && gap < 9 && (inJam || !red)
+    this.stuckT = held ? this.stuckT + dt : 0
+    const wait = inJam ? 2.2 : STUCK // (in the jam it sits at the red a moment first)
+    if (this.stuckT > wait) this.wait(this.stuckT - wait, gap)
+    else if (inJam) this.cap = CAPS.red
+    else if (!this.plan) this.cap = CAPS.free
     return c
+  }
+
+  // sat in the jam: lean on the horn, then take off over it if there is somewhere to come down
+  wait (t, gap) {
+    this.cap = this.edge.closed ? CAPS.red : CAPS.stuck
+    this.horn = HONK.findIndex(h => t < h) % 2 === 1
+    if (t < HONK[HONK.length - 1] + 0.6 || this.sim.air < HOP_AIR) return
+    const spot = landingSpot(this.edge, this.s, this.traffic, gap + 10)
+    if (!spot) {
+      this.stuckT = 0 // nowhere to land yet: wait some more
+      return
+    }
+    this.hop = new Hop(this.sim, spot, this.traffic)
+    this.cap = CAPS.hop
+    this.horn = false
+  }
+  // On its way to the gridlock the lights go its way, a green wave: every one on the route turns
+  // green for it as soon as Autopilot starts (after the cross street's yellow), so each is green
+  // by the time it gets there, and goes back to its cycle once it is through. In the jam, the light
+  // at the far end of the street turns red and holds the gridlock up.
+  lights (lane) {
+    const t = this.traffic.t
+    // the junctions still ahead on the way, with the way it goes through each
+    const want = new Map()
+    if (this.plan && !lane.closed) {
+      let L = lane
+      if (!lane.road) {
+        want.set(NODES[lane.node], lane.dir & 1) // still crossing this one
+        L = lane.next[0]
+      }
+      for (let k = 0; L && !L.closed && k < 16; k++) {
+        const c = this.plan.get(L) || this.plan.get(L.twin)
+        if (!c) break
+        want.set(NODES[L.to], L.dir & 1)
+        L = c.next[0]
+      }
+    }
+    for (const node of this.held.keys())
+      if (!want.has(node)) {
+        releaseLight(node, t)
+        this.held.delete(node)
+      }
+    for (const [node, axis] of want)
+      if (!this.held.has(node)) {
+        holdLight(node, axis, t)
+        this.held.set(node, axis)
+      }
+    if (lane.closed && !this.red) {
+      this.red = NODES[lane.to]
+      holdLight(this.red, (lane.dir & 1) ^ 1, t)
+    }
+  }
+  // every light it held back on its cycle (when it lands, or hands over)
+  releaseLights () {
+    const t = this.traffic?.t ?? 0
+    for (const node of this.held?.keys() || []) releaseLight(node, t)
+    if (this.red) releaseLight(this.red, t)
+    this.held = new Map()
+    this.red = null
+  }
+  // back on the road beyond the jam: carry on down the lane it came down on
+  landed () {
+    this.releaseLights()
+    const to = this.hop.to
+    this.hop = null
+    this.plan = null
+    this.stuckT = 0
+    this.acc = 0
+    this.cap = CAPS.free
+    const sim = this.sim
+    if (sim.mode !== 'ground') return
+    this.edge = to.lane
+    this.s = this.project(this.edge, sim.pos.x, sim.pos.z)
+    this.next = this.pick(this.edge)
+    this.go = null
   }
 }
