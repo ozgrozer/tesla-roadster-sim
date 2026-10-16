@@ -217,6 +217,12 @@ export class SoundEngine {
     this.tone(120, 36, 0.5, 'sine', 0.55 * k)
     this.noise(0.35, 0.35 * k, 'lowpass', 700, 90)
   }
+  // a knock against a car, a post or a wall: a dull thud with a crunch of metal on top
+  bump (v) {
+    const k = clamp(v / 10, 0.15, 1)
+    this.tone(150, 50, 0.25, 'sine', 0.5 * k)
+    this.noise(0.22, 0.4 * k, 'bandpass', 2400, 900)
+  }
   crash () {
     this.noise(1.1, 0.7, 'lowpass', 4000, 150)
     this.tone(190, 55, 0.7, 'sawtooth', 0.16)
