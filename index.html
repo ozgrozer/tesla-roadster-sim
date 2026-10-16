@@ -21,9 +21,22 @@
       <div class="top">
         <div class="brand">
           <h1>Tesla Roadster Sim</h1>
-          <p>170° inverted wall · 10 cold-gas thrusters · McGregor test site</p>
+          <p id="brandSub">
+            170° inverted wall · 10 cold-gas thrusters · McGregor test site
+          </p>
         </div>
         <div class="controls-top">
+          <button
+            class="btn btn-world"
+            id="btnWorld"
+            type="button"
+            aria-label="Drive in the city"
+          >
+            <svg viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M1 15V8h3V4h3v3h2V1h4v14M11 4h0M11 7h0M11 10h0" />
+            </svg>
+            <span id="worldLabel">City</span>
+          </button>
           <button class="btn mode-pill" id="btnMode" type="button">
             <span class="dot"></span><span id="modeLabel">Autopilot</span>
           </button>
@@ -74,6 +87,7 @@
           <li>
             <kbd>V</kbd> camera · <kbd>T</kbd> slow-mo · <kbd>N</kbd> sound
           </li>
+          <li><kbd>C</kbd> drive the city · back to the test site</li>
           <li><kbd>H</kbd> hide this panel</li>
         </ul>
         <p class="note">Any drive key during the demo hands you the wheel.</p>
@@ -143,6 +157,8 @@
         </div>
       </div>
 
+      <canvas class="radar" id="radar" aria-label="City map"></canvas>
+
       <div class="context-hint" id="hint">
         Autopilot demo running · press any drive key to take over
       </div>
@@ -199,6 +215,7 @@
         </div>
       </div>
     </div>
+    <div class="fade" id="fade"></div>
     <!-- One self-contained script built from js/ (npm run build), so this page opens straight from disk. -->
     <script src="dist/roadster.js"></script>
     <script>
