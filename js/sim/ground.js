@@ -59,10 +59,13 @@ export function stepGround (s, dt, c, main, lift) {
   // longitudinal demand at the tyres
   const au = Math.abs(u),
     su = u > 0.02 ? 1 : u < -0.02 ? -1 : 0
+  // the e-brake overrides the throttle while it is held (W held through a handbrake turn picks up
+  // again as soon as it comes off)
+  const throttle = c.ebrake ? 0 : c.throttle
   let Fdrive = 0
-  if (c.throttle > 0 && u < CAR.vMax)
+  if (throttle > 0 && u < CAR.vMax)
     Fdrive +=
-      c.throttle * Math.min(m * CAR.driveAccelMax, CAR.powerW / Math.max(au, 1))
+      throttle * Math.min(m * CAR.driveAccelMax, CAR.powerW / Math.max(au, 1))
   if (c.reverse > 0 && u > -10) Fdrive -= c.reverse * m * 5
   const coasting =
     c.throttle === 0 && c.reverse === 0 && c.brake === 0 && !c.ebrake
@@ -72,7 +75,10 @@ export function stepGround (s, dt, c, main, lift) {
       clamp(au / 2.5, 0, 1) *
       Math.min(1, CAR.regenPowerW / (m * CAR.regenAccel * Math.max(au, 1)))
     : 0
-  const Fbrake = c.brake * m * CAR.brakeAccel
+  // Space stops the car hard in a straight line: with the wheel straight the e-brake brings in the
+  // front brakes too; turned, it leaves the fronts free so the locked rears swing the car round
+  const ebFront = c.ebrake ? 0.8 * (1 - Math.min(1, Math.abs(c.steer))) : 0
+  const Fbrake = Math.min(1, c.brake + ebFront) * m * CAR.brakeAccel
   let Fxf = 0.4 * Fdrive - su * (0.6 * Fbrake + 0.5 * Fregen)
   let Fxr = 0.6 * Fdrive - su * (0.4 * Fbrake + 0.5 * Fregen)
   // traction control + ABS: keep the grip the tyres are using to corner, leave at least 35% for drive/brakes
@@ -177,7 +183,7 @@ export function stepGround (s, dt, c, main, lift) {
   }
 
   // brakes, regen and rolling resistance can stop the car but never push it backwards
-  const pushing = c.throttle > 0 || c.reverse > 0 || main > 0
+  const pushing = throttle > 0 || c.reverse > 0 || main > 0
   const cy2 = Math.cos(s.yaw),
     sy2 = Math.sin(s.yaw)
   let uN = v.x * cy2 - v.z * sy2
