@@ -1,23 +1,23 @@
-// The city's ground: open land, asphalt, kerbed blocks with sidewalks and rounded corners, lane
-// paint, stop lines and zebra crossings, parks, parking lots and the barrier round the ring road.
+// The city's ground: asphalt, kerbed blocks with sidewalks and rounded corners, lane
+// paint, stop lines and zebra crossings, parks, parking lots and the promenade round the ring road.
 import * as THREE from 'three'
-import { merge, marks, box } from './geo.js'
+import { merge, marks } from './geo.js'
 import { canvasTex, speckle } from './scene.js'
 import {
   N,
-  ROADS,
-  ROAD_HW,
+  DIRS,
   WALK,
-  CURB_H,
-  CURB_R,
   STOP,
   HALF,
-  LANE_W,
-  BARRIER,
-  BLOCKS,
+  ROADS,
   NODES,
-  DIRS,
-  STALLS
+  STALLS,
+  CURB_H,
+  CURB_R,
+  BLOCKS,
+  LANE_W,
+  ROAD_HW,
+  PROMENADE
 } from '../sim/city.js'
 
 // ---------- textures (UVs are in metres, so each texture's repeat is 1 / its tile size) ----------
@@ -92,15 +92,7 @@ function textures () {
     }
   })
   grass.repeat.set(1 / 8, 1 / 8)
-  const dirt = canvasTex(512, (g, S) => {
-    g.fillStyle = '#8a7d5e' // dry scrub
-    g.fillRect(0, 0, S, S)
-    blotches(g, S, 40, 'rgba(90,96,58,0.16)', 'rgba(200,180,130,0.14)', 30, 120)
-    speckle(g, 12000, S, 0.18, false)
-    speckle(g, 6000, S, 0.1, true)
-  })
-  dirt.repeat.set(1 / 24, 1 / 24)
-  return { asphalt, walk, plaza, grass, dirt }
+  return { asphalt, walk, plaza, grass }
 }
 
 // rounded rectangle in shape space (x, -z), so it lies flat after rotateX(-90deg)
@@ -143,12 +135,7 @@ export function buildGround (group) {
     asphalt: mat(T.asphalt, 0xffffff, 0.88),
     walk: mat(T.walk),
     plaza: mat(T.plaza),
-    grass: mat(T.grass, 0xffffff, 0.98),
-    dirt: mat(T.dirt, 0xffffff, 1),
-    concrete: new THREE.MeshStandardMaterial({
-      color: 0xb9b4aa,
-      roughness: 0.85
-    })
+    grass: mat(T.grass, 0xffffff, 0.98)
   }
   const add = (geo, m, shadow = true) => {
     const mesh = new THREE.Mesh(geo, m)
@@ -156,8 +143,7 @@ export function buildGround (group) {
     group.add(mesh)
     return mesh
   }
-  // open land out to the horizon, and the asphalt under the whole street grid
-  add(flat(-1800, -1800, 1800, 1800, -0.03), M.dirt, false)
+  // the asphalt under the whole street grid (the beach and the sea round it: citySea.js)
   const ra = HALF + ROAD_HW + 0.5
   add(flat(-ra, -ra, ra, ra, 0), M.asphalt)
 
@@ -182,9 +168,9 @@ export function buildGround (group) {
         flat(x0, z0, x1, z1, y)
       )
   }
-  // the sidewalk on the outside of the ring road, out to the barrier
+  // the promenade: the sidewalk on the outside of the ring road, out to the beach
   const outer = new THREE.Shape(),
-    o = BARRIER + 1,
+    o = PROMENADE,
     i = HALF + ROAD_HW
   outer.moveTo(-o, -o)
   outer.lineTo(o, -o)
@@ -203,20 +189,6 @@ export function buildGround (group) {
   add(merge(lots.plaza), M.plaza)
   add(merge(lots.grass), M.grass)
   add(merge(lots.asphalt), M.asphalt)
-
-  // concrete barrier round the city
-  const bw = BARRIER,
-    L = 2 * bw + 1.6
-  const barrier = add(
-    merge([
-      box(-bw - 0.8, 0, -bw - 0.8, bw + 0.8, 1.1, -bw),
-      box(-bw - 0.8, 0, bw, bw + 0.8, 1.1, bw + 0.8),
-      box(-bw - 0.8, 0, -L / 2, -bw, 1.1, L / 2),
-      box(bw, 0, -L / 2, bw + 0.8, 1.1, L / 2)
-    ]),
-    M.concrete
-  )
-  barrier.castShadow = true
 
   // ---------- paint ----------
   const white = [],
