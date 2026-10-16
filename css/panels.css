@@ -236,6 +236,16 @@
   stroke-width: 0.8;
   stroke-linecap: round;
 }
+/* the telemetry strip reaches the corner on narrower screens: sit just above it */
+@media (max-width: 1020px) {
+  .promo {
+    bottom: calc(max(14px, env(safe-area-inset-bottom, 0px)) + 73px);
+    padding: 4px 8px 4px 6px;
+  }
+  .schematic {
+    bottom: 118px;
+  }
+}
 
 @media (max-width: 760px) {
   .schematic {
@@ -246,7 +256,7 @@
     left: auto;
     right: max(16px, env(safe-area-inset-right, 0px));
     top: auto;
-    bottom: 86px;
+    bottom: 106px;
     width: 104px;
     height: 104px;
   }
@@ -284,6 +294,9 @@
   }
   .credit {
     display: none;
+  }
+  .promo {
+    bottom: calc(max(14px, env(safe-area-inset-bottom, 0px)) + 62px);
   }
   .help {
     display: none;
