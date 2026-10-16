@@ -5,6 +5,9 @@ import { BUILDINGS, rng, query, addCollider } from './city.js'
 
 export const PARAPET = 0.3 // m thick
 export const PARAPET_H = 0.9 // m above the roof
+export const LIP = 0.3 // the roof's edging: m wide
+export const LIP_H = 0.1 // and m high, drawn only (the wheels roll over it)
+export const STEP = 0.3 // a roof up to this much higher than the one the car is on is driven onto
 
 // plant, kept on each building as b.plant for the renderer
 const R = rng(4242)
