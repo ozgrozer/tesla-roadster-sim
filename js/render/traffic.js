@@ -5,7 +5,9 @@
 // headlights, tail lights that brighten under braking, amber indicators that blink for lane changes
 // and turns (and both at once, hazards, for a car knocked out of its lane), and a soft shadow on the
 // road under each car, where its body shuts out the sky. Parked in a lot, a car's lights are off; at
-// night (this.night) the headlights throw their beams on the road ahead.
+// night (this.night) the headlights throw their beams on the road ahead. Only the cars the camera
+// can see are drawn (or whose shadows it can: the frustum is let out a little for those), in the
+// view and in the sun's shadow map alike; out of sight a car costs nothing but its springs.
 import * as THREE from 'three'
 import { hdr } from './scene.js'
 import { CURB_H } from '../sim/city.js'
@@ -92,6 +94,8 @@ const _m = new THREE.Matrix4(),
   _y = new THREE.Vector3(0, 1, 0),
   _z = new THREE.Vector3(0, 0, 1),
   _sc = new THREE.Vector3()
+const _sp = new THREE.Sphere()
+const SHADOW_REACH = 8 // m: the long evening shadow a car just out of sight throws into it
 const TAIL = hdr(1.6, 0.04, 0.03),
   BRAKE = hdr(4, 0.12, 0.06),
   TAIL_OFF = hdr(0.12, 0.01, 0.01),
@@ -240,7 +244,8 @@ export class TrafficView {
     this.max = max
   }
 
-  update (traffic, dt = 0) {
+  // view: a THREE.Frustum of what the camera sees (none: draw every car)
+  update (traffic, dt = 0, view = null) {
     const counts = this.types.map(() => 0)
     const rimN = { alloy: 0, steel: 0 }
     let w = 0,
@@ -254,9 +259,14 @@ export class TrafficView {
       const ty = this.types[car.type],
         i = counts[car.type]
       if (i >= this.max) continue
-      counts[car.type]++
       const { T, S } = ty
       if (!car.parked) ride(car, T, S, dt)
+      if (view) {
+        _sp.center.set(car.x, 1, car.z)
+        _sp.radius = T.len / 2 + SHADOW_REACH
+        if (!view.intersectsSphere(_sp)) continue
+      }
+      counts[car.type]++
       // the car where it stands (in a parking lot, up on its raised slab), and its body tipped on
       // its springs about the axles' height
       const y = car.parked && !car.jam ? CURB_H : 0
