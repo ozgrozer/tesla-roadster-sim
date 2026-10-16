@@ -2,7 +2,22 @@
 // mapping (a gamepad's sticks and triggers are analog: gamepad.js).
 import { Pad } from './gamepad.js'
 import { TRACK } from '../sim/track.js'
-import { makeControls } from '../sim/constants.js'
+import { clamp, makeControls } from '../sim/constants.js'
+
+// The steering keys ease the wheel over rather than throwing it to full lock: full in KEY_T s at a
+// standstill and KEY_T_V s more per m/s, so at speed a tap is a small correction, holding the key a
+// lane change, then a turn at the tyres' limit; with the handbrake pulled, or the car sliding, as
+// fast as at a standstill (a handbrake turn, a slide to catch). Let go and it comes back KEY_BACK
+// times as fast.
+const KEY_T = 0.1,
+  KEY_T_V = 0.011,
+  KEY_BACK = 2.5
+// k eased towards want (-1, 0 or 1) at up per s, and back to the middle at down per s
+export function easeKey (k, want, up, down, dt) {
+  if (want !== 0 && k * want >= 0)
+    return want > 0 ? Math.min(want, k + up * dt) : Math.max(want, k - up * dt)
+  return k > 0 ? Math.max(0, k - down * dt) : Math.min(0, k + down * dt)
+}
 
 export const DRIVE_KEYS = new Set([
   'KeyW',
@@ -104,6 +119,7 @@ export class Input {
     // (a stick that was steering only flies the car once it has come back to the middle)
     if (!air || Math.hypot(pad.stickX, pad.stickY) < 0.2) this.padStale = false
     this.wasAir = air
+    const dt = clamp(sim.time - this.lastT, 0, 0.05)
     this.lastT = sim.time
     const W = this.held('KeyW', 'ArrowUp', air),
       S = this.held('KeyS', 'ArrowDown', air)
@@ -134,7 +150,17 @@ export class Input {
       )
     } else {
       c.throttle = Math.max(W ? 1 : 0, pad.throttle)
-      c.steer = or((A ? 1 : 0) - (D ? 1 : 0), pad.steer)
+      // (sliding: the rear axle running ten degrees or more off the line of the car)
+      const sliding = sim.mode === 'ground' && Math.abs(sim.slipR) > 0.17
+      const T = c.ebrake || sliding ? KEY_T : KEY_T + KEY_T_V * sim.groundSpeed()
+      this.keySteer = easeKey(
+        this.keySteer || 0,
+        (A ? 1 : 0) - (D ? 1 : 0),
+        1 / T,
+        KEY_BACK / T,
+        dt
+      )
+      c.steer = or(this.keySteer, pad.steer)
       const brake = Math.max(S ? 1 : 0, pad.brake)
       if (brake > 0.02) {
         // S brakes while rolling forward, then reverses (also back down the wall)
