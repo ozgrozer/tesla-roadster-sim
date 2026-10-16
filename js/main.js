@@ -23,6 +23,7 @@ import { DEG, TAU, makeControls } from './sim/constants.js'
 import { LED_MAT, buildWall, buildTruss } from './render/wall.js'
 import { buildRoadster, updateRoadster } from './render/roadster.js'
 import { Post } from './render/post.js'
+import { Resolution } from './render/resolution.js'
 import {
   MAT,
   scene,
@@ -48,6 +49,7 @@ const RS = buildRoadster()
 attachDiamonds(RS)
 
 const post = new Post(renderer, scene, camera) // bloom, speed blur, tone mapping
+const resolution = new Resolution(renderer, post) // sharp while the GPU keeps up, less when not
 
 // ---------- state ----------
 const sim = new Sim()
@@ -439,7 +441,10 @@ function frame (now) {
   mixSound(sound, app, traffic, dt, clock)
   hud.update(dt, app)
   if (city) cityView.shadows(camera, [RS.car])
+  resolution.begin()
   post.render(sim, rig.shot, dt)
+  resolution.end()
+  resolution.update(dt)
   tween.restore()
   if (firstFrame) {
     firstFrame = false
@@ -464,6 +469,8 @@ window.__roadster = {
   peds,
   cityView,
   renderer,
+  resolution,
+  post,
   setAuto,
   resetTo,
   setWorld,
