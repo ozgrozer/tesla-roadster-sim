@@ -178,12 +178,31 @@ function shopMaps () {
   lit.needsUpdate = true
   return { map, lit }
 }
+// a flat roof's membrane (4 m a tile): laid in metre-wide strips lapped at the seams, with the
+// stains where rain stood in puddles
 function roofTex () {
   return canvasTex(256, (g, S) => {
-    g.fillStyle = '#6a6862'
+    g.fillStyle = '#8a8780'
     g.fillRect(0, 0, S, S)
-    speckle(g, 9000, S, 0.3, false)
+    speckle(g, 9000, S, 0.26, false)
     speckle(g, 4000, S, 0.15, true)
+    for (let i = 0; i < 7; i++) {
+      const x = R() * S,
+        y = R() * S,
+        r = 14 + R() * 40
+      const gr = g.createRadialGradient(x, y, 0, x, y, r)
+      gr.addColorStop(0, 'rgba(40,38,34,0.16)')
+      gr.addColorStop(0.8, 'rgba(40,38,34,0.1)')
+      gr.addColorStop(1, 'rgba(0,0,0,0)')
+      g.fillStyle = gr
+      g.fillRect(x - r, y - r, r * 2, r * 2)
+    }
+    for (let y = 0; y < S; y += S / 4) {
+      g.fillStyle = 'rgba(30,29,26,0.32)'
+      g.fillRect(0, y, S, 2)
+      g.fillStyle = 'rgba(255,255,255,0.08)'
+      g.fillRect(0, y + 2, S, 3)
+    }
   })
 }
 
@@ -316,7 +335,10 @@ export function buildBuildings (group) {
   for (const b of BUILDINGS) {
     const out = B[b.style]
     col.setHex(b.tint).multiplyScalar(0.94 + R() * 0.12)
-    const roofCol = new THREE.Color().setScalar(0.75 + R() * 0.3)
+    // a pale membrane on some roofs, grey on the rest
+    const roofCol = new THREE.Color().setScalar(
+      R() < 0.35 ? 1.05 + R() * 0.15 : 0.55 + R() * 0.3
+    )
     const awning = new THREE.Color().setScalar(0.16 + R() * 0.08)
     b.tiers.forEach((t, k) => {
       const base = k === 0 && b.shop ? SHOP : t.y0
