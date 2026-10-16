@@ -1,17 +1,28 @@
-// Cameras: the autopilot's director shots, a GTA-style follow camera, chase, side and free orbit.
+// Cameras: the autopilot's director shots, a GTA-style follow camera, chase, the driver's seat, side
+// and free orbit.
 import * as THREE from 'three'
 import { clamp, wrapPi } from '../sim/constants.js'
 import { TRACK, LINEUP_FIRST, LINEUP_LAST } from '../sim/track.js'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 
-export const CAM_MODES = ['director', 'follow', 'chase', 'side', 'free']
+export const CAM_MODES = [
+  'director',
+  'follow',
+  'chase',
+  'cockpit',
+  'side',
+  'free'
+]
 export const CAM_NAMES = {
   director: 'Director',
   follow: 'Follow',
   chase: 'Chase',
+  cockpit: 'Cockpit',
   side: 'Side',
   free: 'Free'
 }
+// the shots that ride along with the car (the road trembles up through them; speed blurs them)
+export const RIDING = new Set(['follow', 'chase', 'cockpit'])
 
 const lerpK = (k, dt) => 1 - Math.exp(-k * dt)
 const BLEND_TIME = 1.8 // s to ease from one shot into the next (cuts skip it)
@@ -19,7 +30,8 @@ const SWING = 2.6 // rad/s: the fastest the follow camera swings round behind th
 const _p = new THREE.Vector3(),
   _f = new THREE.Vector3(),
   _u = new THREE.Vector3(),
-  _t = new THREE.Vector3()
+  _t = new THREE.Vector3(),
+  _r = new THREE.Vector3()
 const FIX = {
   launch: new THREE.Vector3(-58, 1.3, 9),
   wallWide: new THREE.Vector3(-34, 3.2, 27),
@@ -53,6 +65,8 @@ export class CameraRig {
     this.shotT = 0 // seconds since the current shot began
     this.chaseDir = new THREE.Vector3(1, 0, 0)
     this.clip = null // (aim, pos) => pulls pos in front of anything solid; set in the city
+    this.cockpit = null // { head, body }: the driver's head and the car's body, for the Cockpit
+    this.camUp = new THREE.Vector3(0, 1, 0)
     this.controls = new OrbitControls(camera, dom)
     this.controls.enabled = false
     this.controls.enableDamping = true
@@ -74,7 +88,8 @@ export class CameraRig {
     }
     this.drag = null
     dom.addEventListener('pointerdown', e => {
-      if (this.mode === 'follow' && e.button === 0 && e.pointerType === 'mouse')
+      const looks = this.mode === 'follow' || this.mode === 'cockpit'
+      if (looks && e.button === 0 && e.pointerType === 'mouse')
         this.drag = { x: e.clientX, y: e.clientY }
     })
     window.addEventListener('pointermove', e => {
@@ -105,6 +120,7 @@ export class CameraRig {
     this.controls.enabled = m === 'free'
     if (m === 'free') this.controls.target.copy(this.look)
     if (m === 'follow') this.f.init = false
+    this.f.yawOff = this.f.pitchOff = 0
   }
   // the car was just put somewhere else: cut to it rather than ease over from where the camera was
   cut () {
@@ -198,6 +214,35 @@ export class CameraRig {
     // wider with speed, and a kick wider still while the main thrusters fire
     f.kick += (sim.thrMain - f.kick) * lerpK(4, dt)
     return 55 + Math.min(16, speed * 0.14) + 8 * f.kick
+  }
+
+  // From the driver's seat: the eyes just ahead of Optimus's head (hidden from in here), looking out
+  // along the car through the windshield and a little down at the road, turned with the mouse or the
+  // right stick, and a little way into the turn. It rides with the body, so it pitches and rolls on
+  // the springs, and the view tilts with the car.
+  driverSeat (dt, sim) {
+    const { head, body } = this.cockpit
+    const f = this.f
+    f.idle += dt
+    if (f.idle > 1.5 && !this.drag) {
+      const k = lerpK(2, dt)
+      f.yawOff -= f.yawOff * k
+      f.pitchOff -= f.pitchOff * k
+    }
+    body.updateWorldMatrix(true, true)
+    _f.set(1, 0, 0).transformDirection(body.matrixWorld)
+    _u.set(0, 1, 0).transformDirection(body.matrixWorld)
+    head.getWorldPosition(this.pos)
+    this.pos.addScaledVector(_u, 0.1).addScaledVector(_f, 0.04)
+    this.camUp.copy(_u)
+    // the gaze: along the car, turned about its up axis and tipped down a little
+    const yaw = f.yawOff + sim.steerAng * 0.5,
+      pitch = -0.1 - f.pitchOff * 0.6
+    _t.copy(_f).applyAxisAngle(_u, yaw)
+    _r.crossVectors(_t, _u).normalize() // (to the right of the gaze)
+    _t.applyAxisAngle(_r, pitch)
+    this.aim.copy(this.pos).addScaledVector(_t, 10)
+    return 72
   }
 
   // velocity-led action camera
@@ -378,6 +423,10 @@ export class CameraRig {
         fov = this.chase(sim, P)
         k = sim.mode === 'ramp' ? 6 : 5
         break
+      case 'cockpit':
+        fov = this.driverSeat(dt, sim)
+        cut = snap = true
+        break
       default:
         shot = 'follow'
         fov = this.follow(dt, sim, P)
@@ -413,9 +462,11 @@ export class CameraRig {
     this.look.copy(this.fromLookOff).add(P).lerp(this.shotLook, e)
     if (this.clip && (shot === 'follow' || shot === 'chase'))
       this.clip(this.look, cam.position)
-    cam.fov += (fov - cam.fov) * lerpK(3, dt)
+    cam.fov += (fov - cam.fov) * lerpK(shot === 'cockpit' ? 12 : 3, dt)
     cam.updateProjectionMatrix()
-    cam.up.set(0, 1, 0)
+    // (from the driver's seat the horizon tilts with the car; every other shot keeps it level)
+    if (shot === 'cockpit') cam.up.copy(this.camUp)
+    else cam.up.set(0, 1, 0)
     cam.lookAt(this.look)
     if (this.shakeAmt > 0.001) {
       // a quick judder that dies away, not a fresh random jump every frame
@@ -424,7 +475,7 @@ export class CameraRig {
       this.shakeAmt *= Math.exp(-dt * 6)
     }
     // the road coming up through the car at speed: a fine tremble, coarser on sand or grass
-    if ((shot === 'follow' || shot === 'chase') && sim.mode === 'ground') {
+    if (RIDING.has(shot) && sim.mode === 'ground') {
       const rough = sim.surface === 'sand' || sim.surface === 'grass' ? 3 : 1
       const a =
         clamp((sim.groundSpeed() - 18) / 70, 0, 1) * 0.011 * rough +
