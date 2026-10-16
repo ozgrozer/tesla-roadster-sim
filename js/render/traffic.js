@@ -4,7 +4,8 @@
 // their springs (nose down under braking, squatting as they pull away, leaning out of a corner),
 // headlights, tail lights that brighten under braking, amber indicators that blink for lane changes
 // and turns (and both at once, hazards, for a car knocked out of its lane), and a soft shadow on the
-// road under each car, where its body shuts out the sky.
+// road under each car, where its body shuts out the sky. Parked in a lot, a car's lights are off; at
+// night (this.night) the headlights throw their beams on the road ahead.
 import * as THREE from 'three'
 import { hdr } from './scene.js'
 import { CURB_H } from '../sim/city.js'
@@ -52,6 +53,32 @@ function underTexture () {
   t.colorSpace = THREE.SRGBColorSpace
   return t
 }
+// a headlight's throw on the road: a cone, brightest just ahead of the car, widening and fading
+// as it goes
+function beamTexture () {
+  const W = 128,
+    Hh = 64,
+    cv = document.createElement('canvas')
+  cv.width = W
+  cv.height = Hh
+  const g = cv.getContext('2d'),
+    img = g.createImageData(W, Hh)
+  for (let y = 0; y < Hh; y++)
+    for (let x = 0; x < W; x++) {
+      const u = x / W,
+        v = (y + 0.5) / Hh - 0.5,
+        wide = 0.06 + 0.36 * u
+      const a = Math.pow(1 - u, 1.6) * Math.exp(-(v * v) / (2 * wide * wide))
+      const i = (y * W + x) * 4
+      img.data[i] = img.data[i + 1] = img.data[i + 2] = 255
+      const fade = Math.min(1, a * 1.3) * Math.min(1, u * 12) // (in from the lamp)
+      img.data[i + 3] = Math.round(255 * fade)
+    }
+  g.putImageData(img, 0, 0)
+  const t = new THREE.CanvasTexture(cv)
+  t.colorSpace = THREE.SRGBColorSpace
+  return t
+}
 
 const _m = new THREE.Matrix4(),
   _b = new THREE.Matrix4(),
@@ -67,6 +94,9 @@ const _m = new THREE.Matrix4(),
   _sc = new THREE.Vector3()
 const TAIL = hdr(1.6, 0.04, 0.03),
   BRAKE = hdr(4, 0.12, 0.06),
+  TAIL_OFF = hdr(0.12, 0.01, 0.01),
+  HEAD = hdr(2.6, 2.6, 2.4),
+  HEAD_OFF = hdr(0.14, 0.14, 0.15),
   AMBER = hdr(3, 1.1, 0.05),
   AMBER_OFF = hdr(0.25, 0.1, 0.02)
 
@@ -163,7 +193,7 @@ export class TrafficView {
     const lamp = new THREE.BoxGeometry(0.05, 0.11, 0.34)
     const lit = () => new THREE.MeshBasicMaterial({ toneMapped: false })
     this.heads = mesh(lamp, lit(), max * 2, false)
-    this.heads.material.color = hdr(2.6, 2.6, 2.4)
+    this.heads.setColorAt(0, HEAD)
     this.tails = mesh(lamp, lit(), max * 2, false)
     this.tails.setColorAt(0, TAIL)
     this.blinkers = mesh(
@@ -189,6 +219,24 @@ export class TrafficView {
       false
     )
     this.under.receiveShadow = false
+    this.beams = mesh(
+      new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2),
+      new THREE.MeshBasicMaterial({
+        map: beamTexture(),
+        color: new THREE.Color(1, 0.9, 0.72),
+        transparent: true,
+        opacity: 0.3,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        polygonOffset: true,
+        polygonOffsetFactor: -4,
+        polygonOffsetUnits: -4
+      }),
+      max,
+      false
+    )
+    this.beams.receiveShadow = false
+    this.night = false
     this.max = max
   }
 
@@ -198,7 +246,8 @@ export class TrafficView {
     let w = 0,
       l = 0,
       b = 0,
-      u = 0
+      u = 0,
+      hb = 0
     // indicators flash at 1.5 Hz
     const flash = Math.sin(traffic.t * Math.PI * 3) > 0
     for (const car of traffic.cars) {
@@ -257,13 +306,25 @@ export class TrafficView {
           rims.setMatrixAt(rimN[kind], _w)
           rims.setColorAt(rimN[kind]++, rimCol)
         }
+      // (in a parking lot, its lights are off; on the road at night, its beams are on the road)
+      const lit = !car.parked || car.jam
+      if (lit && this.night)
+        this.beams.setMatrixAt(
+          hb++,
+          _w.compose(
+            _p.set(T.len / 2 + 7, 0.025, 0).applyMatrix4(_m),
+            _q.setFromAxisAngle(_y, car.yaw),
+            _sc.set(14, 1, 6.5)
+          )
+        )
       for (const side of [-1, 1]) {
         const z = side * (T.wid / 2 - 0.3)
         _w.makeTranslation(T.len / 2 + 0.01, S.lights[0], z)
         this.heads.setMatrixAt(l, _w.premultiply(_b))
+        this.heads.setColorAt(l, lit ? HEAD : HEAD_OFF)
         _w.makeTranslation(-T.len / 2 - 0.01, S.lights[1], z)
         this.tails.setMatrixAt(l, _w.premultiply(_b))
-        this.tails.setColorAt(l, car.brake ? BRAKE : TAIL)
+        this.tails.setColorAt(l, lit ? (car.brake ? BRAKE : TAIL) : TAIL_OFF)
         l++
         // indicators at each corner: side -1 is the car's left
         const on =
@@ -298,14 +359,17 @@ export class TrafficView {
     this.heads.count = this.tails.count = l
     this.blinkers.count = b
     this.under.count = u
+    this.beams.count = hb
     for (const m of [
       this.tyres,
       this.heads,
       this.tails,
       this.blinkers,
-      this.under
+      this.under,
+      this.beams
     ])
       m.instanceMatrix.needsUpdate = true
+    this.heads.instanceColor.needsUpdate = true
     this.tails.instanceColor.needsUpdate = true
     this.blinkers.instanceColor.needsUpdate = true
   }
