@@ -13,24 +13,30 @@ import * as THREE from 'three'
 const BAY = 3 // m: a texture cell is a bay wide (cityBuildings.js) ...
 const STOREY = 3.5 // ... and a storey high
 const ROOM = 4.5 // m: how far back a room runs, on average
+// 0 at golden hour, 1 at night: more of the windows lit (those lit by day stay lit), the dark rooms
+// darker still
+export const NIGHT = { value: 0 }
 
 // win: the window's rectangle in a cell (x, y from the cell's top, w, h, as fractions); lit: share
-// of windows with a light on; blinds: share with blinds down; tilt: how far panes go off true;
+// of windows with a light on (and litNight, at night); blinds: share with blinds down; tilt: how far
+// panes go off true;
 // inset: m the glass sits back from the wall face; glassMetal: how mirrored the glass is (0 for
 // clear glass, more for a curtain wall's coated panes)
 export function facadeMaterial (
   opts,
-  { cells, win, lit, blinds, tilt, inset, glassMetal = 0 }
+  { cells, win, lit, litNight = lit, blinds, tilt, inset, glassMetal = 0 }
 ) {
   const m = new THREE.MeshStandardMaterial(opts)
   const f = v => v.toFixed(4)
   const [wx, wy, ww, wh] = win.map(f)
   const C = cells.toFixed(1)
   m.onBeforeCompile = shader => {
+    shader.uniforms.uNight = NIGHT
     shader.fragmentShader = shader.fragmentShader
       .replace(
         '#include <common>',
         `#include <common>
+        uniform float uNight;
         float cellHash (vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
         float gBlind = 0.0, gWin = 0.0;
         vec2 gCell = vec2(0.0);
@@ -120,15 +126,16 @@ export function facadeMaterial (
         '#include <emissivemap_fragment>',
         `{
           float h1 = cellHash(gCell), h2 = cellHash(gCell + 17.3), h3 = cellHash(gCell + 41.1);
-          float on = step(h1, ${lit.toFixed(3)});
+          float on = step(h1, mix(${lit.toFixed(3)}, ${litNight.toFixed(3)}, uNight));
           vec3 warm = mix(vec3(1.0, 0.66, 0.36), vec3(1.0, 0.84, 0.62), h2);
           vec3 light = mix(warm, vec3(0.72, 0.84, 1.0), step(0.8, h3)) * (0.35 + 0.65 * h2);
           // a lit room, or a dark one with only the dusk in it
-          totalEmissiveRadiance *= gWin * gRoom * mix(vec3(0.07, 0.065, 0.075), light, on);
+          vec3 dark = vec3(0.07, 0.065, 0.075) * (1.0 - 0.8 * uNight);
+          totalEmissiveRadiance *= gWin * gRoom * mix(dark, light, on);
         }`
       )
   }
   m.customProgramCacheKey = () =>
-    `facade ${win} ${lit} ${blinds} ${tilt} ${inset} ${glassMetal}`
+    `facade ${win} ${lit} ${litNight} ${blinds} ${tilt} ${inset} ${glassMetal}`
   return m
 }
