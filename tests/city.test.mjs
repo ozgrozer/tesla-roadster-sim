@@ -459,3 +459,72 @@ test('a 180 km/h jump clears the jammed street', () => {
   assert.equal(sim.mode, 'air', 'still flying past the end of the jam')
   assert.ok(!tr.cars.some(c => c.loose), 'every jammed car still in place')
 })
+
+test('the Roadster lands on a roof, drives on it inside the parapet, and hops off the edge', () => {
+  // a single-tier roof with a clear run from its middle to its east edge
+  const b = BUILDINGS.find(b => {
+    const t = b.tiers[0],
+      cx = (t.x0 + t.x1) / 2,
+      cz = (t.z0 + t.z1) / 2
+    return (
+      b.tiers.length === 1 &&
+      !b.antenna &&
+      t.x1 - t.x0 > 20 &&
+      t.z1 - t.z0 > 20 &&
+      t.y1 > 15 &&
+      t.y1 < 60 &&
+      !b.plant.some(p => p.x1 > cx - 3 && p.z0 < cz + 2 && p.z1 > cz - 2)
+    )
+  })
+  const t = b.tiers[0],
+    cz = (t.z0 + t.z1) / 2
+  const sim = new Sim()
+  sim.reset('city')
+  const tr = new Traffic({ count: 0 })
+  tr.reset(t.x0, cz)
+  const events = []
+  const run = (secs, ctl) => {
+    for (let i = 0; i < secs / H; i++) {
+      const c = makeControls()
+      c.fan = false
+      ctl(c)
+      sim.step(H, c)
+      tr.step(H, sim)
+      events.push(...sim.events)
+      sim.events.length = 0
+    }
+  }
+  const drop = h => {
+    sim.setMode('air')
+    sim.com.set(t.x0 + 4, t.y1 + h, cz)
+    sim.vel.set(0, 0, 0)
+    sim.syncPose()
+    run(1.5, () => {})
+  }
+  drop(3)
+  assert.equal(sim.mode, 'ground', 'landed')
+  assert.ok(Math.abs(sim.pos.y - t.y1) < 1e-9, 'on the roof')
+  run(4, c => {
+    c.throttle = 1
+  })
+  assert.ok(
+    events.some(e => e.type === 'bump' && e.what === 'parapet'),
+    'the parapet stops it'
+  )
+  assert.ok(
+    Math.abs(sim.pos.y - t.y1) < 1e-9 && sim.pos.x < t.x1,
+    'still on the roof'
+  )
+  // a run at the east edge, hopping the parapet on the lift thrusters
+  drop(1)
+  let hop = false
+  run(6, c => {
+    c.throttle = sim.mode === 'ground' ? 1 : 0
+    if (sim.mode === 'ground' && sim.pos.x > t.x1 - 8) hop = true
+    if (hop && sim.com.y < t.y1 + 2.5 && sim.vel.y >= 0 && sim.pos.x < t.x1 + 3)
+      c.lift = 1
+  })
+  assert.ok(!events.some(e => e.type === 'crash'), 'no crash')
+  assert.equal(sim.mode, 'ground')
+  assert.ok(sim.pos.x > t.x1, 'over the edge and down on the far side')
+})
