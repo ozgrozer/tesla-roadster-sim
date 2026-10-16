@@ -14,6 +14,7 @@ export class CityView {
   constructor () {
     this.group = null
     this.on = false
+    this.onLand = null
   }
   build () {
     const g = new THREE.Group()
@@ -22,7 +23,9 @@ export class CityView {
     buildBuildings(g)
     const props = buildProps(g)
     this.signals = props.signals
-    this.lamps = props.lamps
+    this.fallers = props.fallers
+    for (const f of Object.values(this.fallers))
+      f.onLand = (x, z, faller) => this.onLand?.(x, z, faller.kind)
     this.cars = new TrafficView(g)
     g.visible = false
     scene.add(g)
@@ -35,17 +38,18 @@ export class CityView {
     site.visible = !on
     this.sky?.apply(on)
   }
-  // a street light the Roadster knocked down, and all of them back up when the city resets
+  // a street light, signal, tree or palm knocked down (the sim's 'knock' event), and all of them back
+  // up when the city resets. onLand(x, z, kind): one of them has just hit the ground at (x, z).
   knock (e) {
-    this.lamps?.knock(e.i, e.dx, e.dz)
+    this.fallers?.[e.kind]?.knock(e)
   }
   standUp () {
-    this.lamps?.standUp()
+    for (const f of Object.values(this.fallers || {})) f.standUp()
   }
   update (dt, clock, traffic, camera) {
     if (!this.on) return
     this.sky.follow(camera)
-    this.lamps.update(dt)
+    for (const f of Object.values(this.fallers)) f.update(dt)
     this.signals.update(traffic.t)
     this.cars.update(traffic)
     const b = Math.sin(clock * 2.2) > 0.4 ? 1 : 0.08
