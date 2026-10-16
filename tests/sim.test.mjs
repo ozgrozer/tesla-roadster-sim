@@ -4,7 +4,7 @@ import { Sim } from '../js/sim/sim.js'
 import assert from 'node:assert/strict'
 import { LINEUP, TRACK } from '../js/sim/track.js'
 import { Autopilot } from '../js/sim/autopilot.js'
-import { CORNERS, DEG, makeControls, wrapPi } from '../js/sim/constants.js'
+import { AX_X, CORNERS, DEG, makeControls, wrapPi } from '../js/sim/constants.js'
 
 const H = 1 / 120
 
@@ -322,4 +322,61 @@ test('a nose dipped into the pad while climbing on the thrusters scrapes, not la
   )
   assert.equal(sim.mode, 'air')
   assert.ok(sim.com.y > 3, `climbs away, at ${sim.com.y.toFixed(1)} m`)
+})
+
+// A crash on open ground beside the runway, rolled `ang` about the long axis, left to come to rest.
+function wreck (ang) {
+  const sim = new Sim()
+  sim.pos.set(-150, 0, 40)
+  sim.syncPose()
+  sim.setMode('air')
+  sim.quat.setFromAxisAngle(AX_X, ang)
+  sim.com.set(-150, 1.4, 40)
+  sim.vel.set(3, 0, 1)
+  sim.toCrash('test')
+  for (let i = 0; i < 120 * 4; i++) sim.step(H, makeControls())
+  return sim
+}
+function driveOff (sim) {
+  for (let i = 0; i < 120 * 2; i++) {
+    const c = makeControls()
+    c.fan = false
+    c.throttle = 1
+    sim.step(H, c)
+  }
+  return sim.speed
+}
+
+test('a wreck rolls back onto its wheels with A or D and drives on, GTA-style', () => {
+  const rolls = []
+  for (const [ang, steer] of [
+    [Math.PI, 1],
+    [Math.PI, -1],
+    [Math.PI / 2, 1],
+    [-Math.PI / 2, 1]
+  ]) {
+    const sim = wreck(ang)
+    assert.equal(sim.mode, 'crash', 'a wreck left alone stays put')
+    assert.ok(sim.up().y < 0.5, 'at rest on its roof or side')
+    let t = 0
+    while (sim.mode === 'crash' && t < 2) {
+      const c = makeControls()
+      c.steer = steer
+      sim.step(H, c)
+      if (sim.righting && !sim.righting.t) rolls.push(sim.righting.roll)
+      t += H
+    }
+    assert.equal(sim.mode, 'ground', 'back on its wheels')
+    assert.ok(t < 1.2, `in ${t.toFixed(2)} s`)
+    assert.ok(driveOff(sim) > 15, 'and drives on')
+  }
+  assert.ok(rolls[0] * rolls[1] < 0, 'A and D roll it off its roof opposite ways')
+  for (const r of rolls.slice(2))
+    assert.ok(Math.abs(r) < 2, 'off its side the short way, whichever key')
+})
+
+test('a wreck that comes to rest on its wheels drives on with W', () => {
+  const sim = wreck(0)
+  assert.equal(sim.mode, 'crash')
+  assert.ok(driveOff(sim) > 15, 'drives on')
 })
