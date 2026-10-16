@@ -3,6 +3,7 @@
 import * as THREE from 'three'
 import { merge, marks } from './geo.js'
 import { canvasTex, speckle } from './scene.js'
+import { roadMaterial } from './roadSurface.js'
 import {
   N,
   DIRS,
@@ -132,7 +133,7 @@ export function buildGround (group) {
   const mat = (map, color = 0xffffff, rough = 0.92) =>
     new THREE.MeshStandardMaterial({ map, color, roughness: rough })
   const M = {
-    asphalt: mat(T.asphalt, 0xffffff, 0.88),
+    asphalt: roadMaterial({ map: T.asphalt, roughness: 0.88 }),
     walk: mat(T.walk),
     plaza: mat(T.plaza),
     grass: mat(T.grass, 0xffffff, 0.98)
