@@ -4,7 +4,7 @@ import * as THREE from 'three'
 import { rng } from '../sim/city.js'
 import { scene, pmrem, renderer, hemi, key, keyOffset } from './scene.js'
 
-const SUN = new THREE.Vector3(-66, 30, 28) // where the low sun sits relative to the car
+export const SUN = new THREE.Vector3(-66, 30, 28) // where the low sun sits relative to the car
 const HAZE = new THREE.Color(0.86, 0.6, 0.48)
 
 function skyMaterial () {
@@ -123,14 +123,16 @@ export class Sky {
     if (on) {
       scene.background = HAZE.clone()
       scene.fog = new THREE.FogExp2(HAZE.clone().multiplyScalar(0.92), 0.00105)
+      // a strong, warm low sun, and the shade lit only by the cooler sky (the whole city throws its
+      // shadows now: sunShadow.js), for golden hour's contrast
       scene.environment = this.env
-      scene.environmentIntensity = 0.75
-      renderer.toneMappingExposure = 1.0
-      hemi.color.setRGB(0.95, 0.82, 0.78)
+      scene.environmentIntensity = 0.5
+      renderer.toneMappingExposure = 1.05
+      hemi.color.setRGB(0.72, 0.76, 0.92)
       hemi.groundColor.setRGB(0.36, 0.3, 0.26)
-      hemi.intensity = 1.25
+      hemi.intensity = 0.7
       key.color.setRGB(1, 0.72, 0.48)
-      key.intensity = 2.8
+      key.intensity = 4.6
       keyOffset.copy(SUN)
     } else if (this.saved) {
       const s = this.saved
