@@ -107,8 +107,10 @@ export class TrafficView {
       roughness: 0.55,
       side: THREE.DoubleSide
     })
+    this.meshes = [] // (all of them: kept out of the city's shadow map)
     const mesh = (geo, mat, cap = max, shadow = true) => {
       const m = new THREE.InstancedMesh(geo, mat, cap)
+      this.meshes.push(m)
       m.castShadow = shadow
       m.receiveShadow = true
       m.frustumCulled = false
