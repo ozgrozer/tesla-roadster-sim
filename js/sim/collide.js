@@ -267,6 +267,25 @@ export function knock (s, c, impact) {
   return true
 }
 
+// The test site's parked lineup: cars to bounce off, on the ground or low in the air, like the
+// city's traffic (they are too heavy to shove). Hitting a car never takes the wheel away.
+export function bumpCars (s, solids) {
+  const me = playerRect(s)
+  const bottom = s.mode === 'ground' ? 0 : s.com.y - 0.9
+  for (const c of solids) {
+    if (c.kind !== 'car' || bottom > c.y1) continue
+    const hit = rectRect(me, boxRect(c))
+    if (!hit) continue
+    nudge(s, hit.nx * hit.depth, hit.nz * hit.depth)
+    const impact = impulse(loadBody(s), null, hit, 0.25, 0.3)
+    storeBody(s)
+    me.x = BODY.x
+    me.z = BODY.z
+    if (impact > 0.6) s.emit('bump', { impact, what: 'car' })
+  }
+  s.syncPose()
+}
+
 // A tumbling or airborne body whose centre is inside a building: lift it out by the nearest face.
 export function pushOut (s, b, margin = 1.3) {
   const p = s.com,
