@@ -441,6 +441,7 @@ export function buildBuildings (group) {
           cells: CELLS,
           win: WIN[s].map(v => v / 64),
           lit: glass ? 0.2 : 0.28,
+          litNight: glass ? 0.5 : 0.62,
           blinds: glass ? 0.2 : 0.45,
           tilt: glass ? 0.14 : 0.05,
           inset: INSET[s],
@@ -454,16 +455,14 @@ export function buildBuildings (group) {
     new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.75 })
   )
   const sm = shopMaps()
-  add(
-    shops,
-    new THREE.MeshStandardMaterial({
-      map: sm.map,
-      emissiveMap: sm.lit,
-      emissive: 0xffffff,
-      emissiveIntensity: 1.4,
-      roughness: 0.55
-    })
-  )
+  const shopMat = new THREE.MeshStandardMaterial({
+    map: sm.map,
+    emissiveMap: sm.lit,
+    emissive: 0xffffff,
+    emissiveIntensity: 1.4,
+    roughness: 0.55
+  })
+  add(shops, shopMat)
   const rt = roofTex()
   rt.repeat.set(1, 1)
   add(
@@ -475,4 +474,10 @@ export function buildBuildings (group) {
     })
   )
   group.add(new THREE.Mesh(beacons.geometry(), BEACON))
+  // night (0 to 1): the shopfronts' signs and windows brighter (the windows: facade.js)
+  return {
+    night (k) {
+      shopMat.emissiveIntensity = 1.4 + 1.2 * k
+    }
+  }
 }
