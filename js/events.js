@@ -14,6 +14,17 @@ export function handleEvents (g) {
       app.score += e.pts
       hud.popup(`${e.text} <b>+${e.pts}</b>`)
       sound.chime()
+    } else if (e.type === 'track') {
+      // the handbrake at speed: Track Mode, the first time it comes on, says what it does
+      if (!app.trackHint) {
+        app.trackHint = true
+        hud.popup(
+          'Track Mode · <b>W</b> holds the drift · steer into it to go deeper, ' +
+            'out of it to straighten',
+          4200,
+          'hint'
+        )
+      }
     } else if (e.type === 'drift') {
       app.score += e.pts
       const deg = Math.round(e.angle * 57.3)
