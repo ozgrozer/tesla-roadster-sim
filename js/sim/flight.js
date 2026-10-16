@@ -1,7 +1,7 @@
 // Free flight: gravity, cold-gas thrust, attitude control (manoeuvres + stability assist) and contacts.
 import * as THREE from 'three'
-import { TRACK } from './track.js'
-import { crashName } from './collide.js'
+import { TRACK, SOLIDS } from './track.js'
+import { crashName, bumpCars } from './collide.js'
 import {
   G,
   CAR,
@@ -140,6 +140,7 @@ export function stepAir (s, dt, c, main, lift) {
       s.toCrash(upY <= 0.72 ? 'Landed on its side' : 'Hit the ground too hard')
     return
   }
+  if (s.world === 'site') bumpCars(s, SOLIDS)
   const hit = s.hitSolid()
   if (hit) {
     s.toCrash(
