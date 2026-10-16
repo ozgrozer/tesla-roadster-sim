@@ -128,6 +128,7 @@ function startAutopilot () {
 function resetTo (spot, at = null) {
   setWorld(spot === 'city' ? 'city' : 'site')
   sim.reset(spot, at)
+  rig.cut()
   if (spot === 'city' && !at) {
     traffic.reset(sim.pos.x, sim.pos.z)
     standUp()
