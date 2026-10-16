@@ -165,7 +165,7 @@ for (const c of LINEUP)
 export const LINEUP_FIRST = Math.max(...LINEUP.map(c => c.box.x1))
 export const LINEUP_LAST = Math.min(...LINEUP.map(c => c.box.x0))
 export const SOLIDS = [
-  ...LINEUP.map(c => ({ ...c.box, name: c.name })),
+  ...LINEUP.map(c => ({ ...c.box, name: c.name, kind: 'car' })),
   {
     name: 'tower',
     x0: TRACK.towerX0,
