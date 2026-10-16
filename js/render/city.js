@@ -48,7 +48,12 @@ export class CityView {
     if (this.group) this.group.visible = on
     site.visible = !on
     this.sky?.apply(on)
-    this.shadow?.refresh() // (empty while the test site is shown)
+    // the city's shadows only while it is shown (at the test site, which lies inside the city's
+    // square, its map would throw the buildings' shadows on the desert)
+    if (this.shadow) {
+      this.shadow.light.visible = on
+      this.shadow.refresh()
+    }
   }
   // a street light, signal, tree or palm knocked down (the sim's 'knock' event), and all of them back
   // up when the city resets. onLand(x, z, kind): one of them has just hit the ground at (x, z).
