@@ -21,6 +21,7 @@ export const ONE_SHOTS = {
       node.connect(s).connect(this.verb)
     }
   },
+  // o.filter ([type, Hz, Q]) shapes a buzzy wave, the way a housing muffles what is inside it
   tone (f0, f1, dur, type, vol, delay = 0, o = {}) {
     if (!this.ctx || !this.enabled || vol < 0.002) return
     const t = this.ctx.currentTime + delay,
@@ -33,7 +34,13 @@ export const ONE_SHOTS = {
     g.gain.exponentialRampToValueAtTime(vol, t + (o.attack ?? 0.012))
     if (o.hold) g.gain.setValueAtTime(vol, t + o.hold)
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur)
-    osc.connect(g)
+    if (o.filter) {
+      const b = this.ctx.createBiquadFilter()
+      b.type = o.filter[0]
+      b.frequency.value = o.filter[1]
+      b.Q.value = o.filter[2] ?? 0.7
+      osc.connect(b).connect(g)
+    } else osc.connect(g)
     this.out(g, o)
     osc.start(t)
     osc.stop(t + dur + 0.05)
