@@ -69,6 +69,7 @@ export class Input {
     const A = this.held('KeyA', 'ArrowLeft'),
       D = this.held('KeyD', 'ArrowRight')
     const nearWall =
+      sim.world === 'site' &&
       sim.pos.x > TRACK.X0 - 25 &&
       sim.pos.x < TRACK.towerX1 &&
       Math.abs(sim.pos.z) < TRACK.W &&
