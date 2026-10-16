@@ -154,6 +154,11 @@ export const MAT = {
     roughness: 0.28,
     metalness: 1.0
   }),
+  aero: new THREE.MeshStandardMaterial({
+    color: 0xc4c8cd,
+    roughness: 0.34,
+    metalness: 0.5
+  }),
   hole: new THREE.MeshBasicMaterial({ color: 0x020203 }),
   headlight: new THREE.MeshBasicMaterial({
     color: hdr(3.2, 3.3, 3.6),
