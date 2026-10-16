@@ -1,112 +1,20 @@
 // The Roadster model, measured off the Oct 15, 2026 reveal photos (a side-on shot at the event sets the
-// proportions): a faceted wedge in satin Ano White with a tall blunt nose, sloped fender facets either
-// side of a short hood, squinting triangular headlights, one dark gold-tinted canopy from a far-forward
-// windshield over the roof to the tail lip, flanked by buttresses that run out to the tail corners, a
-// black sill that rises to the rear, full-width light bars, a black diffuser frame carrying 4 nozzles
-// over 4 fans, a closed, flush tail deck, underfloor suction fan, skirts and flat aero-disc wheels;
+// proportions, a top-down one the canopy, a rear one the tail): a wedge in satin Ano White, smooth
+// panels with crisp creases, a tall blunt nose, sloped fender facets either side of a short hood,
+// squinting triangular headlights, one bronze-tinted canopy from a windshield nearly as wide as the car
+// over the roof to a narrow tip at the tail, flanked by buttresses that run out to the tail corners, a
+// black sill that rises to the rear, full-width light bars, the black tail with 4 nozzles over 4 fans
+// (roadsterRear.js), an active rear wing, underfloor suction fan, skirts and twin-spoke aero wheels;
 // plus per-frame pose and animation.
 import * as THREE from 'three'
 import { scene, MAT } from './scene.js'
-import { TAU, clamp } from '../sim/constants.js'
+import { clamp } from '../sim/constants.js'
+import { buildOptimus, poseOptimus, HIP_SIT } from './optimus.js'
+import { loft, loftGeos, at, seam, withStations } from './loft.js'
 import { buildWheels, updateWheels, withWheelArches } from './wheels.js'
+import { buildTail, buildWing, updateWing, fanUnit } from './roadsterRear.js'
 
 const _a = new THREE.Vector3()
-
-// ---------- lofting ----------
-// Sweep a half section (z >= 0, from the bottom centre line round to the top one) through stations
-// along x, mirrored to both sides. Faces stay flat-shaded, so every panel reads as a facet.
-// Without capMat the ends stay open (used for the canopy).
-function loft (stations, matFor, capMat) {
-  const buckets = new Map()
-  const push = (mat, ...v) => {
-    if (!buckets.has(mat)) buckets.set(mat, [])
-    buckets.get(mat).push(...v)
-  }
-  for (let k = 0; k < stations.length - 1; k++) {
-    const A = stations[k],
-      B = stations[k + 1]
-    for (let j = 0; j < A.p.length - 1; j++) {
-      const mat = matFor(j, A.x, B.x)
-      for (const sg of [1, -1]) {
-        const a = [A.x, A.p[j][1], sg * A.p[j][0]],
-          b = [A.x, A.p[j + 1][1], sg * A.p[j + 1][0]]
-        const c = [B.x, B.p[j][1], sg * B.p[j][0]],
-          d = [B.x, B.p[j + 1][1], sg * B.p[j + 1][0]]
-        if (sg > 0) push(mat, ...a, ...c, ...b, ...c, ...d, ...b)
-        else push(mat, ...a, ...b, ...c, ...c, ...b, ...d)
-      }
-    }
-  }
-  const cap = (S, front) => {
-    const ringPts = [
-      ...S.p.map(([z, y]) => [z, y]),
-      ...S.p
-        .slice(1, -1)
-        .reverse()
-        .map(([z, y]) => [-z, y])
-    ]
-    const cy = S.p.reduce((s, p) => s + p[1], 0) / S.p.length
-    for (let i = 0; i < ringPts.length; i++) {
-      const p = ringPts[i],
-        q = ringPts[(i + 1) % ringPts.length]
-      const O = [S.x, cy, 0],
-        P1 = [S.x, p[1], p[0]],
-        P2 = [S.x, q[1], q[0]]
-      if (front) push(capMat, ...O, ...P2, ...P1)
-      else push(capMat, ...O, ...P1, ...P2)
-    }
-  }
-  if (capMat) {
-    cap(stations[0], false)
-    cap(stations[stations.length - 1], true)
-  }
-  const group = new THREE.Group()
-  for (const [mat, arr] of buckets) {
-    const g = new THREE.BufferGeometry()
-    g.setAttribute('position', new THREE.Float32BufferAttribute(arr, 3))
-    g.computeVertexNormals()
-    const m = new THREE.Mesh(g, mat)
-    m.castShadow = true
-    m.receiveShadow = true
-    group.add(m)
-  }
-  return group
-}
-
-// [z, y] of profile point k at x, linear between the stations either side
-function at (stations, x, k) {
-  let i = 0
-  while (i < stations.length - 2 && stations[i + 1].x < x) i++
-  const A = stations[i],
-    B = stations[i + 1]
-  const t = (x - A.x) / (B.x - A.x)
-  return [0, 1].map(n => A.p[k][n] + (B.p[k][n] - A.p[k][n]) * t)
-}
-
-// A thin dark line across the surface at x, along section points k0..k1 on both sides, standing just
-// proud of the panels so it never z-fights them.
-function seam (stations, x, k0, k1, w = 0.008, lift = 0.0025) {
-  const pos = []
-  for (let k = k0; k < k1; k++) {
-    const P = at(stations, x, k),
-      Q = at(stations, x, k + 1)
-    const len = Math.hypot(Q[0] - P[0], Q[1] - P[1]) || 1
-    const nz = ((Q[1] - P[1]) / len) * lift,
-      ny = (-(Q[0] - P[0]) / len) * lift
-    for (const sg of [1, -1]) {
-      const v = (x2, [z, y]) => [x2, y + ny, sg * (z + nz)]
-      const a = v(x - w / 2, P),
-        b = v(x + w / 2, P),
-        c = v(x - w / 2, Q),
-        d = v(x + w / 2, Q)
-      pos.push(...a, ...b, ...c, ...c, ...b, ...d)
-    }
-  }
-  const g = new THREE.BufferGeometry()
-  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3))
-  g.computeVertexNormals()
-  return new THREE.Mesh(g, SEAM)
-}
 const SEAM = new THREE.MeshStandardMaterial({
   color: 0x0b0c0e,
   roughness: 0.7,
@@ -122,22 +30,22 @@ const SEAM = new THREE.MeshStandardMaterial({
 // x, floor y, sill [z, y], crease [z, y], shoulder [z, y], wall top [z, y], wall foot [z, y], centre y
 // prettier-ignore
 const BODY = [
-  [-2.22, 0.14, [0.74, 0.66], [0.8, 0.74], [0.79, 0.9], [0.74, 0.915], [0.38, 0.915], 0.915],
-  [-2.12, 0.13, [0.84, 0.65], [0.9, 0.73], [0.88, 0.905], [0.76, 0.925], [0.4, 0.92], 0.92],
-  [-1.95, 0.13, [0.9, 0.6], [0.96, 0.71], [0.94, 0.91], [0.72, 0.952], [0.43, 0.932], 0.925],
-  [-1.8, 0.13, [0.91, 0.55], [0.98, 0.68], [0.96, 0.915], [0.69, 0.995], [0.44, 0.962], 0.94],
-  [-1.5, 0.12, [0.92, 0.5], [0.99, 0.67], [0.97, 0.915], [0.64, 1.065], [0.47, 1.025], 0.96],
-  [-1.2, 0.12, [0.92, 0.46], [0.99, 0.65], [0.97, 0.905], [0.6, 1.11], [0.51, 1.085], 0.97],
+  [-2.22, 0.14, [0.8, 0.64], [0.86, 0.76], [0.87, 0.9], [0.8, 0.915], [0.27, 0.915], 0.915],
+  [-2.12, 0.13, [0.88, 0.64], [0.93, 0.74], [0.92, 0.905], [0.78, 0.928], [0.27, 0.92], 0.92],
+  [-1.95, 0.13, [0.91, 0.6], [0.97, 0.71], [0.95, 0.91], [0.72, 0.952], [0.29, 0.932], 0.93],
+  [-1.8, 0.13, [0.92, 0.55], [0.98, 0.68], [0.96, 0.915], [0.69, 0.995], [0.33, 0.965], 0.95],
+  [-1.5, 0.12, [0.92, 0.5], [0.99, 0.67], [0.97, 0.915], [0.64, 1.065], [0.4, 1.03], 0.98],
+  [-1.2, 0.12, [0.92, 0.46], [0.99, 0.65], [0.97, 0.905], [0.6, 1.11], [0.51, 1.085], 0.99],
   [-0.9, 0.12, [0.92, 0.42], [0.99, 0.63], [0.97, 0.89], [0.72, 1.0], [0.56, 0.95], 0.85],
-  [-0.6, 0.12, [0.92, 0.36], [0.99, 0.62], [0.97, 0.885], [0.83, 0.89], [0.62, 0.81], 0.79],
-  [0.4, 0.12, [0.92, 0.3], [0.99, 0.6], [0.97, 0.87], [0.84, 0.875], [0.62, 0.8], 0.78],
-  [1.0, 0.12, [0.92, 0.28], [0.99, 0.58], [0.97, 0.855], [0.84, 0.86], [0.62, 0.8], 0.79],
-  [1.2, 0.12, [0.92, 0.27], [0.99, 0.57], [0.97, 0.84], [0.8, 0.845], [0.6, 0.805], 0.795],
-  [1.45, 0.12, [0.92, 0.26], [0.99, 0.56], [0.97, 0.815], [0.62, 0.8], [0.6, 0.796], 0.792],
-  [1.55, 0.12, [0.92, 0.255], [0.99, 0.55], [0.965, 0.79], [0.59, 0.778], [0.585, 0.775], 0.772],
-  [1.7, 0.12, [0.92, 0.25], [0.99, 0.53], [0.95, 0.745], [0.585, 0.73], [0.58, 0.727], 0.725],
-  [1.85, 0.13, [0.9, 0.25], [0.96, 0.5], [0.93, 0.69], [0.595, 0.68], [0.59, 0.675], 0.672],
-  [2.05, 0.14, [0.8, 0.255], [0.85, 0.46], [0.84, 0.615], [0.605, 0.6], [0.6, 0.597], 0.595],
+  [-0.6, 0.12, [0.92, 0.36], [0.99, 0.62], [0.97, 0.885], [0.85, 0.885], [0.62, 0.81], 0.79],
+  [0.4, 0.12, [0.92, 0.3], [0.99, 0.6], [0.97, 0.87], [0.85, 0.872], [0.62, 0.8], 0.78],
+  [1.0, 0.12, [0.92, 0.28], [0.99, 0.58], [0.97, 0.855], [0.85, 0.857], [0.62, 0.8], 0.79],
+  [1.2, 0.12, [0.92, 0.27], [0.99, 0.57], [0.97, 0.84], [0.84, 0.84], [0.62, 0.805], 0.795],
+  [1.45, 0.12, [0.92, 0.26], [0.99, 0.56], [0.97, 0.815], [0.81, 0.8], [0.79, 0.796], 0.792],
+  [1.55, 0.12, [0.92, 0.255], [0.99, 0.55], [0.965, 0.79], [0.78, 0.782], [0.76, 0.776], 0.772],
+  [1.7, 0.12, [0.92, 0.25], [0.99, 0.53], [0.95, 0.745], [0.7, 0.735], [0.68, 0.729], 0.725],
+  [1.85, 0.13, [0.9, 0.25], [0.96, 0.5], [0.93, 0.69], [0.64, 0.682], [0.62, 0.676], 0.672],
+  [2.05, 0.14, [0.8, 0.255], [0.85, 0.46], [0.84, 0.615], [0.61, 0.601], [0.6, 0.597], 0.595],
   [2.22, 0.16, [0.58, 0.26], [0.63, 0.4], [0.62, 0.535], [0.61, 0.532], [0.605, 0.53], 0.528]
 ].map(([x, yb, sill, crease, sh, wt, wf, yc]) => ({
   x,
@@ -146,21 +54,29 @@ const BODY = [
 const SILL = 1,
   WALL = 5,
   DECK = 6 // segment indices in the body section
+// the butterfly doors: from the front shut line to the rear one, sill to roof rail, hinged at the
+// top of the front edge, swinging up and out
+const DOOR = [-0.3, 0.84]
+const HINGE = [0.84, 0.97, 0.76] // x, y, |z|
 
-// Canopy stations, tail to windshield foot: where the side glass meets the shoulder, the roof rail
-// (the A-pillar on the windshield) and the centre line. x, base [z, y], rail [z, y], centre y
+// Canopy stations, tail to windshield foot: where the side glass meets the shoulder (or, at the rear,
+// the buttress), the roof rail (the windshield's edge up front) and the centre line. Seen from above
+// it is a teardrop: the windshield's foot spans nearly the whole car, the tip is narrow at the tail.
+// x, base [z, y], rail [z, y], centre y
 // prettier-ignore
 const GLASS = [
-  [-1.95, [0.41, 0.928], [0.39, 0.936], 0.94],
-  [-1.5, [0.47, 1.02], [0.44, 1.045], 1.05],
-  [-1.2, [0.62, 1.0], [0.5, 1.09], 1.1],
-  [-0.9, [0.74, 0.95], [0.53, 1.14], 1.16],
-  [-0.4, [0.82, 0.885], [0.55, 1.16], 1.19],
-  [0.0, [0.83, 0.88], [0.56, 1.14], 1.165],
-  [0.5, [0.83, 0.872], [0.62, 1.03], 1.05],
-  [1.0, [0.83, 0.855], [0.77, 0.895], 0.915],
-  [1.25, [0.74, 0.835], [0.72, 0.842], 0.86],
-  [1.5, [0.33, 0.788], [0.32, 0.789], 0.79]
+  [-1.98, [0.285, 0.93], [0.27, 0.935], 0.94],
+  [-1.8, [0.33, 0.965], [0.31, 0.975], 0.985],
+  [-1.5, [0.4, 1.03], [0.37, 1.055], 1.065],
+  [-1.2, [0.52, 1.0], [0.44, 1.1], 1.11],
+  [-0.9, [0.7, 0.95], [0.49, 1.14], 1.155],
+  [-0.4, [0.84, 0.885], [0.545, 1.165], 1.19],
+  [0.0, [0.85, 0.875], [0.58, 1.15], 1.175],
+  [0.3, [0.85, 0.87], [0.61, 1.11], 1.135],
+  [0.8, [0.85, 0.858], [0.69, 1.0], 1.02],
+  [1.15, [0.85, 0.838], [0.78, 0.89], 0.905],
+  [1.3, [0.83, 0.82], [0.815, 0.835], 0.855],
+  [1.5, [0.79, 0.79], [0.78, 0.792], 0.795]
 ].map(([x, base, rail, yc]) => {
   // a thin painted strip runs along the rail, on the side-glass side
   const t = Math.min(
@@ -171,64 +87,76 @@ const GLASS = [
   return { x, p: [base, edge, rail, [0, yc]] }
 })
 
-function plateTexture () {
-  const cv = document.createElement('canvas')
-  cv.width = 256
-  cv.height = 128
-  const g = cv.getContext('2d')
-  g.fillStyle = '#dcdee1'
-  g.fillRect(0, 0, 256, 128)
-  g.strokeStyle = '#9a9da3'
-  g.lineWidth = 6
-  g.strokeRect(6, 6, 244, 116)
-  g.fillStyle = '#4a4d53'
-  g.font = '600 76px "Saira Semi Condensed", "Arial Narrow", sans-serif'
-  g.textAlign = 'center'
-  g.textBaseline = 'middle'
-  g.fillText('RDSTR', 128, 70)
-  const t = new THREE.CanvasTexture(cv)
-  t.colorSpace = THREE.SRGBColorSpace
-  return t
-}
-
 const box = (w, h, d, mat, x, y, z) => {
   const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat)
   m.position.set(x, y, z)
   return m
 }
-
-// A fan in a round duct, spinning about local y; blades go in `fans` for the per-frame spin.
-function fanUnit (r, nBlades, fans) {
-  const g = new THREE.Group()
-  const duct = new THREE.Mesh(
-    new THREE.TorusGeometry(r, r * 0.12, 8, 28),
-    MAT.darkMetal
-  )
-  duct.rotation.x = Math.PI / 2
-  const back = new THREE.Mesh(new THREE.CircleGeometry(r, 24), MAT.hole)
-  back.rotation.x = -Math.PI / 2
-  back.position.y = -r * 0.5
-  const hub = new THREE.Mesh(
-    new THREE.ConeGeometry(r * 0.32, r * 0.8, 12),
-    MAT.darkMetal
-  )
-  hub.position.y = r * 0.15
-  const blades = new THREE.Group()
-  for (let i = 0; i < nBlades; i++) {
-    const b = new THREE.Mesh(
-      new THREE.BoxGeometry(r * 0.85, r * 0.03, r * 0.24),
-      MAT.darkMetal
-    )
-    b.position.x = r * 0.5
-    b.rotation.x = 0.4
-    const p = new THREE.Group()
-    p.rotation.y = (i * TAU) / nBlades
-    p.add(b)
-    blades.add(p)
+// a dark line along the roof glass at z, from x0 to x1 (the glass roof's panel joints)
+function roofLine (z, x0, x1) {
+  const pos = [],
+    w = 0.006
+  const yAt = x => {
+    const [zr, yr] = at(GLASS, x, 2),
+      yc = at(GLASS, x, 3)[1]
+    return yc + (yr - yc) * (z / zr) + 0.003
   }
-  g.add(duct, back, hub, blades)
-  fans.push(blades)
-  return g
+  for (let x = x0; x > x1; x -= 0.1) {
+    const xb = Math.max(x1, x - 0.1)
+    const a = [x, yAt(x), z - w],
+      b = [x, yAt(x), z + w],
+      c = [xb, yAt(xb), z - w],
+      d = [xb, yAt(xb), z + w]
+    pos.push(...a, ...b, ...c, ...c, ...b, ...d)
+  }
+  const g = new THREE.BufferGeometry()
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3))
+  g.computeVertexNormals()
+  return new THREE.Mesh(g, SEAM)
+}
+
+const DOOR_INSIDE = new THREE.MeshStandardMaterial({
+  color: 0x1c1d20,
+  roughness: 0.75,
+  side: THREE.BackSide
+})
+// The cabin, seen through the glass and the open doors: a black tub with two bucket seats, the
+// console between them, the dash under the windshield and the yoke.
+function buildCabin (body) {
+  const dark = new THREE.MeshStandardMaterial({
+    color: 0x18191c,
+    roughness: 0.8
+  })
+  const seat = new THREE.MeshStandardMaterial({
+    color: 0x2a2b2f,
+    roughness: 0.6
+  })
+  const add = (w, h, d, mat, x, y, z, rz = 0) => {
+    const m = box(w, h, d, mat, x, y, z)
+    m.rotation.z = rz
+    body.add(m)
+  }
+  add(2.1, 0.03, 1.64, dark, 0.1, 0.15, 0) // floor
+  for (const sg of [-1, 1]) {
+    add(1.16, 0.2, 0.1, dark, 0.27, 0.24, sg * 0.84) // the sill under the door
+    add(0.5, 0.1, 0.48, seat, -0.32, 0.24, sg * 0.36) // seat base
+    add(0.11, 0.66, 0.46, seat, -0.66, 0.56, sg * 0.36, 0.3) // backrest
+    add(0.12, 0.08, 0.3, seat, -0.84, 0.92, sg * 0.36, 0.3) // head rest
+  }
+  add(1.2, 0.2, 0.22, dark, 0.05, 0.26, 0) // console
+  add(0.08, 0.85, 1.64, dark, -0.98, 0.55, 0) // bulkhead behind the seats
+  add(0.55, 0.16, 1.56, dark, 0.92, 0.6, 0) // dash
+  // the yoke on its column
+  const yoke = new THREE.Mesh(
+    new THREE.TorusGeometry(0.15, 0.018, 8, 24, Math.PI * 1.2),
+    MAT.trim
+  )
+  yoke.rotation.set(0, Math.PI / 2, Math.PI * 0.4)
+  yoke.position.set(0.24, 0.66, -0.36)
+  yoke.rotation.order = 'YXZ'
+  yoke.rotation.x = -0.35
+  body.add(yoke)
+  add(0.42, 0.05, 0.05, dark, 0.48, 0.6, -0.36, 0.35)
 }
 
 export function buildRoadster () {
@@ -237,26 +165,58 @@ export function buildRoadster () {
   car.add(body)
   const shell = withWheelArches(MAT.paint)
   const shellTrim = withWheelArches(MAT.trim)
-  // black floor and sill; dark cabin floor and inner walls under the glass; white everywhere else
-  const bodyMat = (j, xA, xB) => {
+  // black floor and sill; dark cabin floor and inner walls under the glass; white everywhere else;
+  // the doors' panels and glass apart, to swing open
+  const inDoor = x => x > DOOR[0] && x < DOOR[1]
+  const bodyMat = (j, xA, xB, sg) => {
     const x = (xA + xB) / 2
     if (j <= SILL) return shellTrim
+    if (j <= WALL - 1 && j > SILL && inDoor(x)) return `door${sg}`
     if (j === WALL && x > -1.0 && x < 1.3) return shellTrim
     if (j === DECK && x > -1.96 && x < 1.5) return shellTrim
     return shell
   }
-  body.add(loft(BODY, bodyMat, shellTrim))
-  body.add(loft(GLASS, j => (j === 1 ? MAT.paint : MAT.glass)))
+  const glassMat = (j, xA, xB, sg) =>
+    j <= 1 && inDoor((xA + xB) / 2)
+      ? `${j ? 'strip' : 'pane'}${sg}`
+      : j === 1
+      ? MAT.paint
+      : MAT.glass
+  const doors = []
+  for (const sg of [-1, 1]) {
+    const pivot = new THREE.Group()
+    pivot.position.set(HINGE[0], HINGE[1], sg * HINGE[2])
+    body.add(pivot)
+    doors[sg] = pivot
+  }
+  const DOOR_MATS = { door: MAT.paint, strip: MAT.paint, pane: MAT.glass }
+  const place = geos => {
+    for (const [key, g] of geos) {
+      if (typeof key !== 'string') {
+        const m = new THREE.Mesh(g, key)
+        m.castShadow = m.receiveShadow = true
+        body.add(m)
+        continue
+      }
+      const sg = key.endsWith('-1') ? -1 : 1,
+        pivot = doors[sg]
+      g.translate(-HINGE[0], -HINGE[1], -sg * HINGE[2])
+      const m = new THREE.Mesh(g, DOOR_MATS[key.replace(/-?1$/, '')])
+      m.castShadow = true
+      pivot.add(m)
+      // the inside of the door, dark, seen once it is up
+      if (key.startsWith('door')) pivot.add(new THREE.Mesh(g, DOOR_INSIDE))
+    }
+  }
+  place(loftGeos(withStations(BODY, DOOR), bodyMat, shellTrim, 30))
+  place(loftGeos(withStations(GLASS, DOOR), glassMat, undefined, 40))
+  buildCabin(body)
 
-  // Starman in the driver's seat
-  const helmet = new THREE.Mesh(
-    new THREE.SphereGeometry(0.13, 16, 12),
-    MAT.suit
-  )
-  helmet.position.set(-0.28, 0.98, -0.36)
-  const torso = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.32), MAT.suit)
-  torso.position.set(-0.4, 0.77, -0.36)
-  body.add(helmet, torso)
+  // Optimus in the driver's seat
+  const optimus = buildOptimus()
+  optimus.root.position.set(-0.33, HIP_SIT, -0.36)
+  poseOptimus(optimus, { sit: 1, drive: 1 })
+  body.add(optimus.root)
 
   // front: light line along the hood's leading edge, squinting triangular headlights on the fenders'
   // facets, black splitter, amber markers behind the front arches and red ones ahead of the tail
@@ -286,7 +246,7 @@ export function buildRoadster () {
       [-2.06, 0.665],
       [-1.96, 0.64]
     ])
-      markR.push(x, y, sg * (x < -2 ? 0.92 : 0.965))
+      markR.push(x, y, sg * (x < -2 ? 0.94 : 0.975))
   }
   const flat = (pos, mat) => {
     const g = new THREE.BufferGeometry()
@@ -307,55 +267,37 @@ export function buildRoadster () {
     flat(markR, MAT.ledRed)
   )
   body.add(box(0.28, 0.025, 1.56, MAT.trim, 2.12, 0.125, 0))
-
-  // shut lines: the butterfly doors' front and rear edges, and the divider in the side glass
-  body.add(
-    seam(BODY, 0.84, 2, 5),
-    seam(BODY, -0.3, 2, 5),
-    seam(GLASS, -0.52, 0, 1)
-  )
-
-  // rear: light bar in a deep black housing under the deck lip, tail panel with the plate and its two
-  // lamps, then the diffuser: a black frame (a beam carrying the 4 main nozzles on two legs) round
-  // the four fan bays
-  body.add(box(0.012, 0.08, 1.58, MAT.trim, -2.232, 0.87, 0))
-  const rear = box(0.012, 0.018, 1.54, MAT.taillight.clone(), -2.238, 0.872, 0)
-  body.add(rear)
-  body.add(box(0.012, 0.27, 1.52, MAT.paint, -2.226, 0.695, 0))
-  const plate = new THREE.Mesh(
-    new THREE.PlaneGeometry(0.3, 0.15),
-    new THREE.MeshStandardMaterial({
-      map: plateTexture(),
-      roughness: 0.45,
-      metalness: 0.3
-    })
-  )
-  plate.rotation.y = -Math.PI / 2
-  plate.position.set(-2.234, 0.68, 0)
-  body.add(plate)
-  for (const z of [-0.06, 0.06])
-    body.add(box(0.01, 0.012, 0.03, MAT.headlight, -2.236, 0.776, z))
-  body.add(box(0.06, 0.09, 1.2, MAT.trim, -2.24, 0.47, 0))
-  for (const z of [-0.56, 0.56])
-    body.add(box(0.06, 0.4, 0.07, MAT.trim, -2.24, 0.31, z))
-  body.add(box(0.06, 0.04, 1.18, MAT.trim, -2.24, 0.13, 0))
-  for (const z of [0, -0.26, 0.26])
-    body.add(box(0.08, 0.3, 0.012, MAT.trim, -2.24, 0.3, z))
-  // the four fans exhaust through the diffuser; one more draws air from under the floor
-  const fans = []
-  for (const z of [-0.39, -0.13, 0.13, 0.39]) {
-    const f = fanUnit(0.09, 7, fans)
-    f.rotation.z = Math.PI / 2 // local +y points aft
-    f.position.set(-2.232, 0.27, z)
-    body.add(f)
+  // the side camera on each front fender, where a mirror would be
+  for (const sg of [1, -1]) {
+    const cam = box(0.09, 0.022, 0.012, MAT.trim, 1.02, 0.79, sg * 0.975)
+    cam.rotation.x = sg * 0.35
+    body.add(cam)
   }
+
+  // shut lines: the butterfly doors' front and rear edges, the divider in the side glass and the
+  // joints in the glass roof (windshield, a centre spine, rear glass)
+  body.add(
+    seam(BODY, DOOR[1], 2, 5, SEAM),
+    seam(BODY, DOOR[0], 2, 5, SEAM),
+    seam(GLASS, DOOR[0], 0, 1, SEAM),
+    seam(GLASS, 0.3, 2, 3, SEAM, 0.006, 0.003),
+    seam(GLASS, -0.62, 2, 3, SEAM, 0.006, 0.003),
+    roofLine(0.11, 0.3, -0.62),
+    roofLine(-0.11, 0.3, -0.62)
+  )
+
+  // the tail (light bar, plate, nozzle housing, diffuser and its fans) and the active wing
+  const fans = []
+  const taillight = buildTail(body, fans)
+  const wing = buildWing(body)
+  // one more fan draws air from under the floor
   const floorFan = fanUnit(0.3, 7, fans)
   floorFan.rotation.x = Math.PI // opens downward
   floorFan.position.set(-0.9, 0.105, 0)
   body.add(floorFan)
 
-  // 10 cold-gas nozzles: 4 main on the diffuser beam, 4 lift hanging under the body behind each wheel,
-  // 2 attitude nozzles in the black sills ahead of the rear wheels
+  // 10 cold-gas nozzles: 4 main on the housing over the diffuser, 4 lift hanging under the body
+  // behind each wheel, 2 attitude nozzles in the black sills ahead of the rear wheels
   const nozzles = []
   const ringGeo = new THREE.TorusGeometry(0.046, 0.012, 8, 20),
     holeGeo = new THREE.CircleGeometry(0.044, 16),
@@ -370,12 +312,12 @@ export function buildRoadster () {
     g.position.set(x, y, z)
     const r = new THREE.Mesh(
         ringGeo,
-        kind.startsWith('side') ? MAT.darkMetal : MAT.gold
+        kind.startsWith('side') ? MAT.darkMetal : MAT.chrome
       ),
       h = new THREE.Mesh(holeGeo, MAT.hole)
     h.position.z = 0.004
     g.add(r, h)
-    if (kind === 'main') g.add(new THREE.Mesh(tubeGeo, MAT.gold)) // stands proud of the beam
+    if (kind === 'main') g.add(new THREE.Mesh(tubeGeo, MAT.chrome)) // stands proud of the housing
     if (kind === 'lift') g.add(new THREE.Mesh(stemGeo, MAT.steel)) // hangs below the floor
     g.lookAt(_a.set(x, y, z).add(dir)) // local +z along the exhaust
     body.add(g)
@@ -386,8 +328,8 @@ export function buildRoadster () {
       group: g
     })
   }
-  for (const z of [-0.34, -0.115, 0.115, 0.34])
-    nozzle(-2.285, 0.47, z, new THREE.Vector3(-1, 0, 0), 'main')
+  for (const z of [-0.37, -0.125, 0.125, 0.37])
+    nozzle(-2.31, 0.505, z, new THREE.Vector3(-1, 0, 0), 'main')
   for (const [x, z] of [
     [0.95, -0.8],
     [0.95, 0.8],
@@ -420,12 +362,17 @@ export function buildRoadster () {
     nozzles,
     fans,
     skirts,
-    taillight: rear.material,
-    settle: { mode: null, k: 0, dy: 0, dq: new THREE.Quaternion() }
+    wing,
+    taillight,
+    doors,
+    door: 0, // how far the driver's door is open, 0 to 1
+    optimus,
+    settle: { mode: null, k: 0, dy: 0, dq: new THREE.Quaternion() },
+    // body pitch and roll on their springs (rad) and how fast they are moving
+    lean: { p: 0, pv: 0, r: 0, rv: 0 }
   }
 }
 
-const lerpK = (k, dt) => 1 - Math.exp(-k * dt)
 const _sq = new THREE.Quaternion()
 
 // Landing (or getting back on the wheels after a crash) puts the sim's car flat on the road at once,
@@ -442,25 +389,43 @@ function settle (RS, sim, dt) {
   st.k *= Math.exp(-12 * dt)
 }
 
-// Pose the model from the sim and animate wheels, suspension, body roll/pitch, fans, skirts and brake light.
+// Pose the model from the sim and animate wheels, suspension, body roll/pitch, fans, skirts, the wing
+// and the brake light. The body pitches and rolls on springs, so it dips and rocks back a little when
+// the car brakes, launches or turns in, instead of just tilting.
 export function updateRoadster (RS, sim, ctl, dt) {
   settle(RS, sim, dt)
   RS.car.position.copy(sim.pos)
   RS.car.quaternion.copy(sim.quat)
   if (RS.settle.k > 0.002) {
     RS.car.position.y += RS.settle.dy * RS.settle.k
-    RS.car.quaternion.premultiply(_sq.identity().slerp(RS.settle.dq, RS.settle.k))
+    RS.car.quaternion.premultiply(
+      _sq.identity().slerp(RS.settle.dq, RS.settle.k)
+    )
   }
   RS.body.position.y = clamp(sim.susp, -0.12, 0.06) * 0.6
   const onGround = sim.mode === 'ground'
-  const pitchVis = onGround ? clamp(-sim.accLong * 0.0022, -0.035, 0.035) : 0
-  const rollVis = onGround ? clamp(sim.latAcc * 0.0035, -0.05, 0.05) : 0
-  RS.body.rotation.z += (pitchVis - RS.body.rotation.z) * lerpK(6, dt)
-  RS.body.rotation.x += (rollVis - RS.body.rotation.x) * lerpK(6, dt)
+  const pitchT = onGround ? clamp(-sim.accLong * 0.0028, -0.045, 0.045) : 0
+  const rollT = onGround ? clamp(sim.latAcc * 0.0042, -0.06, 0.06) : 0
+  const L = RS.lean,
+    h = Math.min(dt, 1 / 30)
+  L.pv += (90 * (pitchT - L.p) - 11 * L.pv) * h
+  L.p += L.pv * h
+  L.rv += (110 * (rollT - L.r) - 12 * L.rv) * h
+  L.r += L.rv * h
+  RS.body.rotation.z = L.p
+  RS.body.rotation.x = L.r
   updateWheels(RS, sim, dt)
+  updateWing(RS.wing, sim, ctl, dt)
+  // the driver's door swings up and out about its hinge (RS.door: set by the intro)
+  const k = RS.door * RS.door * (3 - 2 * RS.door)
+  RS.doors[-1].rotation.set(-0.5 * k, 0, -1.2 * k)
+  // the driver looks into the turns
+  if (RS.seated !== false)
+    RS.optimus.head.rotation.y +=
+      (sim.steerAng * 1.4 - RS.optimus.head.rotation.y) * Math.min(1, dt * 4)
   for (const f of RS.fans) f.rotation.y += sim.suction * dt * 60
   for (const sk of RS.skirts) sk.position.y = 0.1 - 0.05 * sim.suction
   const spd = sim.groundSpeed()
   const braking = (ctl.brake > 0 || ctl.ebrake) && spd > 0.5
-  RS.taillight.color.setRGB(braking ? 7 : 2.6, braking ? 0.3 : 0.12, 0.1)
+  RS.taillight.color.setRGB(braking ? 4.2 : 1.8, braking ? 0.1 : 0.03, 0.02)
 }
