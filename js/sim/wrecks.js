@@ -12,9 +12,7 @@ import {
   boxRect,
   loadBody,
   storeBody,
-  crashInto,
-  playerRect,
-  CRASH_SPEED
+  playerRect
 } from './collide.js'
 
 const near = []
@@ -78,7 +76,8 @@ function rejoin (tr, car) {
   tr.place(car)
 }
 
-// the Roadster against the traffic: push apart by mass, trade momentum, knock the car loose
+// the Roadster against the traffic: push apart by mass, trade momentum, knock the car loose. However
+// hard the hit, the Roadster stays drivable: it's a shove, not a crash.
 export function collidePlayer (tr, sim) {
   if (sim.mode === 'ramp') return
   const me = playerRect(sim)
@@ -99,11 +98,6 @@ export function collidePlayer (tr, sim) {
     me.x = BODY.x
     me.z = BODY.z
     if (impact > 0.6) sim.emit('bump', { impact, what: 'car' })
-    if (impact > CRASH_SPEED && sim.mode === 'ground') {
-      sim.syncPose()
-      crashInto(sim, hit, impact, 'Hit a car')
-      return
-    }
   }
   if (sim.mode === 'ground') sim.syncPose()
 }
