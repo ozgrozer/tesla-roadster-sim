@@ -3,6 +3,7 @@
 // Each style is one merged mesh, so seven hundred buildings draw in a few calls.
 import * as THREE from 'three'
 import { BUILDINGS, rng } from '../sim/city.js'
+import { PARAPET, PARAPET_H } from '../sim/roofs.js'
 import { canvasTex, speckle, hdr } from './scene.js'
 
 const COL = 3 // m per window bay
@@ -312,37 +313,19 @@ export function buildBuildings (group) {
       })
       roofs.top(t.x0, t.x1, t.z0, t.z1, t.y1, roofCol)
       // parapet round the roof edge
-      const p = 0.3,
-        h = t.y1 + 0.9
+      const p = PARAPET,
+        h = t.y1 + PARAPET_H
       roofs.cuboid(t.x0, t.x1, t.z0, t.z0 + p, t.y1, h, col)
       roofs.cuboid(t.x0, t.x1, t.z1 - p, t.z1, t.y1, h, col)
       roofs.cuboid(t.x0, t.x0 + p, t.z0, t.z1, t.y1, h, col)
       roofs.cuboid(t.x1 - p, t.x1, t.z0, t.z1, t.y1, h, col)
     })
-    // rooftop plant on the top tier: a stair and lift housing and a few air-handling units
+    // rooftop plant on the top tier (solid, so laid out by the sim: roofs.js)
     const t = b.tiers[b.tiers.length - 1],
-      w = t.x1 - t.x0,
-      d = t.z1 - t.z0,
       y = t.y1
     const grey = new THREE.Color().setScalar(0.55 + R() * 0.25)
-    if (w > 10 && d > 10) {
-      const hx = t.x0 + 3 + R() * (w - 10),
-        hz = t.z0 + 3 + R() * (d - 10)
-      roofs.cuboid(hx, hx + 4 + R() * 2, hz, hz + 3 + R() * 2, y, y + 3.2, grey)
-      for (let i = 0; i < 3; i++) {
-        const ax = t.x0 + 2 + R() * (w - 6),
-          az = t.z0 + 2 + R() * (d - 6)
-        roofs.cuboid(
-          ax,
-          ax + 1.6 + R() * 1.4,
-          az,
-          az + 1.2 + R(),
-          y,
-          y + 1.1 + R() * 0.8,
-          grey
-        )
-      }
-    }
+    for (const p of b.plant)
+      roofs.cuboid(p.x0, p.x1, p.z0, p.z1, p.y0, p.y1, grey)
     if (b.antenna) {
       const cx = (t.x0 + t.x1) / 2,
         cz = (t.z0 + t.z1) / 2,
