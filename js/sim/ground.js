@@ -4,10 +4,36 @@ import { TRACK, SOLIDS } from './track.js'
 import { collideCity, bumpCars } from './collide.js'
 import { G, CAR, LIFT_ACC, clamp, wrapPi } from './constants.js'
 
-// Planar two-axle tyre model: slip angles, friction circle, AWD split, load transfer,
-// rolling resistance, aero drag, coast regen and a rear-locking e-brake. Let go of the e-brake in a
-// slide and the rears find their grip again over half a second, with stability control standing
-// back meanwhile, so a handbrake turn carries on as a powerslide instead of snapping straight.
+// Planar two-axle tyre model: slip angles, a tyre curve that peaks and falls away, friction circle,
+// AWD split, load transfer, rolling resistance, aero drag, coast regen, a steering rack turned at the
+// speed of a driver's hands, and a handbrake on the rear wheels only. Pulled, it locks the rears,
+// which slide (at the sliding tyre's grip) the way they are going; the fronts still steer and the
+// front motor still pulls. Let go, and the rear wheels spin back up with the road in a few
+// hundredths of a second; a car well sideways by then is past its tyres' peak and slides on until
+// they bite, or the driver catches it, or stability control does.
+
+// A tyre's grip against its slip, x: the slip angle in units of its grip over its cornering
+// stiffness, so that the force starts out at the stiffness times the slip. It builds like a sine to
+// its peak at x = pi / 2 (about 11 degrees on the fronts), then falls away to what a sliding tyre
+// keeps (CAR.slideMu), so a tyre pushed past its limit gives less, not more.
+const PEAK = Math.PI / 2
+export function tyreCurve (x) {
+  const a = Math.abs(x)
+  const f =
+    a < PEAK
+      ? Math.sin(a)
+      : CAR.slideMu + (1 - CAR.slideMu) * Math.exp(-((a - PEAK) ** 2) / 1.2)
+  return Math.sign(x) * f
+}
+// the steering rack: how fast hands turn the road wheels (rad/s, full lock in a third of a second),
+// and the extra speed they come back to the middle at as the car rolls (the tyres' self-aligning
+// torque, per m/s)
+const HANDS = 1.8,
+  CENTRE = 0.08
+// the rear wheels spinning back up with the road after the e-brake: the share of their grip they get
+// back per second
+const SPIN_UP = 12
+
 export function stepGround (s, dt, c, main, lift) {
   const m = CAR.mass,
     v = s.vel
@@ -37,32 +63,35 @@ export function stepGround (s, dt, c, main, lift) {
   )
   const Nf = Ntot / 2 - dN,
     Nr = Ntot / 2 + dN
-  // the rears' grip coming back after the e-brake (1: all of it): slowly while the car is still well
-  // sideways, quickly once it lines up with where it is going
-  const back = 2.2 * (1 - 0.55 * clamp(Math.abs(s.slipR) / 0.7, 0, 1))
-  s.rearGrip = c.ebrake ? 0.6 : Math.min(1, s.rearGrip + dt * back)
+  // the rears' grip (1: all of it): a sliding tyre's while the e-brake locks them, all of it again
+  // once they have spun back up with the road
+  s.rearGrip = c.ebrake ? CAR.slideMu : Math.min(1, s.rearGrip + dt * SPIN_UP)
   const FmaxF = mu * Nf,
-    FmaxR = mu * CAR.rearGrip * Nr * (c.ebrake ? 1 : s.rearGrip)
+    FmaxR = mu * CAR.rearGrip * Nr * s.rearGrip
 
   // speed-sensitive steering so a keyboard stays controllable
   const steerMax = 0.6 / (1 + (u * u) / 300)
-  // steering assist: cap the front slip near its peak so normal steering grips instead of squealing
+  // the driver's feel for the limit: the fronts are turned no further than just short of their
+  // peak, where they grip hardest (past it they would only scrub and push wide)
   let steerT = c.steer * steerMax
   if (!c.ebrake && u > 3) {
     const aKin = Math.atan2(w + a * r, u),
-      aLim = (1.25 * FmaxF) / CAR.corneringF
+      aLim = (1.5 * FmaxF) / CAR.corneringF
     steerT = clamp(steerT, aKin - aLim, aKin + aLim)
   }
-  s.steerAng += (steerT - s.steerAng) * Math.min(1, dt * 8)
+  // the rack: turned at the speed of hands, and coming back quicker the faster the car rolls
+  const centring =
+    Math.abs(steerT) < Math.abs(s.steerAng) && steerT * s.steerAng >= 0
+  const rate = HANDS + (centring ? CENTRE * Math.abs(u) : 0)
+  s.steerAng += clamp(steerT - s.steerAng, -rate * dt, rate * dt)
   const cd = Math.cos(s.steerAng),
     sd = Math.sin(s.steerAng)
 
   // longitudinal demand at the tyres
   const au = Math.abs(u),
     su = u > 0.02 ? 1 : u < -0.02 ? -1 : 0
-  // the e-brake overrides the throttle while it is held (W held through a handbrake turn picks up
-  // again as soon as it comes off)
-  const throttle = c.ebrake ? 0 : c.throttle
+  // (with the rears locked by the e-brake, only the front motor's share reaches the road)
+  const throttle = c.throttle
   let Fdrive = 0
   if (throttle > 0 && u < CAR.vMax)
     Fdrive +=
@@ -76,10 +105,7 @@ export function stepGround (s, dt, c, main, lift) {
       clamp(au / 2.5, 0, 1) *
       Math.min(1, CAR.regenPowerW / (m * CAR.regenAccel * Math.max(au, 1)))
     : 0
-  // Space stops the car hard in a straight line: with the wheel straight the e-brake brings in the
-  // front brakes too; turned, it leaves the fronts free so the locked rears swing the car round
-  const ebFront = c.ebrake ? 0.8 * (1 - Math.min(1, Math.abs(c.steer))) : 0
-  const Fbrake = Math.min(1, c.brake + ebFront) * m * CAR.brakeAccel
+  const Fbrake = c.brake * m * CAR.brakeAccel
   let Fxf = 0.4 * Fdrive - su * (0.6 * Fbrake + 0.5 * Fregen)
   let Fxr = 0.6 * Fdrive - su * (0.4 * Fbrake + 0.5 * Fregen)
   // traction control + ABS: keep the grip the tyres are using to corner, leave at least 35% for drive/brakes
@@ -97,7 +123,7 @@ export function stepGround (s, dt, c, main, lift) {
   const uwf = u * cd + wf * sd,
     wwf = -u * sd + wf * cd
   const alphaF = Math.atan2(wwf, Math.max(Math.abs(uwf), 2))
-  let Fyf = -FmaxF * Math.tanh((CAR.corneringF * alphaF) / FmaxF)
+  let Fyf = -FmaxF * tyreCurve((CAR.corneringF * alphaF) / FmaxF)
   const wantF = Fyf
   const limF = Math.sqrt(Math.max(0, FmaxF * FmaxF - Fxf * Fxf))
   Fyf = clamp(Fyf, -limF, limF)
@@ -114,7 +140,7 @@ export function stepGround (s, dt, c, main, lift) {
   if (c.ebrake) {
     s.slipR = Math.atan2(wr, Math.max(au, 2))
     const vr = Math.hypot(u, wr),
-      k = (CAR.ebrakeMu * FmaxR) / Math.max(vr, 0.6)
+      k = FmaxR / Math.max(vr, 0.6) // (FmaxR is already the sliding grip)
     Fxr2 = -u * k
     Fyr = -wr * k
     slideR = clamp(vr / 3, 0, 1)
@@ -122,7 +148,7 @@ export function stepGround (s, dt, c, main, lift) {
     Fxr2 = clamp(Fxr, -FmaxR, FmaxR)
     const alphaR = Math.atan2(wr, Math.max(au, 2))
     s.slipR = alphaR
-    Fyr = -FmaxR * Math.tanh((CAR.corneringR * alphaR) / FmaxR)
+    Fyr = -FmaxR * tyreCurve((CAR.corneringR * alphaR) / FmaxR)
     wantR = Fyr
     const limR = Math.sqrt(Math.max(0, FmaxR * FmaxR - Fxr2 * Fxr2))
     Fyr = clamp(Fyr, -limR, limR)
@@ -169,21 +195,6 @@ export function stepGround (s, dt, c, main, lift) {
   v.y = 0
   s.yawRate += (Mz / CAR.Iz) * dt
   s.yaw = wrapPi(s.yaw + s.yawRate * dt)
-  // A handbrake turn carries the car round with its nose, as in GTA: for a moment after the e-brake
-  // comes off, the sideways part of the slide is scrubbed away and the swing back damped, so it
-  // drives off the way it now points rather than snapping back to the way it was going.
-  if (c.ebrake) s.driftT = 1
-  else if (s.driftT > 0) {
-    s.driftT = Math.max(0, s.driftT - dt)
-    const k = 1 - Math.exp(-dt * 4 * s.driftT)
-    const ly = -Math.sin(s.yaw),
-      lzz = -Math.cos(s.yaw)
-    const lat = v.x * ly + v.z * lzz
-    v.x -= lat * k * ly
-    v.z -= lat * k * lzz
-    s.yawRate *= 1 - k * 0.5
-  }
-
   // brakes, regen and rolling resistance can stop the car but never push it backwards
   const pushing = throttle > 0 || c.reverse > 0 || main > 0
   const cy2 = Math.cos(s.yaw),
