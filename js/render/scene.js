@@ -7,9 +7,11 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js'
 export const canvas = document.getElementById('c')
 export let renderer
 try {
+  // (no antialiasing on the canvas: the frame is drawn into the effect composer's own targets and
+  // only copied out onto the canvas, where multisampling would cost memory and nothing else)
   renderer = new THREE.WebGLRenderer({
     canvas,
-    antialias: true,
+    antialias: false,
     powerPreference: 'high-performance'
   })
 } catch (err) {
