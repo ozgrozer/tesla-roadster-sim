@@ -206,11 +206,13 @@ export class Hud {
       const cd = ap.countdown
       el.countdown.style.opacity = cd === null ? 0 : 1
       if (cd !== null) el.countdown.textContent = cd === 0 ? 'GO' : String(cd)
+      const what =
+        this.world === 'city' ? 'Autopilot on' : 'Autopilot demo running'
       this.setText(
         el.hint,
         app.soundOn
-          ? 'Autopilot demo running · press any drive key to take over'
-          : 'Autopilot demo running · click or press N for sound · any drive key takes over'
+          ? `${what} · press any drive key to take over`
+          : `${what} · click or press N for sound · any drive key takes over`
       )
     } else {
       el.countdown.style.opacity = 0
