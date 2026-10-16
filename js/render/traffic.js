@@ -2,10 +2,12 @@
 // (carShapes.js), instanced per type, with paint per car, wheels with tyres and alloy or steel rims
 // (carWheels.js) that roll with the distance driven and steer through the turns, bodies that ride on
 // their springs (nose down under braking, squatting as they pull away, leaning out of a corner),
-// headlights, tail lights that brighten under braking, and amber indicators that blink for lane
-// changes and turns (and both at once, hazards, for a car knocked out of its lane).
+// headlights, tail lights that brighten under braking, amber indicators that blink for lane changes
+// and turns (and both at once, hazards, for a car knocked out of its lane), and a soft shadow on the
+// road under each car, where its body shuts out the sky.
 import * as THREE from 'three'
 import { hdr } from './scene.js'
+import { CURB_H } from '../sim/city.js'
 import { clamp, wrapPi } from '../sim/constants.js'
 import { TYPES } from '../sim/traffic.js'
 import { carShape, archMaterial } from './carShapes.js'
@@ -32,6 +34,24 @@ const FIXED = {
 }
 // cabs, vans and buses run on steel wheels, everyone else on alloys
 const STEEL = new Set(['taxi', 'van', 'bus'])
+
+// the dark under a car: a rounded rectangle, blurred, darkest in the middle
+function underTexture () {
+  const S = 128,
+    cv = document.createElement('canvas')
+  cv.width = cv.height = S
+  const g = cv.getContext('2d')
+  // (drawn off the canvas, so only its blurred shadow lands on it)
+  g.shadowColor = 'rgba(0,0,0,1)'
+  g.shadowBlur = 22
+  g.shadowOffsetX = S * 2
+  g.beginPath()
+  g.roundRect(22 - S * 2, 26, S - 44, S - 52, 18)
+  g.fill()
+  const t = new THREE.CanvasTexture(cv)
+  t.colorSpace = THREE.SRGBColorSpace
+  return t
+}
 
 const _m = new THREE.Matrix4(),
   _b = new THREE.Matrix4(),
@@ -153,6 +173,22 @@ export class TrafficView {
       false
     )
     this.blinkers.setColorAt(0, AMBER)
+    this.under = mesh(
+      new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2),
+      new THREE.MeshBasicMaterial({
+        map: underTexture(),
+        color: 0x000000,
+        transparent: true,
+        opacity: 0.62,
+        depthWrite: false,
+        polygonOffset: true,
+        polygonOffsetFactor: -3,
+        polygonOffsetUnits: -3
+      }),
+      max,
+      false
+    )
+    this.under.receiveShadow = false
     this.max = max
   }
 
@@ -161,7 +197,8 @@ export class TrafficView {
     const rimN = { alloy: 0, steel: 0 }
     let w = 0,
       l = 0,
-      b = 0
+      b = 0,
+      u = 0
     // indicators flash at 1.5 Hz
     const flash = Math.sin(traffic.t * Math.PI * 3) > 0
     for (const car of traffic.cars) {
@@ -171,9 +208,19 @@ export class TrafficView {
       counts[car.type]++
       const { T, S } = ty
       if (!car.parked) ride(car, T, S, dt)
-      // the car where it stands, and its body tipped on its springs about the axles' height
+      // the car where it stands (in a parking lot, up on its raised slab), and its body tipped on
+      // its springs about the axles' height
+      const y = car.parked && !car.jam ? CURB_H : 0
       _q.setFromAxisAngle(_y, car.yaw)
-      _m.compose(_p.set(car.x, 0, car.z), _q, _s)
+      _m.compose(_p.set(car.x, y, car.z), _q, _s)
+      this.under.setMatrixAt(
+        u++,
+        _w.compose(
+          _p.set(car.x, y + 0.012, car.z),
+          _q,
+          _sc.set(T.len + 0.5, 1, T.wid + 0.45)
+        )
+      )
       _b.copy(_m)
       if (!car.parked) {
         _e.set(car.roll || 0, 0, car.pitch || 0)
@@ -250,7 +297,14 @@ export class TrafficView {
     }
     this.heads.count = this.tails.count = l
     this.blinkers.count = b
-    for (const m of [this.tyres, this.heads, this.tails, this.blinkers])
+    this.under.count = u
+    for (const m of [
+      this.tyres,
+      this.heads,
+      this.tails,
+      this.blinkers,
+      this.under
+    ])
       m.instanceMatrix.needsUpdate = true
     this.tails.instanceColor.needsUpdate = true
     this.blinkers.instanceColor.needsUpdate = true
