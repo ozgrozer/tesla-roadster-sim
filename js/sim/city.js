@@ -12,7 +12,7 @@ export const CURB_R = 4 // rounded kerb at every corner
 export const STOP = 11 // stop line, measured from an intersection's centre
 export const HALF = (N / 2) * PITCH // centre line of the outer ring road
 export const EDGE = HALF + ROAD_HW + WALK // outside of the ring road's sidewalk
-export const OUTER = EDGE + 60 // the open ground ends here
+export const OUTER = EDGE + 24 // the beach past the ring road ends here, at the sea
 export const ROADS = Array.from(
   { length: N + 1 },
   (_, i) => (i - N / 2) * PITCH
@@ -374,16 +374,9 @@ export function addCollider (c) {
 for (const b of BUILDINGS)
   for (const t of b.tiers) addCollider({ ...t, kind: 'building' })
 // (street lights, palms, trees and signal masts: breakables.js)
-// a low concrete barrier round the outside of the ring road, and the end of the open ground
-const BW = EDGE + 1.5
-for (const [x0, x1, z0, z1] of [
-  [-BW - 0.8, BW + 0.8, -BW - 0.8, -BW],
-  [-BW - 0.8, BW + 0.8, BW, BW + 0.8],
-  [-BW - 0.8, -BW, -BW, BW],
-  [BW, BW + 0.8, -BW, BW]
-])
-  addCollider({ x0, x1, z0, z1, y0: 0, y1: 1.1, kind: 'barrier' })
-export const BARRIER = BW
+// the promenade: the sidewalk round the outside of the ring road ends here and the beach begins,
+// open all the way down to the water (OUTER)
+export const PROMENADE = EDGE + 1.5
 // Street lights, signals and trees go down when they are hit hard (collider.down); this stands them
 // all back up.
 export function standUp () {
