@@ -79,6 +79,7 @@ const cityPilot = new CityPilot(sim, traffic)
 const cityView = new CityView()
 const minimap = new Minimap(document.getElementById('radar'))
 const intro = new Intro(RS, rig)
+intro.onCue = cue => sound[cue](panOf(RS.car.position.x, RS.car.position.z))
 const tween = new Tween(sim, traffic) // drawing between physics steps
 const HOLD = { ...makeControls(), brake: 1, fan: false } // parked while Optimus gets in
 const app = {
