@@ -5,6 +5,8 @@ import { Sim } from './sim/sim.js'
 import { Input } from './ui/input.js'
 import { Minimap } from './ui/minimap.js'
 import { smoke } from './render/smoke.js'
+import { Intro } from './render/intro.js'
+import { Tween } from './render/tween.js'
 import { Traffic } from './sim/traffic.js'
 import { SoundEngine } from './audio/sound.js'
 import { Autopilot } from './sim/autopilot.js'
@@ -76,6 +78,9 @@ const traffic = new Traffic()
 const cityPilot = new CityPilot(sim, traffic)
 const cityView = new CityView()
 const minimap = new Minimap(document.getElementById('radar'))
+const intro = new Intro(RS, rig)
+const tween = new Tween(sim, traffic) // drawing between physics steps
+const HOLD = { ...makeControls(), brake: 1, fan: false } // parked while Optimus gets in
 const app = {
   world: 'site', // 'site' (the reveal's test site) or 'city' (free roam)
   sim,
@@ -91,13 +96,15 @@ const app = {
   restHint: false, // told the player how to carry on from a wreck at rest
   lastCountdown: null,
   wheelAudio: 0,
-  lastBump: 0
+  lastBump: 0,
+  pilotHorn: false
 }
 
 function setAuto (on) {
   app.auto = on
   hud.setMode(on)
   if (!on) {
+    cityPilot.releaseLights() // any light it held for itself goes back to its cycle
     ap.slow = 1
     app.fanMode = 'auto'
     if (rig.mode === 'director') setCam('follow')
@@ -118,6 +125,7 @@ function startDemo () {
 }
 // P and the mode button: the demo at the test site, Autopilot in the city
 function startAutopilot () {
+  intro.finish(true)
   if (app.world !== 'city') return startDemo()
   cityPilot.reset()
   if (!cityPilot.join()) {
@@ -132,6 +140,8 @@ function startAutopilot () {
   setAuto(true)
 }
 function resetTo (spot, at = null) {
+  intro.finish(true)
+  traffic.walker = null
   setWorld(spot === 'city' ? 'city' : 'site')
   sim.reset(spot, at)
   rig.cut()
@@ -146,6 +156,8 @@ function resetTo (spot, at = null) {
 }
 // ---------- worlds: the test site and the city ----------
 function setWorld (w) {
+  if (w !== 'city') intro.finish(true) // (Optimus gets in at once, off camera)
+  cityPilot.releaseLights()
   if (app.world === w) return
   app.world = w
   app.ap = pilot()
@@ -158,15 +170,19 @@ function setWorld (w) {
   const url = location.pathname + location.search
   history.replaceState(null, '', w === 'site' ? `${url}#site` : url)
 }
+// the city opens on Optimus walking up to the Roadster and getting in
 function enterCity () {
   resetTo('city')
   setCam('follow')
-  hud.popup('Welcome to the city · <b>C</b> for the test site', 3200, 'hint')
-  hud.popup(
-    'Gridlock on the avenue ahead · <b>Space</b> to jump it',
-    4200,
-    'hint'
-  )
+  intro.start(() => {
+    traffic.walker = null
+    hud.popup('Welcome to the city · <b>C</b> for the test site', 3200, 'hint')
+    hud.popup(
+      'Gridlock on the avenue ahead · hold <b>F</b> to jump it',
+      4200,
+      'hint'
+    )
+  })
 }
 function toggleWorld () {
   hud.fade(() => (app.world === 'city' ? startDemo() : enterCity()))
@@ -248,7 +264,8 @@ const COMMANDS = {
 }
 const input = new Input({
   onDrive: (code, first) => {
-    if (code === 'KeyB' && first) sound.ratchet()
+    if (intro.active) intro.finish()
+    if (code === 'Space' && first) sound.ratchet()
     if (app.auto) setAuto(false)
   },
   onCommand: code => COMMANDS[code]?.(),
@@ -288,6 +305,7 @@ cityView.onLand = (x, z, kind) => {
   sound.fall(kind, hearing(x, z), panOf(x, z))
 }
 
+const _walker = new THREE.Vector3()
 // the camera's ground position and heading: traffic spawns out of its sight, the radar turns with it
 const VIEW = { x: 0, z: 0, fx: 1, fz: 0, heading: 0 }
 const _dir = new THREE.Vector3()
@@ -321,7 +339,12 @@ function frame (now) {
   const city = app.world === 'city'
   if (city) updateView()
   while (acc >= H && steps < 14) {
-    const c = app.auto ? P.update(H) : input.controls(sim, app.fanMode)
+    const c = app.auto
+      ? P.update(H)
+      : intro.active
+      ? HOLD
+      : input.controls(sim, app.fanMode)
+    tween.before(city)
     sim.step(H, c)
     if (city) traffic.step(H, sim, VIEW)
     app.lastCtl = c
@@ -335,6 +358,12 @@ function frame (now) {
     }
   }
   if (steps >= 14) acc = 0
+  // Autopilot leaning on the horn, sat in a jam
+  const ph = app.auto && !!P.horn
+  if (ph !== app.pilotHorn) {
+    app.pilotHorn = ph
+    setHorn(ph)
+  }
   handleEvents()
   // a wreck at rest stays put (no respawn): say how to carry on from it
   if (!app.auto && sim.mode === 'crash' && sim.crashSettled && !app.restHint) {
@@ -351,6 +380,13 @@ function frame (now) {
     if (P.countdown !== null) sound.beep(P.countdown === 0)
     app.lastCountdown = P.countdown
   }
+  if (intro.active) {
+    intro.update(dt)
+    traffic.walker = intro.where(_walker)
+  }
+  app.intro = intro.active
+  // draw this frame part of the way between the last two physics steps, so nothing judders
+  tween.apply(Math.min(1, acc / H), city)
   updateRoadster(RS, sim, app.lastCtl, dt)
   followKeyLight(sim.pos)
   updateSkids(RS, sim)
@@ -361,7 +397,7 @@ function frame (now) {
   LED_MAT.uniforms.uTime.value = clock
   const blink = Math.sin(clock * 2.4) > 0.6 ? 1 : 0.15
   MAT.beacon.color.setRGB(4 * blink, 0.2 * blink, 0.15 * blink)
-  rig.update(dt, clock, sim, app.auto ? P.shot : null)
+  if (!intro.active) rig.update(dt, clock, sim, app.auto ? P.shot : null)
   // (after the camera has moved: the smoke is lit and sorted from where it now looks)
   camera.updateMatrixWorld()
   smoke.track(camera, sim)
@@ -378,6 +414,7 @@ function frame (now) {
   mixSound(sound, app, traffic, dt, clock)
   hud.update(dt, app)
   composer.render()
+  tween.restore()
   if (firstFrame) {
     firstFrame = false
     hud.hideLoading()
@@ -391,6 +428,9 @@ requestAnimationFrame(frame)
 // debugging hook for the console and automated checks: fast-forward the sim without rendering
 window.__roadster = {
   sim,
+  RS,
+  intro,
+  tween,
   ap,
   rig,
   sound,
