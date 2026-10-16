@@ -1,6 +1,6 @@
 // The parked Tesla lineup for stunt 2: extruded low-poly profiles, parked broadside to the jump.
 import * as THREE from 'three'
-import { scene, MAT } from './scene.js'
+import { site, MAT } from './scene.js'
 import { LINEUP } from '../sim/track.js'
 
 // ---------- parked lineup ----------
@@ -183,6 +183,6 @@ export function buildLineup () {
     }
     g.rotation.y = Math.PI / 2 // broadside to the jump
     g.position.set(v.x, 0, 0)
-    scene.add(g)
+    site.add(g)
   }
 }
