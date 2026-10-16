@@ -225,7 +225,9 @@ export class Hud {
           : sim.mode === 'ramp'
           ? 'W climb · S brake, then reverse down · B hold · Shift main burn off the lip'
           : sim.mode === 'crash'
-          ? 'Crashed · R to reset · P to watch the autopilot'
+          ? sim.up().y > 0.95
+            ? 'Crashed · W to drive on · R to reset · P to watch the autopilot'
+            : 'Upside down · A/D to roll it back over · R to reset'
           : 'W throttle · release to coast · S brake · B e-brake · A/D steer · Shift boost · Space lift off'
       )
     }
