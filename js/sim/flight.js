@@ -1,7 +1,7 @@
 // Free flight: gravity, cold-gas thrust, attitude control (manoeuvres + stability assist) and contacts.
 import * as THREE from 'three'
 import { TRACK, SOLIDS } from './track.js'
-import { crashName, bumpCars } from './collide.js'
+import { crashName, bumpCars, collideAir } from './collide.js'
 import {
   G,
   CAR,
@@ -19,6 +19,7 @@ const _a = new THREE.Vector3(),
   _d = new THREE.Vector3()
 const _q = new THREE.Quaternion(),
   _q2 = new THREE.Quaternion()
+const LAND_UP = 0.25 // tilted less than this from on its side, the car comes down on its wheels
 
 export function stepAir (s, dt, c, main, lift) {
   const m = CAR.mass,
@@ -121,12 +122,14 @@ export function stepAir (s, dt, c, main, lift) {
   s.syncPose()
 
   // ground contact
-  let minY = Infinity
+  let minY = Infinity,
+    maxY = -Infinity
   for (const p of CORNERS) {
     _a.set(p.x, p.y - CAR.comH, p.z)
       .applyQuaternion(q)
       .add(s.com)
-    if (_a.y < minY) minY = _a.y
+    minY = Math.min(minY, _a.y)
+    maxY = Math.max(maxY, _a.y)
   }
   const upY = s.up(_b).y
   if (minY <= 0 && s.vel.y > 0 && upY > 0.72) {
@@ -135,24 +138,25 @@ export function stepAir (s, dt, c, main, lift) {
     s.com.y -= minY
     s.syncPose()
   } else if (minY <= 0) {
-    if (upY > 0.72 && s.vel.y > -13) s.land()
-    else
-      s.toCrash(upY <= 0.72 ? 'Landed on its side' : 'Hit the ground too hard')
+    // like GTA, a landing never takes the wheel away, however hard: anything short of its side or
+    // roof comes down on its wheels. On its side or roof it tumbles (and A/D rolls it back: crash.js)
+    if (upY > LAND_UP) s.land()
+    else s.toCrash(upY > -0.4 ? 'Landed on its side' : 'Landed on its roof')
     return
   }
-  if (s.world === 'site') bumpCars(s, SOLIDS)
-  const hit = s.hitSolid()
-  if (hit) {
-    s.toCrash(
-      s.world === 'site'
-        ? 'Mid-air collision'
-        : hit.kind === 'building'
-        ? 'Flew into a building'
-        : crashName(hit.kind)
-    )
+  if (s.world === 'city') {
+    // the side of a building, a post or the barrier bounces the car off; dropping onto a roof crashes
+    const top = collideAir(s, minY, maxY)
+    if (top)
+      s.toCrash(top.kind === 'building' ? 'Landed on a roof' : crashName(top.kind))
     return
   }
-  if (s.world === 'site') checkRampContact(s)
+  bumpCars(s, SOLIDS)
+  if (s.hitSolid()) {
+    s.toCrash('Mid-air collision')
+    return
+  }
+  checkRampContact(s)
 }
 
 export function checkRampContact (s) {
