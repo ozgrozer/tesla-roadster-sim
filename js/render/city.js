@@ -7,6 +7,7 @@ import { Sky, SUN } from './citySky.js'
 import { scene, site, renderer } from './scene.js'
 import { CityShadow } from './sunShadow.js'
 import { raycast, BUILDINGS, OUTER } from '../sim/city.js'
+import { PedView } from './peds.js'
 import { TrafficView } from './traffic.js'
 import { buildProps } from './cityProps.js'
 import { buildGround } from './cityGround.js'
@@ -38,6 +39,7 @@ export class CityView {
       }
     this.falling = false
     this.cars = new TrafficView(g)
+    this.people = new PedView(g)
     g.visible = false
     scene.add(g)
     this.group = g
@@ -67,9 +69,9 @@ export class CityView {
   // before the frame is drawn: the city's shadow map, if it is due (with the cars and hide, the
   // Roadster, left out of it)
   shadows (camera, hide) {
-    this.shadow?.update(camera, [...this.cars.meshes, ...hide])
+    this.shadow?.update(camera, [...this.cars.meshes, this.people.mesh, ...hide])
   }
-  update (dt, clock, traffic, camera) {
+  update (dt, clock, traffic, camera, peds) {
     if (!this.on) return
     this.sky.follow(camera)
     this.sea(clock, camera)
@@ -83,6 +85,7 @@ export class CityView {
     this.falling = falling
     this.signals.update(traffic.t)
     this.cars.update(traffic, dt)
+    if (peds) this.people.update(peds)
     const b = Math.sin(clock * 2.2) > 0.4 ? 1 : 0.08
     BEACON.color.setRGB(5 * b, 0.2 * b, 0.12 * b)
   }
