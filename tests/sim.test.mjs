@@ -4,7 +4,13 @@ import { Sim } from '../js/sim/sim.js'
 import assert from 'node:assert/strict'
 import { LINEUP, TRACK } from '../js/sim/track.js'
 import { Autopilot } from '../js/sim/autopilot.js'
-import { AX_X, CORNERS, DEG, makeControls, wrapPi } from '../js/sim/constants.js'
+import {
+  DEG,
+  AX_X,
+  wrapPi,
+  CORNERS,
+  makeControls
+} from '../js/sim/constants.js'
 
 const H = 1 / 120
 
@@ -370,7 +376,10 @@ test('a wreck rolls back onto its wheels with A or D and drives on, GTA-style', 
     assert.ok(t < 1.2, `in ${t.toFixed(2)} s`)
     assert.ok(driveOff(sim) > 15, 'and drives on')
   }
-  assert.ok(rolls[0] * rolls[1] < 0, 'A and D roll it off its roof opposite ways')
+  assert.ok(
+    rolls[0] * rolls[1] < 0,
+    'A and D roll it off its roof opposite ways'
+  )
   for (const r of rolls.slice(2))
     assert.ok(Math.abs(r) < 2, 'off its side the short way, whichever key')
 })
@@ -392,7 +401,10 @@ test('the parked lineup bounces the Roadster off instead of crashing it', () => 
     events.push(...sim.events)
     sim.events.length = 0
   }
-  assert.ok(events.some(e => e.type === 'bump' && e.impact > 10), 'hits it hard')
+  assert.ok(
+    events.some(e => e.type === 'bump' && e.impact > 10),
+    'hits it hard'
+  )
   assert.ok(!events.some(e => e.type === 'crash'), 'without a crash')
   assert.equal(sim.mode, 'ground')
   const cab = LINEUP.find(c => c.kind === 'cab')
@@ -425,7 +437,10 @@ test('hard and tilted landings come down on the wheels, and the car drives on', 
   ]) {
     const { sim, events } = drop(roll, vy)
     assert.ok(!events.some(e => e.type === 'crash'), `no crash at ${vy} m/s`)
-    assert.ok(events.some(e => e.type === 'touchdown'), 'a touchdown')
+    assert.ok(
+      events.some(e => e.type === 'touchdown'),
+      'a touchdown'
+    )
     assert.equal(sim.mode, 'ground')
     assert.ok(driveOff(sim) > 15, 'and drives on')
   }
