@@ -251,6 +251,33 @@ export function knock (s, c, impact) {
   return true
 }
 
+// In the air over the city: the side of a building, a post or the barrier bounces the car off as it
+// would on the road (a street light still folds over). Coming down onto the top of one is another
+// matter: that one is returned, for a crash. bottom and top: the car's lowest and highest corners.
+export function collideAir (s, bottom, top) {
+  const me = playerRect(s)
+  query(me.x - 4, me.z - 4, me.x + 4, me.z + 4, hits)
+  for (const c of hits) {
+    if (c.down || bottom >= c.y1 || top <= c.y0) continue
+    const hit = c.r ? rectPost(me, c) : rectRect(me, boxRect(c))
+    if (!hit) continue
+    if (
+      c.kind === 'lamp' &&
+      knock(s, c, -(s.vel.x * hit.nx + s.vel.z * hit.nz))
+    )
+      continue
+    if (s.vel.y < 0 && c.y1 - bottom < hit.depth) return c // in through the top
+    nudge(s, hit.nx * hit.depth, hit.nz * hit.depth)
+    const impact = impulse(loadBody(s), null, hit, 0.2, 0.35)
+    storeBody(s)
+    me.x = BODY.x
+    me.z = BODY.z
+    if (impact > 0.6) s.emit('bump', { impact, what: c.kind })
+  }
+  s.syncPose()
+  return null
+}
+
 // The test site's parked lineup: cars to bounce off, on the ground or low in the air, like the
 // city's traffic (they are too heavy to shove). Hitting a car never takes the wheel away.
 export function bumpCars (s, solids) {
