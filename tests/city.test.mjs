@@ -6,7 +6,7 @@ import { roofAt } from '../js/sim/roofs.js'
 import { Traffic } from '../js/sim/traffic.js'
 import { JAM, JAM_AT } from '../js/sim/jam.js'
 import { CityPilot } from '../js/sim/cityPilot.js'
-import { makeControls } from '../js/sim/constants.js'
+import { CAR, makeControls } from '../js/sim/constants.js'
 import { rectRect, carRect } from '../js/sim/collide.js'
 import {
   RED,
@@ -412,7 +412,7 @@ const inJam = p =>
     )
   })
 
-test('the jammed street is packed nose to tail, and traffic and Autopilot keep out', () => {
+test('the jammed street is packed nose to tail, traffic keeps out, Autopilot joins its tail', () => {
   const sim = new Sim()
   sim.reset('city')
   const tr = new Traffic({ seed: 5 })
@@ -424,18 +424,25 @@ test('the jammed street is packed nose to tail, and traffic and Autopilot keep o
       const a = { ...carRect(jam[i]) }
       assert.ok(!rectRect(a, carRect(jam[j])), 'no two jammed cars overlap')
     }
-  // Autopilot sets off from the spawn point, which faces the jam down the avenue
+  // Autopilot sets off from the spawn point, which faces the jam down the avenue: it waits at the
+  // light like anyone else, then pulls up behind the last car in the queue, clear of the junction
   const pilot = new CityPilot(sim, tr)
   assert.ok(pilot.join(), 'finds its lane at the spawn point')
-  let entered = 0
+  let entered = 0,
+    queued = null
+  const hits = []
   for (let i = 0; i < 90 / H; i++) {
     sim.step(H, pilot.update(H))
     tr.step(H, sim)
+    hits.push(...sim.events.filter(e => e.type === 'bump'))
     sim.events.length = 0
-    if (pilot.edge.closed) entered++
     for (const car of tr.cars) if (!car.parked && car.edge?.closed) entered++
+    if (pilot.horn && !queued) queued = { edge: pilot.edge, s: pilot.s }
   }
-  assert.equal(entered, 0, 'nobody drives into the jammed street')
+  assert.equal(entered, 0, 'no traffic drives into the jammed street')
+  assert.ok(queued?.edge.closed, 'Autopilot joins the queue in it')
+  assert.ok(queued.s > CAR.halfL, 'with its tail clear of the junction')
+  assert.deepEqual(hits, [], 'without touching the car in front')
   assert.ok(
     !inJam(nearestLane(JAM_AT.x, JAM_AT.z)),
     'a wreck in the jam is put back on an open street'
