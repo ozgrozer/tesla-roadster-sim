@@ -21,6 +21,7 @@ import { updateSkids, clearSkids } from './render/skids.js'
 import { DEG, TAU, makeControls } from './sim/constants.js'
 import { LED_MAT, buildWall, buildTruss } from './render/wall.js'
 import { buildRoadster, updateRoadster } from './render/roadster.js'
+import { speedBlurPass, updateSpeedBlur } from './render/speedBlur.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js'
@@ -59,6 +60,8 @@ composer.addPass(
     0.95
   )
 )
+const speedBlur = speedBlurPass()
+composer.addPass(speedBlur)
 composer.addPass(new OutputPass())
 function resize () {
   renderer.setSize(window.innerWidth, window.innerHeight)
@@ -425,6 +428,7 @@ function frame (now) {
   }
   mixSound(sound, app, traffic, dt, clock)
   hud.update(dt, app)
+  updateSpeedBlur(speedBlur, sim, rig.shot, dt)
   composer.render()
   tween.restore()
   if (firstFrame) {
