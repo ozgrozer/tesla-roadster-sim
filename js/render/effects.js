@@ -1,7 +1,9 @@
-// Particles (cold-gas vapor, jet cores, sparks), supersonic shock-diamond jets and thruster emission.
+// Particles (jet cores, sparks), supersonic shock-diamond jets, and what the car throws up:
+// thruster vapor, tyre smoke and dust (smoke.js).
 import * as THREE from 'three'
 import { scene, softTex } from './scene.js'
 import { TAU, clamp01 } from '../sim/constants.js'
+import { smoke, VAPOR, TYRE, DUST } from './smoke.js'
 
 class Particles {
   constructor (
@@ -136,11 +138,6 @@ class Particles {
     this.geo.setDrawRange(0, 0)
   }
 }
-const vapor = new Particles(5000, {
-  colA: new THREE.Color(0.72, 0.75, 0.8),
-  colB: new THREE.Color(1.05, 1.07, 1.12),
-  buoyancy: 0.5
-})
 const jets = new Particles(1200, {
   additive: true,
   colA: new THREE.Color(0.5, 0.7, 0.95),
@@ -152,7 +149,7 @@ const sparks = new Particles(500, {
   colB: new THREE.Color(4, 2.4, 0.8),
   gravity: 9.81
 })
-export const ALL_PARTICLES = [vapor, jets, sparks]
+export const ALL_PARTICLES = [smoke, jets, sparks]
 
 // supersonic jets with shock diamonds, one per nozzle
 const diamondGeo = new THREE.CylinderGeometry(0.028, 0.058, 1, 12, 1, true)
@@ -235,20 +232,22 @@ export function emitThrusters (RS, sim, dt, clock) {
     nz.carry += 105 * lv * big * (1 + 2.4 * near) * dt
     while (nz.carry >= 1) {
       nz.carry -= 1
+      // the cold jet condenses the air into vapor; fired at the ground it piles up into a cloud
       const sp = 16 + Math.random() * 18,
-        j = 2.5
-      vapor.spawn(
-        _wp.x + _wd.x * 0.6,
-        _wp.y + _wd.y * 0.6,
-        _wp.z + _wd.z * 0.6,
+        j = 2.5,
+        f = Math.random() * 0.6
+      smoke.spawn(
+        VAPOR,
+        _wp.x + _wd.x * (0.6 + f),
+        _wp.y + _wd.y * (0.6 + f),
+        _wp.z + _wd.z * (0.6 + f),
         vx * 0.85 + _wd.x * sp + (Math.random() - 0.5) * j,
         vy * 0.85 + _wd.y * sp + (Math.random() - 0.5) * j,
         vz * 0.85 + _wd.z * sp + (Math.random() - 0.5) * j,
-        (1.1 + Math.random() * 1.5) * (1 + 0.5 * near),
-        0.4 * big,
-        (3.2 + Math.random() * 2.8) * big * (1 + 0.4 * near),
-        0.2,
-        1.9 - 0.6 * near
+        sim.floor,
+        big * (1 + 0.3 * near),
+        1 + 0.5 * near,
+        1 - 0.3 * near
       )
     }
     nz.carryJ += 150 * lv * big * dt
@@ -271,53 +270,51 @@ export function emitThrusters (RS, sim, dt, clock) {
     }
   }
 }
-// Light tyre smoke where a tyre is sliding hard (e-brake drifts, lock-ups)
+// Tyre smoke where a tyre is sliding (e-brake drifts, lock-ups, sliding sideways). A sliding tyre
+// heats its rubber in proportion to the power it rubs away, so the smoke comes thicker with how hard
+// it slides and how fast; it pours out of the contact patch, hot, and climbs as it trails behind.
 const _tw = new THREE.Vector3()
 export function emitTireSmoke (RS, sim, dt) {
   if (dt <= 0 || sim.mode !== 'ground') return
   const speed = sim.groundSpeed()
-  if (speed < 3) return
+  if (speed < 2.5) return
   RS.wheels.forEach(w => {
     const amt = w.front ? sim.skidF : sim.skidR
-    if (amt < 0.45) return
-    w.smoke = (w.smoke || 0) + 26 * amt * Math.min(1, speed / 15) * dt
+    if (amt < 0.3) return
+    w.smoke = (w.smoke || 0) + 46 * amt * amt * Math.min(1.3, speed / 14) * dt
     while (w.smoke >= 1) {
       w.smoke -= 1
       w.pivot.getWorldPosition(_tw)
-      vapor.spawn(
-        _tw.x + (Math.random() - 0.5) * 0.3,
-        sim.pos.y + 0.25,
-        _tw.z + (Math.random() - 0.5) * 0.3,
-        sim.vel.x * 0.25 + (Math.random() - 0.5) * 1.2,
-        0.5 + Math.random() * 0.8,
-        sim.vel.z * 0.25 + (Math.random() - 0.5) * 1.2,
-        1.6 + Math.random() * 1.4,
-        0.5,
-        2.4 + Math.random() * 1.6,
-        0.14,
-        1.6
+      smoke.spawn(
+        TYRE,
+        _tw.x + (Math.random() - 0.5) * 0.35,
+        sim.pos.y + 0.2,
+        _tw.z + (Math.random() - 0.5) * 0.35,
+        sim.vel.x * 0.35 + (Math.random() - 0.5) * 1.5,
+        0.3 + Math.random() * 0.6,
+        sim.vel.z * 0.35 + (Math.random() - 0.5) * 1.5,
+        sim.pos.y,
+        0.7 + 0.4 * amt
       )
     }
   })
 }
 
-// y: the ground it kicks up from (a roof, or the street)
-export function burst (x, z, n, speed, y = 0) {
+// A ring of dust thrown out along the ground. y: the ground it kicks up from (a roof, or the street).
+export function burst (x, z, n, speed, y = 0, size = 1) {
   for (let i = 0; i < n; i++) {
     const a = Math.random() * TAU,
       s = speed * (0.4 + Math.random() * 0.8)
-    vapor.spawn(
-      x + Math.cos(a) * 1.2,
+    smoke.spawn(
+      DUST,
+      x + Math.cos(a) * 1.2 * size,
       y + 0.3 + Math.random() * 0.6,
-      z + Math.sin(a) * 1.2,
+      z + Math.sin(a) * 1.2 * size,
       Math.cos(a) * s,
       0.6 + Math.random() * 2.2,
       Math.sin(a) * s,
-      1.6 + Math.random() * 2.2,
-      1.2,
-      4.5 + Math.random() * 3,
-      0.3,
-      1.4
+      y,
+      size
     )
   }
 }
