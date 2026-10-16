@@ -1,8 +1,11 @@
 // City buildings: procedural facades (glass curtain wall, office, brick, stucco) with windows lit for
-// the evening, storefronts along the street, setbacks, roof lips, rooftop plant and antenna beacons.
-// Each style is one merged mesh, so seven hundred buildings draw in a few calls.
+// the evening, storefronts under canopies along the street, setbacks, cornices, roof lips, rooftop
+// plant and antenna beacons. Each style is one merged mesh, so seven hundred buildings draw in a few
+// calls. Every window is its own (facade.js): lit or dark, warm or cool, blinds up or down, and a
+// glass pane catches the sky at its own slight angle.
 import * as THREE from 'three'
 import { LIP, LIP_H } from '../sim/roofs.js'
+import { facadeMaterial } from './facade.js'
 import { BUILDINGS, rng } from '../sim/city.js'
 import { canvasTex, speckle, hdr } from './scene.js'
 
@@ -90,30 +93,24 @@ function drawWall (g, style, S) {
       }
     }
 }
+// every window's glow, brightest at its head (which windows are lit, and in what light, is picked
+// per window in the shader: facade.js)
 function drawLit (g, style, S) {
   const c = S / CELLS,
     [wx, wy, ww, wh] = WIN[style]
   g.fillStyle = '#000'
   g.fillRect(0, 0, S, S)
-  const share = style === 'glass' ? 0.16 : 0.24
   for (let j = 0; j < CELLS; j++)
-    for (let i = 0; i < CELLS; i++) {
-      if (R() > share) continue
-      const v = 0.45 + R() * 0.55,
-        cool = R() < 0.3
-      const col = cool
-        ? `rgb(${(200 * v) | 0},${(220 * v) | 0},${(255 * v) | 0})`
-        : `rgb(${(255 * v) | 0},${(196 * v) | 0},${(130 * v) | 0})`
+    for (let i = 0; i < CELLS; i++)
       lighten(
         g,
         i * c + wx,
         j * c + wy,
         ww,
         wh - (style === 'glass' ? 8 : 0),
-        col,
-        '#000'
+        '#ffffff',
+        '#3a3a3a'
       )
-    }
 }
 // storefronts: sign band, lit window, door and sometimes a striped awning (4 m per shop)
 const AWNINGS = [
@@ -248,6 +245,30 @@ class Builder {
       col
     )
   }
+  bottom (x0, x1, z0, z1, y, col) {
+    this.quad(
+      [x0, y, z0],
+      [x1, y, z0],
+      [x1, y, z1],
+      [x0, y, z1],
+      [0, -1, 0],
+      [0, 0, 0, 0],
+      col
+    )
+  }
+  // a band standing out o m round the walls of [x0, x1] x [z0, z1], from y0 to y1, with its
+  // underside: a cornice, a parapet or a shop canopy
+  band (x0, x1, z0, z1, o, y0, y1, col) {
+    for (const [a, b, c, d] of [
+      [x0 - o, x1 + o, z0 - o, z0],
+      [x0 - o, x1 + o, z1, z1 + o],
+      [x0 - o, x0, z0, z1],
+      [x1, x1 + o, z0, z1]
+    ]) {
+      this.cuboid(a, b, c, d, y0, y1, col)
+      this.bottom(a, b, c, d, y0, col)
+    }
+  }
   top (x0, x1, z0, z1, y, col) {
     this.quad(
       [x0, y, z1],
@@ -285,13 +306,16 @@ export function buildBuildings (group) {
   const B = Object.fromEntries(styles.map(s => [s, new Builder()]))
   const shops = new Builder(),
     roofs = new Builder(),
+    ledges = new Builder(),
     beacons = new Builder()
   const col = new THREE.Color(),
-    white = new THREE.Color(1, 1, 1)
+    white = new THREE.Color(1, 1, 1),
+    metal = new THREE.Color(0.32, 0.34, 0.37)
   for (const b of BUILDINGS) {
     const out = B[b.style]
     col.setHex(b.tint).multiplyScalar(0.94 + R() * 0.12)
     const roofCol = new THREE.Color().setScalar(0.75 + R() * 0.3)
+    const awning = new THREE.Color().setScalar(0.16 + R() * 0.08)
     b.tiers.forEach((t, k) => {
       const base = k === 0 && b.shop ? SHOP : t.y0
       if (base > t.y0)
@@ -312,6 +336,31 @@ export function buildBuildings (group) {
         ]
       })
       roofs.top(t.x0, t.x1, t.z0, t.z1, t.y1, roofCol)
+      // a cornice round the top of each tier (a slim metal parapet on glass), and a canopy over
+      // the shops
+      const glass = b.style === 'glass',
+        o = glass ? 0.1 : b.style === 'office' ? 0.22 : 0.34
+      ledges.band(
+        t.x0,
+        t.x1,
+        t.z0,
+        t.z1,
+        o,
+        t.y1 - (glass ? 0.5 : 0.42),
+        t.y1 + LIP_H + 0.02,
+        glass ? metal : col
+      )
+      if (base > t.y0)
+        ledges.band(
+          t.x0,
+          t.x1,
+          t.z0,
+          t.z1,
+          1.1,
+          SHOP - 0.14,
+          SHOP + 0.02,
+          awning
+        )
       // a low lip round the roof edge (the wheels roll over it)
       const p = LIP,
         h = t.y1 + LIP_H
@@ -352,20 +401,34 @@ export function buildBuildings (group) {
   }
   for (const s of styles) {
     const { map, lit } = facadeMaps(s)
+    const glass = s === 'glass'
     add(
       B[s],
-      new THREE.MeshStandardMaterial({
-        map,
-        emissiveMap: lit,
-        emissive: 0xffffff,
-        emissiveIntensity: 1.15,
-        vertexColors: true,
-        roughness: s === 'glass' ? 0.16 : 0.86,
-        metalness: s === 'glass' ? 0.65 : 0,
-        envMapIntensity: s === 'glass' ? 1.5 : 1
-      })
+      facadeMaterial(
+        {
+          map,
+          emissiveMap: lit,
+          emissive: 0xffffff,
+          emissiveIntensity: 1.25,
+          vertexColors: true,
+          roughness: glass ? 0.1 : 0.86,
+          metalness: glass ? 0.7 : 0,
+          envMapIntensity: glass ? 1.7 : 1
+        },
+        {
+          cells: CELLS,
+          win: WIN[s].map(v => v / 64),
+          lit: glass ? 0.2 : 0.28,
+          blinds: glass ? 0.2 : 0.45,
+          tilt: glass ? 0.14 : 0.05
+        }
+      )
     )
   }
+  add(
+    ledges,
+    new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.75 })
+  )
   const sm = shopMaps()
   add(
     shops,
