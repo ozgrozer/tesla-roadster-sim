@@ -5,6 +5,9 @@ import { CAR, clamp } from './constants.js'
 import { query, OUTER } from './city.js'
 
 export const CRASH_SPEED = 20 // m/s into something solid before the Roadster tumbles
+// The most yaw rate (rad/s) a knock adds on the ground: the tyres on the road soak up the rest, so a
+// clipped car or wall corner twitches the Roadster instead of spinning it out of the driver's hands.
+const KNOCK_SPIN = 1.8
 export const KNOCK_SPEED = 3 // m/s into a street light to knock it flat
 const NAMES = {
   building: 'Hit a building',
@@ -194,11 +197,11 @@ export function loadBody (s) {
   BODY.w = s.mode === 'ground' ? s.yawRate : 0
   return BODY
 }
-export function storeBody (s) {
+export function storeBody (s, w0 = s.yawRate) {
   s.vel.x = BODY.vx
   s.vel.z = BODY.vz
   if (s.mode !== 'ground') return
-  s.yawRate = BODY.w
+  s.yawRate = w0 + clamp(BODY.w - w0, -KNOCK_SPIN, KNOCK_SPIN)
   s.speed = s.vel.x * Math.cos(s.yaw) - s.vel.z * Math.sin(s.yaw)
 }
 export function nudge (s, dx, dz) {
