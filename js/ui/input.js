@@ -1,4 +1,6 @@
-// Keyboard and touch input: held drive keys, one-shot command keys, and the manual control mapping.
+// Keyboard, gamepad and touch input: held drive keys, one-shot command keys, and the manual control
+// mapping (a gamepad's sticks and triggers are analog: gamepad.js).
+import { Pad } from './gamepad.js'
 import { TRACK } from '../sim/track.js'
 import { makeControls } from '../sim/constants.js'
 
@@ -20,15 +22,17 @@ export const DRIVE_KEYS = new Set([
 ])
 
 export class Input {
-  // onDrive(code, firstPress) fires for held driving keys, onCommand(code) for everything else, and
-  // onRelease(code) when any key comes back up (the horn sounds for as long as H is held)
-  constructor ({ onDrive, onCommand, onRelease = () => {} }) {
+  // onDrive(code, firstPress) fires for held driving keys (and a gamepad's sticks and triggers),
+  // onCommand(code) for everything else, onRelease(code) when any key comes back up (the horn sounds
+  // for as long as H is held), and onPad(name) when a gamepad is plugged in
+  constructor ({ onDrive, onCommand, onRelease = () => {}, onPad }) {
     this.keys = new Set()
     this.stale = new Set() // held since before lift-off: they don't fly the car until pressed again
     this.wasAir = false
     this.lastT = -1
     this.down = new Set() // every key held, drive or not
     const press = code => {
+      if (code === 'Pad') return onDrive(code, true)
       this.down.add(code)
       if (DRIVE_KEYS.has(code)) {
         const first = !this.keys.has(code)
@@ -51,6 +55,8 @@ export class Input {
       for (const code of this.down) release(code)
       this.keys.clear()
     })
+    this.pad = new Pad({ press, release, onConnect: onPad })
+    this.padStale = false // a stick held over since before lift-off
     // on-screen pad for touch screens: each button behaves like its key
     for (const b of document.querySelectorAll('.tb')) {
       const code = b.dataset.key
@@ -71,6 +77,11 @@ export class Input {
     }
   }
 
+  // once a frame: the gamepad's buttons, sticks and triggers
+  poll () {
+    this.pad.poll()
+  }
+
   // `fresh`: leave out keys still held from before lift-off
   held (a, b, fresh = false) {
     const on = k => this.keys.has(k) && !(fresh && this.stale.has(k))
@@ -84,9 +95,14 @@ export class Input {
     const c = makeControls()
     const air = sim.mode === 'air'
     // (the first call after the autopilot hands over, or after a reset, is not a lift-off)
-    if (air && !this.wasAir && Math.abs(sim.time - this.lastT) < 0.05)
+    const pad = this.pad
+    if (air && !this.wasAir && Math.abs(sim.time - this.lastT) < 0.05) {
       for (const k of this.keys) this.stale.add(k)
+      this.padStale = Math.hypot(pad.stickX, pad.stickY) > 0.3
+    }
     if (!air) this.stale.clear()
+    // (a stick that was steering only flies the car once it has come back to the middle)
+    if (!air || Math.hypot(pad.stickX, pad.stickY) < 0.2) this.padStale = false
     this.wasAir = air
     this.lastT = sim.time
     const W = this.held('KeyW', 'ArrowUp', air),
@@ -106,18 +122,25 @@ export class Input {
     c.ebrake = this.keys.has('Space')
     c.main = this.held('ShiftLeft', 'ShiftRight') ? 1 : 0
     c.lift = this.keys.has('KeyF') ? 1 : 0
+    // a key wins over the stick; the stick and triggers are analog
+    const or = (key, analog) => key || analog
     if (air) {
-      c.pitch = (S ? 1 : 0) - (W ? 1 : 0)
-      c.roll = (D ? 1 : 0) - (A ? 1 : 0)
-      c.yaw = (this.keys.has('KeyQ') ? 1 : 0) - (this.keys.has('KeyE') ? 1 : 0)
+      const live = !this.padStale
+      c.pitch = or((S ? 1 : 0) - (W ? 1 : 0), live ? pad.stickY : 0)
+      c.roll = or((D ? 1 : 0) - (A ? 1 : 0), live ? pad.stickX : 0)
+      c.yaw = or(
+        (this.keys.has('KeyQ') ? 1 : 0) - (this.keys.has('KeyE') ? 1 : 0),
+        -pad.lookX
+      )
     } else {
-      c.throttle = W ? 1 : 0
-      c.steer = (A ? 1 : 0) - (D ? 1 : 0)
-      if (S) {
+      c.throttle = Math.max(W ? 1 : 0, pad.throttle)
+      c.steer = or((A ? 1 : 0) - (D ? 1 : 0), pad.steer)
+      const brake = Math.max(S ? 1 : 0, pad.brake)
+      if (brake > 0.02) {
         // S brakes while rolling forward, then reverses (also back down the wall)
         const fwd = sim.mode === 'ramp' ? sim.v : sim.speed
-        if (fwd > 0.5) c.brake = 1
-        else c.reverse = 1
+        if (fwd > 0.5) c.brake = brake
+        else c.reverse = brake
       }
     }
     return c
