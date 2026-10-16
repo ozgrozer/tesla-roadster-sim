@@ -2,6 +2,7 @@
 // signal masts), resolved with impulses (restitution, friction, spin) so cars bounce off each other
 // and off the city. No hit tumbles the Roadster, on the road or flying, as in GTA: it bounces off
 // and the driver keeps the wheel.
+import { snap } from './breakables.js'
 import { CAR, clamp } from './constants.js'
 import { query, OUTER } from './city.js'
 import { parapets } from './roofs.js'
@@ -9,7 +10,6 @@ import { parapets } from './roofs.js'
 // The most yaw rate (rad/s) a knock adds on the ground: the tyres on the road soak up the rest, so a
 // clipped car or wall corner twitches the Roadster instead of spinning it out of the driver's hands.
 const KNOCK_SPIN = 1.8
-export const KNOCK_SPEED = 3 // m/s into a street light to knock it flat
 
 // Rectangles are { x, z, fx, fz, hl, hw }: centre, unit forward axis, half length and half width.
 // The side axis is (-fz, fx).
@@ -215,11 +215,7 @@ export function collideCity (s) {
     if (c.down || c.y0 > fl + 1.2 || c.y1 <= fl + 0.05) continue
     const hit = c.r ? rectPost(me, c) : rectRect(me, boxRect(c))
     if (!hit) continue
-    if (
-      c.kind === 'lamp' &&
-      knock(s, c, -(s.vel.x * hit.nx + s.vel.z * hit.nz))
-    )
-      continue
+    if (c.breakAt && knock(s, c, hit.nx, hit.nz)) continue
     nudge(s, hit.nx * hit.depth, hit.nz * hit.depth)
     me.x = s.pos.x
     me.z = s.pos.z
@@ -236,21 +232,25 @@ export function collideCity (s) {
   s.syncPose()
 }
 
-// A street light hit hard enough snaps at the base and falls the way the car was going; the car
-// barely notices. Returns whether it went down.
-export function knock (s, c, impact) {
-  if (impact < KNOCK_SPEED) return false
-  c.down = true
-  s.vel.x *= 0.9
-  s.vel.z *= 0.9
-  s.emit('knock', { i: c.i, x: c.x, z: c.z, dx: s.vel.x, dz: s.vel.z, impact })
+// A street light, signal mast or tree hit hard enough snaps at the base and goes over the way the car
+// was going, and the car drives on through, slowed by what it took (breakables.js). (nx, nz): the
+// contact normal, from the post to the car. Returns whether it went down.
+const _v = { vx: 0, vz: 0 }
+export function knock (s, c, nx, nz) {
+  _v.vx = s.vel.x
+  _v.vz = s.vel.z
+  const e = snap(_v, c, nx, nz, CAR.mass)
+  if (!e) return false
+  s.vel.x = _v.vx
+  s.vel.z = _v.vz
+  s.emit('knock', { ...e, by: 'roadster' })
   return true
 }
 
 // In the air over the city: the side of a building, a post or the barrier bounces the car off as it
-// would on the road (a street light still folds over). Coming down on a roof is a landing (flight.js);
-// clipping a roof's edge on the way past pushes the car off it. bottom and top: the car's lowest and
-// highest corners.
+// would on the road (a hard enough hit still snaps a street light, signal or tree). Coming down on a
+// roof is a landing (flight.js); clipping a roof's edge on the way past pushes the car off it. bottom
+// and top: the car's lowest and highest corners.
 export function collideAir (s, bottom, top) {
   const me = playerRect(s)
   query(me.x - 4, me.z - 4, me.x + 4, me.z + 4, hits)
@@ -258,11 +258,7 @@ export function collideAir (s, bottom, top) {
     if (c.down || bottom >= c.y1 || top <= c.y0) continue
     const hit = c.r ? rectPost(me, c) : rectRect(me, boxRect(c))
     if (!hit) continue
-    if (
-      c.kind === 'lamp' &&
-      knock(s, c, -(s.vel.x * hit.nx + s.vel.z * hit.nz))
-    )
-      continue
+    if (c.breakAt && knock(s, c, hit.nx, hit.nz)) continue
     nudge(s, hit.nx * hit.depth, hit.nz * hit.depth)
     const impact = impulse(loadBody(s), null, hit, 0.2, 0.35)
     storeBody(s)
