@@ -242,6 +242,29 @@ test('e-brake plus steering rotates the car into a drift', () => {
   assert.ok(r.maxSlip > 45, `drift slip ${r.maxSlip.toFixed(0)}°`)
 })
 
+test('a handbrake turn carries the car round with its nose, as in GTA', () => {
+  // a tap of the e-brake on full lock at 60 mph, then the wheel straight and the throttle on: it
+  // drives off the way it now points, without snapping back towards the way it was going
+  const r = from60((c, t) => {
+    c.ebrake = t < 0.6
+    c.steer = t < 0.6 ? 1 : 0
+    c.throttle = t > 0.6 ? 0.6 : 0
+  }, 3)
+  const turned = from60((c, t) => {
+    c.ebrake = t < 0.6
+    c.steer = t < 0.6 ? 1 : 0
+    c.throttle = t > 0.6 ? 0.6 : 0
+  }, 1.4).turned
+  assert.ok(r.turned > 45 && r.turned < 120, `turned ${r.turned.toFixed(0)}°`)
+  assert.ok(
+    r.turned > turned - 10,
+    `held its new heading (${turned.toFixed(0)}° at 1.4 s, ${r.turned.toFixed(
+      0
+    )}° at 3 s)`
+  )
+  assert.ok(r.maxSlip > 20, `slid through it (${r.maxSlip.toFixed(0)}°)`)
+})
+
 test('stability control keeps normal driving from spinning', () => {
   const slalom = from60((c, t) => {
     c.steer = Math.sin(t * 3) > 0 ? 1 : -1
