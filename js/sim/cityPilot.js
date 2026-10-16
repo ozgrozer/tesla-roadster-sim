@@ -200,7 +200,8 @@ export class CityPilot {
       hz = -Math.sin(sim.yaw)
     let gap = Infinity,
       vl = 0,
-      red = false
+      red = false,
+      walker = false // what it waits for is someone on foot
     for (const o of this.traffic.cars) {
       if (o.parked && !o.loose && !o.jam) continue // (parked in a lot, not queued in the jam)
       const dx = o.x - x,
@@ -220,6 +221,20 @@ export class CityPilot {
           0,
           o.loose ? o.vx * hx + o.vz * hz : o.v * (o.hx * hx + o.hz * hz)
         )
+      }
+    }
+    // and anyone on foot in the road (on a crossing, or still getting out of the way)
+    for (const p of this.traffic.peds) {
+      const dx = p.x - x,
+        dz = p.z - z,
+        along = dx * hx + dz * hz
+      if (along <= 0 || along > LOOK) continue
+      if (Math.abs(dz * hx - dx * hz) > CAR.halfW + 0.9) continue
+      const g = along - CAR.halfL - 0.5
+      if (g < gap) {
+        gap = g
+        vl = 0
+        walker = true
       }
     }
     // overtake: a slower car ahead (not one stopped in a queue), room in the other lane and street
@@ -296,9 +311,10 @@ export class CityPilot {
       c.throttle = 0
       c.brake = 1 // pull up crisply, and hold at a standstill
     }
-    // stuck: in the gridlock at once, elsewhere after a long wait in traffic (not at a red light)
+    // stuck: in the gridlock at once, elsewhere after a long wait in traffic (not at a red light,
+    // nor for someone on foot)
     const inJam = lane.closed
-    const held = v < 0.3 && gap < 9 && (inJam || !red)
+    const held = v < 0.3 && gap < 9 && (inJam || (!red && !walker))
     this.stuckT = held ? this.stuckT + dt : 0
     const wait = inJam ? 2.2 : STUCK // (in the jam it sits at the red a moment first)
     if (this.stuckT > wait) this.wait(this.stuckT - wait, gap)
