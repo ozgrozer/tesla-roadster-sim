@@ -1,7 +1,7 @@
 // Free flight: gravity, cold-gas thrust, attitude control (manoeuvres + stability assist) and contacts.
 import * as THREE from 'three'
-import { TRACK, SOLIDS } from './track.js'
 import { roofAt } from './roofs.js'
+import { TRACK, SOLIDS } from './track.js'
 import { bumpCars, collideAir } from './collide.js'
 import {
   G,
@@ -150,7 +150,7 @@ export function stepAir (s, dt, c, main, lift) {
   }
   if (s.world === 'city') {
     // the side of a building, a post or the barrier bounces the car off
-    collideAir(s, minY, maxY)
+    collideAir(s, minY, maxY, dt)
     return
   }
   bumpCars(s, SOLIDS)
