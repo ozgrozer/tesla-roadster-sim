@@ -144,6 +144,39 @@ export const ONE_SHOTS = {
     this.tone(880, 880, 0.14, 'triangle', 0.1, 0, { verb: 0 })
     this.tone(1320, 1320, 0.22, 'triangle', 0.09, 0.09, { verb: 0 })
   },
+  // A door's lock actuator, heard through the door: its little motor whirring up through the gears
+  // for a few hundredths of a second, then the snap of the latch rod hitting its stop, the panel's
+  // dull thunk round it, and a faint tick as the motor's clutch lets go. k: how loud, f: its pitch.
+  actuator (delay, k, f, o) {
+    const whirr = { ...o, attack: 0.005 },
+      snap = { ...o, attack: 0.002 },
+      stop = delay + 0.05
+    this.tone(260 * f, 430 * f, 0.055, 'sawtooth', 0.08 * k, delay, {
+      ...whirr,
+      hold: 0.042,
+      filter: ['bandpass', 1100 * f, 1.2]
+    })
+    this.noise(0.05, 0.045 * k, 'bandpass', 1700 * f, 2500 * f, delay, whirr)
+    this.noise(0.02, 0.2 * k, 'bandpass', 3200 * f, 2000 * f, stop, snap)
+    this.tone(1250 * f, 1180 * f, 0.045, 'triangle', 0.04 * k, stop, snap)
+    this.tone(230 * f, 110 * f, 0.09, 'sine', 0.2 * k, stop, snap)
+    this.noise(0.07, 0.12 * k, 'lowpass', 900, 150, stop, snap)
+    this.noise(0.008, 0.03 * k, 'highpass', 4500, 4000, delay + 0.13, snap)
+  },
+  // the car unlocking as its key walks up: both doors' actuators, the far one a beat behind and
+  // fainter, a light, quick "ka-chack"
+  unlock (pan = 0) {
+    const o = { pan, verb: 0.15 }
+    this.actuator(0, 0.85, 1, o)
+    this.actuator(0.025, 0.55, 1.07, o)
+  },
+  // and locking once the door is down, the driver inside: the same pair, lower and firmer, a
+  // solid "ka-chunk"
+  lock (pan = 0) {
+    const o = { pan, verb: 0.15 }
+    this.actuator(0, 1.05, 0.88, o)
+    this.actuator(0.018, 0.7, 0.93, o)
+  },
   // the e-brake: a ratchet clicking up and the rear calipers biting
   ratchet () {
     for (let i = 0; i < 3; i++)
