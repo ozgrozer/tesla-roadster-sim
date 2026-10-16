@@ -15,6 +15,9 @@ import { buildGround } from './cityGround.js'
 import { buildStreet } from './cityStreet.js'
 import { buildBuildings, BEACON } from './cityBuildings.js'
 
+const _pv = new THREE.Matrix4(),
+  _view = new THREE.Frustum()
+
 export class CityView {
   constructor () {
     this.group = null
@@ -101,8 +104,11 @@ export class CityView {
     if (this.falling && !falling) this.shadow.refresh()
     this.falling = falling
     this.signals.update(traffic.t)
-    this.cars.update(traffic, dt)
-    if (peds) this.people.update(peds)
+    // (only what the camera can see is drawn)
+    _pv.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse)
+    _view.setFromProjectionMatrix(_pv)
+    this.cars.update(traffic, dt, _view)
+    if (peds) this.people.update(peds, _view)
     const b = Math.sin(clock * 2.2) > 0.4 ? 1 : 0.08
     BEACON.color.setRGB(5 * b, 0.2 * b, 0.12 * b)
   }
