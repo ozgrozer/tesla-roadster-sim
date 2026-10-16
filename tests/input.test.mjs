@@ -42,3 +42,29 @@ test('W held through a lift-off only pitches once it is pressed again', () => {
     'pressed again: nose down'
   )
 })
+
+test('Space is the e-brake, F the lift thrusters and H the horn', () => {
+  const pressed = [],
+    released = []
+  const input = new Input({
+    onDrive () {},
+    onCommand: code => pressed.push(code),
+    onRelease: code => released.push(code)
+  })
+  const sim = new Sim()
+  sim.reset('lineup')
+  down('Space')
+  let c = input.controls(sim, 'auto')
+  assert.equal(c.ebrake, true, 'Space holds the e-brake')
+  assert.equal(c.lift, 0, 'and no longer fires the lift thrusters')
+  up('Space')
+  down('KeyF')
+  c = input.controls(sim, 'auto')
+  assert.equal(c.lift, 1, 'F fires the lift thrusters')
+  assert.equal(c.ebrake, false)
+  up('KeyF')
+  down('KeyH')
+  assert.deepEqual(pressed, ['KeyH'], 'H is a command, not a drive key')
+  up('KeyH')
+  assert.ok(released.includes('KeyH'), 'and letting go of it is reported')
+})
