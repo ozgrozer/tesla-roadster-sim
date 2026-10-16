@@ -5,6 +5,7 @@ import { stepAir } from './flight.js'
 import { stepGround } from './ground.js'
 import { TRACK, SOLIDS } from './track.js'
 import { SPAWN, query } from './city.js'
+import { knock } from './collide.js'
 import { enterCrash, stepCrash } from './crash.js'
 import {
   G,
@@ -436,13 +437,20 @@ export class Sim {
         .applyQuaternion(q)
         .add(P)
       for (const b of solids) {
-        if (_a.y <= b.y0 || _a.y >= b.y1) continue
+        if (b.down || _a.y <= b.y0 || _a.y >= b.y1) continue
         if (
           b.r
             ? Math.hypot(_a.x - b.x, _a.z - b.z) < b.r
             : _a.x > b.x0 && _a.x < b.x1 && _a.z > b.z0 && _a.z < b.z1
-        )
+        ) {
+          // street lights fold over rather than stop the car
+          if (
+            b.kind === 'lamp' &&
+            knock(this, b, Math.hypot(this.vel.x, this.vel.z))
+          )
+            continue
           return b
+        }
       }
     }
     return null
