@@ -338,7 +338,25 @@ export const beacons = []
 // The shadow-casting key light rides along with the car so its shadow stays sharp anywhere on the site.
 // keyOffset is where the light sits relative to the car (the city moves it to a low sun).
 export const keyOffset = new THREE.Vector3(-26, 42, 30)
+// The light is kept to whole texels of its shadow map across the sun's beam, so the shadows' edges
+// stay put as the car drives instead of crawling.
+const _sr = new THREE.Vector3(),
+  _su = new THREE.Vector3(),
+  _sf = new THREE.Vector3(),
+  _sp = new THREE.Vector3(),
+  _up = new THREE.Vector3(0, 1, 0)
 export function followKeyLight (pos) {
-  key.position.copy(pos).add(keyOffset)
-  key.target.position.copy(pos)
+  const cam = key.shadow.camera,
+    texel = (cam.right - cam.left) / key.shadow.mapSize.x
+  _sf.copy(keyOffset).normalize()
+  _sr.crossVectors(_up, _sf).normalize()
+  _su.crossVectors(_sf, _sr)
+  const a = pos.dot(_sr),
+    b = pos.dot(_su)
+  _sp
+    .copy(pos)
+    .addScaledVector(_sr, Math.round(a / texel) * texel - a)
+    .addScaledVector(_su, Math.round(b / texel) * texel - b)
+  key.target.position.copy(_sp)
+  key.position.copy(_sp).add(keyOffset)
 }
