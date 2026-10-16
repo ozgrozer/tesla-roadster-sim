@@ -8,6 +8,7 @@
 import { JAM, atJam } from './jam.js'
 import { temper } from './manners.js'
 import { CAR, clamp } from './constants.js'
+import { nearMisses } from './stunts.js'
 import { slide, collidePlayer } from './wrecks.js'
 import { SIGHT, LOOK, STOP_DECEL } from './sight.js'
 import {
@@ -299,6 +300,7 @@ export class Traffic {
       if (car.loose) slide(this, car, dt, sim)
       else if (!car.parked) this.drive(car, dt)
     collidePlayer(this, sim)
+    nearMisses(this, sim)
     this.clock += dt
     if (this.clock > 0.25) {
       this.clock = 0
