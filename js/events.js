@@ -1,5 +1,5 @@
-// What the sim reports (scores, landings, knocks, kerbs, honks, crashes), turned into popups, sounds,
-// camera shake, a gamepad's rumble and particles.
+// What the sim reports (scores, landings, drifts, near misses, knocks, kerbs, honks, crashes), turned
+// into popups, sounds, camera shake, a gamepad's rumble and particles.
 import { HORNS } from './audio/sound.js'
 import { hearing, panOf } from './audio/mix.js'
 import { burst, knockFx, sparkBurst } from './render/effects.js'
@@ -13,6 +13,18 @@ export function handleEvents (g) {
     } else if (e.type === 'trick') {
       app.score += e.pts
       hud.popup(`${e.text} <b>+${e.pts}</b>`)
+      sound.chime()
+    } else if (e.type === 'drift') {
+      app.score += e.pts
+      const deg = Math.round(e.angle * 57.3)
+      hud.popup(`Drift ${e.t.toFixed(1)} s · ${deg}° <b>+${e.pts}</b>`)
+      sound.chime()
+    } else if (e.type === 'nearMiss') {
+      app.score += e.pts
+      hud.popup(
+        `${e.oncoming ? 'Oncoming near miss' : 'Near miss'} <b>+${e.pts}</b>`,
+        1300
+      )
       sound.chime()
     } else if (e.type === 'landing') {
       app.score += e.pts
