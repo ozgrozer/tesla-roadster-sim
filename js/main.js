@@ -5,7 +5,7 @@ import { Sim } from './sim/sim.js'
 import { Input } from './ui/input.js'
 import { Minimap } from './ui/minimap.js'
 import { Traffic } from './sim/traffic.js'
-import { nearestLane } from './sim/city.js'
+import { nearestLane, standUp } from './sim/city.js'
 import { Autopilot } from './sim/autopilot.js'
 import { CityPilot } from './sim/cityPilot.js'
 import { SoundEngine } from './audio/sound.js'
@@ -128,7 +128,11 @@ function startAutopilot () {
 function resetTo (spot, at = null) {
   setWorld(spot === 'city' ? 'city' : 'site')
   sim.reset(spot, at)
-  if (spot === 'city' && !at) traffic.reset(sim.pos.x, sim.pos.z)
+  if (spot === 'city' && !at) {
+    traffic.reset(sim.pos.x, sim.pos.z)
+    standUp()
+    cityView.standUp()
+  }
   app.lastSpot = spot
   app.score = 0
   app.crashClock = 0
@@ -283,6 +287,11 @@ function handleEvents () {
         rig.shake(Math.min(0.45, e.impact * 0.035))
         if (e.impact > 6) sparkBurst(sim.pos, Math.min(60, e.impact * 4))
       }
+    } else if (e.type === 'knock') {
+      cityView.knock(e)
+      sound.bump(e.impact * 0.6)
+      sparkBurst({ x: e.x, y: 0.4, z: e.z }, 26)
+      rig.shake(0.12)
     } else if (e.type === 'crash') {
       sparkBurst(sim.com, 120)
       burst(sim.com.x, sim.com.z, 80, 8)
