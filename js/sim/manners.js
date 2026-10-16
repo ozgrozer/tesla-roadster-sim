@@ -44,9 +44,11 @@ export function temper (tr, car, dt, mine, gap, acc) {
     if (car.honkT <= 0 && tr.R() < 0.3) honk(tr, car, false)
   }
 }
-// sim event 'honk': where, which horn, and a toot or a long blast
+// sim event 'honk': where, which horn, and a toot or a long blast (none while the traffic is quiet,
+// waiting for the Roadster to honk first at the gridlock)
 export function honk (tr, car, long) {
   car.honkT = 3.5 + ((car.paint * 13) % 1) * 3
+  if (tr.quiet) return
   tr.sim?.emit('honk', {
     x: car.x,
     z: car.z,
