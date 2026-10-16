@@ -379,8 +379,15 @@ export class Sim {
   land () {
     const f = this.fwd(_a)
     const vy = this.vel.y
-    this.yaw = Math.atan2(-f.z, f.x)
-    this.yawRate = _b.copy(this.omega).applyQuaternion(this.quat).y
+    // (a nose pointing nearly straight down: face the way the car is going)
+    if (Math.hypot(f.x, f.z) > 0.25) this.yaw = Math.atan2(-f.z, f.x)
+    else if (Math.hypot(this.vel.x, this.vel.z) > 1)
+      this.yaw = Math.atan2(-this.vel.z, this.vel.x)
+    this.yawRate = clamp(
+      _b.copy(this.omega).applyQuaternion(this.quat).y,
+      -3,
+      3
+    )
     this.vel.y = 0
     this.speed =
       this.vel.x * Math.cos(this.yaw) - this.vel.z * Math.sin(this.yaw)
