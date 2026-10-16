@@ -4,17 +4,18 @@ import { Hud } from './ui/hud.js'
 import { Sim } from './sim/sim.js'
 import { Input } from './ui/input.js'
 import { Minimap } from './ui/minimap.js'
+import { smoke } from './render/smoke.js'
 import { Traffic } from './sim/traffic.js'
-import { nearestLane, standUp } from './sim/city.js'
 import { Autopilot } from './sim/autopilot.js'
 import { CityPilot } from './sim/cityPilot.js'
 import { SoundEngine } from './audio/sound.js'
 import { buildLineup } from './render/lineup.js'
+import { nearestLane, standUp } from './sim/city.js'
+import { CityView, clipCamera } from './render/city.js'
 import { CameraRig, CAM_NAMES } from './render/camera.js'
 import { updateSkids, clearSkids } from './render/skids.js'
 import { LED_MAT, buildWall, buildTruss } from './render/wall.js'
 import { DEG, TAU, clamp, makeControls } from './sim/constants.js'
-import { CityView, clipCamera } from './render/city.js'
 import { buildRoadster, updateRoadster } from './render/roadster.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
@@ -425,17 +426,20 @@ function frame (now) {
   updateNozzles(RS, sim)
   emitThrusters(RS, sim, simDt, clock)
   emitTireSmoke(RS, sim, simDt)
+  LED_MAT.uniforms.uLit.value = sim.maxRampS
+  LED_MAT.uniforms.uTime.value = clock
+  const blink = Math.sin(clock * 2.4) > 0.6 ? 1 : 0.15
+  MAT.beacon.color.setRGB(4 * blink, 0.2 * blink, 0.15 * blink)
+  rig.update(dt, clock, sim, app.auto ? P.shot : null)
+  // (after the camera has moved: the smoke is lit and sorted from where it now looks)
+  camera.updateMatrixWorld()
+  smoke.track(camera, sim)
   const pxScale =
     renderer.domElement.height / (2 * Math.tan((camera.fov * DEG) / 2))
   for (const p of ALL_PARTICLES) {
     p.mat.uniforms.uScale.value = pxScale
     p.update(simDt)
   }
-  LED_MAT.uniforms.uLit.value = sim.maxRampS
-  LED_MAT.uniforms.uTime.value = clock
-  const blink = Math.sin(clock * 2.4) > 0.6 ? 1 : 0.15
-  MAT.beacon.color.setRGB(4 * blink, 0.2 * blink, 0.15 * blink)
-  rig.update(dt, clock, sim, app.auto ? P.shot : null)
   if (city) {
     cityView.update(simDt, clock, traffic, camera)
     minimap.update(dt, sim, traffic, VIEW.heading)
