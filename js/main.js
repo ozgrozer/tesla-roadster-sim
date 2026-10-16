@@ -440,6 +440,7 @@ function frame (now) {
   mixSound(sound, app, traffic, dt, clock)
   hud.update(dt, app)
   updateSpeedBlur(speedBlur, sim, rig.shot, dt)
+  if (city) cityView.shadows(camera, [RS.car])
   composer.render()
   tween.restore()
   if (firstFrame) {
