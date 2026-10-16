@@ -1,10 +1,10 @@
 // Contacts in the ground plane: oriented boxes (cars, building footprints) and posts (lamps, palms,
 // signal masts), resolved with impulses (restitution, friction, spin) so cars bounce off each other
-// and off the city. A hard enough hit hands the Roadster over to the tumbling crash model.
+// and off the city. On the road no hit is hard enough to tumble the Roadster, as in GTA: it bounces
+// off and the driver keeps the wheel (flying into something is another matter: flight.js).
 import { CAR, clamp } from './constants.js'
 import { query, OUTER } from './city.js'
 
-export const CRASH_SPEED = 20 // m/s into something solid before the Roadster tumbles
 // The most yaw rate (rad/s) a knock adds on the ground: the tyres on the road soak up the rest, so a
 // clipped car or wall corner twitches the Roadster instead of spinning it out of the driver's hands.
 const KNOCK_SPIN = 1.8
@@ -15,8 +15,7 @@ const NAMES = {
   palm: 'Hit a palm tree',
   tree: 'Hit a tree',
   signal: 'Hit a traffic light',
-  barrier: 'Hit the barrier',
-  car: 'Hit a car'
+  barrier: 'Hit the barrier'
 }
 export const crashName = kind => NAMES[kind] || 'Crashed'
 
@@ -210,16 +209,6 @@ export function nudge (s, dx, dz) {
   p.z += dz
 }
 
-// Over it goes: a hop and a tumble away from whatever the car hit, then the crash model takes over.
-export function crashInto (s, hit, impact, reason) {
-  const f = playerRect(s)
-  const nF = hit.nx * f.fx + hit.nz * f.fz,
-    nS = hit.nz * f.fx - hit.nx * f.fz
-  const k = clamp(impact * 0.12, 1, 4)
-  s.vel.y = Math.max(s.vel.y, Math.min(6, impact * 0.18))
-  s.omega.set(-nS * k, s.mode === 'ground' ? s.yawRate : s.omega.y, nF * k)
-  s.toCrash(reason)
-}
 
 const hits = []
 // Ground mode: keep the Roadster out of buildings, posts and the barrier.
@@ -241,11 +230,6 @@ export function collideCity (s) {
     const impact = impulse(loadBody(s), null, hit, 0.2, 0.35)
     storeBody(s)
     if (impact > 0.6) s.emit('bump', { impact, what: c.kind })
-    if (impact > CRASH_SPEED) {
-      s.syncPose()
-      crashInto(s, hit, impact, crashName(c.kind))
-      return
-    }
   }
   // the open ground ends a little way past the city's barrier
   for (const k of ['x', 'z'])
