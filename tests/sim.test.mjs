@@ -380,3 +380,21 @@ test('a wreck that comes to rest on its wheels drives on with W', () => {
   assert.equal(sim.mode, 'crash')
   assert.ok(driveOff(sim) > 15, 'drives on')
 })
+
+test('the parked lineup bounces the Roadster off instead of crashing it', () => {
+  const sim = new Sim()
+  sim.reset('lineup') // 40 m short of the Cybercab, facing it
+  const events = []
+  for (let i = 0; i < 120 * 5; i++) {
+    const c = makeControls()
+    c.throttle = 1
+    sim.step(H, c)
+    events.push(...sim.events)
+    sim.events.length = 0
+  }
+  assert.ok(events.some(e => e.type === 'bump' && e.impact > 10), 'hits it hard')
+  assert.ok(!events.some(e => e.type === 'crash'), 'without a crash')
+  assert.equal(sim.mode, 'ground')
+  const cab = LINEUP.find(c => c.kind === 'cab')
+  assert.ok(sim.pos.x - 2.22 > cab.box.x1 - 0.05, 'and stays clear of it')
+})
