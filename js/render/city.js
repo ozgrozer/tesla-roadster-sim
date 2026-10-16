@@ -54,7 +54,7 @@ export class CityView {
     this.sea(clock, camera)
     for (const f of Object.values(this.fallers)) f.update(dt)
     this.signals.update(traffic.t)
-    this.cars.update(traffic)
+    this.cars.update(traffic, dt)
     const b = Math.sin(clock * 2.2) > 0.4 ? 1 : 0.08
     BEACON.color.setRGB(5 * b, 0.2 * b, 0.12 * b)
   }
