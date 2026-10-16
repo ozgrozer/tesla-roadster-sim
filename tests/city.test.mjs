@@ -7,6 +7,7 @@ import { rectRect, carRect } from '../js/sim/collide.js'
 import { Traffic } from '../js/sim/traffic.js'
 import { CityPilot } from '../js/sim/cityPilot.js'
 import { JAM, JAM_AT } from '../js/sim/jam.js'
+import { roofAt } from '../js/sim/roofs.js'
 import {
   RED,
   WALK,
@@ -460,20 +461,36 @@ test('a 180 km/h jump clears the jammed street', () => {
   assert.ok(!tr.cars.some(c => c.loose), 'every jammed car still in place')
 })
 
-test('the Roadster lands on a roof, drives on it inside the parapet, and hops off the edge', () => {
+// rooftop plant (and masts) clear of a 5 m wide run along x from x0 to x1 at z
+const clearRun = (b, x0, x1, z) =>
+  !b.antenna &&
+  !b.plant.some(p => p.x1 > x0 && p.x0 < x1 && p.z1 > z - 2.5 && p.z0 < z + 2.5)
+// run the Roadster under ctl(c) for secs, collecting its events
+function drive (sim, tr, secs, ctl, events = []) {
+  for (let i = 0; i < secs / H; i++) {
+    const c = makeControls()
+    c.fan = false
+    ctl(c)
+    sim.step(H, c)
+    tr.step(H, sim)
+    events.push(...sim.events)
+    sim.events.length = 0
+  }
+  return events
+}
+
+test('the Roadster lands on a roof, drives on it, and drives straight off the edge', () => {
   // a single-tier roof with a clear run from its middle to its east edge
   const b = BUILDINGS.find(b => {
     const t = b.tiers[0],
-      cx = (t.x0 + t.x1) / 2,
       cz = (t.z0 + t.z1) / 2
     return (
       b.tiers.length === 1 &&
-      !b.antenna &&
       t.x1 - t.x0 > 20 &&
       t.z1 - t.z0 > 20 &&
       t.y1 > 15 &&
       t.y1 < 60 &&
-      !b.plant.some(p => p.x1 > cx - 3 && p.z0 < cz + 2 && p.z1 > cz - 2)
+      clearRun(b, t.x0, t.x1, cz)
     )
   })
   const t = b.tiers[0],
@@ -482,49 +499,76 @@ test('the Roadster lands on a roof, drives on it inside the parapet, and hops of
   sim.reset('city')
   const tr = new Traffic({ count: 0 })
   tr.reset(t.x0, cz)
-  const events = []
-  const run = (secs, ctl) => {
-    for (let i = 0; i < secs / H; i++) {
-      const c = makeControls()
-      c.fan = false
-      ctl(c)
-      sim.step(H, c)
-      tr.step(H, sim)
-      events.push(...sim.events)
-      sim.events.length = 0
-    }
-  }
-  const drop = h => {
-    sim.setMode('air')
-    sim.com.set(t.x0 + 4, t.y1 + h, cz)
-    sim.vel.set(0, 0, 0)
-    sim.syncPose()
-    run(1.5, () => {})
-  }
-  drop(3)
+  sim.setMode('air')
+  sim.com.set(t.x0 + 4, t.y1 + 3, cz)
+  sim.vel.set(0, 0, 0)
+  sim.syncPose()
+  const events = drive(sim, tr, 1.5, () => {})
   assert.equal(sim.mode, 'ground', 'landed')
   assert.ok(Math.abs(sim.pos.y - t.y1) < 1e-9, 'on the roof')
-  run(4, c => {
-    c.throttle = 1
-  })
+  drive(sim, tr, 1, c => (c.throttle = 0.4), events)
+  assert.ok(Math.abs(sim.pos.y - t.y1) < 1e-9, 'driving on the roof')
+  // full throttle at the east edge: no parapet in the way, it goes right over and down
+  drive(sim, tr, 6, c => (c.throttle = sim.mode === 'ground' ? 1 : 0), events)
+  assert.ok(!events.some(e => e.type === 'crash'), 'no crash')
   assert.ok(
-    events.some(e => e.type === 'bump' && e.what === 'parapet'),
-    'the parapet stops it'
+    !events.some(e => e.type === 'bump' && e.impact > 1 && sim.pos.x < t.x1),
+    'nothing stopped it on the roof'
   )
-  assert.ok(
-    Math.abs(sim.pos.y - t.y1) < 1e-9 && sim.pos.x < t.x1,
-    'still on the roof'
-  )
-  // a run at the east edge, hopping the parapet on the lift thrusters
-  drop(1)
-  let hop = false
-  run(6, c => {
-    c.throttle = sim.mode === 'ground' ? 1 : 0
-    if (sim.mode === 'ground' && sim.pos.x > t.x1 - 8) hop = true
-    if (hop && sim.com.y < t.y1 + 2.5 && sim.vel.y >= 0 && sim.pos.x < t.x1 + 3)
-      c.lift = 1
+  assert.equal(sim.mode, 'ground')
+  assert.ok(sim.pos.x > t.x1 && sim.pos.y < t.y1, 'off the edge and down')
+})
+
+test('the Roadster drives off a tall roof onto a lower one across the alley', () => {
+  // the biggest drop between single-tier roofs side by side, with a clear run across
+  let best = null
+  for (const A of BUILDINGS) {
+    const a = A.tiers[0]
+    if (A.tiers.length !== 1 || a.x1 - a.x0 < 16) continue
+    for (const B of BUILDINGS) {
+      const b = B.tiers[0],
+        gap = b.x0 - a.x1,
+        drop = a.y1 - b.y1
+      if (B.tiers.length !== 1 || gap <= 0 || gap > 6 || drop < 4) continue
+      if (b.x1 - b.x0 < 16 || (best && drop < best.drop)) continue
+      for (
+        let z = Math.max(a.z0, b.z0) + 3;
+        z <= Math.min(a.z1, b.z1) - 3;
+        z += 0.5
+      )
+        if (
+          clearRun(A, a.x1 - 16, a.x1, z) &&
+          clearRun(B, b.x0, b.x0 + 14, z)
+        ) {
+          best = { a, b, gap, drop, z }
+          break
+        }
+    }
+  }
+  const { a, b, gap, drop, z } = best
+  assert.ok(drop > 20, `a ${drop.toFixed(0)} m drop`)
+  // just fast enough to come down well onto the far roof
+  const v = (gap + 6) / Math.sqrt((2 * drop) / 9.81)
+  const sim = new Sim()
+  sim.reset('city', { x: a.x1 - 5, z, yaw: 0 })
+  sim.floor = a.y1
+  sim.roof = roofAt(a.x1 - 5, z, a.y1)
+  sim.vel.set(v, 0, 0)
+  sim.speed = v
+  sim.syncPose()
+  const tr = new Traffic({ count: 0 })
+  tr.reset(sim.pos.x, z)
+  const events = drive(sim, tr, 8, c => {
+    if (sim.mode !== 'ground') return
+    if (sim.floor === a.y1) c.throttle = sim.speed < v ? 0.3 : 0
+    else c.brake = 1
   })
   assert.ok(!events.some(e => e.type === 'crash'), 'no crash')
+  assert.ok(
+    events.some(e => e.type === 'touchdown'),
+    'it flew off the edge and came down'
+  )
   assert.equal(sim.mode, 'ground')
-  assert.ok(sim.pos.x > t.x1, 'over the edge and down on the far side')
+  assert.ok(Math.abs(sim.pos.y - b.y1) < 1e-9, 'on the lower roof')
+  assert.ok(sim.pos.x > b.x0 && sim.pos.x < b.x1, 'inside its edges')
 })
