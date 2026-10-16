@@ -15,6 +15,7 @@ export const CAM_NAMES = {
 
 const lerpK = (k, dt) => 1 - Math.exp(-k * dt)
 const BLEND_TIME = 1.8 // s to ease from one shot into the next (cuts skip it)
+const SWING = 2.6 // rad/s: the fastest the follow camera swings round behind the car
 const _p = new THREE.Vector3(),
   _f = new THREE.Vector3(),
   _u = new THREE.Vector3(),
@@ -121,13 +122,29 @@ export class CameraRig {
   }
 
   // GTA-style: sit behind the car's heading (not its velocity), ignore pitch and roll so flips never
-  // throw the camera, and hold the heading through the wall ride and any manoeuvre.
+  // throw the camera, and hold the heading through the wall ride and any manoeuvre. A car spun round
+  // by a knock, sliding sideways or tumbling is followed the way it is going instead: chasing its
+  // whirling nose would whip the camera round and round it.
   follow (dt, sim, P) {
     const f = this.f,
       fw = sim.fwd(_f),
-      up = sim.up(_u)
-    if (up.y > 0.55 && Math.hypot(fw.x, fw.z) > 0.3 && sim.mode !== 'ramp')
-      f.targetHeading = Math.atan2(-fw.z, fw.x)
+      up = sim.up(_u),
+      v = sim.vel,
+      hv = Math.hypot(v.x, v.z)
+    const nose = Math.atan2(-fw.z, fw.x),
+      slip = Math.cos(Math.atan2(-v.z, v.x) - nose)
+    const wild =
+      sim.mode === 'crash' ||
+      (sim.mode === 'ground' &&
+        (Math.abs(sim.yawRate) > 2.5 || (hv > 4 && slip < 0.8 && slip > -0.3)))
+    if (wild) {
+      if (hv > 3) f.targetHeading = Math.atan2(-v.z, v.x)
+    } else if (
+      up.y > 0.55 &&
+      Math.hypot(fw.x, fw.z) > 0.3 &&
+      sim.mode !== 'ramp'
+    )
+      f.targetHeading = nose
     if (!f.init) {
       const v = sim.vel
       if (!(up.y > 0.55) && Math.hypot(v.x, v.z) > 1)
@@ -137,7 +154,11 @@ export class CameraRig {
       f.target.copy(P)
       f.elev = sim.mode === 'ramp' ? up.y : 1
     }
-    f.heading += wrapPi(f.targetHeading - f.heading) * lerpK(3.2, dt)
+    f.heading += clamp(
+      wrapPi(f.targetHeading - f.heading) * lerpK(3.2, dt),
+      -SWING * dt,
+      SWING * dt
+    )
     f.idle += dt
     if (f.idle > 1.5 && !this.drag) {
       const k = lerpK(2, dt)
