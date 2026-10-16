@@ -275,7 +275,8 @@ function handleEvents () {
         sim.pos.x,
         sim.pos.z,
         90 + Math.min(120, Math.abs(e.vy) * 20),
-        7 + Math.abs(e.vy)
+        7 + Math.abs(e.vy),
+        sim.pos.y
       )
       rig.shake(Math.min(0.6, 0.05 + Math.abs(e.vy) * 0.04))
       sound.thump(e.g)
@@ -295,12 +296,12 @@ function handleEvents () {
       rig.shake(0.12)
     } else if (e.type === 'righted') {
       // rolled back onto its wheels after a crash
-      burst(sim.pos.x, sim.pos.z, 60, 5)
+      burst(sim.pos.x, sim.pos.z, 60, 5, sim.pos.y)
       rig.shake(0.15)
       sound.thump(1.4)
     } else if (e.type === 'crash') {
       sparkBurst(sim.com, 120)
-      burst(sim.com.x, sim.com.z, 80, 8)
+      burst(sim.com.x, sim.com.z, 80, 8, sim.floor)
       rig.shake(0.5)
       app.restHint = false
       sound.crash()
