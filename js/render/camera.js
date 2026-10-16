@@ -65,6 +65,7 @@ export class CameraRig {
       yawOff: 0,
       pitchOff: 0,
       dist: 8.5,
+      reach: 0, // how far the arm lets out with speed, eased so a sudden stop doesn't yank it in
       elev: 1,
       idle: 99,
       target: new THREE.Vector3()
@@ -153,6 +154,7 @@ export class CameraRig {
       f.heading = f.targetHeading
       f.target.copy(P)
       f.elev = sim.mode === 'ramp' ? up.y : 1
+      f.reach = Math.min(4, sim.groundSpeed() * 0.05)
     }
     f.heading += clamp(
       wrapPi(f.targetHeading - f.heading) * lerpK(3.2, dt),
@@ -168,7 +170,8 @@ export class CameraRig {
     // on the wall the arm follows the car's up vector, so it drops below the car when it hangs inverted
     f.elev += ((sim.mode === 'ramp' ? up.y : 1) - f.elev) * lerpK(3, dt)
     const speed = sim.groundSpeed()
-    const dist = f.dist + Math.min(4, speed * 0.05)
+    f.reach += (Math.min(4, speed * 0.05) - f.reach) * lerpK(1.5, dt)
+    const dist = f.dist + f.reach
     const yaw = f.heading + f.yawOff,
       pitch = 0.2 + f.pitchOff
     f.target.x += (P.x - f.target.x) * lerpK(12, dt)
