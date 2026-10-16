@@ -19,6 +19,9 @@ import {
   CYCLE,
   BUILDINGS,
   LAMPS,
+  POLES,
+  TREES,
+  PALMS,
   signal,
   pointAt,
   standUp,
@@ -571,4 +574,99 @@ test('the Roadster drives off a tall roof onto a lower one across the alley', ()
   assert.equal(sim.mode, 'ground')
   assert.ok(Math.abs(sim.pos.y - b.y1) < 1e-9, 'on the lower roof')
   assert.ok(sim.pos.x > b.x0 && sim.pos.x < b.x1, 'inside its edges')
+})
+
+// Coast at `speed` along +x from (x, z) for secs: every event, the first 'knock' and the car's speed
+// just after it.
+function ram (x, z, speed, secs = 1.5) {
+  const sim = new Sim()
+  sim.reset('city', { x, z, yaw: 0 })
+  sim.vel.set(speed, 0, 0)
+  sim.speed = speed
+  sim.syncPose()
+  const tr = new Traffic({ count: 0 })
+  tr.reset(x, z)
+  const events = []
+  let knock, after
+  for (let i = 0; i < secs / H; i++) {
+    const c = makeControls()
+    c.fan = false
+    sim.step(H, c)
+    tr.step(H, sim)
+    events.push(...sim.events)
+    if (!knock && (knock = sim.events.find(e => e.type === 'knock')))
+      after = Math.hypot(sim.vel.x, sim.vel.z)
+    sim.events.length = 0
+  }
+  return { sim, events, knock, after }
+}
+
+test('a signal mast stops a slow car, and goes over when hit hard at a cost in speed', () => {
+  // the mast on the far right corner for eastbound traffic, approached along the sidewalk
+  const p = POLES.find(p => p.dir === 0 && p.x > 0 && p.z > 0)
+  standUp()
+  const slow = ram(p.x - 14, p.z, 8, 3)
+  assert.ok(!slow.knock, 'a 29 km/h knock leaves it standing')
+  assert.ok(slow.sim.pos.x + 2.22 < p.x, 'and stops the car')
+  assert.ok(slow.events.some(e => e.type === 'bump'))
+  standUp()
+  const fast = ram(p.x - 14, p.z, 20)
+  assert.equal(fast.knock?.kind, 'signal', 'a 72 km/h hit takes it down')
+  assert.ok(!fast.events.some(e => e.type === 'crash'), 'without a crash')
+  assert.ok(
+    fast.after < 15 && fast.after > 8,
+    `and costs speed: 20 -> ${fast.after.toFixed(1)} m/s`
+  )
+  assert.ok(fast.sim.pos.x > p.x + 2, 'the car drives on through')
+  // a breakaway street light costs far less
+  standUp()
+  const l = LAMPS.find(k => k.az !== 0 && k.x > 0)
+  const lamp = ram(l.x - 8, l.z, 20)
+  assert.equal(lamp.knock?.kind, 'lamp')
+  assert.ok(lamp.after > 17.5, `20 -> ${lamp.after.toFixed(1)} m/s`)
+  standUp()
+})
+
+test('park trees and palms snap when hit hard, by how big they are', () => {
+  // a big park tree with no other in the way of a run at it along +x
+  const t = TREES.find(
+    t =>
+      t.s > 1.1 &&
+      !TREES.some(
+        o => o !== t && Math.abs(o.z - t.z) < 1.8 && o.x < t.x && o.x > t.x - 14
+      )
+  )
+  standUp()
+  assert.ok(!ram(t.x - 12, t.z, 6, 3).knock, 'a nudge leaves it standing')
+  standUp()
+  const tree = ram(t.x - 12, t.z, 20)
+  assert.equal(tree.knock?.kind, 'tree', 'a hard hit takes it down')
+  assert.ok(!tree.events.some(e => e.type === 'crash'), 'without a crash')
+  assert.ok(tree.after < 19, `20 -> ${tree.after.toFixed(1)} m/s`)
+  // a palm along a boulevard's sidewalk
+  standUp()
+  const p = PALMS.find((p, i) => i % 2 === 1 && p.x > 0 && p.z > 0)
+  const palm = ram(p.x - 9, p.z, 22)
+  assert.equal(palm.knock?.kind, 'palm')
+  standUp()
+})
+
+test('a car knocked loose snaps a street light it slides into', () => {
+  const l = LAMPS.find(k => k.az !== 0 && k.x > 0)
+  standUp()
+  // (the Roadster parked on the road nearby: traffic far from it is cleared away)
+  const sim = new Sim()
+  sim.reset('city', { x: l.x - 20, z: l.z + l.az * 7.6, yaw: 0 })
+  const tr = new Traffic({ count: 0 })
+  tr.reset(l.x, l.z)
+  const car = tr.make(0)
+  Object.assign(car, { loose: true, looseT: 0, lc: 0, vx: 14, vz: 0, w: 0 })
+  car.x = l.x - 6
+  car.z = l.z
+  tr.setYaw(car, 0)
+  const events = drive(sim, tr, 1, c => (c.brake = 1))
+  const k = events.find(e => e.type === 'knock')
+  assert.equal(k?.by, 'traffic', 'the sliding car took it down')
+  assert.ok(car.x > l.x, 'and slid on past')
+  standUp()
 })
