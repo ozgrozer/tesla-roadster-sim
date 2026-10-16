@@ -43,8 +43,14 @@ export class Hud {
       thrTotal: $('thrTotal'),
       thrAir: $('thrAir'),
       dots: $('thrDots'),
-      loading: $('loading')
+      loading: $('loading'),
+      world: $('btnWorld'),
+      worldLabel: $('worldLabel'),
+      brandSub: $('brandSub'),
+      fade: $('fade')
     }
+    this.world = 'site'
+    this.siteSub = this.el.brandSub.textContent
     this.dots = RS.nozzles.map(nz => this.makeDot(nz))
   }
 
@@ -88,6 +94,28 @@ export class Hud {
     this.el.mode.classList.toggle('manual', !auto)
     this.el.modeLabel.textContent = auto ? 'Autopilot' : 'Manual'
     this.el.cap.style.opacity = auto ? 1 : 0
+  }
+  setWorld (w) {
+    this.world = w
+    const city = w === 'city'
+    document.body.classList.toggle('in-city', city)
+    this.el.worldLabel.textContent = city ? 'Test site' : 'City'
+    this.el.world.setAttribute(
+      'aria-label',
+      city ? 'Back to the test site' : 'Drive in the city'
+    )
+    this.el.brandSub.textContent = city
+      ? 'Free roam · downtown grid · live traffic and signals'
+      : this.siteSub
+  }
+  // black out, run fn (the world switch) behind it, then fade back in
+  fade (fn) {
+    const f = this.el.fade
+    f.style.opacity = 1
+    setTimeout(() => {
+      fn()
+      setTimeout(() => (f.style.opacity = 0), 140)
+    }, 260)
   }
   setCam (name) {
     this.el.cam.textContent = name
@@ -188,7 +216,9 @@ export class Hud {
       el.countdown.style.opacity = 0
       this.setText(
         el.hint,
-        sim.mode === 'air'
+        this.world === 'city' && sim.mode === 'ground'
+          ? 'W throttle · S brake · A/D steer · B e-brake · Shift boost · Space lift off · C test site'
+          : sim.mode === 'air'
           ? 'W/S pitch · A/D roll · Q/E yaw · Space lift · Shift boost · X backflip · K kickflip'
           : sim.mode === 'ramp'
           ? 'W climb · S brake, then reverse down · B hold · Shift main burn off the lip'
