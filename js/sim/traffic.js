@@ -130,6 +130,7 @@ export class Traffic {
     const R = this.R
     for (let tries = 0; tries < 40; tries++) {
       const e = LANES[Math.floor(R() * LANES.length)]
+      if (e.closed) continue
       const s = 6 + R() * (e.len - 12)
       const px = e.x0 + e.dx * s,
         pz = e.z0 + e.dz * s
@@ -181,13 +182,14 @@ export class Traffic {
     if (i >= 0) list.splice(i, 1)
   }
   // Where to go at the end of this lane: mostly straight on, sometimes a turn, which can mean
-  // moving over to the other lane first (unless `own`).
+  // moving over to the other lane first (unless `own`). Never into the jammed street.
   choose (e, car, own = false) {
-    const straight = e.next.find(o => o.move === 'S')
+    const open = o => !o.next[0].closed
+    const straight = e.next.find(o => o.move === 'S' && open(o))
     if (straight && this.R() < (car.type === BUS ? 0.9 : 0.6)) return straight
-    const turns = e.next.filter(o => o !== straight)
+    const turns = e.next.filter(o => o !== straight && open(o))
     if (!own && e.twin)
-      for (const o of e.twin.next) if (o.move !== 'S') turns.push(o)
+      for (const o of e.twin.next) if (o.move !== 'S' && open(o)) turns.push(o)
     return turns.length
       ? turns[Math.floor(this.R() * turns.length)]
       : straight || null
