@@ -187,6 +187,7 @@
   padding-inline: 16px;
 }
 .credit {
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
   position: absolute;
   right: max(16px, env(safe-area-inset-right, 0px));
   top: 56px;
