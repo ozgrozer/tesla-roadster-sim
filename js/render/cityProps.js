@@ -43,20 +43,25 @@ const metal = new THREE.MeshStandardMaterial({
   metalness: 0.6
 })
 
-// ---------- street lights ----------
-function lamps (group) {
-  const post = merge([
-    new THREE.CylinderGeometry(0.075, 0.12, 8, 8).translate(0, 4, 0),
-    box(0, 7.8, -0.06, 2.3, 7.92, 0.06),
-    box(1.9, 7.68, -0.17, 2.7, 7.92, 0.17)
-  ])
-  const lens = new THREE.PlaneGeometry(0.66, 0.26)
-    .rotateX(Math.PI / 2)
-    .translate(2.3, 7.66, 0)
-  const stand = l => pose(l.x, 0, l.z, Math.atan2(-l.az, l.ax))
-  group.add(instanced(post, metal, LAMPS, stand))
-  group.add(
-    instanced(
+// ---------- street lights: knocked flat when the Roadster hits one, stood back up on a reset ----------
+const _ax = new THREE.Vector3(),
+  _tq = new THREE.Quaternion(),
+  UP = new THREE.Vector3(0, 1, 0)
+const ZERO = new THREE.Matrix4().makeScale(0, 0, 0)
+const lampYaw = l => Math.atan2(-l.az, l.ax)
+class Lamps {
+  constructor (group) {
+    const post = merge([
+      new THREE.CylinderGeometry(0.075, 0.12, 8, 8).translate(0, 4, 0),
+      box(0, 7.8, -0.06, 2.3, 7.92, 0.06),
+      box(1.9, 7.68, -0.17, 2.7, 7.92, 0.17)
+    ])
+    const lens = new THREE.PlaneGeometry(0.66, 0.26)
+      .rotateX(Math.PI / 2)
+      .translate(2.3, 7.66, 0)
+    const stand = l => pose(l.x, 0, l.z, lampYaw(l))
+    this.posts = instanced(post, metal, LAMPS, stand)
+    this.lenses = instanced(
       lens,
       new THREE.MeshBasicMaterial({
         color: hdr(3.2, 2.5, 1.6),
@@ -66,7 +71,44 @@ function lamps (group) {
       stand,
       false
     )
-  )
+    group.add(this.posts, this.lenses)
+    this.falling = []
+    this.down = []
+  }
+  // topple lamp i the way (dx, dz) points
+  knock (i, dx, dz) {
+    const l = Math.hypot(dx, dz) || 1
+    this.falling.push({ i, t: 0, ax: dz / l, az: -dx / l })
+    this.down.push(i)
+    this.lenses.setMatrixAt(i, ZERO)
+    this.lenses.instanceMatrix.needsUpdate = true
+  }
+  update (dt) {
+    if (!this.falling.length) return
+    for (const f of this.falling) {
+      f.t = Math.min(1, f.t + dt / 0.75)
+      const l = LAMPS[f.i]
+      _tq.setFromAxisAngle(_ax.set(f.ax, 0, f.az), 1.5 * f.t * f.t) // falls faster as it goes
+      _q.setFromAxisAngle(UP, lampYaw(l)).premultiply(_tq)
+      this.posts.setMatrixAt(
+        f.i,
+        _m.compose(_p.set(l.x, 0, l.z), _q, _s.set(1, 1, 1))
+      )
+    }
+    this.posts.instanceMatrix.needsUpdate = true
+    this.falling = this.falling.filter(f => f.t < 1)
+  }
+  standUp () {
+    for (const i of this.down) {
+      const l = LAMPS[i],
+        m = pose(l.x, 0, l.z, lampYaw(l))
+      this.posts.setMatrixAt(i, m)
+      this.lenses.setMatrixAt(i, m)
+    }
+    this.down.length = this.falling.length = 0
+    this.posts.instanceMatrix.needsUpdate =
+      this.lenses.instanceMatrix.needsUpdate = true
+  }
 }
 
 // ---------- palms: a leaning trunk and a crown of drooping fronds ----------
@@ -254,8 +296,8 @@ export class Signals {
 }
 
 export function buildProps (group) {
-  lamps(group)
+  const lamps = new Lamps(group)
   palms(group)
   trees(group)
-  return new Signals(group)
+  return { lamps, signals: new Signals(group) }
 }
