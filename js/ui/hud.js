@@ -77,9 +77,10 @@ export class Hud {
     return c
   }
 
-  popup (html, ms = 2300) {
+  // kind 'hint' for how to do something: smaller than a score or a crash
+  popup (html, ms = 2300, kind = '') {
     const d = document.createElement('div')
-    d.className = 'popup'
+    d.className = kind ? `popup ${kind}` : 'popup'
     d.innerHTML = html
     this.el.popups.appendChild(d)
     while (this.el.popups.children.length > 4)
@@ -87,7 +88,7 @@ export class Hud {
     setTimeout(() => d.remove(), ms)
   }
   fanPopup (mode) {
-    this.popup(FAN_TEXT[mode], 1600)
+    this.popup(FAN_TEXT[mode], 1600, 'hint')
   }
 
   setMode (auto) {
