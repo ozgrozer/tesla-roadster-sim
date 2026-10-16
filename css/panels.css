@@ -111,6 +111,56 @@
   }
 }
 
+/* city radar, bottom left like the games it borrows from */
+.radar {
+  position: absolute;
+  left: max(16px, env(safe-area-inset-left, 0px));
+  bottom: max(14px, env(safe-area-inset-bottom, 0px));
+  width: 172px;
+  height: 172px;
+  border-radius: 50%;
+  border: 2px solid rgba(238, 240, 242, 0.28);
+  background: rgba(10, 12, 18, 0.55);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
+  display: none;
+}
+.in-city .radar {
+  display: block;
+}
+.in-city .score {
+  left: auto;
+  right: max(16px, env(safe-area-inset-right, 0px));
+  top: 104px;
+  bottom: auto;
+  text-align: right;
+}
+@media (pointer: coarse) {
+  /* the drive pad owns the bottom corners on touch screens */
+  .radar {
+    left: auto;
+    right: max(16px, env(safe-area-inset-right, 0px));
+    bottom: auto;
+    top: 64px;
+    width: 118px;
+    height: 118px;
+  }
+  .in-city .credit {
+    display: none;
+  }
+  .in-city .score {
+    top: 194px;
+  }
+}
+.fade {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s;
+  z-index: 5;
+}
+
 .loading {
   position: fixed;
   inset: 0;
@@ -144,6 +194,25 @@
   .schematic {
     display: none;
   }
+  /* the thruster schematic is gone at this size: the radar takes its corner */
+  .radar {
+    left: auto;
+    right: max(16px, env(safe-area-inset-right, 0px));
+    top: auto;
+    bottom: 86px;
+    width: 104px;
+    height: 104px;
+  }
+  .in-city .score {
+    left: max(16px, env(safe-area-inset-left, 0px));
+    right: auto;
+    top: auto;
+    bottom: 92px;
+    text-align: left;
+  }
+  .in-city .context-hint {
+    display: none;
+  }
   .score {
     bottom: 92px;
   }
@@ -174,6 +243,16 @@
   }
   .caption {
     top: 18%;
+  }
+}
+@media (max-width: 760px) and (pointer: coarse) {
+  /* phones: clear of the drive pad */
+  .radar {
+    bottom: 244px;
+  }
+  .in-city .score {
+    top: 72px;
+    bottom: auto;
   }
 }
 @media (prefers-reduced-motion: reduce) {
