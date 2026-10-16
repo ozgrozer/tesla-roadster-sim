@@ -134,12 +134,13 @@ export const MAT = {
     roughness: 0.55,
     metalness: 0.2
   }),
+  // gold-tinted like a spacesuit visor: near black with bronze reflections
   glass: new THREE.MeshPhysicalMaterial({
-    color: 0x3b2c12,
-    roughness: 0.06,
-    metalness: 0.85,
+    color: 0x2a1d0c,
+    roughness: 0.05,
+    metalness: 0.9,
     transparent: true,
-    opacity: 0.86,
+    opacity: 0.94,
     envMapIntensity: 1.6
   }),
   tire: new THREE.MeshStandardMaterial({ color: 0x111214, roughness: 0.92 }),
