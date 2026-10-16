@@ -363,3 +363,37 @@ test('the jammed street is packed nose to tail, and traffic and Autopilot keep o
     'a wreck in the jam is put back on an open street'
   )
 })
+
+test('a 180 km/h jump clears the jammed street', () => {
+  const lane = JAM.find(e => e.dx === 1 && e.lane === 1)
+  const sim = new Sim()
+  sim.reset('city')
+  sim.pos.set(lane.x0 - 70, 0, lane.z0)
+  sim.vel.set(50, 0, 0)
+  sim.speed = 50
+  sim.syncPose()
+  const tr = new Traffic({ count: 0 })
+  tr.reset(sim.pos.x, sim.pos.z)
+  const events = []
+  while (sim.com.x < lane.x0 + lane.len + 5 && sim.mode !== 'crash') {
+    const c = makeControls()
+    c.fan = false
+    // lift off 45 m short of the first car and climb to 4.5 m on the thrusters
+    c.lift = (sim.mode === 'ground'
+    ? sim.pos.x > lane.x0 - 45
+    : sim.com.y < 4.5 && sim.vel.y >= 0)
+      ? 1
+      : 0
+    sim.step(H, c)
+    tr.step(H, sim)
+    events.push(...sim.events)
+    sim.events.length = 0
+  }
+  assert.deepEqual(
+    events.filter(e => e.type === 'bump' || e.type === 'crash'),
+    [],
+    'touches nothing'
+  )
+  assert.equal(sim.mode, 'air', 'still flying past the end of the jam')
+  assert.ok(!tr.cars.some(c => c.loose), 'every jammed car still in place')
+})
