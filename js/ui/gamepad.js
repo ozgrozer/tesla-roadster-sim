@@ -1,0 +1,97 @@
+// A gamepad, any with the standard layout (Xbox, PlayStation and most others): the left stick steers
+// (and in the air pitches and rolls), the triggers are an analog throttle and brake, the right stick
+// looks round the car (and yaws it in the air), and the buttons press the keys they stand for, so
+// they do everything the keys do. It rumbles for knocks, kerbs, landings and crashes.
+//
+//   RT throttle   LT brake, reverse   A e-brake   RB boost (main thrusters)   LB fly (lift thrusters)
+//   X horn   Y camera   D-pad up / down backflip / kickflip   View reset   Menu Autopilot
+const BUTTONS = {
+  0: 'Space',
+  2: 'KeyH',
+  3: 'KeyV',
+  4: 'KeyF',
+  5: 'ShiftLeft',
+  8: 'KeyR',
+  9: 'KeyP',
+  12: 'KeyX',
+  13: 'KeyK'
+}
+const DEAD = 0.12
+// a stick's axis past its dead zone, rescaled to 0..1 and eased in, for fine control near the centre
+const axis = v => {
+  const a = Math.abs(v)
+  if (a < DEAD) return 0
+  const u = (a - DEAD) / (1 - DEAD)
+  return Math.sign(v) * u * (0.4 + 0.6 * u)
+}
+
+export class Pad {
+  // press(code) and release(code): what pressing a key would do; onConnect(name): a pad is here
+  constructor ({ press, release, onConnect }) {
+    Object.assign(this, { press, release, onConnect })
+    this.index = -1
+    this.down = new Set()
+    this.steer = this.throttle = this.brake = 0
+    this.stickX = this.stickY = this.lookX = this.lookY = 0
+    this.active = false // the analog controls are in use
+    window.addEventListener('gamepadconnected', e => {
+      if (e.gamepad.mapping === 'standard') this.onConnect?.(e.gamepad.id)
+    })
+  }
+  get () {
+    const pads = navigator.getGamepads?.() || []
+    const p = pads[this.index]
+    if (p?.connected) return p
+    this.index = -1
+    for (const q of pads)
+      if (q?.connected && q.mapping === 'standard') {
+        this.index = q.index
+        return q
+      }
+    return null
+  }
+  // once a frame: read the sticks and triggers, and press or release the buttons' keys
+  poll () {
+    const p = this.get()
+    if (!p) {
+      for (const code of this.down) this.release(code)
+      this.down.clear()
+      this.active = false
+      return
+    }
+    const b = p.buttons
+    this.stickX = axis(p.axes[0])
+    this.stickY = axis(p.axes[1])
+    this.lookX = axis(p.axes[2])
+    this.lookY = axis(p.axes[3])
+    this.throttle = b[7]?.value || 0
+    this.brake = b[6]?.value || 0
+    this.steer = -this.stickX
+    const on =
+      this.throttle > 0.05 || this.brake > 0.05 || Math.abs(this.stickX) > 0.05
+    // the first touch of the sticks or triggers takes the wheel, like a drive key
+    if (on && !this.active) this.press('Pad')
+    this.active = on
+    for (const [i, code] of Object.entries(BUTTONS)) {
+      const held = !!b[i]?.pressed
+      if (held && !this.down.has(code)) {
+        this.down.add(code)
+        this.press(code)
+      } else if (!held && this.down.has(code)) {
+        this.down.delete(code)
+        this.release(code)
+      }
+    }
+  }
+  // strong: the big low motor, weak: the small fast one (0..1), for ms
+  rumble (strong, weak, ms = 120) {
+    const p = this.index >= 0 ? this.get() : null
+    p?.vibrationActuator
+      ?.playEffect?.('dual-rumble', {
+        duration: ms,
+        strongMagnitude: Math.min(1, strong),
+        weakMagnitude: Math.min(1, weak)
+      })
+      .catch?.(() => {})
+  }
+}
