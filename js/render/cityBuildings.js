@@ -1,8 +1,8 @@
 // City buildings: procedural facades (glass curtain wall, office, brick, stucco) with windows lit for
 // the evening, storefronts under canopies along the street, setbacks, cornices, roof lips, rooftop
 // plant and antenna beacons. Each style is one merged mesh, so seven hundred buildings draw in a few
-// calls. Every window is its own (facade.js): lit or dark, warm or cool, blinds up or down, and a
-// glass pane catches the sky at its own slight angle.
+// calls. Every window is its own (facade.js): set back in its opening with a room behind it, lit or
+// dark, warm or cool, blinds up or down, and a glass pane catches the sky at its own slight angle.
 import * as THREE from 'three'
 import { LIP, LIP_H } from '../sim/roofs.js'
 import { facadeMaterial } from './facade.js'
@@ -15,7 +15,7 @@ const CELLS = 8 // bays and storeys in one texture tile
 const SHOP = 4.6 // height of the storefront band
 const R = rng(77)
 
-// ---------- facade textures: a colour map and a lit-window map per style ----------
+// ---------- facade textures: a colour map per style ----------
 function lighten (g, x, y, w, h, top, bottom) {
   const gr = g.createLinearGradient(0, y, 0, y + h)
   gr.addColorStop(0, top)
@@ -23,6 +23,9 @@ function lighten (g, x, y, w, h, top, bottom) {
   g.fillStyle = gr
   g.fillRect(x, y, w, h)
 }
+// how far the glass sits back from the wall face (m): a curtain wall's panes are nearly flush, a
+// brick wall's windows deep in their openings
+const INSET = { glass: 0.05, office: 0.14, brick: 0.24, stucco: 0.17 }
 // window rectangle inside a 64 px cell, per style
 const WIN = {
   glass: [2, 2, 60, 52],
@@ -31,30 +34,46 @@ const WIN = {
   stucco: [16, 14, 32, 34]
 }
 function drawWall (g, style, S) {
-  const c = S / CELLS
+  const c = S / CELLS,
+    k = c / 64 // WIN is in a 64 px cell
   if (style === 'glass') {
     g.fillStyle = '#6f7f8c'
     g.fillRect(0, 0, S, S)
   } else if (style === 'brick') {
-    g.fillStyle = '#a89a8c' // mortar
+    // bricks at their real size, about 21 cm by 7.5 cm a course, mortar between, a few darker or
+    // lighter than the rest
+    g.fillStyle = '#a89a8c'
     g.fillRect(0, 0, S, S)
-    for (let y = 0, r = 0; y < S; y += 6, r++)
-      for (let x = (r % 2) * -7; x < S; x += 14) {
-        const v = 0.82 + R() * 0.3
+    const course = Math.max(2, Math.round((0.075 * c) / FLOOR)),
+      len = Math.max(4, Math.round((0.215 * c) / COL))
+    for (let y = 0, r = 0; y < S; y += course, r++)
+      for (let x = (r % 2) * -(len >> 1); x < S; x += len) {
+        const v = 0.8 + R() * 0.3 - (R() < 0.04 ? 0.18 : 0)
         g.fillStyle = `rgb(${(124 * v) | 0},${(66 * v) | 0},${(54 * v) | 0})`
-        g.fillRect(x + 1, y + 1, 12, 5)
+        g.fillRect(x + 1, y + 1, len - 1, course - 1)
       }
+    // soot and weathering: broad patches a shade darker
+    for (let i = 0; i < 30; i++) {
+      const x = R() * S,
+        y = R() * S,
+        rad = c * (0.3 + R() * 0.8)
+      const gr = g.createRadialGradient(x, y, 0, x, y, rad)
+      gr.addColorStop(0, 'rgba(40,24,18,0.12)')
+      gr.addColorStop(1, 'rgba(0,0,0,0)')
+      g.fillStyle = gr
+      g.fillRect(x - rad, y - rad, rad * 2, rad * 2)
+    }
   } else {
     g.fillStyle = style === 'office' ? '#d8d3ca' : '#efebe4'
     g.fillRect(0, 0, S, S)
-    speckle(g, 7000, S, 0.12, false)
-    speckle(g, 3000, S, 0.1, true)
+    speckle(g, 28000, S, 0.12, false)
+    speckle(g, 12000, S, 0.1, true)
   }
   for (let j = 0; j < CELLS; j++)
     for (let i = 0; i < CELLS; i++) {
       const x = i * c,
         y = j * c,
-        [wx, wy, ww, wh] = WIN[style]
+        [wx, wy, ww, wh] = WIN[style].map(v => v * k)
       if (style === 'glass') {
         const v = 0.9 + R() * 0.2
         lighten(
@@ -67,50 +86,39 @@ function drawWall (g, style, S) {
           `rgb(${(150 * v) | 0},${(172 * v) | 0},${(190 * v) | 0})`
         )
         g.fillStyle = '#56636e' // spandrel at each floor slab
-        g.fillRect(x, y + c - 10, c, 10)
+        g.fillRect(x, y + c - 10 * k, c, 10 * k)
+        g.fillStyle = 'rgba(40,46,52,0.9)' // the mullions between panes
+        g.fillRect(x, y, 2 * k, c)
         continue
       }
       if (style === 'office') {
         g.fillStyle = 'rgba(0,0,0,0.12)' // floor band
-        g.fillRect(x, y + c - 8, c, 8)
+        g.fillRect(x, y + c - 8 * k, c, 8 * k)
       }
       if (style === 'brick') {
         g.fillStyle = '#d9cfc2' // stone lintel and sill
-        g.fillRect(x + wx - 3, y + wy - 5, ww + 6, 5)
-        g.fillRect(x + wx - 2, y + wy + wh, ww + 4, 4)
+        g.fillRect(x + wx - 3 * k, y + wy - 5 * k, ww + 6 * k, 5 * k)
+        g.fillRect(x + wx - 2 * k, y + wy + wh, ww + 4 * k, 4 * k)
+        // a rain streak down from each sill
+        const gr = g.createLinearGradient(0, y + wy + wh, 0, y + c)
+        gr.addColorStop(0, 'rgba(50,34,28,0.18)')
+        gr.addColorStop(1, 'rgba(50,34,28,0)')
+        g.fillStyle = gr
+        g.fillRect(x + wx, y + wy + wh + 4 * k, ww, c - wy - wh - 4 * k)
       }
       lighten(g, x + wx, y + wy, ww, wh, '#5d6f80', '#2c3742')
       g.fillStyle = 'rgba(25,28,32,0.9)' // frame and mullion
-      g.fillRect(x + wx + ww / 2 - 1, y + wy, 2, wh)
+      g.fillRect(x + wx + ww / 2 - k, y + wy, 2 * k, wh)
       g.strokeStyle = 'rgba(25,28,32,0.8)'
-      g.lineWidth = 2
+      g.lineWidth = 2 * k
       g.strokeRect(x + wx, y + wy, ww, wh)
       if (style === 'stucco' && j % 2 === 0) {
         g.fillStyle = 'rgba(40,40,42,0.85)' // balcony railing
-        g.fillRect(x + 10, y + wy + wh + 4, c - 20, 2)
-        for (let b = x + 10; b <= x + c - 10; b += 4)
-          g.fillRect(b, y + wy + wh + 4, 1, 9)
+        g.fillRect(x + 10 * k, y + wy + wh + 4 * k, c - 20 * k, 2 * k)
+        for (let b = x + 10 * k; b <= x + c - 10 * k; b += 4 * k)
+          g.fillRect(b, y + wy + wh + 4 * k, k, 9 * k)
       }
     }
-}
-// every window's glow, brightest at its head (which windows are lit, and in what light, is picked
-// per window in the shader: facade.js)
-function drawLit (g, style, S) {
-  const c = S / CELLS,
-    [wx, wy, ww, wh] = WIN[style]
-  g.fillStyle = '#000'
-  g.fillRect(0, 0, S, S)
-  for (let j = 0; j < CELLS; j++)
-    for (let i = 0; i < CELLS; i++)
-      lighten(
-        g,
-        i * c + wx,
-        j * c + wy,
-        ww,
-        wh - (style === 'glass' ? 8 : 0),
-        '#ffffff',
-        '#3a3a3a'
-      )
 }
 // storefronts: sign band, lit window, door and sometimes a striped awning (4 m per shop)
 const AWNINGS = [
@@ -155,13 +163,7 @@ function drawShops (g, lit, W, H) {
     g.fillRect(x, 0, 5, H)
   }
 }
-function facadeMaps (style) {
-  const S = 512
-  return {
-    map: canvasTex(S, g => drawWall(g, style, S)),
-    lit: canvasTex(S, g => drawLit(g, style, S))
-  }
-}
+const facadeMap = style => canvasTex(1024, (g, S) => drawWall(g, style, S))
 function shopMaps () {
   let litCtx = null
   const lit = canvasTex(
@@ -400,27 +402,27 @@ export function buildBuildings (group) {
     return m
   }
   for (const s of styles) {
-    const { map, lit } = facadeMaps(s)
     const glass = s === 'glass'
     add(
       B[s],
       facadeMaterial(
         {
-          map,
-          emissiveMap: lit,
+          map: facadeMap(s),
           emissive: 0xffffff,
           emissiveIntensity: 1.25,
           vertexColors: true,
           roughness: glass ? 0.1 : 0.86,
           metalness: glass ? 0.7 : 0,
-          envMapIntensity: glass ? 1.7 : 1
+          envMapIntensity: glass ? 1.7 : 1.2
         },
         {
           cells: CELLS,
           win: WIN[s].map(v => v / 64),
           lit: glass ? 0.2 : 0.28,
           blinds: glass ? 0.2 : 0.45,
-          tilt: glass ? 0.14 : 0.05
+          tilt: glass ? 0.14 : 0.05,
+          inset: INSET[s],
+          glassMetal: glass ? 0.6 : 0
         }
       )
     )
