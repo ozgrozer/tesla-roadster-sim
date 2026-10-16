@@ -1,6 +1,8 @@
 // Sound, synthesised with Web Audio (nothing to download): the drive units' whine, tyres, wind,
 // thrusters, the fan and the horn; the city round the car (passing traffic with its doppler, honks, a
-// street's hum, birds) and the echo between its buildings. One-shots are in shots.js.
+// street's hum, birds) and the echo between its buildings. One-shots are in shots.js; the slapback
+// off the street's walls, the surf and the tyres off the road in street.js.
+import { STREET } from './street.js'
 import { ONE_SHOTS } from './shots.js'
 import { clamp } from '../sim/constants.js'
 
@@ -52,7 +54,7 @@ export class SoundEngine {
       b2 = 0.57 * b2 + x * 1.0526
       p[i] = (b0 + b1 + b2 + x * 0.1848) * 0.2
     }
-    const comp = ctx.createDynamicsCompressor()
+    const comp = (this.comp = ctx.createDynamicsCompressor())
     comp.threshold.value = -16
     comp.knee.value = 8
     comp.ratio.value = 5
@@ -90,6 +92,7 @@ export class SoundEngine {
     const pan = () => ctx.createStereoPanner()
     this.gain = gain
     this.filt = filt
+    this.loop = loop
 
     // the echo off the buildings: a short synthetic room the one-shots, horns and traffic send into
     this.verb = gain(1)
@@ -203,22 +206,28 @@ export class SoundEngine {
     n.desert = gain(0)
     loop(this.white).connect(filt('bandpass', 380, 0.3)).connect(n.desert)
     n.desert.connect(gust)
-    // the two nearest cars in traffic: an engine's firing note and tyre roar, panned, with doppler
-    n.cars = [0, 1].map(() => {
+    // the four nearest cars in traffic: an engine's firing note (or an electric car's whine) and
+    // tyre roar, panned, with doppler
+    n.cars = [0, 1, 2, 3].map(() => {
       const g = gain(0),
         p = pan()
       const eng = osc('sawtooth', 50),
         sub = osc('triangle', 25),
         lp = filt('lowpass', 400, 1.5),
-        tg = gain(0)
+        eg = gain(0.5),
+        tg = gain(0),
+        whine = osc('sine', 400),
+        wg = gain(0)
       eng.connect(lp)
       sub.connect(gain(0.8)).connect(lp)
-      lp.connect(gain(0.5)).connect(g)
+      lp.connect(eg).connect(g)
+      whine.connect(wg).connect(g)
       loop(this.brown).connect(filt('lowpass', 650, 0.5)).connect(tg).connect(g)
       g.connect(p).connect(this.master)
       p.connect(gain(0.35)).connect(this.verb)
-      return { g, p, eng, sub, lp, tg }
+      return { g, p, eng, sub, lp, eg, tg, whine, wg }
     })
+    this.buildStreet()
     return true
   }
   // a stereo impulse response: a few early reflections off the street's walls, then a dark decay
@@ -316,11 +325,13 @@ export class SoundEngine {
     // the street, and the echo off it: close walls in the city, open desert at the test site
     R(n.city.gain, st.city ? 0.05 : 0, 0.5)
     R(n.desert.gain, st.city ? 0 : 0.025, 0.5)
-    R(n.verbOut.gain, st.city ? 0.45 : 0.15, 0.5)
+    // (more of it between tall buildings than out on the beach or up over the roofs)
+    R(n.verbOut.gain, st.city ? 0.16 + 0.34 * (st.enclosed ?? 1) : 0.15, 0.5)
     this.traffic(st.cars || [], ps, R)
+    this.updateStreet(st, R)
     if (st.city) this.ambience(st.dt, st.honks)
   }
-  // cars: [{ d, pan, doppler, v, big }], nearest first
+  // cars: [{ d, pan, doppler, v, big, ev }], nearest first
   traffic (cars, ps, R) {
     this.n.cars.forEach((voice, i) => {
       const c = cars[i]
@@ -332,6 +343,9 @@ export class SoundEngine {
       R(voice.eng.frequency, fire, 0.08)
       R(voice.sub.frequency, fire / 2, 0.08)
       R(voice.lp.frequency, 220 + c.v * 14, 0.1)
+      R(voice.eg.gain, c.ev ? 0 : 0.5, 0.1)
+      R(voice.whine.frequency, (260 + c.v * 30) * c.doppler * ps, 0.08)
+      R(voice.wg.gain, c.ev ? 0.025 * Math.min(1, c.v / 6) : 0, 0.1)
       R(voice.tg.gain, Math.min(1.2, c.v / 10), 0.1)
       R(voice.p.pan, c.pan, 0.08)
     })
@@ -355,4 +369,4 @@ export class SoundEngine {
     }
   }
 }
-Object.assign(SoundEngine.prototype, ONE_SHOTS)
+Object.assign(SoundEngine.prototype, ONE_SHOTS, STREET)
