@@ -9,6 +9,7 @@ import { raycast } from '../sim/city.js'
 import { TrafficView } from './traffic.js'
 import { buildProps } from './cityProps.js'
 import { buildGround } from './cityGround.js'
+import { buildStreet } from './cityStreet.js'
 import { buildBuildings, BEACON } from './cityBuildings.js'
 
 export class CityView {
@@ -21,6 +22,7 @@ export class CityView {
     const g = new THREE.Group()
     this.sky = new Sky(g)
     buildGround(g)
+    buildStreet(g)
     this.sea = buildSea(g)
     buildBuildings(g)
     const props = buildProps(g)
