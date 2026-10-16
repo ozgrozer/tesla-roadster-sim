@@ -1,11 +1,12 @@
 // The city view: builds the city's meshes the first time it is visited (so the test site loads as
 // fast as ever), shows it in place of the test site, and keeps the traffic, signals, sky, sea and
-// antenna beacons moving.
+// antenna beacons moving, and the city's long shadows up to date (sunShadow.js).
 import * as THREE from 'three'
-import { Sky } from './citySky.js'
 import { buildSea } from './citySea.js'
-import { scene, site } from './scene.js'
-import { raycast } from '../sim/city.js'
+import { Sky, SUN } from './citySky.js'
+import { scene, site, renderer } from './scene.js'
+import { CityShadow } from './sunShadow.js'
+import { raycast, BUILDINGS, OUTER } from '../sim/city.js'
 import { TrafficView } from './traffic.js'
 import { buildProps } from './cityProps.js'
 import { buildGround } from './cityGround.js'
@@ -26,10 +27,16 @@ export class CityView {
     this.sea = buildSea(g)
     buildBuildings(g)
     const props = buildProps(g)
+    const top = Math.max(...BUILDINGS.map(b => b.h)) + 30 // (and the masts on top)
+    this.shadow = new CityShadow(scene, renderer, SUN, OUTER, top)
     this.signals = props.signals
     this.fallers = props.fallers
     for (const f of Object.values(this.fallers))
-      f.onLand = (x, z, faller) => this.onLand?.(x, z, faller.kind)
+      f.onLand = (x, z, faller) => {
+        this.shadow.refresh()
+        this.onLand?.(x, z, faller.kind)
+      }
+    this.falling = false
     this.cars = new TrafficView(g)
     g.visible = false
     scene.add(g)
@@ -41,6 +48,7 @@ export class CityView {
     if (this.group) this.group.visible = on
     site.visible = !on
     this.sky?.apply(on)
+    this.shadow?.refresh() // (empty while the test site is shown)
   }
   // a street light, signal, tree or palm knocked down (the sim's 'knock' event), and all of them back
   // up when the city resets. onLand(x, z, kind): one of them has just hit the ground at (x, z).
@@ -49,12 +57,25 @@ export class CityView {
   }
   standUp () {
     for (const f of Object.values(this.fallers || {})) f.standUp()
+    this.shadow?.refresh()
+  }
+  // before the frame is drawn: the city's shadow map, if it is due (with the cars and hide, the
+  // Roadster, left out of it)
+  shadows (camera, hide) {
+    this.shadow?.update(camera, [...this.cars.meshes, ...hide])
   }
   update (dt, clock, traffic, camera) {
     if (!this.on) return
     this.sky.follow(camera)
     this.sea(clock, camera)
-    for (const f of Object.values(this.fallers)) f.update(dt)
+    let falling = false
+    for (const f of Object.values(this.fallers)) {
+      f.update(dt)
+      falling = falling || f.moving.length > 0
+    }
+    // once whatever was knocked down has come to rest, its shadow is drawn where it lies
+    if (this.falling && !falling) this.shadow.refresh()
+    this.falling = falling
     this.signals.update(traffic.t)
     this.cars.update(traffic, dt)
     const b = Math.sin(clock * 2.2) > 0.4 ? 1 : 0.08
