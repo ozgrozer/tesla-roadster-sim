@@ -219,9 +219,15 @@ test('brakes and e-brake stop the car in realistic distances', () => {
     c.ebrake = true
   })
   assert.ok(
-    eb.dist > 15 && eb.dist < 45,
+    eb.dist >= brake.dist && eb.dist < 20,
     `e-brake distance ${eb.dist.toFixed(1)} m`
   )
+  // the e-brake wins over W held at the same time, as in GTA
+  const ebW = from60(c => {
+    c.ebrake = true
+    c.throttle = 1
+  })
+  assert.ok(ebW.dist < 20, `e-brake with W held: ${ebW.dist.toFixed(1)} m`)
   assert.ok(
     Math.abs(eb.turned) < 2,
     'straight-line e-brake stop stays straight'
