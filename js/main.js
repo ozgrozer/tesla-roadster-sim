@@ -30,6 +30,8 @@ import {
 } from './render/scene.js'
 import {
   burst,
+  fallFx,
+  knockFx,
   sparkBurst,
   ALL_PARTICLES,
   updateNozzles,
@@ -290,10 +292,12 @@ function handleEvents () {
         if (e.impact > 6) sparkBurst(sim.pos, Math.min(60, e.impact * 4))
       }
     } else if (e.type === 'knock') {
+      // a street light, signal or tree snapped off, by the Roadster or a car it sent sliding
       cityView.knock(e)
-      sound.bump(e.impact * 0.6)
-      sparkBurst({ x: e.x, y: 0.4, z: e.z }, 26)
-      rig.shake(0.12)
+      knockFx(e)
+      const mine = e.by === 'roadster'
+      sound.snap(e.kind, e.impact * (mine ? 1 : hearing(e.x, e.z)))
+      if (mine) rig.shake(Math.min(0.35, 0.06 + e.impact * 0.012))
     } else if (e.type === 'righted') {
       // rolled back onto its wheels after a crash
       burst(sim.pos.x, sim.pos.z, 60, 5, sim.pos.y)
@@ -309,6 +313,18 @@ function handleEvents () {
     }
   }
   sim.events.length = 0
+}
+// how loud something at (x, z) sounds from the camera, 0 to 1
+const hearing = (x, z) =>
+  clamp(
+    1.4 / (1 + Math.hypot(camera.position.x - x, camera.position.z - z) / 14),
+    0,
+    1
+  )
+// a knocked-down light, signal or tree hits the ground
+cityView.onLand = (x, z, kind) => {
+  fallFx(x, z, kind)
+  sound.fall(kind, hearing(x, z))
 }
 
 function updateSound (dt) {
@@ -421,7 +437,7 @@ function frame (now) {
   MAT.beacon.color.setRGB(4 * blink, 0.2 * blink, 0.15 * blink)
   rig.update(dt, clock, sim, app.auto ? P.shot : null)
   if (city) {
-    cityView.update(dt, clock, traffic, camera)
+    cityView.update(simDt, clock, traffic, camera)
     minimap.update(dt, sim, traffic, VIEW.heading)
   }
   updateSound(dt)
