@@ -39,11 +39,14 @@ const STUCK = 8 // s stopped in traffic before it takes off
 const HONK = [0.5, 0.75, 0.95, 1.2, 1.4, 2.4] // horn on, off, on, off, on, off (s into the wait)
 const HOP_AIR = 170 // kg of air it wants in the tanks before a hop
 let PLAN = null // the route to the gridlock (the same for every run, so worked out once)
-const CRUISE = 15 // m/s, a little over 50 km/h
-const A = 2.5 // comfortable acceleration and braking, m/s^2
-const B = 3.5
-const LOOK = 70
+const CRUISE = 33 // m/s, about 120 km/h: it is a Roadster
+const A = 8 // a hard launch and firm braking, m/s^2
+const B = 9
+const LAT = 6 // m/s^2 round a corner (traffic takes them at 2.6)
+const HEADWAY = 0.9 // s behind the car ahead (traffic keeps 1.3)
+const LOOK = 110 // m ahead it watches for cars and lights, enough to stop from cruising speed
 const DRIVER = { type: 0 } // how traffic.choose sees the Roadster: an ordinary car
+const corner = e => (e.kind === 1 ? Math.sqrt(LAT * e.r) : Infinity)
 const P = { x: 0, z: 0, hx: 1, hz: 0 }
 
 export class CityPilot {
@@ -159,7 +162,7 @@ export class CityPilot {
       (this.next?.kind === 1 && this.edge.len - this.s < 8)
     let e = this.edge,
       n = this.next,
-      s = this.s + (turning ? 2.5 + v * 0.3 : 5 + v * 0.45)
+      s = this.s + (turning ? 2.5 + v * 0.3 : 5 + v * 0.7)
     while (s > e.len && n) {
       s -= e.len
       e = n
@@ -207,7 +210,7 @@ export class CityPilot {
         const node = NODES[lane.to],
           st = signal(node, lane.dir, this.traffic.t)
         let stop = st !== GREEN
-        if (st === YELLOW && v * v > 2 * 4 * Math.max(0, toLine - 1)) {
+        if (st === YELLOW && v * v > 2 * 8 * Math.max(0, toLine - 1)) {
           this.go = lane // too close to stop: carry on through
           stop = false
         }
@@ -220,19 +223,19 @@ export class CityPilot {
         }
       }
     }
-    // cruise, slowing early for the corner ahead
-    let v0 = Math.min(CRUISE, lane.vmax)
-    if (this.next && this.next.vmax < v0)
+    // cruise, braking in time for the corner ahead
+    let v0 = Math.min(CRUISE, corner(lane))
+    if (this.next && corner(this.next) < v0)
       v0 = Math.min(
         v0,
         Math.sqrt(
-          this.next.vmax ** 2 + 2 * 2 * Math.max(0, lane.len - this.s - 1)
+          corner(this.next) ** 2 + 2 * 5 * Math.max(0, lane.len - this.s - 1)
         )
       )
     let acc = A * (1 - (v / Math.max(v0, 0.1)) ** 4)
     if (gap < LOOK) {
       const ss =
-        2.5 + Math.max(0, v * 1.3 + (v * (v - vl)) / (2 * Math.sqrt(A * B)))
+        2.5 + Math.max(0, v * HEADWAY + (v * (v - vl)) / (2 * Math.sqrt(A * B)))
       acc -= A * (ss / Math.max(gap, 0.2)) ** 2
     }
     // Pedals that follow the asked-for acceleration smoothly: a touch of throttle holds the speed,
@@ -243,9 +246,9 @@ export class CityPilot {
       (acc - this.acc) * (1 - Math.exp(-dt * (acc < this.acc ? 10 : 4)))
     if (this.acc > -0.25) c.throttle = clamp((this.acc + 0.25) / 15, 0.001, 1)
     else c.brake = clamp((-this.acc - 0.25) / 12, 0.002, 1)
-    if (v < 0.3 && gap < 8) {
+    if ((v < 2 && gap < 2.5 + v) || (v < 0.3 && gap < 8)) {
       c.throttle = 0
-      c.brake = 1 // hold at a standstill
+      c.brake = 1 // pull up crisply, and hold at a standstill
     }
     // stuck: in the gridlock at once, elsewhere after a long wait in traffic (not at a red light)
     const inJam = lane.closed
