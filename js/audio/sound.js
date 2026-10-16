@@ -318,7 +318,7 @@ export class SoundEngine {
     R(n.desert.gain, st.city ? 0 : 0.025, 0.5)
     R(n.verbOut.gain, st.city ? 0.45 : 0.15, 0.5)
     this.traffic(st.cars || [], ps, R)
-    if (st.city) this.ambience(st.dt)
+    if (st.city) this.ambience(st.dt, st.honks)
   }
   // cars: [{ d, pan, doppler, v, big }], nearest first
   traffic (cars, ps, R) {
@@ -336,10 +336,10 @@ export class SoundEngine {
       R(voice.p.pan, c.pan, 0.08)
     })
   }
-  // now and then a bird, or a horn a few streets away
-  ambience (dt) {
+  // now and then a bird, or (once drivers honk at all: honks) a horn a few streets away
+  ambience (dt, honks) {
     this.birdT -= dt
-    this.farT -= dt
+    if (honks) this.farT -= dt
     if (this.birdT < 0) {
       this.birdT = 2 + Math.random() * 7
       this.bird(Math.random() * 1.6 - 0.8)
