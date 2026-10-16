@@ -5,7 +5,7 @@ import * as THREE from 'three'
 import { MAT } from './scene.js'
 import { CAR, clamp } from '../sim/constants.js'
 
-export const ARCH_R = 0.41 // arch opening radius around each axle (tyre radius 0.36)
+export const ARCH_R = 0.4 // arch opening radius around each axle (tyre radius 0.36)
 const WELL_IN = 0.5 // inner wall of the wheel well, from the centre line
 const HALF_TRACK = 0.87 // wheel centre from the centre line
 const BODY_SIDE = 0.995 // outer skin of the body at the wheels
