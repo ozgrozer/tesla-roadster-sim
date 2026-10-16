@@ -7,6 +7,7 @@ import { Minimap } from './ui/minimap.js'
 import { Traffic } from './sim/traffic.js'
 import { nearestLane } from './sim/city.js'
 import { Autopilot } from './sim/autopilot.js'
+import { CityPilot } from './sim/cityPilot.js'
 import { SoundEngine } from './audio/sound.js'
 import { buildLineup } from './render/lineup.js'
 import { CameraRig, CAM_NAMES } from './render/camera.js'
@@ -70,6 +71,7 @@ const rig = new CameraRig(camera, canvas)
 const sound = new SoundEngine()
 const hud = new Hud(RS)
 const traffic = new Traffic()
+const cityPilot = new CityPilot(sim, traffic)
 const cityView = new CityView()
 const minimap = new Minimap(document.getElementById('radar'))
 const app = {
@@ -99,7 +101,9 @@ function setAuto (on) {
     if (rig.mode === 'director') setCam('follow')
   }
 }
-function startAutopilot () {
+// the autopilot for the world the car is in: the reveal demo, or Autopilot on the city's streets
+const pilot = () => (app.world === 'city' ? cityPilot : ap)
+function startDemo () {
   setWorld('site')
   sim.reset('start')
   ap.reset()
@@ -108,6 +112,17 @@ function startAutopilot () {
   for (const p of ALL_PARTICLES) p.clear()
   clearSkids()
   setCam('director')
+  setAuto(true)
+}
+// P and the mode button: the demo at the test site, Autopilot in the city
+function startAutopilot () {
+  if (app.world !== 'city') return startDemo()
+  cityPilot.reset()
+  if (!cityPilot.join()) {
+    hud.popup('Autopilot needs a street · drive onto a lane first', 2200)
+    return
+  }
+  setCam('follow')
   setAuto(true)
 }
 function resetTo (spot, at = null) {
@@ -123,6 +138,7 @@ function resetTo (spot, at = null) {
 function setWorld (w) {
   if (app.world === w) return
   app.world = w
+  app.ap = pilot()
   cityView.show(w === 'city')
   rig.clip = w === 'city' ? clipCamera : null
   hud.setWorld(w)
@@ -134,7 +150,7 @@ function setWorld (w) {
 }
 function toggleWorld () {
   hud.fade(() => {
-    if (app.world === 'city') startAutopilot()
+    if (app.world === 'city') startDemo()
     else {
       resetTo('city')
       setCam('follow')
@@ -179,7 +195,8 @@ const COMMANDS = {
   KeyM: () => {
     if (app.auto) setAuto(false)
   },
-  KeyR: () => (app.auto ? startAutopilot() : resetTo(app.lastSpot)),
+  KeyR: () =>
+    app.auto && app.world === 'site' ? startDemo() : resetTo(app.lastSpot),
   Digit1: () => resetTo('start'),
   Digit2: () => {
     resetTo('top')
@@ -332,7 +349,8 @@ function frame (now) {
   const dt = Math.min(0.05, (now - last) / 1000)
   last = now
   clock += dt
-  const target = (app.slow ? 0.3 : 1) * (app.auto ? ap.slow : 1)
+  const P = pilot()
+  const target = (app.slow ? 0.3 : 1) * (app.auto ? P.slow : 1)
   app.timeScale += (target - app.timeScale) * (1 - Math.exp(-5 * dt))
   acc += dt * app.timeScale
   let simDt = 0,
@@ -340,14 +358,15 @@ function frame (now) {
   const city = app.world === 'city'
   if (city) updateView()
   while (acc >= H && steps < 14) {
-    const c = app.auto ? ap.update(H) : input.controls(sim, app.fanMode)
+    const c = app.auto ? P.update(H) : input.controls(sim, app.fanMode)
     sim.step(H, c)
     if (city) traffic.step(H, sim, VIEW)
     app.lastCtl = c
     acc -= H
     simDt += H
     steps++
-    if (app.auto && ap.restart) {
+    if (app.auto && P.restart) {
+      if (city) respawn() // a wreck on Autopilot: back onto the nearest lane and carry on
       startAutopilot()
       break
     }
@@ -361,9 +380,9 @@ function frame (now) {
     (app.crashClock += dt) > 2.5
   )
     respawn()
-  if (app.auto && ap.countdown !== app.lastCountdown) {
-    if (ap.countdown !== null) sound.beep(ap.countdown === 0)
-    app.lastCountdown = ap.countdown
+  if (app.auto && P.countdown !== app.lastCountdown) {
+    if (P.countdown !== null) sound.beep(P.countdown === 0)
+    app.lastCountdown = P.countdown
   }
   updateRoadster(RS, sim, app.lastCtl, dt)
   followKeyLight(sim.pos)
@@ -381,7 +400,7 @@ function frame (now) {
   LED_MAT.uniforms.uTime.value = clock
   const blink = Math.sin(clock * 2.4) > 0.6 ? 1 : 0.15
   MAT.beacon.color.setRGB(4 * blink, 0.2 * blink, 0.15 * blink)
-  rig.update(dt, clock, sim, app.auto ? ap.shot : null)
+  rig.update(dt, clock, sim, app.auto ? P.shot : null)
   if (city) {
     cityView.update(dt, clock, traffic, camera)
     minimap.update(dt, sim, traffic, VIEW.heading)
@@ -417,7 +436,7 @@ window.__roadster = {
   toggleWorld,
   advance (sec) {
     for (let t = 0; t < sec; t += H) {
-      const c = app.auto ? ap.update(H) : input.controls(sim, app.fanMode)
+      const c = app.auto ? pilot().update(H) : input.controls(sim, app.fanMode)
       sim.step(H, c)
       if (app.world === 'city') traffic.step(H, sim, VIEW)
       app.lastCtl = c
