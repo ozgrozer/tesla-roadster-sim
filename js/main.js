@@ -86,7 +86,7 @@ const app = {
   fanMode: 'auto',
   soundOn: false,
   lastCtl: makeControls(),
-  crashClock: 0,
+  restHint: false, // told the player how to carry on from a wreck at rest
   lastCountdown: null,
   wheelAudio: 0,
   lastBump: 0
@@ -136,7 +136,6 @@ function resetTo (spot, at = null) {
   }
   app.lastSpot = spot
   app.score = 0
-  app.crashClock = 0
   if (app.auto) setAuto(false)
 }
 // ---------- worlds: the test site and the city ----------
@@ -298,7 +297,7 @@ function handleEvents () {
       sparkBurst(sim.com, 120)
       burst(sim.com.x, sim.com.z, 80, 8)
       rig.shake(0.9)
-      app.crashClock = 0
+      app.restHint = false
       sound.crash()
       hud.popup(`Crash · ${e.reason}`, 2600)
     }
@@ -384,13 +383,16 @@ function frame (now) {
   }
   if (steps >= 14) acc = 0
   handleEvents()
-  if (
-    !app.auto &&
-    sim.mode === 'crash' &&
-    sim.crashSettled &&
-    (app.crashClock += dt) > 2.5
-  )
-    respawn()
+  // a wreck at rest stays put (no respawn): say how to carry on from it
+  if (!app.auto && sim.mode === 'crash' && sim.crashSettled && !app.restHint) {
+    app.restHint = true
+    hud.popup(
+      sim.up().y > 0.95
+        ? 'On its wheels · <b>W</b> to drive on'
+        : '<b>A</b> / <b>D</b> to roll it back over',
+      3000
+    )
+  }
   if (app.auto && P.countdown !== app.lastCountdown) {
     if (P.countdown !== null) sound.beep(P.countdown === 0)
     app.lastCountdown = P.countdown
