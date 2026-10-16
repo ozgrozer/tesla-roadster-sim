@@ -329,13 +329,13 @@ export class SoundEngine {
     R(n.fanO.frequency, (60 + st.suction * 120) * ps, 0.3)
     R(n.fanBP.frequency, (120 + st.suction * 260) * ps, 0.3)
     // the street, and the echo off it: close walls in the city, open desert at the test site
-    R(n.city.gain, st.city ? 0.05 : 0, 0.5)
+    R(n.city.gain, st.city ? (st.night ? 0.03 : 0.05) : 0, 0.5)
     R(n.desert.gain, st.city ? 0 : 0.025, 0.5)
     // (more of it between tall buildings than out on the beach or up over the roofs)
     R(n.verbOut.gain, st.city ? 0.16 + 0.34 * (st.enclosed ?? 1) : 0.15, 0.5)
     this.traffic(st.cars || [], ps, R)
     this.updateStreet(st, R)
-    if (st.city) this.ambience(st.dt, st.honks)
+    if (st.city) this.ambience(st.dt, st.honks, st.night)
   }
   // cars: [{ d, pan, doppler, v, big, ev }], nearest first
   traffic (cars, ps, R) {
@@ -356,9 +356,10 @@ export class SoundEngine {
       R(voice.p.pan, c.pan, 0.08)
     })
   }
-  // now and then a bird, or (once drivers honk at all: honks) a horn a few streets away
-  ambience (dt, honks) {
-    this.birdT -= dt
+  // now and then a bird (not at night), or (once drivers honk at all: honks) a horn a few streets
+  // away
+  ambience (dt, honks, night) {
+    if (!night) this.birdT -= dt
     if (honks) this.farT -= dt
     if (this.birdT < 0) {
       this.birdT = 2 + Math.random() * 7
