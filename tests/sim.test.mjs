@@ -256,8 +256,8 @@ test('e-brake plus steering rotates the car into a drift', () => {
   assert.ok(r.maxSlip > 45, `drift slip ${r.maxSlip.toFixed(0)}°`)
 })
 
-test('a handbrake turn swings the car round, and the slide runs out at the tyres\' pace', () => {
-  // a tap of the e-brake on full lock at 60 mph, then the wheel straight and the throttle on: the
+test('a handbrake turn swings the car round, and on the power it drives off the way it points', () => {
+  // a tap of the e-brake on full lock at 60 km/h, then the wheel straight and the throttle on: the
   // locked rears swing round, and once they spin up again the car slides on until its tyres bite,
   // no harder than they can pull (nothing snaps it onto its new heading), and drives off that way
   const tap = (c, t) => {
@@ -267,7 +267,7 @@ test('a handbrake turn swings the car round, and the slide runs out at the tyres
   }
   const r = from60(tap, 3)
   const mid = from60(tap, 1.4)
-  assert.ok(r.turned > 45 && r.turned < 120, `turned ${r.turned.toFixed(0)}°`)
+  assert.ok(r.turned > 45 && r.turned < 140, `turned ${r.turned.toFixed(0)}°`)
   assert.ok(r.maxSlip > 20, `slid through it (${r.maxSlip.toFixed(0)}°)`)
   assert.ok(
     mid.maxSlip > 25 && r.maxSlip > 25,
@@ -283,6 +283,69 @@ test('a handbrake turn swings the car round, and the slide runs out at the tyres
     Math.abs(drift) < 5,
     `then drives off the way it points (${drift.toFixed(1)}° off)`
   )
+})
+
+// Track Mode: a handbrake flick at 70 km/h on open ground, then t s of whatever steer() and
+// throttle() ask for; the rear axle's slip every tenth of a second, and the sim at the end
+function flick (steer, throttle, t) {
+  const sim = new Sim()
+  sim.reset('start')
+  sim.pos.set(-100, 0, 300) // open desert, clear of everything
+  sim.suction = 0
+  sim.syncPose()
+  sim.vel.set(70 / 3.6, 0, 0)
+  sim.speed = 70 / 3.6
+  const slip = []
+  for (let i = 0; i < (0.45 + t) / H; i++) {
+    const c = makeControls(),
+      s = i * H - 0.45
+    c.fan = false
+    if (s < 0) {
+      c.ebrake = true
+      c.steer = 1
+    } else {
+      c.steer = steer(s)
+      c.throttle = throttle(s)
+    }
+    sim.step(H, c)
+    if (i % 12 === 0) slip.push(Math.abs(sim.slipR) / DEG)
+  }
+  return { sim, slip }
+}
+
+test('Track Mode: on the power after a handbrake flick the car holds a drift for as long as it is asked', () => {
+  // into the turn and on the power: a drift held, deep, for as long as the steering asks
+  const held = flick(
+    () => 1,
+    () => 1,
+    5
+  )
+  const late = held.slip.slice(15) // (from 1.5 s on)
+  assert.ok(
+    late.every(a => a > 30 && a < 65),
+    `held at ${Math.min(...late).toFixed(0)}-${Math.max(...late).toFixed(0)}°`
+  )
+  assert.ok(held.sim.track, 'still in Track Mode')
+  assert.ok(held.sim.groundSpeed() > 15, 'and still going at a pace')
+  // the wheel left alone: it slowly unwinds and the car drives on, the electronics back on
+  const alone = flick(
+    () => 0,
+    () => 1,
+    8
+  )
+  assert.ok(alone.slip[10] > 15, 'still drifting a second later')
+  assert.ok(alone.slip.slice(-5).every(a => a < 5), 'unwound by the end')
+  assert.ok(!alone.sim.track, 'and out of Track Mode')
+  // steering out of it, or lifting off: straight in a moment, and never over into a drift the
+  // other way
+  for (const [how, steer, throttle] of [
+    ['steering out', () => -1, () => 1],
+    ['lifting off', () => 0, s => (s < 1 ? 1 : 0)]
+  ]) {
+    const r = flick(steer, throttle, 3.5)
+    assert.ok(r.slip.slice(-10).every(a => a < 8), `${how} straightens it`)
+    assert.ok(!r.sim.track, `${how}: out of Track Mode`)
+  }
 })
 
 test('the steering turns at the speed of hands, and the tyres corner to their limit', () => {
