@@ -131,3 +131,53 @@ test('a gamepad is analog, and a stick held through a lift-off waits', () => {
   )
   navigator.getGamepads = undefined
 })
+
+test('the steering keys ease the wheel over: gently at speed, quickly parking or with the handbrake', () => {
+  const input = new Input({ onDrive () {}, onCommand () {} })
+  // steer after A has been held for t s, at v m/s (with the handbrake: Space)
+  const after = (t, v, space = false) => {
+    const sim = new Sim()
+    sim.reset('start')
+    sim.pos.set(-100, 0, 300)
+    sim.suction = 0
+    sim.vel.set(v, 0, 0)
+    sim.speed = v
+    sim.syncPose()
+    input.keySteer = 0
+    input.lastT = sim.time
+    if (space) down('Space')
+    down('KeyA')
+    let c
+    for (let i = 0; i < t / H; i++) {
+      sim.time += H // (the controls only, at a steady speed)
+      c = input.controls(sim, 'off')
+    }
+    up('KeyA')
+    if (space) up('Space')
+    return c.steer
+  }
+  assert.ok(after(0.08, 0) > 0.7, 'a tap at a standstill is most of full lock')
+  const tap = after(0.08, 100 / 3.6)
+  assert.ok(
+    tap > 0.1 && tap < 0.3,
+    `at 100 km/h a tap is a small correction (${tap.toFixed(2)})`
+  )
+  assert.ok(after(0.6, 100 / 3.6) === 1, 'held, it is full steering')
+  assert.ok(
+    after(0.08, 100 / 3.6, true) > 0.7,
+    'with the handbrake pulled, at once'
+  )
+  // and let go, it comes back to the middle faster than it went over
+  const sim = new Sim()
+  sim.reset('start')
+  sim.speed = 100 / 3.6
+  sim.vel.set(sim.speed, 0, 0)
+  input.keySteer = 1
+  input.lastT = sim.time
+  let c
+  for (let i = 0; i < 0.2 / H; i++) {
+    sim.time += H
+    c = input.controls(sim, 'off')
+  }
+  assert.equal(c.steer, 0, 'back to the middle in a fifth of a second')
+})
