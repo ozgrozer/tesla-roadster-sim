@@ -22,11 +22,7 @@ import { updateSkids, clearSkids } from './render/skids.js'
 import { DEG, TAU, makeControls } from './sim/constants.js'
 import { LED_MAT, buildWall, buildTruss } from './render/wall.js'
 import { buildRoadster, updateRoadster } from './render/roadster.js'
-import { speedBlurPass, updateSpeedBlur } from './render/speedBlur.js'
-import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
-import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
-import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js'
-import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js'
+import { Post } from './render/post.js'
 import {
   MAT,
   scene,
@@ -51,26 +47,7 @@ buildLineup()
 const RS = buildRoadster()
 attachDiamonds(RS)
 
-const composer = new EffectComposer(renderer)
-composer.addPass(new RenderPass(scene, camera))
-composer.addPass(
-  new UnrealBloomPass(
-    new THREE.Vector2(window.innerWidth, window.innerHeight),
-    0.55,
-    0.45,
-    0.95
-  )
-)
-const speedBlur = speedBlurPass()
-composer.addPass(speedBlur)
-composer.addPass(new OutputPass())
-function resize () {
-  renderer.setSize(window.innerWidth, window.innerHeight)
-  composer.setSize(window.innerWidth, window.innerHeight)
-  camera.aspect = window.innerWidth / window.innerHeight
-  camera.updateProjectionMatrix()
-}
-window.addEventListener('resize', resize)
+const post = new Post(renderer, scene, camera) // bloom, speed blur, tone mapping
 
 // ---------- state ----------
 const sim = new Sim()
@@ -461,16 +438,14 @@ function frame (now) {
   }
   mixSound(sound, app, traffic, dt, clock)
   hud.update(dt, app)
-  updateSpeedBlur(speedBlur, sim, rig.shot, dt)
   if (city) cityView.shadows(camera, [RS.car])
-  composer.render()
+  post.render(sim, rig.shot, dt)
   tween.restore()
   if (firstFrame) {
     firstFrame = false
     hud.hideLoading()
   }
 }
-resize()
 // the city unless the address asks for the test site (#site)
 if (location.hash !== '#site') enterCity()
 requestAnimationFrame(frame)
