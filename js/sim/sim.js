@@ -1,11 +1,11 @@
 // The vehicle simulation: state, mode switching (ground / ramp / air / crash), the wall ride and scoring.
 // Uses only THREE math types, so it runs headless in Node for tests.
 import * as THREE from 'three'
+import { knock } from './collide.js'
 import { stepAir } from './flight.js'
 import { stepGround } from './ground.js'
-import { TRACK, SOLIDS } from './track.js'
 import { SPAWN, query } from './city.js'
-import { knock } from './collide.js'
+import { TRACK, SOLIDS } from './track.js'
 import { enterCrash, stepCrash } from './crash.js'
 import {
   G,
@@ -446,9 +446,7 @@ export class Sim {
         ? query(P.x - 6, P.z - 6, P.x + 6, P.z + 6, _near)
         : SOLIDS
     for (const p of CORNERS) {
-      _a.copy(p)
-        .applyQuaternion(q)
-        .add(P)
+      _a.copy(p).applyQuaternion(q).add(P)
       for (const b of solids) {
         // (the lineup's cars bounce the car off instead: bumpCars)
         if (b.down || b.kind === 'car' || _a.y <= b.y0 || _a.y >= b.y1) continue
@@ -457,12 +455,13 @@ export class Sim {
             ? Math.hypot(_a.x - b.x, _a.z - b.z) < b.r
             : _a.x > b.x0 && _a.x < b.x1 && _a.z > b.z0 && _a.z < b.z1
         ) {
-          // street lights fold over rather than stop the car
-          if (
-            b.kind === 'lamp' &&
-            knock(this, b, Math.hypot(this.vel.x, this.vel.z))
-          )
-            continue
+          // hit hard enough, street lights, signals and trees go over rather than stop the car
+          if (b.breakAt) {
+            const dx = _a.x - b.x,
+              dz = _a.z - b.z,
+              l = Math.hypot(dx, dz) || 1
+            if (knock(this, b, dx / l, dz / l)) continue
+          }
           return b
         }
       }
