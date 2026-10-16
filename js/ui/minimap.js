@@ -3,12 +3,12 @@
 // gold blip.
 import { JAM_AT } from '../sim/jam.js'
 import {
-  BLOCKS,
-  BUILDINGS,
   HALF,
+  CURB_R,
+  BLOCKS,
   ROAD_HW,
-  BARRIER,
-  CURB_R
+  BUILDINGS,
+  PROMENADE
 } from '../sim/city.js'
 
 export class Minimap {
@@ -21,7 +21,7 @@ export class Minimap {
   }
   // the whole city drawn once at 1 px per metre
   drawMap () {
-    const ext = Math.ceil(BARRIER + 20),
+    const ext = Math.ceil(PROMENADE + 20),
       cv = document.createElement('canvas')
     cv.width = cv.height = ext * 2
     const g = cv.getContext('2d')
