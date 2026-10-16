@@ -20,13 +20,15 @@ function runAutopilot () {
     fallThrust = 0,
     climbTop = 0,
     climbDrop = 0,
-    jumpSpeed = 0
+    jumpSpeed = 0,
+    maxLat = 0
   for (let i = 0; i < 120 * 90 && !ap.restart; i++) {
     const before = ap.phase
     sim.step(H, ap.update(H))
     events.push(...sim.events)
     sim.events.length = 0
     if (ap.phase !== before) phases.push(ap.phase)
+    maxLat = Math.max(maxLat, Math.abs(sim.pos.z))
     if (ap.phase === 'jump' && before === 'rollout') jumpSpeed = sim.speed
     if (ap.phase === 'charge' && sim.mode === 'ramp') {
       climbTop = Math.max(climbTop, sim.v)
@@ -46,13 +48,7 @@ function runAutopilot () {
     if (ap.phase === 'jump' || ap.phase === 'kickflip') {
       let low = Infinity
       for (const p of CORNERS)
-        low = Math.min(
-          low,
-          p
-            .clone()
-            .applyQuaternion(sim.quat)
-            .add(sim.pos).y
-        )
+        low = Math.min(low, p.clone().applyQuaternion(sim.quat).add(sim.pos).y)
       for (const v of LINEUP)
         if (sim.pos.x < v.box.x1 + 2.2 && sim.pos.x > v.box.x0 - 2.2)
           minClear = Math.min(minClear, low - v.h)
@@ -69,7 +65,8 @@ function runAutopilot () {
     firstLandingX,
     fallThrust,
     climbDrop,
-    jumpSpeed
+    jumpSpeed,
+    maxLat
   }
 }
 
@@ -113,6 +110,10 @@ test('autopilot flies the whole reveal sequence without crashing', () => {
   for (const l of landings)
     assert.ok(l.g < 3, `thruster landing, got ${l.g.toFixed(2)} G`)
   assert.ok(r.minClear > 1, `clears the lineup by ${r.minClear.toFixed(2)} m`)
+  assert.ok(
+    r.maxLat < 2,
+    `stays on the centre line of the pad, strayed ${r.maxLat.toFixed(2)} m`
+  )
   assert.ok(
     r.jumpSpeed > 45,
     `main thrusters build ${(r.jumpSpeed * 3.6).toFixed(
