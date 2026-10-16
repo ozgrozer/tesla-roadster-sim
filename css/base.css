@@ -63,6 +63,8 @@ body {
 .brand {
   display: grid;
   gap: 2px;
+  /* readable over a bright city facade as well as the night sky */
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.75), 0 0 16px rgba(0, 0, 0, 0.45);
 }
 .brand h1 {
   margin: 0;
