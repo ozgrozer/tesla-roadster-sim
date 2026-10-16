@@ -184,6 +184,42 @@ test('the Roadster bounces off buildings, even at speed, and keeps the wheel', (
   )
 })
 
+test('a hard hit on a car is a shove, not a crash: the Roadster stays drivable', () => {
+  const lane = LANES.find(e => e.dx === 1 && e.lane === 1)
+  let car
+  const sim = new Sim()
+  sim.reset('city')
+  sim.pos.set(lane.x0 + 5, 0, lane.z0)
+  sim.yaw = 0
+  sim.vel.set(33, 0, 0)
+  sim.speed = 33
+  sim.syncPose()
+  const tr = new Traffic({ count: 0 })
+  tr.reset(sim.pos.x, sim.pos.z)
+  car = tr.make(0) // stopped across the Roadster's path, clipped on its corner
+  car.parked = true
+  car.x = lane.x0 + 40
+  car.z = lane.z0 + 0.8
+  tr.setYaw(car, 0)
+  const events = []
+  let spin = 0
+  for (let i = 0; i < 3 / H; i++) {
+    const c = makeControls()
+    c.fan = false
+    c.throttle = 1
+    sim.step(H, c)
+    tr.step(H, sim)
+    events.push(...sim.events)
+    sim.events.length = 0
+    spin = Math.max(spin, Math.abs(sim.yawRate))
+  }
+  assert.ok(events.some(e => e.type === 'bump' && e.impact > 20), 'a hard hit')
+  assert.ok(!events.some(e => e.type === 'crash'), 'that never crashes')
+  assert.equal(sim.mode, 'ground')
+  assert.ok(car.loose, 'the car is knocked loose')
+  assert.ok(spin < 4, `the Roadster twitches (${spin.toFixed(1)} rad/s), no spin-out`)
+})
+
 test('the Roadster shunts a stopped car out of its lane', () => {
   const lane = LANES.find(e => e.dx === 1 && e.lane === 1)
   let car
