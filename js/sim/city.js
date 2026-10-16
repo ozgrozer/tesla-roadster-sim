@@ -365,7 +365,7 @@ const G0 = -OUTER - PITCH,
   GN = Math.ceil((2 * (OUTER + PITCH)) / PITCH)
 const grid = Array.from({ length: GN * GN }, () => [])
 const cell = v => Math.max(0, Math.min(GN - 1, Math.floor((v - G0) / PITCH)))
-function addCollider (c) {
+export function addCollider (c) {
   COLLIDERS.push(c)
   for (let j = cell(c.z0); j <= cell(c.z1); j++)
     for (let i = cell(c.x0); i <= cell(c.x1); i++) grid[j * GN + i].push(c)
