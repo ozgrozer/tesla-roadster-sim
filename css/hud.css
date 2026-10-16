@@ -175,6 +175,12 @@
   color: var(--gold);
   font-weight: 800;
 }
+/* how to do something, rather than a score: small, and readable over a bright street */
+.popup.hint {
+  font-size: clamp(12px, 1.2vw, 14px);
+  letter-spacing: 0.14em;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8), 0 0 12px rgba(0, 0, 0, 0.45);
+}
 @keyframes pop {
   0% {
     opacity: 0;
