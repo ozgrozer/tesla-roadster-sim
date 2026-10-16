@@ -278,7 +278,8 @@ export class CityPilot {
   // On its way to the gridlock the lights go its way, a green wave: every one on the route turns
   // green for it as soon as Autopilot starts (after the cross street's yellow), so each is green
   // by the time it gets there, and goes back to its cycle once it is through. In the jam, the light
-  // at the far end of the street turns red and holds the gridlock up.
+  // at the far end of the street turns red and holds the gridlock up. Over it, the wave carries on
+  // wherever it drives: the light at the end of the street it is on turns green for it.
   lights (lane) {
     const t = this.traffic.t
     // the junctions still ahead on the way, with the way it goes through each
@@ -295,6 +296,9 @@ export class CityPilot {
         want.set(NODES[L.to], L.dir & 1)
         L = c.next[0]
       }
+    } else if (!this.plan && !lane.closed) {
+      if (!lane.road) want.set(NODES[lane.node], lane.dir & 1)
+      else want.set(NODES[lane.to], lane.dir & 1)
     }
     for (const node of this.held.keys())
       if (!want.has(node)) {
