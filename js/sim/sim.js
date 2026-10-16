@@ -1,6 +1,7 @@
 // The vehicle simulation: state, mode switching (ground / ramp / air / crash), the wall ride and scoring.
 // Uses only THREE math types, so it runs headless in Node for tests.
 import * as THREE from 'three'
+import { drift } from './stunts.js'
 import { knock } from './collide.js'
 import { stepAir } from './flight.js'
 import { stepGround } from './ground.js'
@@ -238,6 +239,7 @@ export class Sim {
       }
     }
     this.gPeak = Math.max(this.gPeak, this.gLoad)
+    drift(this, dt) // (scored once it is over: stunts.js)
 
     // 0-60 mph timer
     const gs = this.mode === 'ground' ? this.speed : -1
