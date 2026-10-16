@@ -6,6 +6,7 @@ import { makeControls } from '../js/sim/constants.js'
 import { rectRect, carRect } from '../js/sim/collide.js'
 import { Traffic } from '../js/sim/traffic.js'
 import { CityPilot } from '../js/sim/cityPilot.js'
+import { JAM, JAM_AT } from '../js/sim/jam.js'
 import {
   RED,
   WALK,
@@ -19,7 +20,8 @@ import {
   LAMPS,
   signal,
   pointAt,
-  standUp
+  standUp,
+  nearestLane
 } from '../js/sim/city.js'
 
 const H = 1 / 120
@@ -319,4 +321,45 @@ test('wild driving in the city never ends in NaN or inside a building', () => {
         `run ${run}: traffic finite`
       )
   }
+})
+
+// a point on one of the jammed street's lanes
+const inJam = p =>
+  JAM.some(e => {
+    const s = (p.x - e.x0) * e.dx + (p.z - e.z0) * e.dz
+    return (
+      s > 0 &&
+      s < e.len &&
+      Math.abs((p.z - e.z0) * e.dx - (p.x - e.x0) * e.dz) < 1
+    )
+  })
+
+test('the jammed street is packed nose to tail, and traffic and Autopilot keep out', () => {
+  const sim = new Sim()
+  sim.reset('city')
+  const tr = new Traffic({ seed: 5 })
+  tr.reset(sim.pos.x, sim.pos.z)
+  const jam = tr.cars.filter(c => c.parked && inJam(c))
+  assert.ok(jam.length >= 36, `${jam.length} cars in the jam`)
+  for (let i = 0; i < jam.length; i++)
+    for (let j = i + 1; j < jam.length; j++) {
+      const a = { ...carRect(jam[i]) }
+      assert.ok(!rectRect(a, carRect(jam[j])), 'no two jammed cars overlap')
+    }
+  // Autopilot sets off from the spawn point, which faces the jam down the avenue
+  const pilot = new CityPilot(sim, tr)
+  assert.ok(pilot.join(), 'finds its lane at the spawn point')
+  let entered = 0
+  for (let i = 0; i < 90 / H; i++) {
+    sim.step(H, pilot.update(H))
+    tr.step(H, sim)
+    sim.events.length = 0
+    if (pilot.edge.closed) entered++
+    for (const car of tr.cars) if (!car.parked && car.edge?.closed) entered++
+  }
+  assert.equal(entered, 0, 'nobody drives into the jammed street')
+  assert.ok(
+    !inJam(nearestLane(JAM_AT.x, JAM_AT.z)),
+    'a wreck in the jam is put back on an open street'
+  )
 })
