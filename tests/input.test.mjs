@@ -23,7 +23,7 @@ test('W held through a lift-off only pitches once it is pressed again', () => {
   let c
   while (sim.speed < 50) sim.step(H, (c = input.controls(sim, 'auto')))
   assert.equal(c.throttle, 1, 'W is the throttle on the ground')
-  down('Space')
+  down('KeyF')
   while (sim.mode !== 'air') sim.step(H, input.controls(sim, 'auto'))
   for (let i = 0; i < 60; i++) {
     c = input.controls(sim, 'auto')
