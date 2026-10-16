@@ -1,5 +1,5 @@
-import { TRACK } from './track.js'
-import { collideCity } from './collide.js'
+import { TRACK, SOLIDS } from './track.js'
+import { collideCity, bumpCars } from './collide.js'
 import { G, CAR, LIFT_ACC, clamp, wrapPi } from './constants.js'
 
 // Planar two-axle tyre model: slip angles, friction circle, AWD split, load transfer,
@@ -237,5 +237,6 @@ export function stepGround (s, dt, c, main, lift) {
     v.z *= 0.5
     s.syncPose()
   }
-  if (s.hitSolid()) s.toCrash('Hit the lineup')
+  bumpCars(s, SOLIDS)
+  if (s.hitSolid()) s.toCrash('Hit the tower')
 }
