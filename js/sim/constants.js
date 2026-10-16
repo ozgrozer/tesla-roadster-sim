@@ -18,11 +18,11 @@ export const AX_Z = new THREE.Vector3(0, 0, 1)
 // Figures from the Oct 15, 2026 reveal coverage where they exist; the rest are plausible fills.
 export const CAR = {
   mass: 2200, // kg, includes 250 kg of compressed air
-  wheelbase: 2.7,
-  halfWB: 1.35,
+  wheelbase: 2.9, // measured off the event's side-on photo, scaled by the tyres
+  halfWB: 1.45,
   halfL: 2.22,
   halfW: 0.99,
-  height: 1.12,
+  height: 1.19,
   comH: 0.5, // centre of mass above the contact plane
   wheelR: 0.36,
   tireMu: 1.26, // "1.26 G from tires alone"
