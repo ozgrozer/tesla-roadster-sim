@@ -53,7 +53,7 @@ export class Hud {
     let x = 60,
       y = 86
     if (nz.kind === 'main') {
-      x = 60 + nz.local.z * 36
+      x = 60 + nz.local.z * 56
       y = 141
     } else if (nz.kind === 'lift') {
       x = nz.local.z < 0 ? 34 : 86
