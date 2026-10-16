@@ -7,7 +7,7 @@
 // While it runs it owns the camera; when it ends the follow camera eases in from wherever it left off.
 import * as THREE from 'three'
 import { clamp } from '../sim/constants.js'
-import { DRIVER, YOKE } from './roadster.js'
+import { DRIVER, YOKE } from './roadsterCabin.js'
 import { poseOptimus, HIP_STAND, ANKLE_UP } from './optimus.js'
 
 const T = {
