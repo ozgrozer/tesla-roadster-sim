@@ -60,7 +60,12 @@ export class SoundEngine {
     comp.ratio.value = 5
     this.master = ctx.createGain()
     this.master.gain.value = 0
-    this.master.connect(comp)
+    // the canopy: from the driver's seat everything outside is heard through it, muffled
+    this.cabin = ctx.createBiquadFilter()
+    this.cabin.type = 'lowpass'
+    this.cabin.frequency.value = 20000
+    this.cabin.Q.value = 0.5
+    this.master.connect(this.cabin).connect(comp)
     comp.connect(ctx.destination)
     const n = (this.n = {})
     const loop = buf => {
@@ -274,6 +279,7 @@ export class SoundEngine {
       now = this.ctx.currentTime,
       R = (p, v, tc = 0.06) => p.setTargetAtTime(v, now, tc)
     R(this.master.gain, st.volume, 0.15)
+    R(this.cabin.frequency, st.inside ? 1500 : 20000, 0.12)
     const ps = st.pitch,
       u = st.wheelSpeed
     // the drive units: pitch with road speed, louder under power (and under regen, more gear whine)
