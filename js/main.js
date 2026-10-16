@@ -104,7 +104,8 @@ const app = {
   lastCountdown: null,
   wheelAudio: 0,
   lastBump: 0,
-  pilotHorn: false
+  pilotHorn: false,
+  night: false // the city at night (L)
 }
 
 function setAuto (on) {
@@ -171,6 +172,7 @@ function setWorld (w) {
   app.ap = pilot()
   cityView.show(w === 'city')
   rig.clip = w === 'city' ? clipCamera : null
+  RS.headlights.visible = app.night && w === 'city'
   hud.setWorld(w)
   for (const p of ALL_PARTICLES) p.clear()
   clearSkids()
@@ -205,6 +207,25 @@ function respawn () {
 function setCam (mode) {
   rig.setMode(mode)
   hud.setCam(CAM_NAMES[mode])
+}
+// L: night falls on the city, or it is golden hour again
+function toggleNight () {
+  if (app.world !== 'city') {
+    hud.popup('Night falls in the city · <b>C</b> to go there', 1800, 'hint')
+    return
+  }
+  hud.fade(() => {
+    app.night = !app.night
+    cityView.setNight(app.night)
+    RS.headlights.visible = app.night
+    hud.popup(
+      app.night
+        ? 'Night · <b>L</b> for golden hour'
+        : 'Golden hour · <b>L</b> for night',
+      2000,
+      'hint'
+    )
+  })
 }
 function toggleSlow () {
   app.slow = !app.slow
@@ -258,6 +279,7 @@ const COMMANDS = {
   },
   KeyV: () => setCam(rig.cycle()),
   KeyT: toggleSlow,
+  KeyL: toggleNight,
   KeyI: () => hud.toggleHelp(),
   KeyH: () => setHorn(true),
   KeyN: toggleSound,
