@@ -254,16 +254,7 @@ export class Peds {
     for (const c of traffic.loose)
       if (Math.hypot(c.vx, c.vz) > 2) {
         const { x, z, vx, vz, hx, hz } = c
-        threats.push({
-          x,
-          z,
-          vx,
-          vz,
-          hx,
-          hz,
-          hl: c.len / 2,
-          hw: c.wid / 2
-        })
+        threats.push({ x, z, vx, vz, hx, hz, hl: c.len / 2, hw: c.wid / 2 })
       }
     this.onRoad.length = 0
     for (const p of this.list) {
@@ -495,7 +486,8 @@ export class Peds {
     this.list = this.list.filter(
       p => Math.hypot(p.x - x, p.z - z) < this.radius + 40
     )
-    for (let k = 0; k < 6 && this.list.length < this.count; k++)
+    // (enough at a time to keep up with a car at full speed)
+    for (let k = 0; k < 40 && this.list.length < this.count; k++)
       this.spawn(x, z, 100, this.radius, view)
   }
 }
