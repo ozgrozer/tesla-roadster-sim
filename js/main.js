@@ -290,7 +290,8 @@ function handleEvents () {
         app.lastBump = clock
         sound.bump(e.impact)
         rig.shake(Math.min(0.3, e.impact * 0.025))
-        if (e.impact > 6) sparkBurst(sim.pos, Math.min(60, e.impact * 4))
+        if (e.impact > 6)
+          sparkBurst(sim.pos, Math.min(60, e.impact * 4), sim.floor)
       }
     } else if (e.type === 'knock') {
       // a street light, signal or tree snapped off, by the Roadster or a car it sent sliding
@@ -305,7 +306,7 @@ function handleEvents () {
       rig.shake(0.15)
       sound.thump(1.4)
     } else if (e.type === 'crash') {
-      sparkBurst(sim.com, 120)
+      sparkBurst(sim.com, 120, sim.floor)
       burst(sim.com.x, sim.com.z, 80, 8, sim.floor)
       rig.shake(0.5)
       app.restHint = false
