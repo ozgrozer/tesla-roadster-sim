@@ -57430,14 +57430,18 @@ __define(13, function (__exports) {
 // The jammed street: one block of the central avenue, straight ahead of the city's spawn point,
 // stands gridlocked both ways, nose to tail, for the Roadster to jump. Its lanes are closed:
 // traffic and Autopilot go round, and a wrecked Roadster is never put back inside it.
-const { N, nodeAt } = __require(3)
+const { N, PITCH, ROAD_HW, nodeAt } = __require(3)
 const west = nodeAt(2, N / 2),
   east = nodeAt(3, N / 2)
 const JAM = [...west.out[0], ...east.out[2]] // both lanes each way
 for (const e of JAM) e.closed = true
 // the middle of the block, for the radar
 const JAM_AT = { x: (west.x + east.x) / 2, z: west.z }
-__export(__exports, { "JAM": () => JAM, "JAM_AT": () => JAM_AT })
+// on or over the jammed block, or just short of either end (where the back of the queue is)
+const atJam = (x, z) =>
+  Math.abs(x - JAM_AT.x) < PITCH / 2 + 30 &&
+  Math.abs(z - JAM_AT.z) < ROAD_HW + 4
+__export(__exports, { "JAM": () => JAM, "JAM_AT": () => JAM_AT, "atJam": () => atJam })
 })
 
 // ---- js/ui/minimap.js
@@ -58546,164 +58550,810 @@ const smoke = new Smoke()
 __export(__exports, { "VAPOR": () => VAPOR, "TYRE": () => TYRE, "DUST": () => DUST, "smoke": () => smoke })
 })
 
-// ---- js/render/optimus.js
+// ---- js/render/geo.js
 __define(18, function (__exports) {
-// Optimus, the Roadster's driver: a humanoid robot in gloss white panels over black joints, with a
-// black glass face. Built from simple solids on a skeleton of joints (facing +x, up +y, hips at the
-// root), posed by blending a walk cycle, a seated pose and hands on the yoke.
+// Geometry helpers for the city: merging thousands of small pieces into a handful of buffers (so a
+// whole district draws in a few calls), vertex tints, and instanced flat marks for road paint.
 const THREE = __require(0)
-const WHITE = new THREE.MeshPhysicalMaterial({
-  color: 0xf1f2f3,
-  roughness: 0.28,
-  metalness: 0.05,
-  clearcoat: 0.8,
-  clearcoatRoughness: 0.15
-})
-const BLACK = new THREE.MeshStandardMaterial({
-  color: 0x15161a,
-  roughness: 0.42,
-  metalness: 0.35
-})
-const VISOR = new THREE.MeshPhysicalMaterial({
-  color: 0x050506,
-  roughness: 0.04,
-  metalness: 0.6,
-  clearcoat: 1,
-  clearcoatRoughness: 0.02
-})
-const HIP_STAND = 0.92 // hip height standing, m
-const HIP_SIT = 0.3 // in the Roadster's seat
+const ATTRS = [
+  ['position', 3],
+  ['normal', 3],
+  ['uv', 2],
+  ['color', 3]
+]
+// Concatenate geometries (indexed ones are expanded). Pieces without colours come out white.
+function merge (geos) {
+  const parts = geos.map(g => (g.index ? g.toNonIndexed() : g))
+  let n = 0
+  for (const g of parts) n += g.attributes.position.count
+  const out = new THREE.BufferGeometry()
+  for (const [name, size] of ATTRS) {
+    if (!parts.some(g => g.attributes[name])) continue
+    const arr = new Float32Array(n * size)
+    let o = 0
+    for (const g of parts) {
+      const a = g.attributes[name],
+        c = g.attributes.position.count * size
+      if (a) arr.set(a.array.subarray(0, c), o)
+      else if (name === 'color') arr.fill(1, o, o + c)
+      o += c
+    }
+    out.setAttribute(name, new THREE.BufferAttribute(arr, size))
+  }
+  out.computeBoundingSphere()
+  return out
+}
 
-const joint = (parent, x, y, z) => {
-  const g = new THREE.Group()
-  g.position.set(x, y, z)
-  parent.add(g)
+// Give every vertex of g one colour.
+function tint (g, color) {
+  const c = new THREE.Color(color)
+  const n = g.attributes.position.count,
+    arr = new Float32Array(n * 3)
+  for (let i = 0; i < n; i++) arr.set([c.r, c.g, c.b], i * 3)
+  g.setAttribute('color', new THREE.BufferAttribute(arr, 3))
   return g
 }
-const part = (parent, geo, mat, x, y, z, sx = 1, sy = 1, sz = 1) => {
-  const m = new THREE.Mesh(geo, mat)
-  m.position.set(x, y, z)
-  m.scale.set(sx, sy, sz)
-  m.castShadow = true
-  parent.add(m)
+
+// A box from (x0, y0, z0) to (x1, y1, z1) as a fresh geometry.
+function box (x0, y0, z0, x1, y1, z1) {
+  return new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0).translate(
+    (x0 + x1) / 2,
+    (y0 + y1) / 2,
+    (z0 + z1) / 2
+  )
+}
+
+// Flat marks on the ground (lane paint, crosswalk stripes, parking lines): one instance per
+// { x, z, len, wid, yaw }, `len` along the yaw direction.
+const _m = new THREE.Matrix4(),
+  _q = new THREE.Quaternion(),
+  _p = new THREE.Vector3(),
+  _s = new THREE.Vector3(),
+  _y = new THREE.Vector3(0, 1, 0)
+function marks (list, mat, y) {
+  const geo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2)
+  const m = new THREE.InstancedMesh(geo, mat, list.length)
+  list.forEach((k, i) => {
+    _q.setFromAxisAngle(_y, k.yaw || 0)
+    m.setMatrixAt(
+      i,
+      _m.compose(_p.set(k.x, y, k.z), _q, _s.set(k.len, 1, k.wid))
+    )
+  })
+  m.receiveShadow = true
   return m
 }
-const capsule = (r, len) => new THREE.CapsuleGeometry(r, len, 6, 12)
-const ball = r => new THREE.SphereGeometry(r, 16, 12)
+__export(__exports, { "merge": () => merge, "tint": () => tint, "box": () => box, "marks": () => marks })
+})
+
+// ---- js/render/loft.js
+__define(19, function (__exports) {
+// Lofted bodies: a half section swept through stations along x and mirrored to both sides, with
+// normals smoothed across gentle bends and kept sharp at creases, so a body reads as smooth panels
+// with crisp character lines. Used for the Roadster and the traffic cars.
+const THREE = __require(0)
+// Sweep a half section (z >= 0, from the bottom centre line round to the top one) through stations
+// ({ x, p: [[z, y], ...] }, all with the same number of points) along x, mirrored to both sides.
+// keyFor(j, xA, xB, side) picks a bucket (usually a material) for segment j between two stations on
+// one side (1 or -1), or null to leave it out. Without capKey the ends stay open. Returns
+// Map(key -> BufferGeometry), normals creased at `crease` degrees.
+function loftGeos (stations, keyFor, capKey, crease = 32) {
+  const buckets = new Map()
+  const push = (key, ...v) => {
+    if (!buckets.has(key)) buckets.set(key, [])
+    buckets.get(key).push(...v)
+  }
+  for (let k = 0; k < stations.length - 1; k++) {
+    const A = stations[k],
+      B = stations[k + 1]
+    for (let j = 0; j < A.p.length - 1; j++)
+      for (const sg of [1, -1]) {
+        const key = keyFor(j, A.x, B.x, sg)
+        if (key === null) continue
+        const a = [A.x, A.p[j][1], sg * A.p[j][0]],
+          b = [A.x, A.p[j + 1][1], sg * A.p[j + 1][0]]
+        const c = [B.x, B.p[j][1], sg * B.p[j][0]],
+          d = [B.x, B.p[j + 1][1], sg * B.p[j + 1][0]]
+        if (sg > 0) push(key, ...a, ...c, ...b, ...c, ...d, ...b)
+        else push(key, ...a, ...b, ...c, ...c, ...b, ...d)
+      }
+  }
+  const cap = (S, front) => {
+    const ringPts = [
+      ...S.p.map(([z, y]) => [z, y]),
+      ...S.p
+        .slice(1, -1)
+        .reverse()
+        .map(([z, y]) => [-z, y])
+    ]
+    const cy = S.p.reduce((s, p) => s + p[1], 0) / S.p.length
+    for (let i = 0; i < ringPts.length; i++) {
+      const p = ringPts[i],
+        q = ringPts[(i + 1) % ringPts.length]
+      const O = [S.x, cy, 0],
+        P1 = [S.x, p[1], p[0]],
+        P2 = [S.x, q[1], q[0]]
+      if (front) push(capKey, ...O, ...P2, ...P1)
+      else push(capKey, ...O, ...P1, ...P2)
+    }
+  }
+  if (capKey !== undefined) {
+    cap(stations[0], false)
+    cap(stations[stations.length - 1], true)
+  }
+  const out = new Map()
+  for (const [key, arr] of buckets) {
+    const g = new THREE.BufferGeometry()
+    g.setAttribute('position', new THREE.Float32BufferAttribute(arr, 3))
+    creaseNormals(g, crease)
+    out.set(key, g)
+  }
+  return out
+}
+
+// The same, as a group of meshes: keyFor returns the material for each segment.
+function loft (stations, matFor, capMat, crease) {
+  const group = new THREE.Group()
+  for (const [mat, g] of loftGeos(stations, matFor, capMat, crease)) {
+    const m = new THREE.Mesh(g, mat)
+    m.castShadow = true
+    m.receiveShadow = true
+    group.add(m)
+  }
+  return group
+}
+
+// Vertex normals for a non-indexed geometry: each corner averages the faces that meet it whose
+// normals lie within `angle` degrees of its own face's, so bends smooth over and creases stay sharp.
+function creaseNormals (geo, angle = 32) {
+  const pos = geo.attributes.position.array,
+    nTri = pos.length / 9
+  const fn = new Float32Array(nTri * 3)
+  for (let t = 0; t < nTri; t++) {
+    const o = t * 9
+    const ux = pos[o + 3] - pos[o],
+      uy = pos[o + 4] - pos[o + 1],
+      uz = pos[o + 5] - pos[o + 2]
+    const vx = pos[o + 6] - pos[o],
+      vy = pos[o + 7] - pos[o + 1],
+      vz = pos[o + 8] - pos[o + 2]
+    let nx = uy * vz - uz * vy,
+      ny = uz * vx - ux * vz,
+      nz = ux * vy - uy * vx
+    const l = Math.hypot(nx, ny, nz) || 1
+    fn[t * 3] = nx / l
+    fn[t * 3 + 1] = ny / l
+    fn[t * 3 + 2] = nz / l
+  }
+  const at = new Map()
+  for (let v = 0; v < nTri * 3; v++) {
+    const k = `${Math.round(pos[v * 3] * 1e4)},${Math.round(
+      pos[v * 3 + 1] * 1e4
+    )},${Math.round(pos[v * 3 + 2] * 1e4)}`
+    const list = at.get(k)
+    if (list) list.push(v)
+    else at.set(k, [v])
+  }
+  const cos = Math.cos((angle * Math.PI) / 180),
+    nrm = new Float32Array(pos.length)
+  for (const list of at.values())
+    for (const v of list) {
+      const t = (v / 3) | 0
+      let sx = 0,
+        sy = 0,
+        sz = 0
+      for (const w of list) {
+        const u = (w / 3) | 0
+        const d =
+          fn[t * 3] * fn[u * 3] +
+          fn[t * 3 + 1] * fn[u * 3 + 1] +
+          fn[t * 3 + 2] * fn[u * 3 + 2]
+        if (d < cos) continue
+        sx += fn[u * 3]
+        sy += fn[u * 3 + 1]
+        sz += fn[u * 3 + 2]
+      }
+      const l = Math.hypot(sx, sy, sz) || 1
+      nrm[v * 3] = sx / l
+      nrm[v * 3 + 1] = sy / l
+      nrm[v * 3 + 2] = sz / l
+    }
+  geo.setAttribute('normal', new THREE.BufferAttribute(nrm, 3))
+  return geo
+}
+
+// The same stations with more inserted at xs (each a straight blend of its neighbours, so the shape
+// is unchanged), for panel cuts that fall between stations.
+function withStations (stations, xs) {
+  const out = stations.slice()
+  for (const x of xs) {
+    const p = stations[0].p.map((_, k) => at(stations, x, k))
+    out.push({ x, p })
+  }
+  return out.sort((a, b) => a.x - b.x)
+}
+
+// [z, y] of profile point k at x, linear between the stations either side
+function at (stations, x, k) {
+  let i = 0
+  while (i < stations.length - 2 && stations[i + 1].x < x) i++
+  const A = stations[i],
+    B = stations[i + 1]
+  const t = (x - A.x) / (B.x - A.x)
+  return [0, 1].map(n => A.p[k][n] + (B.p[k][n] - A.p[k][n]) * t)
+}
+
+// A thin dark line across the surface at x, along section points k0..k1 on both sides, standing just
+// proud of the panels so it never z-fights them.
+function seam (stations, x, k0, k1, mat, w = 0.008, lift = 0.0025) {
+  const pos = []
+  for (let k = k0; k < k1; k++) {
+    const P = at(stations, x, k),
+      Q = at(stations, x, k + 1)
+    const len = Math.hypot(Q[0] - P[0], Q[1] - P[1]) || 1
+    const nz = ((Q[1] - P[1]) / len) * lift,
+      ny = (-(Q[0] - P[0]) / len) * lift
+    for (const sg of [1, -1]) {
+      const v = (x2, [z, y]) => [x2, y + ny, sg * (z + nz)]
+      const a = v(x - w / 2, P),
+        b = v(x + w / 2, P),
+        c = v(x - w / 2, Q),
+        d = v(x + w / 2, Q)
+      pos.push(...a, ...b, ...c, ...c, ...b, ...d)
+    }
+  }
+  const g = new THREE.BufferGeometry()
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3))
+  g.computeVertexNormals()
+  return new THREE.Mesh(g, mat)
+}
+__export(__exports, { "loftGeos": () => loftGeos, "loft": () => loft, "creaseNormals": () => creaseNormals, "withStations": () => withStations, "at": () => at, "seam": () => seam })
+})
+
+// ---- js/render/optimus.js
+__define(20, function (__exports) {
+// Optimus, the Roadster's driver, after the Gen 2 robot: satin white shells over black actuators, a
+// gloss black egg of a head ringed in cyan, a black yoke across the shoulders, a boxy chest over a
+// black belly, ribbed elbow pads, black shin actuators and jointed silver hands. Built on a skeleton
+// of joints (facing +x, up +y, hips at the root), each joint's parts merged into one mesh per
+// material, and posed by a walk cycle or by reaching its feet and hands for given points.
+const THREE = __require(0)
+const { merge } = __require(18)
+const { creaseNormals } = __require(19)
+const WHITE = new THREE.MeshPhysicalMaterial({
+  color: 0xd8dadd,
+  roughness: 0.4,
+  metalness: 0.15,
+  clearcoat: 0.35,
+  clearcoatRoughness: 0.3
+})
+const BLACK = new THREE.MeshStandardMaterial({
+  color: 0x18191c,
+  roughness: 0.5,
+  metalness: 0.3
+})
+// the exposed mechanism at the waist, hips and wrists
+const GUNMETAL = new THREE.MeshStandardMaterial({
+  color: 0x3b3e44,
+  roughness: 0.5,
+  metalness: 0.8
+})
+const SILVER = new THREE.MeshStandardMaterial({
+  color: 0xb9bcc1,
+  roughness: 0.3,
+  metalness: 0.85
+})
+const VISOR = new THREE.MeshPhysicalMaterial({
+  color: 0x060608,
+  roughness: 0.05,
+  metalness: 0.5,
+  clearcoat: 1,
+  clearcoatRoughness: 0.03
+})
+const GLOW = new THREE.MeshBasicMaterial({
+  color: new THREE.Color(0.3, 1.45, 2.1),
+  toneMapped: false
+})
+const HIP_STAND = 0.93 // hip height standing, m
+
+// A solid swept up y through rings [y, back x, front x, half width (z), power?]: each a rounded
+// square (a superellipse, 2 an ellipse and higher squarer), the ends capped flat. Normals smooth
+// round the section and crease where rings step in, so a bevel reads as a crisp panel edge.
+function pod (rings, n = 4, seg = 24, crease = 40) {
+  const pts = rings.map(([y, xb, xf, w, p = n]) => {
+    const cx = (xb + xf) / 2,
+      d = (xf - xb) / 2,
+      out = []
+    for (let i = 0; i < seg; i++) {
+      const a = (i / seg) * Math.PI * 2,
+        c = Math.cos(a),
+        s = Math.sin(a)
+      out.push([
+        cx + d * Math.sign(c) * Math.abs(c) ** (2 / p),
+        y,
+        w * Math.sign(s) * Math.abs(s) ** (2 / p)
+      ])
+    }
+    return out
+  })
+  const v = []
+  for (let k = 0; k < pts.length - 1; k++)
+    for (let i = 0; i < seg; i++) {
+      const j = (i + 1) % seg
+      const A = pts[k][i],
+        B = pts[k][j],
+        C = pts[k + 1][i],
+        D = pts[k + 1][j]
+      v.push(...A, ...C, ...B, ...B, ...C, ...D)
+    }
+  for (const [R, up] of [
+    [pts[0], false],
+    [pts[pts.length - 1], true]
+  ]) {
+    const O = [
+      R.reduce((s, p) => s + p[0], 0) / seg,
+      R[0][1],
+      R.reduce((s, p) => s + p[2], 0) / seg
+    ]
+    for (let i = 0; i < seg; i++) {
+      const P = R[i],
+        Q = R[(i + 1) % seg]
+      if (up) v.push(...O, ...Q, ...P)
+      else v.push(...O, ...P, ...Q)
+    }
+  }
+  const g = new THREE.BufferGeometry()
+  g.setAttribute('position', new THREE.Float32BufferAttribute(v, 3))
+  return creaseNormals(g, crease)
+}
+
+// an egg up y, `h` tall, half depth `d` and half width `w` at its widest, fuller at the top, with
+// the lower half pushed forward by `jut`
+function egg (h, d, w, jut = 0) {
+  const rings = []
+  for (let i = 0; i <= 14; i++) {
+    const t = -0.9 + (1.9 * i) / 14,
+      r = Math.sqrt(Math.max(0.0004, 1 - t * t)) * (1 + 0.08 * t),
+      x = jut * Math.max(0, -t)
+    rings.push([(t * h) / 2, x - d * r, x + d * r, w * r])
+  }
+  return pod(rings, 2.2, 28, 60)
+}
+
+const cyl = (r, len, n = 16) => new THREE.CylinderGeometry(r, r, len, n)
+// a cylinder lying along z (a joint's axle) or x
+const axle = (r, len, n) => cyl(r, len, n).rotateX(Math.PI / 2)
+const along = (r, len, n) => cyl(r, len, n).rotateZ(Math.PI / 2)
 
 function buildOptimus () {
+  const parts = [] // [joint, material, geometry], merged per joint and material at the end
+  const put = (j, mat, geo) => parts.push([j, mat, geo])
+  const joint = (parent, x, y, z) => {
+    const g = new THREE.Group()
+    g.position.set(x, y, z)
+    parent.add(g)
+    return g
+  }
+
   const root = new THREE.Group()
   const hips = joint(root, 0, 0, 0)
-  part(
+  // pelvis: a black block between the legs, round actuators ahead of each hip, a gunmetal bar
+  // across under the waist
+  put(
     hips,
-    capsule(0.08, 0.14).rotateX(Math.PI / 2),
-    WHITE,
-    0,
-    0.0,
-    0,
-    0.9,
-    0.85,
-    1
+    BLACK,
+    pod([
+      [-0.075, -0.05, 0.05, 0.035],
+      [-0.05, -0.075, 0.075, 0.07],
+      [0.04, -0.085, 0.085, 0.085],
+      [0.065, -0.07, 0.07, 0.07]
+    ])
   )
-  // torso: a black waist, a white chest tapering down to it, a black stripe down the front
+  put(
+    hips,
+    GUNMETAL,
+    new THREE.BoxGeometry(0.12, 0.05, 0.3).translate(0, 0.03, 0)
+  )
+  for (const s of [-1, 1]) {
+    put(hips, BLACK, along(0.047, 0.15, 20).translate(0.008, 0.0, s * 0.1))
+    put(hips, GUNMETAL, along(0.022, 0.01, 16).translate(0.085, 0.0, s * 0.1))
+  }
+
+  // torso: a gunmetal spine at the waist, the black belly, the white chest and the black yoke over
+  // the shoulders, a black neck
   const waist = joint(hips, 0, 0.06, 0)
-  part(
+  put(
     waist,
-    new THREE.CylinderGeometry(0.085, 0.1, 0.16, 16),
+    GUNMETAL,
+    new THREE.BoxGeometry(0.1, 0.12, 0.09).translate(-0.01, 0.02, 0)
+  )
+  put(waist, BLACK, axle(0.045, 0.16, 18))
+  for (const s of [-1, 1])
+    put(waist, GUNMETAL, cyl(0.012, 0.11).translate(-0.045, 0.04, s * 0.045))
+  put(
+    waist,
     BLACK,
-    0,
-    0.1,
-    0
+    pod([
+      [0.055, -0.07, 0.07, 0.08],
+      [0.08, -0.09, 0.095, 0.105],
+      [0.155, -0.1, 0.105, 0.118]
+    ])
   )
-  part(
+  put(
     waist,
-    new THREE.CylinderGeometry(0.18, 0.12, 0.32, 20).translate(0, 0, 0),
     WHITE,
-    0,
-    0.33,
-    0,
-    0.62,
-    1,
-    1
+    pod(
+      [
+        [0.14, -0.088, 0.09, 0.118],
+        [0.175, -0.105, 0.115, 0.148],
+        [0.3, -0.112, 0.124, 0.165],
+        [0.42, -0.112, 0.122, 0.17],
+        [0.465, -0.104, 0.114, 0.164],
+        [0.485, -0.09, 0.1, 0.15]
+      ],
+      5
+    )
   )
-  part(
+  put(
     waist,
-    capsule(0.075, 0.26).rotateX(Math.PI / 2),
-    WHITE,
-    0,
-    0.45,
-    0,
-    1,
-    0.8,
-    1
-  )
-  part(waist, new THREE.BoxGeometry(0.02, 0.2, 0.05), BLACK, 0.112, 0.33, 0)
-  part(
-    waist,
-    new THREE.CylinderGeometry(0.045, 0.05, 0.1, 12),
     BLACK,
-    0,
-    0.53,
-    0
+    pod(
+      [
+        [0.452, -0.113, 0.123, 0.196],
+        [0.465, -0.115, 0.125, 0.2],
+        [0.478, -0.11, 0.119, 0.19],
+        [0.505, -0.085, 0.09, 0.13],
+        [0.53, -0.06, 0.06, 0.07],
+        [0.545, -0.045, 0.045, 0.045]
+      ],
+      4,
+      28
+    )
   )
+  put(waist, BLACK, cyl(0.028, 0.1).translate(-0.005, 0.58, 0))
+  // the wordmark across the top of the chest
+  const cv = document.createElement('canvas')
+  cv.width = 512
+  cv.height = 48
+  const g2 = cv.getContext('2d')
+  g2.font = '600 38px "Arial Narrow", Arial, sans-serif'
+  g2.textAlign = 'center'
+  g2.textBaseline = 'middle'
+  g2.fillStyle = '#4a4d53'
+  g2.fillText('T  E  S  L  A', 256, 26)
+  const mark = new THREE.CanvasTexture(cv)
+  mark.colorSpace = THREE.SRGBColorSpace
+  const badge = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.15, 0.014).rotateY(Math.PI / 2),
+    new THREE.MeshBasicMaterial({ map: mark, transparent: true })
+  )
+  badge.position.set(0.1232, 0.425, 0)
+  waist.add(badge)
+
+  // head: a gloss black egg, the face ringed from temple to temple under the chin in cyan
   const head = joint(waist, 0, 0.62, 0)
-  part(head, ball(0.105), WHITE, -0.01, 0, 0, 1, 1.12, 0.95)
-  // the face: the front of the head in black glass
-  part(
+  put(head, VISOR, egg(0.18, 0.086, 0.069, 0.01).translate(-0.008, 0.042, 0))
+  const arc = (Math.PI * 4) / 3
+  put(
     head,
-    new THREE.SphereGeometry(
-      0.108,
-      20,
-      14,
-      Math.PI - Math.PI / 2.4,
-      Math.PI / 1.2,
-      0.5,
-      1.75
-    ),
-    VISOR,
-    -0.005,
-    0,
-    0,
-    1,
-    1.1,
-    0.93
+    GLOW,
+    new THREE.TorusGeometry(1, 0.045, 5, 40, arc)
+      .rotateZ(-Math.PI / 2 - arc / 2)
+      .rotateY(Math.PI / 2)
+      .scale(0.07, 0.083, 0.068)
+      .rotateZ(-0.38)
+      .translate(0.016, 0.036, 0)
   )
+
   const arms = [],
     legs = []
   for (const s of [-1, 1]) {
-    const sh = joint(waist, 0, 0.44, s * 0.2)
-    part(sh, ball(0.058), WHITE, 0, 0, 0)
-    part(sh, capsule(0.04, 0.18), WHITE, 0, -0.14, 0)
+    // arm: a black shoulder actuator, a long white upper arm, a ribbed black pad on the outside of
+    // the elbow, a white forearm shell over black, a gunmetal wrist
+    const sh = joint(waist, 0, 0.44, s * 0.215)
+    put(sh, BLACK, axle(0.04, 0.07, 18))
+    put(
+      sh,
+      WHITE,
+      pod([
+        [-0.25, -0.036, 0.036, 0.036],
+        [-0.225, -0.046, 0.046, 0.045],
+        [-0.1, -0.05, 0.05, 0.05],
+        [-0.02, -0.054, 0.054, 0.054],
+        [0.02, -0.052, 0.052, 0.052, 3],
+        [0.042, -0.03, 0.03, 0.03, 3]
+      ])
+    )
     const el = joint(sh, 0, -0.28, 0)
-    part(el, ball(0.042), BLACK, 0, 0, 0)
-    part(el, capsule(0.035, 0.17), BLACK, 0, -0.12, 0)
-    part(el, capsule(0.038, 0.08), WHITE, 0, -0.08, 0)
+    put(el, BLACK, axle(0.032, 0.08, 18))
+    for (let i = 0; i < 6; i++) {
+      const y = 0.045 - i * 0.017,
+        h = 1 - Math.abs(i - 2.5) / 4.5
+      put(
+        el,
+        BLACK,
+        pod(
+          [
+            [y - 0.0055, -0.034 * h, 0.034 * h, 0.012],
+            [y + 0.0055, -0.034 * h, 0.034 * h, 0.012]
+          ],
+          3,
+          16
+        ).translate(-0.004, 0, s * 0.04)
+      )
+    }
+    put(
+      el,
+      BLACK,
+      pod([
+        [-0.235, -0.028, 0.026, 0.028],
+        [-0.04, -0.036, 0.032, 0.036]
+      ])
+    )
+    put(
+      el,
+      WHITE,
+      pod([
+        [-0.2, -0.034, 0.03, 0.036],
+        [-0.185, -0.039, 0.036, 0.041],
+        [-0.07, -0.046, 0.042, 0.047],
+        [-0.05, -0.042, 0.038, 0.043]
+      ]).translate(0, 0, s * 0.006)
+    )
+    put(
+      el,
+      GUNMETAL,
+      new THREE.BoxGeometry(0.04, 0.04, 0.045).translate(0, -0.24, 0)
+    )
+    // hand: a silver back over a black palm, four fingers curled in towards the body and the thumb
+    // on the front edge
     const hand = joint(el, 0, -0.26, 0)
-    part(hand, new THREE.BoxGeometry(0.07, 0.11, 0.035), BLACK, 0, -0.04, 0)
+    put(
+      hand,
+      SILVER,
+      pod([
+        [-0.088, -0.038, 0.04, 0.013],
+        [-0.015, -0.036, 0.038, 0.016],
+        [0.005, -0.022, 0.022, 0.014]
+      ]).translate(0, 0, s * 0.004)
+    )
+    put(
+      hand,
+      BLACK,
+      new THREE.BoxGeometry(0.07, 0.072, 0.016).translate(0, -0.05, -s * 0.009)
+    )
+    const m4 = new THREE.Matrix4(),
+      bend = new THREE.Matrix4()
+    for (let f = 0; f < 4; f++) {
+      const x = 0.027 - f * 0.018,
+        len = [0.03, 0.025, 0.02].map(l => l * (f === 3 ? 0.8 : 1))
+      m4.makeTranslation(x, -0.09, 0)
+      len.forEach((l, k) => {
+        m4.multiply(bend.makeRotationX(s * (0.16 + 0.1 * k)))
+        put(hand, BLACK, axle(0.0072, 0.013, 8).applyMatrix4(m4))
+        const seg = new THREE.BoxGeometry(0.016, l - 0.004, 0.015)
+          .translate(0, -l / 2, 0)
+          .applyMatrix4(m4)
+        put(hand, SILVER, seg)
+        m4.multiply(new THREE.Matrix4().makeTranslation(0, -l, 0))
+      })
+    }
+    m4.makeTranslation(0.04, -0.03, -s * 0.004)
+    m4.multiply(bend.makeRotationZ(0.5))
+    for (const [k, l] of [0.032, 0.028].entries()) {
+      m4.multiply(bend.makeRotationX(s * 0.3))
+      put(hand, BLACK, axle(0.008, 0.014, 8).applyMatrix4(m4))
+      put(
+        hand,
+        SILVER,
+        new THREE.BoxGeometry(0.017, l - 0.004, 0.016)
+          .translate(0, -l / 2, 0)
+          .applyMatrix4(m4)
+      )
+      m4.multiply(new THREE.Matrix4().makeTranslation(0, -l, 0))
+    }
     arms.push({ sh, el, hand, s })
-    const hip = joint(hips, 0, -0.02, s * 0.1)
-    part(hip, capsule(0.058, 0.27), WHITE, 0, -0.2, 0)
+
+    // leg: a black hip actuator, a tapering white thigh, a white knee cap over a black joint, a
+    // white shin shell with black actuators either side and a black calf, a black foot
+    const hip = joint(hips, 0, -0.02, s * 0.105)
+    put(hip, BLACK, axle(0.055, 0.11, 20))
+    put(
+      hip,
+      WHITE,
+      pod([
+        [-0.405, -0.042, 0.046, 0.042],
+        [-0.375, -0.05, 0.058, 0.05],
+        [-0.3, -0.058, 0.066, 0.056],
+        [-0.15, -0.07, 0.074, 0.064],
+        [-0.075, -0.072, 0.075, 0.066],
+        [-0.045, -0.06, 0.064, 0.056]
+      ])
+    )
     const kn = joint(hip, 0, -0.42, 0)
-    part(kn, ball(0.047), BLACK, 0, 0, 0)
-    part(kn, capsule(0.047, 0.28), WHITE, 0.01, -0.2, 0)
-    part(kn, capsule(0.034, 0.24), BLACK, -0.03, -0.2, 0)
+    put(kn, BLACK, axle(0.042, 0.09, 18))
+    put(
+      kn,
+      WHITE,
+      pod(
+        [
+          [-0.06, 0.012, 0.05, 0.038],
+          [-0.03, 0.006, 0.062, 0.046],
+          [0.035, 0.004, 0.06, 0.044],
+          [0.055, 0.012, 0.046, 0.032]
+        ],
+        3
+      )
+    )
+    put(
+      kn,
+      WHITE,
+      pod([
+        [-0.37, -0.012, 0.036, 0.03],
+        [-0.33, -0.018, 0.042, 0.034],
+        [-0.15, -0.022, 0.052, 0.043],
+        [-0.075, -0.018, 0.05, 0.045],
+        [-0.055, -0.01, 0.042, 0.038]
+      ])
+    )
+    put(
+      kn,
+      BLACK,
+      pod([
+        [-0.385, -0.032, -0.006, 0.022],
+        [-0.3, -0.042, -0.01, 0.026],
+        [-0.15, -0.055, -0.005, 0.036],
+        [-0.04, -0.045, 0.0, 0.032]
+      ])
+    )
+    for (const t of [-1, 1])
+      put(
+        kn,
+        BLACK,
+        pod([
+          [-0.39, -0.022, 0.026, 0.012],
+          [-0.2, -0.02, 0.03, 0.013],
+          [-0.17, -0.012, 0.02, 0.01]
+        ]).translate(0.004, 0, t * 0.04)
+      )
     const ank = joint(kn, 0, -0.43, 0)
-    part(ank, new THREE.BoxGeometry(0.21, 0.055, 0.09), BLACK, 0.045, -0.032, 0)
+    put(ank, GUNMETAL, axle(0.026, 0.07, 14))
+    put(
+      ank,
+      BLACK,
+      pod(
+        [
+          [-0.058, -0.075, 0.17, 0.05],
+          [-0.042, -0.078, 0.172, 0.052],
+          [-0.03, -0.076, 0.165, 0.05],
+          [-0.012, -0.068, 0.11, 0.046],
+          [0.012, -0.045, 0.045, 0.034]
+        ],
+        3.2
+      )
+    )
     legs.push({ hip, kn, ank, s })
   }
+
+  const byJoint = new Map()
+  for (const [j, mat, geo] of parts) {
+    if (!byJoint.has(j)) byJoint.set(j, new Map())
+    const m = byJoint.get(j)
+    if (!m.has(mat)) m.set(mat, [])
+    m.get(mat).push(geo)
+  }
+  for (const [j, mats] of byJoint)
+    for (const [mat, geos] of mats) {
+      const mesh = new THREE.Mesh(merge(geos), mat)
+      mesh.castShadow = mat !== GLOW
+      j.add(mesh)
+    }
   return { root, hips, waist, head, arms, legs, phase: 0 }
 }
 
 const mix = (a, b, t) => a + (b - a) * t
+const THIGH = 0.42,
+  SHIN = 0.43,
+  UPPER = 0.28,
+  FORE = 0.32 // elbow to the middle of the palm
+const ANKLE_UP = 0.058 // ankle joint above the sole
+const _t = new THREE.Vector3(),
+  _d = new THREE.Vector3(),
+  _s = new THREE.Vector3(),
+  _k = new THREE.Vector3(),
+  _u = new THREE.Vector3(),
+  _w = new THREE.Vector3(),
+  _x = new THREE.Vector3(),
+  _y = new THREE.Vector3(),
+  _z = new THREE.Vector3(),
+  _m = new THREE.Matrix4(),
+  _q = new THREE.Quaternion(),
+  _q2 = new THREE.Quaternion()
 
-// Pose: walk (0-1, how much of the walk cycle shows), phase (radians through the stride), sit (0-1),
-// drive (0-1, hands up on the yoke), duck (0-1, leaning in under the door frame), look (head yaw).
+// p, in the frame Optimus stands in (its root's parent), seen from joint j's parent less j's offset;
+// a direction likewise
+function pointAt (O, j, p, out) {
+  out.set(p[0], p[1], p[2])
+  if (O.root.parent) O.root.parent.localToWorld(out)
+  return j.parent.worldToLocal(out).sub(j.position)
+}
+function dirAt (O, j, d, out) {
+  out.set(d[0], d[1], d[2])
+  if (O.root.parent) out.transformDirection(O.root.parent.matrixWorld)
+  return out.transformDirection(_m.copy(j.parent.matrixWorld).invert())
+}
+
+// Two bones from a joint reaching for t (in the joint's parent frame, from the joint), the middle
+// joint bowed towards `pole`: sets the joint's orientation (its -y down the first bone) and returns
+// the bend at the middle joint. A knee folds its shin back (-x), an elbow its forearm forward (+x).
+// Out of reach, the limb points straight at t.
+function limb (j, t, a, b, pole, knee) {
+  const d = Math.min(Math.max(t.length(), Math.abs(a - b) + 1e-4), a + b - 1e-4)
+  _d.copy(t).normalize()
+  const along = (a * a - b * b + d * d) / (2 * d),
+    r = Math.sqrt(Math.max(0, a * a - along * along))
+  _s.copy(pole).addScaledVector(_d, -pole.dot(_d))
+  if (_s.lengthSq() < 1e-8) _s.set(1, 0, 0).addScaledVector(_d, -_d.x)
+  _s.normalize()
+  _k.copy(_d).multiplyScalar(along).addScaledVector(_s, r) // the middle joint
+  _u.copy(_k).normalize() // first bone
+  _w.copy(_d).multiplyScalar(d).sub(_k).normalize() // second bone
+  _y.copy(_u).negate()
+  _x.copy(_s).addScaledVector(_u, -_s.dot(_u)).normalize()
+  if (!knee) _x.negate()
+  _z.crossVectors(_x, _y)
+  j.quaternion.setFromRotationMatrix(_m.makeBasis(_x, _y, _z))
+  return Math.acos(Math.min(1, Math.max(-1, _u.dot(_w))))
+}
+
+// Pose: walk (0-1, how much of the walk cycle shows) and phase (radians through the stride) for the
+// legs and the arm swing, unless feet places them: [left, right], each { at: the ankle, knee: the
+// way the knee points, toe: the foot's heading (rad) }, the points and directions in the frame the
+// root sits in (knees forward and the feet straight ahead by default), soles kept level. lean (rad)
+// bends the torso forward at the waist (back, negative) and tilt to its right (left, negative), nod
+// the head down; look turns it. hands
+// ([left, right], each { at: the middle of the palm, elbow: the way it points, w: 0-1 }) blends each
+// arm from its swing to reaching there.
 function poseOptimus (
   O,
-  { walk = 0, phase = 0, sit = 0, drive = 0, duck = 0, look = 0 }
+  {
+    walk = 0,
+    phase = 0,
+    feet = null,
+    lean = 0,
+    tilt = 0,
+    nod = 0,
+    look = 0,
+    hands = null
+  }
 ) {
-  const sw = Math.sin(phase)
-  for (const L of O.legs) {
+  // a small bob up and down with each step
+  O.hips.position.y = walk * 0.025 * Math.abs(Math.cos(phase))
+  O.waist.rotation.set(tilt, 0, -0.05 * walk - lean)
+  O.head.rotation.y = look
+  O.head.rotation.z = -nod
+  O.root.updateWorldMatrix(true, true)
+  const sw = Math.sin(phase),
+    yaw = O.root.rotation.y
+  O.legs.forEach((L, i) => {
+    const f = feet && feet[i]
+    if (f) {
+      pointAt(O, L.hip, f.at, _t)
+      const pole = f.knee
+        ? dirAt(O, L.hip, f.knee, _z)
+        : _z.set(1, 0, 0.12 * L.s)
+      const bend = limb(L.hip, _t, THIGH, SHIN, pole, true)
+      L.kn.rotation.set(0, 0, -bend)
+      // the sole level, the toes along the heading: the foot's own frame against the leg's
+      const h = (f.toe ?? yaw) - yaw
+      _x.set(Math.cos(h), 0, -Math.sin(h))
+      _y.set(0, 1, 0)
+      _z.crossVectors(_x, _y)
+      _q.setFromRotationMatrix(_m.makeBasis(_x, _y, _z))
+      _q2.copy(L.hip.quaternion).multiply(L.kn.quaternion).invert()
+      L.ank.quaternion.copy(_q2.multiply(_q))
+      return
+    }
     // the legs half a stride apart: each swings forward with the knee bent, then plants and pushes
     // back straight, the foot kept flat on the ground
     const p = phase + (L.s < 0 ? 0 : Math.PI)
@@ -58712,59 +59362,1165 @@ function poseOptimus (
         -0.75 *
         Math.max(0, Math.cos(p)) *
         (0.4 + 0.6 * Math.max(0, Math.sin(p) + 0.3))
-    L.hip.rotation.z = mix(wHip * walk, 1.5, sit)
-    L.kn.rotation.z = mix(wKnee * walk, -1.45, sit)
-    L.ank.rotation.z = mix(-(wHip + wKnee) * 0.85 * walk, -0.05, sit)
-    L.hip.rotation.x = L.s * 0.04 * sit // knees a little apart
-  }
-  for (const A of O.arms) {
+    L.hip.rotation.set(0, 0, wHip * walk)
+    L.kn.rotation.set(0, 0, wKnee * walk)
+    L.ank.rotation.set(0, 0, -(wHip + wKnee) * 0.85 * walk)
+  })
+  O.arms.forEach((A, i) => {
     const k = A.s < 0 ? -sw : sw
-    const swing = 0.32 * k * walk
-    A.sh.rotation.z = mix(mix(swing, 0.25, sit), 1.18, drive)
-    A.el.rotation.z = mix(
-      mix(0.25 + 0.2 * Math.max(0, k) * walk, 0.5, sit),
-      0.36,
-      drive
-    )
-    A.sh.rotation.x = A.s * mix(0.08, 0.16, drive)
-    A.hand.rotation.x = A.s * 0.3 * drive
-  }
-  O.waist.rotation.z = mix(-0.05 * walk, 0.12, sit) - 0.45 * duck
-  O.head.rotation.y = look
-  O.head.rotation.z = 0.15 * duck
-  // a small bob up and down with each step
-  O.hips.position.y = walk * 0.025 * Math.abs(Math.cos(phase))
+    A.sh.rotation.set(A.s * 0.08, 0, 0.32 * k * walk)
+    let e = 0.25 + 0.2 * Math.max(0, k) * walk
+    const g = hands && hands[i]
+    const w = g ? g.w ?? 1 : 0
+    if (w > 0) {
+      _q.copy(A.sh.quaternion)
+      pointAt(O, A.sh, g.at, _t)
+      const pole = g.elbow
+        ? dirAt(O, A.sh, g.elbow, _z)
+        : _z.set(-0.3, -1, 0.5 * A.s)
+      const bend = limb(A.sh, _t, UPPER, FORE, pole, false)
+      A.sh.quaternion.slerpQuaternions(_q, _q2.copy(A.sh.quaternion), w)
+      e = mix(e, bend, w)
+    }
+    A.el.rotation.set(0, 0, e)
+    A.hand.rotation.set(A.s * 0.3 * w, 0, 0)
+  })
 }
-__export(__exports, { "HIP_STAND": () => HIP_STAND, "HIP_SIT": () => HIP_SIT, "buildOptimus": () => buildOptimus, "poseOptimus": () => poseOptimus })
+__export(__exports, { "HIP_STAND": () => HIP_STAND, "buildOptimus": () => buildOptimus, "ANKLE_UP": () => ANKLE_UP, "poseOptimus": () => poseOptimus })
+})
+
+// ---- js/render/wheels.js
+__define(21, function (__exports) {
+// Wheels and wheel wells: arch openings cut into the body shell with dark well liners, tyres with
+// rounded sidewalls round the reveal car's wheels (six black twin spokes over white aero inserts),
+// Ackermann steering and free-spinning wheels in the air.
+const THREE = __require(0)
+const { MAT } = __require(16)
+const { CAR } = __require(1)
+const ARCH_R = 0.4 // arch opening radius around each axle (tyre radius 0.36)
+const WELL_IN = 0.5 // inner wall of the wheel well, from the centre line
+const HALF_TRACK = 0.87 // wheel centre from the centre line
+const BODY_SIDE = 0.995 // outer skin of the body at the wheels
+
+// A copy of a body material that discards the shell inside each wheel arch, so the wheels sit in
+// open wells instead of cutting through the panels when they steer.
+function withWheelArches (mat) {
+  const m = mat.clone()
+  m.onBeforeCompile = shader => {
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vBodyPos;')
+      .replace(
+        '#include <begin_vertex>',
+        '#include <begin_vertex>\nvBodyPos = position;'
+      )
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nvarying vec3 vBodyPos;')
+      .replace(
+        'void main() {',
+        `void main() {
+  if (abs(vBodyPos.z) > ${WELL_IN.toFixed(3)}) {
+    vec2 arch = vec2(abs(vBodyPos.x) - ${CAR.halfWB.toFixed(
+      3
+    )}, vBodyPos.y - ${CAR.wheelR.toFixed(3)});
+    if (dot(arch, arch) < ${(ARCH_R * ARCH_R).toFixed(4)}) discard;
+  }`
+      )
+  }
+  m.customProgramCacheKey = () => 'wheel-arches'
+  return m
+}
+
+// Tyre cross-section (radius, axial offset), revolved: bead, rounded shoulder, flat tread. Low
+// profile round a big rim.
+const TYRE_PROFILE = [
+  [0.285, -0.13],
+  [0.305, -0.148],
+  [0.33, -0.151],
+  [0.35, -0.142],
+  [0.358, -0.125],
+  [0.36, -0.1],
+  [0.36, 0.1],
+  [0.358, 0.125],
+  [0.35, 0.142],
+  [0.33, 0.151],
+  [0.305, 0.148],
+  [0.285, 0.13]
+].map(([r, y]) => new THREE.Vector2(r, y))
+const RIM_R = 0.285
+
+// the wheel face: white aero inserts between six black twin spokes, a dark gap down each pair, a
+// black lip and centre cap (drawn once, mapped onto each disc)
+function faceTexture () {
+  const S = 512,
+    c = S / 2
+  const cv = document.createElement('canvas')
+  cv.width = cv.height = S
+  const g = cv.getContext('2d')
+  g.fillStyle = '#121316'
+  g.fillRect(0, 0, S, S)
+  const gr = g.createRadialGradient(c, c, 40, c, c, c * 0.95)
+  gr.addColorStop(0, '#c9ccd0')
+  gr.addColorStop(0.6, '#eceef0')
+  gr.addColorStop(1, '#d9dce0')
+  g.fillStyle = gr
+  g.beginPath()
+  g.arc(c, c, c * 0.93, 0, Math.PI * 2)
+  g.fill()
+  const at = (a, r) => [c + Math.cos(a) * r, c + Math.sin(a) * r]
+  const wedge = (a0, a1, b0, b1, r0, r1, fill) => {
+    g.fillStyle = fill
+    g.beginPath()
+    g.moveTo(...at(a0, r0))
+    g.lineTo(...at(b0, r1))
+    g.lineTo(...at(b1, r1))
+    g.lineTo(...at(a1, r0))
+    g.closePath()
+    g.fill()
+  }
+  for (let i = 0; i < 6; i++) {
+    const a = (i * Math.PI) / 3
+    // the pair: one black blade narrow at the hub, fanning out to the rim, with a slot down its middle
+    wedge(a - 0.09, a + 0.09, a - 0.2, a + 0.2, c * 0.2, c * 0.95, '#141518')
+    wedge(a - 0.02, a + 0.02, a - 0.08, a + 0.08, c * 0.34, c * 0.9, '#050506')
+    // a machined edge catching the light on one side of each blade
+    wedge(a + 0.075, a + 0.09, a + 0.18, a + 0.2, c * 0.22, c * 0.93, '#4a4e55')
+  }
+  g.fillStyle = '#0d0e10'
+  g.beginPath()
+  g.arc(c, c, c * 0.2, 0, Math.PI * 2)
+  g.fill()
+  g.strokeStyle = '#2b2e33'
+  g.lineWidth = 6
+  g.stroke()
+  g.fillStyle = '#9a9ea5' // the T on the centre cap
+  g.fillRect(c - 22, c - 20, 44, 8)
+  g.fillRect(c - 4, c - 14, 8, 36)
+  const t = new THREE.CanvasTexture(cv)
+  t.colorSpace = THREE.SRGBColorSpace
+  t.anisotropy = 8
+  return t
+}
+
+const liner = new THREE.MeshStandardMaterial({
+  color: 0x0a0b0d,
+  roughness: 0.95,
+  side: THREE.DoubleSide
+})
+// the dark tub behind each arch: a curved roof that meets the arch cut, plus the inner wall
+function wheelWell (x, sz) {
+  const g = new THREE.Group()
+  const depth = BODY_SIDE - WELL_IN
+  // the floor sits 0.24 m below the axle: the well opens downward from there
+  const floorAng = Math.acos((CAR.wheelR - 0.12) / ARCH_R)
+  const roof = new THREE.Mesh(
+    new THREE.CylinderGeometry(
+      ARCH_R,
+      ARCH_R,
+      depth,
+      32,
+      1,
+      true,
+      floorAng,
+      Math.PI * 2 - 2 * floorAng
+    ).rotateX(Math.PI / 2),
+    liner
+  )
+  roof.position.z = sz * (WELL_IN + depth / 2)
+  const wallAng = Math.asin((CAR.wheelR - 0.12) / ARCH_R)
+  const wall = new THREE.Mesh(
+    new THREE.CircleGeometry(ARCH_R, 32, -wallAng, Math.PI + 2 * wallAng),
+    liner
+  )
+  wall.position.z = sz * WELL_IN
+  g.add(roof, wall)
+  g.position.set(x, CAR.wheelR, 0)
+  return g
+}
+
+function buildWheels (car, body) {
+  const tyreGeo = new THREE.LatheGeometry(TYRE_PROFILE, 36).rotateX(Math.PI / 2)
+  const barrelGeo = new THREE.CylinderGeometry(
+    RIM_R + 0.002,
+    RIM_R + 0.002,
+    0.25,
+    32,
+    1,
+    true
+  ).rotateX(Math.PI / 2)
+  const faceGeo = new THREE.CylinderGeometry(
+    RIM_R - 0.004,
+    RIM_R - 0.004,
+    0.012,
+    32
+  ).rotateX(Math.PI / 2)
+  const lipGeo = new THREE.RingGeometry(RIM_R - 0.014, RIM_R, 32)
+  const faceMat = new THREE.MeshStandardMaterial({
+    map: faceTexture(),
+    roughness: 0.32,
+    metalness: 0.25
+  })
+  const axles = {
+    front: { rate: 0, angle: 0 },
+    rear: { rate: 0, angle: 0 }
+  }
+  const wheels = []
+  for (const sx of [1, -1]) {
+    for (const sz of [-1, 1]) {
+      body.add(wheelWell(sx * CAR.halfWB, sz))
+      const pivot = new THREE.Group()
+      pivot.position.set(sx * CAR.halfWB, CAR.wheelR, sz * HALF_TRACK)
+      const spin = new THREE.Group()
+      const tyre = new THREE.Mesh(tyreGeo, MAT.tire)
+      tyre.castShadow = true
+      spin.add(tyre, new THREE.Mesh(barrelGeo, MAT.darkMetal))
+      // the wheel face recessed ~3 cm inside the sidewall on both sides, with a dark lip
+      for (const side of [-1, 1]) {
+        const face = new THREE.Mesh(faceGeo, faceMat)
+        face.position.z = side * 0.112
+        spin.add(face)
+        const ring = new THREE.Mesh(lipGeo, MAT.rim)
+        ring.position.z = side * 0.1185
+        if (side < 0) ring.rotation.y = Math.PI
+        spin.add(ring)
+      }
+      pivot.add(spin)
+      car.add(pivot)
+      wheels.push({ pivot, spin, front: sx > 0, side: sz })
+    }
+  }
+  return { wheels, axles }
+}
+
+// Roll with the ground when the tyres touch it (rears stop dead on the e-brake), keep spinning and
+// slowly run down in the air; steer the fronts with Ackermann geometry.
+function updateWheels (RS, sim, dt) {
+  const grounded = sim.mode === 'ground' || sim.mode === 'ramp'
+  const roll = (sim.mode === 'ramp' ? sim.v : sim.speed) / CAR.wheelR
+  for (const [name, axle] of Object.entries(RS.axles)) {
+    if (grounded) axle.rate = name === 'rear' && sim.ebrakeOn ? 0 : roll
+    else axle.rate *= Math.exp(-0.35 * dt)
+    axle.angle += axle.rate * dt
+  }
+  const d = sim.steerAng
+  const R = Math.abs(d) > 1e-4 ? CAR.wheelbase / Math.tan(d) : Infinity
+  for (const w of RS.wheels) {
+    const axle = w.front ? RS.axles.front : RS.axles.rear
+    w.spin.rotation.z = -axle.angle
+    if (w.front) {
+      // inner wheel turns tighter than the outer one (turn centre on the inside of the bend)
+      w.pivot.rotation.y =
+        R === Infinity
+          ? 0
+          : Math.atan(CAR.wheelbase / (R + w.side * HALF_TRACK))
+    }
+  }
+}
+__export(__exports, { "ARCH_R": () => ARCH_R, "withWheelArches": () => withWheelArches, "buildWheels": () => buildWheels, "updateWheels": () => updateWheels })
+})
+
+// ---- js/render/roadsterRear.js
+__define(22, function (__exports) {
+// The Roadster's tail, as in the rear shot from the reveal: a full-width red light bar in a smoked
+// black band under the ducktail lip, a satin panel with the plate and a camera, and the black lower
+// fascia: a louvred housing for the 4 main nozzles over a diffuser of 4 fan bays split by strakes,
+// with red reflectors at its corners. Plus the active rear wing: it rises out of the deck on swan-neck
+// pylons at speed, folds its endplates down, and tips up as an air brake under hard braking.
+const THREE = __require(0)
+const { MAT, hdr } = __require(16)
+const { TAU, clamp } = __require(1)
+const X = -2.22 // the tail's rear face
+
+const box = (w, h, d, mat, x, y, z) => {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(d, h, w), mat)
+  m.position.set(x, y, z)
+  return m
+}
+
+function plateTexture () {
+  const cv = document.createElement('canvas')
+  cv.width = 256
+  cv.height = 128
+  const g = cv.getContext('2d')
+  const gr = g.createLinearGradient(0, 0, 0, 128)
+  gr.addColorStop(0, '#e9ebed')
+  gr.addColorStop(1, '#cfd2d6')
+  g.fillStyle = gr
+  g.fillRect(0, 0, 256, 128)
+  g.strokeStyle = '#a6a9ae'
+  g.lineWidth = 5
+  g.strokeRect(5, 5, 246, 118)
+  // embossed letters: a light edge above, a shadow below
+  g.font = '600 74px "Saira Semi Condensed", "Arial Narrow", sans-serif'
+  g.textAlign = 'center'
+  g.textBaseline = 'middle'
+  g.fillStyle = '#ffffff'
+  g.fillText('RDSTR', 128, 68)
+  g.fillStyle = '#8d9096'
+  g.fillText('RDSTR', 129, 72)
+  g.fillStyle = '#b7babf'
+  g.fillText('RDSTR', 128, 70)
+  const t = new THREE.CanvasTexture(cv)
+  t.colorSpace = THREE.SRGBColorSpace
+  return t
+}
+
+// A fan in a round duct, spinning about local y; blades go in `fans` for the per-frame spin.
+function fanUnit (r, nBlades, fans) {
+  const g = new THREE.Group()
+  const duct = new THREE.Mesh(
+    new THREE.TorusGeometry(r, r * 0.12, 8, 28),
+    MAT.darkMetal
+  )
+  duct.rotation.x = Math.PI / 2
+  const back = new THREE.Mesh(new THREE.CircleGeometry(r, 24), MAT.hole)
+  back.rotation.x = -Math.PI / 2
+  back.position.y = -r * 0.5
+  const hub = new THREE.Mesh(
+    new THREE.ConeGeometry(r * 0.32, r * 0.8, 12),
+    MAT.darkMetal
+  )
+  hub.position.y = r * 0.15
+  const blades = new THREE.Group()
+  for (let i = 0; i < nBlades; i++) {
+    const b = new THREE.Mesh(
+      new THREE.BoxGeometry(r * 0.85, r * 0.03, r * 0.24),
+      MAT.darkMetal
+    )
+    b.position.x = r * 0.5
+    b.rotation.x = 0.4
+    const p = new THREE.Group()
+    p.rotation.y = (i * TAU) / nBlades
+    p.add(b)
+    blades.add(p)
+  }
+  g.add(duct, back, hub, blades)
+  fans.push(blades)
+  return g
+}
+
+// the tail's fittings; returns the light bar's material (brighter under braking)
+function buildTail (body, fans) {
+  const smoked = new THREE.MeshPhysicalMaterial({
+    color: 0x07080a,
+    roughness: 0.12,
+    metalness: 0.2,
+    clearcoat: 1,
+    clearcoatRoughness: 0.05
+  })
+  // (the output pass tone-maps everything: past about 2 a red burns out to orange)
+  const red = new THREE.MeshBasicMaterial({
+    color: hdr(1.8, 0.03, 0.02),
+    toneMapped: false
+  })
+  // the light bar, full width under the deck lip, in its smoked band
+  body.add(box(1.74, 0.085, 0.03, smoked, X - 0.004, 0.87, 0))
+  body.add(box(1.7, 0.02, 0.012, red, X - 0.02, 0.885, 0))
+  // the satin panel with the plate and the camera over it
+  const satin = new THREE.MeshStandardMaterial({
+    color: 0xb9bdc2,
+    roughness: 0.42,
+    metalness: 0.55
+  })
+  body.add(box(1.62, 0.22, 0.02, satin, X - 0.002, 0.715, 0))
+  const plate = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.32, 0.155),
+    new THREE.MeshStandardMaterial({
+      map: plateTexture(),
+      roughness: 0.4,
+      metalness: 0.35
+    })
+  )
+  plate.rotation.y = -Math.PI / 2
+  plate.position.set(X - 0.016, 0.69, 0)
+  body.add(plate)
+  body.add(box(0.06, 0.018, 0.02, MAT.trim, X - 0.016, 0.78, 0))
+  // the black lower fascia: reflectors at its outer corners
+  const reflector = new THREE.MeshBasicMaterial({
+    color: hdr(0.9, 0.02, 0.015),
+    toneMapped: false
+  })
+  for (const s of [-1, 1])
+    body.add(box(0.15, 0.014, 0.01, reflector, X - 0.006, 0.57, s * 0.76))
+  // the nozzle housing: a black beam with louvres across it, standing proud of the fascia
+  body.add(box(1.26, 0.16, 0.06, MAT.trim, X - 0.03, 0.505, 0))
+  for (const y of [0.455, 0.505, 0.555])
+    body.add(box(1.2, 0.008, 0.012, MAT.darkMetal, X - 0.062, y, 0))
+  // the diffuser: a frame round 4 fan bays, split by strakes that run back under the tail
+  for (const s of [-1, 1])
+    body.add(box(0.05, 0.36, 0.12, MAT.trim, X - 0.04, 0.25, s * 0.63))
+  body.add(box(1.31, 0.05, 0.12, MAT.trim, X - 0.04, 0.095, 0))
+  for (const z of [-0.315, 0, 0.315])
+    body.add(box(0.014, 0.32, 0.16, MAT.trim, X - 0.02, 0.26, z))
+  for (const z of [-0.47, -0.155, 0.155, 0.47]) {
+    const f = fanUnit(0.12, 7, fans)
+    f.rotation.z = Math.PI / 2 // local +y points aft
+    f.position.set(X - 0.012, 0.27, z)
+    body.add(f)
+  }
+  return red
+}
+
+// ---------- the active wing ----------
+const SPAN = 0.93 // half span
+const UP = 0.3 // how far it rises out of the deck
+
+function plateShape (pts) {
+  return new THREE.Shape(pts.map(([x, y]) => new THREE.Vector2(x, y)))
+}
+
+function buildWing (body) {
+  const wing = new THREE.Group() // rises out of the deck
+  const tilt = new THREE.Group() // the blade's angle of attack, about its leading edge
+  wing.position.set(-1.9, 1.04 - UP, 0)
+  tilt.position.set(0.04, 0, 0)
+  wing.add(tilt)
+  // the blade: a cambered section with a gurney flap at the trailing edge, dark on top
+  const foil = plateShape([
+    [0, 0],
+    [-0.03, 0.022],
+    [-0.11, 0.034],
+    [-0.21, 0.03],
+    [-0.3, 0.018],
+    [-0.305, 0.04],
+    [-0.315, 0.04],
+    [-0.31, 0.004],
+    [-0.2, -0.004],
+    [-0.08, -0.008]
+  ])
+  const blade = new THREE.Mesh(
+    new THREE.ExtrudeGeometry(foil, {
+      depth: SPAN * 2,
+      bevelEnabled: false
+    }).translate(0, 0, -SPAN),
+    MAT.trim
+  )
+  tilt.add(blade)
+  // endplates hinged along the blade's tips: down and canted out when deployed, folded flat on top
+  // of the blade when stowed
+  const ep = plateShape([
+    [0.02, 0.02],
+    [-0.33, 0.045],
+    [-0.3, -0.06],
+    [-0.12, -0.2],
+    [-0.06, -0.19]
+  ])
+  const epGeo = new THREE.ExtrudeGeometry(ep, {
+    depth: 0.012,
+    bevelEnabled: false
+  }).translate(0, 0, -0.006)
+  const plates = []
+  for (const s of [-1, 1]) {
+    const hinge = new THREE.Group()
+    hinge.position.set(0, 0.02, s * SPAN)
+    hinge.add(new THREE.Mesh(epGeo, MAT.paint))
+    tilt.add(hinge)
+    plates.push({ hinge, s })
+  }
+  // swan-neck pylons: up from the deck and over, holding the blade from above
+  const neck = plateShape([
+    [0.12, -0.36],
+    [0.05, -0.36],
+    [0.0, -0.1],
+    [-0.04, 0.03],
+    [-0.1, 0.075],
+    [-0.19, 0.06],
+    [-0.19, 0.03],
+    [-0.11, 0.045],
+    [-0.06, 0.0],
+    [0.03, -0.2]
+  ])
+  const neckGeo = new THREE.ExtrudeGeometry(neck, {
+    depth: 0.014,
+    bevelEnabled: false
+  }).translate(0, 0, -0.007)
+  for (const s of [-1, 1]) {
+    const p = new THREE.Mesh(neckGeo, MAT.trim)
+    p.position.set(0, 0, s * 0.46)
+    wing.add(p)
+  }
+  wing.traverse(o => {
+    if (o.isMesh) o.castShadow = true
+  })
+  wing.visible = false
+  body.add(wing)
+  return { wing, tilt, plates, d: 0, aoa: 0, want: false }
+}
+
+// Up above 100 km/h (and kept up down to 60, or while it flies fast), stowed below; tipped up hard
+// as an air brake under heavy braking.
+function updateWing (W, sim, ctl, dt) {
+  const v = sim.groundSpeed()
+  W.want = W.want ? v > 16.7 : v > 27.8
+  W.d = clamp(W.d + (W.want ? dt : -dt) * 1.8, 0, 1)
+  const e = W.d * W.d * (3 - 2 * W.d)
+  const brake = (ctl.brake > 0 || ctl.ebrake) && v > 15 && sim.mode !== 'air'
+  W.aoa += ((brake ? 0.62 : 0.06) - W.aoa) * Math.min(1, dt * 6)
+  W.wing.visible = W.d > 0.001
+  W.wing.position.y = 1.04 - UP * (1 - e)
+  W.tilt.rotation.z = W.aoa * e
+  // the endplates unfold over the last part of the rise
+  const f = clamp((W.d - 0.45) / 0.55, 0, 1)
+  for (const { hinge, s } of W.plates)
+    hinge.rotation.x = s * (Math.PI / 2) * (1 - f) - s * 0.12 * f
+}
+__export(__exports, { "fanUnit": () => fanUnit, "buildTail": () => buildTail, "buildWing": () => buildWing, "updateWing": () => updateWing })
+})
+
+// ---- js/render/roadster.js
+__define(23, function (__exports) {
+// The Roadster model, measured off the Oct 15, 2026 reveal photos (a side-on shot at the event sets the
+// proportions, a top-down one the canopy, a rear one the tail): a wedge in satin Ano White, smooth
+// panels with crisp creases, a tall blunt nose, sloped fender facets either side of a short hood,
+// squinting triangular headlights, one bronze-tinted canopy from a windshield nearly as wide as the car
+// over the roof to a narrow tip at the tail, flanked by buttresses that run out to the tail corners, a
+// black sill that rises to the rear, full-width light bars, the black tail with 4 nozzles over 4 fans
+// (roadsterRear.js), an active rear wing, underfloor suction fan, skirts and twin-spoke aero wheels;
+// plus per-frame pose and animation.
+const THREE = __require(0)
+const { scene, MAT } = __require(16)
+const { clamp } = __require(1)
+const { buildOptimus, poseOptimus, ANKLE_UP } = __require(20)
+const { loft, loftGeos, at, seam, withStations } = __require(19)
+const { buildWheels, updateWheels, withWheelArches } = __require(21)
+const { buildTail, buildWing, updateWing, fanUnit } = __require(22)
+const _a = new THREE.Vector3()
+const SEAM = new THREE.MeshStandardMaterial({
+  color: 0x0b0c0e,
+  roughness: 0.7,
+  side: THREE.DoubleSide
+})
+
+// ---------- shape ----------
+// Body stations, tail to nose. The half section runs: floor centre, floor edge, top of the black sill,
+// the side crease (widest point), the shoulder crest, the top and foot of the inner wall (the flying
+// buttress's inner face at the rear; up front it shrinks to the hood's edge) and the centre of the
+// hood or deck.
+// Over each wheel everything outboard of the well wall (z > 0.5) stays above the arch cut.
+// x, floor y, sill [z, y], crease [z, y], shoulder [z, y], wall top [z, y], wall foot [z, y], centre y
+// prettier-ignore
+const BODY = [
+  [-2.22, 0.14, [0.8, 0.64], [0.86, 0.76], [0.87, 0.9], [0.8, 0.915], [0.27, 0.915], 0.915],
+  [-2.12, 0.13, [0.88, 0.64], [0.93, 0.74], [0.92, 0.905], [0.78, 0.928], [0.27, 0.92], 0.92],
+  [-1.95, 0.13, [0.91, 0.6], [0.97, 0.71], [0.95, 0.91], [0.72, 0.952], [0.29, 0.932], 0.93],
+  [-1.8, 0.13, [0.92, 0.55], [0.98, 0.68], [0.96, 0.915], [0.69, 0.995], [0.33, 0.965], 0.95],
+  [-1.5, 0.12, [0.92, 0.5], [0.99, 0.67], [0.97, 0.915], [0.64, 1.065], [0.4, 1.03], 0.98],
+  [-1.2, 0.12, [0.92, 0.46], [0.99, 0.65], [0.97, 0.905], [0.6, 1.11], [0.51, 1.085], 0.99],
+  [-0.9, 0.12, [0.92, 0.42], [0.99, 0.63], [0.97, 0.89], [0.72, 1.0], [0.56, 0.95], 0.85],
+  [-0.6, 0.12, [0.92, 0.36], [0.99, 0.62], [0.97, 0.885], [0.85, 0.885], [0.62, 0.81], 0.79],
+  [0.4, 0.12, [0.92, 0.3], [0.99, 0.6], [0.97, 0.87], [0.85, 0.872], [0.62, 0.8], 0.78],
+  [1.0, 0.12, [0.92, 0.28], [0.99, 0.58], [0.97, 0.855], [0.85, 0.857], [0.62, 0.8], 0.79],
+  [1.2, 0.12, [0.92, 0.27], [0.99, 0.57], [0.97, 0.84], [0.84, 0.84], [0.62, 0.805], 0.795],
+  [1.45, 0.12, [0.92, 0.26], [0.99, 0.56], [0.97, 0.815], [0.81, 0.8], [0.79, 0.796], 0.792],
+  [1.55, 0.12, [0.92, 0.255], [0.99, 0.55], [0.965, 0.79], [0.78, 0.782], [0.76, 0.776], 0.772],
+  [1.7, 0.12, [0.92, 0.25], [0.99, 0.53], [0.95, 0.745], [0.7, 0.735], [0.68, 0.729], 0.725],
+  [1.85, 0.13, [0.9, 0.25], [0.96, 0.5], [0.93, 0.69], [0.64, 0.682], [0.62, 0.676], 0.672],
+  [2.05, 0.14, [0.8, 0.255], [0.85, 0.46], [0.84, 0.615], [0.61, 0.601], [0.6, 0.597], 0.595],
+  [2.22, 0.16, [0.58, 0.26], [0.63, 0.4], [0.62, 0.535], [0.61, 0.532], [0.605, 0.53], 0.528]
+].map(([x, yb, sill, crease, sh, wt, wf, yc]) => ({
+  x,
+  p: [[0, yb], [crease[0] - 0.07, yb], sill, crease, sh, wt, wf, [0, yc]]
+}))
+const SILL = 1,
+  WALL = 5,
+  DECK = 6 // segment indices in the body section
+// the butterfly doors: from the front shut line to the rear one, sill to roof rail, hinged at the
+// top of the front edge, swinging up and out
+const DOOR = [-0.3, 0.84]
+const HINGE = [0.84, 0.97, 0.76] // x, y, |z|
+// the cabin's length under the canopy, open from the floor to the glass
+const CABIN = [-0.8, 0.7]
+
+// Canopy stations, tail to windshield foot: where the side glass meets the shoulder (or, at the rear,
+// the buttress), the roof rail (the windshield's edge up front) and the centre line. Seen from above
+// it is a teardrop: the windshield's foot spans nearly the whole car, the tip is narrow at the tail.
+// x, base [z, y], rail [z, y], centre y
+// prettier-ignore
+const GLASS = [
+  [-1.98, [0.285, 0.93], [0.27, 0.935], 0.94],
+  [-1.8, [0.33, 0.965], [0.31, 0.975], 0.985],
+  [-1.5, [0.4, 1.03], [0.37, 1.055], 1.065],
+  [-1.2, [0.52, 1.0], [0.44, 1.1], 1.11],
+  [-0.9, [0.7, 0.95], [0.49, 1.14], 1.155],
+  [-0.4, [0.84, 0.885], [0.545, 1.165], 1.19],
+  [0.0, [0.85, 0.875], [0.58, 1.15], 1.175],
+  [0.3, [0.85, 0.87], [0.61, 1.11], 1.135],
+  [0.8, [0.85, 0.858], [0.69, 1.0], 1.02],
+  [1.15, [0.85, 0.838], [0.78, 0.89], 0.905],
+  [1.3, [0.83, 0.82], [0.815, 0.835], 0.855],
+  [1.5, [0.79, 0.79], [0.78, 0.792], 0.795]
+].map(([x, base, rail, yc]) => {
+  // a thin painted strip runs along the rail, on the side-glass side
+  const t = Math.min(
+    0.5,
+    0.018 / Math.hypot(base[0] - rail[0], base[1] - rail[1])
+  )
+  const edge = [0, 1].map(n => rail[n] + (base[n] - rail[n]) * t)
+  return { x, p: [base, edge, rail, [0, yc]] }
+})
+
+const box = (w, h, d, mat, x, y, z) => {
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat)
+  m.position.set(x, y, z)
+  return m
+}
+// a dark line along the roof glass at z, from x0 to x1 (the glass roof's panel joints)
+function roofLine (z, x0, x1) {
+  const pos = [],
+    w = 0.006
+  const yAt = x => {
+    const [zr, yr] = at(GLASS, x, 2),
+      yc = at(GLASS, x, 3)[1]
+    return yc + (yr - yc) * (z / zr) + 0.003
+  }
+  for (let x = x0; x > x1; x -= 0.1) {
+    const xb = Math.max(x1, x - 0.1)
+    const a = [x, yAt(x), z - w],
+      b = [x, yAt(x), z + w],
+      c = [xb, yAt(xb), z - w],
+      d = [xb, yAt(xb), z + w]
+    pos.push(...a, ...b, ...c, ...c, ...b, ...d)
+  }
+  const g = new THREE.BufferGeometry()
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3))
+  g.computeVertexNormals()
+  return new THREE.Mesh(g, SEAM)
+}
+
+const DOOR_INSIDE = new THREE.MeshStandardMaterial({
+  color: 0x1c1d20,
+  roughness: 0.75,
+  side: THREE.BackSide
+})
+// The yoke, its grips either side of the hub, and the driver: Optimus sat back in the bucket seat, feet
+// on the floor and hands round the grips
+const YOKE = [-0.02, 0.7, -0.36]
+const DRIVER = {
+  root: [-0.44, 0.33, -0.36],
+  lean: -0.26,
+  nod: 0.2,
+  feet: [-0.13, 0.13].map(dz => ({
+    at: [0.38, 0.165 + ANKLE_UP, YOKE[2] + dz]
+  })),
+  hands: [-0.18, 0.18].map(dz => ({ at: [YOKE[0], YOKE[1], YOKE[2] + dz] }))
+}
+
+// The cabin, seen through the glass and the open doors: a black tub with two bucket seats, the
+// console between them, dark linings behind the doors, the dash under the windshield and the yoke.
+function buildCabin (body) {
+  const dark = new THREE.MeshStandardMaterial({
+    color: 0x18191c,
+    roughness: 0.8
+  })
+  const seat = new THREE.MeshStandardMaterial({
+    color: 0x2a2b2f,
+    roughness: 0.6
+  })
+  const add = (w, h, d, mat, x, y, z, rz = 0) => {
+    const m = box(w, h, d, mat, x, y, z)
+    m.rotation.z = rz
+    body.add(m)
+  }
+  add(2.1, 0.03, 1.64, dark, 0.1, 0.15, 0) // floor
+  for (const sg of [-1, 1]) {
+    add(1.16, 0.2, 0.1, dark, 0.27, 0.24, sg * 0.84) // the sill under the door
+    add(0.5, 0.07, 0.48, seat, -0.32, 0.205, sg * 0.36) // seat base
+    add(0.11, 0.66, 0.46, seat, -0.66, 0.56, sg * 0.36, 0.3) // backrest
+    add(0.12, 0.08, 0.3, seat, -0.84, 0.92, sg * 0.36, 0.3) // head rest
+    add(0.64, 0.72, 0.04, dark, -0.62, 0.525, sg * 0.86) // lining behind the door
+  }
+  add(1.2, 0.2, 0.22, dark, 0.05, 0.26, 0) // console
+  add(0.08, 0.85, 1.64, dark, -0.98, 0.55, 0) // bulkhead behind the seats
+  add(0.55, 0.16, 1.56, dark, 0.92, 0.6, 0) // dash
+  // the yoke, open at the top, its rim leaning a little forward, on a hub and a column that runs
+  // down into the dash
+  const yoke = new THREE.Group()
+  yoke.position.set(...YOKE)
+  yoke.rotation.z = -0.2
+  const rim = new THREE.Mesh(
+    new THREE.TorusGeometry(0.15, 0.018, 8, 24, Math.PI * 1.2),
+    MAT.trim
+  )
+  rim.rotation.set(0, Math.PI / 2, Math.PI * 0.9, 'YXZ')
+  yoke.add(rim, box(0.03, 0.03, 0.28, MAT.trim, 0.01, 0, 0))
+  yoke.add(box(0.05, 0.08, 0.1, dark, 0.03, 0, 0))
+  body.add(yoke)
+  const col = [0.645 - YOKE[0], 0.58 - YOKE[1]]
+  add(
+    Math.hypot(...col),
+    0.05,
+    0.05,
+    dark,
+    YOKE[0] + col[0] / 2,
+    YOKE[1] + col[1] / 2,
+    YOKE[2],
+    Math.atan2(col[1], col[0])
+  )
+}
+
+function buildRoadster () {
+  const car = new THREE.Group()
+  const body = new THREE.Group()
+  car.add(body)
+  const shell = withWheelArches(MAT.paint)
+  const shellTrim = withWheelArches(MAT.trim)
+  // black floor and sill; dark cabin floor and inner walls under the glass; white everywhere else;
+  // the doors' panels and glass apart, to swing open
+  const inDoor = x => x > DOOR[0] && x < DOOR[1]
+  const bodyMat = (j, xA, xB, sg) => {
+    const x = (xA + xB) / 2
+    if (j <= SILL) return shellTrim
+    if (j <= WALL - 1 && j > SILL && inDoor(x)) return `door${sg}`
+    if ((j === WALL || j === DECK) && x > CABIN[0] && x < CABIN[1]) return null
+    if (j === WALL && x > -1.0 && x < 1.3) return shellTrim
+    if (j === DECK && x > -1.96 && x < 1.5) return shellTrim
+    return shell
+  }
+  const glassMat = (j, xA, xB, sg) =>
+    j <= 1 && inDoor((xA + xB) / 2)
+      ? `${j ? 'strip' : 'pane'}${sg}`
+      : j === 1
+      ? MAT.paint
+      : MAT.glass
+  const doors = []
+  for (const sg of [-1, 1]) {
+    const pivot = new THREE.Group()
+    pivot.position.set(HINGE[0], HINGE[1], sg * HINGE[2])
+    body.add(pivot)
+    doors[sg] = pivot
+  }
+  const DOOR_MATS = { door: MAT.paint, strip: MAT.paint, pane: MAT.glass }
+  const place = geos => {
+    for (const [key, g] of geos) {
+      if (typeof key !== 'string') {
+        const m = new THREE.Mesh(g, key)
+        m.castShadow = m.receiveShadow = true
+        body.add(m)
+        continue
+      }
+      const sg = key.endsWith('-1') ? -1 : 1,
+        pivot = doors[sg]
+      g.translate(-HINGE[0], -HINGE[1], -sg * HINGE[2])
+      const m = new THREE.Mesh(g, DOOR_MATS[key.replace(/-?1$/, '')])
+      m.castShadow = true
+      pivot.add(m)
+      // the inside of the door, dark, seen once it is up
+      if (key.startsWith('door')) pivot.add(new THREE.Mesh(g, DOOR_INSIDE))
+    }
+  }
+  place(loftGeos(withStations(BODY, DOOR), bodyMat, shellTrim, 30))
+  place(loftGeos(withStations(GLASS, DOOR), glassMat, undefined, 40))
+  buildCabin(body)
+
+  // Optimus in the driver's seat
+  const optimus = buildOptimus()
+  body.add(optimus.root)
+  optimus.root.position.set(...DRIVER.root)
+  poseOptimus(optimus, DRIVER)
+
+  // front: light line along the hood's leading edge, squinting triangular headlights on the fenders'
+  // facets, black splitter, amber markers behind the front arches and red ones ahead of the tail
+  body.add(box(0.014, 0.014, 1.18, MAT.headlight, 2.224, 0.525, 0))
+  const lamp = [],
+    mark = [],
+    markR = []
+  for (const sg of [1, -1]) {
+    // long side on the hood's edge, tip pointing out across the fender facet
+    const [zt, yt] = at(BODY, 2.03, 5).map(
+      (v, n) => v + (at(BODY, 2.03, 4)[n] - v) * 0.5
+    )
+    for (const [x, z, y] of [
+      [2.19, ...at(BODY, 2.19, 5)],
+      [1.9, ...at(BODY, 1.9, 5)],
+      [2.03, zt, yt]
+    ])
+      lamp.push(x, y + 0.005, sg * z)
+    for (const [x, y] of [
+      [1.0, 0.69],
+      [0.86, 0.69],
+      [0.96, 0.66]
+    ])
+      mark.push(x, y, sg * 0.992)
+    for (const [x, y] of [
+      [-1.92, 0.665],
+      [-2.06, 0.665],
+      [-1.96, 0.64]
+    ])
+      markR.push(x, y, sg * (x < -2 ? 0.94 : 0.975))
+  }
+  const flat = (pos, mat) => {
+    const g = new THREE.BufferGeometry()
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3))
+    const m = mat.clone()
+    m.side = THREE.DoubleSide
+    return new THREE.Mesh(g, m)
+  }
+  body.add(flat(lamp, MAT.headlight))
+  body.add(
+    flat(
+      mark,
+      new THREE.MeshBasicMaterial({
+        color: new THREE.Color(1.5, 0.32, 0.05),
+        toneMapped: false
+      })
+    ),
+    flat(markR, MAT.ledRed)
+  )
+  body.add(box(0.28, 0.025, 1.56, MAT.trim, 2.12, 0.125, 0))
+  // the side camera on each front fender, where a mirror would be
+  for (const sg of [1, -1]) {
+    const cam = box(0.09, 0.022, 0.012, MAT.trim, 1.02, 0.79, sg * 0.975)
+    cam.rotation.x = sg * 0.35
+    body.add(cam)
+  }
+
+  // shut lines: the butterfly doors' front and rear edges, the divider in the side glass and the
+  // joints in the glass roof (windshield, a centre spine, rear glass)
+  body.add(
+    seam(BODY, DOOR[1], 2, 5, SEAM),
+    seam(BODY, DOOR[0], 2, 5, SEAM),
+    seam(GLASS, DOOR[0], 0, 1, SEAM),
+    seam(GLASS, 0.3, 2, 3, SEAM, 0.006, 0.003),
+    seam(GLASS, -0.62, 2, 3, SEAM, 0.006, 0.003),
+    roofLine(0.11, 0.3, -0.62),
+    roofLine(-0.11, 0.3, -0.62)
+  )
+
+  // the tail (light bar, plate, nozzle housing, diffuser and its fans) and the active wing
+  const fans = []
+  const taillight = buildTail(body, fans)
+  const wing = buildWing(body)
+  // one more fan draws air from under the floor
+  const floorFan = fanUnit(0.3, 7, fans)
+  floorFan.rotation.x = Math.PI // opens downward
+  floorFan.position.set(-0.9, 0.105, 0)
+  body.add(floorFan)
+
+  // 10 cold-gas nozzles: 4 main on the housing over the diffuser, 4 lift hanging under the body
+  // behind each wheel, 2 attitude nozzles in the black sills ahead of the rear wheels
+  const nozzles = []
+  const ringGeo = new THREE.TorusGeometry(0.046, 0.012, 8, 20),
+    holeGeo = new THREE.CircleGeometry(0.044, 16),
+    tubeGeo = new THREE.CylinderGeometry(0.05, 0.05, 0.05, 20, 1, true)
+      .rotateX(Math.PI / 2)
+      .translate(0, 0, -0.025),
+    stemGeo = new THREE.CylinderGeometry(0.042, 0.042, 0.14, 16, 1, true)
+      .rotateX(Math.PI / 2)
+      .translate(0, 0, -0.07)
+  function nozzle (x, y, z, dir, kind) {
+    const g = new THREE.Group()
+    g.position.set(x, y, z)
+    const r = new THREE.Mesh(
+        ringGeo,
+        kind.startsWith('side') ? MAT.darkMetal : MAT.chrome
+      ),
+      h = new THREE.Mesh(holeGeo, MAT.hole)
+    h.position.z = 0.004
+    g.add(r, h)
+    if (kind === 'main') g.add(new THREE.Mesh(tubeGeo, MAT.chrome)) // stands proud of the housing
+    if (kind === 'lift') g.add(new THREE.Mesh(stemGeo, MAT.steel)) // hangs below the floor
+    g.lookAt(_a.set(x, y, z).add(dir)) // local +z along the exhaust
+    body.add(g)
+    nozzles.push({
+      kind,
+      local: new THREE.Vector3(x, y, z),
+      dir: dir.clone(),
+      group: g
+    })
+  }
+  for (const z of [-0.37, -0.125, 0.125, 0.37])
+    nozzle(-2.31, 0.505, z, new THREE.Vector3(-1, 0, 0), 'main')
+  for (const [x, z] of [
+    [0.95, -0.8],
+    [0.95, 0.8],
+    [-2.0, -0.68],
+    [-2.0, 0.68]
+  ])
+    nozzle(x, 0.11, z, new THREE.Vector3(0, -1, 0), 'lift')
+  nozzle(-0.95, 0.3, -0.93, new THREE.Vector3(0, 0, -1), 'sideL')
+  nozzle(-0.95, 0.3, 0.93, new THREE.Vector3(0, 0, 1), 'sideR')
+
+  // ground-sealing skirts between the wheel wells
+  const skirts = []
+  for (const z of [-0.94, 0.94]) {
+    const sk = box(1.85, 0.07, 0.03, MAT.trim, 0, 0.1, z)
+    body.add(sk)
+    skirts.push(sk)
+  }
+  const { wheels, axles } = buildWheels(car, body)
+  car.traverse(o => {
+    if (o.isMesh) {
+      o.castShadow = true
+    }
+  })
+  scene.add(car)
+  return {
+    car,
+    body,
+    wheels,
+    axles,
+    nozzles,
+    fans,
+    skirts,
+    wing,
+    taillight,
+    doors,
+    door: 0, // how far the driver's door is open, 0 to 1
+    optimus,
+    settle: { mode: null, k: 0, dy: 0, dq: new THREE.Quaternion() },
+    // body pitch and roll on their springs (rad) and how fast they are moving
+    lean: { p: 0, pv: 0, r: 0, rv: 0 }
+  }
+}
+
+const _sq = new THREE.Quaternion()
+
+// Landing (or getting back on the wheels after a crash) puts the sim's car flat on the road at once,
+// however it came down; the model eases down onto its wheels from the pose it was in instead.
+function settle (RS, sim, dt) {
+  const st = RS.settle
+  if (sim.mode === 'ground' && st.mode && st.mode !== 'ground') {
+    st.dy = RS.car.position.y - sim.pos.y
+    st.dq.copy(RS.car.quaternion).multiply(_sq.copy(sim.quat).invert())
+    // (not across a reset to somewhere else)
+    st.k = RS.car.position.distanceTo(sim.pos) < 6 ? 1 : 0
+  }
+  st.mode = sim.mode
+  st.k *= Math.exp(-12 * dt)
+}
+
+// Pose the model from the sim and animate wheels, suspension, body roll/pitch, fans, skirts, the wing
+// and the brake light. The body pitches and rolls on springs, so it dips and rocks back a little when
+// the car brakes, launches or turns in, instead of just tilting.
+function updateRoadster (RS, sim, ctl, dt) {
+  settle(RS, sim, dt)
+  RS.car.position.copy(sim.pos)
+  RS.car.quaternion.copy(sim.quat)
+  if (RS.settle.k > 0.002) {
+    RS.car.position.y += RS.settle.dy * RS.settle.k
+    RS.car.quaternion.premultiply(
+      _sq.identity().slerp(RS.settle.dq, RS.settle.k)
+    )
+  }
+  RS.body.position.y = clamp(sim.susp, -0.12, 0.06) * 0.6
+  const onGround = sim.mode === 'ground'
+  const pitchT = onGround ? clamp(-sim.accLong * 0.0028, -0.045, 0.045) : 0
+  const rollT = onGround ? clamp(sim.latAcc * 0.0042, -0.06, 0.06) : 0
+  const L = RS.lean,
+    h = Math.min(dt, 1 / 30)
+  L.pv += (90 * (pitchT - L.p) - 11 * L.pv) * h
+  L.p += L.pv * h
+  L.rv += (110 * (rollT - L.r) - 12 * L.rv) * h
+  L.r += L.rv * h
+  RS.body.rotation.z = L.p
+  RS.body.rotation.x = L.r
+  updateWheels(RS, sim, dt)
+  updateWing(RS.wing, sim, ctl, dt)
+  // the driver's door swings up and out about its hinge (RS.door: set by the intro)
+  const k = RS.door * RS.door * (3 - 2 * RS.door)
+  RS.doors[-1].rotation.set(-0.5 * k, 0, -1.4 * k)
+  // the driver looks into the turns
+  if (RS.seated !== false)
+    RS.optimus.head.rotation.y +=
+      (sim.steerAng * 1.4 - RS.optimus.head.rotation.y) * Math.min(1, dt * 4)
+  for (const f of RS.fans) f.rotation.y += sim.suction * dt * 60
+  for (const sk of RS.skirts) sk.position.y = 0.1 - 0.05 * sim.suction
+  const spd = sim.groundSpeed()
+  const braking = (ctl.brake > 0 || ctl.ebrake) && spd > 0.5
+  RS.taillight.color.setRGB(braking ? 4.2 : 1.8, braking ? 0.1 : 0.03, 0.02)
+}
+__export(__exports, { "YOKE": () => YOKE, "DRIVER": () => DRIVER, "buildRoadster": () => buildRoadster, "updateRoadster": () => updateRoadster })
 })
 
 // ---- js/render/intro.js
-__define(19, function (__exports) {
+__define(24, function (__exports) {
 // The city's opening scene: Optimus walks up to the parked Roadster from behind (the camera low at
-// its heels, like the reveal's photo), the driver's door swings up, it ducks in and sits down, takes
-// the yoke, and the door comes down. Any drive key skips it. While it runs it owns the camera; when
-// it ends the follow camera eases in from wherever it left off.
+// its heels, like the reveal's photo) as the driver's door swings up, and gets in the way a person
+// gets into a low car: the inside foot over the sill into the footwell, ducking under the roof rail
+// onto the edge of the seat, the outside leg lifted over the sill after it, then back into the seat
+// and hands on the yoke, and the door comes down. The car unlocks as it walks up and locks once the
+// door is down (onCue hears 'unlock' and 'lock'). Any drive key skips it, locking the car at once.
+// While it runs it owns the camera; when it ends the follow camera eases in from wherever it left off.
 const THREE = __require(0)
 const { clamp } = __require(1)
-const { poseOptimus, HIP_STAND, HIP_SIT } = __require(18)
+const { DRIVER, YOKE } = __require(23)
+const { poseOptimus, HIP_STAND, ANKLE_UP } = __require(20)
 const T = {
   walk: 4.4, // reaches the door
+  unlock: 2.6,
   doorUp: [3.1, 4.3],
-  sit: [4.5, 5.8],
-  hands: [5.6, 6.3],
-  doorDown: [6.4, 7.4],
-  end: 7.6
+  doorDown: [8.9, 9.9],
+  lock: 10.2,
+  end: 10.3
 }
 const FROM = [-6.4, -2.05] // car-frame x, z where it starts walking
-const DOORSIDE = [0.02, -1.42] // where it stands to get in
-const SEAT = [-0.33, -0.36]
+const DOORSIDE = [-0.2, -1.32] // where it stands to get in, by the back of the door opening
 const STRIDE = 1.45 // m per step pair, and its pace
 const SPEED = (DOORSIDE[0] - FROM[0]) / T.walk
 
+// Getting in, after the walk, as keys eased one into the next: the hips (car frame), the torso's lean
+// and its tilt (out, to keep the head clear of the roof rail until it is low enough to pass under), the
+// feet ([left, right] ankles, `up` lifting one over the sill on its way to this key) and which way
+// the knees point, and what the hands hold on the way down: the left the roof rail over the door, the
+// right the yoke, until each takes its own grip. The left leg is the one outside.
+const G = ANKLE_UP, // ankle on the road
+  F = 0.165 + ANKLE_UP // and on the cabin floor
+const ahead = [1, 0, 0],
+  splay = [1, 0.2, -0.5], // a knee forward and out, clear of the yoke
+  elbows = [
+    [-0.3, -1, -0.5],
+    [-0.3, -1, 0.5]
+  ]
+const RAIL = [0.0, 1.04, -0.66], // the roof rail's edge over the door opening
+  GRIP = DRIVER.hands.map(h => h.at),
+  OUTER = [YOKE[0], YOKE[1], YOKE[2] - 0.12] // the right hand on the left grip
+const KEYS = [
+  {
+    t: 4.7,
+    hips: [DOORSIDE[0], HIP_STAND, DOORSIDE[1]],
+    feet: [
+      [DOORSIDE[0], G, DOORSIDE[1] - 0.105],
+      [DOORSIDE[0], G, DOORSIDE[1] + 0.105]
+    ]
+  },
+  {
+    t: 5.5,
+    hips: [-0.18, 0.84, -1.17],
+    lean: 0.1,
+    look: -0.3,
+    feet: [
+      [DOORSIDE[0], G, DOORSIDE[1] - 0.105],
+      [0.12, F, -0.64, 0.3]
+    ]
+  },
+  {
+    t: 6.2,
+    hips: [-0.16, 0.56, -0.8],
+    lean: 0.35,
+    look: -0.3,
+    feet: [
+      [-0.1, G, -1.12, 0.06],
+      [0.12, F, -0.64]
+    ],
+    knees: [ahead, splay],
+    hands: [RAIL, OUTER],
+    elbows: [[-0.2, -0.6, -1], elbows[1]]
+  },
+  {
+    t: 6.55,
+    hips: [-0.2, 0.47, -0.64],
+    lean: 0.4,
+    tilt: -0.18,
+    look: -0.25,
+    feet: [
+      [-0.1, G, -1.12],
+      [0.14, F, -0.6]
+    ],
+    knees: [[0.2, 1, -0.3], splay],
+    hands: [RAIL, OUTER],
+    elbows: [[-0.2, -0.6, -1], elbows[1]]
+  },
+  {
+    t: 6.75,
+    hips: [-0.22, 0.41, -0.6],
+    lean: 0.45,
+    tilt: -0.15,
+    look: -0.2,
+    feet: [
+      [-0.1, G, -1.12],
+      [0.15, F, -0.57]
+    ],
+    knees: [[0.2, 1, -0.3], splay],
+    hands: [RAIL, OUTER],
+    elbows: [[-0.2, -0.6, -1], elbows[1]]
+  },
+  {
+    t: 7.0,
+    hips: [-0.24, 0.385, -0.55],
+    lean: 0.45,
+    look: -0.2,
+    feet: [
+      [-0.1, G, -1.12],
+      [0.16, F, -0.55]
+    ],
+    knees: [[0.2, 1, -0.3], splay],
+    hands: [RAIL, OUTER],
+    elbows: [[-0.2, -0.6, -1], elbows[1]]
+  },
+  {
+    t: 7.4,
+    hips: [-0.3, 0.36, -0.5],
+    lean: 0.3,
+    feet: [
+      [-0.02, 0.5, -1.0],
+      [0.2, F, -0.45]
+    ],
+    knees: [[0.2, 1, -0.6], splay],
+    hands: [RAIL, OUTER],
+    elbows: [[-0.2, -0.6, -1], elbows[1]]
+  },
+  {
+    t: 7.9,
+    hips: [-0.34, 0.35, -0.42],
+    lean: 0.25,
+    feet: [
+      [0.25, F, -0.5, 0.12],
+      [0.3, F, -0.25]
+    ],
+    knees: [[1, 0.5, -0.4], ahead],
+    hands: GRIP
+  },
+  {
+    t: 8.6,
+    hips: DRIVER.root,
+    lean: DRIVER.lean,
+    nod: DRIVER.nod,
+    feet: DRIVER.feet.map(f => f.at),
+    hands: GRIP
+  }
+]
+
 const ease = t => t * t * (3 - 2 * t)
 const span = (t, [a, b]) => ease(clamp((t - a) / (b - a), 0, 1))
+const lerp = (a, b, k) => a.map((v, i) => v + (b[i] - v) * k)
 const _p = new THREE.Vector3(),
   _l = new THREE.Vector3()
+
+// the pose between the keys either side of t
+function keyed (t) {
+  let i = 0
+  while (i < KEYS.length - 2 && t > KEYS[i + 1].t) i++
+  const A = KEYS[i],
+    B = KEYS[i + 1]
+  const u = clamp((t - A.t) / (B.t - A.t), 0, 1),
+    k = ease(u)
+  const num = key => (A[key] ?? 0) + ((B[key] ?? 0) - (A[key] ?? 0)) * k
+  return {
+    hips: lerp(A.hips, B.hips, k),
+    lean: num('lean'),
+    tilt: num('tilt'),
+    nod: num('nod'),
+    look: num('look'),
+    feet: [0, 1].map(n => {
+      const at = lerp(A.feet[n], B.feet[n], k).slice(0, 3)
+      at[1] += (B.feet[n][3] || 0) * Math.sin(Math.PI * u)
+      const knee = lerp(A.knees?.[n] || ahead, B.knees?.[n] || ahead, k)
+      return { at, knee }
+    }),
+    // a hand reaches for a hold, moves between holds, or lets go
+    hands: [0, 1].map(n => {
+      const a = A.hands?.[n],
+        b = B.hands?.[n]
+      const elbow = lerp(
+        A.elbows?.[n] || elbows[n],
+        B.elbows?.[n] || elbows[n],
+        k
+      )
+      if (a && b) return { at: lerp(a, b, k), elbow, w: 1 }
+      if (a || b) return { at: a || b, elbow, w: a ? 1 - k : k }
+      return null
+    })
+  }
+}
 
 class Intro {
   constructor (RS, rig) {
@@ -58773,6 +60529,7 @@ class Intro {
     this.active = false
     this.t = 0
     this.onDone = null
+    this.onCue = null
   }
   start (onDone) {
     this.active = true
@@ -58785,6 +60542,7 @@ class Intro {
   finish (quiet = false) {
     if (!this.active) return
     if (quiet) this.onDone = null
+    else if (this.t < T.lock) this.onCue?.('lock')
     this.t = T.end
     this.apply()
   }
@@ -58794,33 +60552,35 @@ class Intro {
   }
   update (dt) {
     if (!this.active) return
+    const t0 = this.t
     this.t += dt
+    for (const cue of ['unlock', 'lock'])
+      if (t0 < T[cue] && this.t >= T[cue]) this.onCue?.(cue)
     this.apply()
   }
   apply () {
     const t = this.t,
       RS = this.RS,
       O = RS.optimus
-    const walking = clamp(t / T.walk, 0, 1)
-    const sit = span(t, T.sit)
-    const x = FROM[0] + (DOORSIDE[0] - FROM[0]) * walking,
-      z = FROM[1] + (DOORSIDE[1] - FROM[1]) * walking
-    // into the seat: sideways and down, ducking under the door frame on the way
-    O.root.position.set(
-      x + (SEAT[0] - x) * sit,
-      HIP_STAND + (HIP_SIT - HIP_STAND) * sit,
-      z + (SEAT[1] - z) * sit
-    )
     O.root.rotation.set(0, 0, 0)
-    const stride = t < T.walk ? 1 : clamp(1 - (t - T.walk) / 0.3, 0, 1)
-    poseOptimus(O, {
-      walk: stride * (1 - sit),
-      phase: (Math.PI * 2 * Math.min(t, T.walk) * SPEED) / STRIDE,
-      sit,
-      drive: span(t, T.hands),
-      duck: Math.sin(Math.PI * sit) * 0.8,
-      look: t < T.walk ? 0 : -0.5 * (1 - sit)
-    })
+    if (t < KEYS[0].t) {
+      // walking up, the stride dying away as it stops by the door
+      const k = clamp(t / T.walk, 0, 1)
+      O.root.position.set(
+        FROM[0] + (DOORSIDE[0] - FROM[0]) * k,
+        HIP_STAND,
+        FROM[1] + (DOORSIDE[1] - FROM[1]) * k
+      )
+      poseOptimus(O, {
+        walk:
+          t < T.walk ? 1 : clamp(1 - (t - T.walk) / (KEYS[0].t - T.walk), 0, 1),
+        phase: (Math.PI * 2 * Math.min(t, T.walk) * SPEED) / STRIDE
+      })
+    } else {
+      const P = keyed(t)
+      O.root.position.set(...P.hips)
+      poseOptimus(O, P)
+    }
     RS.door = span(t, T.doorUp) - span(t, T.doorDown)
     this.camera(t)
     if (t >= T.end) {
@@ -58860,7 +60620,7 @@ __export(__exports, { "Intro": () => Intro })
 })
 
 // ---- js/render/tween.js
-__define(20, function (__exports) {
+__define(25, function (__exports) {
 // Drawing between physics steps. The sim runs at a fixed 120 Hz and the screen at whatever rate it
 // likes (60, 120, 144 Hz, never quite even), so a frame lands part of the way through a step. Drawn
 // as the last step left it, the car (and the traffic, and the camera chasing the car) moves on by 0,
@@ -58954,7 +60714,7 @@ __export(__exports, { "Tween": () => Tween })
 })
 
 // ---- js/sim/manners.js
-__define(21, function (__exports) {
+__define(26, function (__exports) {
 // Traffic drivers' manners: indicators for lane changes and turns, hazards on a car knocked loose
 // (wrecks.js), honking at a Roadster that holds them up or cuts them up, and moving over when it
 // honks at them from behind (tr.horn).
@@ -59000,9 +60760,11 @@ function temper (tr, car, dt, mine, gap, acc) {
     if (car.honkT <= 0 && tr.R() < 0.3) honk(tr, car, false)
   }
 }
-// sim event 'honk': where, which horn, and a toot or a long blast
+// sim event 'honk': where, which horn, and a toot or a long blast (none while the traffic is quiet,
+// waiting for the Roadster to honk first at the gridlock)
 function honk (tr, car, long) {
   car.honkT = 3.5 + ((car.paint * 13) % 1) * 3
+  if (tr.quiet) return
   tr.sim?.emit('honk', {
     x: car.x,
     z: car.z,
@@ -59015,12 +60777,12 @@ __export(__exports, { "temper": () => temper, "honk": () => honk })
 })
 
 // ---- js/sim/wrecks.js
-__define(22, function (__exports) {
+__define(27, function (__exports) {
 // Traffic knocked out of its lane: the Roadster's hits on cars, the slide to a stop on locked-up
 // tyres (off walls and posts, or through a post it hits hard enough to snap), and pulling back into
 // the lane when a car was only nudged.
 const { query } = __require(3)
-const { honk } = __require(21)
+const { honk } = __require(26)
 const { CAR } = __require(1)
 const { snap } = __require(5)
 const { BODY, nudge, boxRect, impulse, carRect, rectRect, rectPost, loadBody, storeBody, playerRect } = __require(6)
@@ -59125,7 +60887,7 @@ __export(__exports, { "slide": () => slide, "collidePlayer": () => collidePlayer
 })
 
 // ---- js/sim/sight.js
-__define(23, function (__exports) {
+__define(28, function (__exports) {
 // What a traffic driver sees, mixed into Traffic (traffic.js): the car ahead in its path, the
 // Roadster or a knocked or crossing car in the way, and the oncoming traffic a left turn would cut.
 const { DIRS } = __require(3)
@@ -59243,17 +61005,18 @@ __export(__exports, { "LOOK": () => LOOK, "STOP_DECEL": () => STOP_DECEL, "SIGHT
 })
 
 // ---- js/sim/traffic.js
-__define(24, function (__exports) {
+__define(29, function (__exports) {
 // City traffic: drivers follow the lane graph, keep their distance (intelligent driver model), stop
 // for red lights, slow for corners and for the Roadster, and get knocked loose when it hits them.
 // They signal before a lane change or a turn, honk at a Roadster that holds them up or cuts them up,
-// and move over when it honks at them from behind.
+// and move over when it honks at them from behind. Nobody honks until the Roadster has sounded its own
+// horn at the gridlock: the first horn in the city is the Roadster's.
 // Traffic lives in a bubble round the player: cars far behind are recycled into the streets ahead.
-const { JAM } = __require(13)
-const { temper } = __require(21)
+const { JAM, atJam } = __require(13)
+const { temper } = __require(26)
 const { CAR, clamp } = __require(1)
-const { slide, collidePlayer } = __require(22)
-const { SIGHT, LOOK, STOP_DECEL } = __require(23)
+const { slide, collidePlayer } = __require(27)
+const { SIGHT, LOOK, STOP_DECEL } = __require(28)
 const { rng, NODES, EDGES, LANES, GREEN, YELLOW, STALLS, signal, pointAt, LANE_OFF } = __require(3)
 const TYPES = [
   { name: 'sedan', len: 4.7, wid: 1.85, hgt: 1.45, m: 1600, share: 30 },
@@ -59289,6 +61052,8 @@ class Traffic {
     this.clock = 0
     this.vl = 0
     this.walker = null // { x, z } of someone crossing on foot
+    this.horn = false // the Roadster's horn is sounding
+    this.quiet = true // no driver honks yet
   }
 
   // the lane graph is shared, so whichever traffic was there before is cleared off it too
@@ -59302,6 +61067,7 @@ class Traffic {
   reset (x, z) {
     this.clear()
     this.t = 0
+    this.quiet = true
     for (const n of NODES) n.hold = null // every light on its cycle
     for (const st of STALLS) if (st.taken) this.park(st)
     for (const e of JAM) this.jam(e)
@@ -59518,6 +61284,7 @@ class Traffic {
       else if (!c.parked && (c.edge.move || c.lc)) this.box.push(c)
     const pl = sim.mode === 'ground' ? sim.pos : sim.com
     this.me = sim.mode !== 'ramp' && pl.y < 4 ? pl : null
+    if (this.quiet && this.horn && atJam(pl.x, pl.z)) this.quiet = false
     this.mev = sim.vel
     this.sim = sim
     this.mhx = Math.cos(sim.yaw)
@@ -59677,7 +61444,7 @@ __export(__exports, { "TYPES": () => TYPES, "Traffic": () => Traffic })
 })
 
 // ---- js/audio/shots.js
-__define(25, function (__exports) {
+__define(30, function (__exports) {
 // One-shot sounds, mixed into the SoundEngine (sound.js): each can sit anywhere left to right (pan)
 // and send some of itself into the street's echo (verb).
 const { clamp } = __require(1)
@@ -59700,6 +61467,7 @@ const ONE_SHOTS = {
       node.connect(s).connect(this.verb)
     }
   },
+  // o.filter ([type, Hz, Q]) shapes a buzzy wave, the way a housing muffles what is inside it
   tone (f0, f1, dur, type, vol, delay = 0, o = {}) {
     if (!this.ctx || !this.enabled || vol < 0.002) return
     const t = this.ctx.currentTime + delay,
@@ -59712,7 +61480,13 @@ const ONE_SHOTS = {
     g.gain.exponentialRampToValueAtTime(vol, t + (o.attack ?? 0.012))
     if (o.hold) g.gain.setValueAtTime(vol, t + o.hold)
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur)
-    osc.connect(g)
+    if (o.filter) {
+      const b = this.ctx.createBiquadFilter()
+      b.type = o.filter[0]
+      b.frequency.value = o.filter[1]
+      b.Q.value = o.filter[2] ?? 0.7
+      osc.connect(b).connect(g)
+    } else osc.connect(g)
     this.out(g, o)
     osc.start(t)
     osc.stop(t + dur + 0.05)
@@ -59816,6 +61590,39 @@ const ONE_SHOTS = {
     this.tone(880, 880, 0.14, 'triangle', 0.1, 0, { verb: 0 })
     this.tone(1320, 1320, 0.22, 'triangle', 0.09, 0.09, { verb: 0 })
   },
+  // A door's lock actuator, heard through the door: its little motor whirring up through the gears
+  // for a few hundredths of a second, then the snap of the latch rod hitting its stop, the panel's
+  // dull thunk round it, and a faint tick as the motor's clutch lets go. k: how loud, f: its pitch.
+  actuator (delay, k, f, o) {
+    const whirr = { ...o, attack: 0.005 },
+      snap = { ...o, attack: 0.002 },
+      stop = delay + 0.05
+    this.tone(260 * f, 430 * f, 0.055, 'sawtooth', 0.08 * k, delay, {
+      ...whirr,
+      hold: 0.042,
+      filter: ['bandpass', 1100 * f, 1.2]
+    })
+    this.noise(0.05, 0.045 * k, 'bandpass', 1700 * f, 2500 * f, delay, whirr)
+    this.noise(0.02, 0.2 * k, 'bandpass', 3200 * f, 2000 * f, stop, snap)
+    this.tone(1250 * f, 1180 * f, 0.045, 'triangle', 0.04 * k, stop, snap)
+    this.tone(230 * f, 110 * f, 0.09, 'sine', 0.2 * k, stop, snap)
+    this.noise(0.07, 0.12 * k, 'lowpass', 900, 150, stop, snap)
+    this.noise(0.008, 0.03 * k, 'highpass', 4500, 4000, delay + 0.13, snap)
+  },
+  // the car unlocking as its key walks up: both doors' actuators, the far one a beat behind and
+  // fainter, a light, quick "ka-chack"
+  unlock (pan = 0) {
+    const o = { pan, verb: 0.15 }
+    this.actuator(0, 0.85, 1, o)
+    this.actuator(0.025, 0.55, 1.07, o)
+  },
+  // and locking once the door is down, the driver inside: the same pair, lower and firmer, a
+  // solid "ka-chunk"
+  lock (pan = 0) {
+    const o = { pan, verb: 0.15 }
+    this.actuator(0, 1.05, 0.88, o)
+    this.actuator(0.018, 0.7, 0.93, o)
+  },
   // the e-brake: a ratchet clicking up and the rear calipers biting
   ratchet () {
     for (let i = 0; i < 3; i++)
@@ -59870,11 +61677,11 @@ __export(__exports, { "ONE_SHOTS": () => ONE_SHOTS })
 })
 
 // ---- js/audio/sound.js
-__define(26, function (__exports) {
+__define(31, function (__exports) {
 // Sound, synthesised with Web Audio (nothing to download): the drive units' whine, tyres, wind,
 // thrusters, the fan and the horn; the city round the car (passing traffic with its doppler, honks, a
 // street's hum, birds) and the echo between its buildings. One-shots are in shots.js.
-const { ONE_SHOTS } = __require(25)
+const { ONE_SHOTS } = __require(30)
 const { clamp } = __require(1)
 // a few stock two-tone horns (Hz): traffic picks one per car
 const HORNS = [
@@ -60190,7 +61997,7 @@ class SoundEngine {
     R(n.desert.gain, st.city ? 0 : 0.025, 0.5)
     R(n.verbOut.gain, st.city ? 0.45 : 0.15, 0.5)
     this.traffic(st.cars || [], ps, R)
-    if (st.city) this.ambience(st.dt)
+    if (st.city) this.ambience(st.dt, st.honks)
   }
   // cars: [{ d, pan, doppler, v, big }], nearest first
   traffic (cars, ps, R) {
@@ -60208,10 +62015,10 @@ class SoundEngine {
       R(voice.p.pan, c.pan, 0.08)
     })
   }
-  // now and then a bird, or a horn a few streets away
-  ambience (dt) {
+  // now and then a bird, or (once drivers honk at all: honks) a horn a few streets away
+  ambience (dt, honks) {
     this.birdT -= dt
-    this.farT -= dt
+    if (honks) this.farT -= dt
     if (this.birdT < 0) {
       this.birdT = 2 + Math.random() * 7
       this.bird(Math.random() * 1.6 - 0.8)
@@ -60232,7 +62039,7 @@ __export(__exports, { "HORNS": () => HORNS, "SoundEngine": () => SoundEngine })
 })
 
 // ---- js/sim/autopilot.js
-__define(27, function (__exports) {
+__define(32, function (__exports) {
 // Autopilot: flies the reveal-night sequence through the same controls a player uses.
 //  Stunt 1: from the foot of the wall, climb and hang inverted, reverse back to the start, then a
 //           full-speed run off the lip, roll upright and come straight down on the thrusters.
@@ -60571,7 +62378,7 @@ __export(__exports, { "CAPS": () => CAPS, "Autopilot": () => Autopilot })
 })
 
 // ---- js/sim/cityHop.js
-__define(28, function (__exports) {
+__define(33, function (__exports) {
 // Autopilot's way out of a traffic jam: the route to the gridlock, a clear spot on the road beyond
 // whatever holds the car up, and the hop there: straight up on the lift thrusters until it clears the
 // cars, along the street on the main thrusters, then down on a landing burn onto the open road.
@@ -60744,13 +62551,13 @@ __export(__exports, { "routeToJam": () => routeToJam, "landingSpot": () => landi
 })
 
 // ---- js/sim/cityPilot.js
-__define(29, function (__exports) {
+__define(34, function (__exports) {
 // Autopilot in the city: drives the Roadster round the streets through the normal controls, on
 // the same lane graph as the traffic. It steers by pure pursuit along its lane, keeps its distance
 // to the cars ahead, slows for corners, stops for red lights and gives way when turning left.
 // Started, it heads for the gridlock downtown, sits in it, leans on the horn and then flies over it
 // (cityHop.js); after that it drives on, and hops over any other jam it gets stuck in.
-const { Hop, landingSpot, routeToJam } = __require(28)
+const { Hop, landingSpot, routeToJam } = __require(33)
 const { CAR, clamp, wrapPi, makeControls } = __require(1)
 const { LANES, NODES, GREEN, YELLOW, signal, pointAt, holdLight, releaseLight } = __require(3)
 const CAPS = {
@@ -60776,11 +62583,14 @@ const STUCK = 8 // s stopped in traffic before it takes off
 const HONK = [0.5, 0.75, 0.95, 1.2, 1.4, 2.4] // horn on, off, on, off, on, off (s into the wait)
 const HOP_AIR = 170 // kg of air it wants in the tanks before a hop
 let PLAN = null // the route to the gridlock (the same for every run, so worked out once)
-const CRUISE = 15 // m/s, a little over 50 km/h
-const A = 2.5 // comfortable acceleration and braking, m/s^2
-const B = 3.5
-const LOOK = 70
+const CRUISE = 33 // m/s, about 120 km/h: it is a Roadster
+const A = 8 // a hard launch and firm braking, m/s^2
+const B = 9
+const LAT = 6 // m/s^2 round a corner (traffic takes them at 2.6)
+const HEADWAY = 0.9 // s behind the car ahead (traffic keeps 1.3)
+const LOOK = 110 // m ahead it watches for cars and lights, enough to stop from cruising speed
 const DRIVER = { type: 0 } // how traffic.choose sees the Roadster: an ordinary car
+const corner = e => (e.kind === 1 ? Math.sqrt(LAT * e.r) : Infinity)
 const P = { x: 0, z: 0, hx: 1, hz: 0 }
 
 class CityPilot {
@@ -60804,6 +62614,7 @@ class CityPilot {
     this.horn = false
     this.acc = 0 // the acceleration it asks for, smoothed so the pedals don't flicker
     this.stuckT = 0
+    this.passT = 0 // s until it may change lanes to overtake again
     this.hop = null
     this.plan = PLAN || (PLAN = routeToJam()) // until it has flown over the gridlock
   }
@@ -60838,6 +62649,26 @@ class CityPilot {
     this.edge = best
     this.next = this.pick(best)
     this.go = null
+    return true
+  }
+  // Room to move over into lane t at speed v: a safe gap to its cars (traffic.canMerge), and nothing
+  // at all in it (a wreck, a car still crossing the junction) slower than the Roadster for as far
+  // ahead as it covers in 2.5 s, nor coming up fast from behind.
+  clear (t, v) {
+    if (!this.traffic.canMerge(t, { s: this.s, v, len: 2 * CAR.halfL }, true))
+      return false
+    pointAt(t, clamp(this.s, 0, t.len), P)
+    for (const o of this.traffic.cars) {
+      const dx = o.x - P.x,
+        dz = o.z - P.z,
+        along = dx * P.hx + dz * P.hz
+      if (Math.abs(dz * P.hx - dx * P.hz) > 2.6) continue
+      const ov = o.loose
+        ? o.vx * P.hx + o.vz * P.hz
+        : o.v * (o.hx * P.hx + o.hz * P.hz)
+      if (along > -6 && along < 12 + v * 2.5 && ov < v - 1) return false
+      if (along <= -6 && along > -12 - ov * 1.5 && ov > v + 1) return false
+    }
     return true
   }
   // distance along edge e of the point nearest (x, z)
@@ -60878,11 +62709,11 @@ class CityPilot {
     // or go another way if the chance has passed
     const cur = this.edge
     if (cur.road && cur.twin && this.next && !cur.next.includes(this.next)) {
-      const me = { s: this.s, v, len: 2 * CAR.halfL }
       if (
         this.s > 4 &&
         this.s < cur.len - 25 &&
-        this.traffic.canMerge(cur.twin, me, true)
+        v < 20 &&
+        this.clear(cur.twin, v)
       ) {
         this.edge = cur.twin
         this.s = this.project(this.edge, x, z)
@@ -60896,7 +62727,7 @@ class CityPilot {
       (this.next?.kind === 1 && this.edge.len - this.s < 8)
     let e = this.edge,
       n = this.next,
-      s = this.s + (turning ? 2.5 + v * 0.3 : 5 + v * 0.45)
+      s = this.s + (turning ? 2.5 + v * 0.3 : 5 + v * 0.7)
     while (s > e.len && n) {
       s -= e.len
       e = n
@@ -60935,6 +62766,31 @@ class CityPilot {
         )
       }
     }
+    // overtake: a slower car ahead (not one stopped in a queue), room in the other lane and street
+    // enough left to get by; on its way to the gridlock, only where it can still turn as planned
+    const cur2 = this.edge
+    this.passT -= dt
+    if (
+      this.passT <= 0 &&
+      cur2.road &&
+      cur2.twin &&
+      !cur2.closed &&
+      !this.next?.closed &&
+      gap < 40 &&
+      vl > 2 &&
+      vl < CRUISE * 0.75 &&
+      v < 22 &&
+      this.s > 4 &&
+      this.s < cur2.len - 40 &&
+      (!this.plan || cur2.twin.next.includes(this.next)) &&
+      this.clear(cur2.twin, v)
+    ) {
+      this.edge = cur2.twin
+      this.s = this.project(this.edge, x, z)
+      if (!this.edge.next.includes(this.next))
+        this.next = this.pick(this.edge, true)
+      this.passT = 3
+    }
     const lane = this.edge
     // on its way to the gridlock it waits at the light like anyone else, then on the green drives on
     // into the jammed street and pulls up behind the last car in the queue (lane.closed: in it)
@@ -60944,7 +62800,7 @@ class CityPilot {
         const node = NODES[lane.to],
           st = signal(node, lane.dir, this.traffic.t)
         let stop = st !== GREEN
-        if (st === YELLOW && v * v > 2 * 4 * Math.max(0, toLine - 1)) {
+        if (st === YELLOW && v * v > 2 * 8 * Math.max(0, toLine - 1)) {
           this.go = lane // too close to stop: carry on through
           stop = false
         }
@@ -60957,19 +62813,19 @@ class CityPilot {
         }
       }
     }
-    // cruise, slowing early for the corner ahead
-    let v0 = Math.min(CRUISE, lane.vmax)
-    if (this.next && this.next.vmax < v0)
+    // cruise, braking in time for the corner ahead
+    let v0 = Math.min(CRUISE, corner(lane))
+    if (this.next && corner(this.next) < v0)
       v0 = Math.min(
         v0,
         Math.sqrt(
-          this.next.vmax ** 2 + 2 * 2 * Math.max(0, lane.len - this.s - 1)
+          corner(this.next) ** 2 + 2 * 5 * Math.max(0, lane.len - this.s - 1)
         )
       )
     let acc = A * (1 - (v / Math.max(v0, 0.1)) ** 4)
     if (gap < LOOK) {
       const ss =
-        2.5 + Math.max(0, v * 1.3 + (v * (v - vl)) / (2 * Math.sqrt(A * B)))
+        2.5 + Math.max(0, v * HEADWAY + (v * (v - vl)) / (2 * Math.sqrt(A * B)))
       acc -= A * (ss / Math.max(gap, 0.2)) ** 2
     }
     // Pedals that follow the asked-for acceleration smoothly: a touch of throttle holds the speed,
@@ -60980,9 +62836,9 @@ class CityPilot {
       (acc - this.acc) * (1 - Math.exp(-dt * (acc < this.acc ? 10 : 4)))
     if (this.acc > -0.25) c.throttle = clamp((this.acc + 0.25) / 15, 0.001, 1)
     else c.brake = clamp((-this.acc - 0.25) / 12, 0.002, 1)
-    if (v < 0.3 && gap < 8) {
+    if ((v < 2 && gap < 2.5 + v) || (v < 0.3 && gap < 8)) {
       c.throttle = 0
-      c.brake = 1 // hold at a standstill
+      c.brake = 1 // pull up crisply, and hold at a standstill
     }
     // stuck: in the gridlock at once, elsewhere after a long wait in traffic (not at a red light)
     const inJam = lane.closed
@@ -61012,7 +62868,8 @@ class CityPilot {
   // On its way to the gridlock the lights go its way, a green wave: every one on the route turns
   // green for it as soon as Autopilot starts (after the cross street's yellow), so each is green
   // by the time it gets there, and goes back to its cycle once it is through. In the jam, the light
-  // at the far end of the street turns red and holds the gridlock up.
+  // at the far end of the street turns red and holds the gridlock up. Over it, the wave carries on
+  // wherever it drives: the light at the end of the street it is on turns green for it.
   lights (lane) {
     const t = this.traffic.t
     // the junctions still ahead on the way, with the way it goes through each
@@ -61029,6 +62886,9 @@ class CityPilot {
         want.set(NODES[L.to], L.dir & 1)
         L = c.next[0]
       }
+    } else if (!this.plan && !lane.closed) {
+      if (!lane.road) want.set(NODES[lane.node], lane.dir & 1)
+      else want.set(NODES[lane.to], lane.dir & 1)
     }
     for (const node of this.held.keys())
       if (!want.has(node)) {
@@ -61074,7 +62934,7 @@ __export(__exports, { "CityPilot": () => CityPilot })
 })
 
 // ---- js/render/lineup.js
-__define(30, function (__exports) {
+__define(35, function (__exports) {
 // The parked Tesla lineup for stunt 2: extruded low-poly profiles, parked broadside to the jump.
 const THREE = __require(0)
 const { site, MAT } = __require(16)
@@ -61266,7 +63126,7 @@ __export(__exports, { "buildLineup": () => buildLineup })
 })
 
 // ---- js/audio/mix.js
-__define(31, function (__exports) {
+__define(36, function (__exports) {
 // What the sound engine hears each frame, from where the camera is: the Roadster's drive state, how
 // loud and how far left or right things are, and the moving cars nearest the camera, with doppler.
 const THREE = __require(0)
@@ -61348,6 +63208,7 @@ function mixSound (sound, app, traffic, dt, clock) {
     side: sim.thrSide,
     suction: sim.suction,
     city,
+    honks: !traffic.quiet, // (not until the Roadster has honked at the gridlock)
     cars: city && sound.enabled ? nearCars(traffic, sim) : NONE,
     dt,
     t: clock
@@ -61357,7 +63218,7 @@ __export(__exports, { "hearing": () => hearing, "panOf": () => panOf, "mixSound"
 })
 
 // ---- js/render/effects.js
-__define(32, function (__exports) {
+__define(37, function (__exports) {
 // Particles (jet cores, sparks, leaves), supersonic shock-diamond jets, and what the car throws up:
 // thruster vapor, tyre smoke and dust (smoke.js), and the debris of whatever it knocks over.
 const THREE = __require(0)
@@ -61764,12 +63625,12 @@ __export(__exports, { "ALL_PARTICLES": () => ALL_PARTICLES, "attachDiamonds": ()
 })
 
 // ---- js/events.js
-__define(33, function (__exports) {
+__define(38, function (__exports) {
 // What the sim reports (scores, landings, knocks, honks, crashes), turned into popups, sounds,
 // camera shake and particles.
-const { HORNS } = __require(26)
-const { hearing, panOf } = __require(31)
-const { burst, knockFx, sparkBurst } = __require(32)
+const { HORNS } = __require(31)
+const { hearing, panOf } = __require(36)
+const { burst, knockFx, sparkBurst } = __require(37)
 function handleEvents (g) {
   const { sim, app, hud, sound, rig, cityView, ap, clock } = g
   for (const e of sim.events) {
@@ -61850,7 +63711,7 @@ __export(__exports, { "handleEvents": () => handleEvents })
 })
 
 // ---- js/render/citySky.js
-__define(34, function (__exports) {
+__define(39, function (__exports) {
 // The city's evening: a sunset sky dome with streaky cloud, hazy hills round the horizon, a matching
 // environment map for reflections, and the switch between the night test site and the city's light.
 const THREE = __require(0)
@@ -62005,7 +63866,7 @@ __export(__exports, { "Sky": () => Sky })
 })
 
 // ---- js/render/citySea.js
-__define(35, function (__exports) {
+__define(40, function (__exports) {
 // The sea round the city: past the promenade a strip of beach runs down to the water, which goes out to
 // the hills on the horizon. The water is a shader: a few rolling swells and ripples for its surface,
 // the evening sky in it at a glancing angle, a glitter path under the low sun, clear turquoise over
@@ -62181,275 +64042,15 @@ function buildSea (group) {
 __export(__exports, { "buildSea": () => buildSea })
 })
 
-// ---- js/render/geo.js
-__define(36, function (__exports) {
-// Geometry helpers for the city: merging thousands of small pieces into a handful of buffers (so a
-// whole district draws in a few calls), vertex tints, and instanced flat marks for road paint.
-const THREE = __require(0)
-const ATTRS = [
-  ['position', 3],
-  ['normal', 3],
-  ['uv', 2],
-  ['color', 3]
-]
-// Concatenate geometries (indexed ones are expanded). Pieces without colours come out white.
-function merge (geos) {
-  const parts = geos.map(g => (g.index ? g.toNonIndexed() : g))
-  let n = 0
-  for (const g of parts) n += g.attributes.position.count
-  const out = new THREE.BufferGeometry()
-  for (const [name, size] of ATTRS) {
-    if (!parts.some(g => g.attributes[name])) continue
-    const arr = new Float32Array(n * size)
-    let o = 0
-    for (const g of parts) {
-      const a = g.attributes[name],
-        c = g.attributes.position.count * size
-      if (a) arr.set(a.array.subarray(0, c), o)
-      else if (name === 'color') arr.fill(1, o, o + c)
-      o += c
-    }
-    out.setAttribute(name, new THREE.BufferAttribute(arr, size))
-  }
-  out.computeBoundingSphere()
-  return out
-}
-
-// Give every vertex of g one colour.
-function tint (g, color) {
-  const c = new THREE.Color(color)
-  const n = g.attributes.position.count,
-    arr = new Float32Array(n * 3)
-  for (let i = 0; i < n; i++) arr.set([c.r, c.g, c.b], i * 3)
-  g.setAttribute('color', new THREE.BufferAttribute(arr, 3))
-  return g
-}
-
-// A box from (x0, y0, z0) to (x1, y1, z1) as a fresh geometry.
-function box (x0, y0, z0, x1, y1, z1) {
-  return new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0).translate(
-    (x0 + x1) / 2,
-    (y0 + y1) / 2,
-    (z0 + z1) / 2
-  )
-}
-
-// Flat marks on the ground (lane paint, crosswalk stripes, parking lines): one instance per
-// { x, z, len, wid, yaw }, `len` along the yaw direction.
-const _m = new THREE.Matrix4(),
-  _q = new THREE.Quaternion(),
-  _p = new THREE.Vector3(),
-  _s = new THREE.Vector3(),
-  _y = new THREE.Vector3(0, 1, 0)
-function marks (list, mat, y) {
-  const geo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2)
-  const m = new THREE.InstancedMesh(geo, mat, list.length)
-  list.forEach((k, i) => {
-    _q.setFromAxisAngle(_y, k.yaw || 0)
-    m.setMatrixAt(
-      i,
-      _m.compose(_p.set(k.x, y, k.z), _q, _s.set(k.len, 1, k.wid))
-    )
-  })
-  m.receiveShadow = true
-  return m
-}
-__export(__exports, { "merge": () => merge, "tint": () => tint, "box": () => box, "marks": () => marks })
-})
-
-// ---- js/render/loft.js
-__define(37, function (__exports) {
-// Lofted bodies: a half section swept through stations along x and mirrored to both sides, with
-// normals smoothed across gentle bends and kept sharp at creases, so a body reads as smooth panels
-// with crisp character lines. Used for the Roadster and the traffic cars.
-const THREE = __require(0)
-// Sweep a half section (z >= 0, from the bottom centre line round to the top one) through stations
-// ({ x, p: [[z, y], ...] }, all with the same number of points) along x, mirrored to both sides.
-// keyFor(j, xA, xB, side) picks a bucket (usually a material) for segment j between two stations on
-// one side (1 or -1), or null to leave it out. Without capKey the ends stay open. Returns
-// Map(key -> BufferGeometry), normals creased at `crease` degrees.
-function loftGeos (stations, keyFor, capKey, crease = 32) {
-  const buckets = new Map()
-  const push = (key, ...v) => {
-    if (!buckets.has(key)) buckets.set(key, [])
-    buckets.get(key).push(...v)
-  }
-  for (let k = 0; k < stations.length - 1; k++) {
-    const A = stations[k],
-      B = stations[k + 1]
-    for (let j = 0; j < A.p.length - 1; j++)
-      for (const sg of [1, -1]) {
-        const key = keyFor(j, A.x, B.x, sg)
-        if (key === null) continue
-        const a = [A.x, A.p[j][1], sg * A.p[j][0]],
-          b = [A.x, A.p[j + 1][1], sg * A.p[j + 1][0]]
-        const c = [B.x, B.p[j][1], sg * B.p[j][0]],
-          d = [B.x, B.p[j + 1][1], sg * B.p[j + 1][0]]
-        if (sg > 0) push(key, ...a, ...c, ...b, ...c, ...d, ...b)
-        else push(key, ...a, ...b, ...c, ...c, ...b, ...d)
-      }
-  }
-  const cap = (S, front) => {
-    const ringPts = [
-      ...S.p.map(([z, y]) => [z, y]),
-      ...S.p
-        .slice(1, -1)
-        .reverse()
-        .map(([z, y]) => [-z, y])
-    ]
-    const cy = S.p.reduce((s, p) => s + p[1], 0) / S.p.length
-    for (let i = 0; i < ringPts.length; i++) {
-      const p = ringPts[i],
-        q = ringPts[(i + 1) % ringPts.length]
-      const O = [S.x, cy, 0],
-        P1 = [S.x, p[1], p[0]],
-        P2 = [S.x, q[1], q[0]]
-      if (front) push(capKey, ...O, ...P2, ...P1)
-      else push(capKey, ...O, ...P1, ...P2)
-    }
-  }
-  if (capKey !== undefined) {
-    cap(stations[0], false)
-    cap(stations[stations.length - 1], true)
-  }
-  const out = new Map()
-  for (const [key, arr] of buckets) {
-    const g = new THREE.BufferGeometry()
-    g.setAttribute('position', new THREE.Float32BufferAttribute(arr, 3))
-    creaseNormals(g, crease)
-    out.set(key, g)
-  }
-  return out
-}
-
-// The same, as a group of meshes: keyFor returns the material for each segment.
-function loft (stations, matFor, capMat, crease) {
-  const group = new THREE.Group()
-  for (const [mat, g] of loftGeos(stations, matFor, capMat, crease)) {
-    const m = new THREE.Mesh(g, mat)
-    m.castShadow = true
-    m.receiveShadow = true
-    group.add(m)
-  }
-  return group
-}
-
-// Vertex normals for a non-indexed geometry: each corner averages the faces that meet it whose
-// normals lie within `angle` degrees of its own face's, so bends smooth over and creases stay sharp.
-function creaseNormals (geo, angle = 32) {
-  const pos = geo.attributes.position.array,
-    nTri = pos.length / 9
-  const fn = new Float32Array(nTri * 3)
-  for (let t = 0; t < nTri; t++) {
-    const o = t * 9
-    const ux = pos[o + 3] - pos[o],
-      uy = pos[o + 4] - pos[o + 1],
-      uz = pos[o + 5] - pos[o + 2]
-    const vx = pos[o + 6] - pos[o],
-      vy = pos[o + 7] - pos[o + 1],
-      vz = pos[o + 8] - pos[o + 2]
-    let nx = uy * vz - uz * vy,
-      ny = uz * vx - ux * vz,
-      nz = ux * vy - uy * vx
-    const l = Math.hypot(nx, ny, nz) || 1
-    fn[t * 3] = nx / l
-    fn[t * 3 + 1] = ny / l
-    fn[t * 3 + 2] = nz / l
-  }
-  const at = new Map()
-  for (let v = 0; v < nTri * 3; v++) {
-    const k = `${Math.round(pos[v * 3] * 1e4)},${Math.round(
-      pos[v * 3 + 1] * 1e4
-    )},${Math.round(pos[v * 3 + 2] * 1e4)}`
-    const list = at.get(k)
-    if (list) list.push(v)
-    else at.set(k, [v])
-  }
-  const cos = Math.cos((angle * Math.PI) / 180),
-    nrm = new Float32Array(pos.length)
-  for (const list of at.values())
-    for (const v of list) {
-      const t = (v / 3) | 0
-      let sx = 0,
-        sy = 0,
-        sz = 0
-      for (const w of list) {
-        const u = (w / 3) | 0
-        const d =
-          fn[t * 3] * fn[u * 3] +
-          fn[t * 3 + 1] * fn[u * 3 + 1] +
-          fn[t * 3 + 2] * fn[u * 3 + 2]
-        if (d < cos) continue
-        sx += fn[u * 3]
-        sy += fn[u * 3 + 1]
-        sz += fn[u * 3 + 2]
-      }
-      const l = Math.hypot(sx, sy, sz) || 1
-      nrm[v * 3] = sx / l
-      nrm[v * 3 + 1] = sy / l
-      nrm[v * 3 + 2] = sz / l
-    }
-  geo.setAttribute('normal', new THREE.BufferAttribute(nrm, 3))
-  return geo
-}
-
-// The same stations with more inserted at xs (each a straight blend of its neighbours, so the shape
-// is unchanged), for panel cuts that fall between stations.
-function withStations (stations, xs) {
-  const out = stations.slice()
-  for (const x of xs) {
-    const p = stations[0].p.map((_, k) => at(stations, x, k))
-    out.push({ x, p })
-  }
-  return out.sort((a, b) => a.x - b.x)
-}
-
-// [z, y] of profile point k at x, linear between the stations either side
-function at (stations, x, k) {
-  let i = 0
-  while (i < stations.length - 2 && stations[i + 1].x < x) i++
-  const A = stations[i],
-    B = stations[i + 1]
-  const t = (x - A.x) / (B.x - A.x)
-  return [0, 1].map(n => A.p[k][n] + (B.p[k][n] - A.p[k][n]) * t)
-}
-
-// A thin dark line across the surface at x, along section points k0..k1 on both sides, standing just
-// proud of the panels so it never z-fights them.
-function seam (stations, x, k0, k1, mat, w = 0.008, lift = 0.0025) {
-  const pos = []
-  for (let k = k0; k < k1; k++) {
-    const P = at(stations, x, k),
-      Q = at(stations, x, k + 1)
-    const len = Math.hypot(Q[0] - P[0], Q[1] - P[1]) || 1
-    const nz = ((Q[1] - P[1]) / len) * lift,
-      ny = (-(Q[0] - P[0]) / len) * lift
-    for (const sg of [1, -1]) {
-      const v = (x2, [z, y]) => [x2, y + ny, sg * (z + nz)]
-      const a = v(x - w / 2, P),
-        b = v(x + w / 2, P),
-        c = v(x - w / 2, Q),
-        d = v(x + w / 2, Q)
-      pos.push(...a, ...b, ...c, ...c, ...b, ...d)
-    }
-  }
-  const g = new THREE.BufferGeometry()
-  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3))
-  g.computeVertexNormals()
-  return new THREE.Mesh(g, mat)
-}
-__export(__exports, { "loftGeos": () => loftGeos, "loft": () => loft, "creaseNormals": () => creaseNormals, "withStations": () => withStations, "at": () => at, "seam": () => seam })
-})
-
 // ---- js/render/carShapes.js
-__define(38, function (__exports) {
+__define(41, function (__exports) {
 // The traffic's car bodies, lofted like the Roadster (loft.js): a rounded body that tucks in at the
 // bumpers, a cabin that narrows above the beltline, glass for the windshield, side and rear windows,
 // a painted roof, wheel arches cut into the body over dark wheel wells, and the trim (bumpers, grille,
 // mirrors, plates, handles) baked in vertex colours. One shape per traffic type.
 const THREE = __require(0)
-const { loftGeos } = __require(37)
-const { merge, box, tint } = __require(36)
+const { loftGeos } = __require(19)
+const { merge, box, tint } = __require(18)
 // Per type: floor and sill heights, the beltline, hood (at the cowl) and nose heights, the deck and
 // tail heights, the roof, and along x the windshield's foot (ws), the roof's front (rf) and back (rr)
 // and the rear window's foot (rw); the wheel radius and axles; the head and tail lights' height;
@@ -62647,16 +64248,16 @@ __export(__exports, { "SPECS": () => SPECS, "carShape": () => carShape, "archMat
 })
 
 // ---- js/render/traffic.js
-__define(39, function (__exports) {
+__define(42, function (__exports) {
 // Traffic cars: seven body types lofted with rounded bodies, glass cabins and open wheel arches
 // (carShapes.js), instanced per type, with paint per car, spinning wheels, headlights, tail lights
 // that brighten under braking, and amber indicators that blink for lane changes and turns (and both
 // at once, hazards, for a car knocked out of its lane).
 const THREE = __require(0)
 const { hdr } = __require(16)
-const { merge, tint } = __require(36)
-const { TYPES } = __require(24)
-const { carShape, archMaterial } = __require(38)
+const { merge, tint } = __require(18)
+const { TYPES } = __require(29)
+const { carShape, archMaterial } = __require(41)
 // paint by type: realistic street colours, yellow cabs, white buses and vans
 const PALETTE = [
   0xe9e9e6, 0x15171b, 0xa9adb2, 0x5c6168, 0x1f2f55, 0x8f1219, 0xbcae90,
@@ -62841,13 +64442,13 @@ __export(__exports, { "TrafficView": () => TrafficView })
 })
 
 // ---- js/render/cityProps.js
-__define(40, function (__exports) {
+__define(43, function (__exports) {
 // Street furniture: street lights, palms on the boulevards, park trees and a signal mast on every
 // corner whose red, yellow and green lamps follow the intersection's signal plan. All instanced, and
 // all of it goes over when the Roadster hits it hard enough (the sim decides: breakables.js).
 const THREE = __require(0)
 const { hdr } = __require(16)
-const { merge, box, tint } = __require(36)
+const { merge, box, tint } = __require(18)
 const { G, clamp } = __require(1)
 const { rng, NODES, LAMPS, PALMS, TREES, POLES, DIRS, RED, YELLOW, GREEN, ROAD_HW, LANE_OFF, signal } = __require(3)
 const R = rng(99)
@@ -63247,11 +64848,11 @@ __export(__exports, { "Signals": () => Signals, "buildProps": () => buildProps }
 })
 
 // ---- js/render/cityGround.js
-__define(41, function (__exports) {
+__define(44, function (__exports) {
 // The city's ground: asphalt, kerbed blocks with sidewalks and rounded corners, lane
 // paint, stop lines and zebra crossings, parks, parking lots and the promenade round the ring road.
 const THREE = __require(0)
-const { merge, marks } = __require(36)
+const { merge, marks } = __require(18)
 const { canvasTex, speckle } = __require(16)
 const { N, DIRS, WALK, STOP, HALF, ROADS, NODES, STALLS, CURB_H, CURB_R, BLOCKS, LANE_W, ROAD_HW, PROMENADE } = __require(3)
 // ---------- textures (UVs are in metres, so each texture's repeat is 1 / its tile size) ----------
@@ -63498,7 +65099,7 @@ __export(__exports, { "buildGround": () => buildGround })
 })
 
 // ---- js/render/facade.js
-__define(42, function (__exports) {
+__define(45, function (__exports) {
 // Facades where every window is its own. The facade textures repeat every 8 bays and 8 storeys, so
 // whatever varies window to window is picked in the shader from the window's place on the building
 // (its cell in the texture's UVs, which run on unbroken round a building and up it): whether its
@@ -63571,7 +65172,7 @@ __export(__exports, { "facadeMaterial": () => facadeMaterial })
 })
 
 // ---- js/render/cityBuildings.js
-__define(43, function (__exports) {
+__define(46, function (__exports) {
 // City buildings: procedural facades (glass curtain wall, office, brick, stucco) with windows lit for
 // the evening, storefronts under canopies along the street, setbacks, cornices, roof lips, rooftop
 // plant and antenna beacons. Each style is one merged mesh, so seven hundred buildings draw in a few
@@ -63579,7 +65180,7 @@ __define(43, function (__exports) {
 // glass pane catches the sky at its own slight angle.
 const THREE = __require(0)
 const { LIP, LIP_H } = __require(4)
-const { facadeMaterial } = __require(42)
+const { facadeMaterial } = __require(45)
 const { BUILDINGS, rng } = __require(3)
 const { canvasTex, speckle, hdr } = __require(16)
 const COL = 3 // m per window bay
@@ -64029,19 +65630,19 @@ __export(__exports, { "BEACON": () => BEACON, "buildBuildings": () => buildBuild
 })
 
 // ---- js/render/city.js
-__define(44, function (__exports) {
+__define(47, function (__exports) {
 // The city view: builds the city's meshes the first time it is visited (so the test site loads as
 // fast as ever), shows it in place of the test site, and keeps the traffic, signals, sky, sea and
 // antenna beacons moving.
 const THREE = __require(0)
-const { Sky } = __require(34)
-const { buildSea } = __require(35)
+const { Sky } = __require(39)
+const { buildSea } = __require(40)
 const { scene, site } = __require(16)
 const { raycast } = __require(3)
-const { TrafficView } = __require(39)
-const { buildProps } = __require(40)
-const { buildGround } = __require(41)
-const { buildBuildings, BEACON } = __require(43)
+const { TrafficView } = __require(42)
+const { buildProps } = __require(43)
+const { buildGround } = __require(44)
+const { buildBuildings, BEACON } = __require(46)
 class CityView {
   constructor () {
     this.group = null
@@ -64101,7 +65702,7 @@ __export(__exports, { "CityView": () => CityView, "clipCamera": () => clipCamera
 })
 
 // ---- vendor/three/addons/controls/OrbitControls.js
-__define(45, function (__exports) {
+__define(48, function (__exports) {
 const { Controls, MOUSE, Quaternion, Spherical, TOUCH, Vector2, Vector3, Plane, Ray, MathUtils } = __require(0)
 
 // OrbitControls performs orbiting, dollying (zooming), and panning.
@@ -65616,12 +67217,12 @@ __export(__exports, { "OrbitControls": () => OrbitControls })
 })
 
 // ---- js/render/camera.js
-__define(46, function (__exports) {
+__define(49, function (__exports) {
 // Cameras: the autopilot's director shots, a GTA-style follow camera, chase, side and free orbit.
 const THREE = __require(0)
 const { clamp, wrapPi } = __require(1)
 const { TRACK, LINEUP_FIRST, LINEUP_LAST } = __require(7)
-const { OrbitControls } = __require(45)
+const { OrbitControls } = __require(48)
 const CAM_MODES = ['director', 'follow', 'chase', 'side', 'free']
 const CAM_NAMES = {
   director: 'Director',
@@ -66038,7 +67639,7 @@ __export(__exports, { "CAM_MODES": () => CAM_MODES, "CAM_NAMES": () => CAM_NAMES
 })
 
 // ---- js/render/skids.js
-__define(47, function (__exports) {
+__define(50, function (__exports) {
 // Skid marks: one continuous rubber ribbon per sliding tyre. The ribbon is as wide as the tyre's
 // footprint across its path (full tread width in a straight lock-up, the short contact patch when it
 // slides sideways), darkens with how hard the tyre slides and fades in and out at each end.
@@ -66191,7 +67792,7 @@ __export(__exports, { "clearSkids": () => clearSkids, "updateSkids": () => updat
 })
 
 // ---- js/render/wall.js
-__define(48, function (__exports) {
+__define(51, function (__exports) {
 // The curved wall (slab, LED edges that turn white behind the car, centre line) and its steel truss.
 const THREE = __require(0)
 const { site, MAT } = __require(16)
@@ -66443,918 +68044,6 @@ function buildTruss () {
     }
 }
 __export(__exports, { "LED_MAT": () => LED_MAT, "buildWall": () => buildWall, "buildTruss": () => buildTruss })
-})
-
-// ---- js/render/wheels.js
-__define(49, function (__exports) {
-// Wheels and wheel wells: arch openings cut into the body shell with dark well liners, tyres with
-// rounded sidewalls round the reveal car's wheels (six black twin spokes over white aero inserts),
-// Ackermann steering and free-spinning wheels in the air.
-const THREE = __require(0)
-const { MAT } = __require(16)
-const { CAR } = __require(1)
-const ARCH_R = 0.4 // arch opening radius around each axle (tyre radius 0.36)
-const WELL_IN = 0.5 // inner wall of the wheel well, from the centre line
-const HALF_TRACK = 0.87 // wheel centre from the centre line
-const BODY_SIDE = 0.995 // outer skin of the body at the wheels
-
-// A copy of a body material that discards the shell inside each wheel arch, so the wheels sit in
-// open wells instead of cutting through the panels when they steer.
-function withWheelArches (mat) {
-  const m = mat.clone()
-  m.onBeforeCompile = shader => {
-    shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vBodyPos;')
-      .replace(
-        '#include <begin_vertex>',
-        '#include <begin_vertex>\nvBodyPos = position;'
-      )
-    shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vBodyPos;')
-      .replace(
-        'void main() {',
-        `void main() {
-  if (abs(vBodyPos.z) > ${WELL_IN.toFixed(3)}) {
-    vec2 arch = vec2(abs(vBodyPos.x) - ${CAR.halfWB.toFixed(
-      3
-    )}, vBodyPos.y - ${CAR.wheelR.toFixed(3)});
-    if (dot(arch, arch) < ${(ARCH_R * ARCH_R).toFixed(4)}) discard;
-  }`
-      )
-  }
-  m.customProgramCacheKey = () => 'wheel-arches'
-  return m
-}
-
-// Tyre cross-section (radius, axial offset), revolved: bead, rounded shoulder, flat tread. Low
-// profile round a big rim.
-const TYRE_PROFILE = [
-  [0.285, -0.13],
-  [0.305, -0.148],
-  [0.33, -0.151],
-  [0.35, -0.142],
-  [0.358, -0.125],
-  [0.36, -0.1],
-  [0.36, 0.1],
-  [0.358, 0.125],
-  [0.35, 0.142],
-  [0.33, 0.151],
-  [0.305, 0.148],
-  [0.285, 0.13]
-].map(([r, y]) => new THREE.Vector2(r, y))
-const RIM_R = 0.285
-
-// the wheel face: white aero inserts between six black twin spokes, a dark gap down each pair, a
-// black lip and centre cap (drawn once, mapped onto each disc)
-function faceTexture () {
-  const S = 512,
-    c = S / 2
-  const cv = document.createElement('canvas')
-  cv.width = cv.height = S
-  const g = cv.getContext('2d')
-  g.fillStyle = '#121316'
-  g.fillRect(0, 0, S, S)
-  const gr = g.createRadialGradient(c, c, 40, c, c, c * 0.95)
-  gr.addColorStop(0, '#c9ccd0')
-  gr.addColorStop(0.6, '#eceef0')
-  gr.addColorStop(1, '#d9dce0')
-  g.fillStyle = gr
-  g.beginPath()
-  g.arc(c, c, c * 0.93, 0, Math.PI * 2)
-  g.fill()
-  const at = (a, r) => [c + Math.cos(a) * r, c + Math.sin(a) * r]
-  const wedge = (a0, a1, b0, b1, r0, r1, fill) => {
-    g.fillStyle = fill
-    g.beginPath()
-    g.moveTo(...at(a0, r0))
-    g.lineTo(...at(b0, r1))
-    g.lineTo(...at(b1, r1))
-    g.lineTo(...at(a1, r0))
-    g.closePath()
-    g.fill()
-  }
-  for (let i = 0; i < 6; i++) {
-    const a = (i * Math.PI) / 3
-    // the pair: one black blade narrow at the hub, fanning out to the rim, with a slot down its middle
-    wedge(a - 0.09, a + 0.09, a - 0.2, a + 0.2, c * 0.2, c * 0.95, '#141518')
-    wedge(a - 0.02, a + 0.02, a - 0.08, a + 0.08, c * 0.34, c * 0.9, '#050506')
-    // a machined edge catching the light on one side of each blade
-    wedge(a + 0.075, a + 0.09, a + 0.18, a + 0.2, c * 0.22, c * 0.93, '#4a4e55')
-  }
-  g.fillStyle = '#0d0e10'
-  g.beginPath()
-  g.arc(c, c, c * 0.2, 0, Math.PI * 2)
-  g.fill()
-  g.strokeStyle = '#2b2e33'
-  g.lineWidth = 6
-  g.stroke()
-  g.fillStyle = '#9a9ea5' // the T on the centre cap
-  g.fillRect(c - 22, c - 20, 44, 8)
-  g.fillRect(c - 4, c - 14, 8, 36)
-  const t = new THREE.CanvasTexture(cv)
-  t.colorSpace = THREE.SRGBColorSpace
-  t.anisotropy = 8
-  return t
-}
-
-const liner = new THREE.MeshStandardMaterial({
-  color: 0x0a0b0d,
-  roughness: 0.95,
-  side: THREE.DoubleSide
-})
-// the dark tub behind each arch: a curved roof that meets the arch cut, plus the inner wall
-function wheelWell (x, sz) {
-  const g = new THREE.Group()
-  const depth = BODY_SIDE - WELL_IN
-  // the floor sits 0.24 m below the axle: the well opens downward from there
-  const floorAng = Math.acos((CAR.wheelR - 0.12) / ARCH_R)
-  const roof = new THREE.Mesh(
-    new THREE.CylinderGeometry(
-      ARCH_R,
-      ARCH_R,
-      depth,
-      32,
-      1,
-      true,
-      floorAng,
-      Math.PI * 2 - 2 * floorAng
-    ).rotateX(Math.PI / 2),
-    liner
-  )
-  roof.position.z = sz * (WELL_IN + depth / 2)
-  const wallAng = Math.asin((CAR.wheelR - 0.12) / ARCH_R)
-  const wall = new THREE.Mesh(
-    new THREE.CircleGeometry(ARCH_R, 32, -wallAng, Math.PI + 2 * wallAng),
-    liner
-  )
-  wall.position.z = sz * WELL_IN
-  g.add(roof, wall)
-  g.position.set(x, CAR.wheelR, 0)
-  return g
-}
-
-function buildWheels (car, body) {
-  const tyreGeo = new THREE.LatheGeometry(TYRE_PROFILE, 36).rotateX(Math.PI / 2)
-  const barrelGeo = new THREE.CylinderGeometry(
-    RIM_R + 0.002,
-    RIM_R + 0.002,
-    0.25,
-    32,
-    1,
-    true
-  ).rotateX(Math.PI / 2)
-  const faceGeo = new THREE.CylinderGeometry(
-    RIM_R - 0.004,
-    RIM_R - 0.004,
-    0.012,
-    32
-  ).rotateX(Math.PI / 2)
-  const lipGeo = new THREE.RingGeometry(RIM_R - 0.014, RIM_R, 32)
-  const faceMat = new THREE.MeshStandardMaterial({
-    map: faceTexture(),
-    roughness: 0.32,
-    metalness: 0.25
-  })
-  const axles = {
-    front: { rate: 0, angle: 0 },
-    rear: { rate: 0, angle: 0 }
-  }
-  const wheels = []
-  for (const sx of [1, -1]) {
-    for (const sz of [-1, 1]) {
-      body.add(wheelWell(sx * CAR.halfWB, sz))
-      const pivot = new THREE.Group()
-      pivot.position.set(sx * CAR.halfWB, CAR.wheelR, sz * HALF_TRACK)
-      const spin = new THREE.Group()
-      const tyre = new THREE.Mesh(tyreGeo, MAT.tire)
-      tyre.castShadow = true
-      spin.add(tyre, new THREE.Mesh(barrelGeo, MAT.darkMetal))
-      // the wheel face recessed ~3 cm inside the sidewall on both sides, with a dark lip
-      for (const side of [-1, 1]) {
-        const face = new THREE.Mesh(faceGeo, faceMat)
-        face.position.z = side * 0.112
-        spin.add(face)
-        const ring = new THREE.Mesh(lipGeo, MAT.rim)
-        ring.position.z = side * 0.1185
-        if (side < 0) ring.rotation.y = Math.PI
-        spin.add(ring)
-      }
-      pivot.add(spin)
-      car.add(pivot)
-      wheels.push({ pivot, spin, front: sx > 0, side: sz })
-    }
-  }
-  return { wheels, axles }
-}
-
-// Roll with the ground when the tyres touch it (rears stop dead on the e-brake), keep spinning and
-// slowly run down in the air; steer the fronts with Ackermann geometry.
-function updateWheels (RS, sim, dt) {
-  const grounded = sim.mode === 'ground' || sim.mode === 'ramp'
-  const roll = (sim.mode === 'ramp' ? sim.v : sim.speed) / CAR.wheelR
-  for (const [name, axle] of Object.entries(RS.axles)) {
-    if (grounded) axle.rate = name === 'rear' && sim.ebrakeOn ? 0 : roll
-    else axle.rate *= Math.exp(-0.35 * dt)
-    axle.angle += axle.rate * dt
-  }
-  const d = sim.steerAng
-  const R = Math.abs(d) > 1e-4 ? CAR.wheelbase / Math.tan(d) : Infinity
-  for (const w of RS.wheels) {
-    const axle = w.front ? RS.axles.front : RS.axles.rear
-    w.spin.rotation.z = -axle.angle
-    if (w.front) {
-      // inner wheel turns tighter than the outer one (turn centre on the inside of the bend)
-      w.pivot.rotation.y =
-        R === Infinity
-          ? 0
-          : Math.atan(CAR.wheelbase / (R + w.side * HALF_TRACK))
-    }
-  }
-}
-__export(__exports, { "ARCH_R": () => ARCH_R, "withWheelArches": () => withWheelArches, "buildWheels": () => buildWheels, "updateWheels": () => updateWheels })
-})
-
-// ---- js/render/roadsterRear.js
-__define(50, function (__exports) {
-// The Roadster's tail, as in the rear shot from the reveal: a full-width red light bar in a smoked
-// black band under the ducktail lip, a satin panel with the plate and a camera, and the black lower
-// fascia: a louvred housing for the 4 main nozzles over a diffuser of 4 fan bays split by strakes,
-// with red reflectors at its corners. Plus the active rear wing: it rises out of the deck on swan-neck
-// pylons at speed, folds its endplates down, and tips up as an air brake under hard braking.
-const THREE = __require(0)
-const { MAT, hdr } = __require(16)
-const { TAU, clamp } = __require(1)
-const X = -2.22 // the tail's rear face
-
-const box = (w, h, d, mat, x, y, z) => {
-  const m = new THREE.Mesh(new THREE.BoxGeometry(d, h, w), mat)
-  m.position.set(x, y, z)
-  return m
-}
-
-function plateTexture () {
-  const cv = document.createElement('canvas')
-  cv.width = 256
-  cv.height = 128
-  const g = cv.getContext('2d')
-  const gr = g.createLinearGradient(0, 0, 0, 128)
-  gr.addColorStop(0, '#e9ebed')
-  gr.addColorStop(1, '#cfd2d6')
-  g.fillStyle = gr
-  g.fillRect(0, 0, 256, 128)
-  g.strokeStyle = '#a6a9ae'
-  g.lineWidth = 5
-  g.strokeRect(5, 5, 246, 118)
-  // embossed letters: a light edge above, a shadow below
-  g.font = '600 74px "Saira Semi Condensed", "Arial Narrow", sans-serif'
-  g.textAlign = 'center'
-  g.textBaseline = 'middle'
-  g.fillStyle = '#ffffff'
-  g.fillText('RDSTR', 128, 68)
-  g.fillStyle = '#8d9096'
-  g.fillText('RDSTR', 129, 72)
-  g.fillStyle = '#b7babf'
-  g.fillText('RDSTR', 128, 70)
-  const t = new THREE.CanvasTexture(cv)
-  t.colorSpace = THREE.SRGBColorSpace
-  return t
-}
-
-// A fan in a round duct, spinning about local y; blades go in `fans` for the per-frame spin.
-function fanUnit (r, nBlades, fans) {
-  const g = new THREE.Group()
-  const duct = new THREE.Mesh(
-    new THREE.TorusGeometry(r, r * 0.12, 8, 28),
-    MAT.darkMetal
-  )
-  duct.rotation.x = Math.PI / 2
-  const back = new THREE.Mesh(new THREE.CircleGeometry(r, 24), MAT.hole)
-  back.rotation.x = -Math.PI / 2
-  back.position.y = -r * 0.5
-  const hub = new THREE.Mesh(
-    new THREE.ConeGeometry(r * 0.32, r * 0.8, 12),
-    MAT.darkMetal
-  )
-  hub.position.y = r * 0.15
-  const blades = new THREE.Group()
-  for (let i = 0; i < nBlades; i++) {
-    const b = new THREE.Mesh(
-      new THREE.BoxGeometry(r * 0.85, r * 0.03, r * 0.24),
-      MAT.darkMetal
-    )
-    b.position.x = r * 0.5
-    b.rotation.x = 0.4
-    const p = new THREE.Group()
-    p.rotation.y = (i * TAU) / nBlades
-    p.add(b)
-    blades.add(p)
-  }
-  g.add(duct, back, hub, blades)
-  fans.push(blades)
-  return g
-}
-
-// the tail's fittings; returns the light bar's material (brighter under braking)
-function buildTail (body, fans) {
-  const smoked = new THREE.MeshPhysicalMaterial({
-    color: 0x07080a,
-    roughness: 0.12,
-    metalness: 0.2,
-    clearcoat: 1,
-    clearcoatRoughness: 0.05
-  })
-  // (the output pass tone-maps everything: past about 2 a red burns out to orange)
-  const red = new THREE.MeshBasicMaterial({
-    color: hdr(1.8, 0.03, 0.02),
-    toneMapped: false
-  })
-  // the light bar, full width under the deck lip, in its smoked band
-  body.add(box(1.74, 0.085, 0.03, smoked, X - 0.004, 0.87, 0))
-  body.add(box(1.7, 0.02, 0.012, red, X - 0.02, 0.885, 0))
-  // the satin panel with the plate and the camera over it
-  const satin = new THREE.MeshStandardMaterial({
-    color: 0xb9bdc2,
-    roughness: 0.42,
-    metalness: 0.55
-  })
-  body.add(box(1.62, 0.22, 0.02, satin, X - 0.002, 0.715, 0))
-  const plate = new THREE.Mesh(
-    new THREE.PlaneGeometry(0.32, 0.155),
-    new THREE.MeshStandardMaterial({
-      map: plateTexture(),
-      roughness: 0.4,
-      metalness: 0.35
-    })
-  )
-  plate.rotation.y = -Math.PI / 2
-  plate.position.set(X - 0.016, 0.69, 0)
-  body.add(plate)
-  body.add(box(0.06, 0.018, 0.02, MAT.trim, X - 0.016, 0.78, 0))
-  // the black lower fascia: reflectors at its outer corners
-  const reflector = new THREE.MeshBasicMaterial({
-    color: hdr(0.9, 0.02, 0.015),
-    toneMapped: false
-  })
-  for (const s of [-1, 1])
-    body.add(box(0.15, 0.014, 0.01, reflector, X - 0.006, 0.57, s * 0.76))
-  // the nozzle housing: a black beam with louvres across it, standing proud of the fascia
-  body.add(box(1.26, 0.16, 0.06, MAT.trim, X - 0.03, 0.505, 0))
-  for (const y of [0.455, 0.505, 0.555])
-    body.add(box(1.2, 0.008, 0.012, MAT.darkMetal, X - 0.062, y, 0))
-  // the diffuser: a frame round 4 fan bays, split by strakes that run back under the tail
-  for (const s of [-1, 1])
-    body.add(box(0.05, 0.36, 0.12, MAT.trim, X - 0.04, 0.25, s * 0.63))
-  body.add(box(1.31, 0.05, 0.12, MAT.trim, X - 0.04, 0.095, 0))
-  for (const z of [-0.315, 0, 0.315])
-    body.add(box(0.014, 0.32, 0.16, MAT.trim, X - 0.02, 0.26, z))
-  for (const z of [-0.47, -0.155, 0.155, 0.47]) {
-    const f = fanUnit(0.12, 7, fans)
-    f.rotation.z = Math.PI / 2 // local +y points aft
-    f.position.set(X - 0.012, 0.27, z)
-    body.add(f)
-  }
-  return red
-}
-
-// ---------- the active wing ----------
-const SPAN = 0.93 // half span
-const UP = 0.3 // how far it rises out of the deck
-
-function plateShape (pts) {
-  return new THREE.Shape(pts.map(([x, y]) => new THREE.Vector2(x, y)))
-}
-
-function buildWing (body) {
-  const wing = new THREE.Group() // rises out of the deck
-  const tilt = new THREE.Group() // the blade's angle of attack, about its leading edge
-  wing.position.set(-1.9, 1.04 - UP, 0)
-  tilt.position.set(0.04, 0, 0)
-  wing.add(tilt)
-  // the blade: a cambered section with a gurney flap at the trailing edge, dark on top
-  const foil = plateShape([
-    [0, 0],
-    [-0.03, 0.022],
-    [-0.11, 0.034],
-    [-0.21, 0.03],
-    [-0.3, 0.018],
-    [-0.305, 0.04],
-    [-0.315, 0.04],
-    [-0.31, 0.004],
-    [-0.2, -0.004],
-    [-0.08, -0.008]
-  ])
-  const blade = new THREE.Mesh(
-    new THREE.ExtrudeGeometry(foil, {
-      depth: SPAN * 2,
-      bevelEnabled: false
-    }).translate(0, 0, -SPAN),
-    MAT.trim
-  )
-  tilt.add(blade)
-  // endplates hinged along the blade's tips: down and canted out when deployed, folded flat on top
-  // of the blade when stowed
-  const ep = plateShape([
-    [0.02, 0.02],
-    [-0.33, 0.045],
-    [-0.3, -0.06],
-    [-0.12, -0.2],
-    [-0.06, -0.19]
-  ])
-  const epGeo = new THREE.ExtrudeGeometry(ep, {
-    depth: 0.012,
-    bevelEnabled: false
-  }).translate(0, 0, -0.006)
-  const plates = []
-  for (const s of [-1, 1]) {
-    const hinge = new THREE.Group()
-    hinge.position.set(0, 0.02, s * SPAN)
-    hinge.add(new THREE.Mesh(epGeo, MAT.paint))
-    tilt.add(hinge)
-    plates.push({ hinge, s })
-  }
-  // swan-neck pylons: up from the deck and over, holding the blade from above
-  const neck = plateShape([
-    [0.12, -0.36],
-    [0.05, -0.36],
-    [0.0, -0.1],
-    [-0.04, 0.03],
-    [-0.1, 0.075],
-    [-0.19, 0.06],
-    [-0.19, 0.03],
-    [-0.11, 0.045],
-    [-0.06, 0.0],
-    [0.03, -0.2]
-  ])
-  const neckGeo = new THREE.ExtrudeGeometry(neck, {
-    depth: 0.014,
-    bevelEnabled: false
-  }).translate(0, 0, -0.007)
-  for (const s of [-1, 1]) {
-    const p = new THREE.Mesh(neckGeo, MAT.trim)
-    p.position.set(0, 0, s * 0.46)
-    wing.add(p)
-  }
-  wing.traverse(o => {
-    if (o.isMesh) o.castShadow = true
-  })
-  wing.visible = false
-  body.add(wing)
-  return { wing, tilt, plates, d: 0, aoa: 0, want: false }
-}
-
-// Up above 100 km/h (and kept up down to 60, or while it flies fast), stowed below; tipped up hard
-// as an air brake under heavy braking.
-function updateWing (W, sim, ctl, dt) {
-  const v = sim.groundSpeed()
-  W.want = W.want ? v > 16.7 : v > 27.8
-  W.d = clamp(W.d + (W.want ? dt : -dt) * 1.8, 0, 1)
-  const e = W.d * W.d * (3 - 2 * W.d)
-  const brake = (ctl.brake > 0 || ctl.ebrake) && v > 15 && sim.mode !== 'air'
-  W.aoa += ((brake ? 0.62 : 0.06) - W.aoa) * Math.min(1, dt * 6)
-  W.wing.visible = W.d > 0.001
-  W.wing.position.y = 1.04 - UP * (1 - e)
-  W.tilt.rotation.z = W.aoa * e
-  // the endplates unfold over the last part of the rise
-  const f = clamp((W.d - 0.45) / 0.55, 0, 1)
-  for (const { hinge, s } of W.plates)
-    hinge.rotation.x = s * (Math.PI / 2) * (1 - f) - s * 0.12 * f
-}
-__export(__exports, { "fanUnit": () => fanUnit, "buildTail": () => buildTail, "buildWing": () => buildWing, "updateWing": () => updateWing })
-})
-
-// ---- js/render/roadster.js
-__define(51, function (__exports) {
-// The Roadster model, measured off the Oct 15, 2026 reveal photos (a side-on shot at the event sets the
-// proportions, a top-down one the canopy, a rear one the tail): a wedge in satin Ano White, smooth
-// panels with crisp creases, a tall blunt nose, sloped fender facets either side of a short hood,
-// squinting triangular headlights, one bronze-tinted canopy from a windshield nearly as wide as the car
-// over the roof to a narrow tip at the tail, flanked by buttresses that run out to the tail corners, a
-// black sill that rises to the rear, full-width light bars, the black tail with 4 nozzles over 4 fans
-// (roadsterRear.js), an active rear wing, underfloor suction fan, skirts and twin-spoke aero wheels;
-// plus per-frame pose and animation.
-const THREE = __require(0)
-const { scene, MAT } = __require(16)
-const { clamp } = __require(1)
-const { buildOptimus, poseOptimus, HIP_SIT } = __require(18)
-const { loft, loftGeos, at, seam, withStations } = __require(37)
-const { buildWheels, updateWheels, withWheelArches } = __require(49)
-const { buildTail, buildWing, updateWing, fanUnit } = __require(50)
-const _a = new THREE.Vector3()
-const SEAM = new THREE.MeshStandardMaterial({
-  color: 0x0b0c0e,
-  roughness: 0.7,
-  side: THREE.DoubleSide
-})
-
-// ---------- shape ----------
-// Body stations, tail to nose. The half section runs: floor centre, floor edge, top of the black sill,
-// the side crease (widest point), the shoulder crest, the top and foot of the inner wall (the flying
-// buttress's inner face at the rear; up front it shrinks to the hood's edge) and the centre of the
-// hood or deck.
-// Over each wheel everything outboard of the well wall (z > 0.5) stays above the arch cut.
-// x, floor y, sill [z, y], crease [z, y], shoulder [z, y], wall top [z, y], wall foot [z, y], centre y
-// prettier-ignore
-const BODY = [
-  [-2.22, 0.14, [0.8, 0.64], [0.86, 0.76], [0.87, 0.9], [0.8, 0.915], [0.27, 0.915], 0.915],
-  [-2.12, 0.13, [0.88, 0.64], [0.93, 0.74], [0.92, 0.905], [0.78, 0.928], [0.27, 0.92], 0.92],
-  [-1.95, 0.13, [0.91, 0.6], [0.97, 0.71], [0.95, 0.91], [0.72, 0.952], [0.29, 0.932], 0.93],
-  [-1.8, 0.13, [0.92, 0.55], [0.98, 0.68], [0.96, 0.915], [0.69, 0.995], [0.33, 0.965], 0.95],
-  [-1.5, 0.12, [0.92, 0.5], [0.99, 0.67], [0.97, 0.915], [0.64, 1.065], [0.4, 1.03], 0.98],
-  [-1.2, 0.12, [0.92, 0.46], [0.99, 0.65], [0.97, 0.905], [0.6, 1.11], [0.51, 1.085], 0.99],
-  [-0.9, 0.12, [0.92, 0.42], [0.99, 0.63], [0.97, 0.89], [0.72, 1.0], [0.56, 0.95], 0.85],
-  [-0.6, 0.12, [0.92, 0.36], [0.99, 0.62], [0.97, 0.885], [0.85, 0.885], [0.62, 0.81], 0.79],
-  [0.4, 0.12, [0.92, 0.3], [0.99, 0.6], [0.97, 0.87], [0.85, 0.872], [0.62, 0.8], 0.78],
-  [1.0, 0.12, [0.92, 0.28], [0.99, 0.58], [0.97, 0.855], [0.85, 0.857], [0.62, 0.8], 0.79],
-  [1.2, 0.12, [0.92, 0.27], [0.99, 0.57], [0.97, 0.84], [0.84, 0.84], [0.62, 0.805], 0.795],
-  [1.45, 0.12, [0.92, 0.26], [0.99, 0.56], [0.97, 0.815], [0.81, 0.8], [0.79, 0.796], 0.792],
-  [1.55, 0.12, [0.92, 0.255], [0.99, 0.55], [0.965, 0.79], [0.78, 0.782], [0.76, 0.776], 0.772],
-  [1.7, 0.12, [0.92, 0.25], [0.99, 0.53], [0.95, 0.745], [0.7, 0.735], [0.68, 0.729], 0.725],
-  [1.85, 0.13, [0.9, 0.25], [0.96, 0.5], [0.93, 0.69], [0.64, 0.682], [0.62, 0.676], 0.672],
-  [2.05, 0.14, [0.8, 0.255], [0.85, 0.46], [0.84, 0.615], [0.61, 0.601], [0.6, 0.597], 0.595],
-  [2.22, 0.16, [0.58, 0.26], [0.63, 0.4], [0.62, 0.535], [0.61, 0.532], [0.605, 0.53], 0.528]
-].map(([x, yb, sill, crease, sh, wt, wf, yc]) => ({
-  x,
-  p: [[0, yb], [crease[0] - 0.07, yb], sill, crease, sh, wt, wf, [0, yc]]
-}))
-const SILL = 1,
-  WALL = 5,
-  DECK = 6 // segment indices in the body section
-// the butterfly doors: from the front shut line to the rear one, sill to roof rail, hinged at the
-// top of the front edge, swinging up and out
-const DOOR = [-0.3, 0.84]
-const HINGE = [0.84, 0.97, 0.76] // x, y, |z|
-
-// Canopy stations, tail to windshield foot: where the side glass meets the shoulder (or, at the rear,
-// the buttress), the roof rail (the windshield's edge up front) and the centre line. Seen from above
-// it is a teardrop: the windshield's foot spans nearly the whole car, the tip is narrow at the tail.
-// x, base [z, y], rail [z, y], centre y
-// prettier-ignore
-const GLASS = [
-  [-1.98, [0.285, 0.93], [0.27, 0.935], 0.94],
-  [-1.8, [0.33, 0.965], [0.31, 0.975], 0.985],
-  [-1.5, [0.4, 1.03], [0.37, 1.055], 1.065],
-  [-1.2, [0.52, 1.0], [0.44, 1.1], 1.11],
-  [-0.9, [0.7, 0.95], [0.49, 1.14], 1.155],
-  [-0.4, [0.84, 0.885], [0.545, 1.165], 1.19],
-  [0.0, [0.85, 0.875], [0.58, 1.15], 1.175],
-  [0.3, [0.85, 0.87], [0.61, 1.11], 1.135],
-  [0.8, [0.85, 0.858], [0.69, 1.0], 1.02],
-  [1.15, [0.85, 0.838], [0.78, 0.89], 0.905],
-  [1.3, [0.83, 0.82], [0.815, 0.835], 0.855],
-  [1.5, [0.79, 0.79], [0.78, 0.792], 0.795]
-].map(([x, base, rail, yc]) => {
-  // a thin painted strip runs along the rail, on the side-glass side
-  const t = Math.min(
-    0.5,
-    0.018 / Math.hypot(base[0] - rail[0], base[1] - rail[1])
-  )
-  const edge = [0, 1].map(n => rail[n] + (base[n] - rail[n]) * t)
-  return { x, p: [base, edge, rail, [0, yc]] }
-})
-
-const box = (w, h, d, mat, x, y, z) => {
-  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat)
-  m.position.set(x, y, z)
-  return m
-}
-// a dark line along the roof glass at z, from x0 to x1 (the glass roof's panel joints)
-function roofLine (z, x0, x1) {
-  const pos = [],
-    w = 0.006
-  const yAt = x => {
-    const [zr, yr] = at(GLASS, x, 2),
-      yc = at(GLASS, x, 3)[1]
-    return yc + (yr - yc) * (z / zr) + 0.003
-  }
-  for (let x = x0; x > x1; x -= 0.1) {
-    const xb = Math.max(x1, x - 0.1)
-    const a = [x, yAt(x), z - w],
-      b = [x, yAt(x), z + w],
-      c = [xb, yAt(xb), z - w],
-      d = [xb, yAt(xb), z + w]
-    pos.push(...a, ...b, ...c, ...c, ...b, ...d)
-  }
-  const g = new THREE.BufferGeometry()
-  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3))
-  g.computeVertexNormals()
-  return new THREE.Mesh(g, SEAM)
-}
-
-const DOOR_INSIDE = new THREE.MeshStandardMaterial({
-  color: 0x1c1d20,
-  roughness: 0.75,
-  side: THREE.BackSide
-})
-// The cabin, seen through the glass and the open doors: a black tub with two bucket seats, the
-// console between them, the dash under the windshield and the yoke.
-function buildCabin (body) {
-  const dark = new THREE.MeshStandardMaterial({
-    color: 0x18191c,
-    roughness: 0.8
-  })
-  const seat = new THREE.MeshStandardMaterial({
-    color: 0x2a2b2f,
-    roughness: 0.6
-  })
-  const add = (w, h, d, mat, x, y, z, rz = 0) => {
-    const m = box(w, h, d, mat, x, y, z)
-    m.rotation.z = rz
-    body.add(m)
-  }
-  add(2.1, 0.03, 1.64, dark, 0.1, 0.15, 0) // floor
-  for (const sg of [-1, 1]) {
-    add(1.16, 0.2, 0.1, dark, 0.27, 0.24, sg * 0.84) // the sill under the door
-    add(0.5, 0.1, 0.48, seat, -0.32, 0.24, sg * 0.36) // seat base
-    add(0.11, 0.66, 0.46, seat, -0.66, 0.56, sg * 0.36, 0.3) // backrest
-    add(0.12, 0.08, 0.3, seat, -0.84, 0.92, sg * 0.36, 0.3) // head rest
-  }
-  add(1.2, 0.2, 0.22, dark, 0.05, 0.26, 0) // console
-  add(0.08, 0.85, 1.64, dark, -0.98, 0.55, 0) // bulkhead behind the seats
-  add(0.55, 0.16, 1.56, dark, 0.92, 0.6, 0) // dash
-  // the yoke on its column
-  const yoke = new THREE.Mesh(
-    new THREE.TorusGeometry(0.15, 0.018, 8, 24, Math.PI * 1.2),
-    MAT.trim
-  )
-  yoke.rotation.set(0, Math.PI / 2, Math.PI * 0.4)
-  yoke.position.set(0.24, 0.66, -0.36)
-  yoke.rotation.order = 'YXZ'
-  yoke.rotation.x = -0.35
-  body.add(yoke)
-  add(0.42, 0.05, 0.05, dark, 0.48, 0.6, -0.36, 0.35)
-}
-
-function buildRoadster () {
-  const car = new THREE.Group()
-  const body = new THREE.Group()
-  car.add(body)
-  const shell = withWheelArches(MAT.paint)
-  const shellTrim = withWheelArches(MAT.trim)
-  // black floor and sill; dark cabin floor and inner walls under the glass; white everywhere else;
-  // the doors' panels and glass apart, to swing open
-  const inDoor = x => x > DOOR[0] && x < DOOR[1]
-  const bodyMat = (j, xA, xB, sg) => {
-    const x = (xA + xB) / 2
-    if (j <= SILL) return shellTrim
-    if (j <= WALL - 1 && j > SILL && inDoor(x)) return `door${sg}`
-    if (j === WALL && x > -1.0 && x < 1.3) return shellTrim
-    if (j === DECK && x > -1.96 && x < 1.5) return shellTrim
-    return shell
-  }
-  const glassMat = (j, xA, xB, sg) =>
-    j <= 1 && inDoor((xA + xB) / 2)
-      ? `${j ? 'strip' : 'pane'}${sg}`
-      : j === 1
-      ? MAT.paint
-      : MAT.glass
-  const doors = []
-  for (const sg of [-1, 1]) {
-    const pivot = new THREE.Group()
-    pivot.position.set(HINGE[0], HINGE[1], sg * HINGE[2])
-    body.add(pivot)
-    doors[sg] = pivot
-  }
-  const DOOR_MATS = { door: MAT.paint, strip: MAT.paint, pane: MAT.glass }
-  const place = geos => {
-    for (const [key, g] of geos) {
-      if (typeof key !== 'string') {
-        const m = new THREE.Mesh(g, key)
-        m.castShadow = m.receiveShadow = true
-        body.add(m)
-        continue
-      }
-      const sg = key.endsWith('-1') ? -1 : 1,
-        pivot = doors[sg]
-      g.translate(-HINGE[0], -HINGE[1], -sg * HINGE[2])
-      const m = new THREE.Mesh(g, DOOR_MATS[key.replace(/-?1$/, '')])
-      m.castShadow = true
-      pivot.add(m)
-      // the inside of the door, dark, seen once it is up
-      if (key.startsWith('door')) pivot.add(new THREE.Mesh(g, DOOR_INSIDE))
-    }
-  }
-  place(loftGeos(withStations(BODY, DOOR), bodyMat, shellTrim, 30))
-  place(loftGeos(withStations(GLASS, DOOR), glassMat, undefined, 40))
-  buildCabin(body)
-
-  // Optimus in the driver's seat
-  const optimus = buildOptimus()
-  optimus.root.position.set(-0.33, HIP_SIT, -0.36)
-  poseOptimus(optimus, { sit: 1, drive: 1 })
-  body.add(optimus.root)
-
-  // front: light line along the hood's leading edge, squinting triangular headlights on the fenders'
-  // facets, black splitter, amber markers behind the front arches and red ones ahead of the tail
-  body.add(box(0.014, 0.014, 1.18, MAT.headlight, 2.224, 0.525, 0))
-  const lamp = [],
-    mark = [],
-    markR = []
-  for (const sg of [1, -1]) {
-    // long side on the hood's edge, tip pointing out across the fender facet
-    const [zt, yt] = at(BODY, 2.03, 5).map(
-      (v, n) => v + (at(BODY, 2.03, 4)[n] - v) * 0.5
-    )
-    for (const [x, z, y] of [
-      [2.19, ...at(BODY, 2.19, 5)],
-      [1.9, ...at(BODY, 1.9, 5)],
-      [2.03, zt, yt]
-    ])
-      lamp.push(x, y + 0.005, sg * z)
-    for (const [x, y] of [
-      [1.0, 0.69],
-      [0.86, 0.69],
-      [0.96, 0.66]
-    ])
-      mark.push(x, y, sg * 0.992)
-    for (const [x, y] of [
-      [-1.92, 0.665],
-      [-2.06, 0.665],
-      [-1.96, 0.64]
-    ])
-      markR.push(x, y, sg * (x < -2 ? 0.94 : 0.975))
-  }
-  const flat = (pos, mat) => {
-    const g = new THREE.BufferGeometry()
-    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3))
-    const m = mat.clone()
-    m.side = THREE.DoubleSide
-    return new THREE.Mesh(g, m)
-  }
-  body.add(flat(lamp, MAT.headlight))
-  body.add(
-    flat(
-      mark,
-      new THREE.MeshBasicMaterial({
-        color: new THREE.Color(1.5, 0.32, 0.05),
-        toneMapped: false
-      })
-    ),
-    flat(markR, MAT.ledRed)
-  )
-  body.add(box(0.28, 0.025, 1.56, MAT.trim, 2.12, 0.125, 0))
-  // the side camera on each front fender, where a mirror would be
-  for (const sg of [1, -1]) {
-    const cam = box(0.09, 0.022, 0.012, MAT.trim, 1.02, 0.79, sg * 0.975)
-    cam.rotation.x = sg * 0.35
-    body.add(cam)
-  }
-
-  // shut lines: the butterfly doors' front and rear edges, the divider in the side glass and the
-  // joints in the glass roof (windshield, a centre spine, rear glass)
-  body.add(
-    seam(BODY, DOOR[1], 2, 5, SEAM),
-    seam(BODY, DOOR[0], 2, 5, SEAM),
-    seam(GLASS, DOOR[0], 0, 1, SEAM),
-    seam(GLASS, 0.3, 2, 3, SEAM, 0.006, 0.003),
-    seam(GLASS, -0.62, 2, 3, SEAM, 0.006, 0.003),
-    roofLine(0.11, 0.3, -0.62),
-    roofLine(-0.11, 0.3, -0.62)
-  )
-
-  // the tail (light bar, plate, nozzle housing, diffuser and its fans) and the active wing
-  const fans = []
-  const taillight = buildTail(body, fans)
-  const wing = buildWing(body)
-  // one more fan draws air from under the floor
-  const floorFan = fanUnit(0.3, 7, fans)
-  floorFan.rotation.x = Math.PI // opens downward
-  floorFan.position.set(-0.9, 0.105, 0)
-  body.add(floorFan)
-
-  // 10 cold-gas nozzles: 4 main on the housing over the diffuser, 4 lift hanging under the body
-  // behind each wheel, 2 attitude nozzles in the black sills ahead of the rear wheels
-  const nozzles = []
-  const ringGeo = new THREE.TorusGeometry(0.046, 0.012, 8, 20),
-    holeGeo = new THREE.CircleGeometry(0.044, 16),
-    tubeGeo = new THREE.CylinderGeometry(0.05, 0.05, 0.05, 20, 1, true)
-      .rotateX(Math.PI / 2)
-      .translate(0, 0, -0.025),
-    stemGeo = new THREE.CylinderGeometry(0.042, 0.042, 0.14, 16, 1, true)
-      .rotateX(Math.PI / 2)
-      .translate(0, 0, -0.07)
-  function nozzle (x, y, z, dir, kind) {
-    const g = new THREE.Group()
-    g.position.set(x, y, z)
-    const r = new THREE.Mesh(
-        ringGeo,
-        kind.startsWith('side') ? MAT.darkMetal : MAT.chrome
-      ),
-      h = new THREE.Mesh(holeGeo, MAT.hole)
-    h.position.z = 0.004
-    g.add(r, h)
-    if (kind === 'main') g.add(new THREE.Mesh(tubeGeo, MAT.chrome)) // stands proud of the housing
-    if (kind === 'lift') g.add(new THREE.Mesh(stemGeo, MAT.steel)) // hangs below the floor
-    g.lookAt(_a.set(x, y, z).add(dir)) // local +z along the exhaust
-    body.add(g)
-    nozzles.push({
-      kind,
-      local: new THREE.Vector3(x, y, z),
-      dir: dir.clone(),
-      group: g
-    })
-  }
-  for (const z of [-0.37, -0.125, 0.125, 0.37])
-    nozzle(-2.31, 0.505, z, new THREE.Vector3(-1, 0, 0), 'main')
-  for (const [x, z] of [
-    [0.95, -0.8],
-    [0.95, 0.8],
-    [-2.0, -0.68],
-    [-2.0, 0.68]
-  ])
-    nozzle(x, 0.11, z, new THREE.Vector3(0, -1, 0), 'lift')
-  nozzle(-0.95, 0.3, -0.93, new THREE.Vector3(0, 0, -1), 'sideL')
-  nozzle(-0.95, 0.3, 0.93, new THREE.Vector3(0, 0, 1), 'sideR')
-
-  // ground-sealing skirts between the wheel wells
-  const skirts = []
-  for (const z of [-0.94, 0.94]) {
-    const sk = box(1.85, 0.07, 0.03, MAT.trim, 0, 0.1, z)
-    body.add(sk)
-    skirts.push(sk)
-  }
-  const { wheels, axles } = buildWheels(car, body)
-  car.traverse(o => {
-    if (o.isMesh) {
-      o.castShadow = true
-    }
-  })
-  scene.add(car)
-  return {
-    car,
-    body,
-    wheels,
-    axles,
-    nozzles,
-    fans,
-    skirts,
-    wing,
-    taillight,
-    doors,
-    door: 0, // how far the driver's door is open, 0 to 1
-    optimus,
-    settle: { mode: null, k: 0, dy: 0, dq: new THREE.Quaternion() },
-    // body pitch and roll on their springs (rad) and how fast they are moving
-    lean: { p: 0, pv: 0, r: 0, rv: 0 }
-  }
-}
-
-const _sq = new THREE.Quaternion()
-
-// Landing (or getting back on the wheels after a crash) puts the sim's car flat on the road at once,
-// however it came down; the model eases down onto its wheels from the pose it was in instead.
-function settle (RS, sim, dt) {
-  const st = RS.settle
-  if (sim.mode === 'ground' && st.mode && st.mode !== 'ground') {
-    st.dy = RS.car.position.y - sim.pos.y
-    st.dq.copy(RS.car.quaternion).multiply(_sq.copy(sim.quat).invert())
-    // (not across a reset to somewhere else)
-    st.k = RS.car.position.distanceTo(sim.pos) < 6 ? 1 : 0
-  }
-  st.mode = sim.mode
-  st.k *= Math.exp(-12 * dt)
-}
-
-// Pose the model from the sim and animate wheels, suspension, body roll/pitch, fans, skirts, the wing
-// and the brake light. The body pitches and rolls on springs, so it dips and rocks back a little when
-// the car brakes, launches or turns in, instead of just tilting.
-function updateRoadster (RS, sim, ctl, dt) {
-  settle(RS, sim, dt)
-  RS.car.position.copy(sim.pos)
-  RS.car.quaternion.copy(sim.quat)
-  if (RS.settle.k > 0.002) {
-    RS.car.position.y += RS.settle.dy * RS.settle.k
-    RS.car.quaternion.premultiply(
-      _sq.identity().slerp(RS.settle.dq, RS.settle.k)
-    )
-  }
-  RS.body.position.y = clamp(sim.susp, -0.12, 0.06) * 0.6
-  const onGround = sim.mode === 'ground'
-  const pitchT = onGround ? clamp(-sim.accLong * 0.0028, -0.045, 0.045) : 0
-  const rollT = onGround ? clamp(sim.latAcc * 0.0042, -0.06, 0.06) : 0
-  const L = RS.lean,
-    h = Math.min(dt, 1 / 30)
-  L.pv += (90 * (pitchT - L.p) - 11 * L.pv) * h
-  L.p += L.pv * h
-  L.rv += (110 * (rollT - L.r) - 12 * L.rv) * h
-  L.r += L.rv * h
-  RS.body.rotation.z = L.p
-  RS.body.rotation.x = L.r
-  updateWheels(RS, sim, dt)
-  updateWing(RS.wing, sim, ctl, dt)
-  // the driver's door swings up and out about its hinge (RS.door: set by the intro)
-  const k = RS.door * RS.door * (3 - 2 * RS.door)
-  RS.doors[-1].rotation.set(-0.5 * k, 0, -1.2 * k)
-  // the driver looks into the turns
-  if (RS.seated !== false)
-    RS.optimus.head.rotation.y +=
-      (sim.steerAng * 1.4 - RS.optimus.head.rotation.y) * Math.min(1, dt * 4)
-  for (const f of RS.fans) f.rotation.y += sim.suction * dt * 60
-  for (const sk of RS.skirts) sk.position.y = 0.1 - 0.05 * sim.suction
-  const spd = sim.groundSpeed()
-  const braking = (ctl.brake > 0 || ctl.ebrake) && spd > 0.5
-  RS.taillight.color.setRGB(braking ? 4.2 : 1.8, braking ? 0.1 : 0.03, 0.02)
-}
-__export(__exports, { "buildRoadster": () => buildRoadster, "updateRoadster": () => updateRoadster })
 })
 
 // ---- vendor/three/addons/postprocessing/Pass.js
@@ -68669,28 +69358,28 @@ const { Sim } = __require(11)
 const { Input } = __require(12)
 const { Minimap } = __require(14)
 const { smoke } = __require(17)
-const { Intro } = __require(19)
-const { Tween } = __require(20)
-const { Traffic } = __require(24)
-const { SoundEngine } = __require(26)
-const { Autopilot } = __require(27)
-const { CityPilot } = __require(29)
-const { buildLineup } = __require(30)
+const { Intro } = __require(24)
+const { Tween } = __require(25)
+const { Traffic } = __require(29)
+const { SoundEngine } = __require(31)
+const { Autopilot } = __require(32)
+const { CityPilot } = __require(34)
+const { buildLineup } = __require(35)
 const { nearestLane, standUp } = __require(3)
-const { handleEvents: simEvents } = __require(33)
-const { CityView, clipCamera } = __require(44)
-const { hearing, panOf, mixSound } = __require(31)
-const { CameraRig, CAM_NAMES } = __require(46)
-const { updateSkids, clearSkids } = __require(47)
+const { handleEvents: simEvents } = __require(38)
+const { CityView, clipCamera } = __require(47)
+const { hearing, panOf, mixSound } = __require(36)
+const { CameraRig, CAM_NAMES } = __require(49)
+const { updateSkids, clearSkids } = __require(50)
 const { DEG, TAU, makeControls } = __require(1)
-const { LED_MAT, buildWall, buildTruss } = __require(48)
-const { buildRoadster, updateRoadster } = __require(51)
+const { LED_MAT, buildWall, buildTruss } = __require(51)
+const { buildRoadster, updateRoadster } = __require(23)
 const { OutputPass } = __require(54)
 const { RenderPass } = __require(55)
 const { EffectComposer } = __require(59)
 const { UnrealBloomPass } = __require(61)
 const { MAT, scene, camera, canvas, renderer, followKeyLight } = __require(16)
-const { fallFx, ALL_PARTICLES, updateNozzles, emitThrusters, emitTireSmoke, attachDiamonds } = __require(32)
+const { fallFx, ALL_PARTICLES, updateNozzles, emitThrusters, emitTireSmoke, attachDiamonds } = __require(37)
 // ---------- world ----------
 buildWall()
 buildTruss()
@@ -68728,6 +69417,7 @@ const cityPilot = new CityPilot(sim, traffic)
 const cityView = new CityView()
 const minimap = new Minimap(document.getElementById('radar'))
 const intro = new Intro(RS, rig)
+intro.onCue = cue => sound[cue](panOf(RS.car.position.x, RS.car.position.z))
 const tween = new Tween(sim, traffic) // drawing between physics steps
 const HOLD = { ...makeControls(), brake: 1, fan: false } // parked while Optimus gets in
 const app = {
