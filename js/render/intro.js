@@ -2,8 +2,9 @@
 // its heels, like the reveal's photo) as the driver's door swings up, and gets in the way a person
 // gets into a low car: the inside foot over the sill into the footwell, ducking under the roof rail
 // onto the edge of the seat, the outside leg lifted over the sill after it, then back into the seat
-// and hands on the yoke, and the door comes down. Any drive key skips it. While it runs it owns the
-// camera; when it ends the follow camera eases in from wherever it left off.
+// and hands on the yoke, and the door comes down. The car unlocks as it walks up and locks once the
+// door is down (onCue hears 'unlock' and 'lock'). Any drive key skips it, locking the car at once.
+// While it runs it owns the camera; when it ends the follow camera eases in from wherever it left off.
 import * as THREE from 'three'
 import { clamp } from '../sim/constants.js'
 import { DRIVER, YOKE } from './roadster.js'
@@ -11,9 +12,11 @@ import { poseOptimus, HIP_STAND, ANKLE_UP } from './optimus.js'
 
 const T = {
   walk: 4.4, // reaches the door
+  unlock: 2.6,
   doorUp: [3.1, 4.3],
   doorDown: [8.9, 9.9],
-  end: 10.1
+  lock: 10.2,
+  end: 10.3
 }
 const FROM = [-6.4, -2.05] // car-frame x, z where it starts walking
 const DOORSIDE = [-0.2, -1.32] // where it stands to get in, by the back of the door opening
@@ -192,6 +195,7 @@ export class Intro {
     this.active = false
     this.t = 0
     this.onDone = null
+    this.onCue = null
   }
   start (onDone) {
     this.active = true
@@ -204,6 +208,7 @@ export class Intro {
   finish (quiet = false) {
     if (!this.active) return
     if (quiet) this.onDone = null
+    else if (this.t < T.lock) this.onCue?.('lock')
     this.t = T.end
     this.apply()
   }
@@ -213,7 +218,10 @@ export class Intro {
   }
   update (dt) {
     if (!this.active) return
+    const t0 = this.t
     this.t += dt
+    for (const cue of ['unlock', 'lock'])
+      if (t0 < T[cue] && this.t >= T[cue]) this.onCue?.(cue)
     this.apply()
   }
   apply () {
