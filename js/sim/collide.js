@@ -2,10 +2,10 @@
 // signal masts), resolved with impulses (restitution, friction, spin) so cars bounce off each other
 // and off the city. No hit tumbles the Roadster, on the road or flying, as in GTA: it bounces off
 // and the driver keeps the wheel.
+import { STEP } from './roofs.js'
 import { snap } from './breakables.js'
-import { CAR, clamp } from './constants.js'
 import { query, OUTER } from './city.js'
-import { parapets } from './roofs.js'
+import { CAR, clamp } from './constants.js'
 
 // The most yaw rate (rad/s) a knock adds on the ground: the tyres on the road soak up the rest, so a
 // clipped car or wall corner twitches the Roadster instead of spinning it out of the driver's hands.
@@ -201,18 +201,17 @@ export function nudge (s, dx, dz) {
   p.z += dz
 }
 
-
 const hits = []
-// Ground mode: keep the Roadster out of buildings, posts and the barrier (and on a roof, inside its
-// parapet and clear of its plant).
+// Ground mode: keep the Roadster out of buildings, posts and the barrier (and on a roof, clear of its
+// plant). A roof's edge is no wall: the car drives straight off it (ground.js).
 export function collideCity (s) {
   const me = playerRect(s),
     fl = s.pos.y
   query(me.x - 4, me.z - 4, me.x + 4, me.z + 4, hits)
-  if (s.roof) hits.push(...parapets(s.roof))
   for (const c of hits) {
-    // out of reach above (upper storeys), or under the wheels (the roof the car is on)
-    if (c.down || c.y0 > fl + 1.2 || c.y1 <= fl + 0.05) continue
+    // out of reach above (upper storeys), or under the wheels: the roof the car is on, or the next
+    // one along if it is no more than a step up
+    if (c.down || c.y0 > fl + 1.2 || c.y1 <= fl + STEP) continue
     const hit = c.r ? rectPost(me, c) : rectRect(me, boxRect(c))
     if (!hit) continue
     if (c.breakAt && knock(s, c, hit.nx, hit.nz)) continue
