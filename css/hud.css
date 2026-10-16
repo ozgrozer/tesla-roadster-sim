@@ -152,11 +152,15 @@
 .popups {
   position: absolute;
   left: 50%;
-  top: 30%;
+  top: 21%;
   transform: translateX(-50%);
+  /* as wide as its lines need (up to the screen), not half the screen from left: 50% */
+  width: max-content;
+  max-width: calc(100vw - 32px);
   display: grid;
   gap: 6px;
   justify-items: center;
+  text-align: center;
 }
 .popup {
   font-weight: 800;
