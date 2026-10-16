@@ -9,6 +9,7 @@ import { CityShadow } from './sunShadow.js'
 import { raycast, BUILDINGS, OUTER } from '../sim/city.js'
 import { PedView } from './peds.js'
 import { TrafficView } from './traffic.js'
+import { NIGHT } from './facade.js'
 import { buildProps } from './cityProps.js'
 import { buildGround } from './cityGround.js'
 import { buildStreet } from './cityStreet.js'
@@ -19,6 +20,7 @@ export class CityView {
     this.group = null
     this.on = false
     this.onLand = null
+    this.night = false
   }
   build () {
     const g = new THREE.Group()
@@ -26,8 +28,8 @@ export class CityView {
     buildGround(g)
     buildStreet(g)
     this.sea = buildSea(g)
-    buildBuildings(g)
-    const props = buildProps(g)
+    this.buildings = buildBuildings(g)
+    const props = (this.props = buildProps(g))
     const top = Math.max(...BUILDINGS.map(b => b.h)) + 30 // (and the masts on top)
     this.shadow = new CityShadow(scene, renderer, SUN, OUTER, top)
     this.signals = props.signals
@@ -43,6 +45,21 @@ export class CityView {
     g.visible = false
     scene.add(g)
     this.group = g
+    this.setNight(this.night)
+  }
+  // golden hour or night: the sky, the sea and the light, more windows lit and the shops brighter,
+  // the street lights on and throwing their light on the ground, headlight beams on the road
+  setNight (on) {
+    this.night = on
+    if (!this.group) return
+    const k = on ? 1 : 0
+    NIGHT.value = k
+    this.sky.setNight(on)
+    this.sea.night(k)
+    this.buildings.night(k)
+    this.props.night(k)
+    this.cars.night = on
+    this.cars.beams.visible = on
   }
   show (on) {
     if (on && !this.group) this.build()
