@@ -1,5 +1,5 @@
+import { roofAt, STEP } from './roofs.js'
 import { TRACK, SOLIDS } from './track.js'
-import { roofAt } from './roofs.js'
 import { collideCity, bumpCars } from './collide.js'
 import { G, CAR, LIFT_ACC, clamp, wrapPi } from './constants.js'
 
@@ -200,10 +200,16 @@ export function stepGround (s, dt, c, main, lift) {
   s.syncPose()
   if (s.world === 'city') {
     collideCity(s)
-    // pushed (or hopped) off the edge of a roof: down it goes
+    // on a roof: driven off its edge, down it goes; onto the next roof at about the same height (the
+    // building next door, or the other half of a split block), it carries on there
     if (s.floor > 0) {
-      const r = roofAt(s.pos.x, s.pos.z, s.floor + 0.3)
-      if ((r ? r.y1 : 0) < s.floor - 0.3) s.toAir(0.4)
+      const r = roofAt(s.pos.x, s.pos.z, s.floor + STEP)
+      if (!r || r.y1 < s.floor - STEP) s.toAir(0.4)
+      else if (r !== s.roof) {
+        s.roof = r
+        s.floor = r.y1
+        s.syncPose()
+      }
     }
     return
   }
