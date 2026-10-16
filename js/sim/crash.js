@@ -2,6 +2,7 @@
 // back on the road afterwards, GTA-style.
 import * as THREE from 'three'
 import { G, TAU, CAR, AX_Y, CORNERS, clamp } from './constants.js'
+import { roofAt } from './roofs.js'
 import { pushOut, bounceCity } from './collide.js'
 
 const _a = new THREE.Vector3(),
@@ -51,8 +52,16 @@ export function enterCrash (s, reason) {
 // goes the short way). The autopilots never steer a wreck: they restart.
 export function stepCrash (s, dt, c) {
   s.crashTime += dt
+  // the street, or the roof the wreck is on
+  s.roof = s.world === 'city' ? roofAt(s.com.x, s.com.z, s.com.y) : null
+  s.floor = s.roof ? s.roof.y1 : 0
   if (s.righting) return stepRighting(s, dt)
-  if (c && s.crashTime > 0.4 && s.com.y < 1.4 && s.omegaW.length() < 3) {
+  if (
+    c &&
+    s.crashTime > 0.4 &&
+    s.com.y - s.floor < 1.4 &&
+    s.omegaW.length() < 3
+  ) {
     if (s.up(_a).y > 0.9) {
       if (c.throttle || c.brake || c.reverse || c.steer) return recover(s, true)
     } else if (c.steer && s.vel.length() < 5)
@@ -74,7 +83,7 @@ export function stepCrash (s, dt, c) {
     dy = 0
   for (const p of CORNERS) {
     const r = _b.set(p.x, p.y - CAR.comH, p.z).applyQuaternion(s.quat)
-    const y = s.com.y + r.y
+    const y = s.com.y + r.y - s.floor
     if (y < dy) {
       dy = y
       deepest = r.clone()
@@ -158,6 +167,7 @@ function startRighting (s, dir) {
     dur: 0.55 + 0.3 * k,
     hop: 0.9 + 0.5 * k,
     y0: s.com.y,
+    y1: s.floor + CAR.comH,
     roll,
     axis,
     q0,
@@ -173,7 +183,7 @@ function stepRighting (s, dt) {
     e = u * u * (3 - 2 * u)
   _q.setFromAxisAngle(r.axis, r.roll * e).multiply(r.q0)
   s.quat.copy(_q2.identity().slerp(r.fix, e)).multiply(_q)
-  s.com.y = r.y0 + (CAR.comH - r.y0) * e + r.hop * Math.sin(Math.PI * u)
+  s.com.y = r.y0 + (r.y1 - r.y0) * e + r.hop * Math.sin(Math.PI * u)
   s.pos.copy(s.com).sub(s.up(_a).multiplyScalar(CAR.comH))
   if (u >= 1) recover(s)
 }
@@ -181,7 +191,7 @@ function stepRighting (s, dt) {
 function recover (s, moving = false) {
   const f = s.fwd(_a)
   s.yaw = Math.atan2(-f.z, f.x)
-  s.pos.set(s.com.x, 0, s.com.z)
+  s.pos.set(s.com.x, s.floor, s.com.z)
   s.yawRate = moving ? clamp(s.omegaW.y, -2, 2) : 0
   if (moving) s.vel.y = 0
   else s.vel.set(0, 0, 0)
