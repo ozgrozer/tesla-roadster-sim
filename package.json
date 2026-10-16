@@ -8,6 +8,7 @@
     "build": "node tools/build.mjs",
     "start": "node tools/serve.mjs --open",
     "watch": "node tools/build.mjs --watch",
+    "og": "node tools/og.mjs",
     "test": "node --import ./tools/node-loader/register.mjs --test tests/*.test.mjs",
     "format": "prettier-standard \"js/**/*.js\" \"tests/*.mjs\" \"tools/**/*.mjs\" --format"
   },
