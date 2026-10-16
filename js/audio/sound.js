@@ -78,26 +78,17 @@ export class SoundEngine {
     // tyre roll and wind
     n.road = gain(0)
     n.roadLP = filt('lowpass', 300, 0.5)
-    loop(this.brown)
-      .connect(n.roadLP)
-      .connect(n.road)
-      .connect(this.master)
+    loop(this.brown).connect(n.roadLP).connect(n.road).connect(this.master)
     n.wind = gain(0)
     n.windBP = filt('bandpass', 700, 0.5)
-    loop(this.white)
-      .connect(n.windBP)
-      .connect(n.wind)
-      .connect(this.master)
+    loop(this.white).connect(n.windBP).connect(n.wind).connect(this.master)
     // tyre squeal: two narrow noise bands with a faint tone, only once a tyre is past its grip limit
     n.skid = gain(0)
     n.skidLo = filt('bandpass', 1250, 14)
     n.skidHi = filt('bandpass', 2450, 10)
     const squeal = loop(this.white)
     squeal.connect(n.skidLo).connect(n.skid)
-    squeal
-      .connect(n.skidHi)
-      .connect(gain(0.6))
-      .connect(n.skid)
+    squeal.connect(n.skidHi).connect(gain(0.6)).connect(n.skid)
     n.tone = osc('sine', 1150)
     n.toneG = gain(0)
     n.tone.connect(n.toneG).connect(n.skid)
@@ -106,16 +97,10 @@ export class SoundEngine {
     // cold-gas thrusters: supersonic hiss plus low roar
     n.hiss = gain(0)
     n.hissHP = filt('highpass', 1600, 0.6)
-    loop(this.white)
-      .connect(n.hissHP)
-      .connect(n.hiss)
-      .connect(this.master)
+    loop(this.white).connect(n.hissHP).connect(n.hiss).connect(this.master)
     n.roar = gain(0)
     n.roarLP = filt('lowpass', 420, 0.7)
-    loop(this.brown)
-      .connect(n.roarLP)
-      .connect(n.roar)
-      .connect(this.master)
+    loop(this.brown).connect(n.roarLP).connect(n.roar).connect(this.master)
     // suction fan: turbine whir
     n.fan = gain(0)
     n.fanO = osc('sawtooth', 130)
@@ -206,9 +191,7 @@ export class SoundEngine {
     g.gain.setValueAtTime(0.0001, t)
     g.gain.exponentialRampToValueAtTime(vol, t + 0.01)
     g.gain.exponentialRampToValueAtTime(0.0001, t + dur)
-    s.connect(b)
-      .connect(g)
-      .connect(this.master)
+    s.connect(b).connect(g).connect(this.master)
     s.start(t, Math.random())
     s.stop(t + dur + 0.05)
   }
@@ -222,6 +205,32 @@ export class SoundEngine {
     const k = clamp(v / 10, 0.15, 1)
     this.tone(150, 50, 0.25, 'sine', 0.5 * k)
     this.noise(0.22, 0.4 * k, 'bandpass', 2400, 900)
+  }
+  // a post snapping off at its foot (v: how hard it was hit, already scaled for distance): the crack
+  // of a splitting trunk and a rustle of leaves, or the clang of a steel pole shearing
+  snap (kind, v) {
+    const k = clamp(v / 16, 0.08, 1)
+    if (kind === 'tree' || kind === 'palm') {
+      this.noise(0.07, 0.55 * k, 'highpass', 3200, 1600)
+      this.noise(0.16, 0.4 * k, 'bandpass', 1500, 500, 0.04)
+      this.noise(0.9, 0.16 * k, 'highpass', 6000, 3500, 0.06)
+      this.tone(120, 55, 0.3, 'sine', 0.4 * k)
+    } else {
+      // a ringing pole: a fundamental and an inharmonic overtone, the heavy mast lower
+      const f = kind === 'signal' ? 430 : 610
+      this.tone(f, f * 0.98, 0.7, 'triangle', 0.1 * k)
+      this.tone(f * 2.63, f * 2.6, 0.5, 'triangle', 0.06 * k)
+      this.noise(0.25, 0.4 * k, 'bandpass', 2600, 1100)
+      this.tone(150, 50, 0.3, 'sine', 0.45 * k)
+    }
+  }
+  // something long and heavy hitting the ground: a pole, or a tree onto its crown
+  fall (kind, k) {
+    if (k < 0.02) return
+    const tree = kind === 'tree' || kind === 'palm'
+    this.tone(90, 38, 0.5, 'sine', 0.5 * k)
+    this.noise(tree ? 0.8 : 0.35, 0.3 * k, 'lowpass', tree ? 2500 : 1600, 120)
+    if (!tree) this.tone(780, 770, 0.35, 'triangle', 0.05 * k)
   }
   crash () {
     this.noise(1.1, 0.7, 'lowpass', 4000, 150)
