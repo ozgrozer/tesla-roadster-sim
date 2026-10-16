@@ -43,7 +43,7 @@ export class CityPilot {
     let best = null,
       bd = 10 * 10
     for (const e of LANES) {
-      if (e.dx * fx + e.dz * fz < 0.5) continue
+      if (e.closed || e.dx * fx + e.dz * fz < 0.5) continue
       const t = clamp(
         (s.pos.x - e.x0) * e.dx + (s.pos.z - e.z0) * e.dz,
         0,
