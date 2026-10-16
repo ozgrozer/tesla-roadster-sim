@@ -4,6 +4,7 @@ import * as THREE from 'three'
 import { stepAir } from './flight.js'
 import { stepGround } from './ground.js'
 import { TRACK, SOLIDS } from './track.js'
+import { SPAWN, query } from './city.js'
 import { enterCrash, stepCrash } from './crash.js'
 import {
   G,
@@ -26,6 +27,7 @@ const _a = new THREE.Vector3(),
   _d = new THREE.Vector3()
 const _p1 = { x: 0, y: 0 },
   _p2 = { x: 0, y: 0 }
+const _near = []
 
 export class Sim {
   constructor () {
@@ -42,7 +44,10 @@ export class Sim {
     this.events.push({ type, ...data })
   }
 
-  reset (spot = 'start') {
+  // `at` ({ x, z, yaw }) puts the car somewhere other than the city's usual spawn point
+  reset (spot = 'start', at = null) {
+    // 'site' is the test site with the wall and the lineup, 'city' the free-roam city
+    this.world = spot === 'city' ? 'city' : 'site'
     this.mode = 'ground'
     this.modeTime = 0
     this.time = 0
@@ -103,6 +108,11 @@ export class Sim {
       this.pos.set(-210, 0, 0)
       this.yaw = Math.PI
       this.suction = 1
+    } else if (spot === 'city') {
+      const p = at || SPAWN
+      this.pos.set(p.x, 0, p.z)
+      this.yaw = p.yaw
+      this.suction = 0
     } else if (spot === 'base') {
       // on the flat beginning of the platform, where the autopilot starts and returns to
       this.mode = 'ramp'
@@ -415,19 +425,22 @@ export class Sim {
   }
 
   hitSolid () {
-    const q = this.quat
+    const q = this.quat,
+      P = this.pos
+    const solids =
+      this.world === 'city'
+        ? query(P.x - 6, P.z - 6, P.x + 6, P.z + 6, _near)
+        : SOLIDS
     for (const p of CORNERS) {
       _a.copy(p)
         .applyQuaternion(q)
-        .add(this.pos)
-      for (const b of SOLIDS) {
+        .add(P)
+      for (const b of solids) {
+        if (_a.y <= b.y0 || _a.y >= b.y1) continue
         if (
-          _a.x > b.x0 &&
-          _a.x < b.x1 &&
-          _a.y > b.y0 &&
-          _a.y < b.y1 &&
-          _a.z > b.z0 &&
-          _a.z < b.z1
+          b.r
+            ? Math.hypot(_a.x - b.x, _a.z - b.z) < b.r
+            : _a.x > b.x0 && _a.x < b.x1 && _a.z > b.z0 && _a.z < b.z1
         )
           return b
       }
