@@ -125,27 +125,33 @@ export const softTex = (() => {
 // ---------- materials ----------
 export const hdr = (r, g, b) => new THREE.Color(r, g, b)
 export const MAT = {
-  // Ano White: a satin silver-white, so every facet catches the light differently
+  // Ano White: a satin silver-white with soft, broad highlights
   paint: new THREE.MeshPhysicalMaterial({
-    color: 0xe3e6ea,
-    roughness: 0.32,
-    metalness: 0.35,
-    clearcoat: 0.3,
-    clearcoatRoughness: 0.3
+    color: 0xeceef0,
+    roughness: 0.36,
+    metalness: 0.18,
+    clearcoat: 0.35,
+    clearcoatRoughness: 0.28
   }),
+  // satin black: sills, diffuser, wing
   trim: new THREE.MeshStandardMaterial({
-    color: 0x0c0d10,
-    roughness: 0.55,
-    metalness: 0.2
+    color: 0x0b0c0e,
+    roughness: 0.48,
+    metalness: 0.15
   }),
-  // gold-tinted like a spacesuit visor: near black with bronze reflections
+  // bronze-tinted like a spacesuit visor: a golden mirror from outside
   glass: new THREE.MeshPhysicalMaterial({
-    color: 0x2a1d0c,
-    roughness: 0.05,
-    metalness: 0.9,
+    color: 0x8a5a26,
+    roughness: 0.06,
+    metalness: 1,
     transparent: true,
-    opacity: 0.94,
-    envMapIntensity: 1.6
+    opacity: 0.95,
+    envMapIntensity: 1.5
+  }),
+  chrome: new THREE.MeshStandardMaterial({
+    color: 0xdfe2e6,
+    roughness: 0.14,
+    metalness: 1
   }),
   tire: new THREE.MeshStandardMaterial({ color: 0x111214, roughness: 0.92 }),
   rim: new THREE.MeshStandardMaterial({
@@ -158,11 +164,6 @@ export const MAT = {
     roughness: 0.28,
     metalness: 1.0
   }),
-  aero: new THREE.MeshStandardMaterial({
-    color: 0xc4c8cd,
-    roughness: 0.34,
-    metalness: 0.5
-  }),
   hole: new THREE.MeshBasicMaterial({ color: 0x020203 }),
   headlight: new THREE.MeshBasicMaterial({
     color: hdr(3.2, 3.3, 3.6),
@@ -172,7 +173,6 @@ export const MAT = {
     color: hdr(3.0, 0.12, 0.1),
     toneMapped: false
   }),
-  suit: new THREE.MeshStandardMaterial({ color: 0xf2f2f2, roughness: 0.7 }),
   road: new THREE.MeshStandardMaterial({
     map: concreteTex,
     roughness: 0.86,
