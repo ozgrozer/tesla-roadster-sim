@@ -231,7 +231,7 @@ export function emitThrusters (RS, sim, dt, clock) {
     _wd.copy(nz.dir).applyQuaternion(_wq)
     const big = nz.kind === 'main' || nz.kind === 'lift' ? 1 : 0.45
     // a downward jet close to the pad throws up a far bigger, longer-lived cloud
-    const near = _wd.y < -0.5 ? clamp01(1 - _wp.y / 8) : 0
+    const near = _wd.y < -0.5 ? clamp01(1 - (_wp.y - sim.floor) / 8) : 0
     nz.carry += 105 * lv * big * (1 + 2.4 * near) * dt
     while (nz.carry >= 1) {
       nz.carry -= 1
@@ -286,7 +286,7 @@ export function emitTireSmoke (RS, sim, dt) {
       w.pivot.getWorldPosition(_tw)
       vapor.spawn(
         _tw.x + (Math.random() - 0.5) * 0.3,
-        0.25,
+        sim.pos.y + 0.25,
         _tw.z + (Math.random() - 0.5) * 0.3,
         sim.vel.x * 0.25 + (Math.random() - 0.5) * 1.2,
         0.5 + Math.random() * 0.8,
@@ -301,13 +301,14 @@ export function emitTireSmoke (RS, sim, dt) {
   })
 }
 
-export function burst (x, z, n, speed) {
+// y: the ground it kicks up from (a roof, or the street)
+export function burst (x, z, n, speed, y = 0) {
   for (let i = 0; i < n; i++) {
     const a = Math.random() * TAU,
       s = speed * (0.4 + Math.random() * 0.8)
     vapor.spawn(
       x + Math.cos(a) * 1.2,
-      0.3 + Math.random() * 0.6,
+      y + 0.3 + Math.random() * 0.6,
       z + Math.sin(a) * 1.2,
       Math.cos(a) * s,
       0.6 + Math.random() * 2.2,
