@@ -4,7 +4,7 @@ import { Sim } from '../js/sim/sim.js'
 import assert from 'node:assert/strict'
 import { roofAt } from '../js/sim/roofs.js'
 import { Traffic } from '../js/sim/traffic.js'
-import { JAM, JAM_AT } from '../js/sim/jam.js'
+import { JAM, JAM_AT, atJam } from '../js/sim/jam.js'
 import { CityPilot } from '../js/sim/cityPilot.js'
 import { CAR, makeControls } from '../js/sim/constants.js'
 import { rectRect, carRect } from '../js/sim/collide.js'
@@ -289,6 +289,31 @@ test('the Roadster shunts a stopped car out of its lane', () => {
   assert.ok(!(rectRect(me, a)?.depth > 0.05), 'no overlap afterwards')
 })
 
+test('no driver honks before the Roadster has, at the gridlock', () => {
+  const lane = LANES.find(e => e.dx === 1 && e.lane === 1)
+  // the Roadster runs into a car ahead in its lane: a moment later its driver leans on the horn
+  const honks = (quiet, horn) => {
+    const r = driveInto(lane.x0 + 5, lane.z0, 15, 4, (sim, tr) => {
+      const car = tr.make(0)
+      car.edge = lane
+      car.s = 30
+      car.v = 0
+      car.v0 = 0.01
+      tr.insert(lane, car)
+      car.next = tr.choose(lane, car)
+      tr.place(car)
+      tr.n++
+      tr.quiet = quiet
+      tr.horn = horn // the Roadster's own, sounding all the way
+    })
+    return r.events.filter(e => e.type === 'honk').length
+  }
+  assert.ok(!atJam(lane.x0 + 30, lane.z0), 'well away from the gridlock')
+  assert.ok(honks(false, false) > 0, 'a knocked driver leans on the horn')
+  assert.equal(honks(true, false), 0, 'but not before the Roadster has honked')
+  assert.equal(honks(true, true), 0, 'and not for its horn anywhere else')
+})
+
 test('street lights fold over when the Roadster hits them hard', () => {
   // a light on a sidewalk that runs along x, with the Roadster lined up on it
   const l = LAMPS.find(k => k.az !== 0 && k.x > 0)
@@ -458,11 +483,14 @@ test('Autopilot drives to the gridlock, honks, flies over it and drives on', () 
   assert.ok(pilot.join(), 'finds its lane at the spawn point')
   const events = []
   let honked = false,
+    early = false,
     flew = false,
     maxY = 0
   for (let i = 0; i < 60 / H; i++) {
     sim.step(H, pilot.update(H))
+    tr.horn = pilot.horn // (as the main loop passes it on)
     tr.step(H, sim)
+    early ||= !honked && sim.events.some(e => e.type === 'honk')
     events.push(...sim.events)
     sim.events.length = 0
     honked ||= pilot.horn
@@ -473,6 +501,10 @@ test('Autopilot drives to the gridlock, honks, flies over it and drives on', () 
     if (flew && sim.mode === 'ground' && !pilot.hop && sim.speed > 5) break
   }
   assert.ok(honked, 'leans on the horn in the jam')
+  assert.ok(
+    !early && !tr.quiet,
+    'the first horn in town, after which drivers may'
+  )
   assert.ok(flew && maxY > 6, `flies over it (${maxY.toFixed(1)} m up)`)
   assert.equal(sim.mode, 'ground', 'and comes down on its wheels')
   assert.ok(
