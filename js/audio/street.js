@@ -2,7 +2,8 @@
 // everything it hears off the walls either side (each echo as late as the round trip to its wall,
 // panned to its side, fainter the further off, and gone out in the open or up over the roofs), the
 // surf on the beach with a wave breaking every few seconds and gulls over it (louder the nearer the
-// water), and the tyres on sand (a grainy hiss over a low crunch) or grass (a soft swish).
+// water), the tyres on sand (a grainy hiss over a low crunch) or grass (a soft swish), and at night
+// the crickets, chirping in the parks and gardens.
 import { clamp } from '../sim/constants.js'
 
 export const STREET = {
@@ -45,6 +46,26 @@ export const STREET = {
     n.grass = gain(0)
     loop(this.pink).connect(filt('bandpass', 1300, 0.6)).connect(n.grass)
     n.grass.connect(this.master)
+    // crickets: a high tone pulsing in quick trains of chirps
+    n.crickets = gain(0)
+    const chirp = gain(0)
+    const tone = ctx.createOscillator()
+    tone.frequency.value = 4300
+    tone.start()
+    tone.connect(chirp).connect(n.crickets)
+    const pulse = ctx.createOscillator()
+    pulse.type = 'square'
+    pulse.frequency.value = 28
+    pulse.start()
+    const train = ctx.createOscillator()
+    train.type = 'square'
+    train.frequency.value = 1.3
+    train.start()
+    const gate = gain(0.5)
+    pulse.connect(gate.gain)
+    train.connect(gate)
+    gate.connect(chirp.gain)
+    n.crickets.connect(this.master)
     this.waveT = 1.5
     this.gullT = 5
   },
@@ -74,6 +95,7 @@ export const STREET = {
     }
     const u = st.wheelSpeed,
       g = st.grounded
+    R(n.crickets.gain, st.night ? 0.006 : 0, 0.8)
     const on = k => (st.surface === k ? g : 0)
     R(n.sand.gain, on('sand') * Math.min(1, u / 12) * 0.16, 0.1)
     R(n.grass.gain, on('grass') * Math.min(1, u / 14) * 0.12, 0.1)
