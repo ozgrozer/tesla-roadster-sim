@@ -438,7 +438,8 @@ export class Sim {
         .applyQuaternion(q)
         .add(P)
       for (const b of solids) {
-        if (b.down || _a.y <= b.y0 || _a.y >= b.y1) continue
+        // (the lineup's cars bounce the car off instead: bumpCars)
+        if (b.down || b.kind === 'car' || _a.y <= b.y0 || _a.y >= b.y1) continue
         if (
           b.r
             ? Math.hypot(_a.x - b.x, _a.z - b.z) < b.r
