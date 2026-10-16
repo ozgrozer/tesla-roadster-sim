@@ -23,10 +23,14 @@ export class Input {
   // onDrive(code, firstPress) fires for held driving keys, onCommand(code) for everything else
   constructor ({ onDrive, onCommand }) {
     this.keys = new Set()
+    this.stale = new Set() // held since before lift-off: they don't fly the car until pressed again
+    this.wasAir = false
+    this.lastT = -1
     const press = code => {
       if (DRIVE_KEYS.has(code)) {
         const first = !this.keys.has(code)
         this.keys.add(code)
+        this.stale.delete(code)
         onDrive(code, first)
       } else onCommand(code)
     }
@@ -57,17 +61,28 @@ export class Input {
     }
   }
 
-  held (a, b) {
-    return this.keys.has(a) || (b !== undefined && this.keys.has(b))
+  // `fresh`: leave out keys still held from before lift-off
+  held (a, b, fresh = false) {
+    const on = k => this.keys.has(k) && !(fresh && this.stale.has(k))
+    return on(a) || (b !== undefined && on(b))
   }
 
-  // Map held keys to controls. Same keys drive on the ground and fly in the air.
+  // Map held keys to controls. Same keys drive on the ground and fly in the air, but a key held
+  // through lift-off only flies once it is pressed again: W held for the run-up would otherwise
+  // pitch the nose straight back down into the ground.
   controls (sim, fanMode) {
     const c = makeControls()
-    const W = this.held('KeyW', 'ArrowUp'),
-      S = this.held('KeyS', 'ArrowDown')
-    const A = this.held('KeyA', 'ArrowLeft'),
-      D = this.held('KeyD', 'ArrowRight')
+    const air = sim.mode === 'air'
+    // (the first call after the autopilot hands over, or after a reset, is not a lift-off)
+    if (air && !this.wasAir && Math.abs(sim.time - this.lastT) < 0.05)
+      for (const k of this.keys) this.stale.add(k)
+    if (!air) this.stale.clear()
+    this.wasAir = air
+    this.lastT = sim.time
+    const W = this.held('KeyW', 'ArrowUp', air),
+      S = this.held('KeyS', 'ArrowDown', air)
+    const A = this.held('KeyA', 'ArrowLeft', air),
+      D = this.held('KeyD', 'ArrowRight', air)
     const nearWall =
       sim.world === 'site' &&
       sim.pos.x > TRACK.X0 - 25 &&
@@ -80,7 +95,7 @@ export class Input {
     c.ebrake = this.keys.has('KeyB')
     c.main = this.held('ShiftLeft', 'ShiftRight') ? 1 : 0
     c.lift = this.keys.has('Space') ? 1 : 0
-    if (sim.mode === 'air') {
+    if (air) {
       c.pitch = (S ? 1 : 0) - (W ? 1 : 0)
       c.roll = (D ? 1 : 0) - (A ? 1 : 0)
       c.yaw = (this.keys.has('KeyQ') ? 1 : 0) - (this.keys.has('KeyE') ? 1 : 0)
