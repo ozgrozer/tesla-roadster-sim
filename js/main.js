@@ -272,7 +272,14 @@ const input = new Input({
   onCommand: code => COMMANDS[code]?.(),
   onRelease: code => {
     if (code === 'KeyH') setHorn(false)
-  }
+  },
+  onPad: () =>
+    hud.popup(
+      'Gamepad ready · <b>RT</b> drive · <b>LT</b> brake · <b>A</b> e-brake · ' +
+        '<b>RB</b> boost · <b>LB</b> fly',
+      4000,
+      'hint'
+    )
 })
 hud.el.mode.addEventListener('click', () =>
   app.auto ? setAuto(false) : startAutopilot()
@@ -299,7 +306,7 @@ window.addEventListener('keydown', unlockSound, true)
 
 // ---------- events from the sim: events.js ----------
 const handleEvents = () =>
-  simEvents({ sim, app, hud, sound, rig, cityView, ap, clock })
+  simEvents({ sim, app, hud, sound, rig, cityView, ap, clock, pad: input.pad })
 // a knocked-down light, signal or tree hits the ground
 cityView.onLand = (x, z, kind) => {
   fallFx(x, z, kind)
@@ -331,6 +338,10 @@ function frame (now) {
   const dt = Math.min(0.05, (now - last) / 1000)
   last = now
   clock += dt
+  input.poll()
+  // the right stick looks round the car (in the air it yaws it instead)
+  if (sim.mode !== 'air' && (input.pad.lookX || input.pad.lookY))
+    rig.turn(input.pad.lookX * dt * 2.6, -input.pad.lookY * dt * 1.6)
   const P = pilot()
   const target = (app.slow ? 0.3 : 1) * (app.auto ? P.slow : 1)
   app.timeScale += (target - app.timeScale) * (1 - Math.exp(-5 * dt))
