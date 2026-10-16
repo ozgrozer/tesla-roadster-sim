@@ -56,7 +56,7 @@ export class CityPilot {
         best = e
       }
     }
-    if (!best || s.mode !== 'ground') return false
+    if (!best || s.mode !== 'ground' || s.floor > 0) return false // (not from a roof)
     this.edge = best
     this.next = this.traffic.choose(best, DRIVER)
     this.go = null
