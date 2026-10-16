@@ -23,14 +23,21 @@ export class Post {
     composer.addPass(this.blur)
     composer.addPass(new OutputPass())
     this.composer = composer
-    const resize = () => {
+    this.renderer = renderer
+    const resize = (this.resize = () => {
       renderer.setSize(window.innerWidth, window.innerHeight)
       composer.setSize(window.innerWidth, window.innerHeight)
       camera.aspect = window.innerWidth / window.innerHeight
       camera.updateProjectionMatrix()
-    }
+    })
     window.addEventListener('resize', resize)
     resize()
+  }
+  // pixels drawn per CSS pixel (resolution.js)
+  setPixelRatio (r) {
+    this.renderer.setPixelRatio(r)
+    this.composer.setPixelRatio(r)
+    this.resize()
   }
   // draw the frame (shot: the camera's shot, for the speed blur)
   render (sim, shot, dt) {
