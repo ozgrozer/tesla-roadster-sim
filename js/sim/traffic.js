@@ -1,9 +1,13 @@
 // City traffic: drivers follow the lane graph, keep their distance (intelligent driver model), stop
 // for red lights, slow for corners and for the Roadster, and get knocked loose when it hits them.
+// They signal before a lane change or a turn, honk at a Roadster that holds them up or cuts them up,
+// and move over when it honks at them from behind.
 // Traffic lives in a bubble round the player: cars far behind are recycled into the streets ahead.
 import { JAM } from './jam.js'
+import { temper } from './manners.js'
 import { CAR, clamp } from './constants.js'
 import { slide, collidePlayer } from './wrecks.js'
+import { SIGHT, LOOK, STOP_DECEL } from './sight.js'
 import {
   rng,
   NODES,
@@ -34,8 +38,6 @@ const A = 2.2 // comfortable acceleration, m/s^2
 const B = 3.2 // comfortable braking
 const S0 = 2.2 // gap kept at a standstill, m
 const HEADWAY = 1.3 // s
-const LOOK = 70 // m a driver watches ahead
-const STOP_DECEL = 4 // on yellow, go if stopping would need more than this
 const CHANGE = 28 // m of road a lane change takes
 
 const P = { x: 0, z: 0, hx: 1, hz: 0 }
@@ -52,6 +54,7 @@ export class Traffic {
     this.t = 0
     this.clock = 0
     this.vl = 0
+    this.walker = null // { x, z } of someone crossing on foot
   }
 
   // the lane graph is shared, so whichever traffic was there before is cleared off it too
@@ -96,6 +99,14 @@ export class Traffic {
       lc: 0, // lane change progress, 0 to 1 (0 when not changing)
       lat0: 0, // sideways offset from the new lane when the change began
       stuck: 0, // s spent stopped behind something that isn't moving with the traffic
+      lw: 0, // s spent at the line waiting to turn left across the oncoming traffic
+      sig: 0, // indicators: 0 off, 1 left, 2 right, 3 hazards (knocked loose)
+      horn: 0, // which horn it has (0 to 1)
+      honkT: 0, // s until it will honk again
+      annoy: 0, // s spent held up by the Roadster
+      honkIn: 0, // a honk on its way, after a knock
+      yieldT: 0, // honked at from behind: s it keeps trying to move over
+      big: type === BUS,
       brake: false,
       parked: false,
       loose: false,
@@ -104,6 +115,7 @@ export class Traffic {
       vz: 0,
       w: 0
     }
+    car.horn = (car.paint * 7.31) % 1
     this.cars.push(car)
     return car
   }
@@ -234,6 +246,7 @@ export class Traffic {
     car.lat0 = LANE_OFF[car.edge.lane] - LANE_OFF[t.lane]
     car.lc = 1e-6
     car.stuck = 0
+    car.yieldT = 0
     this.detach(car)
     car.edge = t
     this.insert(t, car)
@@ -270,6 +283,9 @@ export class Traffic {
     const pl = sim.mode === 'ground' ? sim.pos : sim.com
     this.me = sim.mode !== 'ramp' && pl.y < 4 ? pl : null
     this.mev = sim.vel
+    this.sim = sim
+    this.mhx = Math.cos(sim.yaw)
+    this.mhz = -Math.sin(sim.yaw)
     for (const car of this.cars)
       if (car.loose) slide(this, car, dt, sim)
       else if (!car.parked) this.drive(car, dt)
@@ -281,88 +297,13 @@ export class Traffic {
     }
   }
 
-  // Gap to whatever is ahead in this car's path (bumper to bumper) and its speed (in this.vl).
-  leader (car) {
-    const e = car.edge,
-      list = e.cars,
-      i = list.indexOf(car)
-    this.vl = 0
-    if (i >= 0 && i < list.length - 1) {
-      const o = list[i + 1]
-      this.vl = o.v
-      return o.s - car.s - (o.len + car.len) / 2
-    }
-    const n1 = car.next
-    if (!n1) return Infinity
-    let dist = e.len - car.s - car.len / 2,
-      best = Infinity
-    // a car just turning off this lane onto another branch still blocks the mouth of the junction
-    for (const sib of e.next)
-      if (sib !== n1 && sib.cars.length) {
-        const o = sib.cars[0],
-          g = dist + o.s - o.len / 2
-        if (o.s < o.len + 1 && g < best) {
-          best = g
-          this.vl = o.v * 0.5
-        }
-      }
-    if (n1.cars.length) {
-      const o = n1.cars[0],
-        g = dist + o.s - o.len / 2
-      if (g < best) {
-        best = g
-        this.vl = o.v
-      }
-      return best
-    }
-    dist += n1.len
-    if (dist < LOOK && n1.next.length === 1 && n1.next[0].cars.length) {
-      const o = n1.next[0].cars[0],
-        g = dist + o.s - o.len / 2
-      if (g < best) {
-        best = g
-        this.vl = o.v
-      }
-    }
-    return best
-  }
-  // the Roadster, or a car knocked out of its lane, in this car's path
-  obstacle (car, ox, oz, ovx, ovz, half, gap) {
-    const dx = ox - car.x,
-      dz = oz - car.z
-    const along = dx * car.hx + dz * car.hz
-    if (along <= 0 || along > LOOK) return gap
-    if (Math.abs(dz * car.hx - dx * car.hz) > car.wid / 2 + 1.5) return gap
-    const g = along - car.len / 2 - half
-    if (g >= gap) return gap
-    this.vl = Math.max(0, ovx * car.hx + ovz * car.hz)
-    return g
-  }
-
-  // Is anything coming the other way that a left turn into `node` would cut across?
-  oncoming (node, dir) {
-    const lanes = node.inc[(dir + 2) % 4]
-    if (!lanes) return false
-    for (const L of lanes) {
-      for (const c of L.next)
-        if (c.move !== 'L' && c.cars.some(o => o.s < c.len - 2)) return true
-      const list = L.cars
-      for (let i = list.length - 1; i >= Math.max(0, list.length - 3); i--) {
-        const o = list[i],
-          d = L.len - o.s - o.len / 2
-        if (d > 60) break
-        if (o.next?.move !== 'L' && (d < 6 || d < o.v * 6)) return true
-      }
-    }
-    return false
-  }
-
   drive (car, dt) {
     const e = car.edge
     // move over to the other lane: for a turn from there, or to get round something stopped here
+    car.yieldT = Math.max(0, car.yieldT - dt)
     if (e.road && e.twin && !car.lc && car.next) {
       const forTurn = !e.next.includes(car.next)
-      if (forTurn || car.stuck > 2.5) {
+      if (forTurn || car.stuck > 2.5 || car.yieldT > 0) {
         if (car.s > 4 && car.s < e.len - 22 && this.canMerge(e.twin, car))
           this.swap(car)
         else if (forTurn && car.s >= e.len - 22)
@@ -371,22 +312,39 @@ export class Traffic {
     }
     let gap = this.leader(car),
       vl = this.vl,
-      blocked = false
+      blocked = false,
+      mine = false, // what holds it up is the Roadster
+      red = false // (and not a red light it would be waiting at anyway)
     const me = this.me,
       mv = this.mev
-    const see = (x, z, vx, vz, half) => {
-      const g = this.obstacle(car, x, z, vx, vz, half, gap)
+    const see = (x, z, vx, vz, hx, hz, hl, hw, isMe = false) => {
+      const g = this.obstacle(car, x, z, vx, vz, hx, hz, hl, hw, gap)
       if (g < gap) {
         gap = g
         vl = this.vl
         blocked = vl < 0.5
+        mine = isMe
       }
     }
-    if (me) see(me.x, me.z, mv.x, mv.z, CAR.halfL)
-    for (const o of this.loose) see(o.x, o.z, o.vx, o.vz, o.len / 2)
+    if (me)
+      see(
+        me.x,
+        me.z,
+        mv.x,
+        mv.z,
+        this.mhx,
+        this.mhz,
+        CAR.halfL,
+        CAR.halfW,
+        true
+      )
+    const w = this.walker // Optimus, on foot
+    if (w) see(w.x, w.z, 0, 0, 1, 0, 0.3, 0.3)
+    for (const o of this.loose)
+      see(o.x, o.z, o.vx, o.vz, o.hx, o.hz, o.len / 2, o.wid / 2)
     for (const o of this.box)
       if (o !== car && o.edge !== e)
-        see(o.x, o.z, o.hx * o.v, o.hz * o.v, o.len / 2)
+        see(o.x, o.z, o.hx * o.v, o.hz * o.v, o.hx, o.hz, o.len / 2, o.wid / 2)
     // the signal at the end of this lane; a left turn also waits for a gap in the oncoming traffic
     if (e.road && car.next && car.go !== e) {
       const toLine = e.len - car.s - car.len / 2
@@ -407,6 +365,7 @@ export class Traffic {
           gap = toLine - 1.4 // the bumper stops just behind the painted line
           vl = 0
           blocked = false
+          mine = false
         }
       }
     }
@@ -427,6 +386,7 @@ export class Traffic {
     }
     acc = clamp(acc, -9, A)
     car.brake = acc < -1 || v < 0.3
+    temper(this, car, dt, mine && !red, gap, acc)
     car.v = Math.max(0, v + acc * dt)
     car.s += car.v * dt
     car.odo += car.v * dt
@@ -462,3 +422,4 @@ export class Traffic {
       this.spawn(x, z, 150, this.radius, view)
   }
 }
+Object.assign(Traffic.prototype, SIGHT)
