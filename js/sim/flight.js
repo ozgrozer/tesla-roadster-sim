@@ -128,8 +128,13 @@ export function stepAir (s, dt, c, main, lift) {
       .add(s.com)
     if (_a.y < minY) minY = _a.y
   }
-  if (minY <= 0) {
-    const upY = s.up(_b).y
+  const upY = s.up(_b).y
+  if (minY <= 0 && s.vel.y > 0 && upY > 0.72) {
+    // a corner dipped to the floor while the thrusters still lift the car: it scrapes, it doesn't
+    // land (landing would hand it back to the ground, and the lift would throw it straight up again)
+    s.com.y -= minY
+    s.syncPose()
+  } else if (minY <= 0) {
     if (upY > 0.72 && s.vel.y > -13) s.land()
     else
       s.toCrash(upY <= 0.72 ? 'Landed on its side' : 'Hit the ground too hard')
