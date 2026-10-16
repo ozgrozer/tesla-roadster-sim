@@ -5,6 +5,7 @@ import { CAR, clamp } from './constants.js'
 import { query, OUTER } from './city.js'
 
 export const CRASH_SPEED = 20 // m/s into something solid before the Roadster tumbles
+export const KNOCK_SPEED = 3 // m/s into a street light to knock it flat
 const NAMES = {
   building: 'Hit a building',
   lamp: 'Hit a street light',
@@ -223,9 +224,14 @@ export function collideCity (s) {
   const me = playerRect(s)
   query(me.x - 4, me.z - 4, me.x + 4, me.z + 4, hits)
   for (const c of hits) {
-    if (c.y0 > 1.2) continue // upper storeys are out of reach from the street
+    if (c.y0 > 1.2 || c.down) continue // upper storeys are out of reach from the street
     const hit = c.r ? rectPost(me, c) : rectRect(me, boxRect(c))
     if (!hit) continue
+    if (
+      c.kind === 'lamp' &&
+      knock(s, c, -(s.vel.x * hit.nx + s.vel.z * hit.nz))
+    )
+      continue
     nudge(s, hit.nx * hit.depth, hit.nz * hit.depth)
     me.x = s.pos.x
     me.z = s.pos.z
@@ -245,6 +251,17 @@ export function collideCity (s) {
       if (s.vel[k] * s.pos[k] > 0) s.vel[k] = 0
     }
   s.syncPose()
+}
+
+// A street light hit hard enough snaps at the base and falls the way the car was going; the car
+// barely notices. Returns whether it went down.
+export function knock (s, c, impact) {
+  if (impact < KNOCK_SPEED) return false
+  c.down = true
+  s.vel.x *= 0.9
+  s.vel.z *= 0.9
+  s.emit('knock', { i: c.i, x: c.x, z: c.z, dx: s.vel.x, dz: s.vel.z, impact })
+  return true
 }
 
 // A tumbling or airborne body whose centre is inside a building: lift it out by the nearest face.
