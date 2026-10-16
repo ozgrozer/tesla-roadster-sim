@@ -2,6 +2,7 @@
 // tyres (off walls and posts, or through a post it hits hard enough to snap), and pulling back into
 // the lane when a car was only nudged.
 import { query } from './city.js'
+import { honk } from './manners.js'
 import { CAR } from './constants.js'
 import { snap } from './breakables.js'
 import {
@@ -31,6 +32,7 @@ function loosen (tr, car) {
   car.w = 0
   car.v = 0
   car.brake = false
+  car.sig = 3 // hazards
 }
 // sim: where a post it snaps is reported (as a 'knock')
 export function slide (tr, car, dt, sim) {
@@ -63,6 +65,9 @@ export function slide (tr, car, dt, sim) {
     r.z = car.z
     impulse(car, null, hit, 0.2, 0.4)
   }
+  // a moment after the Roadster hits a car, its driver leans on the horn
+  if (car.honkIn > 0 && (car.honkIn -= dt) <= 0 && !car.parked)
+    honk(tr, car, true)
   if (sp < 0.15 && Math.abs(car.w) < 0.05 && car.looseT > 2.5) rejoin(tr, car)
 }
 // a car nudged only slightly out of line drives on once it has stopped
@@ -106,6 +111,7 @@ export function collidePlayer (tr, sim) {
     me.x = BODY.x
     me.z = BODY.z
     if (impact > 0.6) sim.emit('bump', { impact, what: 'car' })
+    if (impact > 2.5 && car.honkT <= 0 && !car.honkIn) car.honkIn = 1.2
   }
   if (sim.mode === 'ground') sim.syncPose()
 }
