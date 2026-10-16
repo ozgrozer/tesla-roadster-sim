@@ -5,6 +5,7 @@ import { Sim } from '../js/sim/sim.js'
 import { makeControls } from '../js/sim/constants.js'
 import { rectRect, carRect } from '../js/sim/collide.js'
 import { Traffic } from '../js/sim/traffic.js'
+import { CityPilot } from '../js/sim/cityPilot.js'
 import {
   RED,
   WALK,
@@ -210,4 +211,39 @@ test('the city never rides the test-site wall that shares its coordinates', () =
   const r = driveInto(-40, 1.75, 20, 4)
   assert.ok(r.sim.pos.x > 0, 'drove on past the origin')
   assert.equal(r.sim.mode, 'ground')
+})
+
+test('Autopilot drives the city without a scrape or a red light', () => {
+  const sim = new Sim()
+  sim.reset('city')
+  const tr = new Traffic({ seed: 5 })
+  tr.reset(sim.pos.x, sim.pos.z)
+  const pilot = new CityPilot(sim, tr)
+  assert.ok(pilot.join(), 'finds its lane at the spawn point')
+  const events = []
+  let dist = 0,
+    reds = 0,
+    turns = 0
+  for (let i = 0; i < 150 / H; i++) {
+    const was = pilot.edge
+    sim.step(H, pilot.update(H))
+    tr.step(H, sim)
+    events.push(...sim.events)
+    sim.events.length = 0
+    dist += Math.max(0, sim.speed) * H
+    if (was.road && pilot.edge !== was && pilot.edge.move) {
+      if (pilot.edge.move !== 'S') turns++
+      const node = NODES[was.to]
+      if (
+        signal(node, was.dir, tr.t) === RED &&
+        signal(node, was.dir, tr.t - SIGNAL.yellow) === RED
+      )
+        reds++
+    }
+  }
+  const hits = events.filter(e => e.type === 'bump' || e.type === 'crash')
+  assert.deepEqual(hits, [], 'touches nothing')
+  assert.equal(reds, 0, 'never enters a junction on red')
+  assert.ok(dist > 500, `drove ${dist.toFixed(0)} m`)
+  assert.ok(turns > 0, 'takes turns as well as going straight on')
 })
