@@ -285,7 +285,7 @@ function handleEvents () {
       if (e.impact > 1.2 && clock - app.lastBump > 0.15) {
         app.lastBump = clock
         sound.bump(e.impact)
-        rig.shake(Math.min(0.45, e.impact * 0.035))
+        rig.shake(Math.min(0.3, e.impact * 0.025))
         if (e.impact > 6) sparkBurst(sim.pos, Math.min(60, e.impact * 4))
       }
     } else if (e.type === 'knock') {
@@ -301,7 +301,7 @@ function handleEvents () {
     } else if (e.type === 'crash') {
       sparkBurst(sim.com, 120)
       burst(sim.com.x, sim.com.z, 80, 8)
-      rig.shake(0.9)
+      rig.shake(0.5)
       app.restHint = false
       sound.crash()
       hud.popup(`Crash · ${e.reason}`, 2600)
