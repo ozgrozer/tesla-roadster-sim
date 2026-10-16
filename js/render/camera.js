@@ -105,6 +105,11 @@ export class CameraRig {
     if (m === 'free') this.controls.target.copy(this.look)
     if (m === 'follow') this.f.init = false
   }
+  // the car was just put somewhere else: cut to it rather than ease over from where the camera was
+  cut () {
+    this.shot = ''
+    this.f.init = false
+  }
   cycle () {
     this.setMode(
       CAM_MODES[(CAM_MODES.indexOf(this.mode) + 1) % CAM_MODES.length]
