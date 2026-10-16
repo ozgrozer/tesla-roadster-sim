@@ -1,0 +1,174 @@
+/* Tesla Roadster Sim: design tokens, page frame, top bar and captions. Fonts live in fonts.css. */
+:root {
+  color-scheme: dark;
+  --night: #05060a;
+  --panel: rgba(10, 12, 18, 0.62);
+  --panel-edge: rgba(238, 240, 242, 0.12);
+  --ano: #eef0f2;
+  --dim: #8a93a0;
+  --led: #ff3b3b;
+  --jet: #bfe9ff;
+  --gold: #d6a84e;
+  --ok: #59e3a0;
+  --warn: #ffb340;
+  --display: 'Saira Semi Condensed', 'Arial Narrow', 'Helvetica Neue', Arial,
+    sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas,
+    monospace;
+}
+html,
+body {
+  height: 100%;
+  margin: 0;
+  background: var(--night);
+  color: var(--ano);
+  overflow: hidden;
+}
+body {
+  font-family: var(--display);
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  -webkit-user-select: none;
+}
+#c {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+}
+
+.hud {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  padding: max(14px, env(safe-area-inset-top, 0px))
+    max(16px, env(safe-area-inset-right, 0px))
+    max(14px, env(safe-area-inset-bottom, 0px))
+    max(16px, env(safe-area-inset-left, 0px));
+}
+.hud button,
+.hud .interactive {
+  pointer-events: auto;
+}
+
+/* top bar */
+.top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+.brand {
+  display: grid;
+  gap: 2px;
+}
+.brand h1 {
+  margin: 0;
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+.brand p {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--dim);
+  letter-spacing: 0.04em;
+}
+.controls-top {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.btn {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ano);
+  background: var(--panel);
+  border: 1px solid var(--panel-edge);
+  border-radius: 3px;
+  padding: 8px 12px;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.btn:hover {
+  border-color: rgba(238, 240, 242, 0.35);
+}
+.btn:focus-visible {
+  outline: 2px solid var(--jet);
+  outline-offset: 2px;
+}
+.btn[aria-pressed='true'] {
+  border-color: var(--led);
+  box-shadow: inset 0 0 0 1px var(--led);
+}
+.mode-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.mode-pill .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--led);
+  box-shadow: 0 0 8px var(--led);
+}
+.mode-pill.manual .dot {
+  background: var(--ok);
+  box-shadow: 0 0 8px var(--ok);
+}
+
+/* phase caption */
+.caption {
+  position: absolute;
+  left: 50%;
+  top: 13%;
+  transform: translateX(-50%);
+  text-align: center;
+  width: min(92vw, 720px);
+  transition: opacity 0.35s;
+}
+.caption .eyebrow {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.28em;
+  color: var(--led);
+  text-transform: uppercase;
+}
+.caption .title {
+  font-weight: 800;
+  font-size: clamp(22px, 4.2vw, 42px);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.05;
+  text-wrap: balance;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.8);
+}
+.caption .sub {
+  margin-top: 6px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: #b7bec8;
+  letter-spacing: 0.06em;
+  text-shadow: 0 1px 3px #000, 0 0 14px rgba(0, 0, 0, 0.9);
+}
+.countdown {
+  position: absolute;
+  left: 50%;
+  top: 40%;
+  transform: translate(-50%, -50%);
+  font-weight: 800;
+  font-size: clamp(64px, 14vw, 140px);
+  color: var(--ano);
+  opacity: 0;
+  text-shadow: 0 0 40px rgba(255, 59, 59, 0.6);
+}
