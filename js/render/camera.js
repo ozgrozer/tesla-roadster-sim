@@ -155,19 +155,28 @@ export class CameraRig {
       v = sim.vel,
       hv = Math.hypot(v.x, v.z)
     const nose = Math.atan2(-fw.z, fw.x),
-      slip = Math.cos(Math.atan2(-v.z, v.x) - nose)
+      along = Math.atan2(-v.z, v.x),
+      off = wrapPi(along - nose),
+      ao = Math.abs(off)
     const wild =
       sim.mode === 'crash' ||
-      (sim.mode === 'ground' &&
-        (Math.abs(sim.yawRate) > 2.5 || (hv > 4 && slip < 0.8 && slip > -0.3)))
+      (sim.mode === 'ground' && Math.abs(sim.yawRate) > 2.5)
     if (wild) {
-      if (hv > 3) f.targetHeading = Math.atan2(-v.z, v.x)
+      if (hv > 3) f.targetHeading = along
     } else if (
       up.y > 0.55 &&
       Math.hypot(fw.x, fw.z) > 0.3 &&
       sim.mode !== 'ramp'
-    )
-      f.targetHeading = nose
+    ) {
+      // sliding (not reversing), it looks partly along the slide, the more the further sideways the
+      // car goes: a drift is seen from its outside, the car's flank to the camera
+      const x = (ao - 0.17) / 0.6,
+        k =
+          sim.mode === 'ground' && hv > 4 && ao < 1.87
+            ? 0.85 * (x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x))
+            : 0
+      f.targetHeading = nose + off * k
+    }
     if (!f.init) {
       const v = sim.vel
       if (!(up.y > 0.55) && Math.hypot(v.x, v.z) > 1)
