@@ -161,6 +161,7 @@ export function mixSound (sound, app, traffic, dt, clock) {
     side: sim.thrSide,
     suction: sim.suction,
     city,
+    inside: !!app.inside, // the camera in the driver's seat
     honks: !traffic.quiet, // (not until the Roadster has honked at the gridlock)
     cars: on ? nearCars(traffic, sim) : NONE,
     walls: w,
