@@ -14,6 +14,7 @@ import {
   signal,
   pointAt
 } from './city.js'
+import { JAM } from './jam.js'
 import { slide, collidePlayer } from './wrecks.js'
 
 export const TYPES = [
@@ -60,11 +61,12 @@ export class Traffic {
     this.n = 0
   }
 
-  // Fill the parking lots and the streets around (x, z).
+  // Fill the parking lots, the jammed street and the streets around (x, z).
   reset (x, z) {
     this.clear()
     this.t = 0
     for (const st of STALLS) if (st.taken) this.park(st)
+    for (const e of JAM) this.jam(e)
     for (let i = 0; i < this.count * 6 && this.n < this.count; i++)
       this.spawn(x, z, 24, this.radius)
   }
@@ -117,6 +119,24 @@ export class Traffic {
     car.x = st.x
     car.z = st.z
     this.setYaw(car, st.yaw)
+  }
+  // a lane of the jammed street: nose to tail, a little out of line, brake lights on (and buses
+  // only in the kerb lane)
+  jam (e) {
+    const R = this.R
+    for (let s = 0.8 + R(); ; ) {
+      const type = this.pickType(e.lane === 0),
+        len = TYPES[type].len
+      if (s + len > e.len - 0.5) break
+      const car = this.make(type)
+      car.parked = car.brake = true
+      pointAt(e, s + len / 2, P)
+      const lat = (R() - 0.5) * 0.5
+      car.x = P.x - P.hz * lat
+      car.z = P.z + P.hx * lat
+      this.setYaw(car, Math.atan2(-P.hz, P.hx) + (R() - 0.5) * 0.06)
+      s += len + 0.9 + R() * 1.4
+    }
   }
   setYaw (car, yaw) {
     car.yaw = yaw
