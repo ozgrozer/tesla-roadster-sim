@@ -68,6 +68,7 @@ export class Traffic {
   reset (x, z) {
     this.clear()
     this.t = 0
+    for (const n of NODES) n.hold = null // every light on its cycle
     for (const st of STALLS) if (st.taken) this.park(st)
     for (const e of JAM) this.jam(e)
     for (let i = 0; i < this.count * 6 && this.n < this.count; i++)
