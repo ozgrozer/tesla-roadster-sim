@@ -189,10 +189,15 @@ function toggleSound () {
   app.soundOn = sound.enabled
   hud.setSound(sound.enabled)
 }
+// the horn sounds while H is held; traffic just ahead moves over for it
+function setHorn (on) {
+  sound.horn(on)
+  traffic.horn = on
+}
 function tryFlip (axis) {
   if (app.auto) setAuto(false)
   if (sim.mode !== 'air') {
-    hud.popup('Get airborne first · hold <b>Space</b>', 1600, 'hint')
+    hud.popup('Get airborne first · hold <b>F</b> to fly', 1600, 'hint')
     return
   }
   if (!sim.man) sim.startManeuver(axis, axis === 'z' ? TAU : -TAU)
@@ -219,16 +224,17 @@ const COMMANDS = {
   Digit3: () => {
     resetTo('lineup')
     hud.popup(
-      'Build speed, then <b>Space</b> to lift and <b>K</b> to kickflip',
+      'Build speed, then <b>F</b> to lift and <b>K</b> to kickflip',
       2300,
       'hint'
     )
   },
   KeyV: () => setCam(rig.cycle()),
   KeyT: toggleSlow,
-  KeyH: () => hud.toggleHelp(),
+  KeyI: () => hud.toggleHelp(),
+  KeyH: () => setHorn(true),
   KeyN: toggleSound,
-  KeyF: () => {
+  KeyG: () => {
     if (app.auto) setAuto(false)
     app.fanMode =
       app.fanMode === 'auto' ? 'on' : app.fanMode === 'on' ? 'off' : 'auto'
@@ -242,7 +248,10 @@ const input = new Input({
     if (code === 'KeyB' && first) sound.ratchet()
     if (app.auto) setAuto(false)
   },
-  onCommand: code => COMMANDS[code]?.()
+  onCommand: code => COMMANDS[code]?.(),
+  onRelease: code => {
+    if (code === 'KeyH') setHorn(false)
+  }
 })
 hud.el.mode.addEventListener('click', () =>
   app.auto ? setAuto(false) : startAutopilot()
@@ -252,6 +261,9 @@ hud.el.camBtn.addEventListener('click', () => setCam(rig.cycle()))
 hud.el.slow.addEventListener('click', toggleSlow)
 hud.el.helpBtn.addEventListener('click', () => hud.toggleHelp())
 hud.el.sound.addEventListener('click', toggleSound)
+// a clicked button lets go of focus, or Space (the e-brake) would press it again
+for (const b of document.querySelectorAll('.btn'))
+  b.addEventListener('click', e => e.detail && b.blur())
 // browsers only allow audio after a gesture: the first click or key turns sound on
 function unlockSound (e) {
   if (e.code === 'KeyN' || e.target?.closest?.('#btnSound')) return
