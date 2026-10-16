@@ -149,7 +149,7 @@ export function stepAir (s, dt, c, main, lift) {
     return
   }
   if (s.world === 'city') {
-    // the side of a building, a post or the barrier bounces the car off
+    // the side of a building or a post bounces the car off
     collideAir(s, minY, maxY, dt)
     return
   }
