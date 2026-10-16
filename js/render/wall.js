@@ -1,7 +1,7 @@
 // The curved wall (slab, LED edges that turn white behind the car, centre line) and its steel truss.
 import * as THREE from 'three'
+import { site, MAT } from './scene.js'
 import { TRACK } from '../sim/track.js'
-import { scene, MAT } from './scene.js'
 import { AX_Y } from '../sim/constants.js'
 
 // ---------- the wall ----------
@@ -143,7 +143,7 @@ export function buildWall () {
   cap.position.set(e.x - (e.nx * th) / 2, e.y - (e.ny * th) / 2, 0)
   cap.rotation.z = Math.atan2(e.ty, e.tx)
   group.add(cap)
-  scene.add(group)
+  site.add(group)
   return ring
 }
 
@@ -233,7 +233,7 @@ export function buildTruss () {
   })
   inst.castShadow = true
   inst.receiveShadow = true
-  scene.add(inst)
+  site.add(inst)
   // stage lights on the gantry
   for (const z of [z0, z1])
     for (const x of [gx0 + 1, (gx0 + x0) / 2]) {
@@ -242,10 +242,10 @@ export function buildTruss () {
         MAT.darkMetal
       )
       l.position.set(x, gy0 - 0.2, z)
-      scene.add(l)
+      site.add(l)
       const lens = new THREE.Mesh(new THREE.CircleGeometry(0.14, 12), MAT.lamp)
       lens.rotation.x = Math.PI / 2
       lens.position.set(x, gy0 - 0.36, z)
-      scene.add(lens)
+      site.add(lens)
     }
 }
