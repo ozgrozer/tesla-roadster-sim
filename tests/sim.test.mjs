@@ -290,3 +290,36 @@ test('edge cases end in a clean crash or stop, never NaN', () => {
     )
   }
 })
+
+test('a nose dipped into the pad while climbing on the thrusters scrapes, not lands', () => {
+  const sim = new Sim()
+  sim.reset('lineup')
+  sim.pos.x = -60 // the open runway, heading for the lineup
+  sim.syncPose()
+  while (sim.speed < 50) {
+    const c = makeControls()
+    c.fan = false
+    c.throttle = 1
+    c.main = 1
+    sim.step(H, c)
+  }
+  const events = []
+  let air = 0
+  for (let i = 0; i < 120 * 1.2; i++) {
+    const c = makeControls()
+    c.fan = false
+    c.lift = 1
+    if (sim.mode === 'air') air += H
+    c.pitch = air > 0 && air < 0.25 ? -1 : 0 // a stab of nose-down just after lift-off
+    sim.step(H, c)
+    events.push(...sim.events)
+    sim.events.length = 0
+  }
+  assert.deepEqual(
+    events.filter(e => e.type === 'touchdown' || e.type === 'crash'),
+    [],
+    'no touchdown while climbing'
+  )
+  assert.equal(sim.mode, 'air')
+  assert.ok(sim.com.y > 3, `climbs away, at ${sim.com.y.toFixed(1)} m`)
+})
