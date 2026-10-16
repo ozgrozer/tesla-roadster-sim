@@ -3,6 +3,9 @@ import * as THREE from 'three'
 import { Hud } from './ui/hud.js'
 import { Sim } from './sim/sim.js'
 import { Input } from './ui/input.js'
+import { Minimap } from './ui/minimap.js'
+import { Traffic } from './sim/traffic.js'
+import { nearestLane } from './sim/city.js'
 import { Autopilot } from './sim/autopilot.js'
 import { SoundEngine } from './audio/sound.js'
 import { buildLineup } from './render/lineup.js'
@@ -10,6 +13,7 @@ import { CameraRig, CAM_NAMES } from './render/camera.js'
 import { updateSkids, clearSkids } from './render/skids.js'
 import { LED_MAT, buildWall, buildTruss } from './render/wall.js'
 import { DEG, TAU, clamp, makeControls } from './sim/constants.js'
+import { CityView, clipCamera } from './render/city.js'
 import { buildRoadster, updateRoadster } from './render/roadster.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
@@ -65,7 +69,11 @@ const ap = new Autopilot(sim)
 const rig = new CameraRig(camera, canvas)
 const sound = new SoundEngine()
 const hud = new Hud(RS)
+const traffic = new Traffic()
+const cityView = new CityView()
+const minimap = new Minimap(document.getElementById('radar'))
 const app = {
+  world: 'site', // 'site' (the reveal's test site) or 'city' (free roam)
   sim,
   ap,
   auto: true,
@@ -78,7 +86,8 @@ const app = {
   lastCtl: makeControls(),
   crashClock: 0,
   lastCountdown: null,
-  wheelAudio: 0
+  wheelAudio: 0,
+  lastBump: 0
 }
 
 function setAuto (on) {
@@ -91,6 +100,7 @@ function setAuto (on) {
   }
 }
 function startAutopilot () {
+  setWorld('site')
   sim.reset('start')
   ap.reset()
   app.score = 0
@@ -100,12 +110,44 @@ function startAutopilot () {
   setCam('director')
   setAuto(true)
 }
-function resetTo (spot) {
-  sim.reset(spot)
+function resetTo (spot, at = null) {
+  setWorld(spot === 'city' ? 'city' : 'site')
+  sim.reset(spot, at)
+  if (spot === 'city' && !at) traffic.reset(sim.pos.x, sim.pos.z)
   app.lastSpot = spot
   app.score = 0
   app.crashClock = 0
   if (app.auto) setAuto(false)
+}
+// ---------- worlds: the test site and the city ----------
+function setWorld (w) {
+  if (app.world === w) return
+  app.world = w
+  cityView.show(w === 'city')
+  rig.clip = w === 'city' ? clipCamera : null
+  hud.setWorld(w)
+  for (const p of ALL_PARTICLES) p.clear()
+  clearSkids()
+  // a reload lands back in the same world
+  const url = location.pathname + location.search
+  history.replaceState(null, '', w === 'city' ? `${url}#city` : url)
+}
+function toggleWorld () {
+  hud.fade(() => {
+    if (app.world === 'city') startAutopilot()
+    else {
+      resetTo('city')
+      setCam('follow')
+      hud.popup('Welcome to the city · <b>C</b> for the test site', 3200)
+    }
+  })
+}
+// after a crash in the city, carry on from the nearest lane instead of the spawn point
+function respawn () {
+  if (app.world !== 'city') return resetTo(app.lastSpot)
+  const at = nearestLane(sim.com.x, sim.com.z)
+  traffic.clearAround(at.x, at.z, 14)
+  resetTo('city', at)
 }
 function setCam (mode) {
   rig.setMode(mode)
@@ -133,6 +175,7 @@ function tryFlip (axis) {
 // ---------- input ----------
 const COMMANDS = {
   KeyP: startAutopilot,
+  KeyC: toggleWorld,
   KeyM: () => {
     if (app.auto) setAuto(false)
   },
@@ -169,6 +212,7 @@ const input = new Input({
 hud.el.mode.addEventListener('click', () =>
   app.auto ? setAuto(false) : startAutopilot()
 )
+hud.el.world.addEventListener('click', toggleWorld)
 hud.el.camBtn.addEventListener('click', () => setCam(rig.cycle()))
 hud.el.slow.addEventListener('click', toggleSlow)
 hud.el.helpBtn.addEventListener('click', () => hud.toggleHelp())
@@ -214,6 +258,14 @@ function handleEvents () {
       rig.shake(Math.min(0.6, 0.05 + Math.abs(e.vy) * 0.04))
       sound.thump(e.g)
       if (app.auto) ap.cap[2] = `Touchdown at ${e.g.toFixed(1)} G`
+    } else if (e.type === 'bump') {
+      // knocks against cars, posts and walls in the city (a scrape fires every step: throttle it)
+      if (e.impact > 1.2 && clock - app.lastBump > 0.15) {
+        app.lastBump = clock
+        sound.bump(e.impact)
+        rig.shake(Math.min(0.45, e.impact * 0.035))
+        if (e.impact > 6) sparkBurst(sim.pos, Math.min(60, e.impact * 4))
+      }
     } else if (e.type === 'crash') {
       sparkBurst(sim.com, 120)
       burst(sim.com.x, sim.com.z, 80, 8)
@@ -256,6 +308,19 @@ function updateSound (dt) {
   })
 }
 
+// the camera's ground position and heading: traffic spawns out of its sight, the radar turns with it
+const VIEW = { x: 0, z: 0, fx: 1, fz: 0, heading: 0 }
+const _dir = new THREE.Vector3()
+function updateView () {
+  camera.getWorldDirection(_dir)
+  const l = Math.hypot(_dir.x, _dir.z) || 1
+  VIEW.x = camera.position.x
+  VIEW.z = camera.position.z
+  VIEW.fx = _dir.x / l
+  VIEW.fz = _dir.z / l
+  VIEW.heading = Math.atan2(-_dir.z, _dir.x)
+}
+
 // ---------- main loop: fixed 120 Hz physics, variable-rate rendering ----------
 const H = 1 / 120
 let acc = 0,
@@ -272,9 +337,12 @@ function frame (now) {
   acc += dt * app.timeScale
   let simDt = 0,
     steps = 0
+  const city = app.world === 'city'
+  if (city) updateView()
   while (acc >= H && steps < 14) {
     const c = app.auto ? ap.update(H) : input.controls(sim, app.fanMode)
     sim.step(H, c)
+    if (city) traffic.step(H, sim, VIEW)
     app.lastCtl = c
     acc -= H
     simDt += H
@@ -292,7 +360,7 @@ function frame (now) {
     sim.crashSettled &&
     (app.crashClock += dt) > 2.5
   )
-    resetTo(app.lastSpot)
+    respawn()
   if (app.auto && ap.countdown !== app.lastCountdown) {
     if (ap.countdown !== null) sound.beep(ap.countdown === 0)
     app.lastCountdown = ap.countdown
@@ -314,6 +382,10 @@ function frame (now) {
   const blink = Math.sin(clock * 2.4) > 0.6 ? 1 : 0.15
   MAT.beacon.color.setRGB(4 * blink, 0.2 * blink, 0.15 * blink)
   rig.update(dt, clock, sim, app.auto ? ap.shot : null)
+  if (city) {
+    cityView.update(dt, clock, traffic, camera)
+    minimap.update(dt, sim, traffic, VIEW.heading)
+  }
   updateSound(dt)
   hud.update(dt, app)
   composer.render()
@@ -323,6 +395,10 @@ function frame (now) {
   }
 }
 resize()
+if (location.hash === '#city') {
+  resetTo('city')
+  setCam('follow')
+}
 requestAnimationFrame(frame)
 
 // debugging hook for the console and automated checks: fast-forward the sim without rendering
@@ -332,12 +408,18 @@ window.__roadster = {
   rig,
   sound,
   app,
+  traffic,
+  cityView,
+  renderer,
   setAuto,
   resetTo,
+  setWorld,
+  toggleWorld,
   advance (sec) {
     for (let t = 0; t < sec; t += H) {
       const c = app.auto ? ap.update(H) : input.controls(sim, app.fanMode)
       sim.step(H, c)
+      if (app.world === 'city') traffic.step(H, sim, VIEW)
       app.lastCtl = c
     }
     handleEvents()
