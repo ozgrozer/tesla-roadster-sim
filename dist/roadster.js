@@ -54895,7 +54895,9 @@ class Hud {
           : sim.mode === 'ramp'
           ? 'W climb · S brake, then reverse down · B hold · Shift main burn off the lip'
           : sim.mode === 'crash'
-          ? 'Crashed · R to reset · P to watch the autopilot'
+          ? sim.up().y > 0.95
+            ? 'Crashed · W to drive on · R to reset · P to watch the autopilot'
+            : 'Upside down · A/D to roll it back over · R to reset'
           : 'W throttle · release to coast · S brake · B e-brake · A/D steer · Shift boost · Space lift off'
       )
     }
@@ -56361,15 +56363,17 @@ __export(__exports, { "stepGround": () => stepGround })
 
 // ---- js/sim/crash.js
 __define(8, function (__exports) {
-// Crashes: a rigid box tumbling on the ground with impulse-based contact and friction.
+// Crashes: a rigid box tumbling on the ground with impulse-based contact and friction, and getting
+// back on the road afterwards, GTA-style.
 const THREE = __require(0)
-const { G, CAR, CORNERS } = __require(1)
+const { G, TAU, CAR, AX_Y, CORNERS } = __require(1)
 const { pushOut, bounceCity } = __require(5)
 const _a = new THREE.Vector3(),
   _b = new THREE.Vector3(),
   _c = new THREE.Vector3(),
   _d = new THREE.Vector3()
-const _q = new THREE.Quaternion()
+const _q = new THREE.Quaternion(),
+  _q2 = new THREE.Quaternion()
 
 function enterCrash (s, reason) {
   if (s.mode === 'crash') return
@@ -56396,6 +56400,7 @@ function enterCrash (s, reason) {
     s.com.x = s.com.x > cx ? hit.x1 + 1.3 : hit.x0 - 1.3
   }
   s.setMode('crash')
+  s.righting = null
   s.man = null
   s.stunt = null
   s.crashReason = reason
@@ -56404,8 +56409,22 @@ function enterCrash (s, reason) {
   s.emit('crash', { reason, speed: s.vel.length() })
 }
 
-function stepCrash (s, dt) {
+// c: the driver's controls. Once the wreck comes to rest, steering rolls it back onto its wheels
+// (A one way, D the other; from its side it always goes the short way), and if it is already on
+// them, any drive key carries on from there. The autopilots never steer a wreck: they restart.
+function stepCrash (s, dt, c) {
   s.crashTime += dt
+  if (s.righting) return stepRighting(s, dt)
+  if (
+    c &&
+    s.crashTime > 0.5 &&
+    s.vel.length() < 1.5 &&
+    s.omegaW.length() < 1.5
+  ) {
+    if (s.up(_a).y > 0.95) {
+      if (c.throttle || c.brake || c.reverse || c.steer) return recover(s)
+    } else if (c.steer) return startRighting(s, -Math.sign(c.steer))
+  }
   s.vel.y -= G * dt
   s.com.addScaledVector(s.vel, dt)
   s.omegaW.multiplyScalar(1 - 0.3 * dt)
@@ -56469,6 +56488,85 @@ function stepCrash (s, dt) {
   s.gLoad += (0 - s.gLoad) * Math.min(1, dt * 4)
   if (s.crashTime > 1.2 && s.vel.length() < 0.8 && s.omegaW.length() < 0.8)
     s.crashSettled = true
+}
+
+// Roll the wreck over about its long axis (dir +1 clockwise seen from behind, -1 the other way)
+// with a little hop, onto its wheels, facing the way it points.
+function startRighting (s, dir) {
+  const f = s.fwd(_a),
+    u = s.up(_b)
+  let hx = f.x,
+    hz = f.z
+  if (Math.hypot(hx, hz) < 0.3) {
+    hx = Math.cos(s.yaw)
+    hz = -Math.sin(s.yaw)
+  }
+  // the roll that brings the roof up (none if the car stands on its nose or tail: it just tips)
+  let roll = 0
+  if (Math.abs(f.y) < 0.8) {
+    const py = _c.set(0, 1, 0).addScaledVector(f, -f.y)
+    roll = Math.atan2(_d.copy(u).cross(py).dot(f), u.dot(py))
+    if (Math.abs(roll) > 2.6 && Math.sign(roll) !== dir)
+      roll -= Math.sign(roll) * TAU // on its roof: the way the player steered
+  }
+  const q0 = s.quat.clone(),
+    axis = f.clone()
+  const level = new THREE.Quaternion().setFromAxisAngle(
+    AX_Y,
+    Math.atan2(-hz, hx)
+  )
+  // what the roll alone leaves over (a nose a little up or down), eased out along the way
+  const fix = level.multiply(
+    _q.setFromAxisAngle(axis, roll).multiply(q0).invert()
+  )
+  const k = Math.abs(roll) / Math.PI
+  s.righting = {
+    t: 0,
+    dur: 0.55 + 0.3 * k,
+    hop: 0.9 + 0.5 * k,
+    y0: s.com.y,
+    roll,
+    axis,
+    q0,
+    fix
+  }
+  s.vel.set(0, 0, 0)
+  s.omegaW.set(0, 0, 0)
+}
+function stepRighting (s, dt) {
+  const r = s.righting
+  r.t += dt
+  const u = Math.min(1, r.t / r.dur),
+    e = u * u * (3 - 2 * u)
+  _q.setFromAxisAngle(r.axis, r.roll * e).multiply(r.q0)
+  s.quat.copy(_q2.identity().slerp(r.fix, e)).multiply(_q)
+  s.com.y = r.y0 + (CAR.comH - r.y0) * e + r.hop * Math.sin(Math.PI * u)
+  s.pos.copy(s.com).sub(s.up(_a).multiplyScalar(CAR.comH))
+  if (u >= 1) recover(s)
+}
+// Back on the road at a standstill, where the wreck lies.
+function recover (s) {
+  const f = s.fwd(_a)
+  s.yaw = Math.atan2(-f.z, f.x)
+  s.pos.set(s.com.x, 0, s.com.z)
+  s.vel.set(0, 0, 0)
+  s.omega.set(0, 0, 0)
+  s.omegaW.set(0, 0, 0)
+  s.speed = s.yawRate = s.steerAng = s.accLong = s.latAcc = 0
+  s.righting = null
+  s.crashSettled = false
+  s.setMode('ground')
+  s.suspV = -1.2
+  s.syncPose()
+  // at the test site, clear of the parked lineup and the tower it may have come to rest against
+  for (let i = 0; i < 3 && s.world === 'site'; i++) {
+    const b = s.hitSolid()
+    if (!b) break
+    s.pos.x =
+      s.pos.x > (b.x0 + b.x1) / 2 ? b.x1 + CAR.halfL + 0.3 : b.x0 - CAR.halfL - 0.3
+    s.syncPose()
+  }
+  s.emit('righted')
 }
 __export(__exports, { "enterCrash": () => enterCrash, "stepCrash": () => stepCrash })
 })
@@ -56543,6 +56641,7 @@ class Sim {
     this.stunt = null
     this.invertedTime = 0
     this.crashSettled = false
+    this.righting = null
     this.crashTime = 0
     this.crashReason = ''
     this.accLong = 0
@@ -56672,7 +56771,7 @@ class Sim {
     if (this.mode === 'ground') stepGround(this, dt, c, main, lift)
     else if (this.mode === 'ramp') this.stepRamp(dt, c, main, lift)
     else if (this.mode === 'air') stepAir(this, dt, c, main, lift)
-    else stepCrash(this, dt)
+    else stepCrash(this, dt, c)
 
     // visual suspension spring
     this.suspV += (-120 * this.susp - 14 * this.suspV) * dt
@@ -65483,7 +65582,7 @@ const app = {
   fanMode: 'auto',
   soundOn: false,
   lastCtl: makeControls(),
-  crashClock: 0,
+  restHint: false, // told the player how to carry on from a wreck at rest
   lastCountdown: null,
   wheelAudio: 0,
   lastBump: 0
@@ -65533,7 +65632,6 @@ function resetTo (spot, at = null) {
   }
   app.lastSpot = spot
   app.score = 0
-  app.crashClock = 0
   if (app.auto) setAuto(false)
 }
 // ---------- worlds: the test site and the city ----------
@@ -65691,11 +65789,16 @@ function handleEvents () {
       sound.bump(e.impact * 0.6)
       sparkBurst({ x: e.x, y: 0.4, z: e.z }, 26)
       rig.shake(0.12)
+    } else if (e.type === 'righted') {
+      // rolled back onto its wheels after a crash
+      burst(sim.pos.x, sim.pos.z, 60, 5)
+      rig.shake(0.15)
+      sound.thump(1.4)
     } else if (e.type === 'crash') {
       sparkBurst(sim.com, 120)
       burst(sim.com.x, sim.com.z, 80, 8)
       rig.shake(0.9)
-      app.crashClock = 0
+      app.restHint = false
       sound.crash()
       hud.popup(`Crash · ${e.reason}`, 2600)
     }
@@ -65781,13 +65884,16 @@ function frame (now) {
   }
   if (steps >= 14) acc = 0
   handleEvents()
-  if (
-    !app.auto &&
-    sim.mode === 'crash' &&
-    sim.crashSettled &&
-    (app.crashClock += dt) > 2.5
-  )
-    respawn()
+  // a wreck at rest stays put (no respawn): say how to carry on from it
+  if (!app.auto && sim.mode === 'crash' && sim.crashSettled && !app.restHint) {
+    app.restHint = true
+    hud.popup(
+      sim.up().y > 0.95
+        ? 'On its wheels · <b>W</b> to drive on'
+        : '<b>A</b> / <b>D</b> to roll it back over',
+      3000
+    )
+  }
   if (app.auto && P.countdown !== app.lastCountdown) {
     if (P.countdown !== null) sound.beep(P.countdown === 0)
     app.lastCountdown = P.countdown
