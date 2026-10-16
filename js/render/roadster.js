@@ -9,7 +9,7 @@
 import * as THREE from 'three'
 import { scene, MAT } from './scene.js'
 import { clamp } from '../sim/constants.js'
-import { buildOptimus, poseOptimus, HIP_SIT } from './optimus.js'
+import { buildOptimus, poseOptimus, ANKLE_UP } from './optimus.js'
 import { loft, loftGeos, at, seam, withStations } from './loft.js'
 import { buildWheels, updateWheels, withWheelArches } from './wheels.js'
 import { buildTail, buildWing, updateWing, fanUnit } from './roadsterRear.js'
@@ -122,6 +122,19 @@ const DOOR_INSIDE = new THREE.MeshStandardMaterial({
   roughness: 0.75,
   side: THREE.BackSide
 })
+// The yoke, its grips either side of the hub, and the driver: Optimus sat back in the bucket seat, feet
+// on the floor and hands round the grips
+export const YOKE = [-0.02, 0.7, -0.36]
+export const DRIVER = {
+  root: [-0.44, 0.33, -0.36],
+  lean: -0.26,
+  nod: 0.2,
+  feet: [-0.13, 0.13].map(dz => ({
+    at: [0.38, 0.165 + ANKLE_UP, YOKE[2] + dz]
+  })),
+  hands: [-0.18, 0.18].map(dz => ({ at: [YOKE[0], YOKE[1], YOKE[2] + dz] }))
+}
+
 // The cabin, seen through the glass and the open doors: a black tub with two bucket seats, the
 // console between them, dark linings behind the doors, the dash under the windshield and the yoke.
 function buildCabin (body) {
@@ -141,7 +154,7 @@ function buildCabin (body) {
   add(2.1, 0.03, 1.64, dark, 0.1, 0.15, 0) // floor
   for (const sg of [-1, 1]) {
     add(1.16, 0.2, 0.1, dark, 0.27, 0.24, sg * 0.84) // the sill under the door
-    add(0.5, 0.1, 0.48, seat, -0.32, 0.24, sg * 0.36) // seat base
+    add(0.5, 0.07, 0.48, seat, -0.32, 0.205, sg * 0.36) // seat base
     add(0.11, 0.66, 0.46, seat, -0.66, 0.56, sg * 0.36, 0.3) // backrest
     add(0.12, 0.08, 0.3, seat, -0.84, 0.92, sg * 0.36, 0.3) // head rest
     add(0.64, 0.72, 0.04, dark, -0.62, 0.525, sg * 0.86) // lining behind the door
@@ -149,17 +162,30 @@ function buildCabin (body) {
   add(1.2, 0.2, 0.22, dark, 0.05, 0.26, 0) // console
   add(0.08, 0.85, 1.64, dark, -0.98, 0.55, 0) // bulkhead behind the seats
   add(0.55, 0.16, 1.56, dark, 0.92, 0.6, 0) // dash
-  // the yoke on its column
-  const yoke = new THREE.Mesh(
+  // the yoke, open at the top, its rim leaning a little forward, on a hub and a column that runs
+  // down into the dash
+  const yoke = new THREE.Group()
+  yoke.position.set(...YOKE)
+  yoke.rotation.z = -0.2
+  const rim = new THREE.Mesh(
     new THREE.TorusGeometry(0.15, 0.018, 8, 24, Math.PI * 1.2),
     MAT.trim
   )
-  yoke.rotation.set(0, Math.PI / 2, Math.PI * 0.4)
-  yoke.position.set(0.24, 0.66, -0.36)
-  yoke.rotation.order = 'YXZ'
-  yoke.rotation.x = -0.35
+  rim.rotation.set(0, Math.PI / 2, Math.PI * 0.9, 'YXZ')
+  yoke.add(rim, box(0.03, 0.03, 0.28, MAT.trim, 0.01, 0, 0))
+  yoke.add(box(0.05, 0.08, 0.1, dark, 0.03, 0, 0))
   body.add(yoke)
-  add(0.42, 0.05, 0.05, dark, 0.48, 0.6, -0.36, 0.35)
+  const col = [0.645 - YOKE[0], 0.58 - YOKE[1]]
+  add(
+    Math.hypot(...col),
+    0.05,
+    0.05,
+    dark,
+    YOKE[0] + col[0] / 2,
+    YOKE[1] + col[1] / 2,
+    YOKE[2],
+    Math.atan2(col[1], col[0])
+  )
 }
 
 export function buildRoadster () {
@@ -218,9 +244,9 @@ export function buildRoadster () {
 
   // Optimus in the driver's seat
   const optimus = buildOptimus()
-  optimus.root.position.set(-0.33, HIP_SIT, -0.36)
-  poseOptimus(optimus, { sit: 1, drive: 1 })
   body.add(optimus.root)
+  optimus.root.position.set(...DRIVER.root)
+  poseOptimus(optimus, DRIVER)
 
   // front: light line along the hood's leading edge, squinting triangular headlights on the fenders'
   // facets, black splitter, amber markers behind the front arches and red ones ahead of the tail
