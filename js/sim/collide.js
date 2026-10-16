@@ -1,23 +1,15 @@
 // Contacts in the ground plane: oriented boxes (cars, building footprints) and posts (lamps, palms,
 // signal masts), resolved with impulses (restitution, friction, spin) so cars bounce off each other
-// and off the city. On the road no hit is hard enough to tumble the Roadster, as in GTA: it bounces
-// off and the driver keeps the wheel (flying into something is another matter: flight.js).
+// and off the city. No hit tumbles the Roadster, on the road or flying, as in GTA: it bounces off
+// and the driver keeps the wheel.
 import { CAR, clamp } from './constants.js'
 import { query, OUTER } from './city.js'
+import { parapets } from './roofs.js'
 
 // The most yaw rate (rad/s) a knock adds on the ground: the tyres on the road soak up the rest, so a
 // clipped car or wall corner twitches the Roadster instead of spinning it out of the driver's hands.
 const KNOCK_SPIN = 1.8
 export const KNOCK_SPEED = 3 // m/s into a street light to knock it flat
-const NAMES = {
-  building: 'Hit a building',
-  lamp: 'Hit a street light',
-  palm: 'Hit a palm tree',
-  tree: 'Hit a tree',
-  signal: 'Hit a traffic light',
-  barrier: 'Hit the barrier'
-}
-export const crashName = kind => NAMES[kind] || 'Crashed'
 
 // Rectangles are { x, z, fx, fz, hl, hw }: centre, unit forward axis, half length and half width.
 // The side axis is (-fz, fx).
@@ -211,12 +203,16 @@ export function nudge (s, dx, dz) {
 
 
 const hits = []
-// Ground mode: keep the Roadster out of buildings, posts and the barrier.
+// Ground mode: keep the Roadster out of buildings, posts and the barrier (and on a roof, inside its
+// parapet and clear of its plant).
 export function collideCity (s) {
-  const me = playerRect(s)
+  const me = playerRect(s),
+    fl = s.pos.y
   query(me.x - 4, me.z - 4, me.x + 4, me.z + 4, hits)
+  if (s.roof) hits.push(...parapets(s.roof))
   for (const c of hits) {
-    if (c.y0 > 1.2 || c.down) continue // upper storeys are out of reach from the street
+    // out of reach above (upper storeys), or under the wheels (the roof the car is on)
+    if (c.down || c.y0 > fl + 1.2 || c.y1 <= fl + 0.05) continue
     const hit = c.r ? rectPost(me, c) : rectRect(me, boxRect(c))
     if (!hit) continue
     if (
@@ -252,8 +248,9 @@ export function knock (s, c, impact) {
 }
 
 // In the air over the city: the side of a building, a post or the barrier bounces the car off as it
-// would on the road (a street light still folds over). Coming down onto the top of one is another
-// matter: that one is returned, for a crash. bottom and top: the car's lowest and highest corners.
+// would on the road (a street light still folds over). Coming down on a roof is a landing (flight.js);
+// clipping a roof's edge on the way past pushes the car off it. bottom and top: the car's lowest and
+// highest corners.
 export function collideAir (s, bottom, top) {
   const me = playerRect(s)
   query(me.x - 4, me.z - 4, me.x + 4, me.z + 4, hits)
@@ -266,7 +263,6 @@ export function collideAir (s, bottom, top) {
       knock(s, c, -(s.vel.x * hit.nx + s.vel.z * hit.nz))
     )
       continue
-    if (s.vel.y < 0 && c.y1 - bottom < hit.depth) return c // in through the top
     nudge(s, hit.nx * hit.depth, hit.nz * hit.depth)
     const impact = impulse(loadBody(s), null, hit, 0.2, 0.35)
     storeBody(s)
@@ -275,7 +271,6 @@ export function collideAir (s, bottom, top) {
     if (impact > 0.6) s.emit('bump', { impact, what: c.kind })
   }
   s.syncPose()
-  return null
 }
 
 // The test site's parked lineup: cars to bounce off, on the ground or low in the air, like the
