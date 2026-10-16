@@ -81,7 +81,7 @@ function rejoin (tr, car) {
 export function collidePlayer (tr, sim) {
   if (sim.mode === 'ramp') return
   const me = playerRect(sim)
-  const bottom = sim.mode === 'ground' ? 0 : sim.com.y - 0.9
+  const bottom = sim.mode === 'ground' ? sim.pos.y : sim.com.y - 0.9
   for (const car of tr.cars) {
     if (Math.abs(car.x - me.x) > 9 || Math.abs(car.z - me.z) > 9) continue
     if (bottom > car.hgt) continue
