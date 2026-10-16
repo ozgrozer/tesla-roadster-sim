@@ -1,21 +1,21 @@
 // City traffic: drivers follow the lane graph, keep their distance (intelligent driver model), stop
 // for red lights, slow for corners and for the Roadster, and get knocked loose when it hits them.
 // Traffic lives in a bubble round the player: cars far behind are recycled into the streets ahead.
+import { JAM } from './jam.js'
 import { CAR, clamp } from './constants.js'
+import { slide, collidePlayer } from './wrecks.js'
 import {
+  rng,
   NODES,
   EDGES,
   LANES,
-  STALLS,
-  LANE_OFF,
   GREEN,
   YELLOW,
-  rng,
+  STALLS,
   signal,
-  pointAt
+  pointAt,
+  LANE_OFF
 } from './city.js'
-import { JAM } from './jam.js'
-import { slide, collidePlayer } from './wrecks.js'
 
 export const TYPES = [
   { name: 'sedan', len: 4.7, wid: 1.85, hgt: 1.45, m: 1600, share: 30 },
@@ -271,7 +271,7 @@ export class Traffic {
     this.me = sim.mode !== 'ramp' && pl.y < 4 ? pl : null
     this.mev = sim.vel
     for (const car of this.cars)
-      if (car.loose) slide(this, car, dt)
+      if (car.loose) slide(this, car, dt, sim)
       else if (!car.parked) this.drive(car, dt)
     collidePlayer(this, sim)
     this.clock += dt
