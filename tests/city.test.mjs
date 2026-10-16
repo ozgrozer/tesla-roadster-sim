@@ -165,7 +165,7 @@ const target = BUILDINGS.find(b => {
   return blk && b.tiers[0].y1 > 10
 })
 
-test('the Roadster bounces off buildings, and crashes into them at speed', () => {
+test('the Roadster bounces off buildings, even at speed, and keeps the wheel', () => {
   const z = (target.z0 + target.z1) / 2
   const slow = driveInto(target.x0 - 6, z, 5, 3)
   assert.notEqual(slow.sim.mode, 'crash')
@@ -175,11 +175,13 @@ test('the Roadster bounces off buildings, and crashes into them at speed', () =>
   )
   assert.ok(slow.events.some(e => e.type === 'bump'))
   const fast = driveInto(target.x0 - 30, z, 32, 3)
+  assert.ok(!fast.events.some(e => e.type === 'crash'), 'a 115 km/h hit bounces')
+  assert.equal(fast.sim.mode, 'ground')
+  assert.ok(fast.events.some(e => e.type === 'bump' && e.impact > 20))
   assert.ok(
-    fast.events.some(e => e.type === 'crash' && e.reason === 'Hit a building'),
-    'a 115 km/h hit crashes'
+    fast.sim.pos.x + 2.22 < target.x0 + 0.05,
+    'and stays outside the wall'
   )
-  assert.ok(fast.sim.com.x < target.x0, 'and the wreck stays outside')
 })
 
 test('the Roadster shunts a stopped car out of its lane', () => {
