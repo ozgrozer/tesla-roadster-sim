@@ -1,8 +1,9 @@
 // City traffic: drivers follow the lane graph, keep their distance (intelligent driver model), stop
 // for red lights, slow for corners and for the Roadster, and get knocked loose when it hits them.
 // They signal before a lane change or a turn, honk at a Roadster that holds them up or cuts them up,
-// and move over when it honks at them from behind. Nobody honks until the Roadster has sounded its own
-// horn at the gridlock: the first horn in the city is the Roadster's.
+// move over when it honks at them from behind, and stop for anyone on foot in the road (peds.js).
+// Nobody honks until the Roadster has sounded its own horn at the gridlock: the first horn in the
+// city is the Roadster's.
 // Traffic lives in a bubble round the player: cars far behind are recycled into the streets ahead.
 import { JAM, atJam } from './jam.js'
 import { temper } from './manners.js'
@@ -56,6 +57,7 @@ export class Traffic {
     this.clock = 0
     this.vl = 0
     this.walker = null // { x, z } of someone crossing on foot
+    this.peds = [] // people in the road (peds.js keeps it)
     this.horn = false // the Roadster's horn is sounding
     this.quiet = true // no driver honks yet
   }
@@ -347,6 +349,7 @@ export class Traffic {
       )
     const w = this.walker // Optimus, on foot
     if (w) see(w.x, w.z, 0, 0, 1, 0, 0.3, 0.3)
+    for (const p of this.peds) see(p.x, p.z, 0, 0, 1, 0, 0.35, 0.35)
     for (const o of this.loose)
       see(o.x, o.z, o.vx, o.vz, o.hx, o.hz, o.len / 2, o.wid / 2)
     for (const o of this.box)
