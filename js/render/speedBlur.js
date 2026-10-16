@@ -1,7 +1,8 @@
 // Speed blur: past about 150 km/h, and whenever the main thrusters fire, the edges of the picture
 // streak in towards the middle, more the faster the car goes, while the middle, where the car is,
-// stays sharp. Only from the cameras that ride along with the car (Follow and Chase); a fixed
+// stays sharp. Only from the cameras that ride along with the car (Follow, Chase, Cockpit); a fixed
 // camera watching it go by has no reason to blur.
+import { RIDING } from './camera.js'
 import { clamp } from '../sim/constants.js'
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js'
 
@@ -24,9 +25,9 @@ export function speedBlurPass () {
   return pass
 }
 
-// shot: the camera's current shot (only 'follow' and 'chase' blur)
+// shot: the camera's current shot (only those riding along with the car blur)
 export function updateSpeedBlur (pass, sim, shot, dt) {
-  const riding = shot === 'follow' || shot === 'chase'
+  const riding = RIDING.has(shot)
   const v = sim.mode === 'ground' ? sim.groundSpeed() : sim.vel.length()
   const want = riding
     ? clamp((v - 40) / 60, 0, 1) * 0.85 +
