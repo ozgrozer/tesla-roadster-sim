@@ -293,6 +293,11 @@ function handleEvents () {
       sound.bump(e.impact * 0.6)
       sparkBurst({ x: e.x, y: 0.4, z: e.z }, 26)
       rig.shake(0.12)
+    } else if (e.type === 'righted') {
+      // rolled back onto its wheels after a crash
+      burst(sim.pos.x, sim.pos.z, 60, 5)
+      rig.shake(0.15)
+      sound.thump(1.4)
     } else if (e.type === 'crash') {
       sparkBurst(sim.com, 120)
       burst(sim.com.x, sim.com.z, 80, 8)
