@@ -134,6 +134,13 @@
   bottom: auto;
   text-align: right;
 }
+.city-only,
+.in-city .site-only {
+  display: none;
+}
+.in-city .city-only {
+  display: list-item;
+}
 @media (pointer: coarse) {
   /* the drive pad owns the bottom corners on touch screens */
   .radar {
