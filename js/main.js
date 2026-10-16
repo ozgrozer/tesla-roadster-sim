@@ -160,6 +160,7 @@ function toggleWorld () {
       resetTo('city')
       setCam('follow')
       hud.popup('Welcome to the city · <b>C</b> for the test site', 3200)
+      hud.popup('Gridlock on the avenue ahead · <b>Space</b> to jump it', 4200)
     }
   })
 }
