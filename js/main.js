@@ -122,7 +122,7 @@ function startAutopilot () {
   if (app.world !== 'city') return startDemo()
   cityPilot.reset()
   if (!cityPilot.join()) {
-    hud.popup('Autopilot needs a street · drive onto a lane first', 2200)
+    hud.popup('Autopilot needs a street · drive onto a lane first', 2200, 'hint')
     return
   }
   setCam('follow')
@@ -158,8 +158,12 @@ function setWorld (w) {
 function enterCity () {
   resetTo('city')
   setCam('follow')
-  hud.popup('Welcome to the city · <b>C</b> for the test site', 3200)
-  hud.popup('Gridlock on the avenue ahead · <b>Space</b> to jump it', 4200)
+  hud.popup('Welcome to the city · <b>C</b> for the test site', 3200, 'hint')
+  hud.popup(
+    'Gridlock on the avenue ahead · <b>Space</b> to jump it',
+    4200,
+    'hint'
+  )
 }
 function toggleWorld () {
   hud.fade(() => (app.world === 'city' ? startDemo() : enterCity()))
@@ -188,7 +192,7 @@ function toggleSound () {
 function tryFlip (axis) {
   if (app.auto) setAuto(false)
   if (sim.mode !== 'air') {
-    hud.popup('Get airborne first · hold <b>Space</b>', 1600)
+    hud.popup('Get airborne first · hold <b>Space</b>', 1600, 'hint')
     return
   }
   if (!sim.man) sim.startManeuver(axis, axis === 'z' ? TAU : -TAU)
@@ -206,11 +210,19 @@ const COMMANDS = {
   Digit1: () => resetTo('start'),
   Digit2: () => {
     resetTo('top')
-    hud.popup('Hanging at 170° · hold <b>Shift</b> to fire the main thrusters')
+    hud.popup(
+      'Hanging at 170° · hold <b>Shift</b> to fire the main thrusters',
+      2300,
+      'hint'
+    )
   },
   Digit3: () => {
     resetTo('lineup')
-    hud.popup('Build speed, then <b>Space</b> to lift and <b>K</b> to kickflip')
+    hud.popup(
+      'Build speed, then <b>Space</b> to lift and <b>K</b> to kickflip',
+      2300,
+      'hint'
+    )
   },
   KeyV: () => setCam(rig.cycle()),
   KeyT: toggleSlow,
@@ -412,7 +424,8 @@ function frame (now) {
       sim.up().y > 0.95
         ? 'On its wheels · <b>W</b> to drive on'
         : '<b>A</b> / <b>D</b> to roll it back over',
-      3000
+      3000,
+      'hint'
     )
   }
   if (app.auto && P.countdown !== app.lastCountdown) {
