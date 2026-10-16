@@ -75,6 +75,7 @@ window.addEventListener('resize', resize)
 const sim = new Sim()
 const ap = new Autopilot(sim)
 const rig = new CameraRig(camera, canvas)
+rig.cockpit = { head: RS.optimus.head, body: RS.body }
 const sound = new SoundEngine()
 const hud = new Hud(RS)
 const traffic = new Traffic()
@@ -413,6 +414,10 @@ function frame (now) {
   const blink = Math.sin(clock * 2.4) > 0.6 ? 1 : 0.15
   MAT.beacon.color.setRGB(4 * blink, 0.2 * blink, 0.15 * blink)
   if (!intro.active) rig.update(dt, clock, sim, app.auto ? P.shot : null)
+  // (from the driver's seat, the driver's head is where the camera is, and the street is heard
+  // through the canopy)
+  app.inside = !intro.active && rig.shot === 'cockpit'
+  RS.optimus.head.visible = !app.inside
   // (after the camera has moved: the smoke is lit and sorted from where it now looks)
   camera.updateMatrixWorld()
   smoke.track(camera, sim)
