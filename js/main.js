@@ -151,20 +151,18 @@ function setWorld (w) {
   hud.setWorld(w)
   for (const p of ALL_PARTICLES) p.clear()
   clearSkids()
-  // a reload lands back in the same world
+  // a reload lands back in the same world (the city is the default, the test site is #site)
   const url = location.pathname + location.search
-  history.replaceState(null, '', w === 'city' ? `${url}#city` : url)
+  history.replaceState(null, '', w === 'site' ? `${url}#site` : url)
+}
+function enterCity () {
+  resetTo('city')
+  setCam('follow')
+  hud.popup('Welcome to the city · <b>C</b> for the test site', 3200)
+  hud.popup('Gridlock on the avenue ahead · <b>Space</b> to jump it', 4200)
 }
 function toggleWorld () {
-  hud.fade(() => {
-    if (app.world === 'city') startDemo()
-    else {
-      resetTo('city')
-      setCam('follow')
-      hud.popup('Welcome to the city · <b>C</b> for the test site', 3200)
-      hud.popup('Gridlock on the avenue ahead · <b>Space</b> to jump it', 4200)
-    }
-  })
+  hud.fade(() => (app.world === 'city' ? startDemo() : enterCity()))
 }
 // after a crash in the city, carry on from the nearest lane instead of the spawn point
 function respawn () {
@@ -454,10 +452,8 @@ function frame (now) {
   }
 }
 resize()
-if (location.hash === '#city') {
-  resetTo('city')
-  setCam('follow')
-}
+// the city unless the address asks for the test site (#site)
+if (location.hash !== '#site') enterCity()
 requestAnimationFrame(frame)
 
 // debugging hook for the console and automated checks: fast-forward the sim without rendering
