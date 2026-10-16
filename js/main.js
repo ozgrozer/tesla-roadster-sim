@@ -6,16 +6,18 @@ import { Input } from './ui/input.js'
 import { Minimap } from './ui/minimap.js'
 import { smoke } from './render/smoke.js'
 import { Traffic } from './sim/traffic.js'
+import { SoundEngine } from './audio/sound.js'
 import { Autopilot } from './sim/autopilot.js'
 import { CityPilot } from './sim/cityPilot.js'
-import { SoundEngine } from './audio/sound.js'
 import { buildLineup } from './render/lineup.js'
 import { nearestLane, standUp } from './sim/city.js'
+import { handleEvents as simEvents } from './events.js'
 import { CityView, clipCamera } from './render/city.js'
+import { hearing, panOf, mixSound } from './audio/mix.js'
 import { CameraRig, CAM_NAMES } from './render/camera.js'
 import { updateSkids, clearSkids } from './render/skids.js'
+import { DEG, TAU, makeControls } from './sim/constants.js'
 import { LED_MAT, buildWall, buildTruss } from './render/wall.js'
-import { DEG, TAU, clamp, makeControls } from './sim/constants.js'
 import { buildRoadster, updateRoadster } from './render/roadster.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
@@ -30,10 +32,7 @@ import {
   followKeyLight
 } from './render/scene.js'
 import {
-  burst,
   fallFx,
-  knockFx,
-  sparkBurst,
   ALL_PARTICLES,
   updateNozzles,
   emitThrusters,
@@ -122,7 +121,11 @@ function startAutopilot () {
   if (app.world !== 'city') return startDemo()
   cityPilot.reset()
   if (!cityPilot.join()) {
-    hud.popup('Autopilot needs a street · drive onto a lane first', 2200, 'hint')
+    hud.popup(
+      'Autopilot needs a street · drive onto a lane first',
+      2200,
+      'hint'
+    )
     return
   }
   setCam('follow')
@@ -276,109 +279,13 @@ function unlockSound (e) {
 window.addEventListener('pointerdown', unlockSound, true)
 window.addEventListener('keydown', unlockSound, true)
 
-// ---------- events from the sim ----------
-function handleEvents () {
-  for (const e of sim.events) {
-    if (e.type === 'z60') {
-      hud.popup(`0–60 mph · <b>${e.t.toFixed(2)} s</b>`)
-      sound.chime()
-    } else if (e.type === 'trick') {
-      app.score += e.pts
-      hud.popup(`${e.text} <b>+${e.pts}</b>`)
-      sound.chime()
-    } else if (e.type === 'landing') {
-      app.score += e.pts
-      hud.popup(
-        `${e.tricks.length ? e.tricks.join(' + ') : 'Clean landing'} <b>+${
-          e.pts
-        }</b>`
-      )
-      hud.popup(`Airtime ${e.airtime.toFixed(1)} s · ${e.g.toFixed(1)} G`, 2000)
-      sound.chime()
-    } else if (e.type === 'touchdown') {
-      burst(
-        sim.pos.x,
-        sim.pos.z,
-        90 + Math.min(120, Math.abs(e.vy) * 20),
-        7 + Math.abs(e.vy),
-        sim.pos.y
-      )
-      rig.shake(Math.min(0.6, 0.05 + Math.abs(e.vy) * 0.04))
-      sound.thump(e.g)
-      if (app.auto) ap.cap[2] = `Touchdown at ${e.g.toFixed(1)} G`
-    } else if (e.type === 'bump') {
-      // knocks against cars, posts and walls in the city (a scrape fires every step: throttle it)
-      if (e.impact > 1.2 && clock - app.lastBump > 0.15) {
-        app.lastBump = clock
-        sound.bump(e.impact)
-        rig.shake(Math.min(0.3, e.impact * 0.025))
-        if (e.impact > 6)
-          sparkBurst(sim.pos, Math.min(60, e.impact * 4), sim.floor)
-      }
-    } else if (e.type === 'knock') {
-      // a street light, signal or tree snapped off, by the Roadster or a car it sent sliding
-      cityView.knock(e)
-      knockFx(e)
-      const mine = e.by === 'roadster'
-      sound.snap(e.kind, e.impact * (mine ? 1 : hearing(e.x, e.z)))
-      if (mine) rig.shake(Math.min(0.35, 0.06 + e.impact * 0.012))
-    } else if (e.type === 'righted') {
-      // rolled back onto its wheels after a crash
-      burst(sim.pos.x, sim.pos.z, 60, 5, sim.pos.y)
-      rig.shake(0.15)
-      sound.thump(1.4)
-    } else if (e.type === 'crash') {
-      sparkBurst(sim.com, 120, sim.floor)
-      burst(sim.com.x, sim.com.z, 80, 8, sim.floor)
-      rig.shake(0.5)
-      app.restHint = false
-      sound.crash()
-      hud.popup(`Crash · ${e.reason}`, 2600)
-    }
-  }
-  sim.events.length = 0
-}
-// how loud something at (x, z) sounds from the camera, 0 to 1
-const hearing = (x, z) =>
-  clamp(
-    1.4 / (1 + Math.hypot(camera.position.x - x, camera.position.z - z) / 14),
-    0,
-    1
-  )
+// ---------- events from the sim: events.js ----------
+const handleEvents = () =>
+  simEvents({ sim, app, hud, sound, rig, cityView, ap, clock })
 // a knocked-down light, signal or tree hits the ground
 cityView.onLand = (x, z, kind) => {
   fallFx(x, z, kind)
-  sound.fall(kind, hearing(x, z))
-}
-
-function updateSound (dt) {
-  const gs =
-    sim.mode === 'ground'
-      ? Math.abs(sim.speed)
-      : sim.mode === 'ramp'
-      ? Math.abs(sim.v)
-      : 0
-  app.wheelAudio =
-    sim.mode === 'air' || sim.mode === 'crash'
-      ? app.wheelAudio * Math.exp(-dt * 0.8)
-      : gs
-  sound.update({
-    volume:
-      0.85 *
-      clamp(1.7 / (1 + camera.position.distanceTo(sim.pos) / 16), 0.22, 1),
-    pitch: 0.55 + 0.45 * app.timeScale,
-    wheelSpeed: app.wheelAudio,
-    throttle: app.lastCtl.throttle,
-    regen: sim.regenOn,
-    grounded: sim.mode === 'ground' || sim.mode === 'ramp' ? 1 : 0,
-    airspeed: sim.vel.length(),
-    skid: sim.skid,
-    main: sim.thrMain,
-    lift: sim.thrLift,
-    side: sim.thrSide,
-    suction: sim.suction,
-    t: clock
-  })
+  sound.fall(kind, hearing(x, z), panOf(x, z))
 }
 
 // the camera's ground position and heading: traffic spawns out of its sight, the radar turns with it
@@ -468,7 +375,7 @@ function frame (now) {
     cityView.update(simDt, clock, traffic, camera)
     minimap.update(dt, sim, traffic, VIEW.heading)
   }
-  updateSound(dt)
+  mixSound(sound, app, traffic, dt, clock)
   hud.update(dt, app)
   composer.render()
   if (firstFrame) {
