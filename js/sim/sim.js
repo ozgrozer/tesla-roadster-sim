@@ -90,6 +90,9 @@ export class Sim {
     this.yawRate = 0
     this.lastFyf = 0
     this.lastFyr = 0
+    this.rearGrip = 1
+    this.slipR = 0
+    this.driftT = 0
     this.escActive = false
     this.wheelSpin = 0
     this.wheelSpinR = 0
