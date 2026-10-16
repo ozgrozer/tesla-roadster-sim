@@ -361,8 +361,22 @@ export class Traffic {
           car.go = e // too close to stop: carry on through
           stop = false
         }
-        if (!stop && car.next.move === 'L' && toLine < 30)
+        if (!stop && car.next.move === 'L' && toLine < 30) {
           stop = this.oncoming(node, e.dir)
+          // waiting at the line to turn across the oncoming traffic
+          car.lw = stop && toLine < 5 ? (car.lw || 0) + dt : 0
+        } else if (
+          st === YELLOW &&
+          car.next.move === 'L' &&
+          car.lw > 4 &&
+          toLine < 5 &&
+          !this.oncoming(node, e.dir, true)
+        ) {
+          // as the light changes, the oncoming traffic stops and whoever waited to turn left goes
+          car.go = e
+          stop = false
+        }
+        red = stop
         if (stop && toLine - 1.4 < gap) {
           gap = toLine - 1.4 // the bumper stops just behind the painted line
           vl = 0
