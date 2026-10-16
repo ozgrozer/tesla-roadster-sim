@@ -468,6 +468,7 @@ export function nearestLane (x, z) {
   let best = null,
     bd = Infinity
   for (const e of LANES) {
+    if (e.closed) continue // the jammed street (jam.js)
     const s = Math.min(
       e.len - 6,
       Math.max(6, (x - e.x0) * e.dx + (z - e.z0) * e.dz)
