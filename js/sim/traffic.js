@@ -1,9 +1,10 @@
 // City traffic: drivers follow the lane graph, keep their distance (intelligent driver model), stop
 // for red lights, slow for corners and for the Roadster, and get knocked loose when it hits them.
 // They signal before a lane change or a turn, honk at a Roadster that holds them up or cuts them up,
-// and move over when it honks at them from behind.
+// and move over when it honks at them from behind. Nobody honks until the Roadster has sounded its own
+// horn at the gridlock: the first horn in the city is the Roadster's.
 // Traffic lives in a bubble round the player: cars far behind are recycled into the streets ahead.
-import { JAM } from './jam.js'
+import { JAM, atJam } from './jam.js'
 import { temper } from './manners.js'
 import { CAR, clamp } from './constants.js'
 import { slide, collidePlayer } from './wrecks.js'
@@ -55,6 +56,8 @@ export class Traffic {
     this.clock = 0
     this.vl = 0
     this.walker = null // { x, z } of someone crossing on foot
+    this.horn = false // the Roadster's horn is sounding
+    this.quiet = true // no driver honks yet
   }
 
   // the lane graph is shared, so whichever traffic was there before is cleared off it too
@@ -68,6 +71,7 @@ export class Traffic {
   reset (x, z) {
     this.clear()
     this.t = 0
+    this.quiet = true
     for (const n of NODES) n.hold = null // every light on its cycle
     for (const st of STALLS) if (st.taken) this.park(st)
     for (const e of JAM) this.jam(e)
@@ -284,6 +288,7 @@ export class Traffic {
       else if (!c.parked && (c.edge.move || c.lc)) this.box.push(c)
     const pl = sim.mode === 'ground' ? sim.pos : sim.com
     this.me = sim.mode !== 'ramp' && pl.y < 4 ? pl : null
+    if (this.quiet && this.horn && atJam(pl.x, pl.z)) this.quiet = false
     this.mev = sim.vel
     this.sim = sim
     this.mhx = Math.cos(sim.yaw)
