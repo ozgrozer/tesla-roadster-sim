@@ -69,6 +69,7 @@ export class CameraRig {
       elev: 1,
       idle: 99,
       kick: 0,
+      surge: 0, // the arm giving with the car's acceleration
       target: new THREE.Vector3()
     }
     this.drag = null
@@ -78,15 +79,12 @@ export class CameraRig {
     })
     window.addEventListener('pointermove', e => {
       if (!this.drag) return
-      this.f.yawOff -= (e.clientX - this.drag.x) * 0.006
-      this.f.pitchOff = clamp(
-        this.f.pitchOff + (e.clientY - this.drag.y) * 0.004,
-        -0.3,
-        0.95
+      this.turn(
+        (e.clientX - this.drag.x) * 0.006,
+        (e.clientY - this.drag.y) * 0.004
       )
       this.drag.x = e.clientX
       this.drag.y = e.clientY
-      this.f.idle = 0
     })
     window.addEventListener('pointerup', () => {
       this.drag = null
@@ -122,6 +120,13 @@ export class CameraRig {
   shake (a) {
     this.shakeAmt = Math.max(this.shakeAmt, a)
   }
+  // swing the follow camera round the car and up or down (a mouse drag, a gamepad's right stick);
+  // it drifts back behind the car once it is left alone
+  turn (dx, dy) {
+    this.f.yawOff -= dx
+    this.f.pitchOff = clamp(this.f.pitchOff + dy, -0.3, 0.95)
+    this.f.idle = 0
+  }
 
   // GTA-style: sit behind the car's heading (not its velocity), ignore pitch and roll so flips never
   // throw the camera, and hold the heading through the wall ride and any manoeuvre. A car spun round
@@ -156,6 +161,7 @@ export class CameraRig {
       f.target.copy(P)
       f.elev = sim.mode === 'ramp' ? up.y : 1
       f.reach = Math.min(4, sim.groundSpeed() * 0.05)
+      f.surge = 0
     }
     f.heading += clamp(
       wrapPi(f.targetHeading - f.heading) * lerpK(3.2, dt),
@@ -172,7 +178,10 @@ export class CameraRig {
     f.elev += ((sim.mode === 'ramp' ? up.y : 1) - f.elev) * lerpK(3, dt)
     const speed = sim.groundSpeed()
     f.reach += (Math.min(4, speed * 0.05) - f.reach) * lerpK(1.5, dt)
-    const dist = f.dist + f.reach
+    // it falls back as the car launches and closes in under hard braking
+    const acc = sim.mode === 'ground' ? clamp(sim.accLong, -14, 16) : 0
+    f.surge += (acc * 0.055 - f.surge) * lerpK(2.5, dt)
+    const dist = f.dist + f.reach + f.surge
     const yaw = f.heading + f.yawOff,
       pitch = 0.2 + f.pitchOff
     f.target.x += (P.x - f.target.x) * lerpK(12, dt)
@@ -188,7 +197,7 @@ export class CameraRig {
     this.aim.set(f.target.x, f.target.y + 1.0 * f.elev, f.target.z)
     // wider with speed, and a kick wider still while the main thrusters fire
     f.kick += (sim.thrMain - f.kick) * lerpK(4, dt)
-    return 55 + Math.min(14, speed * 0.12) + 8 * f.kick
+    return 55 + Math.min(16, speed * 0.14) + 8 * f.kick
   }
 
   // velocity-led action camera
@@ -413,6 +422,15 @@ export class CameraRig {
       cam.position.x += 0.5 * this.shakeAmt * Math.sin(t * 43)
       cam.position.y += 0.5 * this.shakeAmt * Math.sin(t * 37 + 1.3)
       this.shakeAmt *= Math.exp(-dt * 6)
+    }
+    // the road coming up through the car at speed: a fine tremble, coarser on sand or grass
+    if ((shot === 'follow' || shot === 'chase') && sim.mode === 'ground') {
+      const rough = sim.surface === 'sand' || sim.surface === 'grass' ? 3 : 1
+      const a =
+        clamp((sim.groundSpeed() - 18) / 70, 0, 1) * 0.011 * rough +
+        (rough > 1 ? clamp(sim.groundSpeed() / 30, 0, 1) * 0.01 : 0)
+      cam.position.y += a * Math.sin(t * 61.3) * Math.sin(t * 17.9 + 0.7)
+      cam.position.x += a * 0.6 * Math.sin(t * 53.1 + 2.1)
     }
   }
 }
