@@ -70,6 +70,7 @@ export class CityPilot {
     this.horn = false
     this.acc = 0 // the acceleration it asks for, smoothed so the pedals don't flicker
     this.stuckT = 0
+    this.passT = 0 // s until it may change lanes to overtake again
     this.hop = null
     this.plan = PLAN || (PLAN = routeToJam()) // until it has flown over the gridlock
   }
@@ -104,6 +105,26 @@ export class CityPilot {
     this.edge = best
     this.next = this.pick(best)
     this.go = null
+    return true
+  }
+  // Room to move over into lane t at speed v: a safe gap to its cars (traffic.canMerge), and nothing
+  // at all in it (a wreck, a car still crossing the junction) slower than the Roadster for as far
+  // ahead as it covers in 2.5 s, nor coming up fast from behind.
+  clear (t, v) {
+    if (!this.traffic.canMerge(t, { s: this.s, v, len: 2 * CAR.halfL }, true))
+      return false
+    pointAt(t, clamp(this.s, 0, t.len), P)
+    for (const o of this.traffic.cars) {
+      const dx = o.x - P.x,
+        dz = o.z - P.z,
+        along = dx * P.hx + dz * P.hz
+      if (Math.abs(dz * P.hx - dx * P.hz) > 2.6) continue
+      const ov = o.loose
+        ? o.vx * P.hx + o.vz * P.hz
+        : o.v * (o.hx * P.hx + o.hz * P.hz)
+      if (along > -6 && along < 12 + v * 2.5 && ov < v - 1) return false
+      if (along <= -6 && along > -12 - ov * 1.5 && ov > v + 1) return false
+    }
     return true
   }
   // distance along edge e of the point nearest (x, z)
@@ -144,11 +165,11 @@ export class CityPilot {
     // or go another way if the chance has passed
     const cur = this.edge
     if (cur.road && cur.twin && this.next && !cur.next.includes(this.next)) {
-      const me = { s: this.s, v, len: 2 * CAR.halfL }
       if (
         this.s > 4 &&
         this.s < cur.len - 25 &&
-        this.traffic.canMerge(cur.twin, me, true)
+        v < 20 &&
+        this.clear(cur.twin, v)
       ) {
         this.edge = cur.twin
         this.s = this.project(this.edge, x, z)
@@ -200,6 +221,31 @@ export class CityPilot {
           o.loose ? o.vx * hx + o.vz * hz : o.v * (o.hx * hx + o.hz * hz)
         )
       }
+    }
+    // overtake: a slower car ahead (not one stopped in a queue), room in the other lane and street
+    // enough left to get by; on its way to the gridlock, only where it can still turn as planned
+    const cur2 = this.edge
+    this.passT -= dt
+    if (
+      this.passT <= 0 &&
+      cur2.road &&
+      cur2.twin &&
+      !cur2.closed &&
+      !this.next?.closed &&
+      gap < 40 &&
+      vl > 2 &&
+      vl < CRUISE * 0.75 &&
+      v < 22 &&
+      this.s > 4 &&
+      this.s < cur2.len - 40 &&
+      (!this.plan || cur2.twin.next.includes(this.next)) &&
+      this.clear(cur2.twin, v)
+    ) {
+      this.edge = cur2.twin
+      this.s = this.project(this.edge, x, z)
+      if (!this.edge.next.includes(this.next))
+        this.next = this.pick(this.edge, true)
+      this.passT = 3
     }
     const lane = this.edge
     // on its way to the gridlock it waits at the light like anyone else, then on the green drives on
