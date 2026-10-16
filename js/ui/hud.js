@@ -219,17 +219,19 @@ export class Hud {
       el.countdown.style.opacity = 0
       this.setText(
         el.hint,
-        this.world === 'city' && sim.mode === 'ground'
-          ? 'W throttle · S brake · A/D steer · B e-brake · Shift boost · Space lift off · C test site'
+        app.intro
+          ? 'Optimus is getting in · any drive key skips'
+          : this.world === 'city' && sim.mode === 'ground'
+          ? 'W throttle · S brake · A/D steer · Space e-brake · Shift boost · F fly · H horn · C test site'
           : sim.mode === 'air'
-          ? 'W/S pitch · A/D roll · Q/E yaw · Space lift · Shift boost · X backflip · K kickflip'
+          ? 'W/S pitch · A/D roll · Q/E yaw · F lift · Shift boost · X backflip · K kickflip'
           : sim.mode === 'ramp'
-          ? 'W climb · S brake, then reverse down · B hold · Shift main burn off the lip'
+          ? 'W climb · S brake, then reverse down · Space hold · Shift main burn off the lip'
           : sim.mode === 'crash'
           ? sim.up().y > 0.95
             ? 'Crashed · W to drive on · R to reset · P to watch the autopilot'
             : 'Upside down · A/D to roll it back over · R to reset'
-          : 'W throttle · release to coast · S brake · B e-brake · A/D steer · Shift boost · Space lift off'
+          : 'W throttle · release to coast · S brake · Space e-brake · A/D steer · Shift boost · F fly'
       )
     }
   }
