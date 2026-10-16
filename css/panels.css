@@ -1,0 +1,184 @@
+/* Tesla Roadster Sim: keys panel, touch pad, loading screen and responsive rules (load last). */
+/* help */
+.help {
+  position: absolute;
+  left: max(16px, env(safe-area-inset-left, 0px));
+  top: 64px;
+  width: 250px;
+  padding: 12px 14px;
+  background: var(--panel);
+  border: 1px solid var(--panel-edge);
+  border-radius: 4px;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.65;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.help h2 {
+  margin: 0 0 4px;
+  font-family: var(--display);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--dim);
+  font-weight: 600;
+}
+.help h2 + ul {
+  margin-bottom: 8px;
+}
+.help ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.help kbd {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ano);
+  border: 1px solid rgba(238, 240, 242, 0.25);
+  border-bottom-width: 2px;
+  border-radius: 3px;
+  padding: 0 4px;
+  margin-right: 4px;
+}
+.help li {
+  color: var(--dim);
+}
+.help .note {
+  margin-top: 6px;
+  color: var(--dim);
+  font-size: 10px;
+}
+
+.context-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 112px;
+  transform: translateX(-50%);
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--dim);
+  white-space: nowrap;
+  text-shadow: 0 1px 6px #000;
+}
+
+/* touch pad */
+.touch {
+  position: absolute;
+  inset: auto 0 112px 0;
+  display: none;
+  justify-content: space-between;
+  padding: 0 16px;
+}
+.touch .cluster {
+  display: grid;
+  grid-template-columns: repeat(3, 54px);
+  grid-template-rows: repeat(2, 54px);
+  gap: 8px;
+}
+.touch .tb {
+  pointer-events: auto;
+  border-radius: 50%;
+  border: 1px solid rgba(238, 240, 242, 0.25);
+  background: rgba(10, 12, 18, 0.5);
+  color: var(--ano);
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  display: grid;
+  place-items: center;
+  touch-action: none;
+}
+.touch .tb.active {
+  background: rgba(255, 59, 59, 0.35);
+  border-color: var(--led);
+}
+@media (pointer: coarse) {
+  .touch {
+    display: flex;
+  }
+  .help {
+    display: none;
+  }
+  .context-hint {
+    display: none;
+  }
+  .score {
+    bottom: auto;
+    top: 72px;
+  }
+}
+
+.loading {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--night);
+  z-index: 10;
+  transition: opacity 0.6s;
+}
+.loading div {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  color: var(--dim);
+  text-transform: uppercase;
+  text-align: center;
+  padding-inline: 16px;
+}
+.credit {
+  position: absolute;
+  right: max(16px, env(safe-area-inset-right, 0px));
+  top: 56px;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: rgba(138, 147, 160, 0.7);
+  text-align: right;
+  max-width: 260px;
+}
+
+@media (max-width: 760px) {
+  .schematic {
+    display: none;
+  }
+  .score {
+    bottom: 92px;
+  }
+  .cell {
+    padding: 7px 8px 6px;
+    min-width: 0;
+  }
+  .cell .v {
+    font-size: 14px;
+  }
+  .cell.speed .v {
+    font-size: 22px;
+  }
+  .cell.hide-sm {
+    display: none;
+  }
+  .brand h1 {
+    font-size: 14px;
+  }
+  .brand p {
+    display: none;
+  }
+  .credit {
+    display: none;
+  }
+  .help {
+    display: none;
+  }
+  .caption {
+    top: 18%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .popup {
+    animation-duration: 0.01s;
+    animation-fill-mode: forwards;
+  }
+}
