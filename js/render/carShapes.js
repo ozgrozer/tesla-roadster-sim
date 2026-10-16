@@ -1,44 +1,82 @@
-// The traffic's car bodies, lofted like the Roadster (loft.js): a rounded body that tucks in at the
-// bumpers, a cabin that narrows above the beltline, glass for the windshield, side and rear windows,
-// a painted roof, wheel arches cut into the body over dark wheel wells, and the trim (bumpers, grille,
-// mirrors, plates, handles) baked in vertex colours. One shape per traffic type.
+// The traffic's car bodies, lofted like the Roadster (loft.js): a body with sides that swell out
+// below the shoulder and rounded corners and bumpers, a cabin that narrows above the beltline under a
+// roof with rounded edges, glass for the windshield, side and rear windows, a painted roof, wheel
+// arches cut into the body over dark wheel wells, and the trim (bumpers, grille, mirrors, plates,
+// handles, the doors' shut lines, a black B-pillar and the window line's rubber) baked in vertex
+// colours. One shape per traffic type.
 import * as THREE from 'three'
-import { loftGeos } from './loft.js'
 import { merge, box, tint } from './geo.js'
+import { loftGeos, seam } from './loft.js'
 
 // Per type: floor and sill heights, the beltline, hood (at the cowl) and nose heights, the deck and
 // tail heights, the roof, and along x the windshield's foot (ws), the roof's front (rf) and back (rr)
 // and the rear window's foot (rw); the wheel radius and axles; the head and tail lights' height;
-// sideGlass: where the side windows run (x from, to), when not the whole cabin.
+// sideGlass: where the side windows run (x from, to), when not the whole cabin; doors: x of each
+// door's shut line, front to back; pillars: x of each black pillar between side windows.
 // prettier-ignore
 export const SPECS = {
-  sedan: { floor: 0.2, sill: 0.34, belt: 0.95, hood: 0.88, nose: 0.74, deck: 0.98, tail: 0.86, roof: 1.45, ws: 0.95, rf: 0.12, rr: -0.95, rw: -1.6, r: 0.33, axles: [1.42, -1.42], lights: [0.68, 0.82] },
-  hatch: { floor: 0.2, sill: 0.34, belt: 0.96, hood: 0.88, nose: 0.74, deck: 1.0, tail: 0.92, roof: 1.48, tailRoof: 1.28, ws: 0.82, rf: 0.0, rr: -1.55, rw: -2.1, r: 0.31, axles: [1.3, -1.28], lights: [0.7, 0.9] },
-  suv: { floor: 0.3, sill: 0.46, belt: 1.1, hood: 1.04, nose: 0.92, deck: 1.12, tail: 1.06, roof: 1.73, ws: 1.18, rf: 0.38, rr: -1.95, rw: -2.3, r: 0.38, axles: [1.48, -1.45], lights: [0.88, 1.02] },
-  pickup: { floor: 0.36, sill: 0.5, belt: 1.15, hood: 1.12, nose: 1.0, deck: 1.16, tail: 1.12, roof: 1.84, ws: 1.25, rf: 0.55, rr: -0.62, rw: -0.72, r: 0.4, axles: [1.75, -1.8], lights: [0.96, 1.0] },
-  van: { floor: 0.38, sill: 0.52, belt: 1.2, hood: 1.18, nose: 1.0, deck: 2.66, tail: 2.6, roof: 2.74, tailRoof: 2.7, ws: 2.6, rf: 1.75, rr: -9, rw: -9, r: 0.4, axles: [2.15, -2.2], lights: [1.0, 1.1], sideGlass: [1.25, 2.6] },
-  bus: { floor: 0.36, sill: 0.5, belt: 1.75, hood: 1.45, nose: 1.4, deck: 3.0, tail: 2.96, roof: 3.12, tailRoof: 3.08, ws: 5.75, rf: 5.62, rr: -9, rw: -9, r: 0.5, axles: [3.65, -3.45], lights: [0.75, 0.9], inset: 0.04 }
+  sedan: { floor: 0.2, sill: 0.34, belt: 0.95, hood: 0.88, nose: 0.74, deck: 0.98, tail: 0.86, roof: 1.45, ws: 0.95, rf: 0.12, rr: -0.95, rw: -1.6, r: 0.33, axles: [1.42, -1.42], lights: [0.68, 0.82], doors: [0.98, -0.3, -1.04], pillars: [-0.3] },
+  hatch: { floor: 0.2, sill: 0.34, belt: 0.96, hood: 0.88, nose: 0.74, deck: 1.0, tail: 0.92, roof: 1.48, tailRoof: 1.28, ws: 0.82, rf: 0.0, rr: -1.55, rw: -2.1, r: 0.31, axles: [1.3, -1.28], lights: [0.7, 0.9], doors: [0.9, -0.42, -1.08], pillars: [-0.42] },
+  suv: { floor: 0.3, sill: 0.46, belt: 1.1, hood: 1.04, nose: 0.92, deck: 1.12, tail: 1.06, roof: 1.73, ws: 1.18, rf: 0.38, rr: -1.95, rw: -2.3, r: 0.38, axles: [1.48, -1.45], lights: [0.88, 1.02], doors: [1.02, -0.26, -1.12], pillars: [-0.26] },
+  pickup: { floor: 0.36, sill: 0.5, belt: 1.15, hood: 1.12, nose: 1.0, deck: 1.16, tail: 1.12, roof: 1.84, ws: 1.25, rf: 0.55, rr: -0.62, rw: -0.72, r: 0.4, axles: [1.75, -1.8], lights: [0.96, 1.0], doors: [1.24, 0.0, -0.64], pillars: [0.0] },
+  van: { floor: 0.38, sill: 0.52, belt: 1.2, hood: 1.18, nose: 1.0, deck: 2.66, tail: 2.6, roof: 2.74, tailRoof: 2.7, ws: 2.6, rf: 1.75, rr: -9, rw: -9, r: 0.4, axles: [2.15, -2.2], lights: [1.0, 1.1], sideGlass: [1.25, 2.6], doors: [1.68, 0.8, 0.55, -0.65], pillars: [] },
+  bus: { floor: 0.36, sill: 0.5, belt: 1.75, hood: 1.45, nose: 1.4, deck: 3.0, tail: 2.96, roof: 3.12, tailRoof: 3.08, ws: 5.75, rf: 5.62, rr: -9, rw: -9, r: 0.5, axles: [3.65, -3.45], lights: [0.75, 0.9], inset: 0.04, doors: [], pillars: [] }
 }
 SPECS.taxi = SPECS.sedan
 
-// a station's half section: floor centre, floor edge, sill, widest point, shoulder, then the glass's
-// foot, the roof's edge and its crown (or, with no cabin, the hood or deck surface)
+// a station's half section: floor centre, floor edge, sill, the lower side swelling out to the widest
+// point, the shoulder and the beltline, then the glass's foot, the roof's edge, its rounded shoulder
+// and its crown (or, with no cabin, the hood or deck surface)
+const GLASS_FOOT = 7 // index of the glass's foot in a section
 function section (w, floor, sill, belt, cab, inset, top = belt) {
   const p = [
     [0, floor],
     [w - 0.12, floor],
-    [w - 0.02, sill],
-    [w, belt - 0.16],
-    [w - 0.035, belt]
+    [w - 0.04, sill],
+    [w - 0.008, sill + 0.4 * (belt - 0.18 - sill)],
+    [w, belt - 0.18],
+    [w - 0.022, belt - 0.04],
+    [w - 0.05, belt]
   ]
-  if (cab)
+  if (cab) {
+    const edge = w - 0.06 - inset,
+      ey = belt + 0.02 + (cab - belt - 0.02) * 0.9
     p.push(
-      [w - 0.05 - inset * 0.2, belt + 0.02],
-      [w - 0.05 - inset, belt + 0.02 + (cab - belt - 0.02) * 0.92],
+      [w - 0.06 - inset * 0.2, belt + 0.015],
+      [edge, ey],
+      [edge * 0.8, cab - 0.012],
       [0, cab]
     )
-  else p.push([w * 0.8, top + 0.012], [w * 0.4, top + 0.024], [0, top + 0.03])
+  } else
+    p.push(
+      [w * 0.88, top + 0.008],
+      [w * 0.66, top + 0.018],
+      [w * 0.36, top + 0.026],
+      [0, top + 0.03]
+    )
   return p
+}
+// Round off the corners and bumpers: between each end station and the one next to it, more
+// stations easing from the one to the other along a quarter circle, so the body curves round the
+// corner in plan and the bumper rolls under in profile.
+function roundEnds (st) {
+  const ease = (A, B, t) => {
+    const e = Math.sin((t * Math.PI) / 2)
+    return {
+      x: A.x + (B.x - A.x) * t,
+      p: A.p.map(([z, y], k) => [
+        z + (B.p[k][0] - z) * e,
+        y + (B.p[k][1] - y) * e
+      ])
+    }
+  }
+  const n = st.length,
+    out = st.slice()
+  for (const t of [0.2, 0.45, 0.7]) {
+    out.push(ease(st[0], st[1], t))
+    out.push(ease(st[n - 1], st[n - 2], t))
+  }
+  return out.sort((a, b) => a.x - b.x)
 }
 
 // the shape of type T (len, wid from the sim): geometries for the paint, glass and trim, and the
@@ -69,20 +107,33 @@ export function carShape (T) {
   add(S.ws, hw, floor, sill, belt, belt + 0.05)
   if (S.ws < L - 0.25) add(L - 0.2, hw - 0.03, floor + 0.02, sill, S.nose, 0)
   add(L, hw - 0.15, floor + 0.1, sill + 0.04, S.nose - 0.06, 0)
+  const body = roundEnds(st)
   const side = S.sideGlass || [S.rw, S.ws]
+  const G = GLASS_FOOT
   const keyFor = (j, xA, xB) => {
-    const x = (xA + xB) / 2
+    const x = (xA + xB) / 2,
+      inSide = x > side[0] && x < side[1]
     if (j === 0) return 'under'
-    if (j === 5) return x > side[0] && x < side[1] ? 'glass' : 'paint'
-    if (j === 6)
+    if (j === G - 1) return inSide ? 'rubber' : 'paint' // the window line
+    if (j === G) return inSide ? 'glass' : 'paint'
+    if (j > G)
       return (x > S.rf && x < S.ws) || (x < S.rr && x > S.rw)
         ? 'glass'
         : 'paint'
     return 'paint'
   }
-  const g = loftGeos(st, keyFor, 'paint', 30)
+  const g = loftGeos(body, keyFor, 'paint', 30)
   const trim = trimFor(T, S, L, hw)
   trim.push(tint(g.get('under'), 0x16171a))
+  if (g.get('rubber')) trim.push(tint(g.get('rubber'), 0x101113))
+  // the doors' shut lines, from the sill to the beltline (over an arch, only above it), and a black
+  // pillar between the side windows
+  const overArch = x => S.axles.some(a => Math.abs(x - a) < S.r + 0.1)
+  const line = (x, k0, k1, w, lift, c) =>
+    trim.push(tint(seam(body, x, k0, k1, null, w, lift).geometry, c))
+  for (const x of S.doors)
+    line(x, overArch(x) ? 4 : 1, G - 1, 0.012, 0.003, 0x0e0f11)
+  for (const x of S.pillars) line(x, G, G + 1, 0.1, 0.004, 0x0b0c0e)
   return {
     paint: g.get('paint'),
     glass: g.get('glass') || box(0, 0, 0, 0.01, 0.01, 0.01),
