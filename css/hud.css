@@ -1,0 +1,190 @@
+/* Tesla Roadster Sim: telemetry strip, thruster schematic, stunt score and popups. */
+/* telemetry strip */
+.telemetry {
+  position: absolute;
+  left: 50%;
+  bottom: max(14px, env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  background: var(--panel);
+  border: 1px solid var(--panel-edge);
+  border-radius: 4px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  max-width: calc(100vw - 32px);
+}
+.cell {
+  padding: 9px 14px 8px;
+  display: grid;
+  gap: 1px;
+  min-width: 64px;
+  border-left: 1px solid var(--panel-edge);
+}
+.cell:first-child {
+  border-left: 0;
+}
+.cell .k {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--dim);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.cell .v {
+  font-family: var(--mono);
+  font-weight: 600;
+  font-size: 19px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.cell .v small {
+  font-size: 10px;
+  color: var(--dim);
+  font-weight: 400;
+  margin-left: 3px;
+}
+.cell.speed .v {
+  font-size: 30px;
+  line-height: 1;
+}
+.bar {
+  height: 4px;
+  background: rgba(238, 240, 242, 0.12);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+.bar i {
+  display: block;
+  height: 100%;
+  width: 100%;
+  background: var(--jet);
+  transform-origin: left;
+}
+.status-on {
+  color: var(--ok);
+}
+.cell.speed {
+  position: relative;
+}
+.tag {
+  position: absolute;
+  left: 8px;
+  top: -24px;
+  font-style: normal;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  white-space: nowrap;
+  color: var(--led);
+  background: var(--panel);
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  padding: 2px 6px;
+}
+.tag:empty {
+  display: none;
+}
+.tag.esc {
+  color: var(--warn);
+}
+.status-warn {
+  color: var(--warn);
+}
+
+/* thruster schematic */
+.schematic {
+  position: absolute;
+  right: max(16px, env(safe-area-inset-right, 0px));
+  bottom: 98px;
+  width: 148px;
+  padding: 10px 10px 8px;
+  background: var(--panel);
+  border: 1px solid var(--panel-edge);
+  border-radius: 4px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.schematic .k {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--dim);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  display: flex;
+  justify-content: space-between;
+}
+.schematic svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: 6px;
+}
+.schematic .legend {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--dim);
+  margin-top: 4px;
+  line-height: 1.5;
+}
+
+/* score + popups */
+.score {
+  position: absolute;
+  left: max(16px, env(safe-area-inset-left, 0px));
+  bottom: 98px;
+  font-family: var(--mono);
+  display: grid;
+  gap: 2px;
+}
+.score .k {
+  font-size: 9.5px;
+  color: var(--dim);
+  letter-spacing: 0.16em;
+}
+.score .v {
+  font-size: 22px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.popups {
+  position: absolute;
+  left: 50%;
+  top: 30%;
+  transform: translateX(-50%);
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+}
+.popup {
+  font-weight: 800;
+  font-size: clamp(18px, 3vw, 28px);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ano);
+  text-shadow: 0 0 18px rgba(191, 233, 255, 0.55);
+  animation: pop 2.2s ease-out forwards;
+}
+.popup b {
+  color: var(--gold);
+  font-weight: 800;
+}
+@keyframes pop {
+  0% {
+    opacity: 0;
+    transform: translateY(12px) scale(0.92);
+  }
+  12% {
+    opacity: 1;
+    transform: none;
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-14px);
+  }
+}
