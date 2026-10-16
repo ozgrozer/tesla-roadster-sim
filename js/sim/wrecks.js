@@ -1,15 +1,17 @@
 // Traffic knocked out of its lane: the Roadster's hits on cars, the slide to a stop on locked-up
-// tyres (off walls and posts), and pulling back into the lane when a car was only nudged.
-import { CAR } from './constants.js'
+// tyres (off walls and posts, or through a post it hits hard enough to snap), and pulling back into
+// the lane when a car was only nudged.
 import { query } from './city.js'
+import { CAR } from './constants.js'
+import { snap } from './breakables.js'
 import {
   BODY,
   nudge,
+  boxRect,
   impulse,
   carRect,
   rectRect,
   rectPost,
-  boxRect,
   loadBody,
   storeBody,
   playerRect
@@ -30,7 +32,8 @@ function loosen (tr, car) {
   car.v = 0
   car.brake = false
 }
-export function slide (tr, car, dt) {
+// sim: where a post it snaps is reported (as a 'knock')
+export function slide (tr, car, dt, sim) {
   const sp = Math.hypot(car.vx, car.vz)
   if (sp > 1e-4) {
     const k = Math.max(0, sp - 6.5 * dt) / sp
@@ -49,6 +52,11 @@ export function slide (tr, car, dt) {
     if (c.y0 > 1.2 || c.down) continue
     const hit = c.r ? rectPost(r, c) : rectRect(r, boxRect(c))
     if (!hit) continue
+    const e = c.breakAt && snap(car, c, hit.nx, hit.nz, car.m)
+    if (e) {
+      sim?.emit('knock', { ...e, by: 'traffic' })
+      continue
+    }
     car.x += hit.nx * hit.depth
     car.z += hit.nz * hit.depth
     r.x = car.x
