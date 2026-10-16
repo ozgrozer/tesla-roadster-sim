@@ -7,7 +7,9 @@
 // lit, the head in shadow) and the pane slides behind it; and behind each pane is a room, traced in
 // the shader: a box a bay wide, a storey high and a few metres deep, with a floor, a ceiling, walls
 // and a dark desk or cabinet, lit by its lamp or only by the dusk outside. The glass itself is smooth
-// and reflects the sky at a glancing angle, as glass does, however rough the wall round it.
+// and reflects the sky at a glancing angle, as glass does, however rough the wall round it. Far off,
+// where a window is only a few pixels across, the reveal and the room go (nobody could see them)
+// and each window is simply its glass with the room's average light behind it.
 import * as THREE from 'three'
 
 const BAY = 3 // m: a texture cell is a bay wide (cityBuildings.js) ...
@@ -61,8 +63,10 @@ export function facadeMaterial (
           vec3 rd = normalize(-vViewPosition);
           vec3 r = vec3(dot(rd, ta) / ${f(BAY)}, dot(rd, up) / ${f(STOREY)},
             min(dot(rd, n), -0.03) / ${f(ROOM)});
+          // (far off: windows a few pixels across, cells per pixel past a quarter)
+          bool far = max(length(du), length(dv)) * ${C} > 0.25;
           // where it meets the glass, set back from the wall face; short of it, the reveal
-          vec2 g = f + r.xy * (${f(inset / ROOM)} / -r.z);
+          vec2 g = far ? f : f + r.xy * (${f(inset / ROOM)} / -r.z);
           float pane = gWin * step(x0, g.x) * step(g.x, x1) * step(bot, g.y) * step(g.y, top);
           if (gWin > 0.5 && pane < 0.5) {
             // the reveal: the wall's own colour, the sill catching the light, the head in shadow
@@ -80,6 +84,9 @@ export function facadeMaterial (
             vec3 bc = mix(vec3(0.86, 0.84, 0.78), vec3(0.74, 0.7, 0.62), cellHash(gCell + 9.1));
             bc *= 0.92 + 0.08 * step(0.5, fract(g.y * 40.0));
             diffuseColor.rgb = mix(diffuseColor.rgb, bc, gBlind * 0.9);
+            vec3 wallC = mix(vec3(0.9, 0.86, 0.78), vec3(0.72, 0.77, 0.82), cellHash(gCell + 8.1));
+            if (far) gRoom = wallC * 0.62 * (1.0 - 0.6 * gBlind); // (the room's light, on average)
+            else {
             // the room behind: a box from the glass back to its back wall, floor to ceiling
             float depth = 0.7 + 0.6 * cellHash(gCell + 5.5);
             vec2 rq = vec2(abs(r.x) < 1e-4 ? 1e-4 : r.x, abs(r.y) < 1e-4 ? 1e-4 : r.y);
@@ -88,7 +95,6 @@ export function facadeMaterial (
             float tz = depth / -r.z;
             float tm = min(min(tx, ty), tz);
             vec3 h = vec3(g, 0.0) + r * tm;
-            vec3 wallC = mix(vec3(0.9, 0.86, 0.78), vec3(0.72, 0.77, 0.82), cellHash(gCell + 8.1));
             vec3 c;
             if (tm == tz) {
               c = wallC;
@@ -103,6 +109,7 @@ export function facadeMaterial (
             vec3 dl = (h - lamp) * vec3(1.0, 1.2, 1.0 / depth);
             c *= 1.25 / (1.0 + 2.6 * dot(dl, dl));
             gRoom = c * (1.0 - 0.6 * gBlind);
+            }
           }
           gWin = pane;
         }
