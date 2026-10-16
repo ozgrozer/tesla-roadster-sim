@@ -1,15 +1,14 @@
 // Wheels and wheel wells: arch openings cut into the body shell with dark well liners, tyres with
-// rounded sidewalls and recessed aero rims, Ackermann steering, free-spinning wheels in the air
-// and a motion-blur disc so fast spokes don't strobe.
+// rounded sidewalls round flat aero discs (as on the car at the reveal), Ackermann steering and
+// free-spinning wheels in the air.
 import * as THREE from 'three'
 import { MAT } from './scene.js'
-import { CAR, clamp } from '../sim/constants.js'
+import { CAR } from '../sim/constants.js'
 
 export const ARCH_R = 0.4 // arch opening radius around each axle (tyre radius 0.36)
 const WELL_IN = 0.5 // inner wall of the wheel well, from the centre line
 const HALF_TRACK = 0.87 // wheel centre from the centre line
 const BODY_SIDE = 0.995 // outer skin of the body at the wheels
-const lerpK = (k, dt) => 1 - Math.exp(-k * dt)
 
 // A copy of a body material that discards the shell inside each wheel arch, so the wheels sit in
 // open wells instead of cutting through the panels when they steer.
@@ -39,35 +38,29 @@ export function withWheelArches (mat) {
   return m
 }
 
-// Tyre cross-section (radius, axial offset), revolved: bead, rounded shoulder, flat tread.
+// Tyre cross-section (radius, axial offset), revolved: bead, rounded shoulder, flat tread. Low
+// profile round a big rim.
 const TYRE_PROFILE = [
-  [0.252, -0.128],
-  [0.29, -0.147],
-  [0.33, -0.15],
+  [0.285, -0.13],
+  [0.305, -0.148],
+  [0.33, -0.151],
   [0.35, -0.142],
   [0.358, -0.125],
   [0.36, -0.1],
   [0.36, 0.1],
   [0.358, 0.125],
   [0.35, 0.142],
-  [0.33, 0.15],
-  [0.29, 0.147],
-  [0.252, 0.128]
+  [0.33, 0.151],
+  [0.305, 0.148],
+  [0.285, 0.13]
 ].map(([r, y]) => new THREE.Vector2(r, y))
+const RIM_R = 0.285
 
 const liner = new THREE.MeshStandardMaterial({
   color: 0x0a0b0d,
   roughness: 0.95,
   side: THREE.DoubleSide
 })
-const blurMat = () =>
-  new THREE.MeshBasicMaterial({
-    color: 0x34373d,
-    transparent: true,
-    opacity: 0,
-    depthWrite: false
-  })
-
 // the dark tub behind each arch: a curved roof that meets the arch cut, plus the inner wall
 function wheelWell (x, sz) {
   const g = new THREE.Group()
@@ -102,24 +95,27 @@ function wheelWell (x, sz) {
 export function buildWheels (car, body) {
   const tyreGeo = new THREE.LatheGeometry(TYRE_PROFILE, 36).rotateX(Math.PI / 2)
   const barrelGeo = new THREE.CylinderGeometry(
-    0.253,
-    0.253,
+    RIM_R + 0.002,
+    RIM_R + 0.002,
     0.25,
-    28,
+    32,
     1,
     true
   ).rotateX(Math.PI / 2)
-  const faceGeo = new THREE.CylinderGeometry(0.248, 0.248, 0.012, 28).rotateX(
+  const faceGeo = new THREE.CylinderGeometry(
+    RIM_R - 0.004,
+    RIM_R - 0.004,
+    0.012,
+    32
+  ).rotateX(Math.PI / 2)
+  const lipGeo = new THREE.RingGeometry(RIM_R - 0.014, RIM_R, 32)
+  const grooveGeo = new THREE.RingGeometry(0.212, 0.22, 48)
+  const capGeo = new THREE.CylinderGeometry(0.045, 0.045, 0.016, 16).rotateX(
     Math.PI / 2
   )
-  const spokeGeo = new THREE.BoxGeometry(0.47, 0.05, 0.022)
-  const capGeo = new THREE.CylinderGeometry(0.055, 0.055, 0.03, 16).rotateX(
-    Math.PI / 2
-  )
-  const blurGeo = new THREE.CircleGeometry(0.247, 28)
   const axles = {
-    front: { rate: 0, angle: 0, blur: blurMat() },
-    rear: { rate: 0, angle: 0, blur: blurMat() }
+    front: { rate: 0, angle: 0 },
+    rear: { rate: 0, angle: 0 }
   }
   const wheels = []
   for (const sx of [1, -1]) {
@@ -131,25 +127,24 @@ export function buildWheels (car, body) {
       const tyre = new THREE.Mesh(tyreGeo, MAT.tire)
       tyre.castShadow = true
       spin.add(tyre, new THREE.Mesh(barrelGeo, MAT.darkMetal))
-      const axle = sx > 0 ? axles.front : axles.rear
-      // rim face recessed ~3 cm inside the sidewall on both sides, three-blade aero spokes
+      // flat silver disc recessed ~3 cm inside the sidewall on both sides: dark lip, one groove
+      // ring, small dark hub
       for (const side of [-1, 1]) {
-        const face = new THREE.Mesh(faceGeo, MAT.rim)
+        const face = new THREE.Mesh(faceGeo, MAT.aero)
         face.position.z = side * 0.112
         spin.add(face)
-        for (let i = 0; i < 3; i++) {
-          const sp = new THREE.Mesh(spokeGeo, MAT.trim)
-          sp.rotation.z = (i * Math.PI) / 3
-          sp.position.z = side * 0.124
-          spin.add(sp)
+        for (const [geo, z] of [
+          [lipGeo, 0.1185],
+          [grooveGeo, 0.119]
+        ]) {
+          const ring = new THREE.Mesh(geo, MAT.rim)
+          ring.position.z = side * z
+          if (side < 0) ring.rotation.y = Math.PI
+          spin.add(ring)
         }
         const cap = new THREE.Mesh(capGeo, MAT.darkMetal)
-        cap.position.z = side * 0.128
+        cap.position.z = side * 0.124
         spin.add(cap)
-        const blur = new THREE.Mesh(blurGeo, axle.blur)
-        blur.position.z = side * 0.137
-        if (side < 0) blur.rotation.y = Math.PI
-        spin.add(blur)
       }
       pivot.add(spin)
       car.add(pivot)
@@ -168,9 +163,6 @@ export function updateWheels (RS, sim, dt) {
     if (grounded) axle.rate = name === 'rear' && sim.ebrakeOn ? 0 : roll
     else axle.rate *= Math.exp(-0.35 * dt)
     axle.angle += axle.rate * dt
-    // above ~70 km/h the spokes blur into a disc instead of strobing
-    const blur = clamp((Math.abs(axle.rate) - 20) / 45, 0, 0.88)
-    axle.blur.opacity += (blur - axle.blur.opacity) * lerpK(10, dt)
   }
   const d = sim.steerAng
   const R = Math.abs(d) > 1e-4 ? CAR.wheelbase / Math.tan(d) : Infinity
