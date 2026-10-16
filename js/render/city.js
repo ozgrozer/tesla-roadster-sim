@@ -1,8 +1,9 @@
 // The city view: builds the city's meshes the first time it is visited (so the test site loads as
-// fast as ever), shows it in place of the test site, and keeps the traffic, signals, sky and
+// fast as ever), shows it in place of the test site, and keeps the traffic, signals, sky, sea and
 // antenna beacons moving.
 import * as THREE from 'three'
 import { Sky } from './citySky.js'
+import { buildSea } from './citySea.js'
 import { scene, site } from './scene.js'
 import { raycast } from '../sim/city.js'
 import { TrafficView } from './traffic.js'
@@ -20,6 +21,7 @@ export class CityView {
     const g = new THREE.Group()
     this.sky = new Sky(g)
     buildGround(g)
+    this.sea = buildSea(g)
     buildBuildings(g)
     const props = buildProps(g)
     this.signals = props.signals
@@ -49,6 +51,7 @@ export class CityView {
   update (dt, clock, traffic, camera) {
     if (!this.on) return
     this.sky.follow(camera)
+    this.sea(clock, camera)
     for (const f of Object.values(this.fallers)) f.update(dt)
     this.signals.update(traffic.t)
     this.cars.update(traffic)
