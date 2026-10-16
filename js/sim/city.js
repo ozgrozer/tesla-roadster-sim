@@ -386,7 +386,7 @@ const post = (x, z, r, h, kind) =>
   })
 for (const b of BUILDINGS)
   for (const t of b.tiers) addCollider({ ...t, kind: 'building' })
-for (const l of LAMPS) post(l.x, l.z, 0.16, 8, 'lamp')
+LAMPS.forEach((l, i) => (post(l.x, l.z, 0.16, 8, 'lamp').i = i))
 for (const p of PALMS) post(p.x, p.z, 0.28, p.h, 'palm')
 for (const t of TREES) post(t.x, t.z, 0.3, 6, 'tree')
 for (const p of POLES) post(p.x, p.z, 0.2, 7, 'signal')
@@ -400,6 +400,10 @@ for (const [x0, x1, z0, z1] of [
 ])
   addCollider({ x0, x1, z0, z1, y0: 0, y1: 1.1, kind: 'barrier' })
 export const BARRIER = BW
+// Street lights go down when the Roadster hits them (collider.down); this stands them all back up.
+export function standUp () {
+  for (const c of COLLIDERS) c.down = false
+}
 
 let stamp = 0
 // Every collider whose footprint overlaps the rectangle [x0, x1] x [z0, z1].
