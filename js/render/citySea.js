@@ -42,6 +42,7 @@ function seaMaterial () {
       THREE.UniformsLib.fog,
       {
         uTime: { value: 0 },
+        uNight: { value: 0 },
         uSun: { value: SUN.clone() },
         uShore: {
           value:
@@ -59,7 +60,7 @@ function seaMaterial () {
         gl_Position = projectionMatrix * mvPosition;
         #include <fog_vertex>
       }`,
-    fragmentShader: `uniform float uTime; uniform vec3 uSun; uniform float uShore; varying vec3 vW;
+    fragmentShader: `uniform float uTime; uniform float uNight; uniform vec3 uSun; uniform float uShore; varying vec3 vW;
       #include <fog_pars_fragment>
       float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
       float noise(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
@@ -93,31 +94,36 @@ function seaMaterial () {
         vec3 horizon = vec3(1.0, 0.56, 0.32), mid = vec3(0.62, 0.42, 0.52), zenith = vec3(0.13, 0.2, 0.42);
         vec3 sky = mix(horizon, mid, smoothstep(0.0, 0.16, r.y));
         sky = mix(sky, zenith, smoothstep(0.12, 0.62, r.y));
+        // (at night: the dark sky, the city's glow low down)
+        vec3 nsky = mix(vec3(0.06, 0.05, 0.06), vec3(0.006, 0.01, 0.03), smoothstep(0.0, 0.4, r.y));
+        sky = mix(sky, nsky, uNight);
         float sd = max(dot(r, uSun), 0.0);
-        sky += vec3(1.0, 0.55, 0.25) * pow(sd, 8.0) * 0.6;
+        sky += mix(vec3(1.0, 0.55, 0.25), vec3(0.3, 0.32, 0.4), uNight) * pow(sd, 8.0) * 0.6;
         // deep blue out at sea, turquoise over the shallows by the beach
         float out_ = max(abs(vW.x), abs(vW.z)) - uShore;
         vec3 deep = vec3(0.008, 0.08, 0.27), shallow = vec3(0.05, 0.42, 0.5);
         vec3 body = mix(shallow, deep, smoothstep(2.0, 70.0, out_));
+        body = mix(body, vec3(0.003, 0.012, 0.03), uNight * 0.92);
         // light coming up through a wave's face
         body += vec3(0.02, 0.12, 0.13) * max(0.0, s.x * 0.8 + s.y * 0.4) ;
         // (the sky in it a little cooler than the sky itself: the water's own blue shows through)
-        vec3 col = mix(body, sky * vec3(0.78, 0.88, 1.08), fres * 0.7);
-        // the sun's glitter path
-        col += vec3(1.0, 0.75, 0.45) * pow(sd, 260.0) * 9.0;
-        col += vec3(1.0, 0.6, 0.3) * pow(sd, 40.0) * 0.35;
+        vec3 col = mix(body, sky * vec3(0.78, 0.88, 1.08), fres * mix(0.7, 0.4, uNight));
+        // the sun's glitter path (the moon's at night, cold and fainter)
+        vec3 glint = mix(vec3(1.0, 0.75, 0.45), vec3(0.75, 0.8, 1.0) * 0.35, uNight);
+        col += glint * pow(sd, 260.0) * 9.0;
+        col += mix(vec3(1.0, 0.6, 0.3), vec3(0.2, 0.22, 0.3), uNight) * pow(sd, 40.0) * 0.35;
         // surf: a foam line rolling up the beach, and streaks of it just offshore
         float swash = sin(out_ * 0.9 - uTime * 1.6 + noise(vW.xz * 0.08) * 6.0);
         float foam = smoothstep(2.6, 0.0, out_) * (0.55 + 0.45 * swash);
         foam += smoothstep(14.0, 4.0, out_) * smoothstep(0.75, 0.95, swash) * noise(vW.xz * 0.6 + uTime * 0.3) * 0.7;
-        col = mix(col, vec3(0.92, 0.9, 0.86), clamp(foam, 0.0, 0.9));
+        col = mix(col, vec3(0.92, 0.9, 0.86) * (1.0 - 0.8 * uNight), clamp(foam, 0.0, 0.9));
         gl_FragColor = vec4(col, 1.0);
         #include <fog_fragment>
       }`
   })
 }
 
-// returns a per-frame update (the water moves)
+// returns a per-frame update (the water moves), with .night(k) to turn it to night (k = 1)
 export function buildSea (group) {
   const sand = new THREE.MeshStandardMaterial({
     map: sandTexture(),
@@ -164,10 +170,12 @@ export function buildSea (group) {
   )
   sea.position.y = WATER
   group.add(sea)
-  return (t, camera) => {
+  const update = (t, camera) => {
     mat.uniforms.uTime.value = t
     // the plane follows the camera so the horizon never runs out
     sea.position.x = camera.position.x
     sea.position.z = camera.position.z
   }
+  update.night = k => (mat.uniforms.uNight.value = k)
+  return update
 }
