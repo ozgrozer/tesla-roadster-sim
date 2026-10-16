@@ -1,10 +1,9 @@
-// Roofs: the flat top of every building tier is somewhere to land and drive, walled in by its parapet,
-// with plant on the top tier (a stair and lift housing, air-handling units and sometimes a mast) to
-// steer round. To get down, hop the parapet on the lift thrusters.
+// Roofs: the flat top of every building tier is somewhere to land and drive, with plant on the top
+// tier (a stair and lift housing, air-handling units and sometimes a mast) to steer round. The edge is
+// only a low lip the wheels roll over, so the car can drive straight off a tall roof and drop onto a
+// lower one across the alley (or onto the tier below).
 import { BUILDINGS, rng, query, addCollider } from './city.js'
 
-export const PARAPET = 0.3 // m thick
-export const PARAPET_H = 0.9 // m above the roof
 export const LIP = 0.3 // the roof's edging: m wide
 export const LIP_H = 0.1 // and m high, drawn only (the wheels roll over it)
 export const STEP = 0.3 // a roof up to this much higher than the one the car is on is driven onto
@@ -65,27 +64,4 @@ export function roofAt (x, z, y) {
     )
       best = c
   return best
-}
-
-// a roof's parapet, as four low walls along its edges
-export function parapets (roof) {
-  if (!roof.parapets) {
-    const { x0, x1, z0, z1, y1 } = roof,
-      p = PARAPET
-    roof.parapets = [
-      [x0, x1, z0, z0 + p],
-      [x0, x1, z1 - p, z1],
-      [x0, x0 + p, z0, z1],
-      [x1 - p, x1, z0, z1]
-    ].map(([a, b, c, d]) => ({
-      x0: a,
-      x1: b,
-      z0: c,
-      z1: d,
-      y0: y1,
-      y1: y1 + PARAPET_H,
-      kind: 'parapet'
-    }))
-  }
-  return roof.parapets
 }
