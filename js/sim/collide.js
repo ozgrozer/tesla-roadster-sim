@@ -205,7 +205,7 @@ export function nudge (s, dx, dz) {
 }
 
 const hits = []
-// Ground mode: keep the Roadster out of buildings, posts and the barrier (and on a roof, clear of its
+// Ground mode: keep the Roadster out of buildings and posts (and on a roof, clear of its
 // plant). A roof's edge is no wall: the car drives straight off it (ground.js).
 export function collideCity (s) {
   const me = playerRect(s),
@@ -225,7 +225,7 @@ export function collideCity (s) {
     storeBody(s)
     if (impact > 0.6) s.emit('bump', { impact, what: c.kind })
   }
-  // the open ground ends a little way past the city's barrier
+  // the beach past the ring road ends at the sea
   for (const k of ['x', 'z'])
     if (Math.abs(s.pos[k]) > OUTER) {
       s.pos[k] = Math.sign(s.pos[k]) * OUTER
@@ -249,7 +249,7 @@ export function knock (s, c, nx, nz) {
   return true
 }
 
-// In the air over the city: the side of a building, a post or the barrier bounces the car off as it
+// In the air over the city: the side of a building or a post bounces the car off as it
 // would on the road (a hard enough hit still snaps a street light, signal or tree). Coming down on a
 // roof is a landing (flight.js). Over a roof's edge, with its centre already past it, the car rides
 // the edge and tips off it (the roof it drove off, or one it only just reached). bottom and top: the
