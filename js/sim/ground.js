@@ -4,7 +4,9 @@ import { collideCity, bumpCars } from './collide.js'
 import { G, CAR, LIFT_ACC, clamp, wrapPi } from './constants.js'
 
 // Planar two-axle tyre model: slip angles, friction circle, AWD split, load transfer,
-// rolling resistance, aero drag, coast regen and a rear-locking e-brake.
+// rolling resistance, aero drag, coast regen and a rear-locking e-brake. Let go of the e-brake in a
+// slide and the rears find their grip again over half a second, with stability control standing
+// back meanwhile, so a handbrake turn carries on as a powerslide instead of snapping straight.
 export function stepGround (s, dt, c, main, lift) {
   const m = CAR.mass,
     v = s.vel
@@ -34,8 +36,12 @@ export function stepGround (s, dt, c, main, lift) {
   )
   const Nf = Ntot / 2 - dN,
     Nr = Ntot / 2 + dN
+  // the rears' grip coming back after the e-brake (1: all of it): slowly while the car is still well
+  // sideways, quickly once it lines up with where it is going
+  const back = 2.2 * (1 - 0.55 * clamp(Math.abs(s.slipR) / 0.7, 0, 1))
+  s.rearGrip = c.ebrake ? 0.6 : Math.min(1, s.rearGrip + dt * back)
   const FmaxF = mu * Nf,
-    FmaxR = mu * CAR.rearGrip * Nr
+    FmaxR = mu * CAR.rearGrip * Nr * (c.ebrake ? 1 : s.rearGrip)
 
   // speed-sensitive steering so a keyboard stays controllable
   const steerMax = 0.6 / (1 + (u * u) / 300)
@@ -99,6 +105,7 @@ export function stepGround (s, dt, c, main, lift) {
     slideR,
     wantR = 0
   if (c.ebrake) {
+    s.slipR = Math.atan2(wr, Math.max(au, 2))
     const vr = Math.hypot(u, wr),
       k = (CAR.ebrakeMu * FmaxR) / Math.max(vr, 0.6)
     Fxr2 = -u * k
@@ -107,6 +114,7 @@ export function stepGround (s, dt, c, main, lift) {
   } else {
     Fxr2 = clamp(Fxr, -FmaxR, FmaxR)
     const alphaR = Math.atan2(wr, Math.max(au, 2))
+    s.slipR = alphaR
     Fyr = -FmaxR * Math.tanh((CAR.corneringR * alphaR) / FmaxR)
     wantR = Fyr
     const limR = Math.sqrt(Math.max(0, FmaxR * FmaxR - Fxr2 * Fxr2))
@@ -124,7 +132,7 @@ export function stepGround (s, dt, c, main, lift) {
   s.lastFyr = wantR
   // stability control: when the car rotates faster than the steering asks for, brake a front wheel to counter it
   s.escActive = false
-  if (!c.ebrake && au > 3) {
+  if (!c.ebrake && s.rearGrip >= 1 && au > 3) {
     const rT = clamp(
       (u * Math.tan(s.steerAng)) / CAR.wheelbase,
       (-mu * G) / au,
@@ -153,6 +161,20 @@ export function stepGround (s, dt, c, main, lift) {
   v.y = 0
   s.yawRate += (Mz / CAR.Iz) * dt
   s.yaw = wrapPi(s.yaw + s.yawRate * dt)
+  // A handbrake turn carries the car round with its nose, as in GTA: for a moment after the e-brake
+  // comes off, the sideways part of the slide is scrubbed away and the swing back damped, so it
+  // drives off the way it now points rather than snapping back to the way it was going.
+  if (c.ebrake) s.driftT = 1
+  else if (s.driftT > 0) {
+    s.driftT = Math.max(0, s.driftT - dt)
+    const k = 1 - Math.exp(-dt * 4 * s.driftT)
+    const ly = -Math.sin(s.yaw),
+      lzz = -Math.cos(s.yaw)
+    const lat = v.x * ly + v.z * lzz
+    v.x -= lat * k * ly
+    v.z -= lat * k * lzz
+    s.yawRate *= 1 - k * 0.5
+  }
 
   // brakes, regen and rolling resistance can stop the car but never push it backwards
   const pushing = c.throttle > 0 || c.reverse > 0 || main > 0
