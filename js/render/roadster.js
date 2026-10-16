@@ -198,6 +198,13 @@ export function buildRoadster () {
   // front: light line along the hood's leading edge, squinting triangular headlights on the fenders'
   // facets, black splitter, amber markers behind the front arches and red ones ahead of the tail
   body.add(box(0.014, 0.014, 1.18, MAT.headlight, 2.224, 0.525, 0))
+  // at night the headlights light the road ahead, dipped like low beams so a car stopped in front
+  // is lit rather than blown out (headlights.visible: main.js switches them)
+  const headlights = new THREE.SpotLight(0xfff2e0, 500, 70, 0.38, 0.6, 2)
+  headlights.position.set(2.1, 0.6, 0)
+  headlights.target.position.set(24, -1.6, 0)
+  headlights.visible = false
+  body.add(headlights, headlights.target)
   const lamp = [],
     mark = [],
     markR = []
@@ -345,6 +352,7 @@ export function buildRoadster () {
     door: 0, // how far the driver's door is open, 0 to 1
     optimus,
     cabin,
+    headlights,
     settle: { mode: null, k: 0, dy: 0, dq: new THREE.Quaternion() },
     // body pitch and roll on their springs (rad) and how fast they are moving
     lean: { p: 0, pv: 0, r: 0, rv: 0 },
