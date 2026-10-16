@@ -1,6 +1,7 @@
 // What happens to each frame after it is drawn: bloom on everything bright (lamps, thrusters, the
 // low sun's glints), the speed blur (speedBlur.js), then tone mapping and colour out; and keeping it
-// all the size of the window.
+// all the size of the window. The bloom is worked out at the window's own size, not the screen's
+// pixels: a soft glow loses nothing by it, and on a high-density screen it is four times cheaper.
 import * as THREE from 'three'
 import { speedBlurPass, updateSpeedBlur } from './speedBlur.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
@@ -18,6 +19,12 @@ export class Post {
       0.45,
       0.95
     )
+    // (the composer sizes its passes in the screen's pixels)
+    const size = bloom.setSize.bind(bloom)
+    bloom.setSize = (w, h) => {
+      const k = Math.max(1, renderer.getPixelRatio())
+      size(Math.round(w / k), Math.round(h / k))
+    }
     composer.addPass(bloom)
     this.blur = speedBlurPass()
     composer.addPass(this.blur)
