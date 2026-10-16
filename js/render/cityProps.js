@@ -2,12 +2,13 @@
 // corner whose red, yellow and green lamps follow the intersection's signal plan. All instanced, and
 // all of it goes over when the Roadster hits it hard enough (the sim decides: breakables.js).
 import * as THREE from 'three'
-import { hdr } from './scene.js'
+import { hdr, softTex } from './scene.js'
 import { merge, box, tint } from './geo.js'
 import { G, clamp } from '../sim/constants.js'
 import {
   rng,
   NODES,
+  CURB_H,
   LAMPS,
   PALMS,
   TREES,
@@ -156,27 +157,42 @@ function lamps (group) {
     .translate(2.3, 7.66, 0)
   const stand = l => pose(l.x, 0, l.z, lampYaw(l))
   const posts = instanced(post, metal, LAMPS, stand)
-  const lenses = instanced(
-    lens,
-    new THREE.MeshBasicMaterial({
-      color: hdr(3.2, 2.5, 1.6),
-      toneMapped: false
-    }),
+  LENS.color = hdr(3.2, 2.5, 1.6)
+  const lenses = instanced(lens, LENS, LAMPS, stand, false)
+  // at night, the light each throws on the ground under its head (on the pavement's height, so it
+  // shows on the pavement as well as the road)
+  const pools = instanced(
+    new THREE.PlaneGeometry(12, 12).rotateX(-Math.PI / 2),
+    POOL,
     LAMPS,
-    stand,
+    l => pose(l.x + l.ax * 2.3, CURB_H + 0.02, l.z + l.az * 2.3, 0),
     false
   )
-  group.add(posts, lenses)
+  pools.receiveShadow = false
+  pools.visible = false
+  group.add(posts, lenses, pools)
   return new Fallers(
     'lamp',
     LAMPS,
     [
       { mesh: posts, of: one },
-      { mesh: lenses, of: one, dark: true }
+      { mesh: lenses, of: one, dark: true },
+      { mesh: pools, of: one, dark: true }
     ],
     { L: () => 5.6, rest: () => 1.53, h: () => 8, skid: 0.5 }
   )
 }
+const LENS = new THREE.MeshBasicMaterial({ toneMapped: false })
+const POOL = new THREE.MeshBasicMaterial({
+  map: softTex,
+  color: new THREE.Color(1, 0.74, 0.45),
+  transparent: true,
+  blending: THREE.AdditiveBlending,
+  depthWrite: false,
+  polygonOffset: true,
+  polygonOffsetFactor: -4,
+  polygonOffsetUnits: -4
+})
 
 // ---------- palms: a leaning trunk and a crown of drooping fronds ----------
 function frond (a, len) {
@@ -403,7 +419,8 @@ export class Signals {
   }
 }
 
-// the street furniture, and what goes over when it is hit, by the sim's kind
+// the street furniture, and what goes over when it is hit, by the sim's kind; night (0 to 1) lights
+// the street lights up
 export function buildProps (group) {
   const signals = new Signals(group)
   const fallers = {
@@ -412,5 +429,11 @@ export function buildProps (group) {
     tree: trees(group),
     signal: signals.fallers
   }
-  return { signals, fallers }
+  const pools = fallers.lamp.parts[2].mesh
+  const night = k => {
+    LENS.color.copy(hdr(3.2, 2.5, 1.6)).multiplyScalar(1 + 2 * k)
+    POOL.opacity = 0.42 * k
+    pools.visible = k > 0.01
+  }
+  return { signals, fallers, night }
 }
