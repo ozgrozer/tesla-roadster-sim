@@ -4,7 +4,10 @@ import { Sim } from '../js/sim/sim.js'
 import assert from 'node:assert/strict'
 import { LINEUP, TRACK } from '../js/sim/track.js'
 import { Autopilot } from '../js/sim/autopilot.js'
+import { tyreCurve } from '../js/sim/ground.js'
 import {
+  G,
+  CAR,
   DEG,
   AX_X,
   wrapPi,
@@ -180,12 +183,16 @@ function from60 (after, secs = 30) {
     z0 = sim.pos.z,
     yaw0 = sim.yaw
   let t = 0,
-    maxSlip = 0
+    maxSlip = 0,
+    maxG = 0 // the most the car was pushed or pulled about by its tyres (in g)
   while (t < secs) {
     const c = makeControls()
     c.fan = false
     after(c, t)
+    const vx = sim.vel.x,
+      vz = sim.vel.z
     sim.step(H, c)
+    maxG = Math.max(maxG, Math.hypot(sim.vel.x - vx, sim.vel.z - vz) / H / G)
     t += H
     const lat = -sim.vel.x * Math.sin(sim.yaw) - sim.vel.z * Math.cos(sim.yaw)
     if (sim.groundSpeed() > 2)
@@ -200,7 +207,8 @@ function from60 (after, secs = 30) {
     t,
     dist: Math.hypot(sim.pos.x - x0, sim.pos.z - z0),
     turned: wrapPi(sim.yaw - yaw0) / DEG,
-    maxSlip
+    maxSlip,
+    maxG
   }
 }
 
@@ -215,22 +223,28 @@ test('brakes and e-brake stop the car in realistic distances', () => {
     c.brake = 1
   })
   assert.ok(brake.dist < 15, `brake distance ${brake.dist.toFixed(1)} m`)
+  // the e-brake locks only the rear wheels: a long stop, at about half a g
   const eb = from60(c => {
     c.ebrake = true
   })
   assert.ok(
-    eb.dist >= brake.dist && eb.dist < 20,
+    eb.dist > 1.8 * brake.dist && eb.dist < 40,
     `e-brake distance ${eb.dist.toFixed(1)} m`
   )
-  // the e-brake wins over W held at the same time, as in GTA
-  const ebW = from60(c => {
-    c.ebrake = true
-    c.throttle = 1
-  })
-  assert.ok(ebW.dist < 20, `e-brake with W held: ${ebW.dist.toFixed(1)} m`)
   assert.ok(
     Math.abs(eb.turned) < 2,
     'straight-line e-brake stop stays straight'
+  )
+  // and with W held the front motor pulls against the locked rears, as on a real car
+  const ebW = from60(c => {
+    c.ebrake = true
+    c.throttle = 1
+  }, 3)
+  assert.ok(
+    ebW.sim.groundSpeed() > 12,
+    `the fronts pull it along on locked rears (${ebW.sim
+      .groundSpeed()
+      .toFixed(1)} m/s after 3 s)`
   )
 })
 
@@ -242,27 +256,65 @@ test('e-brake plus steering rotates the car into a drift', () => {
   assert.ok(r.maxSlip > 45, `drift slip ${r.maxSlip.toFixed(0)}°`)
 })
 
-test('a handbrake turn carries the car round with its nose, as in GTA', () => {
-  // a tap of the e-brake on full lock at 60 mph, then the wheel straight and the throttle on: it
-  // drives off the way it now points, without snapping back towards the way it was going
-  const r = from60((c, t) => {
+test('a handbrake turn swings the car round, and the slide runs out at the tyres\' pace', () => {
+  // a tap of the e-brake on full lock at 60 mph, then the wheel straight and the throttle on: the
+  // locked rears swing round, and once they spin up again the car slides on until its tyres bite,
+  // no harder than they can pull (nothing snaps it onto its new heading), and drives off that way
+  const tap = (c, t) => {
     c.ebrake = t < 0.6
     c.steer = t < 0.6 ? 1 : 0
     c.throttle = t > 0.6 ? 0.6 : 0
-  }, 3)
-  const turned = from60((c, t) => {
-    c.ebrake = t < 0.6
-    c.steer = t < 0.6 ? 1 : 0
-    c.throttle = t > 0.6 ? 0.6 : 0
-  }, 1.4).turned
+  }
+  const r = from60(tap, 3)
+  const mid = from60(tap, 1.4)
   assert.ok(r.turned > 45 && r.turned < 120, `turned ${r.turned.toFixed(0)}°`)
-  assert.ok(
-    r.turned > turned - 10,
-    `held its new heading (${turned.toFixed(0)}° at 1.4 s, ${r.turned.toFixed(
-      0
-    )}° at 3 s)`
-  )
   assert.ok(r.maxSlip > 20, `slid through it (${r.maxSlip.toFixed(0)}°)`)
+  assert.ok(
+    mid.maxSlip > 25 && r.maxSlip > 25,
+    `still sliding after the release (${mid.maxSlip.toFixed(0)}°)`
+  )
+  assert.ok(
+    r.maxG < 1.45,
+    `no more force than the tyres have (${r.maxG.toFixed(2)} g)`
+  )
+  const v = r.sim.vel
+  const drift = wrapPi(Math.atan2(-v.z, v.x) - r.sim.yaw) / DEG
+  assert.ok(
+    Math.abs(drift) < 5,
+    `then drives off the way it points (${drift.toFixed(1)}° off)`
+  )
+})
+
+test('the steering turns at the speed of hands, and the tyres corner to their limit', () => {
+  // a step of full lock at walking pace: the wheels take about a third of a second to get there
+  const sim = new Sim()
+  sim.reset('start')
+  sim.pos.set(-300, 0, 60)
+  sim.vel.set(3, 0, 0)
+  sim.speed = 3
+  sim.syncPose()
+  const c = makeControls()
+  c.fan = false
+  c.steer = 1
+  for (let i = 0; i < 12; i++) sim.step(H, c)
+  assert.ok(
+    sim.steerAng > 0.15 && sim.steerAng < 0.25,
+    `a tenth of a second in: ${(sim.steerAng / DEG).toFixed(0)}°`
+  )
+  for (let i = 0; i < 36; i++) sim.step(H, c)
+  assert.ok(sim.steerAng > 0.55, 'at full lock by 0.4 s')
+  // and at 60 km/h, full lock held: the car corners at the grip of its tyres (1.26 g)
+  const fast = from60((c, t) => {
+    c.steer = t > 0.2 ? 1 : 0
+    c.throttle = 0.25
+  }, 1.5)
+  const g = Math.abs(fast.sim.latAcc) / G
+  assert.ok(g > 1.05 && g < 1.3, `cornering at ${g.toFixed(2)} g`)
+  // a tyre pushed past its peak gives less, down to what a sliding tyre keeps
+  assert.ok(Math.abs(tyreCurve(Math.PI / 2) - 1) < 1e-9, 'the peak')
+  assert.ok(tyreCurve(0.01) > 0.0099, 'stiff from the start')
+  assert.ok(tyreCurve(2.5) < 0.95 && tyreCurve(2.5) > CAR.slideMu, 'past it')
+  assert.ok(Math.abs(tyreCurve(-8) + CAR.slideMu) < 0.01, 'sliding')
 })
 
 test('stability control keeps normal driving from spinning', () => {
@@ -274,7 +326,7 @@ test('stability control keeps normal driving from spinning', () => {
   const corner = from60(c => {
     c.steer = 1
     c.throttle = 0.3
-  }, 4)
+  }, 3)
   assert.ok(
     corner.maxSlip < 20 && Math.abs(corner.turned) > 60,
     'holds a steady corner'
