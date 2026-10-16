@@ -1,9 +1,9 @@
 // City buildings: procedural facades (glass curtain wall, office, brick, stucco) with windows lit for
-// the evening, storefronts along the street, setbacks, parapets, rooftop plant and antenna beacons.
+// the evening, storefronts along the street, setbacks, roof lips, rooftop plant and antenna beacons.
 // Each style is one merged mesh, so seven hundred buildings draw in a few calls.
 import * as THREE from 'three'
+import { LIP, LIP_H } from '../sim/roofs.js'
 import { BUILDINGS, rng } from '../sim/city.js'
-import { PARAPET, PARAPET_H } from '../sim/roofs.js'
 import { canvasTex, speckle, hdr } from './scene.js'
 
 const COL = 3 // m per window bay
@@ -312,9 +312,9 @@ export function buildBuildings (group) {
         ]
       })
       roofs.top(t.x0, t.x1, t.z0, t.z1, t.y1, roofCol)
-      // parapet round the roof edge
-      const p = PARAPET,
-        h = t.y1 + PARAPET_H
+      // a low lip round the roof edge (the wheels roll over it)
+      const p = LIP,
+        h = t.y1 + LIP_H
       roofs.cuboid(t.x0, t.x1, t.z0, t.z0 + p, t.y1, h, col)
       roofs.cuboid(t.x0, t.x1, t.z1 - p, t.z1, t.y1, h, col)
       roofs.cuboid(t.x0, t.x0 + p, t.z0, t.z1, t.y1, h, col)
