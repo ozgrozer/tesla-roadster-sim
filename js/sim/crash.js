@@ -1,6 +1,7 @@
 // Crashes: a rigid box tumbling on the ground with impulse-based contact and friction.
 import * as THREE from 'three'
 import { G, CAR, CORNERS } from './constants.js'
+import { pushOut, bounceCity } from './collide.js'
 
 const _a = new THREE.Vector3(),
   _b = new THREE.Vector3(),
@@ -16,7 +17,8 @@ export function enterCrash (s, reason) {
   }
   const hit = s.hitSolid()
   s.omegaW.copy(s.omega).applyQuaternion(s.quat)
-  if (hit) {
+  if (hit && s.world === 'city') pushOut(s, hit)
+  else if (hit) {
     s.vel.x *= -0.25
     s.vel.z *= 0.5
     s.vel.y = Math.max(s.vel.y, 2.5)
@@ -100,6 +102,7 @@ export function stepCrash (s, dt) {
       }
     }
   }
+  if (s.world === 'city') bounceCity(s)
   s.pos.copy(s.com).sub(s.up(_a).multiplyScalar(CAR.comH))
   s.gLoad += (0 - s.gLoad) * Math.min(1, dt * 4)
   if (s.crashTime > 1.2 && s.vel.length() < 0.8 && s.omegaW.length() < 0.8)
