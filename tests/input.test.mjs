@@ -68,3 +68,66 @@ test('Space is the e-brake, F the lift thrusters and H the horn', () => {
   up('KeyH')
   assert.ok(released.includes('KeyH'), 'and letting go of it is reported')
 })
+
+test('a gamepad is analog, and a stick held through a lift-off waits', () => {
+  const pad = {
+    index: 0,
+    connected: true,
+    mapping: 'standard',
+    axes: [0, 0, 0, 0],
+    buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 }))
+  }
+  navigator.getGamepads = () => [pad]
+  const driven = []
+  const input = new Input({
+    onDrive: code => driven.push(code),
+    onCommand () {}
+  })
+  const sim = new Sim()
+  sim.reset('lineup')
+  sim.pos.x = -60
+  sim.syncPose()
+  pad.buttons[7].value = 0.5
+  pad.axes[0] = 1
+  input.poll()
+  let c = input.controls(sim, 'auto')
+  assert.equal(c.throttle, 0.5, 'half the right trigger is half throttle')
+  assert.ok(c.steer < -0.99, 'the stick right over steers right')
+  assert.ok(driven.includes('Pad'), 'and touching them takes the wheel')
+  pad.axes[0] = 0
+  pad.buttons[0].pressed = true
+  input.poll()
+  assert.equal(input.controls(sim, 'auto').ebrake, true, 'A holds the e-brake')
+  pad.buttons[0].pressed = false
+  pad.buttons[7].value = 0
+  pad.buttons[6].value = 0.7
+  input.poll()
+  c = input.controls(sim, 'auto')
+  assert.equal(c.reverse, 0.7, 'stopped, the left trigger reverses')
+  // full throttle and boost to take-off speed, the stick held over to the left, then lift off
+  pad.buttons[6].value = 0
+  pad.buttons[7].value = 1
+  pad.buttons[5].pressed = true
+  pad.axes[0] = -0.8
+  input.poll()
+  while (sim.speed < 40) sim.step(H, input.controls(sim, 'auto'))
+  assert.equal(input.controls(sim, 'auto').brake, 0)
+  pad.buttons[4].pressed = true // LB: lift
+  input.poll()
+  while (sim.mode !== 'air') sim.step(H, input.controls(sim, 'auto'))
+  for (let i = 0; i < 30; i++) {
+    c = input.controls(sim, 'auto')
+    assert.equal(c.roll, 0, 'still held over from the run-up: no roll')
+    sim.step(H, c)
+  }
+  pad.axes[0] = 0
+  input.poll()
+  input.controls(sim, 'auto')
+  pad.axes[0] = 1
+  input.poll()
+  assert.ok(
+    input.controls(sim, 'auto').roll > 0.99,
+    'back through the middle, it rolls'
+  )
+  navigator.getGamepads = undefined
+})
