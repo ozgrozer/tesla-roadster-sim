@@ -7,6 +7,7 @@ import { Minimap } from './ui/minimap.js'
 import { smoke } from './render/smoke.js'
 import { Intro } from './render/intro.js'
 import { Tween } from './render/tween.js'
+import { Peds } from './sim/peds.js'
 import { Traffic } from './sim/traffic.js'
 import { SoundEngine } from './audio/sound.js'
 import { Autopilot } from './sim/autopilot.js'
@@ -79,6 +80,7 @@ rig.cockpit = { head: RS.optimus.head, body: RS.body }
 const sound = new SoundEngine()
 const hud = new Hud(RS)
 const traffic = new Traffic()
+const peds = new Peds() // people on foot
 const cityPilot = new CityPilot(sim, traffic)
 const cityView = new CityView()
 const minimap = new Minimap(document.getElementById('radar'))
@@ -152,6 +154,7 @@ function resetTo (spot, at = null) {
   rig.cut()
   if (spot === 'city' && !at) {
     traffic.reset(sim.pos.x, sim.pos.z)
+    peds.reset(sim.pos.x, sim.pos.z)
     standUp()
     cityView.standUp()
   }
@@ -362,7 +365,10 @@ function frame (now) {
       : input.controls(sim, app.fanMode)
     tween.before(city)
     sim.step(H, c)
-    if (city) traffic.step(H, sim, VIEW)
+    if (city) {
+      peds.step(H, sim, traffic, VIEW)
+      traffic.step(H, sim, VIEW)
+    }
     app.lastCtl = c
     acc -= H
     simDt += H
@@ -428,7 +434,7 @@ function frame (now) {
     p.update(simDt)
   }
   if (city) {
-    cityView.update(simDt, clock, traffic, camera)
+    cityView.update(simDt, clock, traffic, camera, peds)
     minimap.update(dt, sim, traffic, VIEW.heading)
   }
   mixSound(sound, app, traffic, dt, clock)
@@ -457,6 +463,7 @@ window.__roadster = {
   sound,
   app,
   traffic,
+  peds,
   cityView,
   renderer,
   setAuto,
@@ -467,7 +474,10 @@ window.__roadster = {
     for (let t = 0; t < sec; t += H) {
       const c = app.auto ? pilot().update(H) : input.controls(sim, app.fanMode)
       sim.step(H, c)
-      if (app.world === 'city') traffic.step(H, sim, VIEW)
+      if (app.world === 'city') {
+        peds.step(H, sim, traffic, VIEW)
+        traffic.step(H, sim, VIEW)
+      }
       app.lastCtl = c
     }
     handleEvents()
