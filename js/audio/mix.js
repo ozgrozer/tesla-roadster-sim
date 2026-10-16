@@ -80,6 +80,7 @@ export function mixSound (sound, app, traffic, dt, clock) {
     side: sim.thrSide,
     suction: sim.suction,
     city,
+    honks: !traffic.quiet, // (not until the Roadster has honked at the gridlock)
     cars: city && sound.enabled ? nearCars(traffic, sim) : NONE,
     dt,
     t: clock
