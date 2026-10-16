@@ -8,7 +8,7 @@ const MAX_SEG = 3000 // ring buffer of ribbon segments (oldest marks are overwri
 const STEP = 0.14 // m between ribbon samples
 const TREAD = 0.3 // tyre width
 const PATCH = 0.17 // contact patch length
-const Y = 0.022 // just above the pad
+const Y = 0.022 // just above the pad (or roof)
 
 // fine streaks along the mark: the tread grooves dragged across the concrete
 function streakTexture () {
@@ -75,7 +75,9 @@ const _q = new THREE.Quaternion()
 
 function addSegment (a, b) {
   const v = head * 4
-  pos.set([a.lx, Y, a.lz, a.rx, Y, a.rz, b.lx, Y, b.lz, b.rx, Y, b.rz], v * 3)
+  const ya = a.y + Y,
+    yb = b.y + Y
+  pos.set([a.lx, ya, a.lz, a.rx, ya, a.rz, b.lx, yb, b.lz, b.rx, yb, b.rz], v * 3)
   col[v * 4 + 3] = col[(v + 1) * 4 + 3] = a.alpha
   col[(v + 2) * 4 + 3] = col[(v + 3) * 4 + 3] = b.alpha
   uv.set([0, a.u, 1, a.u, 0, b.u, 1, b.u], v * 2)
@@ -104,6 +106,7 @@ export function updateSkids (RS, sim) {
     if (!last) {
       trail[i] = {
         x: _c.x,
+        y: sim.pos.y,
         z: _c.z,
         lx: _c.x,
         lz: _c.z,
@@ -131,6 +134,7 @@ export function updateSkids (RS, sim) {
     const nz = tx * width * 0.5
     const next = {
       x: _c.x,
+      y: sim.pos.y,
       z: _c.z,
       lx: _c.x + nx,
       lz: _c.z + nz,
