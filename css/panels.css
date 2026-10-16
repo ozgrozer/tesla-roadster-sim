@@ -197,6 +197,45 @@
   text-align: right;
   max-width: 260px;
 }
+/* grape.cool, in the bottom right corner */
+.promo {
+  position: absolute;
+  right: max(16px, env(safe-area-inset-right, 0px));
+  bottom: max(14px, env(safe-area-inset-bottom, 0px));
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px 6px 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--ano);
+  text-decoration: none;
+  background: var(--panel);
+  border: 1px solid var(--panel-edge);
+  border-radius: 3px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  pointer-events: auto;
+}
+.promo:hover {
+  border-color: var(--grape);
+}
+.promo:focus-visible {
+  outline: 2px solid var(--jet);
+  outline-offset: 2px;
+}
+.promo svg {
+  width: 14px;
+  height: 14px;
+  fill: var(--grape);
+}
+.promo .leaf {
+  fill: var(--ok);
+  stroke: var(--ok);
+  stroke-width: 0.8;
+  stroke-linecap: round;
+}
 
 @media (max-width: 760px) {
   .schematic {
