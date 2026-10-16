@@ -19,7 +19,7 @@ try {
     'WebGL is unavailable in this browser, so the simulation cannot start.'
   throw err
 }
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)) // (resolution.js lowers it if need be)
 renderer.setSize(window.innerWidth, window.innerHeight)
 renderer.shadowMap.enabled = true
 renderer.shadowMap.type = THREE.PCFSoftShadowMap
