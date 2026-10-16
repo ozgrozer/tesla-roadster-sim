@@ -2,7 +2,7 @@
 // gloss black egg of a head ringed in cyan, a black yoke across the shoulders, a boxy chest over a
 // black belly, ribbed elbow pads, black shin actuators and jointed silver hands. Built on a skeleton
 // of joints (facing +x, up +y, hips at the root), each joint's parts merged into one mesh per
-// material, and posed by blending a walk cycle, a seated pose and hands on the yoke.
+// material, and posed by a walk cycle or by reaching its feet and hands for given points.
 import * as THREE from 'three'
 import { merge } from './geo.js'
 import { creaseNormals } from './loft.js'
@@ -41,8 +41,7 @@ const GLOW = new THREE.MeshBasicMaterial({
   color: new THREE.Color(0.3, 1.45, 2.1),
   toneMapped: false
 })
-export const HIP_STAND = 0.92 // hip height standing, m
-export const HIP_SIT = 0.3 // in the Roadster's seat
+export const HIP_STAND = 0.93 // hip height standing, m
 
 // A solid swept up y through rings [y, back x, front x, half width (z), power?]: each a rounded
 // square (a superellipse, 2 an ellipse and higher squarer), the ends capped flat. Normals smooth
@@ -440,15 +439,108 @@ export function buildOptimus () {
 }
 
 const mix = (a, b, t) => a + (b - a) * t
+const THIGH = 0.42,
+  SHIN = 0.43,
+  UPPER = 0.28,
+  FORE = 0.32 // elbow to the middle of the palm
+export const ANKLE_UP = 0.058 // ankle joint above the sole
+const _t = new THREE.Vector3(),
+  _d = new THREE.Vector3(),
+  _s = new THREE.Vector3(),
+  _k = new THREE.Vector3(),
+  _u = new THREE.Vector3(),
+  _w = new THREE.Vector3(),
+  _x = new THREE.Vector3(),
+  _y = new THREE.Vector3(),
+  _z = new THREE.Vector3(),
+  _m = new THREE.Matrix4(),
+  _q = new THREE.Quaternion(),
+  _q2 = new THREE.Quaternion()
 
-// Pose: walk (0-1, how much of the walk cycle shows), phase (radians through the stride), sit (0-1),
-// drive (0-1, hands up on the yoke), duck (0-1, leaning in under the door frame), look (head yaw).
+// p, in the frame Optimus stands in (its root's parent), seen from joint j's parent less j's offset;
+// a direction likewise
+function pointAt (O, j, p, out) {
+  out.set(p[0], p[1], p[2])
+  if (O.root.parent) O.root.parent.localToWorld(out)
+  return j.parent.worldToLocal(out).sub(j.position)
+}
+function dirAt (O, j, d, out) {
+  out.set(d[0], d[1], d[2])
+  if (O.root.parent) out.transformDirection(O.root.parent.matrixWorld)
+  return out.transformDirection(_m.copy(j.parent.matrixWorld).invert())
+}
+
+// Two bones from a joint reaching for t (in the joint's parent frame, from the joint), the middle
+// joint bowed towards `pole`: sets the joint's orientation (its -y down the first bone) and returns
+// the bend at the middle joint. A knee folds its shin back (-x), an elbow its forearm forward (+x).
+// Out of reach, the limb points straight at t.
+function limb (j, t, a, b, pole, knee) {
+  const d = Math.min(Math.max(t.length(), Math.abs(a - b) + 1e-4), a + b - 1e-4)
+  _d.copy(t).normalize()
+  const along = (a * a - b * b + d * d) / (2 * d),
+    r = Math.sqrt(Math.max(0, a * a - along * along))
+  _s.copy(pole).addScaledVector(_d, -pole.dot(_d))
+  if (_s.lengthSq() < 1e-8) _s.set(1, 0, 0).addScaledVector(_d, -_d.x)
+  _s.normalize()
+  _k.copy(_d).multiplyScalar(along).addScaledVector(_s, r) // the middle joint
+  _u.copy(_k).normalize() // first bone
+  _w.copy(_d).multiplyScalar(d).sub(_k).normalize() // second bone
+  _y.copy(_u).negate()
+  _x.copy(_s).addScaledVector(_u, -_s.dot(_u)).normalize()
+  if (!knee) _x.negate()
+  _z.crossVectors(_x, _y)
+  j.quaternion.setFromRotationMatrix(_m.makeBasis(_x, _y, _z))
+  return Math.acos(Math.min(1, Math.max(-1, _u.dot(_w))))
+}
+
+// Pose: walk (0-1, how much of the walk cycle shows) and phase (radians through the stride) for the
+// legs and the arm swing, unless feet places them: [left, right], each { at: the ankle, knee: the
+// way the knee points, toe: the foot's heading (rad) }, the points and directions in the frame the
+// root sits in (knees forward and the feet straight ahead by default), soles kept level. lean (rad)
+// bends the torso forward at the waist (back, negative) and tilt to its right (left, negative), nod
+// the head down; look turns it. hands
+// ([left, right], each { at: the middle of the palm, elbow: the way it points, w: 0-1 }) blends each
+// arm from its swing to reaching there.
 export function poseOptimus (
   O,
-  { walk = 0, phase = 0, sit = 0, drive = 0, duck = 0, look = 0 }
+  {
+    walk = 0,
+    phase = 0,
+    feet = null,
+    lean = 0,
+    tilt = 0,
+    nod = 0,
+    look = 0,
+    hands = null
+  }
 ) {
-  const sw = Math.sin(phase)
-  for (const L of O.legs) {
+  // a small bob up and down with each step
+  O.hips.position.y = walk * 0.025 * Math.abs(Math.cos(phase))
+  O.waist.rotation.set(tilt, 0, -0.05 * walk - lean)
+  O.head.rotation.y = look
+  O.head.rotation.z = -nod
+  O.root.updateWorldMatrix(true, true)
+  const sw = Math.sin(phase),
+    yaw = O.root.rotation.y
+  O.legs.forEach((L, i) => {
+    const f = feet && feet[i]
+    if (f) {
+      pointAt(O, L.hip, f.at, _t)
+      const pole = f.knee
+        ? dirAt(O, L.hip, f.knee, _z)
+        : _z.set(1, 0, 0.12 * L.s)
+      const bend = limb(L.hip, _t, THIGH, SHIN, pole, true)
+      L.kn.rotation.set(0, 0, -bend)
+      // the sole level, the toes along the heading: the foot's own frame against the leg's
+      const h = (f.toe ?? yaw) - yaw
+      _x.set(Math.cos(h), 0, -Math.sin(h))
+      _y.set(0, 1, 0)
+      _z.crossVectors(_x, _y)
+      _q.setFromRotationMatrix(_m.makeBasis(_x, _y, _z))
+      _q2.copy(L.hip.quaternion).multiply(L.kn.quaternion).invert()
+      L.ank.quaternion.copy(_q2.multiply(_q))
+      return
+    }
     // the legs half a stride apart: each swings forward with the knee bent, then plants and pushes
     // back straight, the foot kept flat on the ground
     const p = phase + (L.s < 0 ? 0 : Math.PI)
@@ -457,26 +549,27 @@ export function poseOptimus (
         -0.75 *
         Math.max(0, Math.cos(p)) *
         (0.4 + 0.6 * Math.max(0, Math.sin(p) + 0.3))
-    L.hip.rotation.z = mix(wHip * walk, 1.5, sit)
-    L.kn.rotation.z = mix(wKnee * walk, -1.45, sit)
-    L.ank.rotation.z = mix(-(wHip + wKnee) * 0.85 * walk, -0.05, sit)
-    L.hip.rotation.x = L.s * 0.04 * sit // knees a little apart
-  }
-  for (const A of O.arms) {
+    L.hip.rotation.set(0, 0, wHip * walk)
+    L.kn.rotation.set(0, 0, wKnee * walk)
+    L.ank.rotation.set(0, 0, -(wHip + wKnee) * 0.85 * walk)
+  })
+  O.arms.forEach((A, i) => {
     const k = A.s < 0 ? -sw : sw
-    const swing = 0.32 * k * walk
-    A.sh.rotation.z = mix(mix(swing, 0.25, sit), 1.18, drive)
-    A.el.rotation.z = mix(
-      mix(0.25 + 0.2 * Math.max(0, k) * walk, 0.5, sit),
-      0.36,
-      drive
-    )
-    A.sh.rotation.x = A.s * mix(0.08, 0.16, drive)
-    A.hand.rotation.x = A.s * 0.3 * drive
-  }
-  O.waist.rotation.z = mix(-0.05 * walk, 0.12, sit) - 0.45 * duck
-  O.head.rotation.y = look
-  O.head.rotation.z = 0.15 * duck
-  // a small bob up and down with each step
-  O.hips.position.y = walk * 0.025 * Math.abs(Math.cos(phase))
+    A.sh.rotation.set(A.s * 0.08, 0, 0.32 * k * walk)
+    let e = 0.25 + 0.2 * Math.max(0, k) * walk
+    const g = hands && hands[i]
+    const w = g ? g.w ?? 1 : 0
+    if (w > 0) {
+      _q.copy(A.sh.quaternion)
+      pointAt(O, A.sh, g.at, _t)
+      const pole = g.elbow
+        ? dirAt(O, A.sh, g.elbow, _z)
+        : _z.set(-0.3, -1, 0.5 * A.s)
+      const bend = limb(A.sh, _t, UPPER, FORE, pole, false)
+      A.sh.quaternion.slerpQuaternions(_q, _q2.copy(A.sh.quaternion), w)
+      e = mix(e, bend, w)
+    }
+    A.el.rotation.set(0, 0, e)
+    A.hand.rotation.set(A.s * 0.3 * w, 0, 0)
+  })
 }
