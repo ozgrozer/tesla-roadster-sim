@@ -51,6 +51,7 @@ export class CameraRig {
     this.blend = 1
     this.shotT = 0 // seconds since the current shot began
     this.chaseDir = new THREE.Vector3(1, 0, 0)
+    this.clip = null // (aim, pos) => pulls pos in front of anything solid; set in the city
     this.controls = new OrbitControls(camera, dom)
     this.controls.enabled = false
     this.controls.enableDamping = true
@@ -187,6 +188,7 @@ export class CameraRig {
 
   // director picks for manual driving, mirroring the autopilot's shot list
   manualShot (sim) {
+    if (sim.world === 'city') return 'follow'
     const x = sim.pos.x,
       y = sim.pos.y
     if (sim.mode === 'ramp')
@@ -368,6 +370,8 @@ export class CameraRig {
     const e = this.blend * this.blend * (3 - 2 * this.blend)
     cam.position.copy(this.fromOff).add(P).lerp(this.shotPos, e)
     this.look.copy(this.fromLookOff).add(P).lerp(this.shotLook, e)
+    if (this.clip && (shot === 'follow' || shot === 'chase'))
+      this.clip(this.look, cam.position)
     cam.fov += (fov - cam.fov) * lerpK(3, dt)
     cam.updateProjectionMatrix()
     cam.up.set(0, 1, 0)
