@@ -4,6 +4,7 @@
 // the shallows, deep blue further out, and surf breaking along the beach.
 import * as THREE from 'three'
 import { OUTER } from '../sim/city.js'
+import { LAYER } from './geo.js'
 import { canvasTex, speckle } from './scene.js'
 
 const SHORE = OUTER + 3 // where the beach starts down into the water (square, like the city)
@@ -161,6 +162,7 @@ export function buildSea (group) {
   beach.computeVertexNormals()
   const sandMesh = new THREE.Mesh(beach, sand)
   sandMesh.receiveShadow = true
+  sandMesh.renderOrder = LAYER.beach
   group.add(sandMesh)
   // the water, out to the horizon
   const mat = seaMaterial()
@@ -169,6 +171,7 @@ export function buildSea (group) {
     mat
   )
   sea.position.y = WATER
+  sea.renderOrder = LAYER.sea
   group.add(sea)
   const update = (t, camera) => {
     mat.uniforms.uTime.value = t
