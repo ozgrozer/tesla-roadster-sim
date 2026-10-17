@@ -19,6 +19,9 @@ import { G, CAR, LIFT_ACC, clamp, wrapPi } from './constants.js'
 // slowly unwind (a small flick is a short slide, a big one a long drift), and steering out of it
 // unwinds it fast; lift off and the rears grip and the car straightens. Once it is lined up again
 // the electronics are back.
+// Three GTA-style touches on top: the handbrake with the wheel turned swings the car round at once,
+// a car spinning faster than its tyres could carry it is caught once the handbrake is let go, and
+// the throttle and brake together at a crawl are a burnout (steered, a donut).
 
 // A tyre's grip against its slip, x: the slip angle in units of its grip over its cornering
 // stiffness, so that the force starts out at the stiffness times the slip. It builds like a sine to
@@ -51,6 +54,30 @@ const TRACK_IN = 5,
   TRACK_STRAIGHT = 0.09,
   CALM = 0.4,
   TRACK_FRONT = 0
+// The handbrake pulled with the wheel turned, GTA-style: the locked rears step out at once rather
+// than waiting for the fronts to drag the car round. The yaw moment it adds (N m at full lock, from
+// a jog upwards, fading out as the car comes round past HB_FADE rad so it doesn't spin on its own)
+const HB_YAW = 7000,
+  HB_FADE = 0.9
+// Catching a spin, as a driver's hands and GTA's forgiving cars do: off the handbrake, a car turning
+// faster than its tyres could carry it round (its grip over its speed, or what the wheel asks for,
+// and SPIN_OK rad/s to spare) is eased back, SPIN_K N m per rad/s too fast, at most SPIN_MAX, so a
+// handbrake turn stops swinging soon after the handbrake is let go instead of spinning on round.
+const SPIN_OK = 0.35,
+  SPIN_K = 11000,
+  SPIN_MAX = 13000
+// A burnout, GTA-style: the throttle and the brake together under BURN_V m/s, the fronts held on
+// their brakes and the rears spinning against them in a cloud of smoke; turn the wheel and the rears
+// swing out round the fronts, the car turning at up to BURN_R rad/s on full lock (the rears' push
+// worked out as a moment of at most BURN_YAW N m, BURN_K N m per rad/s short of it) while it creeps
+// forward at up to BURN_CREEP m/s: a donut. Let go of the brake and it leaves on spinning rears, in
+// Track Mode.
+export const BURN_V = 6
+const BURN_R = 2.6,
+  BURN_K = 14000,
+  BURN_YAW = 17000,
+  BURN_CREEP = 1.6,
+  BURN_GRIP = 0.15 // the share of their grip spinning rears keep sideways
 // the drift the rear motors hold (rad, at most DRIFT_MAX_A), and how it changes (rad/s): deeper
 // steering into the turn, unwinding slowly with the wheel left alone and fast steering out; and how
 // hard they work at it: N m per rad off, N m per rad/s it is swinging, and at most N m (all of one
@@ -175,6 +202,12 @@ export function stepGround (s, dt, c, main, lift) {
       Math.min(1, CAR.regenPowerW / (m * CAR.regenAccel * Math.max(au, 1)))
     : 0
   const Fbrake = c.brake * m * CAR.brakeAccel
+  const burn = !!c.burnout && au < BURN_V && !c.ebrake
+  if (burn) {
+    Fdrive = 0 // (the rears' push and the fronts' brakes, worked out as one below)
+    s.track = true
+    s.calm = 0
+  }
   // (in Track Mode most of the drive goes to the rears)
   const front = track ? TRACK_FRONT : 0.4
   let Fxf = front * Fdrive - su * (0.6 * Fbrake + 0.5 * Fregen)
@@ -196,6 +229,14 @@ export function stepGround (s, dt, c, main, lift) {
     spin = clamp(Fxr / FmaxR - 0.6, 0, 1)
     Fxr = 0.95 * FmaxR * Math.tanh(Fxr / FmaxR)
   } else if (!c.ebrake) Fxr = clamp(Fxr, -capR, capR)
+  if (burn) {
+    // the rears' push against the fronts' brakes nets out at a creep, quicker on full lock
+    const creep =
+      BURN_CREEP * (0.3 + 0.7 * Math.abs(c.steer)) * c.throttle
+    Fxf = clamp(m * 3 * (creep - u), -FmaxF, FmaxF)
+    Fxr = 0
+    spin = 1
+  }
 
   // front tyre, evaluated in the steered wheel frame
   const wf = w + a * r
@@ -230,16 +271,20 @@ export function stepGround (s, dt, c, main, lift) {
     Fyr = -FmaxR * tyreCurve((CAR.corneringR * alphaR) / FmaxR)
     wantR = Fyr
     // (spinning, a tyre holds on sideways far less than its friction circle alone would say)
-    const limR =
-      Math.sqrt(Math.max(0, FmaxR * FmaxR - Fxr2 * Fxr2)) * (1 - 0.5 * spin)
+    const limR = burn
+      ? BURN_GRIP * FmaxR
+      : Math.sqrt(Math.max(0, FmaxR * FmaxR - Fxr2 * Fxr2)) * (1 - 0.5 * spin)
     Fyr = clamp(Fyr, -limR, limR)
     slideR = clamp(
       ((CAR.corneringR * Math.abs(alphaR)) / FmaxR - 1.4) / 0.8,
       0,
       1
     )
-    // (spinning on the power, they smoke and squeal too)
-    slideR = Math.max(slideR, spin * clamp(au / 6, 0, 1))
+    // (spinning on the power, they smoke and squeal too; in a burnout, standing still)
+    slideR = Math.max(
+      slideR,
+      spin * (burn ? 0.85 * c.throttle : clamp(au / 6, 0, 1))
+    )
   }
   Fu += Fxr2 + main * CAR.mainThrust
   Fw += Fyr
@@ -272,7 +317,13 @@ export function stepGround (s, dt, c, main, lift) {
   const letGo = s.driftWant < 0.08 && ab < 0.15
   // (unwound all the way, the drift is over: the electronics are back to catch what is left of it)
   if (s.driftDir && !c.ebrake && s.driftWant < 0.03) s.track = false
-  if (track && s.driftDir === d && !letGo && throttle > 0.2 && au > 4) {
+  if (burn)
+    Mz += clamp(
+      BURN_K * (c.steer * c.throttle * BURN_R - r),
+      -BURN_YAW,
+      BURN_YAW
+    )
+  else if (track && s.driftDir === d && !letGo && throttle > 0.2 && au > 4) {
     const want = s.driftWant * clamp((throttle - 0.2) / 0.5, 0, 1)
     const hold = 0.75 * b * Math.abs(Fyr) // (most of the rear tyres' pull straight)
     Mz +=
@@ -283,6 +334,14 @@ export function stepGround (s, dt, c, main, lift) {
         DRIFT_MAX
       )
   }
+  // (going forwards only, and fading as the car comes round from the way it is travelling: the
+  // rear axle's slip comes back towards nothing once the car is going backwards)
+  if (c.ebrake && c.steer !== 0 && u > 2)
+    Mz +=
+      c.steer *
+      HB_YAW *
+      smooth((u - 2) / 8) *
+      (1 - smooth((Math.abs(Math.atan2(w, u)) - HB_FADE) / 0.6))
   s.lastFyf = wantF
   s.lastFyr = wantR
   // stability control: when the car rotates faster than the steering asks for, brake a front wheel to
@@ -302,8 +361,18 @@ export function stepGround (s, dt, c, main, lift) {
     }
   }
 
-  // rolling resistance + aero drag oppose the motion
   const spd = Math.hypot(u, w)
+  if (!c.ebrake && !burn && spd > 4) {
+    const rOk =
+      Math.max(
+        Math.abs(u * Math.tan(s.steerAng)) / CAR.wheelbase,
+        (1.1 * mu * G) / spd
+      ) + SPIN_OK
+    if (Math.abs(r) > rOk)
+      Mz -= Math.sign(r) * Math.min(SPIN_K * (Math.abs(r) - rOk), SPIN_MAX)
+  }
+
+  // rolling resistance + aero drag oppose the motion
   const Fres =
     (CAR.rollRes + dragOf(s)) * Ntot * Math.min(1, spd / 0.5) +
     m * CAR.dragK * spd * spd
@@ -341,7 +410,14 @@ export function stepGround (s, dt, c, main, lift) {
   s.accLong = clamp(Fu / m, -20, 20) // body-frame longitudinal accel drives load transfer
   s.latAcc = Fw / m
   s.speed = uN
-  s.drivePower = Fdrive * u - (Fregen > 0 ? Fregen * au : 0)
+  s.drivePower = burn
+    ? 0.3 * CAR.powerW * c.throttle // (the rears spinning hard against the brakes)
+    : Fdrive * u - (Fregen > 0 ? Fregen * au : 0)
+  s.burning = burn
+  s.rearSpin = spin // (how much the driven rears spin past the road, 0 to 1: Track Mode, burnouts)
+  // how fast the rear tyres' tread is spinning past the road in a burnout (m/s), for the wheels,
+  // the smoke and the squeal
+  s.burnSpin = burn ? 16 * c.throttle : 0
   s.regenOn = Fregen > 0
   // traction control and ABS stop wheelspin and lock-ups, so only real sliding (or the e-brake) marks the pad
   const slideF = clamp(
@@ -351,7 +427,7 @@ export function stepGround (s, dt, c, main, lift) {
   )
   const moving = clamp(spd / 3, 0, 1)
   s.skidF = slideF * moving
-  s.skidR = slideR * moving
+  s.skidR = burn ? slideR : slideR * moving
   s.skid = Math.max(s.skidF, s.skidR)
 
   const px = s.pos.x
