@@ -205,7 +205,13 @@ export function updateWheels (RS, sim, dt) {
   const grounded = sim.mode === 'ground' || sim.mode === 'ramp'
   const roll = (sim.mode === 'ramp' ? sim.v : sim.speed) / CAR.wheelR
   for (const [name, axle] of Object.entries(RS.axles)) {
-    if (grounded) axle.rate = name === 'rear' && sim.ebrakeOn ? 0 : roll
+    if (grounded)
+      axle.rate =
+        name === 'rear'
+          ? sim.ebrakeOn
+            ? 0
+            : roll + (sim.burnSpin || 0) / CAR.wheelR // (spinning in a burnout)
+          : roll
     else axle.rate *= Math.exp(-0.35 * dt)
     axle.angle += axle.rate * dt
   }
