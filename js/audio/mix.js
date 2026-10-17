@@ -1,142 +1,256 @@
-// What the sound engine hears each frame, from where the camera is: the Roadster's drive state, how
-// loud and how far left or right things are, the moving cars nearest the camera, with doppler, the
-// walls either side and how near the sea is; and the one-shots the street makes: posts, trees and
-// cars rushing past the Roadster close by, and buses' air brakes as they pull up.
+// What the sound engine hears each frame, from where the camera is: the Roadster's drive state (the
+// motors' force, worked out from the power the sim reports, its wheels and tyres), where the car is
+// from the camera, the cars nearest the camera with their doppler and whether a building stands in
+// the way, how busy the traffic is a few streets off either side, the walls either side and how
+// near the sea is, the people close by, their footsteps and their screams; the one-shots the street
+// makes are watched for in watch.js, and ears.js says how loud, where and how dull a thing sounds.
+// Everything is written into objects kept from frame to frame, so a frame allocates nothing.
 import * as THREE from 'three'
 import { camera } from '../render/scene.js'
 import { clamp } from '../sim/constants.js'
-import { OUTER, query, raycast } from '../sim/city.js'
+import { TYPES } from '../sim/traffic.js'
+import { OUTER } from '../sim/city.js'
+import { hearing, panOf, blocked, dullness, placeOf, ray } from './ears.js'
+import { watch, forget, ALARM } from './watch.js'
 
-// how loud something at (x, z) sounds from the camera, 0 to 1
-export const hearing = (x, z) =>
-  clamp(
-    1.4 / (1 + Math.hypot(camera.position.x - x, camera.position.z - z) / 14),
-    0,
-    1
-  )
-// where (x, z) sits left to right from the camera, -0.85 to 0.85
+export { hearing, panOf, dullness, placeOf }
+
 const _right = new THREE.Vector3()
-export function panOf (x, z) {
-  _right.setFromMatrixColumn(camera.matrixWorld, 0)
-  const dx = x - camera.position.x,
-    dz = z - camera.position.z
-  return clamp(
-    ((dx * _right.x + dz * _right.z) / (Math.hypot(dx, dz) || 1)) * 0.85,
-    -0.85,
-    0.85
-  )
+
+const FMAX = 2200 * 15 // N, the most the motors push (constants.js: mass x driveAccelMax)
+
+// the camera's own velocity, for the doppler (it may ride with the car, or stand still)
+const camVel = new THREE.Vector3(),
+  camLast = new THREE.Vector3()
+let camInit = false,
+  cut = false
+function trackCamera (dt) {
+  const p = camera.position
+  // (a jump of more than a few metres in a frame is a cut)
+  cut = camInit && p.distanceTo(camLast) > 6
+  if (camInit && dt > 0) {
+    const k = Math.min(1, dt * 8)
+    const vx = (p.x - camLast.x) / dt,
+      vz = (p.z - camLast.z) / dt
+    // (a cut is a jump, not a speed)
+    if (Math.hypot(vx, vz) < 150) {
+      camVel.x += (vx - camVel.x) * k
+      camVel.z += (vz - camVel.z) * k
+    }
+  }
+  camLast.copy(p)
+  camInit = true
 }
-// the moving cars within earshot, nearest first: distance, pan, doppler, speed
-const _cars = [],
-  NONE = []
-function nearCars (traffic, sim) {
-  _cars.length = 0
-  const cp = camera.position,
-    v = sim.vel
+
+// the cars within earshot, nearest first: { key, d, pan, doppler, v, type, ev, occl }, from a pool
+// (further off than RANGE, the far traffic's wash stands for them)
+const N_CARS = 5,
+  RANGE = 55
+const pool = Array.from({ length: 24 }, () => ({
+  key: null,
+  d: 0,
+  pan: 0,
+  doppler: 1,
+  v: 0,
+  type: '',
+  ev: false,
+  loose: false,
+  rev: false,
+  acc: NaN,
+  panic: false,
+  back: 0,
+  occl: 0
+}))
+const near = [],
+  occl = new Map()
+let rayAt = 0
+const byDistance = (a, b) => a.d - b.d
+const _fwd = new THREE.Vector3()
+function nearCars (traffic, dt) {
+  near.length = 0
+  _fwd.setFromMatrixColumn(camera.matrixWorld, 2).negate()
+  const cp = camera.position
+  let used = 0,
+    worst = 0
   for (const c of traffic.cars) {
-    if (c.parked) continue
+    // (parked cars are off, but the gridlock's are idling)
+    if (c.parked && !c.jam) continue
+    const dx = c.x - cp.x,
+      dz = c.z - cp.z
+    if (Math.abs(dx) > RANGE || Math.abs(dz) > RANGE) continue
+    const d = Math.hypot(dx, dz)
+    if (d > RANGE) continue
+    // keep the nearest few: fill the pool, then replace the furthest
+    let e
+    if (used < pool.length) e = pool[used++]
+    else {
+      if (d >= near[worst].d) continue
+      e = near[worst]
+    }
+    const vx = c.loose ? c.vx : c.hx * c.v,
+      vz = c.loose ? c.vz : c.hz * c.v
+    const l = d || 1,
+      ux = dx / l,
+      uz = dz / l
+    // the source drawing away along the line between them, and the listener moving towards it
+    const vs = vx * ux + vz * uz,
+      vl = camVel.x * ux + camVel.z * uz
+    e.key = c
+    e.d = d
+    e.pan = 0
+    e.doppler = clamp((343 + vl) / (343 + vs), 0.75, 1.3)
+    e.v = Math.hypot(vx, vz)
+    e.type = TYPES[c.type]?.name || 'sedan'
+    e.ev = !c.big && (c.paint * 3.7) % 1 < 0.3 // about a third of the cars are electric
+    e.loose = !!c.loose
+    e.rev = c.v < -0.1 // (backing up)
+    e.acc = c.acc
+    e.panic = c.panic > 0
+    // behind the camera, a little duller (the head's shadow)
+    e.back = clamp(-(dx * _fwd.x + dz * _fwd.z) / l, 0, 1)
+    if (e !== near[worst]) near.push(e)
+    worst = 0
+    for (let i = 1; i < near.length; i++)
+      if (near[i].d > near[worst].d) worst = i
+  }
+  near.sort(byDistance)
+  // (five voices for the nearest, but past 35 m only while fewer than four cars are nearer)
+  let close = 0
+  while (close < near.length && near[close].d < 35) close++
+  near.length = Math.min(near.length, N_CARS, Math.max(close, 4))
+  // a building in the way: one or two rays a frame, round the nearest cars, eased in and out
+  for (let i = 0; i < 1 && near.length; i++) {
+    const e = near[rayAt++ % near.length]
+    const o = occl.get(e.key) ?? { t: 0, v: 0 }
+    o.t = blocked(e.key.x, e.key.z)
+    occl.set(e.key, o)
+  }
+  for (const e of near) {
+    e.pan = panOf(e.key.x, e.key.z)
+    const o = occl.get(e.key)
+    if (o) {
+      o.v += (o.t - o.v) * Math.min(1, dt * 5)
+      e.occl = o.v
+    } else e.occl = 0
+  }
+  if (occl.size > 60) occl.clear()
+  return near
+}
+
+// how busy the traffic is off to the left and right, 40 to 250 m away (0 to 1)
+const WASH = { l: 0, r: 0 }
+function wash (traffic) {
+  _right.setFromMatrixColumn(camera.matrixWorld, 0)
+  const cp = camera.position
+  let l = 0,
+    r = 0
+  for (const c of traffic.cars) {
     const dx = c.x - cp.x,
       dz = c.z - cp.z,
       d = Math.hypot(dx, dz)
-    if (d > 45) continue
-    const vx = c.loose ? c.vx : c.hx * c.v,
-      vz = c.loose ? c.vz : c.hz * c.v
-    // how fast it is drawing away along the line between them (the camera rides with the Roadster)
-    const vr = ((vx - v.x) * dx + (vz - v.z) * dz) / (d || 1)
-    _cars.push({
-      d,
-      pan: panOf(c.x, c.z),
-      doppler: clamp(343 / (343 + vr), 0.8, 1.25),
-      v: Math.hypot(vx, vz),
-      big: c.big,
-      ev: !c.big && (c.paint * 3.7) % 1 < 0.3 // about a third of the cars are electric
-    })
+    if (d < 40 || d > 250) continue
+    const w = (0.3 + Math.min(1, (c.v || 0) / 12)) / (1 + d / 60)
+    if (dx * _right.x + dz * _right.z < 0) l += w
+    else r += w
   }
-  return _cars.sort((a, b) => a.d - b.d)
+  WASH.l = 1 - Math.exp(-l / 2.5)
+  WASH.r = 1 - Math.exp(-r / 2.5)
+}
+
+// the people near the camera, and the footsteps of those walking close by (each half of their
+// stride's cycle a step); people taking fright (peds.panic, how many are running scared, rising;
+// peds.scream, how many just started to) scream, from where the fright was
+const steps = Array.from({ length: 6 }, () => ({ k: 0, pan: 0 })),
+  STEPS = []
+const PI = Math.PI
+const SCREAM = { n: 0, k: 0, pan: 0, lp: 20000 }
+let panicWas = 0
+function people (peds) {
+  STEPS.length = 0
+  const panic = peds?.panic || 0
+  SCREAM.n = Math.min(3, Math.max(peds?.scream || 0, panic - panicWas))
+  panicWas = panic
+  if (SCREAM.n > 0) {
+    const at = placeOf(peds.panicX || 0, peds.panicZ || 0)
+    SCREAM.k = at.k
+    SCREAM.pan = at.pan
+    SCREAM.lp = at.lp
+  }
+  const cp = camera.position
+  let crowd = 0
+  for (const p of peds?.list || []) {
+    const d = Math.hypot(p.x - cp.x, p.z - cp.z)
+    if (d > 22) continue
+    crowd += 1 / (1 + d / 6)
+    const ph = Math.floor((p.phase || 0) / PI)
+    if (
+      d < 10 &&
+      p.sndPh !== undefined &&
+      ph !== p.sndPh &&
+      STEPS.length < steps.length
+    ) {
+      const s = steps[STEPS.length]
+      s.k = clamp(1.5 / (1 + d / 2), 0, 1) * clamp(p.gait ?? 1, 0.3, 1.6)
+      s.pan = panOf(p.x, p.z)
+      STEPS.push(s)
+    }
+    p.sndPh = ph
+  }
+  return clamp(crowd / 6, 0, 1)
 }
 
 // the nearest wall to the camera's left and right (m), along the line across its view
-const RANGE = 70
+const WALL_RANGE = 70
 const WALLS = { left: Infinity, right: Infinity }
 function walls () {
   _right.setFromMatrixColumn(camera.matrixWorld, 0)
   const p = camera.position,
     l = Math.hypot(_right.x, _right.z) || 1
-  for (const side of [-1, 1]) {
-    const x = p.x + ((side * _right.x) / l) * RANGE,
-      z = p.z + ((side * _right.z) / l) * RANGE
-    const t = raycast(p.x, p.y, p.z, x, p.y, z)
-    WALLS[side < 0 ? 'left' : 'right'] = t < 1 ? t * RANGE : Infinity
+  for (let side = -1; side < 2; side += 2) {
+    const x = p.x + ((side * _right.x) / l) * WALL_RANGE,
+      z = p.z + ((side * _right.z) / l) * WALL_RANGE
+    const t = ray(p.x, p.y, p.z, x, p.y, z)
+    WALLS[side < 0 ? 'left' : 'right'] = t < 1 ? t * WALL_RANGE : Infinity
   }
   return WALLS
 }
 
-// Things the Roadster passes close and fast: the moment each one is abeam (it stops closing and
-// starts drawing away), a rush of air from its side. last: each thing's closing rate last frame.
-const last = new Map(),
-  seen = new Set(),
-  _near = []
-function passBy (sound, sim, traffic) {
-  const p = sim.mode === 'ground' ? sim.pos : sim.com,
-    v = sim.vel
-  seen.clear()
-  const check = (key, x, z, vx, vz, reach, big) => {
-    const rx = x - p.x,
-      rz = z - p.z,
-      wx = vx - v.x,
-      wz = vz - v.z
-    const closing = rx * wx + rz * wz,
-      w = Math.hypot(wx, wz)
-    seen.add(key)
-    const before = last.get(key)
-    last.set(key, closing)
-    const d = Math.hypot(rx, rz)
-    if (before < 0 && closing >= 0 && w > 10 && d < reach)
-      sound.whoosh(w, panOf(x, z), big, d)
-  }
-  if (p.y < 8)
-    for (const c of query(p.x - 8, p.z - 8, p.x + 8, p.z + 8, _near))
-      if (c.r && !c.down) check(c, c.x, c.z, 0, 0, 4.5, false)
-  if (p.y < 3.5)
-    for (const c of traffic.cars) {
-      if (Math.abs(c.x - p.x) > 12 || Math.abs(c.z - p.z) > 12) continue
-      const vx = c.loose ? c.vx : c.hx * c.v,
-        vz = c.loose ? c.vz : c.hz * c.v
-      check(c, c.x, c.z, vx, vz, 6, true)
-    }
-  for (const k of last.keys()) if (!seen.has(k)) last.delete(k)
-}
-// a bus coming to a stop lets its air brakes go
-function busBrakes (sound, traffic) {
-  for (const c of traffic.cars) {
-    if (!c.big || c.parked) continue
-    if (c.sndV > 0.8 && c.v < 0.25) {
-      const k = hearing(c.x, c.z)
-      if (k > 0.05) sound.airbrake(0.3 * k, panOf(c.x, c.z))
-    }
-    c.sndV = c.v
-  }
-}
-
-export function mixSound (sound, app, traffic, dt, clock) {
+const ST = { cars: near, steps: STEPS }
+let frame = 0,
+  worldDt = 0,
+  wallsAt = null,
+  crowd = 0
+const NONE = []
+const _cp = new THREE.Vector3()
+export function mixSound (sound, app, traffic, dt, clock, peds) {
   const sim = app.sim
-  const gs =
-    sim.mode === 'ground'
-      ? Math.abs(sim.speed)
-      : sim.mode === 'ramp'
-      ? Math.abs(sim.v)
-      : 0
+  const ground = sim.mode === 'ground',
+    ramp = sim.mode === 'ramp'
+  const gs = ground ? Math.abs(sim.speed) : ramp ? Math.abs(sim.v) : 0
   app.wheelAudio =
     sim.mode === 'air' || sim.mode === 'crash'
       ? app.wheelAudio * Math.exp(-dt * 0.8)
       : gs
   const city = app.world === 'city'
   const on = city && sound.enabled
-  if (on) {
-    passBy(sound, sim, traffic)
-    busBrakes(sound, traffic)
+  trackCamera(dt)
+  // (the world round the car is looked at every other frame, the slow things in it every fourth:
+  // the far traffic, the walls either side)
+  frame++
+  const world = (frame & 1) === 0
+  worldDt += dt
+  // (back from a pause: what the watchers remembered is stale)
+  if (on && sound.fresh) {
+    sound.fresh = false
+    forget(traffic)
+    panicWas = peds?.panic || 0
+    for (const p of peds?.list || NONE) p.sndPh = Math.floor((p.phase || 0) / Math.PI)
   }
-  const w = on ? walls() : null
+  if (on && world) {
+    watch(sound, app, traffic)
+    if ((frame & 3) === 0) wash(traffic)
+  }
+  const w = on ? ((frame & 3) === 1 || !wallsAt ? (wallsAt = walls()) : wallsAt) : null
   // how shut in by walls the camera is, for the reverb
   const shut = w
     ? (clamp(1 - w.left / 45, 0, 1) + clamp(1 - w.right / 45, 0, 1)) / 2
@@ -145,31 +259,78 @@ export function mixSound (sound, app, traffic, dt, clock) {
   app.enclosed = was + (shut - was) * clamp(dt * 2, 0, 1)
   const cp = camera.position,
     shore = OUTER + 3 - Math.max(Math.abs(cp.x), Math.abs(cp.z))
-  sound.update({
-    volume:
-      0.85 *
-      clamp(1.7 / (1 + camera.position.distanceTo(sim.pos) / 16), 0.22, 1),
-    pitch: 0.55 + 0.45 * app.timeScale,
-    wheelSpeed: app.wheelAudio,
-    throttle: app.lastCtl.throttle,
-    regen: sim.regenOn,
-    grounded: sim.mode === 'ground' || sim.mode === 'ramp' ? 1 : 0,
-    airspeed: sim.vel.length(),
-    skid: sim.skid,
-    main: sim.thrMain,
-    lift: sim.thrLift,
-    side: sim.thrSide,
-    suction: sim.suction,
-    city,
-    inside: !!app.inside, // the camera in the driver's seat
-    night: city && app.night,
-    honks: !traffic.quiet, // (not until the Roadster has honked at the gridlock)
-    cars: on ? nearCars(traffic, sim) : NONE,
-    walls: w,
-    enclosed: app.enclosed,
-    sea: city ? clamp(1 - shore / 140, 0, 1) : 0,
-    surface: sim.mode === 'ground' && city ? sim.surface : null,
-    dt,
-    t: clock
-  })
+  const c = app.lastCtl,
+    u = Math.max(gs, 0.5)
+  // the motors' force: the power over the speed, or at a standstill what the throttle asks for
+  const force =
+    gs > 1.5
+      ? (sim.drivePower || 0) / u
+      : c.throttle * FMAX - (sim.regenOn ? 2860 : 0)
+  const at = sim.mode === 'ground' || ramp ? sim.pos : sim.com
+  _cp.copy(at)
+  const st = ST
+  st.volume = 0.85
+  st.pitch = 0.55 + 0.45 * app.timeScale
+  st.wheelSpeed = app.wheelAudio
+  st.throttle = c.throttle
+  st.force = sim.mode === 'ground' || ramp ? force : 0
+  st.regen = sim.regenOn
+  st.grounded = ground || ramp ? 1 : 0
+  st.airspeed = sim.vel.length()
+  st.skid = sim.skid
+  st.skidF = sim.skidF ?? sim.skid
+  st.skidR = sim.skidR ?? sim.skid
+  st.slipR = sim.slipR || 0
+  st.latG = (sim.latAcc || 0) / 9.81
+  // how much of the tyres' grip the car is using cornering (braking and pulling count for less: the
+  // electronics keep those just short of a squeal)
+  st.use = ground
+    ? Math.hypot(sim.latAcc || 0, 0.6 * (sim.accLong || 0)) /
+      (9.81 * 1.26 * (sim.grip || 1))
+    : 0
+  st.yawRate = sim.yawRate || 0
+  st.ebrake = !!sim.ebrakeOn && ground
+  st.track = !!sim.track
+  // (sim.rearSpin, 0 to 1, how much the driven rears spin past the road; about 10 m/s at full spin,
+  // and in a burnout the sim says how fast)
+  st.spin = ground
+    ? Math.max((sim.rearSpin || 0) * 10, sim.burnSpin || 0)
+    : 0
+  st.burning = ground && !!sim.burning
+  st.main = sim.thrMain
+  st.lift = sim.thrLift
+  st.side = sim.thrSide
+  st.suction = sim.suction
+  st.city = city
+  st.inside = !!app.inside // the camera in the driver's seat
+  st.carDist = cp.distanceTo(_cp)
+  st.cut = cut
+  st.carPan = panOf(_cp.x, _cp.z)
+  st.camY = cp.y
+  st.night = city && app.night
+  st.honks = !traffic.quiet // (not until the Roadster has honked at the gridlock)
+  st.cars = on ? (world ? nearCars(traffic, worldDt) : near) : NONE
+  st.washL = WASH.l
+  st.washR = WASH.r
+  if (on && world) crowd = people(peds)
+  else {
+    // (between looks, no new footsteps or screams)
+    STEPS.length = 0
+    SCREAM.n = 0
+  }
+  st.peds = on ? crowd : 0
+  st.screams = on ? SCREAM : null
+  st.panic = on ? Math.min(1, (peds?.panic || 0) / 8) : 0
+  st.steps = STEPS
+  st.walls = w
+  st.alarm = ALARM
+  st.enclosed = app.enclosed
+  st.sea = city ? clamp(1 - shore / 140, 0, 1) : 0
+  st.surface = ground && city ? sim.surface : null
+  st.dt = dt
+  st.world = world
+  st.worldDt = worldDt
+  st.t = clock
+  sound.update(st)
+  if (world) worldDt = 0
 }
