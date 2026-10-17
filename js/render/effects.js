@@ -140,8 +140,18 @@ class Particles {
       i++
     }
     this.geo.setDrawRange(0, this.n)
-    for (const a of [this.aPos, this.aSize, this.aAlpha, this.aHeat])
+    // (only the live part of each buffer goes up to the GPU, and nothing while there is none)
+    if (!this.n) return
+    for (const [a, size] of [
+      [this.aPos, 3],
+      [this.aSize, 1],
+      [this.aAlpha, 1],
+      [this.aHeat, 1]
+    ]) {
+      a.clearUpdateRanges()
+      a.addUpdateRange(0, this.n * size)
       a.needsUpdate = true
+    }
   }
   clear () {
     this.n = 0
@@ -305,12 +315,17 @@ const SAND = {
 }
 export function emitTireSmoke (RS, sim, dt) {
   if (dt <= 0 || sim.mode !== 'ground') return
-  const speed = sim.groundSpeed()
-  if (speed < 2.5) return
+  // (in a burnout the rears' tread runs past the road however slowly the car goes; the fronts are
+  // held on their brakes)
+  const roll = sim.groundSpeed(),
+    spun = Math.max(roll, (sim.burnSpin || 0) * 0.5)
+  if (spun < 2.5) return
   if (sim.surface === 'sand')
     RS.wheels.forEach(w => {
       // a rooster tail off each tyre, heavier off the driven, slipping rears
       const slip = w.front ? sim.skidF : sim.skidR
+      const speed = w.front ? roll : spun
+      if (speed < 2.5) return
       w.sand =
         (w.sand || 0) +
         (w.front ? 9 : 16) * Math.min(1.6, speed / 14) * (1 + 2 * slip) * dt
@@ -333,6 +348,7 @@ export function emitTireSmoke (RS, sim, dt) {
   RS.wheels.forEach(w => {
     const amt = w.front ? sim.skidF : sim.skidR
     if (amt < 0.3) return
+    const speed = w.front ? roll : spun
     w.smoke = (w.smoke || 0) + 46 * amt * amt * Math.min(1.3, speed / 14) * dt
     while (w.smoke >= 1) {
       w.smoke -= 1
