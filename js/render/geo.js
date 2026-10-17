@@ -2,6 +2,13 @@
 // whole district draws in a few calls), vertex tints, and instanced flat marks for road paint.
 import * as THREE from 'three'
 
+// The order the city's solid surfaces are drawn in (each mesh's renderOrder). The graphics card
+// skips shading a pixel that something already drawn in front of it covers, so the city draws from
+// what hides the most to what hides the least: the Roadster, the buildings, the street furniture and
+// the traffic first (0), then the pavements and lots, the asphalt and the paint on it, the beach
+// under it all, the sea, the hills, and last the sky, only where nothing else has been drawn.
+export const LAYER = { ground: 1, road: 2, beach: 3, sea: 4, hills: 5, sky: 6 }
+
 const ATTRS = [
   ['position', 3],
   ['normal', 3],
@@ -68,5 +75,6 @@ export function marks (list, mat, y) {
     )
   })
   m.receiveShadow = true
+  m.renderOrder = LAYER.road
   return m
 }
