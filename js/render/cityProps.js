@@ -1,8 +1,10 @@
 // Street furniture: street lights, palms on the boulevards, park trees and a signal mast on every
-// corner whose red, yellow and green lamps follow the intersection's signal plan. All instanced, and
-// all of it goes over when the Roadster hits it hard enough (the sim decides: breakables.js).
+// corner whose red, yellow and green lamps follow the intersection's signal plan. All instanced (one
+// mesh a district: chunks.js), and all of it goes over when the Roadster hits it hard enough (the sim
+// decides: breakables.js).
 import * as THREE from 'three'
 import { hdr, softTex } from './scene.js'
+import { Instances } from './chunks.js'
 import { merge, box, tint } from './geo.js'
 import { G, clamp } from '../sim/constants.js'
 import {
@@ -33,12 +35,14 @@ const pose = (x, y, z, yaw, sx = 1, sy = 1, sz = 1, tilt = 0, tiltDir = 0) => {
   _e.set(Math.cos(tiltDir) * tilt, yaw, Math.sin(tiltDir) * tilt, 'YXZ')
   return _m.compose(_p.set(x, y, z), _q.setFromEuler(_e), _s.set(sx, sy, sz))
 }
+// (those that cast no shadow are small: one mesh for the city)
 function instanced (geo, mat, list, place, shadow = true) {
-  const m = new THREE.InstancedMesh(geo, mat, list.length)
+  const m = new Instances(geo, mat, list.length, i => list[i], {
+    cast: shadow,
+    split: shadow
+  })
   list.forEach((it, i) => m.setMatrixAt(i, place(it, i)))
-  m.castShadow = shadow
-  m.receiveShadow = true
-  return m
+  return m.bounds()
 }
 const metal = new THREE.MeshStandardMaterial({
   color: 0x34373c,
@@ -57,7 +61,7 @@ const _ax = new THREE.Vector3(),
   _k = new THREE.Matrix4()
 const ZERO = new THREE.Matrix4().makeScale(0, 0, 0)
 class Fallers {
-  // list: the sim's LAMPS, POLES, TREES or PALMS. parts: [{ mesh, of: i => its instances in mesh,
+  // list: the sim's LAMPS, POLES, TREES or PALMS. parts: [{ inst, of: i => its instances in inst,
   // dark }], dark ones (lit lenses) going out instead of falling. L, rest, h: per item, its pendulum
   // length, the tilt it comes to rest at and its height. skid: how much of the shove its foot keeps.
   constructor (kind, list, parts, { L, rest, h, skid }) {
@@ -72,17 +76,15 @@ class Fallers {
     const it = this.list[e.i]
     this.standing.set(
       e.i,
-      this.parts.map(({ mesh, of, dark }) =>
+      this.parts.map(({ inst, of, dark }) =>
         of(e.i).map(k => {
           const m = new THREE.Matrix4()
-          mesh.getMatrixAt(k, m)
-          if (dark) mesh.setMatrixAt(k, ZERO)
+          inst.getMatrixAt(k, m)
+          if (dark) inst.setMatrixAt(k, ZERO)
           return m
         })
       )
     )
-    for (const p of this.parts)
-      if (p.dark) p.mesh.instanceMatrix.needsUpdate = true
     const L = this.L(it)
     this.moving.push({
       it,
@@ -121,23 +123,24 @@ class Fallers {
       _ax.set(-x, 0, -z).applyQuaternion(_tq)
       _k.setPosition(_ax.x + x + f.dx * f.s, _ax.y, _ax.z + z + f.dz * f.s)
       const saved = this.standing.get(f.i)
-      this.parts.forEach(({ mesh, of, dark }, p) => {
+      this.parts.forEach(({ inst, of, dark }, p) => {
         if (dark) return
-        of(f.i).forEach((k, j) =>
-          mesh.setMatrixAt(k, _m.multiplyMatrices(_k, saved[p][j]))
+        const ks = of(f.i)
+        ks.forEach((k, j) =>
+          inst.setMatrixAt(k, _m.multiplyMatrices(_k, saved[p][j]))
         )
+        inst.refit(ks[0]) // (its district's bounds follow it, so it isn't culled)
       })
       f.done = f.down && f.v === 0 && f.w === 0
     }
-    for (const p of this.parts) p.mesh.instanceMatrix.needsUpdate = true
     this.moving = this.moving.filter(f => !f.done)
   }
   standUp () {
     for (const [i, saved] of this.standing)
-      this.parts.forEach(({ mesh, of }, p) =>
-        of(i).forEach((k, j) => mesh.setMatrixAt(k, saved[p][j]))
+      this.parts.forEach(({ inst, of }, p) =>
+        of(i).forEach((k, j) => inst.setMatrixAt(k, saved[p][j]))
       )
-    for (const p of this.parts) p.mesh.instanceMatrix.needsUpdate = true
+    if (this.standing.size) for (const p of this.parts) p.inst.bounds()
     this.standing.clear()
     this.moving.length = 0
   }
@@ -170,14 +173,14 @@ function lamps (group) {
   )
   pools.receiveShadow = false
   pools.visible = false
-  group.add(posts, lenses, pools)
+  group.add(...posts.meshes, ...lenses.meshes, ...pools.meshes)
   return new Fallers(
     'lamp',
     LAMPS,
     [
-      { mesh: posts, of: one },
-      { mesh: lenses, of: one, dark: true },
-      { mesh: pools, of: one, dark: true }
+      { inst: posts, of: one },
+      { inst: lenses, of: one, dark: true },
+      { inst: pools, of: one, dark: true }
     ],
     { L: () => 5.6, rest: () => 1.53, h: () => 8, skid: 0.5 }
   )
@@ -275,14 +278,14 @@ function palms (group) {
     PALMS,
     (p, i) => pose(tops[i].x, tops[i].y, tops[i].z, R() * Math.PI * 2)
   )
-  group.add(trunks, crowns)
+  group.add(...trunks.meshes, ...crowns.meshes)
   // the crown is most of the weight; it comes to rest on its drooping fronds
   return new Fallers(
     'palm',
     PALMS,
     [
-      { mesh: trunks, of: one },
-      { mesh: crowns, of: one }
+      { inst: trunks, of: one },
+      { inst: crowns, of: one }
     ],
     {
       L: p => 0.85 * p.h,
@@ -319,14 +322,14 @@ function trees (group) {
   TREES.forEach((t, i) =>
     leaves.setColorAt(i, c.setHSL(0.25 + R() * 0.08, 0.45, 0.2 + R() * 0.1))
   )
-  group.add(trunks, leaves)
+  group.add(...trunks.meshes, ...leaves.meshes)
   // top-heavy: it goes over almost like a weight on a stick, and comes to rest propped on its crown
   return new Fallers(
     'tree',
     TREES,
     [
-      { mesh: trunks, of: one },
-      { mesh: leaves, of: one }
+      { inst: trunks, of: one },
+      { inst: leaves, of: one }
     ],
     {
       L: t => 4 * t.s,
@@ -363,13 +366,16 @@ export class Signals {
     const masts = instanced(merge(parts), metal, POLES, p =>
       pose(p.x, 0, p.z, yaw(p))
     )
-    group.add(masts)
+    group.add(...masts.meshes)
     const disc = new THREE.CircleGeometry(0.14, 14).rotateY(-Math.PI / 2)
-    const n = POLES.length * HEAD_Z.length * 3
-    this.lamps = new THREE.InstancedMesh(
+    const per = HEAD_Z.length * 3,
+      n = POLES.length * per
+    this.lamps = new Instances(
       disc,
       new THREE.MeshBasicMaterial({ toneMapped: false }),
-      n
+      n,
+      k => POLES[Math.floor(k / per)],
+      { cast: false, receive: false, split: false }
     )
     let k = 0
     for (const p of POLES) {
@@ -382,17 +388,17 @@ export class Signals {
           )
     }
     for (let i = 0; i < n; i++) this.lamps.setColorAt(i, OFF[i % 3])
-    group.add(this.lamps)
+    this.lamps.bounds()
+    group.add(...this.lamps.meshes)
     this.state = new Int8Array(POLES.length).fill(-1)
     // a mast that is knocked down goes dark
-    const per = HEAD_Z.length * 3
     this.fallers = new Fallers(
       'signal',
       POLES,
       [
-        { mesh: masts, of: one },
+        { inst: masts, of: one },
         {
-          mesh: this.lamps,
+          inst: this.lamps,
           of: i => Array.from({ length: per }, (_, j) => i * per + j),
           dark: true
         }
@@ -401,12 +407,10 @@ export class Signals {
     )
   }
   update (t) {
-    let changed = false
     POLES.forEach((p, i) => {
       const st = signal(NODES[p.node], p.dir, t)
       if (st === this.state[i]) return
       this.state[i] = st
-      changed = true
       const lit = st === RED ? 0 : st === YELLOW ? 1 : st === GREEN ? 2 : -1
       for (let h = 0; h < HEAD_Z.length; h++)
         for (let j = 0; j < 3; j++)
@@ -415,7 +419,6 @@ export class Signals {
             j === lit ? ON[j] : OFF[j]
           )
     })
-    if (changed) this.lamps.instanceColor.needsUpdate = true
   }
 }
 
@@ -429,7 +432,7 @@ export function buildProps (group) {
     tree: trees(group),
     signal: signals.fallers
   }
-  const pools = fallers.lamp.parts[2].mesh
+  const pools = fallers.lamp.parts[2].inst
   const night = k => {
     LENS.color.copy(hdr(3.2, 2.5, 1.6)).multiplyScalar(1 + 2 * k)
     POOL.opacity = 0.42 * k
