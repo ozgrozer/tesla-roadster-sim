@@ -39,7 +39,11 @@ export class Pad {
     })
   }
   get () {
-    const pads = navigator.getGamepads?.() || []
+    // (a page in a frame the gamepads aren't allowed into gets none, rather than an error)
+    let pads = []
+    try {
+      pads = navigator.getGamepads?.() || []
+    } catch {}
     const p = pads[this.index]
     if (p?.connected) return p
     this.index = -1
