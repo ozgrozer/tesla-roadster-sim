@@ -48,7 +48,8 @@ export function canvasTex (size, draw, repeat = 1, height = size) {
   const cv = document.createElement('canvas')
   cv.width = size
   cv.height = height
-  const g = cv.getContext('2d')
+  // (drawn once and read back by speckle: kept in memory rather than on the GPU)
+  const g = cv.getContext('2d', { willReadFrequently: true })
   draw(g, size, height)
   const t = new THREE.CanvasTexture(cv)
   t.wrapS = t.wrapT = THREE.RepeatWrapping
@@ -57,13 +58,35 @@ export function canvasTex (size, draw, repeat = 1, height = size) {
   t.anisotropy = renderer.capabilities.getMaxAnisotropy()
   return t
 }
+// Grit: n specks, each a square 0.4 to 2.6 px across somewhere in a size-px tile, black (or white,
+// light) at up to alpha opacity, blended straight into the canvas's pixels, each pixel by how much
+// of it the speck covers (as the canvas would draw them, but tens of thousands of fillRects, each
+// with a colour of its own, took most of a second at startup).
 export function speckle (g, n, size, alpha, light) {
+  const W = g.canvas.width,
+    H = g.canvas.height
+  const img = g.getImageData(0, 0, W, H),
+    d = img.data
+  const v = light ? 255 : 0
   for (let i = 0; i < n; i++) {
-    const v = light ? 255 : 0
-    g.fillStyle = `rgba(${v},${v},${v},${Math.random() * alpha})`
+    const a = Math.random() * alpha
     const r = Math.random() * 2.2 + 0.4
-    g.fillRect(Math.random() * size, Math.random() * size, r, r)
+    const x0 = Math.random() * size,
+      y0 = Math.random() * size,
+      x1 = Math.min(x0 + r, W),
+      y1 = Math.min(y0 + r, H)
+    for (let y = Math.floor(y0); y < y1; y++) {
+      const cy = a * (Math.min(y + 1, y1) - Math.max(y, y0))
+      for (let x = Math.floor(x0); x < x1; x++) {
+        const k = cy * (Math.min(x + 1, x1) - Math.max(x, x0)),
+          o = (y * W + x) * 4
+        d[o] += (v - d[o]) * k
+        d[o + 1] += (v - d[o + 1]) * k
+        d[o + 2] += (v - d[o + 2]) * k
+      }
+    }
   }
+  g.putImageData(img, 0, 0)
 }
 const concreteTex = canvasTex(512, (g, S) => {
   g.fillStyle = '#9a9c9e'
