@@ -2,6 +2,7 @@
 // signal masts), resolved with impulses (restitution, friction, spin) so cars bounce off each other
 // and off the city. No hit tumbles the Roadster, on the road or flying, as in GTA: it bounces off
 // and the driver keeps the wheel.
+import * as THREE from 'three'
 import { STEP } from './roofs.js'
 import { snap } from './breakables.js'
 import { query, OUTER } from './city.js'
@@ -204,6 +205,40 @@ export function nudge (s, dx, dz) {
   p.z += dz
 }
 
+// Where a contact at (px, pz) with the normal (nx, nz) lands on the car, in the car's own frame as
+// it is now (+x its nose, +y up): out.l, the point (at bumper height on the road, at the middle of
+// the body in the air), and out.n, the normal
+const _qi = new THREE.Quaternion()
+export const CONTACT_Y = 0.48
+export function carFrame (s, px, pz, nx, nz, out) {
+  _qi.copy(s.quat).invert()
+  const y = s.mode === 'ground' ? s.pos.y + CONTACT_Y : s.com.y
+  out.l.set(px - s.pos.x, y - s.pos.y, pz - s.pos.z).applyQuaternion(_qi)
+  out.n.set(nx, 0, nz).applyQuaternion(_qi)
+  return out
+}
+const _frame = { l: new THREE.Vector3(), n: new THREE.Vector3() }
+// A knock against something, with where it landed on the car: the contact point (px, pz) and the
+// normal (nx, nz), from what was hit towards the Roadster, in the world and in the car's frame at
+// that moment (lx, ly, lz and lnx, lny, lnz: the body dents there, damage.js)
+export function bump (s, impact, what, hit) {
+  const f = carFrame(s, hit.px, hit.pz, hit.nx, hit.nz, _frame)
+  s.emit('bump', {
+    impact,
+    what,
+    px: hit.px,
+    pz: hit.pz,
+    nx: hit.nx,
+    nz: hit.nz,
+    lx: f.l.x,
+    ly: f.l.y,
+    lz: f.l.z,
+    lnx: f.n.x,
+    lny: f.n.y,
+    lnz: f.n.z
+  })
+}
+
 const hits = []
 // Ground mode: keep the Roadster out of buildings and posts (and on a roof, clear of its
 // plant). A roof's edge is no wall: the car drives straight off it (ground.js).
@@ -223,7 +258,7 @@ export function collideCity (s) {
     me.z = s.pos.z
     const impact = impulse(loadBody(s), null, hit, 0.2, 0.35)
     storeBody(s)
-    if (impact > 0.6) s.emit('bump', { impact, what: c.kind })
+    if (impact > 0.6) bump(s, impact, c.kind, hit)
   }
   // the beach past the ring road ends at the sea
   for (const k of ['x', 'z'])
@@ -276,7 +311,7 @@ export function collideAir (s, bottom, top, dt) {
     storeBody(s)
     me.x = BODY.x
     me.z = BODY.z
-    if (impact > 0.6) s.emit('bump', { impact, what: c.kind })
+    if (impact > 0.6) bump(s, impact, c.kind, hit)
   }
   s.syncPose()
 }
@@ -295,7 +330,7 @@ export function bumpCars (s, solids) {
     storeBody(s)
     me.x = BODY.x
     me.z = BODY.z
-    if (impact > 0.6) s.emit('bump', { impact, what: 'car' })
+    if (impact > 0.6) bump(s, impact, 'car', hit)
   }
   s.syncPose()
 }
