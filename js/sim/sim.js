@@ -1,7 +1,7 @@
 // The vehicle simulation: state, mode switching (ground / ramp / air / crash), the wall ride and scoring.
 // Uses only THREE math types, so it runs headless in Node for tests.
 import * as THREE from 'three'
-import { drift } from './stunts.js'
+import { drift, donuts } from './stunts.js'
 import { knock } from './collide.js'
 import { stepAir } from './flight.js'
 import { stepGround } from './ground.js'
@@ -107,6 +107,11 @@ export class Sim {
     this.drivePower = 0
     this.regenOn = false
     this.ebrakeOn = false
+    this.burning = false // a burnout: the throttle and brake together at a crawl (ground.js)
+    this.burnSpin = 0
+    this.rearSpin = 0
+    this.donutTurn = 0 // how far round the car has turned in this burnout (rad), and how many
+    this.donutCount = 0 // full turns it has scored (stunts.js)
     this.z60 = { armed: true, t0: 0, last: null }
     this.susp = 0
     this.suspV = 0
@@ -235,8 +240,12 @@ export class Sim {
       dt
     this.ebrakeOn = !!c.ebrake && this.mode !== 'air'
     this.wheelSpin += roll
-    if (!this.ebrakeOn) this.wheelSpinR += roll
+    if (!this.ebrakeOn)
+      this.wheelSpinR += roll + ((this.burnSpin || 0) / CAR.wheelR) * dt
     if (this.mode !== 'ground') {
+      this.burning = false
+      this.burnSpin = 0
+      this.rearSpin = 0
       this.skid = this.skidF = this.skidR = 0
       if (this.mode !== 'ramp') {
         this.drivePower = 0
@@ -245,10 +254,14 @@ export class Sim {
     }
     this.gPeak = Math.max(this.gPeak, this.gLoad)
     drift(this, dt) // (scored once it is over: stunts.js)
+    donuts(this, dt)
 
     // 0-60 mph timer
     const gs = this.mode === 'ground' ? this.speed : -1
-    if (this.mode === 'ground' && Math.abs(this.speed) < 0.15) {
+    if (
+      this.mode === 'ground' &&
+      (Math.abs(this.speed) < 0.15 || this.burning)
+    ) {
       this.z60.armed = true
       this.z60.t0 = this.time
     }
