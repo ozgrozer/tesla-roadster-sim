@@ -3,6 +3,7 @@
 // At night (L), the same dome turns deep blue with stars, a moon low where the sun was (so the city's
 // shadows still fall the same way, only faintly), and the city's own glow along the horizon.
 import * as THREE from 'three'
+import { LAYER } from './geo.js'
 import { rng } from '../sim/city.js'
 import { scene, pmrem, renderer, hemi, key, keyOffset } from './scene.js'
 
@@ -10,11 +11,14 @@ export const SUN = new THREE.Vector3(-66, 30, 28) // where the low sun sits rela
 const HAZE = new THREE.Color(0.86, 0.6, 0.48)
 const NIGHT_HAZE = new THREE.Color(0.035, 0.04, 0.065)
 
-function skyMaterial () {
+// far: the dome seen from the city, pushed out to the far plane so it is drawn last, and only where
+// nothing else is (the one in the environment map's scene stays where it is)
+function skyMaterial (uniforms, far = false) {
   return new THREE.ShaderMaterial({
-    uniforms: { uSun: { value: SUN.clone().normalize() }, uNight: { value: 0 } },
+    uniforms,
     vertexShader: `varying vec3 vDir;
-      void main(){ vDir = position; vec4 p = modelViewMatrix * vec4(position, 1.0); gl_Position = projectionMatrix * p; }`,
+      void main(){ vDir = position; vec4 p = modelViewMatrix * vec4(position, 1.0); gl_Position = projectionMatrix * p;
+        ${far ? 'gl_Position.z = gl_Position.w;' : ''} }`,
     fragmentShader: `uniform vec3 uSun; uniform float uNight; varying vec3 vDir;
       float hash3(vec3 p){ return fract(sin(dot(p, vec3(127.1, 311.7, 74.7))) * 43758.5453); }
       float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -107,11 +111,19 @@ function hills () {
 
 export class Sky {
   constructor (group) {
-    const mat = (this.mat = skyMaterial())
-    this.dome = new THREE.Mesh(new THREE.SphereGeometry(1800, 32, 16), mat)
-    this.dome.renderOrder = -1
+    const uniforms = {
+      uSun: { value: SUN.clone().normalize() },
+      uNight: { value: 0 }
+    }
+    const mat = (this.mat = skyMaterial(uniforms))
+    this.dome = new THREE.Mesh(
+      new THREE.SphereGeometry(1800, 32, 16),
+      skyMaterial(uniforms, true)
+    )
+    this.dome.renderOrder = LAYER.sky
     this.dome.frustumCulled = false
     this.hills = hills()
+    this.hills.renderOrder = LAYER.hills
     group.add(this.dome, this.hills)
     // reflections come from the same sky, rendered once into an environment map (and once more at
     // night, the first time it falls)
