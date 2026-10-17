@@ -3,6 +3,20 @@ import { CAR } from '../sim/constants.js'
 
 const $ = id => document.getElementById(id)
 const SVG_NS = 'http://www.w3.org/2000/svg'
+// Write a node's text, markup, class, style or attribute only when it changes: even an unchanged
+// write costs the browser a style and layout pass, and the HUD has a couple of dozen of them.
+const last = new WeakMap()
+function put (node, what, value) {
+  let was = last.get(node)
+  if (!was) last.set(node, (was = {}))
+  if (was[what] === value) return
+  was[what] = value
+  if (what === 'text') node.textContent = value
+  else if (what === 'html') node.innerHTML = value
+  else if (what === 'class') node.className = value
+  else if (what[0] === '@') node.setAttribute(what.slice(1), value)
+  else node.style[what] = value
+}
 const FAN_TEXT = {
   auto: 'Suction fan <b>auto</b> · spins up for the wall',
   on: 'Suction fan <b>on</b> · 2.1 G of grip',
@@ -142,36 +156,40 @@ export class Hud {
   }
 
   setText (node, text) {
-    if (node.textContent !== text) node.textContent = text
+    put(node, 'text', text)
   }
 
   update (dt, app) {
     const { sim, ap } = app,
       el = this.el
     this.RS.nozzles.forEach((nz, i) =>
-      this.dots[i].setAttribute('fill-opacity', nz.level.toFixed(2))
+      put(this.dots[i], '@fill-opacity', nz.level.toFixed(2))
     )
     this.clock += dt
     if (this.clock < 0.07) return
     this.clock = 0
-    el.speed.textContent = Math.round(sim.groundSpeed() * 3.6)
-    el.pitch.textContent = `${Math.round(sim.pitchDeg())}°`
-    el.g.innerHTML = `${sim.gLoad.toFixed(2)}<small>G</small>`
+    put(el.speed, 'text', String(Math.round(sim.groundSpeed() * 3.6)))
+    put(el.pitch, 'text', `${Math.round(sim.pitchDeg())}°`)
+    put(el.g, 'html', `${sim.gLoad.toFixed(2)}<small>G</small>`)
     const alt =
       sim.mode === 'air' || sim.mode === 'crash'
         ? Math.max(0, sim.com.y - CAR.comH)
         : sim.pos.y
-    el.alt.innerHTML = `${alt.toFixed(1)}<small>m</small>`
+    put(el.alt, 'html', `${alt.toFixed(1)}<small>m</small>`)
     if (sim.suction > 0.05) {
-      el.suck.textContent = `${(sim.suction * CAR.suctionG).toFixed(1)} G`
-      el.suck.className = 'v status-on'
+      put(el.suck, 'text', `${(sim.suction * CAR.suctionG).toFixed(1)} G`)
+      put(el.suck, 'class', 'v status-on')
     } else {
-      el.suck.textContent = !app.auto && app.fanMode === 'auto' ? 'AUTO' : 'OFF'
-      el.suck.className = 'v'
+      put(
+        el.suck,
+        'text',
+        !app.auto && app.fanMode === 'auto' ? 'AUTO' : 'OFF'
+      )
+      put(el.suck, 'class', 'v')
     }
     const kw = Math.round(sim.drivePower / 1000)
-    el.pow.innerHTML = `${kw > 0 ? '+' : ''}${kw}<small>kW</small>`
-    el.pow.className = kw < 0 ? 'v status-on' : 'v'
+    put(el.pow, 'html', `${kw > 0 ? '+' : ''}${kw}<small>kW</small>`)
+    put(el.pow, 'class', kw < 0 ? 'v status-on' : 'v')
     const tag = sim.ebrakeOn
       ? 'E-BRAKE'
       : sim.escActive
@@ -184,29 +202,41 @@ export class Hud {
       el.tag.className =
         tag === 'ESC' ? 'tag esc' : tag === 'REGEN' ? 'tag status-on' : 'tag'
     }
-    el.air.innerHTML = `${Math.round(sim.air)}<small>kg</small>`
-    el.airBar.style.transform = `scaleX(${(sim.air / CAR.airMass).toFixed(3)})`
-    el.airBar.style.background = sim.air < 50 ? 'var(--warn)' : 'var(--jet)'
-    el.thrAir.textContent = `${Math.round(sim.air)} kg air · ${Math.round(
-      (380 * sim.air) / CAR.airMass
-    )} bar`
+    put(el.air, 'html', `${Math.round(sim.air)}<small>kg</small>`)
+    put(
+      el.airBar,
+      'transform',
+      `scaleX(${(sim.air / CAR.airMass).toFixed(3)})`
+    )
+    put(el.airBar, 'background', sim.air < 50 ? 'var(--warn)' : 'var(--jet)')
+    put(
+      el.thrAir,
+      'text',
+      `${Math.round(sim.air)} kg air · ${Math.round(
+        (380 * sim.air) / CAR.airMass
+      )} bar`
+    )
     if (sim.z60.last)
-      el.z60.innerHTML = `${sim.z60.last.toFixed(2)}<small>s</small>`
-    el.thrTotal.textContent = `${Math.round(
+      put(el.z60, 'html', `${sim.z60.last.toFixed(2)}<small>s</small>`)
+    put(
+      el.thrTotal,
+      'text',
+      `${Math.round(
       (sim.thrMain * CAR.mainThrust +
         sim.thrLift * CAR.liftThrust +
         sim.thrSide * CAR.sideThrust) /
         1000
     )} kN`
-    el.score.textContent = app.score.toLocaleString('en-US')
+    )
+    put(el.score, 'text', app.score.toLocaleString('en-US'))
     if (app.auto) {
       const [e, t, s] = ap.cap
       this.setText(el.capE, e)
       this.setText(el.capT, t)
       this.setText(el.capS, s)
       const cd = ap.countdown
-      el.countdown.style.opacity = cd === null ? 0 : 1
-      if (cd !== null) el.countdown.textContent = cd === 0 ? 'GO' : String(cd)
+      put(el.countdown, 'opacity', cd === null ? '0' : '1')
+      if (cd !== null) put(el.countdown, 'text', cd === 0 ? 'GO' : String(cd))
       const what =
         this.world === 'city' ? 'Autopilot on' : 'Autopilot demo running'
       this.setText(
@@ -216,7 +246,7 @@ export class Hud {
           : `${what} · click or press N for sound · any drive key takes over`
       )
     } else {
-      el.countdown.style.opacity = 0
+      put(el.countdown, 'opacity', '0')
       this.setText(
         el.hint,
         app.intro
