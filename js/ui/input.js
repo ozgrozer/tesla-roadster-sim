@@ -2,15 +2,18 @@
 // mapping (a gamepad's sticks and triggers are analog: gamepad.js).
 import { Pad } from './gamepad.js'
 import { TRACK } from '../sim/track.js'
+import { BURN_V } from '../sim/ground.js'
 import { clamp, makeControls } from '../sim/constants.js'
 
 // The steering keys ease the wheel over rather than throwing it to full lock: full in KEY_T s at a
-// standstill and KEY_T_V s more per m/s, so at speed a tap is a small correction, holding the key a
-// lane change, then a turn at the tyres' limit; with the handbrake pulled, or the car sliding, as
-// fast as at a standstill (a handbrake turn, a slide to catch). Let go and it comes back KEY_BACK
-// times as fast.
+// standstill and KEY_T_V s more per m/s (up to KEY_V_TOP m/s: past it the wheel turns no slower, as
+// the steering's reach is already small up there), so at speed a tap is a small correction, holding
+// the key a lane change, then a turn at the tyres' limit; with the handbrake pulled, or the car
+// sliding, as fast as at a standstill (a handbrake turn, a slide to catch). Let go and it comes back
+// KEY_BACK times as fast.
 const KEY_T = 0.1,
-  KEY_T_V = 0.011,
+  KEY_T_V = 0.008,
+  KEY_V_TOP = 35,
   KEY_BACK = 2.5
 // k eased towards want (-1, 0 or 1) at up per s, and back to the middle at down per s
 export function easeKey (k, want, up, down, dt) {
@@ -152,7 +155,10 @@ export class Input {
       c.throttle = Math.max(W ? 1 : 0, pad.throttle)
       // (sliding: the rear axle running ten degrees or more off the line of the car)
       const sliding = sim.mode === 'ground' && Math.abs(sim.slipR) > 0.17
-      const T = c.ebrake || sliding ? KEY_T : KEY_T + KEY_T_V * sim.groundSpeed()
+      const T =
+        c.ebrake || sliding
+          ? KEY_T
+          : KEY_T + KEY_T_V * Math.min(KEY_V_TOP, sim.groundSpeed())
       this.keySteer = easeKey(
         this.keySteer || 0,
         (A ? 1 : 0) - (D ? 1 : 0),
@@ -162,7 +168,17 @@ export class Input {
       )
       c.steer = or(this.keySteer, pad.steer)
       const brake = Math.max(S ? 1 : 0, pad.brake)
-      if (brake > 0.02) {
+      // the throttle and the brake together at a crawl: a burnout (and with the wheel turned, a
+      // donut), as in GTA
+      if (
+        c.throttle > 0.5 &&
+        brake > 0.5 &&
+        !c.ebrake &&
+        sim.mode === 'ground' &&
+        sim.groundSpeed() < BURN_V
+      )
+        c.burnout = true
+      else if (brake > 0.02) {
         // S brakes while rolling forward, then reverses (also back down the wall)
         const fwd = sim.mode === 'ramp' ? sim.v : sim.speed
         if (fwd > 0.5) c.brake = brake
