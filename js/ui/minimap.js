@@ -11,6 +11,12 @@ import {
   PROMENADE
 } from '../sim/city.js'
 
+const DOTS = [
+  { color: '#6d747e', is: car => !car.loose && !!car.parked },
+  { color: '#d6dbe2', is: car => !car.loose && !car.parked },
+  { color: '#e0a92a', is: car => !!car.loose }
+]
+
 export class Minimap {
   constructor (canvas) {
     this.cv = canvas
@@ -74,11 +80,15 @@ export class Minimap {
     g.translate(-p.x, -p.z)
     g.drawImage(this.map, -this.ext, -this.ext)
     const reach = (c * 1.4) / this.zoom
-    for (const car of traffic.cars) {
-      if (Math.abs(car.x - p.x) > reach || Math.abs(car.z - p.z) > reach)
-        continue
-      g.fillStyle = car.loose ? '#e0a92a' : car.parked ? '#6d747e' : '#d6dbe2'
-      g.fillRect(car.x - 1.8, car.z - 1.8, 3.6, 3.6)
+    // (parked cars, then moving ones, then wrecks on top: one colour set for each)
+    for (const kind of DOTS) {
+      g.fillStyle = kind.color
+      for (const car of traffic.cars) {
+        if (!kind.is(car)) continue
+        if (Math.abs(car.x - p.x) > reach || Math.abs(car.z - p.z) > reach)
+          continue
+        g.fillRect(car.x - 1.8, car.z - 1.8, 3.6, 3.6)
+      }
     }
     g.restore()
     // the jammed street: a gold blip with a jump chevron, held on the rim while it is off the map
