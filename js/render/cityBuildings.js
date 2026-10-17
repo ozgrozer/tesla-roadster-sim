@@ -1,11 +1,12 @@
 // City buildings: procedural facades (glass curtain wall, office, brick, stucco) with windows lit for
 // the evening, storefronts under canopies along the street, setbacks, cornices, roof lips, rooftop
 // plant and antenna beacons. Each style is one merged mesh, so seven hundred buildings draw in a few
-// calls. Every window is its own (facade.js): set back in its opening with a room behind it, lit or
+// calls (the cornices and roofs, heavy with corners, one a district: chunks.js). Every window is its own (facade.js): set back in its opening with a room behind it, lit or
 // dark, warm or cool, blinds up or down, and a glass pane catches the sky at its own slight angle.
 import * as THREE from 'three'
 import { LIP, LIP_H } from '../sim/roofs.js'
 import { facadeMaterial } from './facade.js'
+import { district, DISTRICTS } from './chunks.js'
 import { BUILDINGS, rng } from '../sim/city.js'
 import { canvasTex, speckle, hdr } from './scene.js'
 
@@ -217,12 +218,11 @@ class Builder {
   // quad a-b-c-d counter-clockwise seen from outside; uv = [u0, v0, u1, v1] across a-b and up b-c
   quad (a, b, c, d, nrm, uv, col) {
     const [u0, v0, u1, v1] = uv
-    const V = [a, b, c, a, c, d],
-      T = [u0, v0, u1, v0, u1, v1, u0, v0, u1, v1, u0, v1]
+    // (two triangles, a-b-c and a-c-d)
+    this.p.push(...a, ...b, ...c, ...a, ...c, ...d)
+    this.uv.push(u0, v0, u1, v0, u1, v1, u0, v0, u1, v1, u0, v1)
     for (let i = 0; i < 6; i++) {
-      this.p.push(...V[i])
-      this.n.push(...nrm)
-      this.uv.push(T[i * 2], T[i * 2 + 1])
+      this.n.push(nrm[0], nrm[1], nrm[2])
       this.c.push(col.r, col.g, col.b)
     }
   }
@@ -326,14 +326,19 @@ export function buildBuildings (group) {
   const styles = ['glass', 'office', 'brick', 'stucco']
   const B = Object.fromEntries(styles.map(s => [s, new Builder()]))
   const shops = new Builder(),
-    roofs = new Builder(),
-    ledges = new Builder(),
     beacons = new Builder()
+  const byDistrict = () => Array.from({ length: DISTRICTS }, () => new Builder())
+  const roofsBy = byDistrict(),
+    ledgesBy = byDistrict()
   const col = new THREE.Color(),
     white = new THREE.Color(1, 1, 1),
     metal = new THREE.Color(0.32, 0.34, 0.37)
   for (const b of BUILDINGS) {
-    const out = B[b.style]
+    const out = B[b.style],
+      t0 = b.tiers[0],
+      d = district((t0.x0 + t0.x1) / 2, (t0.z0 + t0.z1) / 2),
+      roofs = roofsBy[d],
+      ledges = ledgesBy[d]
     col.setHex(b.tint).multiplyScalar(0.94 + R() * 0.12)
     // a pale membrane on some roofs, grey on the rest
     const roofCol = new THREE.Color().setScalar(
@@ -450,10 +455,11 @@ export function buildBuildings (group) {
       )
     )
   }
-  add(
-    ledges,
-    new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.75 })
-  )
+  const ledgeMat = new THREE.MeshStandardMaterial({
+    vertexColors: true,
+    roughness: 0.75
+  })
+  for (const l of ledgesBy) if (l.p.length) add(l, ledgeMat)
   const sm = shopMaps()
   const shopMat = new THREE.MeshStandardMaterial({
     map: sm.map,
@@ -465,14 +471,12 @@ export function buildBuildings (group) {
   add(shops, shopMat)
   const rt = roofTex()
   rt.repeat.set(1, 1)
-  add(
-    roofs,
-    new THREE.MeshStandardMaterial({
-      map: rt,
-      vertexColors: true,
-      roughness: 0.95
-    })
-  )
+  const roofMat = new THREE.MeshStandardMaterial({
+    map: rt,
+    vertexColors: true,
+    roughness: 0.95
+  })
+  for (const r of roofsBy) if (r.p.length) add(r, roofMat)
   group.add(new THREE.Mesh(beacons.geometry(), BEACON))
   // night (0 to 1): the shopfronts' signs and windows brighter (the windows: facade.js)
   return {
