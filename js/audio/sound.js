@@ -1,19 +1,20 @@
-// Sound, synthesised with Web Audio (nothing to download): the drive units' whine, tyres, wind,
-// thrusters, the fan and the horn; the city round the car (passing traffic with its doppler, honks, a
-// street's hum, birds) and the echo between its buildings. One-shots are in shots.js; the slapback
-// off the street's walls, the surf and the tyres off the road in street.js.
+// Sound, synthesised with Web Audio (nothing to download). This is the engine: the context, the
+// buses and the master chain, the thrusters, fan and horn; the rest is mixed in from its own
+// module: buffers.js (the noise and sample bank, built at start-up), space.js (where things are
+// heard from: the car's place, the canopy, the reverb and the walls' echo), motor.js (the drive
+// units), tyres.js (rolling, squealing, the wind), impacts.js (knocks, crashes, scrapes), shots.js
+// (one-shots: horns, air brakes, birds, locks), cars.js (the traffic's engines and tyres),
+// street.js (the city's bed: far traffic, wind, surf, birds, crickets) and ambience.js (sirens,
+// dogs, building work and the people on the pavement).
+import { noises, bank, wobble, wave } from './buffers.js'
+import { SPACE } from './space.js'
+import { DRIVE } from './motor.js'
+import { TYRES } from './tyres.js'
+import { IMPACTS } from './impacts.js'
+import { ONE_SHOTS, HORNS } from './shots.js'
+import { CARS } from './cars.js'
 import { STREET } from './street.js'
-import { ONE_SHOTS } from './shots.js'
-import { clamp } from '../sim/constants.js'
-
-// a few stock two-tone horns (Hz): traffic picks one per car
-export const HORNS = [
-  [415, 520],
-  [370, 466],
-  [440, 554],
-  [330, 415],
-  [494, 587]
-]
+import { AMBIENCE } from './ambience.js'
 
 export class SoundEngine {
   constructor () {
@@ -22,358 +23,352 @@ export class SoundEngine {
     this.userMuted = false
     this.hornOn = false
     this.thr = 0 // last frame's thrust, for the burst as the valves open
-    this.birdT = 4
-    this.farT = 9
+    this.now = 0
+    this.ps = 1
+    // set an AudioParam smoothly towards v (time constant tc), skipping it when it is already there
+    this.R = (p, v, tc = 0.06) => {
+      if (!Number.isFinite(v)) return
+      if (Math.abs(v - (p.__to ?? NaN)) <= 3e-3 * Math.abs(v) + 1e-5) {
+        // (silent, and settled by now: exactly zero, so the filters it feeds can rest; Web Audio
+        // skips work on silence, but a level still easing towards zero is never quite silent)
+        if (v === 0 && !p.__rest && this.now - p.__at > 7 * p.__tc) {
+          p.cancelScheduledValues(this.now)
+          p.setValueAtTime(0, this.now)
+          p.__rest = true
+        }
+        return
+      }
+      p.__to = v
+      p.__at = this.now
+      p.__tc = tc
+      // (a level waking from rest may need its lane back: see gateLanes)
+      if (p.__rest) this.stirred = true
+      p.__rest = false
+      p.setTargetAtTime(v, this.now, tc)
+    }
+  }
+  // set an AudioParam to v at once (a voice just handed to a new source, so it doesn't glide there)
+  J (p, v) {
+    if (!Number.isFinite(v)) return
+    p.cancelScheduledValues(this.now)
+    p.setValueAtTime(v, this.now)
+    p.__to = v
+    p.__at = this.now
+    p.__tc = 0.01
+    p.__rest = false
   }
   ensure () {
     if (this.ctx) {
-      if (this.ctx.state === 'suspended') this.ctx.resume()
+      if (this.ctx.state === 'suspended' && this.live) this.ctx.resume()
       return true
     }
     const AC = window.AudioContext || window.webkitAudioContext
     if (!AC) return false
     const ctx = (this.ctx = new AC())
-    const sr = ctx.sampleRate
-    this.white = ctx.createBuffer(1, sr * 2, sr)
-    this.brown = ctx.createBuffer(1, sr * 2, sr)
-    this.pink = ctx.createBuffer(1, sr * 2, sr)
-    const d = this.white.getChannelData(0),
-      e = this.brown.getChannelData(0),
-      p = this.pink.getChannelData(0)
-    let last = 0,
-      b0 = 0,
-      b1 = 0,
-      b2 = 0
-    for (let i = 0; i < d.length; i++) {
-      const x = Math.random() * 2 - 1
-      d[i] = x
-      last = (last + 0.02 * x) / 1.02
-      e[i] = last * 3.5
-      b0 = 0.99765 * b0 + x * 0.099
-      b1 = 0.963 * b1 + x * 0.2965
-      b2 = 0.57 * b2 + x * 1.0526
-      p[i] = (b0 + b1 + b2 + x * 0.1848) * 0.2
+    // (an offline context, for rendering to a buffer, can't be resumed and wants its samples at
+    // once)
+    const Off = window.OfflineAudioContext
+    this.live = !(Off && ctx instanceof Off)
+    if (this.live) {
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) this.pause()
+      })
+      // (frames stop without the tab being hidden too, or stall: a third of a second without one
+      // fades the sound out, two seconds stop the context)
+      this.lastUpdate = performance.now()
+      setInterval(() => {
+        const now = performance.now(),
+          idle = now - this.lastUpdate
+        // (and a context started again while paused, by a key press during a stall, say, is
+        // stopped again)
+        if (this.paused) {
+          if (this.ctx.state === 'running' && now - this.pausedAt > 100) this.ctx.suspend()
+          return
+        }
+        if (!this.enabled || idle < 330) return
+        if (idle > 2000) this.pause()
+        else if (!this.hushed) {
+          this.hushed = true
+          this.master.gain.cancelScheduledValues(this.ctx.currentTime)
+          this.master.gain.setTargetAtTime(0, this.ctx.currentTime, 0.02)
+        }
+      }, 250)
     }
-    const comp = (this.comp = ctx.createDynamicsCompressor())
-    comp.threshold.value = -16
-    comp.knee.value = 8
-    comp.ratio.value = 5
-    this.master = ctx.createGain()
-    this.master.gain.value = 0
-    // the canopy: from the driver's seat everything outside is heard through it, muffled
-    this.cabin = ctx.createBiquadFilter()
-    this.cabin.type = 'lowpass'
-    this.cabin.frequency.value = 20000
-    this.cabin.Q.value = 0.5
-    this.master.connect(this.cabin).connect(comp)
-    comp.connect(ctx.destination)
+    Object.assign(this, noises(ctx))
+    this.bank = bank(ctx, !this.live)
+    // slow gusts (and the asphalt's patches), a tyre's chatter, and a quicker flutter
+    this.gust = wobble(ctx, 24, 0.06, 1.2, 3)
+    this.chatter = wobble(ctx, 2, 12, 70, 5, 6000)
+    this.flutter = wobble(ctx, 4, 3, 16, 7)
+    this.syllables = wobble(ctx, 6, 2.5, 7, 9)
+    this.hornWave = wave(ctx, hornHarmonics(24, 1.1, false))
+    this.airHornWave = wave(ctx, hornHarmonics(16, 1, true))
     const n = (this.n = {})
-    const loop = buf => {
+    this.loop = buf => {
       const s = ctx.createBufferSource()
       s.buffer = buf
       s.loop = true
-      s.start(0, Math.random() * 1.5)
+      s.start(0, Math.random() * buf.duration)
       return s
     }
-    const gain = (v = 0) => {
+    this.gain = (v = 0) => {
       const g = ctx.createGain()
       g.gain.value = v
       return g
     }
-    const filt = (type, f, q = 0.7) => {
+    this.filt = (type, f, q = 0.7) => {
       const b = ctx.createBiquadFilter()
       b.type = type
       b.frequency.value = f
       b.Q.value = q
       return b
     }
-    const osc = (type, f) => {
+    this.osc = (type, f) => {
       const o = ctx.createOscillator()
       o.type = type
       o.frequency.value = f
       o.start()
       return o
     }
-    const pan = () => ctx.createStereoPanner()
-    this.gain = gain
-    this.filt = filt
-    this.loop = loop
-
-    // the echo off the buildings: a short synthetic room the one-shots, horns and traffic send into
-    this.verb = gain(1)
-    const conv = ctx.createConvolver()
-    conv.buffer = this.room(1.7)
-    n.verbOut = gain(0.45)
-    this.verb.connect(conv).connect(n.verbOut).connect(this.master)
-
-    // drive units: the primary whine, a slow beat against a detuned copy, the gear mesh a fifth up, the
-    // motor's body an octave down, a growl under full power and the inverter's thin tone on top
-    n.motor = gain(0)
-    n.motorLP = filt('lowpass', 3000, 0.5)
-    n.motor.connect(n.motorLP).connect(this.master)
-    n.w1 = osc('sine', 200)
-    n.w1.connect(gain(0.5)).connect(n.motor)
-    n.w1b = osc('sine', 200)
-    n.w1b.connect(gain(0.22)).connect(n.motor)
-    n.w2 = osc('sine', 300)
-    n.w2g = gain(0.14)
-    n.w2.connect(n.w2g).connect(n.motor)
-    n.w3 = osc('triangle', 100)
-    n.w3.connect(gain(0.24)).connect(n.motor)
-    n.growl = gain(0)
-    n.growlLP = filt('lowpass', 500, 4)
-    n.g1 = osc('sawtooth', 50)
-    n.g1.connect(n.growlLP).connect(n.growl).connect(this.master)
-    n.inv = gain(0)
-    n.m3 = osc('sine', 3000)
-    n.m3.connect(n.inv).connect(this.master)
-    // tyres: roar off the road surface, a hiss of tread at speed, and the low scrub of a slide
-    n.road = gain(0)
-    n.roadLP = filt('lowpass', 300, 0.5)
-    loop(this.brown).connect(n.roadLP).connect(n.road).connect(this.master)
-    n.tread = gain(0)
-    n.treadBP = filt('bandpass', 900, 0.6)
-    loop(this.pink).connect(n.treadBP).connect(n.tread).connect(this.master)
-    n.scrub = gain(0)
-    loop(this.brown)
-      .connect(filt('bandpass', 260, 1.2))
-      .connect(n.scrub)
-      .connect(this.master)
-    // wind, with slow gusts
-    n.wind = gain(0)
-    n.windBP = filt('bandpass', 700, 0.5)
-    const gust = gain(1)
-    osc('sine', 0.21).connect(gain(0.22)).connect(gust.gain)
-    osc('sine', 0.53).connect(gain(0.12)).connect(gust.gain)
-    loop(this.white).connect(n.windBP).connect(n.wind).connect(gust)
-    gust.connect(this.master)
-    // tyre squeal: two narrow noise bands with a faint tone, only once a tyre is past its grip limit;
-    // two slow wobbles chatter its pitch the way a sliding tyre does
-    n.skid = gain(0)
-    n.skidLo = filt('bandpass', 1250, 14)
-    n.skidHi = filt('bandpass', 2450, 10)
-    const squeal = loop(this.white)
-    squeal.connect(n.skidLo).connect(n.skid)
-    squeal.connect(n.skidHi).connect(gain(0.6)).connect(n.skid)
-    n.tone = osc('sine', 1150)
-    n.toneG = gain(0)
-    n.tone.connect(n.toneG).connect(n.skid)
-    for (const [f, a] of [
-      [6.7, 45],
-      [2.9, 70]
-    ]) {
-      const w = gain(a)
-      osc('sine', f).connect(w)
-      w.connect(n.skidLo.frequency)
-      w.connect(n.skidHi.frequency)
-      w.connect(n.tone.frequency)
-    }
-    n.skid.connect(this.master)
-    this.squeal = 0
+    const { gain, filt, osc } = this
+    // one source of each noise, shared by everything that filters it its own way
+    const src = (this.src = {})
+    for (const k of ['white', 'pink', 'brown']) src[k] = this.loop(this[k])
+    this.lanes = []
+    this.buildSpace()
+    this.buildDrive()
+    this.buildTyres()
+    this.buildImpacts()
     // cold-gas thrusters: supersonic hiss plus low roar
+    // (each level comes first, so whatever is silent rests: see R)
     n.hiss = gain(0)
     n.hissHP = filt('highpass', 1600, 0.6)
-    loop(this.white).connect(n.hissHP).connect(n.hiss).connect(this.master)
-    n.roar = gain(0)
-    n.roarLP = filt('lowpass', 420, 0.7)
-    loop(this.brown).connect(n.roarLP).connect(n.roar).connect(this.master)
+    src.white.connect(n.hiss).connect(n.hissHP)
+    this.lane([n.hiss.gain], n.hissHP, this.carBus)
+    n.roar2 = gain(0)
+    n.roarLP2 = filt('lowpass', 420, 0.7)
+    src.brown.connect(n.roar2).connect(n.roarLP2)
+    this.lane([n.roar2.gain], n.roarLP2, this.carBus)
+    // and the crackle of the shocks in a supersonic jet, at full thrust
+    n.crackle = gain(0)
+    this.lane([n.crackle.gain], n.crackle.connect(filt('highpass', 900, 0.6)), this.carBus)
+    this.bank.ready('gravel', b => {
+      n.crackleSrc = this.loop(b)
+      n.crackleSrc.playbackRate.value = 1.7
+      n.crackleSrc.connect(n.crackle)
+    })
     // suction fan: turbine whir
     n.fan = gain(0)
+    n.fanAir = gain(0)
     n.fanO = osc('sawtooth', 130)
     n.fanBP = filt('bandpass', 260, 4)
-    n.fanO.connect(n.fanBP).connect(n.fan)
-    loop(this.white)
-      .connect(filt('bandpass', 900, 1.2))
-      .connect(gain(0.5))
-      .connect(n.fan)
-    n.fan.connect(this.master)
-    // the horn: two blaring tones a major third apart, clipped hard like a diaphragm horn
+    n.fanO.connect(n.fan).connect(n.fanBP)
+    this.lane([n.fan.gain], n.fanBP, this.carBus)
+    const whir = filt('bandpass', 900, 1.2)
+    src.white.connect(n.fanAir).connect(whir)
+    this.lane([n.fanAir.gain], whir, this.carBus)
+    // the horn: a pair of disc horns a major third apart, bright with the diaphragm's harmonics
     n.horn = gain(0)
-    const clip = ctx.createWaveShaper()
-    clip.curve = Float32Array.from({ length: 256 }, (_, i) =>
-      Math.tanh(((i / 255) * 2 - 1) * 3)
-    )
-    for (const f of HORNS[0])
-      osc('sawtooth', f).connect(gain(0.5)).connect(clip)
-    const bite = filt('peaking', 2600, 2)
-    bite.gain.value = 6
-    clip.connect(filt('bandpass', 1100, 0.6)).connect(bite).connect(n.horn)
-    n.horn.connect(this.master)
-    n.horn.connect(gain(0.5)).connect(this.verb)
-    // the street: a far-off hum of traffic in the city, a breath of wind over the desert test site
-    n.city = gain(0)
-    loop(this.brown).connect(filt('lowpass', 240, 0.5)).connect(n.city)
-    loop(this.pink)
-      .connect(filt('bandpass', 650, 0.4))
-      .connect(gain(0.3))
-      .connect(n.city)
-    n.city.connect(this.master)
-    n.desert = gain(0)
-    loop(this.white).connect(filt('bandpass', 380, 0.3)).connect(n.desert)
-    n.desert.connect(gust)
-    // the four nearest cars in traffic: an engine's firing note (or an electric car's whine) and
-    // tyre roar, panned, with doppler
-    n.cars = [0, 1, 2, 3].map(() => {
-      const g = gain(0),
-        p = pan()
-      const eng = osc('sawtooth', 50),
-        sub = osc('triangle', 25),
-        lp = filt('lowpass', 400, 1.5),
-        eg = gain(0.5),
-        tg = gain(0),
-        whine = osc('sine', 400),
-        wg = gain(0)
-      eng.connect(lp)
-      sub.connect(gain(0.8)).connect(lp)
-      lp.connect(eg).connect(g)
-      whine.connect(wg).connect(g)
-      loop(this.brown).connect(filt('lowpass', 650, 0.5)).connect(tg).connect(g)
-      g.connect(p).connect(this.master)
-      p.connect(gain(0.35)).connect(this.verb)
-      return { g, p, eng, sub, lp, eg, tg, whine, wg }
+    const bite = filt('peaking', 2900, 1.1)
+    bite.gain.value = 7
+    n.hornO = HORNS[0].map(f => {
+      const o = osc('sine', f)
+      o.setPeriodicWave(this.hornWave)
+      o.connect(n.horn)
+      return o
     })
+    // (connected only while it sounds, and a moment after)
+    n.hornOn = gain(0)
+    n.horn.connect(n.hornOn).connect(bite)
+    this.lane([n.hornOn.gain], bite, this.carBus, bite.connect(gain(0.4)), this.verb)
+    this.hornOff = 0
+    // the desert's breath at the test site
+    n.desert = gain(0)
+    this.lane(
+      [n.desert.gain],
+      src.white.connect(n.desert).connect(filt('bandpass', 380, 0.3)),
+      this.world
+    )
+    this.buildCars()
     this.buildStreet()
+    this.buildAmbience()
     return true
   }
-  // a stereo impulse response: a few early reflections off the street's walls, then a dark decay
-  room (sec) {
-    const sr = this.ctx.sampleRate,
-      len = Math.floor(sr * sec)
-    const b = this.ctx.createBuffer(2, len, sr)
-    for (let ch = 0; ch < 2; ch++) {
-      const d = b.getChannelData(ch)
-      let lp = 0
-      for (let i = 0; i < len; i++) {
-        lp += 0.35 * (Math.random() * 2 - 1 - lp)
-        d[i] = lp * Math.exp(-i / (sr * 0.38)) * 0.6
-      }
-      for (const ms of [11, 19, 31, 47, 64]) {
-        const i = Math.floor(((ms + ch * 3) / 1000) * sr)
-        d[i] += (Math.random() < 0.5 ? -1 : 1) * 0.5 * Math.exp(-ms / 60)
-      }
-    }
-    return b
-  }
+  // N, or the sound button: on fades in (and the street's watchers start afresh); off fades out and
+  // then stops the context, so nothing runs (or piles up) while it is muted
   setEnabled (on) {
     this.enabled = on && this.ensure()
-    if (this.ctx)
-      this.master.gain.setTargetAtTime(
-        this.enabled ? 0.8 : 0,
-        this.ctx.currentTime,
-        0.08
-      )
+    if (!this.ctx) return
+    if (this.enabled) this.wake()
+    else this.pause()
+  }
+  // Pausing: a quick fade, then the context stopped. Hiding the tab does it (no more frames to set
+  // the levels from: the last frame's would drone on), as do two seconds without a frame.
+  pause () {
+    if (!this.ctx || !this.live || this.paused) return
+    this.paused = true
+    this.pausedAt = performance.now()
+    const g = this.master.gain,
+      t = this.ctx.currentTime
+    g.cancelScheduledValues(t)
+    g.setTargetAtTime(0, t, 0.006)
+    setTimeout(() => {
+      if (this.paused && this.ctx.state === 'running') this.ctx.suspend()
+    }, 40)
+  }
+  // and back: the context running again, the master faded in, and st.fresh for the mix (what it
+  // remembered from before the pause, the pass-bys and the brakes, is stale)
+  wake () {
+    this.paused = this.hushed = false
+    this.fresh = true
+    this.lastUpdate = performance.now()
+    if (this.live && this.ctx.state !== 'running') this.ctx.resume()
+    const g = this.master.gain,
+      t = this.ctx.currentTime
+    g.cancelScheduledValues(t)
+    g.setTargetAtTime(0.8, t, 0.08)
+  }
+  // whether a one-shot may start now (not while the context is stopped: they would all go off at
+  // once when it starts again)
+  playing () {
+    return (
+      !!this.ctx &&
+      this.enabled &&
+      !this.paused &&
+      (this.ctx.state === 'running' || !this.live)
+    )
   }
   // hold H: the horn sounds for as long as it is held
   horn (on) {
     this.hornOn = on
     if (!this.ctx || !this.enabled) return
-    this.n.horn.gain.setTargetAtTime(
-      on ? 0.32 : 0,
-      this.ctx.currentTime,
-      on ? 0.006 : 0.03
-    )
+    const g = this.n.horn.gain,
+      t = this.ctx.currentTime
+    g.cancelScheduledValues(t)
+    if (on) {
+      // (the diaphragm's first swing overshoots the pitch a little)
+      for (const o of this.n.hornO) {
+        o.frequency.cancelScheduledValues(t)
+        o.frequency.setValueAtTime(o.frequency.value * 1.02, t)
+        o.frequency.setTargetAtTime(o.frequency.value, t + 0.002, 0.012)
+      }
+      g.setTargetAtTime(0.11, t, 0.004)
+    } else {
+      g.setTargetAtTime(0, t, 0.02)
+      g.setValueAtTime(0, t + 0.25)
+      this.hornOff = t + 0.3
+    }
+  }
+  // A lane is the last connection (or connections: node, destination, ...) of a layer, made only
+  // while any of its levels is above zero. A node whose gain is zero still has everything before it
+  // processed, every sample; a disconnected one has nothing processed at all.
+  lane (levels, ...outs) {
+    const l = { levels, outs, on: true }
+    for (let i = 0; i < outs.length; i += 2) outs[i].connect(outs[i + 1])
+    this.lanes.push(l)
+    return l
+  }
+  // once a frame: lanes whose levels have all come to rest at zero (see R) are let go, and taken up
+  // again as soon as one of them is raised
+  // (checked every fourth frame for lanes to let go, and at once when a level wakes)
+  gateLanes () {
+    if (!this.stirred && (this.frame & 3) !== 0) return
+    this.stirred = false
+    for (const l of this.lanes) {
+      let live = false
+      for (const p of l.levels)
+        if (!p.__rest) {
+          live = true
+          break
+        }
+      if (live === l.on) continue
+      l.on = live
+      for (let i = 0; i < l.outs.length; i += 2) {
+        try {
+          if (live) l.outs[i].connect(l.outs[i + 1])
+          else l.outs[i].disconnect(l.outs[i + 1])
+        } catch (e) {}
+      }
+    }
   }
   update (st) {
     if (!this.ctx || !this.enabled) return
+    this.lastUpdate = performance.now()
+    // (a hidden tab stays paused even if its frames go on)
+    if (this.live && document.hidden) return this.pause()
+    if (this.paused || this.hushed) this.wake()
+    if (this.live && this.ctx.state !== 'running') return
     const n = this.n,
-      now = this.ctx.currentTime,
-      R = (p, v, tc = 0.06) => p.setTargetAtTime(v, now, tc)
-    R(this.master.gain, st.volume, 0.15)
-    R(this.cabin.frequency, st.inside ? 1500 : 20000, 0.12)
-    const ps = st.pitch,
-      u = st.wheelSpeed
-    // the drive units: pitch with road speed, louder under power (and under regen, more gear whine)
-    const f = (34 + u * 21) * ps
-    R(n.w1.frequency, f, 0.04)
-    R(n.w1b.frequency, f * 1.006, 0.04)
-    R(n.w2.frequency, f * 1.53, 0.04)
-    R(n.w3.frequency, f * 0.5, 0.04)
-    R(n.g1.frequency, f * 0.25, 0.04)
-    R(n.m3.frequency, (2600 + f * 2.2) * ps)
-    const load =
-      st.throttle > 0 ? 0.4 + 0.6 * st.throttle : st.regen ? 0.32 : 0.05
-    const presence = Math.min(1, u / 3)
-    R(n.motor.gain, (presence * load * 0.26) / (1 + u / 70))
-    R(n.w2g.gain, st.regen ? 0.32 : 0.14)
-    R(n.growl.gain, presence * st.throttle * clamp(1 - u / 70, 0.3, 1) * 0.05)
-    R(n.growlLP.frequency, 260 + u * 22 + st.throttle * 380)
-    R(n.inv.gain, presence * load * 0.008)
-    R(n.motorLP.frequency, 1600 + u * 55)
-    const gr = st.grounded
-    R(n.road.gain, gr * Math.min(0.34, u / 65))
-    R(n.roadLP.frequency, 160 + u * 16)
-    R(n.tread.gain, gr * Math.min(0.07, (u / 75) ** 2 * 0.09))
-    R(n.treadBP.frequency, 650 + u * 9)
-    R(n.wind.gain, Math.min(0.42, (st.airspeed / 68) ** 2 * 0.5))
-    R(n.windBP.frequency, (450 + st.airspeed * 14) * ps)
-    // smooth attack and a slower release so a tyre hovering at the limit doesn't flutter
-    const sq = clamp((st.skid - 0.12) / 0.6, 0, 1)
-    const level = sq * sq * (3 - 2 * sq)
-    R(n.skid.gain, level * 3.2, level > this.squeal ? 0.1 : 0.25)
-    this.squeal = level
-    R(n.toneG.gain, level * 0.015, 0.15)
-    R(n.skidLo.frequency, (1150 + 250 * st.skid) * ps, 0.2)
-    R(n.skidHi.frequency, (2300 + 300 * st.skid) * ps, 0.2)
-    R(n.tone.frequency, (1100 + 200 * st.skid) * ps, 0.3)
-    R(n.scrub.gain, gr * st.skid * Math.min(1, u / 6) * 0.35, 0.12)
+      R = this.R
+    this.now = this.ctx.currentTime
+    this.frame = (this.frame || 0) + 1
+    this.ps = st.pitch
+    const ps = st.pitch
+    // The car, its tyres and its motors are set every frame; the world round it (where the car is
+    // heard from, the traffic, the city's life) on the frames the mix marks st.world, every other
+    // one (with st.worldDt, the time since the last), and the city's bed every other world frame.
+    const dt = st.dt,
+      world = st.world !== false
+    if (world || st.cut) {
+      st.dt = st.worldDt || dt
+      this.updateSpace(st)
+      st.dt = dt
+    }
+    this.updateDrive(st)
+    this.updateTyres(st)
+    this.updateImpacts(st)
     const thr = st.main * 0.55 + st.lift * 0.6 + st.side * 0.2
-    R(n.hiss.gain, Math.min(0.7, thr * 0.55), 0.03)
-    R(n.hissHP.frequency, 1300 * ps + 400 * thr)
-    R(n.roar.gain, Math.min(0.8, (st.main + st.lift) * 0.45), 0.04)
-    R(n.roarLP.frequency, (300 + 250 * thr) * ps)
+    R(n.hiss.gain, Math.min(0.7, thr * 0.5), 0.03)
+    R(n.roar2.gain, Math.min(0.8, (st.main + st.lift) * 0.45), 0.04)
+    R(n.crackle.gain, Math.max(0, st.main + st.lift - 0.4) * 0.35, 0.05)
+    if (thr > 0) {
+      R(n.hissHP.frequency, 1300 * ps + 400 * thr)
+      R(n.roarLP2.frequency, (300 + 250 * thr) * ps)
+    }
     // the valves opening, and slamming shut
     if (thr > 0.25 && this.thr < 0.06) this.ignite(thr)
     else if (thr < 0.04 && this.thr > 0.3) this.shutoff()
     this.thr = thr
     R(n.fan.gain, st.suction * 0.07, 0.2)
-    R(n.fanO.frequency, (60 + st.suction * 120) * ps, 0.3)
-    R(n.fanBP.frequency, (120 + st.suction * 260) * ps, 0.3)
-    // the street, and the echo off it: close walls in the city, open desert at the test site
-    R(n.city.gain, st.city ? (st.night ? 0.03 : 0.05) : 0, 0.5)
-    R(n.desert.gain, st.city ? 0 : 0.025, 0.5)
-    // (more of it between tall buildings than out on the beach or up over the roofs)
-    R(n.verbOut.gain, st.city ? 0.16 + 0.34 * (st.enclosed ?? 1) : 0.15, 0.5)
-    this.traffic(st.cars || [], ps, R)
-    this.updateStreet(st, R)
-    if (st.city) this.ambience(st.dt, st.honks, st.night)
-  }
-  // cars: [{ d, pan, doppler, v, big, ev }], nearest first
-  traffic (cars, ps, R) {
-    this.n.cars.forEach((voice, i) => {
-      const c = cars[i]
-      if (!c) return R(voice.g.gain, 0, 0.25)
-      const near = clamp(1.4 / (1 + c.d / 6), 0, 1)
-      R(voice.g.gain, near * (0.045 + Math.min(0.1, c.v / 110)), 0.12)
-      // firing frequency: a diesel bus burbles low, a car's four-cylinder sits higher
-      const fire = (c.big ? 24 + c.v * 1.2 : 34 + c.v * 2.4) * c.doppler * ps
-      R(voice.eng.frequency, fire, 0.08)
-      R(voice.sub.frequency, fire / 2, 0.08)
-      R(voice.lp.frequency, 220 + c.v * 14, 0.1)
-      R(voice.eg.gain, c.ev ? 0 : 0.5, 0.1)
-      R(voice.whine.frequency, (260 + c.v * 30) * c.doppler * ps, 0.08)
-      R(voice.wg.gain, c.ev ? 0.025 * Math.min(1, c.v / 6) : 0, 0.1)
-      R(voice.tg.gain, Math.min(1.2, c.v / 10), 0.1)
-      R(voice.p.pan, c.pan, 0.08)
-    })
-  }
-  // now and then a bird (not at night), or (once drivers honk at all: honks) a horn a few streets
-  // away
-  ambience (dt, honks, night) {
-    if (!night) this.birdT -= dt
-    if (honks) this.farT -= dt
-    if (this.birdT < 0) {
-      this.birdT = 2 + Math.random() * 7
-      this.bird(Math.random() * 1.6 - 0.8)
+    R(n.fanAir.gain, st.suction * 0.035, 0.2)
+    if (st.suction > 0) {
+      R(n.fanO.frequency, (60 + st.suction * 120) * ps, 0.3)
+      R(n.fanBP.frequency, (120 + st.suction * 260) * ps, 0.3)
     }
-    if (this.farT < 0) {
-      this.farT = 9 + Math.random() * 18
-      this.honk(
-        HORNS[Math.floor(Math.random() * HORNS.length)],
-        0.12,
-        Math.random() * 1.6 - 0.8,
-        Math.random() < 0.4
-      )
+    R(n.desert.gain, st.city ? 0 : 0.02, 0.5)
+    R(n.hornOn.gain, this.hornOn || this.now < this.hornOff ? 1 : 0, 0.005)
+    if (world) {
+      st.dt = st.worldDt || dt
+      this.updateCars(st)
+      this.updateAmbience(st)
+      this.slowDt = (this.slowDt || 0) + st.dt
+      if ((this.worlds = (this.worlds || 0) + 1) & 1) {
+        st.dt = this.slowDt
+        this.updateStreet(st)
+        this.slowDt = 0
+      }
+      st.dt = dt
     }
+    this.gateLanes()
   }
 }
-Object.assign(SoundEngine.prototype, ONE_SHOTS, STREET)
+// a disc horn's spectrum: every harmonic, falling off slowly, the diaphragm slapping its stop
+// making it buzzy; an air horn's bell favours the odd ones
+function hornHarmonics (n, tilt, odd) {
+  const a = {}
+  for (let k = 1; k <= n; k++)
+    a[k] =
+      (odd && k % 2 === 0 ? 0.45 : 1) * Math.pow(k, -tilt) * (k < 4 ? 1 : 1.4)
+  return a
+}
+Object.assign(
+  SoundEngine.prototype,
+  SPACE,
+  DRIVE,
+  TYRES,
+  IMPACTS,
+  ONE_SHOTS,
+  CARS,
+  STREET,
+  AMBIENCE
+)
