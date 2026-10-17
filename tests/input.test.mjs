@@ -181,3 +181,22 @@ test('the steering keys ease the wheel over: gently at speed, quickly parking or
   }
   assert.equal(c.steer, 0, 'back to the middle in a fifth of a second')
 })
+
+test('W and S together at a crawl are a burnout; at speed S still brakes', () => {
+  const input = new Input({ onDrive () {}, onCommand () {} })
+  const sim = new Sim()
+  sim.reset('start')
+  sim.pos.set(-100, 0, 300)
+  sim.syncPose()
+  down('KeyW')
+  down('KeyS')
+  let c = input.controls(sim, 'off')
+  assert.ok(c.burnout && c.throttle === 1, 'a burnout at a standstill')
+  assert.equal(c.reverse, 0, 'not reversing')
+  sim.vel.set(25, 0, 0)
+  sim.speed = 25
+  c = input.controls(sim, 'off')
+  assert.ok(!c.burnout && c.brake === 1, 'at speed, the brake')
+  up('KeyW')
+  up('KeyS')
+})
