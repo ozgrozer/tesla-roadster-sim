@@ -18,6 +18,21 @@ import { buildBuildings, BEACON } from './cityBuildings.js'
 const _pv = new THREE.Matrix4(),
   _view = new THREE.Frustum()
 
+// Depth materials for the instanced meshes' shadows, one for those with colours of their own and one
+// for those without. three.js draws every shadow caster with one shared depth material, and has to
+// pick its program again whenever the next caster differs from the last in being instanced or in
+// having instance colours: a car's paint has them, its glass and trim don't, so the city's shadow
+// pass changed program fifteen times a frame.
+const depth = () =>
+  new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking })
+const DEPTH = { plain: depth(), tinted: depth() }
+function depthMaterials (group) {
+  group.traverse(o => {
+    if (o.isInstancedMesh && o.castShadow && !o.customDepthMaterial)
+      o.customDepthMaterial = o.instanceColor ? DEPTH.tinted : DEPTH.plain
+  })
+}
+
 export class CityView {
   constructor () {
     this.group = null
@@ -45,6 +60,7 @@ export class CityView {
     this.falling = false
     this.cars = new TrafficView(g)
     this.people = new PedView(g)
+    depthMaterials(g)
     g.visible = false
     scene.add(g)
     this.group = g
@@ -89,7 +105,12 @@ export class CityView {
   // before the frame is drawn: the city's shadow map, if it is due (with the cars and hide, the
   // Roadster, left out of it)
   shadows (camera, hide) {
-    this.shadow?.update(camera, [...this.cars.meshes, this.people.mesh, ...hide])
+    if (this.shadow?.pending)
+      this.shadow.update(camera, [
+        ...this.cars.meshes,
+        this.people.mesh,
+        ...hide
+      ])
   }
   update (dt, clock, traffic, camera, peds) {
     if (!this.on) return
