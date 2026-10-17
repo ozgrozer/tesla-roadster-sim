@@ -30,6 +30,42 @@ export function tyreGeometry () {
   g.computeVertexNormals()
   return g
 }
+// A wheel seen from far off (beyond NEAR in traffic.js): the tyre with eight sides and a plainer
+// section, and both rim faces as flat grey discs, in vertex colours: about a third of the
+// triangles of a near wheel with its rims, drawn in one call for all of them.
+export function farWheelGeometry () {
+  const tyre = new THREE.LatheGeometry(
+    [
+      [0.64, -0.44],
+      [0.95, -0.48],
+      [1.0, -0.3],
+      [1.0, 0.3],
+      [0.95, 0.48],
+      [0.64, 0.44]
+    ].map(([r, z]) => new THREE.Vector2(r, z)),
+    8
+  ).rotateX(Math.PI / 2)
+  tyre.computeVertexNormals()
+  const face = z =>
+    new THREE.CircleGeometry(FACE_R, 8)
+      .rotateY(z > 0 ? 0 : Math.PI)
+      .translate(0, 0, z)
+  const colour = (g, c) => {
+    const n = (g.index ? g.index.count : g.attributes.position.count)
+    const col = new THREE.Color(c),
+      arr = new Float32Array(n * 3)
+    for (let i = 0; i < n; i++) arr.set([col.r, col.g, col.b], i * 3)
+    const flat = g.index ? g.toNonIndexed() : g
+    flat.setAttribute('color', new THREE.BufferAttribute(arr, 3))
+    return flat
+  }
+  return merge([
+    colour(tyre, 0x17181a),
+    colour(face(FACE_Z), 0x9a9da2),
+    colour(face(-FACE_Z), 0x9a9da2)
+  ])
+}
+
 // both faces of the rim, each looking out of its own side of the wheel
 export function rimGeometry () {
   return merge([
