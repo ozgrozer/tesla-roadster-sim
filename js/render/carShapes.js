@@ -1,12 +1,15 @@
 // The traffic's car bodies, lofted like the Roadster (loft.js): a body with sides that swell out
 // below the shoulder and rounded corners and bumpers, a cabin that narrows above the beltline under a
-// roof with rounded edges, glass for the windshield, side and rear windows, a painted roof, wheel
-// arches cut into the body over dark wheel wells, and the trim (bumpers, grille, mirrors, plates,
-// handles, the doors' shut lines, a black B-pillar and the window line's rubber) baked in vertex
-// colours. One shape per traffic type.
+// roof with rounded edges, glass for the windshield, side and rear windows (framed in black), a
+// painted roof, wheel arches cut into the body over dark wheel wells, a darker plastic valance under
+// each bumper (and cladding along an SUV's or pickup's sills), wing mirrors in the body colour, and
+// the trim (number plates, grille, the mirrors' arms, handles, the doors' shut lines, a black B-pillar
+// and the window line's rubber, a bus's window pillars and doors) baked in vertex colours, with the
+// lamps (carLamps.js) in with it. One shape per traffic type.
 import * as THREE from 'three'
 import { merge, box, tint } from './geo.js'
-import { loftGeos, seam } from './loft.js'
+import { loftGeos, seam, at } from './loft.js'
+import { lampsFor, headInner } from './carLamps.js'
 
 // Per type: floor and sill heights, the beltline, hood (at the cowl) and nose heights, the deck and
 // tail heights, the roof, and along x the windshield's foot (ws), the roof's front (rf) and back (rr)
@@ -15,14 +18,15 @@ import { loftGeos, seam } from './loft.js'
 // door's shut line, front to back; pillars: x of each black pillar between side windows.
 // prettier-ignore
 export const SPECS = {
-  sedan: { floor: 0.2, sill: 0.34, belt: 0.95, hood: 0.88, nose: 0.74, deck: 0.98, tail: 0.86, roof: 1.45, ws: 0.95, rf: 0.12, rr: -0.95, rw: -1.6, r: 0.33, axles: [1.42, -1.42], lights: [0.68, 0.82], doors: [0.98, -0.3, -1.04], pillars: [-0.3] },
-  hatch: { floor: 0.2, sill: 0.34, belt: 0.96, hood: 0.88, nose: 0.74, deck: 1.0, tail: 0.92, roof: 1.48, tailRoof: 1.28, ws: 0.82, rf: 0.0, rr: -1.55, rw: -2.1, r: 0.31, axles: [1.3, -1.28], lights: [0.7, 0.9], doors: [0.9, -0.42, -1.08], pillars: [-0.42] },
-  suv: { floor: 0.3, sill: 0.46, belt: 1.1, hood: 1.04, nose: 0.92, deck: 1.12, tail: 1.06, roof: 1.73, ws: 1.18, rf: 0.38, rr: -1.95, rw: -2.3, r: 0.38, axles: [1.48, -1.45], lights: [0.88, 1.02], doors: [1.02, -0.26, -1.12], pillars: [-0.26] },
-  pickup: { floor: 0.36, sill: 0.5, belt: 1.15, hood: 1.12, nose: 1.0, deck: 1.16, tail: 1.12, roof: 1.84, ws: 1.25, rf: 0.55, rr: -0.62, rw: -0.72, r: 0.4, axles: [1.75, -1.8], lights: [0.96, 1.0], doors: [1.24, 0.0, -0.64], pillars: [0.0] },
-  van: { floor: 0.38, sill: 0.52, belt: 1.2, hood: 1.18, nose: 1.0, deck: 2.66, tail: 2.6, roof: 2.74, tailRoof: 2.7, ws: 2.6, rf: 1.75, rr: -9, rw: -9, r: 0.4, axles: [2.15, -2.2], lights: [1.0, 1.1], sideGlass: [1.25, 2.6], doors: [1.68, 0.8, 0.55, -0.65], pillars: [] },
-  bus: { floor: 0.36, sill: 0.5, belt: 1.75, hood: 1.45, nose: 1.4, deck: 3.0, tail: 2.96, roof: 3.12, tailRoof: 3.08, ws: 5.75, rf: 5.62, rr: -9, rw: -9, r: 0.5, axles: [3.65, -3.45], lights: [0.75, 0.9], inset: 0.04, doors: [], pillars: [] }
+  sedan: { floor: 0.2, sill: 0.34, belt: 0.95, hood: 0.88, nose: 0.74, deck: 0.98, tail: 0.86, roof: 1.45, ws: 0.95, rf: 0.12, rr: -0.95, rw: -1.6, r: 0.33, axles: [1.42, -1.42], lights: [0.66, 0.8], doors: [0.98, -0.3, -1.04], pillars: [-0.3], valance: 0.17 },
+  hatch: { floor: 0.2, sill: 0.34, belt: 0.96, hood: 0.88, nose: 0.74, deck: 1.0, tail: 0.92, roof: 1.48, tailRoof: 1.28, ws: 0.82, rf: 0.0, rr: -1.55, rw: -2.1, r: 0.31, axles: [1.3, -1.28], lights: [0.68, 0.9], doors: [0.9, -0.42, -1.08], pillars: [-0.42], valance: 0.17 },
+  suv: { floor: 0.3, sill: 0.46, belt: 1.1, hood: 1.04, nose: 0.92, deck: 1.12, tail: 1.06, roof: 1.73, tailRoof: 1.62, ws: 1.18, rf: 0.38, rr: -1.9, rw: -2.5, r: 0.38, axles: [1.48, -1.45], lights: [0.88, 1.02], doors: [1.02, -0.26, -1.12], pillars: [-0.26, -1.55], valance: 0.22, clad: true },
+  pickup: { floor: 0.36, sill: 0.5, belt: 1.15, hood: 1.12, nose: 1.0, deck: 1.16, tail: 1.12, roof: 1.84, ws: 1.25, rf: 0.55, rr: -0.62, rw: -0.72, r: 0.4, axles: [1.75, -1.8], lights: [0.96, 1.0], doors: [1.24, 0.0, -0.64], pillars: [0.0], bumpers: 0x8d9196, clad: true },
+  van: { floor: 0.38, sill: 0.52, belt: 1.2, hood: 1.18, nose: 1.0, deck: 2.66, tail: 2.6, roof: 2.74, tailRoof: 2.7, ws: 2.6, rf: 1.75, rr: -9, rw: -9, r: 0.4, axles: [2.15, -2.2], lights: [1.0, 1.1], sideGlass: [1.25, 2.6], doors: [1.68, 0.8, 0.55, -0.65], pillars: [], bumpers: 0x1d1e21 },
+  bus: { floor: 0.36, sill: 0.5, belt: 1.75, hood: 1.45, nose: 1.4, deck: 3.0, tail: 2.96, roof: 3.12, tailRoof: 3.08, ws: 5.75, rf: 5.62, rr: -9, rw: -9, r: 0.5, axles: [3.65, -3.45], lights: [0.75, 0.9], inset: 0.04, sideGlass: [-5.45, 5.5], doors: [], pillars: [-4.9, -3.75, -2.6, -1.45, 0.2, 1.3, 2.4, 3.45, 4.75], bumpers: 0x1d1e21 }
 }
 SPECS.taxi = SPECS.sedan
+const DARK = 0x1d1e21
 
 // a station's half section: floor centre, floor edge, sill, the lower side swelling out to the widest
 // point, the shoulder and the beltline, then the glass's foot, the roof's edge, its rounded shoulder
@@ -126,6 +130,9 @@ export function carShape (T) {
   const trim = trimFor(T, S, L, hw)
   trim.push(tint(g.get('under'), 0x16171a))
   if (g.get('rubber')) trim.push(tint(g.get('rubber'), 0x101113))
+  // the side windows framed in black along their tops
+  const top = frame(body, G + 1, G, Math.max(side[0], -L + 0.3), Math.min(side[1], L - 0.3))
+  trim.push(tint(top, 0x0c0d0f))
   // the doors' shut lines, from the sill to the beltline (over an arch, only above it), and a black
   // pillar between the side windows
   const overArch = x => S.axles.some(a => Math.abs(x - a) < S.r + 0.1)
@@ -134,41 +141,76 @@ export function carShape (T) {
   for (const x of S.doors)
     line(x, overArch(x) ? 4 : 1, G - 1, 0.012, 0.003, 0x0e0f11)
   for (const x of S.pillars) line(x, G, G + 1, 0.1, 0.004, 0x0b0c0e)
+  // wing mirrors: a cap in the body colour on a black arm (trimFor)
+  const paint = [g.get('paint')]
+  for (const s of [-1, 1])
+    paint.push(
+      new THREE.SphereGeometry(1, 10, 6)
+        .scale(0.05, 0.05, 0.085)
+        .translate(S.ws - 0.15, S.belt + 0.06, s * (hw + 0.1))
+    )
+  // a bus's windscreen and back window, a van's rear door windows: glass on the end faces
+  const glass = [g.get('glass') || box(0, 0, 0, 0.01, 0.01, 0.01)]
+  if (T.name === 'bus') {
+    glass.push(box(L - 0.004, 1.05, -hw + 0.1, L + 0.006, 2.66, hw - 0.1))
+    glass.push(box(-L - 0.006, 1.85, -hw + 0.3, -L + 0.004, 2.6, hw - 0.3))
+  } else if (T.name === 'van')
+    for (const s of [-1, 1])
+      glass.push(box(-L - 0.006, 1.45, s * 0.06, -L + 0.004, 2.3, s * (hw - 0.25)))
   return {
-    paint: g.get('paint'),
-    glass: g.get('glass') || box(0, 0, 0, 0.01, 0.01, 0.01),
-    trim: merge(trim),
-    arch: { axles: S.axles, r: S.r + 0.07, y: S.r, wellIn: hw - 0.28 },
+    paint: merge(paint),
+    glass: merge(glass),
+    trim: withLamps(trim, lampsFor(T, S, L, hw)),
+    arch: {
+      axles: S.axles,
+      r: S.r + 0.07,
+      y: S.r,
+      wellIn: hw - 0.28,
+      // the dark plastic: under each bumper, and along the sills of the rugged ones
+      L,
+      valance: S.valance ? S.floor + S.valance : -1,
+      clad: S.clad ? S.sill + 0.07 : -1
+    },
     S
   }
 }
 
-// bumpers, grille, mirrors, plates, door handles, dark wheel wells, and the taxi's roof sign and the
-// bus's doors and destination board, as vertex-coloured boxes
+// bumpers (on the utility types: the cars' are part of the body), grille, number plates, the
+// mirrors' arms, door handles, dark wheel wells, and a bus's doors, as vertex-coloured boxes
 function trimFor (T, S, L, hw) {
-  const dark = 0x1d1e21,
-    black = 0x0d0e10
+  const black = 0x0d0e10
   const parts = []
   const put = (c, ...b) => parts.push(tint(box(...b), c))
   const yb = S.floor + 0.04
-  put(dark, L - 0.12, yb, -hw + 0.1, L + 0.04, yb + 0.24, hw - 0.1) // front bumper
-  put(dark, -L - 0.04, yb, -hw + 0.1, -L + 0.12, yb + 0.24, hw - 0.1) // rear bumper
-  put(
-    black,
-    L - 0.02,
-    yb + 0.25,
-    -hw * 0.45,
-    L + 0.02,
-    S.lights[0] + 0.02,
-    hw * 0.45
-  ) // grille
-  put(0xe8e8e2, L + 0.03, yb + 0.06, -0.24, L + 0.05, yb + 0.17, 0.24) // plates
-  put(0xe8e8e2, -L - 0.05, yb + 0.1, -0.24, -L - 0.03, yb + 0.21, 0.24)
+  if (S.bumpers) {
+    put(S.bumpers, L - 0.12, yb, -hw + 0.1, L + 0.04, yb + 0.24, hw - 0.1)
+    put(S.bumpers, -L - 0.04, yb, -hw + 0.1, -L + 0.12, yb + 0.24, hw - 0.1)
+  }
+  // the grille, between the headlights, with a brighter surround
+  const gy0 = yb + (S.bumpers ? 0.25 : 0.2),
+    gy1 = S.lights[0] + 0.03,
+    gz = Math.min(hw * 0.42, headInner(T, hw) - 0.04)
+  put(0x3a3d42, L - 0.02, gy0 - 0.015, -gz, L + 0.004, gy1 + 0.015, gz)
+  put(black, L - 0.02, gy0, -gz + 0.02, L + 0.01, gy1, gz - 0.02)
+  // number plates, front and back: white, the registration in dark letters, a blue band
+  const ex = S.bumpers ? 0.05 : 0.01
+  for (const [x, y, f] of [
+    [L + ex, yb + 0.06, 1],
+    [-L - ex, yb + (S.bumpers ? 0.1 : 0.26), -1]
+  ]) {
+    const x0 = Math.min(x, x + f * 0.012),
+      x1 = Math.max(x, x + f * 0.012)
+    put(0xe8e8e2, x0, y, -0.24, x1, y + 0.11, 0.24)
+    put(0x1c1e24, x0 + f * 0.004, y + 0.03, -0.17, x1 + f * 0.004, y + 0.08, 0.2)
+    put(0x2a4fa0, x0 + f * 0.004, y + 0.01, -0.235, x1 + f * 0.004, y + 0.1, -0.2)
+  }
   for (const s of [-1, 1]) {
-    // mirrors at the foot of the A-pillars
-    const mx = S.ws - 0.12,
-      my = S.belt + 0.06
-    put(black, mx - 0.08, my, s * hw, mx + 0.06, my + 0.11, s * (hw + 0.16))
+    // the mirrors' arms, from the foot of the A-pillars (their caps are painted: carShape)
+    const mx = S.ws - 0.15,
+      my = S.belt + 0.03
+    put(black, mx - 0.03, my, s * (hw - 0.02), mx + 0.03, my + 0.04, s * (hw + 0.05))
+    // (the glass, facing back)
+    put(0x1a2a36, mx - 0.052, my - 0.008, s * (hw + 0.035), mx - 0.046, my + 0.068, s * (hw + 0.165))
     // door handles
     for (const x of T.name === 'bus'
       ? []
@@ -213,14 +255,59 @@ function trimFor (T, S, L, hw) {
       parts.push(tint(arc, black))
     }
   }
-  if (T.name === 'taxi')
-    put(0xf6f1d8, -0.45, S.roof - 0.02, -0.3, 0.15, S.roof + 0.2, 0.3)
   if (T.name === 'bus') {
-    put(black, L - 0.02, 2.75, -hw + 0.2, L + 0.02, 2.98, hw - 0.2) // destination board
     put(0x202428, 3.6, 0.45, hw - 0.01, 4.6, 2.65, hw + 0.012) // front door
     put(0x202428, -1.0, 0.45, hw - 0.01, 0.0, 2.65, hw + 0.012) // middle door
+    put(black, L - 0.01, 2.68, -0.9, L + 0.004, 2.98, 0.9) // (round the route board)
   }
   return parts
+}
+
+// A black band along section point k (towards point k2) from x0 to x1, both sides: a window frame
+function frame (stations, k, k2, x0, x1, w = 0.035) {
+  const pos = []
+  const n = Math.max(2, Math.ceil((x1 - x0) / 0.25))
+  for (let i = 0; i < n; i++) {
+    const xa = x0 + ((x1 - x0) * i) / n,
+      xb = x0 + ((x1 - x0) * (i + 1)) / n
+    const edge = x => {
+      const P = at(stations, x, k),
+        Q = at(stations, x, k2)
+      const l = Math.hypot(Q[0] - P[0], Q[1] - P[1]) || 1
+      const u = [(Q[0] - P[0]) / l, (Q[1] - P[1]) / l]
+      // (a hair proud of the surface)
+      const o = [u[1] * 0.004, -u[0] * 0.004]
+      return [
+        [P[0] + o[0], P[1] + o[1]],
+        [P[0] + u[0] * w + o[0], P[1] + u[1] * w + o[1]]
+      ]
+    }
+    const [a, b] = edge(xa),
+      [c, d] = edge(xb)
+    for (const sg of [1, -1]) {
+      const v = (x, [z, y]) => [x, y, sg * z]
+      pos.push(...v(xa, a), ...v(xb, c), ...v(xa, b))
+      pos.push(...v(xb, c), ...v(xb, d), ...v(xa, b))
+    }
+  }
+  const g = new THREE.BufferGeometry()
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3))
+  g.computeVertexNormals()
+  return g
+}
+// the trim merged, the lamps (carLamps.js) with it, keeping which lamp each vertex is
+function withLamps (trim, lamps) {
+  const parts = [...trim, ...lamps]
+  const g = merge(parts)
+  const tags = new Float32Array(g.attributes.position.count)
+  let o = 0
+  for (const p of parts) {
+    const n = p.index ? p.index.count : p.attributes.position.count
+    if (p.attributes.aLamp) tags.set(p.attributes.aLamp.array, o)
+    o += n
+  }
+  g.setAttribute('aLamp', new THREE.BufferAttribute(tags, 1))
+  return g
 }
 
 // a body material that cuts the arches: anything outboard of the wheel wells within reach of a
@@ -235,18 +322,42 @@ export function archMaterial (base, arch) {
         '#include <begin_vertex>',
         '#include <begin_vertex>\nvCarPos = position;'
       )
+    const f = v => v.toFixed(3)
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vCarPos;')
+      .replace(
+        '#include <common>',
+        '#include <common>\nvarying vec3 vCarPos;\nbool carDark;'
+      )
       .replace(
         'void main() {',
         `void main() {
-  if (abs(vCarPos.z) > ${arch.wellIn.toFixed(3)}) {
-    float dy = vCarPos.y - ${arch.y.toFixed(3)};
+  if (abs(vCarPos.z) > ${f(arch.wellIn)}) {
+    float dy = vCarPos.y - ${f(arch.y)};
     vec2 a = vec2(vCarPos.x - ${a0}, dy), b = vec2(vCarPos.x - ${a1}, dy);
     if (min(dot(a, a), dot(b, b)) < ${(arch.r * arch.r).toFixed(4)}) discard;
-  }`
+  }
+  // dark plastic: the valance under each bumper, and cladding along the sills
+  carDark = (abs(vCarPos.x) > ${f(arch.L - 0.34)} && vCarPos.y < ${f(arch.valance)})
+    || vCarPos.y < ${f(arch.clad)};`
+      )
+      .replace(
+        '#include <color_fragment>',
+        '#include <color_fragment>\nif (carDark) diffuseColor.rgb = vec3(0.03, 0.031, 0.034);'
+      )
+      .replace(
+        '#include <roughnessmap_fragment>',
+        '#include <roughnessmap_fragment>\nif (carDark) roughnessFactor = 0.62;'
+      )
+      .replace(
+        '#include <metalnessmap_fragment>',
+        '#include <metalnessmap_fragment>\nif (carDark) metalnessFactor = 0.0;'
+      )
+      .replace(
+        '#include <lights_physical_fragment>',
+        '#include <lights_physical_fragment>\nif (carDark) material.clearcoat = 0.0;'
       )
   }
-  m.customProgramCacheKey = () => `arches ${a0} ${a1} ${arch.r} ${arch.wellIn}`
+  m.customProgramCacheKey = () =>
+    `arches ${a0} ${a1} ${arch.r} ${arch.wellIn} ${arch.valance} ${arch.clad}`
   return m
 }
