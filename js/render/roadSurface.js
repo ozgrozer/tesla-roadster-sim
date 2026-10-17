@@ -62,12 +62,12 @@ export function roadMaterial (opts) {
           bool alongZ = abs(u.x) < ${f(ROAD_HW)} && abs(u.y) > ${f(STOP)};
           float lat = alongX ? abs(u.y) : abs(u.x), along = alongX ? abs(u.x) : abs(u.y);
           if (alongX || alongZ) {
-            float tr = 0.0, oil = 0.0;
+            float tr = 0.0, oil = 0.0, drips = smoothstep(0.45, 0.75, rNoise(p * 1.7));
             for (int i = 0; i < 2; i++) {
               float a = abs(lat - (i == 0 ? ${f(LANE_OFF[0])} : ${f(LANE_OFF[1])}));
               float t = (a - 0.8) / 0.3;
               tr += exp(-t * t);
-              oil += exp(-a * a * 16.0) * smoothstep(0.45, 0.75, rNoise(p * 1.7));
+              oil += exp(-a * a * 16.0) * drips;
             }
             // fading in past the stop line, heaviest where cars brake for it
             float wear = smoothstep(${f(STOP)}, ${f(STOP + 6)}, along) *
