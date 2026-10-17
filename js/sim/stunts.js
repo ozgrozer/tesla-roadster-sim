@@ -10,6 +10,25 @@ const DRIFT_SPEED = 9 // m/s, about 30 km/h
 const MISS = 1 // m of daylight between the cars that still counts as a near miss
 const MISS_SPEED = 12 // m/s they pass each other at, at least
 
+// each step of a burnout: every full turn of a donut scores, more for each one on top (to a point)
+const DONUT_PTS = 250
+export function donuts (s, dt) {
+  if (!s.burning) {
+    s.donutTurn = 0
+    s.donutCount = 0
+    return
+  }
+  s.donutTurn = (s.donutTurn || 0) + s.yawRate * dt
+  if (Math.abs(s.donutTurn) < 2 * Math.PI) return
+  s.donutTurn -= Math.sign(s.donutTurn) * 2 * Math.PI
+  s.donutCount = (s.donutCount || 0) + 1
+  const n = s.donutCount
+  s.emit('trick', {
+    text: n > 1 ? `${n}× Donut` : 'Donut',
+    pts: DONUT_PTS * Math.min(n, 4) // (up to four times as much: holding on isn't a jackpot)
+  })
+}
+
 // each step: the drift so far (s.drifting), and its score once it is over
 export function drift (s, dt) {
   const d = s.drifting || (s.drifting = { t: 0, sum: 0, calm: 0 })
