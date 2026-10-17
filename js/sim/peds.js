@@ -1,160 +1,39 @@
 // People on foot: they walk the pavements round the blocks, keeping to a line a metre or three in
-// from the kerb, and at each corner some of them cross: they step to the kerb by the crosswalk, wait
-// for the walk (the first few seconds of the cross street's green, when the street they cross has
-// red, so they are over before it changes) and cross on the stripes to the next block. Traffic and
-// Autopilot stop for anyone in the road (traffic.peds). Anyone in the Roadster's way (or a car's it
-// sent sliding) dives clear, then walks back to the pavement; nobody is ever left under the car.
+// from the kerb, each at their own pace (and a few jogging), some in pairs, some standing about, and
+// at each corner some of them cross: they step to the kerb by the crosswalk, wait for the walk (the
+// first few seconds of the cross street's green, when the street they cross has red, so they are
+// over before it changes) and cross on the stripes to the next block. Now and then someone jaywalks
+// (crowd.js). Traffic and Autopilot stop for anyone in the road (traffic.peds). Anyone in the
+// Roadster's way (or a car's it sent sliding) dives clear, then walks back to the pavement; nobody
+// is ever left under the car; and when it does something frightening close by, people run.
 // They live in a bubble round the player, like the traffic: those left far behind turn up ahead.
 import { kerbDist } from './street.js'
+import { CROWD } from './crowd.js'
+import { warm } from './traffic.js'
 import { CAR, clamp } from './constants.js'
+import { rng, BLOCKS } from './city.js'
 import {
-  N,
-  rng,
-  HALF,
-  PITCH,
-  CYCLE,
-  BLOCKS,
-  CURB_R,
-  ROAD_HW,
-  nodeAt
-} from './city.js'
+  ring,
+  ringAt,
+  walkOn,
+  crossings,
+  nearestOn,
+  blockNear,
+  standBack
+} from './pavement.js'
 
-const CROSS_AT = 9.1 // the crosswalk's middle, from the junction's centre (cityGround.js)
-const KERB = ROAD_HW + 0.5 // where people wait and step off, from the road's centre line
-const WALK_FOR = 4 // s into the cross street's green during which people start over
-
-// A block's pavement ring at d in from the kerb: a rounded rectangle, its corners' radius and the
-// straight runs between them. Laid out from one end of its top edge, round the four corners (0: the
-// corner at x1, z0, then x1 z1, x0 z1 and x0 z0).
-function ring (b, d) {
-  const r = Math.max(0.6, CURB_R - d),
-    x0 = b.x0 + d,
-    x1 = b.x1 - d,
-    z0 = b.z0 + d,
-    z1 = b.z1 - d
-  const w = x1 - x0 - 2 * r,
-    h = z1 - z0 - 2 * r,
-    arc = (Math.PI / 2) * r
-  return {
-    b,
-    r,
-    len: 2 * (w + h) + 4 * arc,
-    runs: [w, arc, h, arc, w, arc, h, arc],
-    // each straight's start and direction, each corner's centre and starting angle
-    edges: [
-      [x0 + r, z0, 1, 0],
-      [x1, z0 + r, 0, 1],
-      [x1 - r, z1, -1, 0],
-      [x0, z1 - r, 0, -1]
-    ],
-    arcs: [
-      [x1 - r, z0 + r, -Math.PI / 2],
-      [x1 - r, z1 - r, 0],
-      [x0 + r, z1 - r, Math.PI / 2],
-      [x0 + r, z0 + r, Math.PI]
-    ]
-  }
-}
-// the point s along a ring, its heading, and which piece of it that is (odd: a corner)
-export function ringAt (R, s, out) {
-  let u = ((s % R.len) + R.len) % R.len,
-    k = 0
-  while (k < 7 && u > R.runs[k]) u -= R.runs[k++]
-  out.piece = k
-  if (k % 2 === 0) {
-    const [sx, sz, dx, dz] = R.edges[k / 2]
-    out.x = sx + dx * u
-    out.z = sz + dz * u
-    out.hx = dx
-    out.hz = dz
-  } else {
-    const [cx, cz, a0] = R.arcs[(k - 1) / 2],
-      a = a0 + u / R.r
-    out.x = cx + R.r * Math.cos(a)
-    out.z = cz + R.r * Math.sin(a)
-    out.hx = -Math.sin(a)
-    out.hz = Math.cos(a)
-  }
-  return out
-}
-// the s on a ring nearest (x, z), by stepping round it (a metre at a time, then refining)
-function nearestOn (R, x, z) {
-  const P = {}
-  let best = 0,
-    bd = Infinity
-  for (let s = 0; s < R.len; s += 1) {
-    ringAt(R, s, P)
-    const d = (P.x - x) ** 2 + (P.z - z) ** 2
-    if (d < bd) {
-      bd = d
-      best = s
-    }
-  }
-  for (let s = best - 1; s < best + 1; s += 0.1) {
-    ringAt(R, s, P)
-    const d = (P.x - x) ** 2 + (P.z - z) ** 2
-    if (d < bd) {
-      bd = d
-      best = s
-    }
-  }
-  return best
-}
-// the block (x, z) is on or nearest, by the grid
-function blockNear (x, z) {
-  const bx = clamp(Math.floor((x + HALF) / PITCH), 0, N - 1),
-    bz = clamp(Math.floor((z + HALF) / PITCH), 0, N - 1)
-  return BLOCKS[bz * N + bx]
-}
-// Is it time to walk across the street at node that runs along axis (0 east-west, 1 north-south)?
-// Its traffic has red, and the cross street's green is in its first few seconds. (Not while the
-// light is held for Autopilot: its timings are its own then.)
-export function walkOn (node, axis, t) {
-  if (node.hold) return false
-  const u = (((t + node.offset) % CYCLE) + CYCLE) % CYCLE
-  const into = u - ((axis ^ 1) * CYCLE) / 2
-  return into >= 0 && into < WALK_FOR
-}
-// The two crossings from a block's corner k (as ringAt numbers them): for each, the way over (from,
-// to), the street's axis, the junction and the block on the other side.
-function crossings (b, k) {
-  const corner = [
-    [b.x1, b.z0],
-    [b.x1, b.z1],
-    [b.x0, b.z1],
-    [b.x0, b.z0]
-  ][k]
-  const ix = b.bx + (corner[0] === b.x1 ? 1 : 0),
-    iz = b.bz + (corner[1] === b.z1 ? 1 : 0)
-  const node = nodeAt(ix, iz)
-  const qx = corner[0] === b.x0 ? 1 : -1, // the block's side of the junction
-    qz = corner[1] === b.z0 ? 1 : -1
-  const out = []
-  const tx = b.bx - qx,
-    tz = b.bz - qz
-  // over the street that runs along z, on the block's side of the junction
-  if (tx >= 0 && tx < N)
-    out.push({
-      node,
-      axis: 1,
-      from: [node.x + qx * KERB, node.z + qz * CROSS_AT],
-      to: [node.x - qx * KERB, node.z + qz * CROSS_AT],
-      block: BLOCKS[b.bz * N + tx]
-    })
-  // and over the one along x
-  if (tz >= 0 && tz < N)
-    out.push({
-      node,
-      axis: 0,
-      from: [node.x + qx * CROSS_AT, node.z + qz * KERB],
-      to: [node.x + qx * CROSS_AT, node.z - qz * KERB],
-      block: BLOCKS[tz * N + b.bx]
-    })
-  return out
-}
+export { ringAt, walkOn }
+let WARM = false
 
 // clear of the street lights (0.6 m in), the palms (1.6) and the signal masts (2.2)
 const LINES = [1.05, 2.75, 3.15]
+// each block's ring at each line, made once
+const RINGS = new Map()
+function ringOf (b, k) {
+  let r = RINGS.get(b)
+  if (!r) RINGS.set(b, (r = LINES.map(d => ring(b, d))))
+  return r[k]
+}
 const P = { x: 0, z: 0, hx: 1, hz: 0, piece: 0 }
 
 export class Peds {
@@ -164,9 +43,20 @@ export class Peds {
     this.list = []
     this.onRoad = [] // in the road just now: what traffic and Autopilot look out for
     this.clock = 0
+    this.P = { x: 0, z: 0, hx: 1, hz: 0, piece: 0 }
+    this.panic = 0 // how many people are running scared just now (for the sound)
+    this.scream = 0 // how many have just started to, this step
+    this.panicX = this.panicZ = 0 // where the last fright was
+    this.frame = 0
+    this.ids = 0
+    this.threats = []
+    this.pool = []
+    this.me = { x: 0, z: 0, vx: 0, vz: 0, hx: 1, hz: 0, hl: CAR.halfL, hw: CAR.halfW }
   }
   reset (x, z) {
     this.list.length = 0
+    this.wasAir = false // (a reset mid-air is no landing)
+    this.lastMode = 'ground'
     for (let i = 0; i < this.count * 4 && this.list.length < this.count; i++)
       this.spawn(x, z, 0, this.radius)
   }
@@ -175,7 +65,7 @@ export class Peds {
     const R = this.R
     for (let tries = 0; tries < 20; tries++) {
       const b = BLOCKS[Math.floor(R() * BLOCKS.length)]
-      const g = ring(b, LINES[Math.floor(R() * LINES.length)] + (R() - 0.5) * 0.2)
+      const g = ringOf(b, Math.floor(R() * LINES.length))
       const s = R() * g.len
       ringAt(g, s, P)
       const d = Math.hypot(P.x - x, P.z - z)
@@ -184,36 +74,80 @@ export class Peds {
       const ahead =
         view && (P.x - view.x) * view.fx + (P.z - view.z) * view.fz > 0
       if (ahead && d < 120) continue
-      const p = {
-        ring: g,
-        s,
-        dir: R() < 0.5 ? 1 : -1,
-        v: 1.1 + R() * 0.5,
-        state: 'walk',
-        x: P.x,
-        z: P.z,
-        yaw: 0,
-        phase: R() * 6.3,
-        gait: 1, // stride, 0 standing to 1.6 running
-        fright: 0, // arms up as they dive
-        hop: 0,
-        t: 0,
-        piece: P.piece,
-        look: R(), // their clothes and build, for the renderer
-        sway: R() * 6.3
-      }
-      this.place(p)
-      this.list.push(p)
+      const p = this.spawnAt(g, s, R() < 0.5 ? 1 : -1)
+      this.extras(p)
       return p
     }
     return null
   }
+  // someone on ring g at s, walking round it in direction dir
+  spawnAt (g, s, dir) {
+    const R = this.R
+    const p = {
+      ring: g,
+      s,
+      dir,
+      v: 1.3,
+      state: 'walk',
+      x: 0,
+      z: 0,
+      yaw: 0,
+      phase: R() * 6.3,
+      gait: 1, // stride, 0 standing to 1.6 running
+      fright: 0, // arms up as they dive
+      hop: 0,
+      t: 0,
+      piece: 0,
+      look: R(), // their clothes and build, for the renderer
+      sway: R() * 6.3,
+      i: this.ids++,
+      lod: 1, // moved every lod-th step
+      lodT: 0,
+      inRoad: false,
+      // (every field anyone sets, so they all keep the same shape)
+      v0: 1.3,
+      tall: 1,
+      wide: 1,
+      jog: false,
+      head: 0,
+      headT: 0,
+      act: 0,
+      lead: null,
+      side: 0,
+      idleT: 0,
+      fleeT: 0,
+      hurry: 0,
+      jay: false,
+      gone: false,
+      cross: null,
+      aside: null,
+      turned: false,
+      stall: 0,
+      near: Infinity,
+      vx: 0,
+      vz: 0,
+      back: null,
+      backRing: null,
+      backS: 0
+    }
+    if (!WARM) {
+      warm(p) // (see traffic.js)
+      WARM = true
+    }
+    this.character(p)
+    p.piece = this.place(p)
+    this.list.push(p)
+    return p
+  }
+  at (p, out) {
+    return ringAt(p.ring, p.s, out)
+  }
   place (p) {
     ringAt(p.ring, p.s, P)
-    // drifting a little from side to side as they walk
-    const o = 0.12 * Math.sin(p.sway)
-    p.x = P.x - P.hz * o * p.dir
-    p.z = P.z + P.hx * o * p.dir
+    // drifting a little from side to side as they walk (and beside whoever they walk with)
+    const o = 0.12 * Math.sin(p.sway) * p.dir + p.side
+    p.x = P.x - P.hz * o
+    p.z = P.z + P.hx * o
     p.yaw = Math.atan2(-P.hz * p.dir, P.hx * p.dir)
     return P.piece
   }
@@ -221,7 +155,7 @@ export class Peds {
   toward (p, x, z, v, dt) {
     const dx = x - p.x,
       dz = z - p.z,
-      d = Math.hypot(dx, dz)
+      d = Math.sqrt(dx * dx + dz * dz)
     p.yaw = Math.atan2(-dz, dx)
     if (d <= v * dt) {
       p.x = x
@@ -238,29 +172,54 @@ export class Peds {
     this.clock += dt
     this.traffic = traffic
     const t = traffic.t
-    const threats = []
+    const threats = this.threats
+    threats.length = 0
     const pl = sim.mode === 'ground' ? sim.pos : sim.com
-    if (sim.mode !== 'ramp' && pl.y - (sim.floor || 0) < 2.5)
-      threats.push({
-        x: pl.x,
-        z: pl.z,
-        vx: sim.vel.x,
-        vz: sim.vel.z,
-        hx: Math.cos(sim.yaw),
-        hz: -Math.sin(sim.yaw),
-        hl: CAR.halfL,
-        hw: CAR.halfW
-      })
+    let me = null
+    if (sim.mode !== 'ramp' && pl.y - (sim.floor || 0) < 2.5) {
+      me = this.me
+      me.x = pl.x
+      me.z = pl.z
+      me.vx = sim.vel.x
+      me.vz = sim.vel.z
+      me.hx = Math.cos(sim.yaw)
+      me.hz = -Math.sin(sim.yaw)
+      threats.push(me)
+    }
+    // (and any car knocked sliding)
     for (const c of traffic.loose)
-      if (Math.hypot(c.vx, c.vz) > 2) {
-        const { x, z, vx, vz, hx, hz } = c
-        threats.push({ x, z, vx, vz, hx, hz, hl: c.len / 2, hw: c.wid / 2 })
+      if (c.vx * c.vx + c.vz * c.vz > 4) {
+        const k = threats.length
+        const th = this.pool[k] || (this.pool[k] = { ...this.me })
+        th.x = c.x
+        th.z = c.z
+        th.vx = c.vx
+        th.vz = c.vz
+        th.hx = c.hx
+        th.hz = c.hz
+        th.hl = c.len / 2
+        th.hw = c.wid / 2
+        threats.push(th)
       }
+    this.alarms(sim, sim.mode === 'ramp' ? null : pl, traffic)
+    // (loud: fast, or on the horn)
+    const loud =
+      me && (me.vx * me.vx + me.vz * me.vz > 121 || traffic.horn) ? me : null
     this.onRoad.length = 0
+    this.frame++
     for (const p of this.list) {
-      this.move(p, dt, t)
+      // (far off, out of the way, every second or fourth step)
+      p.lodT += dt
+      if (p.lod > 1 && (this.frame + p.i) % p.lod) {
+        if (p.inRoad) this.onRoad.push(p)
+        continue
+      }
+      this.move(p, t)
+      p.lodT = 0
+      this.watch(p, dt, loud)
       for (const th of threats) this.dodge(p, th)
-      if (p.state !== 'walk' && kerbDist(p.x, p.z) > -0.2) {
+      p.inRoad = p.state !== 'walk' && kerbDist(p.x, p.z) > -0.2
+      if (p.inRoad) {
         this.onRoad.push(p)
         this.clear(p, traffic.cars)
       }
@@ -271,18 +230,31 @@ export class Peds {
       this.recycle(pl.x, pl.z, view)
     }
   }
-  move (p, dt, t) {
+  // (its step, p.lodT, is read from the person: a number passed in costs an allocation)
+  move (p, t) {
+    const dt = p.lodT
     p.t += dt
     p.hop = Math.max(0, p.hop - dt * 1.5)
     p.fright = Math.max(0, p.fright - dt * 1.2)
     const R = this.R
     if (p.state === 'walk') {
-      p.gait += (1 - p.gait) * Math.min(1, dt * 3)
-      p.s += p.dir * p.v * dt
+      const pace = p.jog ? 1.35 : clamp(p.v / 1.35, 0.7, 1.05)
+      p.gait += (pace - p.gait) * Math.min(1, dt * 3)
+      const lead = p.lead
+      // (whoever they walk with is crossing at this corner: over with them)
+      const over = lead?.cross && !lead.jay && lead.ring === p.ring
+      if (over && lead.state !== 'cross') {
+        const j = lead.cross.j + (lead.cross.j < 0 ? 0.7 : -0.7)
+        p.cross = { ...lead.cross, j }
+        p.state = 'kerb'
+        return
+      }
+      const paired = this.follow(p)
+      if (!paired) p.s += p.dir * p.v * dt
       p.sway += dt * 0.7
       const piece = this.place(p)
       // round a corner: now and then over the road instead
-      if (piece !== p.piece && piece % 2 === 1 && R() < 0.4) {
+      if (piece !== p.piece && piece % 2 === 1 && R() < 0.4 && !paired) {
         const opts = crossings(p.ring.b, (piece - 1) / 2)
         if (opts.length) {
           // (each keeps to their own line along the stripes)
@@ -290,9 +262,17 @@ export class Peds {
           p.cross = { ...pick, j: (R() - 0.5) * 1.6 }
           p.state = 'kerb'
         }
+      } else if (!paired && R() < dt * 0.006) this.jaywalk(p)
+      else if (!paired && !p.jog && R() < dt * 0.004) {
+        // stopping a moment: a call, a message, a look in a window
+        p.state = 'idle'
+        p.act = R() < 0.6 ? 1 : 0
+        p.idleT = 3 + R() * 12
       }
       p.piece = piece
-    } else if (p.state === 'kerb') {
+    } else if (p.state === 'idle') this.idle(p, dt)
+    else if (p.state === 'flee') this.flee(p, dt)
+    else if (p.state === 'kerb') {
       const [fx, fz] = this.jitter(p.cross, p.cross.from)
       if (this.toward(p, fx, fz, p.v, dt)) {
         p.state = 'wait'
@@ -330,7 +310,8 @@ export class Peds {
         }
       } else {
         const [tx, tz] = this.jitter(p.cross, p.cross.to)
-        if (this.toward(p, tx, tz, p.v * 1.08, dt)) this.join(p, p.cross.block)
+        if (this.toward(p, tx, tz, p.v * (p.hurry || 1.08), dt))
+          this.join(p, p.cross.block)
         else {
           // getting nowhere (a car stopped across them, waiting for them to pass): back to the
           // kerb they came from, to wait for the next walk; and if even that is blocked, over
@@ -363,7 +344,7 @@ export class Peds {
       if (p.t > 0.7) {
         p.state = 'back'
         p.back = blockNear(p.x, p.z)
-        const g = ring(p.back, LINES[Math.floor(R() * LINES.length)])
+        const g = ringOf(p.back, Math.floor(R() * LINES.length))
         p.backRing = g
         p.backS = nearestOn(g, p.x, p.z)
       }
@@ -378,116 +359,55 @@ export class Peds {
         p.piece = this.place(p)
       }
     }
-    // the stride: a step every 0.65 m or so at walking pace
-    const speed = p.state === 'wait' ? 0 : p.state === 'back' ? 2.6 : p.v
-    p.phase += (dt * speed * Math.PI * 2) / (1.3 * Math.max(0.6, p.gait))
+    // The stride: two steps to a cycle, each as long as the legs swing (the renderer swings them
+    // 0.42 rad a side at a walk, gait 1), so the feet stay planted as they go. Standing about, the
+    // phase keeps time for their gestures.
+    const speed =
+      p.state === 'wait' || p.state === 'idle'
+        ? 0
+        : p.state === 'back'
+        ? 2.6
+        : p.state === 'cross'
+        ? p.v * (p.hurry || 1.08)
+        : p.v
+    const stride = 3.5 * p.tall * Math.sin(0.42 * Math.max(0.35, p.gait))
+    p.phase += speed ? (dt * speed * Math.PI * 2) / stride : dt * 2
   }
-  // where along the stripes this one walks
+  // where along the stripes this one walks, and waits (back from the kerb)
   jitter (c, [x, z]) {
-    return c.axis === 1 ? [x, z + c.j] : [x + c.j, z]
+    return c.axis === 1 ? standBack(c, x, z + c.j) : standBack(c, x + c.j, z)
   }
   join (p, b) {
-    const g = ring(b, LINES[Math.floor(this.R() * LINES.length)])
+    // (back alongside whoever they walk with, if they are over too)
+    const o = p.lead
+    const g =
+      o && o.state === 'walk' && o.ring.b === b
+        ? o.ring
+        : ringOf(b, Math.floor(this.R() * LINES.length))
     p.ring = g
     p.s = nearestOn(g, p.x, p.z)
     p.state = 'walk'
     p.piece = this.place(p)
     p.cross = p.aside = null
-  }
-  // Out of the way of whatever is coming (th): anyone near its path in the next second and a half
-  // dives clear, sideways, away from it; and nobody stays under it.
-  dodge (p, th) {
-    const dx = p.x - th.x,
-      dz = p.z - th.z
-    if (Math.abs(dx) > 40 || Math.abs(dz) > 40) return
-    // under the car already: out by the nearer side
-    const along = dx * th.hx + dz * th.hz,
-      side = dz * th.hx - dx * th.hz
-    if (Math.abs(along) < th.hl + 0.35 && Math.abs(side) < th.hw + 0.35) {
-      const out = (th.hw + 0.4) * (side >= 0 ? 1 : -1) - side
-      p.x -= th.hz * out
-      p.z += th.hx * out
-    }
-    const sp = Math.hypot(th.vx, th.vz)
-    if (sp < 1.5 || p.state === 'dodge') return
-    const a = (dx * th.vx + dz * th.vz) / sp,
-      l = (dz * th.vx - dx * th.vz) / sp
-    if (a < -th.hl || a > th.hl + sp * 1.5 + 1.5) return
-    if (Math.abs(l) > th.hw + 1.1) return
-    // away from its line, sideways to the way it is going, quicker the closer it is
-    const sg = Math.abs(l) > 0.15 ? Math.sign(l) : this.R() < 0.5 ? 1 : -1
-    const v = a < th.hl + 4 ? 7 : 5
-    p.vx = (-th.vz / sp) * sg * v
-    p.vz = (th.vx / sp) * sg * v
-    p.state = 'dodge'
-    p.t = 0
-    p.hop = 0.35
-    p.fright = 1
-    p.gait = 1.6
-    p.cross = p.aside = null
-  }
-  // Round a car stopped on the crossing (one caught in the junction, or turning and waiting for
-  // them): anyone who would walk into it stays at its edge, and so steps round it.
-  clear (p, cars) {
-    for (const c of cars) {
-      const dx = p.x - c.x,
-        dz = p.z - c.z
-      if (Math.abs(dx) > 8 || Math.abs(dz) > 8) continue
-      const along = dx * c.hx + dz * c.hz,
-        side = dz * c.hx - dx * c.hz
-      const ea = c.len / 2 + 0.35 - Math.abs(along),
-        es = c.wid / 2 + 0.35 - Math.abs(side)
-      if (ea <= 0 || es <= 0) continue
-      // crossing, they take a line round it, past whichever of its ends is nearer, stepping aside
-      // out to it first
-      if (p.state === 'cross' && !p.aside) {
-        const ax = p.cross.axis,
-          base = p.cross.from[ax === 1 ? 1 : 0],
-          mid = ax === 1 ? c.z : c.x,
-          here = ax === 1 ? p.z : p.x
-        const ext =
-          (c.len / 2) * Math.abs(ax === 1 ? c.hz : c.hx) +
-          (c.wid / 2) * Math.abs(ax === 1 ? c.hx : c.hz) +
-          0.55
-        const way = here < mid ? mid - ext : mid + ext
-        p.cross.j = way - base
-        p.aside = ax === 1 ? [p.x, way] : [way, p.z]
-        p.near = Infinity
-        p.stall = 0
-      }
-      // out by the nearer side
-      if (ea < es) {
-        const k = ea * Math.sign(along || 1)
-        p.x += c.hx * k
-        p.z += c.hz * k
-      } else {
-        const k = es * Math.sign(side || 1)
-        p.x -= c.hz * k
-        p.z += c.hx * k
-      }
-    }
-  }
-  // Nothing on the crossing c, or about to be: no car within a car's length of its stripes.
-  clearOver (c) {
-    const ax = c.axis,
-      line = c.from[ax === 1 ? 1 : 0],
-      mid = ax === 1 ? c.node.x : c.node.z
-    for (const o of this.traffic.cars) {
-      if (o.parked && !o.jam) continue
-      const across = ax === 1 ? o.x : o.z,
-        along = ax === 1 ? o.z : o.x
-      if (Math.abs(across - mid) > ROAD_HW + 1) continue
-      if (Math.abs(along - line) < o.len / 2 + 2.5) return false
-    }
-    return true
+    p.jay = false
+    p.hurry = 0
   }
   // drop people far behind and fill in ahead
   recycle (x, z, view) {
-    this.list = this.list.filter(
-      p => Math.hypot(p.x - x, p.z - z) < this.radius + 40
-    )
+    this.list = this.list.filter(p => {
+      const d = Math.hypot(p.x - x, p.z - z)
+      if (d > this.radius + 40) {
+        p.gone = true
+        return false
+      }
+      const seen =
+        view && (p.x - view.x) * view.fx + (p.z - view.z) * view.fz > -8
+      p.lod = d < 55 || (seen && d < 100) ? 1 : seen || d < 100 ? 2 : 4
+      return true
+    })
     // (enough at a time to keep up with a car at full speed)
     for (let k = 0; k < 40 && this.list.length < this.count; k++)
       this.spawn(x, z, 100, this.radius, view)
   }
 }
+Object.assign(Peds.prototype, CROWD)
