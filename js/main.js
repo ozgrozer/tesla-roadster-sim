@@ -24,22 +24,13 @@ import { LED_MAT, buildWall, buildTruss } from './render/wall.js'
 import { buildRoadster, updateRoadster } from './render/roadster.js'
 import { Post } from './render/post.js'
 import { Resolution } from './render/resolution.js'
-import {
-  MAT,
-  scene,
-  camera,
-  canvas,
-  renderer,
-  followKeyLight
-} from './render/scene.js'
-import {
-  fallFx,
-  ALL_PARTICLES,
-  updateNozzles,
-  emitThrusters,
-  emitTireSmoke,
-  attachDiamonds
-} from './render/effects.js'
+import { warmUp } from './render/warm.js'
+import { Damage } from './render/damage.js'
+import { MAT, scene, camera, canvas } from './render/scene.js'
+import { renderer, followKeyLight } from './render/scene.js'
+import { fallFx, ALL_PARTICLES, updateNozzles } from './render/effects.js'
+import { emitThrusters, emitTireSmoke } from './render/effects.js'
+import { attachDiamonds } from './render/effects.js'
 
 // ---------- world ----------
 buildWall()
@@ -47,6 +38,7 @@ buildTruss()
 buildLineup()
 const RS = buildRoadster()
 attachDiamonds(RS)
+const damage = new Damage(RS) // dents where it is knocked (damage.js)
 
 const post = new Post(renderer, scene, camera) // bloom, speed blur, tone mapping
 const resolution = new Resolution(renderer, post) // sharp while the GPU keeps up, less when not
@@ -100,6 +92,7 @@ function setAuto (on) {
 // the autopilot for the world the car is in: the reveal demo, or Autopilot on the city's streets
 const pilot = () => (app.world === 'city' ? cityPilot : ap)
 function startDemo () {
+  damage.repair()
   setWorld('site')
   sim.reset('start')
   ap.reset()
@@ -128,6 +121,7 @@ function startAutopilot () {
 }
 function resetTo (spot, at = null) {
   intro.finish(true)
+  damage.repair()
   traffic.walker = null
   setWorld(spot === 'city' ? 'city' : 'site')
   sim.reset(spot, at)
@@ -157,7 +151,10 @@ function setWorld (w) {
   clearSkids()
   // a reload lands back in the same world (the city is the default, the test site is #site)
   const url = location.pathname + location.search
-  history.replaceState(null, '', w === 'site' ? `${url}#site` : url)
+  // (a page shown in a sandboxed frame may not be allowed to: it just doesn't remember)
+  try {
+    history.replaceState(null, '', w === 'site' ? `${url}#site` : url)
+  } catch {}
 }
 // the city opens on Optimus walking up to the Roadster and getting in
 function enterCity () {
@@ -307,7 +304,7 @@ function unlockSound (e) {
     sound.setEnabled(true)
     app.soundOn = sound.enabled
     hud.setSound(sound.enabled)
-  } else if (sound.ctx?.state === 'suspended') sound.ctx.resume()
+  } else if (sound.enabled && sound.ctx?.state === 'suspended') sound.ctx.resume()
 }
 window.addEventListener('pointerdown', unlockSound, true)
 window.addEventListener('keydown', unlockSound, true)
@@ -337,12 +334,22 @@ function updateView () {
 
 // ---------- main loop: fixed 120 Hz physics, variable-rate rendering ----------
 const H = 1 / 120
+// one physics step of everything that moves, under controls c
+function step (c, city) {
+  sim.step(H, c)
+  if (city) {
+    peds.step(H, sim, traffic, VIEW)
+    traffic.step(H, sim, VIEW)
+  }
+  app.lastCtl = c
+}
 let acc = 0,
   last = performance.now(),
   clock = 0,
   firstFrame = true
 function frame (now) {
   requestAnimationFrame(frame)
+  resolution.apply() // (a step in resolution before anything is sized or drawn)
   const dt = Math.min(0.05, (now - last) / 1000)
   last = now
   clock += dt
@@ -365,12 +372,7 @@ function frame (now) {
       ? HOLD
       : input.controls(sim, app.fanMode)
     tween.before(city)
-    sim.step(H, c)
-    if (city) {
-      peds.step(H, sim, traffic, VIEW)
-      traffic.step(H, sim, VIEW)
-    }
-    app.lastCtl = c
+    step(c, city)
     acc -= H
     simDt += H
     steps++
@@ -387,6 +389,9 @@ function frame (now) {
     app.pilotHorn = ph
     setHorn(ph)
   }
+  for (const e of sim.events)
+    if (e.type === 'bump') damage.hit(e, sim)
+    else if (e.type === 'crash') damage.crash(sim.quat, e.speed, sim.vel)
   handleEvents()
   // a wreck at rest stays put (no respawn): say how to carry on from it
   if (!app.auto && sim.mode === 'crash' && sim.crashSettled && !app.restHint) {
@@ -420,6 +425,7 @@ function frame (now) {
   LED_MAT.uniforms.uTime.value = clock
   const blink = Math.sin(clock * 2.4) > 0.6 ? 1 : 0.15
   MAT.beacon.color.setRGB(4 * blink, 0.2 * blink, 0.15 * blink)
+  rig.simDt = simDt // (the sim's own time this frame: slow motion slows it)
   if (!intro.active) rig.update(dt, clock, sim, app.auto ? P.shot : null)
   // (from the driver's seat, the driver's head is where the camera is, and the street is heard
   // through the canopy)
@@ -438,7 +444,7 @@ function frame (now) {
     cityView.update(simDt, clock, traffic, camera, peds)
     minimap.update(dt, sim, traffic, VIEW.heading)
   }
-  mixSound(sound, app, traffic, dt, clock)
+  mixSound(sound, app, traffic, dt, clock, peds)
   hud.update(dt, app)
   if (city) cityView.shadows(camera, [RS.car])
   resolution.begin()
@@ -449,16 +455,21 @@ function frame (now) {
   if (firstFrame) {
     firstFrame = false
     hud.hideLoading()
+    post.warmed = warmUp(cityView, RS, post) // every shader compiled up front (warm.js)
   }
 }
 // the city unless the address asks for the test site (#site)
 if (location.hash !== '#site') enterCity()
+// (in a frame, as on a shared page, the keys only reach the game once it has been clicked)
+if (window.top !== window && !document.hasFocus())
+  hud.popup('Click the picture, then drive with <b>W A S D</b>', 6000, 'hint')
 requestAnimationFrame(frame)
 
 // debugging hook for the console and automated checks: fast-forward the sim without rendering
 window.__roadster = {
   sim,
   RS,
+  damage,
   intro,
   tween,
   ap,
@@ -476,15 +487,11 @@ window.__roadster = {
   setWorld,
   toggleWorld,
   advance (sec) {
-    for (let t = 0; t < sec; t += H) {
-      const c = app.auto ? pilot().update(H) : input.controls(sim, app.fanMode)
-      sim.step(H, c)
-      if (app.world === 'city') {
-        peds.step(H, sim, traffic, VIEW)
-        traffic.step(H, sim, VIEW)
-      }
-      app.lastCtl = c
-    }
+    for (let t = 0; t < sec; t += H)
+      step(
+        app.auto ? pilot().update(H) : input.controls(sim, app.fanMode),
+        app.world === 'city'
+      )
     handleEvents()
   }
 }
