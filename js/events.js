@@ -1,8 +1,16 @@
-// What the sim reports (scores, landings, drifts, near misses, knocks, kerbs, honks, crashes), turned
-// into popups, sounds, camera shake, a gamepad's rumble and particles.
-import { HORNS } from './audio/sound.js'
-import { hearing, panOf } from './audio/mix.js'
+// What the sim reports (scores, landings, drifts, near misses, knocks, kerbs, honks, crashes),
+// turned into popups, sounds, camera shake, a gamepad's rumble and particles.
+import { HORNS, AIR_HORN } from './audio/shots.js'
+import { hearing, panOf, dullness, placeOf } from './audio/mix.js'
 import { burst, knockFx, sparkBurst } from './render/effects.js'
+
+const CONTACT = { x: 0, y: 0, z: 0 }
+function contactAt (x, y, z) {
+  CONTACT.x = x
+  CONTACT.y = y
+  CONTACT.z = z
+  return CONTACT
+}
 
 export function handleEvents (g) {
   const { sim, app, hud, sound, rig, cityView, ap, clock, pad } = g
@@ -59,14 +67,25 @@ export function handleEvents (g) {
       pad?.rumble(Math.min(1, e.g / 4), 0.6, 240)
       if (app.auto) ap.cap[2] = `Touchdown at ${e.g.toFixed(1)} G`
     } else if (e.type === 'bump') {
-      // knocks against cars, posts and walls in the city (a scrape fires every step: throttle it)
+      // knocks against cars, posts and walls in the city (a scrape fires every step: it keeps the
+      // scrape's loop going, and the knocks are throttled)
+      sound.contact(e.what, sim.vel.length())
       if (e.impact > 1.2 && clock - app.lastBump > 0.15) {
         app.lastBump = clock
-        sound.bump(e.impact, e.what)
+        // (from the side of the car it was hit on, where the sim says)
+        const at = sim.mode === 'ground' ? sim.pos : sim.com
+        const side =
+          e.px === undefined ? 0 : panOf(e.px, e.pz) - panOf(at.x, at.z)
+        sound.bump(e.impact, e.what, null, side)
         rig.shake(Math.min(0.3, e.impact * 0.025))
         pad?.rumble(e.impact / 12, e.impact / 8, 160)
+        // (the sparks fly from where it was hit, when the sim says where)
         if (e.impact > 6)
-          sparkBurst(sim.pos, Math.min(60, e.impact * 4), sim.floor)
+          sparkBurst(
+            e.px === undefined ? at : contactAt(e.px, at.y, e.pz),
+            Math.min(60, e.impact * 4),
+            sim.floor
+          )
       }
     } else if (e.type === 'knock') {
       // a street light, signal or tree snapped off, by the Roadster or a car it sent sliding
@@ -76,12 +95,18 @@ export function handleEvents (g) {
       sound.snap(
         e.kind,
         e.impact * (mine ? 1 : hearing(e.x, e.z)),
-        panOf(e.x, e.z)
+        panOf(e.x, e.z),
+        !mine
       )
       if (mine) {
         rig.shake(Math.min(0.35, 0.06 + e.impact * 0.012))
         pad?.rumble(0.5, 0.6, 150)
       }
+    } else if (e.type === 'clash') {
+      // two cars in traffic colliding (one knocked loose into another), heard where it happened
+      sound.clashed = true
+      if (hearing(e.x, e.z) > 0.04)
+        sound.bump(e.impact, 'car', placeOf(e.x, e.z))
     } else if (e.type === 'kerb') {
       // up onto the kerb or down off it (and off the promenade onto the sand)
       sound.kerb(e.v, e.up)
@@ -100,10 +125,11 @@ export function handleEvents (g) {
       const k = hearing(e.x, e.z)
       if (k > 0.03)
         sound.honk(
-          e.big ? [262, 330] : HORNS[Math.floor(e.horn * HORNS.length)],
+          e.big ? AIR_HORN : HORNS[Math.floor(e.horn * HORNS.length)],
           0.32 * k,
           panOf(e.x, e.z),
-          e.long
+          e.long,
+          dullness(e.x, e.z)
         )
     } else if (e.type === 'crash') {
       sparkBurst(sim.com, 120, sim.floor)
