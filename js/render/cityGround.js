@@ -1,7 +1,7 @@
 // The city's ground: asphalt, kerbed blocks with sidewalks and rounded corners, lane
 // paint, stop lines and zebra crossings, parks, parking lots and the promenade round the ring road.
 import * as THREE from 'three'
-import { merge, marks } from './geo.js'
+import { merge, marks, LAYER } from './geo.js'
 import { canvasTex, speckle } from './scene.js'
 import { roadMaterial } from './roadSurface.js'
 import {
@@ -138,15 +138,16 @@ export function buildGround (group) {
     plaza: mat(T.plaza),
     grass: mat(T.grass, 0xffffff, 0.98)
   }
-  const add = (geo, m, shadow = true) => {
+  const add = (geo, m, order = LAYER.ground) => {
     const mesh = new THREE.Mesh(geo, m)
-    mesh.receiveShadow = shadow
+    mesh.receiveShadow = true
+    mesh.renderOrder = order
     group.add(mesh)
     return mesh
   }
   // the asphalt under the whole street grid (the beach and the sea round it: citySea.js)
   const ra = HALF + ROAD_HW + 0.5
-  add(flat(-ra, -ra, ra, ra, 0), M.asphalt)
+  add(flat(-ra, -ra, ra, ra, 0), M.asphalt, LAYER.road)
 
   // blocks: a kerbed slab with rounded corners, the sidewalk round the edge, the lot inside
   const slabs = [],
@@ -189,7 +190,7 @@ export function buildGround (group) {
   add(merge(slabs), M.walk)
   add(merge(lots.plaza), M.plaza)
   add(merge(lots.grass), M.grass)
-  add(merge(lots.asphalt), M.asphalt)
+  add(merge(lots.asphalt), M.asphalt, LAYER.road)
 
   // ---------- paint ----------
   const white = [],
