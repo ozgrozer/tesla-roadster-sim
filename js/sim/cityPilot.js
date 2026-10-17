@@ -36,6 +36,7 @@ const CAPS = {
   free: ['Autopilot · City', 'Back on the road', 'Stuck again? It flies over']
 }
 const STUCK = 8 // s stopped in traffic before it takes off
+const GIVE = 10 // s waiting to turn left before it goes another way (or counts as stuck)
 const HONK = [0.5, 0.75, 0.95, 1.2, 1.4, 2.4] // horn on, off, on, off, on, off (s into the wait)
 const HOP_AIR = 170 // kg of air it wants in the tanks before a hop
 let PLAN = null // the route to the gridlock (the same for every run, so worked out once)
@@ -70,6 +71,7 @@ export class CityPilot {
     this.horn = false
     this.acc = 0 // the acceleration it asks for, smoothed so the pedals don't flicker
     this.stuckT = 0
+    this.giveT = 0 // s waiting to turn left across oncoming traffic
     this.passT = 0 // s until it may change lanes to overtake again
     this.hop = null
     this.plan = PLAN || (PLAN = routeToJam()) // until it has flown over the gridlock
@@ -265,6 +267,7 @@ export class CityPilot {
     const lane = this.edge
     // on its way to the gridlock it waits at the light like anyone else, then on the green drives on
     // into the jammed street and pulls up behind the last car in the queue (lane.closed: in it)
+    let giving = false // waiting to turn left across oncoming traffic
     if (lane.road && this.next && this.go !== lane) {
       const toLine = lane.len - this.s - CAR.halfL
       if (toLine < LOOK && toLine > -1) {
@@ -275,15 +278,27 @@ export class CityPilot {
           this.go = lane // too close to stop: carry on through
           stop = false
         }
-        if (!stop && this.next.move === 'L' && toLine < 30)
+        // a left turn gives way to oncoming traffic; after a long wait (someone over there waiting
+        // on people crossing, say) it goes another way, or if it can't, waits like one stuck
+        if (!stop && this.next.move === 'L' && toLine < 30) {
           stop = this.traffic.oncoming(node, lane.dir)
+          giving = stop && v < 0.3
+          if (giving && this.giveT > GIVE && !this.plan) {
+            const o = lane.next.find(c => c.move !== 'L')
+            if (o) {
+              this.next = o
+              stop = giving = false
+            }
+          }
+        }
         if (stop && toLine - 1.4 < gap) {
           gap = toLine - 1.4
           vl = 0
-          red = true
+          red = !(giving && this.giveT > GIVE)
         }
       }
     }
+    this.giveT = giving ? this.giveT + dt : 0
     // cruise, braking in time for the corner ahead
     let v0 = Math.min(CRUISE, corner(lane))
     if (this.next && corner(this.next) < v0)
