@@ -2,6 +2,32 @@
 // drives on, the signal plan at every intersection and the solid footprints the Roadster can hit.
 // Pure data and math (no DOM, no three.js), so traffic and collisions run headless in tests.
 
+// the signal plan at every junction is in signals.js
+import {
+  RED,
+  YELLOW,
+  GREEN,
+  SIGNAL,
+  CYCLE,
+  signal,
+  holdLight,
+  releaseLight,
+  amberLeft,
+  redAge
+} from './signals.js'
+export {
+  RED,
+  YELLOW,
+  GREEN,
+  SIGNAL,
+  CYCLE,
+  signal,
+  holdLight,
+  releaseLight,
+  amberLeft,
+  redAge
+}
+
 export const N = 10 // blocks across
 export const PITCH = 96 // m between road centre lines
 export const LANE_W = 3.5
@@ -42,66 +68,6 @@ export function rng (seed) {
 const R = rng(20261015)
 const pick = arr => arr[Math.floor(R() * arr.length)]
 
-// ---------- signals: east-west, then north-south, with an all-red gap between ----------
-// Left turns go on the same green and give way to oncoming traffic.
-export const RED = 0
-export const YELLOW = 1
-export const GREEN = 2
-export const SIGNAL = { green: 13, yellow: 3, clear: 1.2 }
-export const CYCLE = 2 * (SIGNAL.green + SIGNAL.yellow + SIGNAL.clear)
-// State of the light for traffic travelling `dir` into `node` at time t (held, or on its cycle).
-export function signal (node, dir, t) {
-  const h = node.hold
-  if (h)
-    return (dir & 1) === h.axis
-      ? t >= h.t0 + h.wait
-        ? GREEN
-        : RED
-      : t < h.yellowEnd
-      ? YELLOW
-      : RED
-  return cycle(node, dir, t)
-}
-// A light held green one way (axis 0 east-west, 1 north-south) from t, for as long as it is held:
-// Autopilot's green wave on its way to the gridlock, and the red that holds the gridlock up. The
-// other way finishes its green on a (short) yellow and an all-red first.
-const HOLD = { yellow: 2, clear: 0.6 }
-export function holdLight (node, axis, t) {
-  if (node.hold?.axis === axis) return
-  node.hold = null
-  const mine = cycle(node, axis, t),
-    theirs = cycle(node, axis ^ 1, t)
-  let yellowEnd = t
-  if (theirs === GREEN) yellowEnd = t + HOLD.yellow
-  else if (theirs === YELLOW) {
-    // what is left of their yellow
-    let u = (((t + node.offset) % CYCLE) + CYCLE) % CYCLE
-    u -= ((axis ^ 1) * CYCLE) / 2
-    yellowEnd = t + Math.min(HOLD.yellow, SIGNAL.green + SIGNAL.yellow - u)
-  }
-  const wait = mine === RED ? yellowEnd - t + HOLD.clear : 0
-  node.hold = { axis, t0: t, wait, yellowEnd }
-}
-// Back to its cycle, picking it up at the start of a green for the way it was held, so nothing
-// changes in front of anyone the moment it lets go.
-export function releaseLight (node, t) {
-  const h = node.hold
-  if (!h) return
-  node.hold = null
-  node.offset = ((((h.axis * CYCLE) / 2 - t) % CYCLE) + CYCLE) % CYCLE
-}
-function cycle (node, dir, t) {
-  let u = (((t + node.offset) % CYCLE) + CYCLE) % CYCLE
-  const axis = u < CYCLE / 2 ? 0 : 1 // 0 east-west, 1 north-south
-  if ((dir & 1) !== axis) return RED
-  u -= (axis * CYCLE) / 2
-  return u < SIGNAL.green
-    ? GREEN
-    : u < SIGNAL.green + SIGNAL.yellow
-    ? YELLOW
-    : RED
-}
-
 // ---------- lane graph ----------
 export const NODES = [] // intersections
 export const EDGES = [] // every lane piece: straight lanes between intersections and turns inside them
@@ -109,10 +75,37 @@ export const LANES = [] // just the straight lanes (where traffic spawns)
 export const nodeAt = (ix, iz) =>
   ix < 0 || iz < 0 || ix > N || iz > N ? null : NODES[iz * (N + 1) + ix]
 
+// (every edge has every field from the start, lane or turn, so they all share one shape)
 function line (x0, z0, dx, dz, len) {
-  const e = { id: EDGES.length, kind: 0, x0, z0, dx, dz, len, vmax: Infinity }
-  e.cars = []
-  e.next = []
+  const e = {
+    id: EDGES.length,
+    kind: 0,
+    x0,
+    z0,
+    dx,
+    dz,
+    len,
+    vmax: Infinity,
+    cars: [],
+    next: [],
+    feeds: [],
+    // a lane: road, its lane, direction, the junctions it runs from and to, the lane beside it
+    road: false,
+    lane: 0,
+    dir: 0,
+    from: 0,
+    to: 0,
+    twin: null,
+    closed: false, // (the jammed street: jam.js)
+    // a turn: the move (S, L or R) and the junction it is in; its arc's centre, radius, sense
+    move: null,
+    node: 0,
+    cx: 0.5,
+    cz: 0.5,
+    r: 0.5,
+    sg: 0,
+    a0: 0.5
+  }
   EDGES.push(e)
   return e
 }
@@ -201,6 +194,7 @@ for (const n of NODES)
         Object.assign(c, { move, node: n.i, dir: k, lane: l })
         c.next.push(o)
         e.next.push(c)
+        o.feeds.push(c) // the turns that lead onto lane o
       }
       add('S', k)
       if (l === 1) add('R', (k + 1) % 4)
