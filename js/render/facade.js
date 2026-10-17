@@ -9,7 +9,8 @@
 // and a dark desk or cabinet, lit by its lamp or only by the dusk outside. The glass itself is smooth
 // and reflects the sky at a glancing angle, as glass does, however rough the wall round it. Far off,
 // where a window is only a few pixels across, the reveal and the room go (nobody could see them)
-// and each window is simply its glass with the room's average light behind it.
+// and each window is simply its glass with the room's average light behind it. (The wall between
+// the windows skips all of it.)
 import * as THREE from 'three'
 
 const BAY = 3 // m: a texture cell is a bay wide (cityBuildings.js) ...
@@ -55,6 +56,9 @@ export function facadeMaterial (
           vec2 f = fract(cu);
           float x0 = ${wx}, x1 = ${wx} + ${ww}, top = 1.0 - ${wy}, bot = top - ${wh};
           gWin = step(x0, f.x) * step(f.x, x1) * step(bot, f.y) * step(f.y, top);
+          float pane = 0.0;
+          // (the wall between the windows has nothing more to work out)
+          if (gWin > 0.5) {
           // the view ray in the wall's own frame (along it, up it, out of it), in bays, storeys and
           // room depths
           vec3 n = normalize(vNormal);
@@ -67,8 +71,8 @@ export function facadeMaterial (
           bool far = max(length(du), length(dv)) * ${C} > 0.25;
           // where it meets the glass, set back from the wall face; short of it, the reveal
           vec2 g = far ? f : f + r.xy * (${f(inset / ROOM)} / -r.z);
-          float pane = gWin * step(x0, g.x) * step(g.x, x1) * step(bot, g.y) * step(g.y, top);
-          if (gWin > 0.5 && pane < 0.5) {
+          pane = step(x0, g.x) * step(g.x, x1) * step(bot, g.y) * step(g.y, top);
+          if (pane < 0.5) {
             // the reveal: the wall's own colour, the sill catching the light, the head in shadow
             vec3 wall = textureLod(map, (gCell + vec2(0.03, 0.03)) / ${C}, 3.0).rgb;
             diffuseColor.rgb = diffuse * wall * (g.y < bot ? 0.95 : g.y > top ? 0.42 : 0.66);
@@ -111,6 +115,7 @@ export function facadeMaterial (
             gRoom = c * (1.0 - 0.6 * gBlind);
             }
           }
+          }
           gWin = pane;
         }
         #endif`
@@ -125,20 +130,22 @@ export function facadeMaterial (
       .replace(
         '#include <normal_fragment_maps>',
         `#include <normal_fragment_maps>
-        normal = normalize(normal + (vec3(cellHash(gCell + 1.0), cellHash(gCell + 2.0), cellHash(gCell + 3.0)) - 0.5) * ${tilt.toFixed(
-          3
-        )} * gWin);`
+        if (gWin > 0.5)
+          normal = normalize(normal + (vec3(cellHash(gCell + 1.0), cellHash(gCell + 2.0), cellHash(gCell + 3.0)) - 0.5) * ${tilt.toFixed(
+            3
+          )});`
       )
       .replace(
         '#include <emissivemap_fragment>',
-        `{
+        `if (gWin < 0.5) totalEmissiveRadiance = vec3(0.0);
+        else {
           float h1 = cellHash(gCell), h2 = cellHash(gCell + 17.3), h3 = cellHash(gCell + 41.1);
           float on = step(h1, mix(${lit.toFixed(3)}, ${litNight.toFixed(3)}, uNight));
           vec3 warm = mix(vec3(1.0, 0.66, 0.36), vec3(1.0, 0.84, 0.62), h2);
           vec3 light = mix(warm, vec3(0.72, 0.84, 1.0), step(0.8, h3)) * (0.35 + 0.65 * h2);
           // a lit room, or a dark one with only the dusk in it
           vec3 dark = vec3(0.07, 0.065, 0.075) * (1.0 - 0.8 * uNight);
-          totalEmissiveRadiance *= gWin * gRoom * mix(dark, light, on);
+          totalEmissiveRadiance *= gRoom * mix(dark, light, on);
         }`
       )
   }
