@@ -1,31 +1,41 @@
-// Traffic drivers' manners: indicators for lane changes and turns, hazards on a car knocked loose
-// (wrecks.js), honking at a Roadster that holds them up or cuts them up, and moving over when it
-// honks at them from behind (tr.horn).
+// Traffic drivers' manners: indicators for lane changes and turns (on before the car moves over),
+// hazards on a car knocked loose (wrecks.js), honking at a Roadster that holds them up or cuts them
+// up (sooner for an impatient driver), an impatient toot stuck behind something that won't move, and
+// getting out of the way when the Roadster honks at them from behind: over to the kerb lane, or
+// tucked in towards the kerb and slowing to let it by.
 import { LANE_OFF } from './city.js'
 
 // Indicators, a honk at a Roadster in the way (mine: it is what holds the car up), and moving over
 // when it honks from behind.
 export function temper (tr, car, dt, mine, gap, acc) {
   const e = car.edge
-  car.sig = 0
   if (car.lc) car.sig = car.lat0 > 0 ? 1 : 2
+  else if (car.want) car.sig = car.want // waiting to move over
   else if (e.twin && car.next && !e.next.includes(car.next))
     car.sig = LANE_OFF[e.lane] > LANE_OFF[e.twin.lane] ? 1 : 2
-  // waiting to move over
   else {
     const turn =
       e.move || (car.next && e.len - car.s < 45 ? car.next.move : null)
     car.sig = turn === 'L' ? 1 : turn === 'R' ? 2 : 0
   }
+  // a honk on its way (a fright, or a knock close by)
+  if (car.honkIn > 0 && (car.honkIn -= dt) <= 0) honk(tr, car, true)
   car.honkT -= dt
   // held up by the Roadster sitting in the way, or cut up by it
   if (mine && gap < 14 && car.v < 1) car.annoy += dt
   else car.annoy = Math.max(0, car.annoy - dt * 0.5)
   if (car.honkT <= 0) {
-    if (car.annoy > 1.6) {
+    if (car.annoy > 0.8 + car.patience * 0.15) {
       honk(tr, car, car.annoy > 5)
       car.annoy = 0.6
     } else if (mine && acc < -5 && car.v > 6) honk(tr, car, true)
+    else if (car.stuck > car.patience * 1.5 && tr.R() < dt * 0.4)
+      honk(tr, car, false)
+  }
+  // tucked in for the Roadster, until it has gone by
+  if (car.tuck && !car.yieldT) {
+    car.tuck = false
+    if (!car.panic) car.offT = 0
   }
   const me = tr.me
   if (!tr.horn || !me || car.lc) return
@@ -41,6 +51,11 @@ export function temper (tr, car, dt, mine, gap, acc) {
     !car.yieldT
   ) {
     car.yieldT = 3
+    // in the kerb lane already: in towards the kerb, slowing
+    if (e.road && e.lane === 1 && !car.panic) {
+      car.tuck = true
+      car.offT = tr.dodgeRoom(car, 1)
+    }
     if (car.honkT <= 0 && tr.R() < 0.3) honk(tr, car, false)
   }
 }
