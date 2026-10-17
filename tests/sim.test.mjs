@@ -594,3 +594,51 @@ test('hard and tilted landings come down on the wheels, and the car drives on', 
     'coming down on its roof still tumbles (A/D rolls it back)'
   )
 })
+
+test('the throttle and the brake together at a standstill: a burnout, and steered, a donut', () => {
+  const sim = new Sim()
+  sim.reset('start')
+  sim.pos.set(-300, 0, 60) // open ground beside the runway
+  sim.suction = 0
+  sim.syncPose()
+  const burn = (steer, t) => {
+    for (let i = 0; i < t / H; i++) {
+      const c = makeControls()
+      c.fan = false
+      c.throttle = 1
+      c.burnout = true
+      c.steer = steer
+      sim.step(H, c)
+    }
+  }
+  burn(0, 1.5)
+  assert.ok(sim.burning, 'burning out')
+  assert.ok(sim.skidR > 0.8 && sim.burnSpin > 10, 'the rears spin and smoke')
+  assert.ok(sim.groundSpeed() < 1, 'while the fronts hold the car')
+  const yaw0 = sim.yaw
+  let turned = 0,
+    last = yaw0,
+    far = 0
+  for (let i = 0; i < 4 / H; i++) {
+    burn(1, H)
+    turned += wrapPi(sim.yaw - last)
+    last = sim.yaw
+    far = Math.max(far, Math.hypot(sim.pos.x + 300, sim.pos.z - 60))
+  }
+  assert.ok(turned / DEG > 300, `steered, it spins round (${(turned / DEG).toFixed(0)}°)`)
+  assert.ok(far < 6, `on the spot, round its front wheels (${far.toFixed(1)} m out)`)
+  const tricks = sim.events.filter(e => e.type === 'trick')
+  assert.ok(
+    tricks.length >= 1 && tricks[0].text === 'Donut',
+    'each full turn scores a donut'
+  )
+  // let go of the brake: it leaves on its spinning rears and straightens up
+  for (let i = 0; i < 3 / H; i++) {
+    const c = makeControls()
+    c.fan = false
+    c.throttle = 1
+    sim.step(H, c)
+  }
+  assert.ok(!sim.burning && sim.groundSpeed() > 15, 'and drives off')
+  assert.ok(Math.abs(sim.yawRate) < 0.3, 'straight')
+})
