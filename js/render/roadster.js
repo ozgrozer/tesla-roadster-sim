@@ -7,6 +7,7 @@
 // (roadsterRear.js), an active rear wing, underfloor suction fan, skirts and twin-spoke aero wheels,
 // the cabin with its yoke and touchscreen (roadsterCabin.js); plus per-frame pose and animation.
 import * as THREE from 'three'
+import { freeze } from './freeze.js'
 import { scene, MAT } from './scene.js'
 import { CURB_H } from '../sim/city.js'
 import { CAR, clamp, AX_Z } from '../sim/constants.js'
@@ -170,6 +171,8 @@ export function buildRoadster () {
       if (typeof key !== 'string') {
         const m = new THREE.Mesh(g, key)
         m.castShadow = m.receiveShadow = true
+        // (the panels dent, and the glass moves with them: damage.js)
+        m.userData.dent = key === MAT.glass ? 'glass' : true
         body.add(m)
         if (key === MAT.glass) body.add(new THREE.Mesh(g, GLASS_INSIDE))
         continue
@@ -179,6 +182,7 @@ export function buildRoadster () {
       g.translate(-HINGE[0], -HINGE[1], -sg * HINGE[2])
       const m = new THREE.Mesh(g, DOOR_MATS[key.replace(/-?1$/, '')])
       m.castShadow = true
+      m.userData.dent = key.startsWith('pane') ? 'glass' : true
       pivot.add(m)
       // the inside of the door, dark, seen once it is up; and of its window, tinted
       if (key.startsWith('door')) pivot.add(new THREE.Mesh(g, DOOR_INSIDE))
@@ -187,7 +191,9 @@ export function buildRoadster () {
   }
   place(loftGeos(withStations(BODY, DOOR), bodyMat, shellTrim, 30))
   place(loftGeos(withStations(GLASS, DOOR), glassMat, undefined, 40))
+  const before = body.children.length
   const cabin = buildCabin(body)
+  const inside = body.children.slice(before) // (the cabin: its shadow falls inside the car's)
 
   // Optimus in the driver's seat
   const optimus = buildOptimus()
@@ -337,6 +343,22 @@ export function buildRoadster () {
       o.castShadow = true
     }
   })
+  // (what is inside the car throws its shadow inside the car's own: the cabin never needs to be
+  // drawn into the shadow map, and the driver only while out of it)
+  for (const o of inside) o.traverse(m => (m.castShadow = false))
+  // everything on the body that never moves on its own, baked into a few buffers (freeze.js)
+  freeze(body, [
+    doors[-1],
+    doors[1],
+    wing.wing,
+    ...fans,
+    ...skirts,
+    optimus.root,
+    cabin.yoke
+  ])
+  // and each spinning thing's pieces, which turn together: each fan, each wheel
+  for (const f of fans) freeze(f, [])
+  for (const w of wheels) freeze(w.spin, [])
   scene.add(car)
   return {
     car,
@@ -411,13 +433,19 @@ export function updateRoadster (RS, sim, ctl, dt) {
   }
   RS.body.position.y = clamp(sim.susp, -0.12, 0.06) * 0.6
   const onGround = sim.mode === 'ground'
-  const pitchT = onGround ? clamp(-sim.accLong * 0.0028, -0.045, 0.045) : 0
-  const rollT = onGround ? clamp(sim.latAcc * 0.0042, -0.06, 0.06) : 0
+  // (a little more than a stiff supercar's, as GTA's cars do, so the weight is seen moving: about
+  // 2.5 degrees nose down under full braking and up as it launches, 4 of roll at the tyres' limit; a
+  // burnout squats the tail. The body's +x is its nose, so a positive pitch lifts it.)
+  const pitchT = onGround
+    ? clamp(sim.accLong * 0.0034, -0.05, 0.05) + (sim.burning ? 0.018 : 0)
+    : 0
+  const rollT = onGround ? clamp(sim.latAcc * 0.0058, -0.08, 0.08) : 0
   const L = RS.lean,
     h = Math.min(dt, 1 / 30)
-  L.pv += (90 * (pitchT - L.p) - 11 * L.pv) * h
+  // (the springs settle with a touch of overshoot: a rock back after a stop, a sway out of a bend)
+  L.pv += (85 * (pitchT - L.p) - 9.5 * L.pv) * h
   L.p += L.pv * h
-  L.rv += (110 * (rollT - L.r) - 12 * L.rv) * h
+  L.rv += (100 * (rollT - L.r) - 10.5 * L.rv) * h
   L.r += L.rv * h
   RS.body.rotation.z = L.p
   RS.body.rotation.x = L.r
@@ -429,9 +457,15 @@ export function updateRoadster (RS, sim, ctl, dt) {
   // the yoke turning with the steering, the driver's hands with it and head into the turn, and the
   // touchscreen
   updateCabin(RS.cabin, RS.optimus, sim, RS.seated !== false, dt)
+  const outside = RS.seated === false
+  if (RS.optimus.shadow !== outside) {
+    RS.optimus.shadow = outside
+    RS.optimus.root.traverse(o => (o.castShadow = outside))
+  }
   for (const f of RS.fans) f.rotation.y += sim.suction * dt * 60
   for (const sk of RS.skirts) sk.position.y = 0.1 - 0.05 * sim.suction
   const spd = sim.groundSpeed()
-  const braking = (ctl.brake > 0 || ctl.ebrake) && spd > 0.5
+  // (in a burnout the fronts' brakes hold the car)
+  const braking = ((ctl.brake > 0 || ctl.ebrake) && spd > 0.5) || sim.burning
   RS.taillight.color.setRGB(braking ? 4.2 : 1.8, braking ? 0.1 : 0.03, 0.02)
 }
