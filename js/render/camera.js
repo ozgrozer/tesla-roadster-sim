@@ -1,8 +1,9 @@
 // Cameras: the autopilot's director shots, a GTA-style follow camera, chase, the driver's seat, side
 // and free orbit.
 import * as THREE from 'three'
-import { clamp, wrapPi } from '../sim/constants.js'
+import { clamp } from '../sim/constants.js'
 import { TRACK, LINEUP_FIRST, LINEUP_LAST } from '../sim/track.js'
+import { follow, ARM } from './follow.js'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 
 export const CAM_MODES = [
@@ -26,7 +27,6 @@ export const RIDING = new Set(['follow', 'chase', 'cockpit'])
 
 const lerpK = (k, dt) => 1 - Math.exp(-k * dt)
 const BLEND_TIME = 1.8 // s to ease from one shot into the next (cuts skip it)
-const SWING = 2.6 // rad/s: the fastest the follow camera swings round behind the car
 const _p = new THREE.Vector3(),
   _f = new THREE.Vector3(),
   _u = new THREE.Vector3(),
@@ -78,8 +78,9 @@ export class CameraRig {
       targetHeading: 0,
       yawOff: 0,
       pitchOff: 0,
-      dist: 8.5,
+      dist: ARM,
       reach: 0, // how far the arm lets out with speed, eased so a sudden stop doesn't yank it in
+      ahead: 0, // how far down the road it looks, eased the same way
       elev: 1,
       idle: 99,
       kick: 0,
@@ -144,85 +145,8 @@ export class CameraRig {
     this.f.idle = 0
   }
 
-  // GTA-style: sit behind the car's heading (not its velocity), ignore pitch and roll so flips never
-  // throw the camera, and hold the heading through the wall ride and any manoeuvre. A car spun round
-  // by a knock, sliding sideways or tumbling is followed the way it is going instead: chasing its
-  // whirling nose would whip the camera round and round it.
   follow (dt, sim, P) {
-    const f = this.f,
-      fw = sim.fwd(_f),
-      up = sim.up(_u),
-      v = sim.vel,
-      hv = Math.hypot(v.x, v.z)
-    const nose = Math.atan2(-fw.z, fw.x),
-      along = Math.atan2(-v.z, v.x),
-      off = wrapPi(along - nose),
-      ao = Math.abs(off)
-    const wild =
-      sim.mode === 'crash' ||
-      (sim.mode === 'ground' && Math.abs(sim.yawRate) > 2.5)
-    if (wild) {
-      if (hv > 3) f.targetHeading = along
-    } else if (
-      up.y > 0.55 &&
-      Math.hypot(fw.x, fw.z) > 0.3 &&
-      sim.mode !== 'ramp'
-    ) {
-      // sliding (not reversing), it looks partly along the slide, the more the further sideways the
-      // car goes: a drift is seen from its outside, the car's flank to the camera
-      const x = (ao - 0.17) / 0.6,
-        k =
-          sim.mode === 'ground' && hv > 4 && ao < 1.87
-            ? 0.85 * (x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x))
-            : 0
-      f.targetHeading = nose + off * k
-    }
-    if (!f.init) {
-      const v = sim.vel
-      if (!(up.y > 0.55) && Math.hypot(v.x, v.z) > 1)
-        f.targetHeading = Math.atan2(-v.z, v.x)
-      f.init = true
-      f.heading = f.targetHeading
-      f.target.copy(P)
-      f.elev = sim.mode === 'ramp' ? up.y : 1
-      f.reach = Math.min(4, sim.groundSpeed() * 0.05)
-      f.surge = 0
-    }
-    f.heading += clamp(
-      wrapPi(f.targetHeading - f.heading) * lerpK(3.2, dt),
-      -SWING * dt,
-      SWING * dt
-    )
-    f.idle += dt
-    if (f.idle > 1.5 && !this.drag) {
-      const k = lerpK(2, dt)
-      f.yawOff -= f.yawOff * k
-      f.pitchOff -= f.pitchOff * k
-    }
-    // on the wall the arm follows the car's up vector, so it drops below the car when it hangs inverted
-    f.elev += ((sim.mode === 'ramp' ? up.y : 1) - f.elev) * lerpK(3, dt)
-    const speed = sim.groundSpeed()
-    f.reach += (Math.min(4, speed * 0.05) - f.reach) * lerpK(1.5, dt)
-    // it falls back as the car launches and closes in under hard braking
-    const acc = sim.mode === 'ground' ? clamp(sim.accLong, -14, 16) : 0
-    f.surge += (acc * 0.055 - f.surge) * lerpK(2.5, dt)
-    const dist = f.dist + f.reach + f.surge
-    const yaw = f.heading + f.yawOff,
-      pitch = 0.2 + f.pitchOff
-    f.target.x += (P.x - f.target.x) * lerpK(12, dt)
-    f.target.z += (P.z - f.target.z) * lerpK(12, dt)
-    f.target.y += (P.y - f.target.y) * lerpK(6, dt)
-    const h = Math.cos(pitch) * dist
-    this.pos.set(
-      f.target.x - Math.cos(yaw) * h,
-      f.target.y + (Math.sin(pitch) * dist + 1.3) * f.elev,
-      f.target.z + Math.sin(yaw) * h
-    )
-    this.pos.y = Math.max(this.pos.y, 0.7)
-    this.aim.set(f.target.x, f.target.y + 1.0 * f.elev, f.target.z)
-    // wider with speed, and a kick wider still while the main thrusters fire
-    f.kick += (sim.thrMain - f.kick) * lerpK(4, dt)
-    return 55 + Math.min(16, speed * 0.14) + 8 * f.kick
+    return follow(this, dt, sim, P)
   }
 
   // From the driver's seat: the eyes just ahead of Optimus's head (hidden from in here), looking out
