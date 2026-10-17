@@ -67,7 +67,8 @@ export function makeControls () {
     assist: true,
     flare: 0,
     latHold: false,
-    ebrake: false
+    ebrake: false,
+    burnout: false // the throttle and the brake together at a crawl (ground.js)
   }
 }
 
