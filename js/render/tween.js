@@ -34,7 +34,8 @@ export class Tween {
     p.com.copy(s.com)
     p.quat.copy(s.quat)
     if (city)
-      for (const c of this.traffic.cars) {
+      for (let i = 0, cars = this.traffic.cars; i < cars.length; i++) {
+        const c = cars[i]
         c.px = c.x
         c.pz = c.z
         c.pyaw = c.yaw
@@ -56,7 +57,8 @@ export class Tween {
     s.quat.slerpQuaternions(p.quat, q.quat, alpha)
     this.cars = city
     if (city)
-      for (const c of this.traffic.cars) {
+      for (let i = 0, cars = this.traffic.cars; i < cars.length; i++) {
+        const c = cars[i]
         c.cx = c.x
         c.cz = c.z
         c.cyaw = c.yaw
@@ -79,7 +81,8 @@ export class Tween {
     s.com.copy(q.com)
     s.quat.copy(q.quat)
     if (this.cars)
-      for (const c of this.traffic.cars) {
+      for (let i = 0, cars = this.traffic.cars; i < cars.length; i++) {
+        const c = cars[i]
         if (c.cx === undefined) continue
         c.x = c.cx
         c.z = c.cz
