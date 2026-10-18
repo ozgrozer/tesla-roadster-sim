@@ -1,13 +1,14 @@
 // The radar's map (minimap.js). The city inside the ring road is drawn once, a pixel a metre: the
 // streets, the blocks, parks and car parks, the buildings (lighter the taller). What lies round it is
-// drawn as shapes every time, so it stays sharp at any zoom: the beach and the ocean along the coast
-// with the pier, the hills, and more city, out of reach, the other ways (areas.js says which is
-// where).
+// drawn as shapes every time, so it stays sharp at any zoom, as the edges of the map are built
+// (sim/edge.js): the beach and the ocean to the west with the pier's deck and its big wheel, the
+// verges out to the walls on the other three sides, the hills past the north wall, the freeways past
+// the east and south walls, and more city out of reach beyond them.
 import {
   N,
   HALF,
   EDGE,
-  OUTER,
+  WALK,
   PITCH,
   CURB_R,
   BLOCKS,
@@ -15,6 +16,7 @@ import {
   BUILDINGS
 } from '../sim/city.js'
 import { COAST, HILLS, LANDMARKS } from '../sim/areas.js'
+import { WALL, SHORE, PIER } from '../sim/edge.js'
 
 export const MAP = {
   road: '#9ba1a9',
@@ -31,10 +33,15 @@ export const MAP = {
   sand: '#bba97d',
   water: '#3f7197',
   deep: '#365f83',
-  pier: '#8f8068'
+  pier: '#8f8068',
+  verge: '#56654a',
+  wall: '#c9ccd1',
+  freeway: '#8a9099',
+  lane: 'rgba(240, 242, 245, 0.35)'
 }
+// a lot's ground on the map, by what it is (city.js's blocks: plots.js)
+const GROUND = { grass: MAP.park, asphalt: MAP.lot, pool: MAP.water }
 const FAR = 6000 // m: how far the shapes reach (well past anything the radar shows)
-const SHORE = OUTER + 3 // the water's edge (as citySea.js)
 // the four sides, as the way out from the middle
 const OUT = { east: [1, 0], south: [0, 1], west: [-1, 0], north: [0, -1] }
 const angleOf = side => Math.atan2(OUT[side][1], OUT[side][0])
@@ -57,6 +64,24 @@ export function cityMap () {
     g.beginPath()
     g.roundRect(b.x0, b.z0, b.x1 - b.x0, b.z1 - b.z0, CURB_R)
     g.fill()
+    // (on a lot: its lawns, car parks and pools, inside the pavement round the block)
+    const lot =
+      b.base === 'grass' ? MAP.park : b.base === 'asphalt' ? MAP.lot : 0
+    if (lot && b.kind !== 'park') {
+      g.fillStyle = lot
+      g.fillRect(
+        b.x0 + WALK,
+        b.z0 + WALK,
+        b.x1 - b.x0 - 2 * WALK,
+        b.z1 - b.z0 - 2 * WALK
+      )
+    }
+    for (const r of b.ground || []) {
+      const c = GROUND[r.k]
+      if (!c) continue
+      g.fillStyle = c
+      g.fillRect(r.x0, r.z0, r.x1 - r.x0, r.z1 - r.z0)
+    }
   }
   for (const b of BUILDINGS) {
     g.fillStyle = b.h < 15 ? MAP.low : b.h < 45 ? MAP.mid : MAP.tall
@@ -80,7 +105,7 @@ function shapes () {
   for (const d of [45, 100, 170, 250, 340, 450, 580, 730]) {
     for (let x = -FAR; x <= FAR; x += 30) {
       const z =
-        -EDGE -
+        -WALL -
         d +
         (8 + d * 0.05) * Math.sin(x / 170 + d) +
         (3 + d * 0.02) * Math.sin(x / 61 + 2 * d)
@@ -116,11 +141,34 @@ export function drawSurroundings (g, p, reach, px) {
       )
     }
   g.fill()
+  // the freeways behind the sound walls, their decks with a line down each carriageway
+  for (const f of LANDMARKS.freeways || []) {
+    g.strokeStyle = MAP.freeway
+    g.lineWidth = 28
+    g.beginPath()
+    g.moveTo(f.x0, f.z0)
+    g.lineTo(f.x1, f.z1)
+    g.stroke()
+    g.strokeStyle = MAP.lane
+    g.lineWidth = 1.2 * px
+    g.stroke()
+  }
+  // the verges out to the walls, and the walls
+  g.fillStyle = MAP.verge
+  g.fillRect(-WALL, -WALL, WALL * 2, WALL * 2)
+  g.strokeStyle = MAP.wall
+  g.lineWidth = Math.max(1.5, 1.6 * px)
+  g.beginPath()
+  g.moveTo(-EDGE, -WALL)
+  g.lineTo(WALL, -WALL)
+  g.lineTo(WALL, WALL)
+  g.lineTo(-EDGE, WALL)
+  g.stroke()
   // the hills, with their contours
   g.save()
   g.rotate(angleOf(HILLS) - angleOf('north'))
   g.fillStyle = MAP.hills
-  g.fillRect(-FAR, -FAR, FAR * 2, FAR - EDGE)
+  g.fillRect(-FAR, -FAR, FAR * 2, FAR - WALL - 1)
   g.strokeStyle = MAP.contour
   g.lineWidth = 1.3 * px
   g.stroke(CONTOURS)
@@ -129,7 +177,7 @@ export function drawSurroundings (g, p, reach, px) {
   g.save()
   g.rotate(angleOf(COAST) - angleOf('west'))
   g.fillStyle = MAP.sand
-  g.fillRect(-FAR, -FAR, FAR - EDGE, FAR * 2)
+  g.fillRect(-FAR, -WALL, FAR - EDGE, WALL * 2)
   g.fillStyle = MAP.water
   g.fill(SEA)
   g.fillStyle = MAP.deep
@@ -138,25 +186,16 @@ export function drawSurroundings (g, p, reach, px) {
   pier(g)
 }
 
-// the pier, out from the promenade into the sea, a deck with the fairground to one side
+// the pier's deck, out from the promenade into the sea, and its big wheel
 function pier (g) {
-  const at = LANDMARKS.pier
-  if (!at) return
-  const [ox, oz] = OUT[COAST]
-  // (from where the promenade meets it, straight out)
-  const back = at.x * ox + at.z * oz - EDGE
-  const x = at.x - ox * back,
-    z = at.z - oz * back
-  g.strokeStyle = MAP.pier
-  g.lineCap = 'butt'
-  g.lineWidth = 9
-  g.beginPath()
-  g.moveTo(x, z)
-  g.lineTo(x + ox * 130, z + oz * 130)
-  g.stroke()
-  g.lineWidth = 22
-  g.beginPath()
-  g.moveTo(x + ox * 28 - oz * 14, z + oz * 28 + ox * 14)
-  g.lineTo(x + ox * 72 - oz * 14, z + oz * 72 + ox * 14)
-  g.stroke()
+  if (!PIER?.deck) return
+  g.fillStyle = MAP.pier
+  for (const d of PIER.deck) g.fillRect(d.x0, d.z0, d.x1 - d.x0, d.z1 - d.z0)
+  if (PIER.wheel) {
+    g.strokeStyle = MAP.wall
+    g.lineWidth = 2.5
+    g.beginPath()
+    g.arc(PIER.wheel.x, PIER.wheel.z, 7, 0, Math.PI * 2)
+    g.stroke()
+  }
 }
