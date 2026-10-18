@@ -4,7 +4,7 @@ import { Sim } from '../js/sim/sim.js'
 import assert from 'node:assert/strict'
 import { LINEUP, TRACK } from '../js/sim/track.js'
 import { Autopilot } from '../js/sim/autopilot.js'
-import { tyreCurve } from '../js/sim/ground.js'
+import { tyreCurve } from '../js/sim/tyres.js'
 import {
   G,
   CAR,
