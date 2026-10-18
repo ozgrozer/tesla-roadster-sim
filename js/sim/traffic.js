@@ -17,7 +17,8 @@ import { DRIVE, temperament } from './drivers.js'
 import { rng, NODES, EDGES, LANES, STALLS, pointAt, LANE_OFF } from './city.js'
 
 // cruise: the speed an ordinary driver likes (m/s); acc, brake: how hard they pull away and brake;
-// lat: the sideways acceleration they take a corner at
+// lat: the sideways acceleration they take a corner at; share: how many in a hundred cars are of
+// the type (the odd police car and sports car among them)
 // prettier-ignore
 export const TYPES = [
   { name: 'sedan', len: 4.7, wid: 1.85, hgt: 1.45, m: 1600, share: 30, cruise: 13.4, acc: 2.6, brake: 3.2, lat: 2.9 },
@@ -26,7 +27,9 @@ export const TYPES = [
   { name: 'taxi', len: 4.8, wid: 1.85, hgt: 1.62, m: 1650, share: 9, cruise: 14, acc: 2.8, brake: 3.4, lat: 3 },
   { name: 'pickup', len: 5.4, wid: 2.0, hgt: 1.85, m: 2300, share: 10, cruise: 13.4, acc: 2.2, brake: 3, lat: 2.4 },
   { name: 'van', len: 6.4, wid: 2.15, hgt: 2.8, m: 3800, share: 7, cruise: 12.4, acc: 1.7, brake: 2.8, lat: 2.1 },
-  { name: 'bus', len: 11.6, wid: 2.55, hgt: 3.15, m: 12500, share: 3, cruise: 10.6, acc: 1.15, brake: 2.4, lat: 1.6 }
+  { name: 'bus', len: 11.6, wid: 2.55, hgt: 3.15, m: 12500, share: 3, cruise: 10.6, acc: 1.15, brake: 2.4, lat: 1.6 },
+  { name: 'police', len: 5.05, wid: 2.0, hgt: 1.86, m: 2300, share: 2, cruise: 13.6, acc: 2.7, brake: 3.4, lat: 2.8 },
+  { name: 'sports', len: 4.5, wid: 1.9, hgt: 1.28, m: 1500, share: 3, cruise: 14.2, acc: 3.2, brake: 3.6, lat: 3.3 }
 ]
 const BUS = TYPES.findIndex(t => t.name === 'bus')
 const SHARES = TYPES.reduce((a, t) => a + t.share, 0)

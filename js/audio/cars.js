@@ -53,7 +53,9 @@ const KIND = {
   taxi: 'hybrid',
   pickup: 'v8',
   van: 'dsl4',
-  bus: 'dsl6'
+  bus: 'dsl6',
+  police: 'v6',
+  sports: 'v8'
 }
 // the orders of each engine, as harmonics of its cycle (half the crank's turn rate): the firing
 // order and its multiples strong, the rest (the cylinders never quite alike) round them
@@ -303,8 +305,8 @@ export const CARS = {
         (rev
           ? (s.rpm / 60) * 17
           : E.hybrid
-            ? 40 + sp * 30
-            : 2400 + s.boost * 4200) * dop,
+          ? 40 + sp * 30
+          : 2400 + s.boost * 4200) * dop,
         0.1
       )
       R(
@@ -312,8 +314,8 @@ export const CARS = {
         rev
           ? 0.012 * Math.min(1, sp / 2)
           : E.hybrid
-            ? (1 - s.on) * 0.004 * Math.min(1, sp / 3)
-            : t * s.boost * 0.006,
+          ? (1 - s.on) * 0.004 * Math.min(1, sp / 3)
+          : t * s.boost * 0.006,
         0.1
       )
     } else {
@@ -336,8 +338,8 @@ export const CARS = {
       c.loose
         ? Math.min(1, sp / 6) * 0.9
         : stamp
-          ? Math.min(1, sp / 10) * 1.4
-          : roll,
+        ? Math.min(1, sp / 10) * 1.4
+        : roll,
       0.05
     )
     // (the band, at 900 Hz, played slower for a bus's or a wreck's scrub, faster for a screech)
