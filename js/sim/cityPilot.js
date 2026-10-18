@@ -5,6 +5,7 @@
 // (cityHop.js); after that it drives on, and hops over any other jam it gets stuck in.
 import { Hop, landingSpot, routeToJam } from './cityHop.js'
 import { CAR, clamp, wrapPi, makeControls } from './constants.js'
+import { steerMax } from './tyres.js'
 import {
   LANES,
   NODES,
@@ -195,7 +196,7 @@ export class CityPilot {
     const dist = Math.max(1, Math.hypot(P.x - x, P.z - z))
     const alpha = wrapPi(Math.atan2(-(P.z - z), P.x - x) - sim.yaw)
     const steer = Math.atan((2 * CAR.wheelbase * Math.sin(alpha)) / dist)
-    c.steer = clamp(steer / (0.6 / (1 + (v * v) / 300)), -1, 1)
+    c.steer = clamp(steer / steerMax(v), -1, 1)
 
     // what is ahead: traffic in the lane, anything knocked loose, the signal at the end of the lane
     const hx = Math.cos(sim.yaw),
