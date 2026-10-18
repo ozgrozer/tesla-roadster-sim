@@ -237,6 +237,27 @@ test('steering out with the power on links it into a drift the other way, and th
   assert.ok(r.drifts[0].t > 3.5, `${r.drifts[0].t.toFixed(1)} s of it`)
 })
 
+test('Space with the wheel straight stops the car as hard as the tyres grip, W held or not, and bites at once', () => {
+  for (const keys of [[SPACE], [SPACE, W]]) {
+    const r = drive(100, () => keys, 4)
+    const stop = r.log.find(l => l.kmh < 0.5)
+    assert.ok(
+      stop && stop.dist < 31,
+      `${keys.join('+')} from 100 km/h: stopped in ${stop?.dist.toFixed(1)} m`
+    )
+    // (a tenth of a second in, already shedding speed hard)
+    const early = r.log.find(l => l.t >= 0.1)
+    assert.ok(early.kmh < 97, `${keys.join('+')}: ${early.kmh.toFixed(1)} km/h at 0.1 s`)
+    assert.ok(Math.abs(r.sim.yaw) < 0.03, `${keys.join('+')}: straight`)
+  }
+  // turned, it leaves the fronts free and swings the car round on its locked rears instead
+  const turn = drive(60, t => (t < 0.6 ? [A, SPACE] : []), 2)
+  assert.ok(
+    Math.abs(turn.sim.yaw) > 1.2,
+    `on the turn it swings round (${(Math.abs(turn.sim.yaw) / DEG).toFixed(0)}°)`
+  )
+})
+
 test('braking in a drift brings its pace down, and the drift goes on at it', () => {
   const plain = drive(70, t => (t < FLICK ? [A, SPACE] : [A, W]), 4)
   const braked = drive(

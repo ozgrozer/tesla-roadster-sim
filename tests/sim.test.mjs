@@ -223,28 +223,27 @@ test('brakes and e-brake stop the car in realistic distances', () => {
     c.brake = 1
   })
   assert.ok(brake.dist < 15, `brake distance ${brake.dist.toFixed(1)} m`)
-  // the e-brake locks only the rear wheels: a long stop, at about half a g
+  // the e-brake with the wheel straight is an emergency stop on all four wheels at their grip, as
+  // short as the brakes' and straight
   const eb = from60(c => {
     c.ebrake = true
   })
   assert.ok(
-    eb.dist > 1.8 * brake.dist && eb.dist < 40,
-    `e-brake distance ${eb.dist.toFixed(1)} m`
+    eb.dist < Math.max(brake.dist, 11.5),
+    `e-brake distance ${eb.dist.toFixed(1)} m (the brakes', ${brake.dist.toFixed(1)} m)`
   )
   assert.ok(
     Math.abs(eb.turned) < 2,
     'straight-line e-brake stop stays straight'
   )
-  // and with W held the front motor pulls against the locked rears, as on a real car
+  // and it wins over W held at the same time, as in GTA
   const ebW = from60(c => {
     c.ebrake = true
     c.throttle = 1
-  }, 3)
+  })
   assert.ok(
-    ebW.sim.groundSpeed() > 12,
-    `the fronts pull it along on locked rears (${ebW.sim
-      .groundSpeed()
-      .toFixed(1)} m/s after 3 s)`
+    ebW.dist < 11.5 && ebW.sim.groundSpeed() === 0,
+    `e-brake with W held: stopped in ${ebW.dist.toFixed(1)} m`
   )
 })
 
@@ -307,6 +306,43 @@ test('the ABS works only when the brakes ask for more than the tyres have', () =
   }
   assert.ok(hard > 0.9, `full braking: the ABS at work (${hard.toFixed(2)})`)
   assert.equal(soft, 0, 'a firm brake within the grip: no ABS')
+})
+
+test('the e-brake bites in a twentieth of a second: straight, the rears held at their peak; turned, locked', () => {
+  // (from 20 m/s on open ground, the e-brake held for n steps with the wheel at `steer`)
+  const pull = (steer, n) => {
+    const sim = new Sim()
+    sim.reset('start')
+    sim.pos.set(-100, 0, 300)
+    sim.suction = 0
+    sim.syncPose()
+    sim.vel.set(20, 0, 0)
+    sim.speed = 20
+    for (let i = 0; i < n; i++) {
+      const c = makeControls()
+      c.fan = false
+      c.ebrake = true
+      c.steer = steer
+      sim.step(H, c)
+    }
+    return sim
+  }
+  const half = pull(0, 3) // 0.025 s
+  assert.ok(half.ebLock > 0.3 && half.ebLock < 1, 'half way through the pull')
+  assert.ok(half.speed < 20, 'and already slowing')
+  // straight: an emergency stop, the rears braked to their peak by the ABS rather than locked
+  const straight = pull(0, 12) // 0.1 s
+  assert.ok(straight.ebLock === 1, 'fully on by a tenth of a second')
+  assert.ok(
+    !straight.rearLocked && straight.rearGrip === 1,
+    'straight: the rears not locked'
+  )
+  // turned: the handbrake, the rears locked and sliding
+  const turned = pull(1, 12)
+  assert.ok(
+    turned.rearLocked && turned.rearGrip < 1,
+    'turned: the rears locked'
+  )
 })
 
 test('e-brake plus steering rotates the car into a drift', () => {
