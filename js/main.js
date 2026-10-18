@@ -49,7 +49,7 @@ const ap = new Autopilot(sim)
 const rig = new CameraRig(camera, canvas)
 rig.cockpit = { head: RS.optimus.head, body: RS.body }
 const sound = new SoundEngine()
-const hud = new Hud(RS)
+const hud = new Hud(RS, damage) // (the dents fill its condition bar)
 const traffic = new Traffic()
 const peds = new Peds() // people on foot
 const cityPilot = new CityPilot(sim, traffic)
@@ -257,6 +257,7 @@ const COMMANDS = {
   KeyT: toggleSlow,
   KeyL: toggleNight,
   KeyI: () => hud.toggleHelp(),
+  KeyU: () => hud.toggleUnits(), // the speedometer in km/h or mph (remembered: hud.js)
   KeyH: () => setHorn(true),
   KeyN: toggleSound,
   KeyG: () => {

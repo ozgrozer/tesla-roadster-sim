@@ -1,32 +1,35 @@
-// HUD: telemetry strip, thruster schematic, captions, countdown, popups, top-bar buttons and the hint line.
+// The HUD, in the spirit of GTA V: a clean screen while driving (the title and the buttons fade away
+// until the mouse moves or a key that isn't a drive key is pressed), the radar bottom left with the
+// car's condition and its air under it (minimap.js), the speedometer over where you are bottom right
+// (speedo.js, place.js), the engineering instruments only when they matter (instruments.js), stunt
+// titles, the help box and the score (notify.js), the keys card, and the test site's captions and
+// countdown.
+import { $, put } from './dom.js'
+import { Place } from './place.js'
+import { Speedo } from './speedo.js'
+import { DRIVE_KEYS } from './input.js'
 import { CAR } from '../sim/constants.js'
+import { recall, remember } from './prefs.js'
+import { Instruments } from './instruments.js'
+import { Notices, HelpBox, Score } from './notify.js'
 
-const $ = id => document.getElementById(id)
-const SVG_NS = 'http://www.w3.org/2000/svg'
-// Write a node's text, markup, class, style or attribute only when it changes: even an unchanged
-// write costs the browser a style and layout pass, and the HUD has a couple of dozen of them.
-const last = new WeakMap()
-function put (node, what, value) {
-  let was = last.get(node)
-  if (!was) last.set(node, (was = {}))
-  if (was[what] === value) return
-  was[what] = value
-  if (what === 'text') node.textContent = value
-  else if (what === 'html') node.innerHTML = value
-  else if (what === 'class') node.className = value
-  else if (what[0] === '@') node.setAttribute(what.slice(1), value)
-  else node.style[what] = value
-}
 const FAN_TEXT = {
-  auto: 'Suction fan <b>auto</b> · spins up for the wall',
-  on: 'Suction fan <b>on</b> · 2.1 G of grip',
-  off: 'Suction fan <b>off</b>'
+  auto: 'Suction fan: auto · it spins up for the wall · <b>G</b> to change',
+  on: 'Suction fan: on · 2.1 G of grip',
+  off: 'Suction fan: off'
 }
+const WAKE_S = 3 // s the title and the buttons stay up after the mouse last moved, while driving
+// the keys that drive or fly the car (the keys card's Drive and Fly): they keep the screen clean
+const PLAY_KEYS = new Set([...DRIVE_KEYS, 'KeyH', 'KeyG', 'KeyX', 'KeyK'])
+const LINE_S = 7 // s the line of keys along the bottom stays up after it changes
+const DENTED = 1 // m of dents (damage.js's amount) that take the condition bar down to nothing
 
 export class Hud {
-  constructor (RS) {
-    this.RS = RS
+  // RS: the Roadster (its nozzles light the schematic); damage: its dents (the condition bar)
+  constructor (RS, damage) {
+    this.damage = damage
     this.clock = 0
+    this.acc = 0
     this.el = {
       mode: $('btnMode'),
       modeLabel: $('modeLabel'),
@@ -41,68 +44,71 @@ export class Hud {
       capT: $('capTitle'),
       capS: $('capSub'),
       countdown: $('countdown'),
-      popups: $('popups'),
-      score: $('score'),
       hint: $('hint'),
-      speed: $('tSpeed'),
-      tag: $('tTag'),
-      pitch: $('tPitch'),
-      g: $('tG'),
-      alt: $('tAlt'),
-      pow: $('tPow'),
-      suck: $('tSuck'),
-      air: $('tAir'),
-      airBar: $('tAirBar'),
-      z60: $('t060'),
-      thrTotal: $('thrTotal'),
-      thrAir: $('thrAir'),
-      dots: $('thrDots'),
       loading: $('loading'),
       world: $('btnWorld'),
       worldLabel: $('worldLabel'),
       brandSub: $('brandSub'),
-      fade: $('fade')
+      fade: $('fade'),
+      cond: $('condBar'),
+      condBox: $('condBox'),
+      air: $('airBar'),
+      airBox: $('airBox')
     }
     this.world = 'site'
     this.siteSub = this.el.brandSub.textContent
-    this.dots = RS.nozzles.map(nz => this.makeDot(nz))
+    this.instruments = new Instruments(RS)
+    this.speedo = new Speedo()
+    this.speedo.onToggle = unit =>
+      this.helpbox.push(`Speed in ${unit} · <b>U</b> to switch`, 1800, 'units')
+    this.place = new Place()
+    this.notices = new Notices($('notices'))
+    this.helpbox = new HelpBox($('helpbox'), $('helpText'))
+    this.score = new Score($('scoreBox'), $('score'))
+    this.line = '' // the line of keys along the bottom, how long it has been up, whether it is
+    this.lineT = 0 // new, and the lines already shown in this world (each once: a clean screen)
+    this.fresh = false
+    this.lines = new Set()
+    // GTA's empty screen: the time of the last wake (the mouse moved, the screen was touched away
+    // from the drive pad, a key that isn't a drive key) and of the last driving
+    this.wokeAt = 0
+    this.droveAt = -1
+    const wake = () => (this.wokeAt = this.clock)
+    window.addEventListener('pointermove', e => {
+      if (e.pointerType === 'mouse') wake()
+    })
+    window.addEventListener('pointerdown', e => {
+      if (!e.target?.closest?.('.touch')) wake()
+    })
+    window.addEventListener('keydown', e => {
+      if (!PLAY_KEYS.has(e.code)) wake()
+      else this.droveAt = this.clock
+    })
+    // the keys card: on the first visit only, afterwards a hint (there are no keys on a phone),
+    // given on the first update (the world set up at boot clears the help box)
+    const touch = !!window.matchMedia?.('(pointer: coarse)')?.matches
+    this.keysHint = false
+    if (recall('keysSeen') === '1' || touch) {
+      this.showHelp(false)
+      this.keysHint = !touch
+    } else remember('keysSeen', '1')
   }
 
-  // thruster schematic, top-down with the nose at the top
-  makeDot (nz) {
-    let x = 60,
-      y = 86
-    if (nz.kind === 'main') {
-      x = 60 + nz.local.z * 56
-      y = 141
-    } else if (nz.kind === 'lift') {
-      x = nz.local.z < 0 ? 34 : 86
-      y = nz.local.x > 0 ? 24 : 122
-    } else x = nz.kind === 'sideL' ? 23 : 97
-    const c = document.createElementNS(SVG_NS, 'circle')
-    c.setAttribute('cx', x)
-    c.setAttribute('cy', y)
-    c.setAttribute('r', nz.kind.startsWith('side') ? 4 : 5)
-    c.setAttribute('fill', '#bfe9ff')
-    c.setAttribute('fill-opacity', '0')
-    c.setAttribute('stroke', '#d6a84e')
-    c.setAttribute('stroke-width', '1.2')
-    this.el.dots.appendChild(c)
-    return c
-  }
-
-  // kind 'hint' for how to do something: smaller than a score or a crash
+  // a hint goes in the help box (kind 'hint'); anything else is a title mid-screen
   popup (html, ms = 2300, kind = '') {
-    const d = document.createElement('div')
-    d.className = kind ? `popup ${kind}` : 'popup'
-    d.innerHTML = html
-    this.el.popups.appendChild(d)
-    while (this.el.popups.children.length > 4)
-      this.el.popups.firstChild.remove()
-    setTimeout(() => d.remove(), ms)
+    if (kind === 'hint') this.helpbox.push(html, ms)
+    else this.notices.show({ title: html, html: true, tone: 'plain', ms })
+  }
+  // a stunt, a record or a crash (events.js): see Notices.show
+  notify (n) {
+    this.notices.show(n)
   }
   fanPopup (mode) {
-    this.popup(FAN_TEXT[mode], 1600, 'hint')
+    this.helpbox.push(FAN_TEXT[mode], 1800, 'fan')
+  }
+  // U: km/h or mph
+  toggleUnits () {
+    this.speedo.toggle()
   }
 
   setMode (auto) {
@@ -120,8 +126,10 @@ export class Hud {
       city ? 'Back to the test site' : 'Drive in the city'
     )
     this.el.brandSub.textContent = city
-      ? 'Free roam · downtown grid · live traffic and signals'
+      ? 'Los Angeles · free roam · live traffic and signals'
       : this.siteSub
+    this.lines.clear()
+    this.helpbox.clear()
   }
   // black out, run fn (the world switch) behind it, then fade back in
   fade (fn) {
@@ -142,10 +150,12 @@ export class Hud {
     this.el.sound.textContent = on ? 'Sound: on' : 'Sound: off'
     this.el.sound.setAttribute('aria-pressed', String(on))
   }
-  toggleHelp () {
-    const show = this.el.help.hidden
+  showHelp (show) {
     this.el.help.hidden = !show
     this.el.helpBtn.setAttribute('aria-pressed', String(show))
+  }
+  toggleHelp () {
+    this.showHelp(this.el.help.hidden)
   }
   hideLoading () {
     const l = this.el.loading
@@ -160,107 +170,98 @@ export class Hud {
   }
 
   update (dt, app) {
-    const { sim, ap } = app,
-      el = this.el
-    this.RS.nozzles.forEach((nz, i) =>
-      put(this.dots[i], '@fill-opacity', nz.level.toFixed(2))
-    )
+    const { sim } = app
     this.clock += dt
-    if (this.clock < 0.07) return
-    this.clock = 0
-    put(el.speed, 'text', String(Math.round(sim.groundSpeed() * 3.6)))
-    put(el.pitch, 'text', `${Math.round(sim.pitchDeg())}°`)
-    put(el.g, 'html', `${sim.gLoad.toFixed(2)}<small>G</small>`)
-    const alt =
-      sim.mode === 'air' || sim.mode === 'crash'
-        ? Math.max(0, sim.com.y - CAR.comH)
-        : sim.pos.y
-    put(el.alt, 'html', `${alt.toFixed(1)}<small>m</small>`)
-    if (sim.suction > 0.05) {
-      put(el.suck, 'text', `${(sim.suction * CAR.suctionG).toFixed(1)} G`)
-      put(el.suck, 'class', 'v status-on')
-    } else {
-      put(el.suck, 'text', !app.auto && app.fanMode === 'auto' ? 'AUTO' : 'OFF')
-      put(el.suck, 'class', 'v')
+    this.instruments.nozzles()
+    this.acc += dt
+    if (this.acc < 0.07) return
+    dt = this.acc
+    this.acc = 0
+    // (driving: a drive key, or the car moving under the player's hands, a gamepad's too)
+    const manual = !app.auto && !app.intro
+    if (manual && sim.groundSpeed() > 2) this.droveAt = this.clock
+    const quiet =
+      manual && this.droveAt > this.wokeAt && this.clock - this.wokeAt > WAKE_S
+    put(document.body, '.quiet', quiet)
+    put(document.body, '.cine', !!app.intro)
+    if (this.keysHint) {
+      this.keysHint = false
+      this.helpbox.push('Press <b>I</b> for the controls', 4000)
     }
-    const kw = Math.round(sim.drivePower / 1000)
-    put(el.pow, 'html', `${kw > 0 ? '+' : ''}${kw}<small>kW</small>`)
-    put(el.pow, 'class', kw < 0 ? 'v status-on' : 'v')
-    const tag = sim.ebrakeOn
-      ? 'E-BRAKE'
-      : sim.escActive
-      ? 'ESC'
-      : sim.abs > 0.5 && sim.groundSpeed() > 1
-      ? 'ABS'
-      : sim.regenOn && sim.groundSpeed() > 1
-      ? 'REGEN'
-      : ''
-    if (el.tag.textContent !== tag) {
-      el.tag.textContent = tag
-      el.tag.className =
-        tag === 'ESC' || tag === 'ABS'
-          ? 'tag esc'
-          : tag === 'REGEN'
-          ? 'tag status-on'
-          : 'tag'
-    }
-    put(el.air, 'html', `${Math.round(sim.air)}<small>kg</small>`)
-    put(el.airBar, 'transform', `scaleX(${(sim.air / CAR.airMass).toFixed(3)})`)
-    put(el.airBar, 'background', sim.air < 50 ? 'var(--warn)' : 'var(--jet)')
-    put(
-      el.thrAir,
-      'text',
-      `${Math.round(sim.air)} kg air · ${Math.round(
-        (380 * sim.air) / CAR.airMass
-      )} bar`
-    )
-    if (sim.z60.last)
-      put(el.z60, 'html', `${sim.z60.last.toFixed(2)}<small>s</small>`)
-    put(
-      el.thrTotal,
-      'text',
-      `${Math.round(
-        (sim.thrMain * CAR.mainThrust +
-          sim.thrLift * CAR.liftThrust +
-          sim.thrSide * CAR.sideThrust) /
-          1000
-      )} kN`
-    )
-    put(el.score, 'text', app.score.toLocaleString('en-US'))
-    if (app.auto) {
-      const [e, t, s] = ap.cap
-      this.setText(el.capE, e)
-      this.setText(el.capT, t)
-      this.setText(el.capS, s)
-      const cd = ap.countdown
-      put(el.countdown, 'opacity', cd === null ? '0' : '1')
-      if (cd !== null) put(el.countdown, 'text', cd === 0 ? 'GO' : String(cd))
-      const what =
-        this.world === 'city' ? 'Autopilot on' : 'Autopilot demo running'
-      this.setText(
-        el.hint,
-        app.soundOn
-          ? `${what} · press any drive key to take over`
-          : `${what} · click or press N for sound · any drive key takes over`
-      )
-    } else {
+    this.speedo.update(dt, app)
+    this.place.update(dt, app)
+    this.instruments.update(dt, app)
+    this.helpbox.update(dt)
+    this.score.update(dt, app.score, !quiet)
+    this.vitals(sim)
+    this.captions(app)
+    this.keysLine(dt, app)
+  }
+
+  // under the radar: the car's condition (its dents) and the thrusters' air
+  vitals (sim) {
+    const el = this.el
+    const cond = Math.max(0, 1 - (this.damage?.amount || 0) / DENTED)
+    put(el.cond, 'transform', `scaleX(${cond.toFixed(3)})`)
+    put(el.condBox, '.low', cond < 0.3)
+    put(el.air, 'transform', `scaleX(${(sim.air / CAR.airMass).toFixed(3)})`)
+    put(el.airBox, '.low', sim.air < 50)
+  }
+
+  // the autopilot's caption and countdown (the test site's demo, Autopilot in the city)
+  captions (app) {
+    const el = this.el
+    if (!app.auto) {
       put(el.countdown, 'opacity', '0')
-      this.setText(
-        el.hint,
-        app.intro
-          ? 'Optimus is getting in · any drive key skips'
-          : this.world === 'city' && sim.mode === 'ground'
-          ? 'W throttle · S brake · A/D steer · Space e-brake · Shift boost · F fly · H horn · C test site'
-          : sim.mode === 'air'
-          ? 'W/S pitch · A/D roll · Q/E yaw · F lift · Shift boost · X backflip · K kickflip'
-          : sim.mode === 'ramp'
-          ? 'W climb · S brake, then reverse down · Space hold · Shift main burn off the lip'
-          : sim.mode === 'crash'
-          ? sim.up().y > 0.95
-            ? 'Crashed · W to drive on · R to reset · P to watch the autopilot'
-            : 'Upside down · A/D to roll it back over · R to reset'
-          : 'W throttle · release to coast · S brake · Space e-brake · A/D steer · Shift boost · F fly'
-      )
+      return
     }
+    const [e, t, s] = app.ap.cap
+    put(el.capE, 'text', e)
+    put(el.capT, 'text', t)
+    put(el.capS, 'text', s)
+    const cd = app.ap.countdown
+    put(el.countdown, 'opacity', cd === null ? '0' : '1')
+    if (cd !== null) put(el.countdown, 'text', cd === 0 ? 'GO' : String(cd))
+    put(el.countdown, '.go', cd === 0)
+  }
+
+  // the keys for what the car is doing, along the bottom: for good while Autopilot drives, Optimus
+  // gets in or the car is wrecked, otherwise for a few seconds the first time each comes up
+  keysLine (dt, app) {
+    const text = this.lineFor(app)
+    if (text !== this.line) {
+      this.line = text
+      this.lineT = 0
+      this.fresh = !this.lines.has(text)
+      this.lines.add(text)
+    } else this.lineT += dt
+    const sticky = app.auto || app.intro || app.sim.mode === 'crash'
+    put(this.el.hint, 'text', text)
+    put(
+      this.el.hint,
+      '.on',
+      !!text && (sticky || (this.fresh && this.lineT < LINE_S))
+    )
+  }
+  lineFor (app) {
+    const { sim } = app
+    if (app.auto) {
+      const what = this.world === 'city' ? 'Autopilot on' : 'Autopilot demo'
+      return app.soundOn
+        ? `${what} · press any drive key to take over`
+        : `${what} · click or press N for sound · any drive key takes over`
+    }
+    if (app.intro) return 'Optimus is getting in · any drive key skips'
+    if (sim.mode === 'crash')
+      return sim.up().y > 0.95
+        ? 'Crashed · W to drive on · R to reset · P to watch the autopilot'
+        : 'Upside down · A/D to roll it back over · R to reset'
+    if (sim.mode === 'air')
+      return 'W/S pitch · A/D roll · Q/E yaw · F lift · Shift boost · X backflip · K kickflip'
+    if (sim.mode === 'ramp')
+      return 'W climb · S brake, then reverse down · Space hold · Shift main burn off the lip'
+    return this.world === 'city'
+      ? 'W throttle · S brake · A/D steer · Space e-brake · Shift boost · F fly · H horn'
+      : 'W throttle · release to coast · S brake · Space e-brake · A/D steer · Shift boost · F fly'
   }
 }
