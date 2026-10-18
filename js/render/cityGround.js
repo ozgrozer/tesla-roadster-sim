@@ -1,5 +1,7 @@
 // The city's ground: asphalt, kerbed blocks with sidewalks and rounded corners, lane
-// paint, stop lines and zebra crossings, parks, parking lots and the promenade round the ring road.
+// paint, stop lines and zebra crossings, parks, parking lots and the promenade round the ring road;
+// and on each block's lot what the sim laid out (lots.js): its base (paving, a lawn or asphalt) and
+// over it lawns and planters, drives and forecourts, car parks with their spaces marked out.
 import * as THREE from 'three'
 import { merge, marks, LAYER } from './geo.js'
 import { canvasTex, speckle } from './scene.js'
@@ -86,9 +88,9 @@ function textures () {
     g.fillRect(0, 0, S, S)
     blotches(g, S, 30, 'rgba(40,60,20,0.35)', 'rgba(150,170,80,0.18)', 10, 50)
     for (let i = 0; i < 9000; i++) {
-      g.fillStyle = `rgba(${Math.random() < 0.5 ? '30,50,15' : '140,170,80'},${
-        Math.random() * 0.4
-      })`
+      g.fillStyle = `rgba(${
+        Math.random() < 0.5 ? '30,50,15' : '140,170,80'
+      },${Math.random() * 0.4})`
       g.fillRect(Math.random() * S, Math.random() * S, 1, 2 + Math.random() * 2)
     }
   })
@@ -138,6 +140,19 @@ export function buildGround (group) {
     plaza: mat(T.plaza),
     grass: mat(T.grass, 0xffffff, 0.98)
   }
+  // the same, laid over a lot's base: drawn in front of it (a polygon offset), so they never fight
+  const over = m => {
+    m.polygonOffset = true
+    m.polygonOffsetFactor = -1
+    m.polygonOffsetUnits = -2
+    return m
+  }
+  const O = {
+    asphalt: over(roadMaterial({ map: T.asphalt, roughness: 0.88 })),
+    concrete: over(mat(T.walk, 0xf2efe8)),
+    plaza: over(mat(T.plaza)),
+    grass: over(mat(T.grass, 0xffffff, 0.98))
+  }
   const add = (geo, m, order = LAYER.ground) => {
     const mesh = new THREE.Mesh(geo, m)
     mesh.receiveShadow = true
@@ -149,9 +164,11 @@ export function buildGround (group) {
   const ra = HALF + ROAD_HW + 0.5
   add(flat(-ra, -ra, ra, ra, 0), M.asphalt, LAYER.road)
 
-  // blocks: a kerbed slab with rounded corners, the sidewalk round the edge, the lot inside
+  // blocks: a kerbed slab with rounded corners, the sidewalk round the edge, the lot inside: its
+  // base, and what is laid over it
   const slabs = [],
-    lots = { plaza: [], grass: [], asphalt: [] }
+    lots = { plaza: [], grass: [], asphalt: [] },
+    tops = { plaza: [], grass: [], asphalt: [], concrete: [] }
   for (const b of BLOCKS) {
     slabs.push(slab(roundRect(b.x0, b.z0, b.x1, b.z1, CURB_R), CURB_H))
     const x0 = b.x0 + WALK,
@@ -159,16 +176,15 @@ export function buildGround (group) {
       z0 = b.z0 + WALK,
       z1 = b.z1 - WALK,
       y = CURB_H + 0.004
+    lots[b.base].push(flat(x0, z0, x1, z1, y))
     if (b.kind === 'park') {
-      lots.grass.push(flat(x0, z0, x1, z1, y))
       const cx = (x0 + x1) / 2,
         cz = (z0 + z1) / 2 // footpaths across the middle
-      lots.plaza.push(flat(cx - 1.6, z0, cx + 1.6, z1, y + 0.004))
-      lots.plaza.push(flat(x0, cz - 1.6, x1, cz + 1.6, y + 0.004))
-    } else
-      lots[b.kind === 'parking' ? 'asphalt' : 'plaza'].push(
-        flat(x0, z0, x1, z1, y)
-      )
+      tops.plaza.push(flat(cx - 1.6, z0, cx + 1.6, z1, y + 0.004))
+      tops.plaza.push(flat(x0, cz - 1.6, x1, cz + 1.6, y + 0.004))
+    }
+    for (const g of b.ground)
+      if (tops[g.k]) tops[g.k].push(flat(g.x0, g.z0, g.x1, g.z1, y + 0.004))
   }
   // the promenade: the sidewalk on the outside of the ring road, out to the beach
   const outer = new THREE.Shape(),
@@ -188,13 +204,21 @@ export function buildGround (group) {
   outer.holes.push(hole)
   slabs.push(slab(outer, CURB_H))
   add(merge(slabs), M.walk)
-  add(merge(lots.plaza), M.plaza)
-  add(merge(lots.grass), M.grass)
-  add(merge(lots.asphalt), M.asphalt, LAYER.road)
+  for (const k of ['plaza', 'grass', 'asphalt'])
+    if (lots[k].length)
+      add(merge(lots[k]), M[k], k === 'asphalt' ? LAYER.road : LAYER.ground)
+  for (const k of ['plaza', 'grass', 'asphalt', 'concrete'])
+    if (tops[k].length) add(merge(tops[k]), O[k], LAYER.ground)
 
   // ---------- paint ----------
+  // (the lane lines in painted dashes, or, along the low-rise neighbourhoods' streets, in raised
+  // markers as on California's roads: four round dots and a square reflector every 7.3 m)
   const white = [],
-    yellow = []
+    yellow = [],
+    dots = []
+  const block = (bx, bz) =>
+    bx >= 0 && bz >= 0 && bx < N && bz < N ? BLOCKS[bz * N + bx].area : ''
+  const DOTS = new Set(['strip', 'venice', 'beach', 'estates'])
   for (let r = 0; r <= N; r++)
     for (let j = 0; j < N; j++) {
       const c = ROADS[r],
@@ -209,8 +233,20 @@ export function buildGround (group) {
           )
         for (const off of [-0.17, 0.17])
           put(yellow, (a + b) / 2, c + off, b - a, 0.12)
+        const side = alongZ
+          ? [block(r - 1, j), block(r, j)]
+          : [block(j, r - 1), block(j, r)]
+        const botts = DOTS.has(side[0]) || DOTS.has(side[1])
         for (const off of [-LANE_W, LANE_W])
-          for (let u = a + 3; u < b - 2; u += 9) put(white, u, c + off, 3, 0.13)
+          if (botts)
+            for (let u = a + 3; u < b - 4; u += 7.3) {
+              for (let k = 0; k < 4; k++)
+                put(dots, u + k * 0.9, c + off, 0.12, 0.12)
+              put(white, u + 3.65, c + off, 0.1, 0.1)
+            }
+          else
+            for (let u = a + 3; u < b - 2; u += 9)
+              put(white, u, c + off, 3, 0.13)
       }
     }
   for (const n of NODES)
@@ -239,19 +275,29 @@ export function buildGround (group) {
             yaw
           })
     }
+  // the lines either side of each parking space, along it (the way its car's nose points)
   const stalls = []
-  for (const st of STALLS)
+  for (const st of STALLS) {
+    const hx = Math.cos(st.yaw),
+      hz = -Math.sin(st.yaw)
     for (const s of [-1.35, 1.35])
-      stalls.push({ x: st.x + s, z: st.z, len: 5, wid: 0.12, yaw: Math.PI / 2 })
-  const paint = (color, list, y) => {
+      stalls.push({
+        x: st.x - hz * s,
+        z: st.z + hx * s,
+        len: 5,
+        wid: 0.12,
+        yaw: st.yaw
+      })
+  }
+  const paint = (color, list, y, off = 1) => {
     const m = marks(
       list,
       new THREE.MeshStandardMaterial({
         color,
         roughness: 0.7,
         polygonOffset: true,
-        polygonOffsetFactor: -1,
-        polygonOffsetUnits: -1
+        polygonOffsetFactor: -off,
+        polygonOffsetUnits: -off
       }),
       y
     )
@@ -259,6 +305,33 @@ export function buildGround (group) {
   }
   paint(0xdedbd2, white, 0.012)
   paint(0xd9a520, yellow, 0.012)
-  paint(0xdedbd2, stalls, CURB_H + 0.014) // on the raised lot, not the road
+  // the dots: white domes (a round cut-out, shaded as a dome), a little proud of the road
+  const dot = canvasTex(32, (g, S) => {
+    g.clearRect(0, 0, S, S)
+    const gr = g.createRadialGradient(S * 0.4, S * 0.38, 1, S / 2, S / 2, S / 2)
+    gr.addColorStop(0, '#ffffff')
+    gr.addColorStop(0.7, '#d9d6cf')
+    gr.addColorStop(1, '#8e8b85')
+    g.fillStyle = gr
+    g.beginPath()
+    g.arc(S / 2, S / 2, S / 2 - 1, 0, Math.PI * 2)
+    g.fill()
+  })
+  group.add(
+    marks(
+      dots,
+      new THREE.MeshStandardMaterial({
+        map: dot,
+        alphaTest: 0.5,
+        roughness: 0.35,
+        polygonOffset: true,
+        polygonOffsetFactor: -1,
+        polygonOffsetUnits: -1
+      }),
+      0.016
+    )
+  )
+  // (on the raised lot, not the road, and over a car park laid on it)
+  paint(0xdedbd2, stalls, CURB_H + 0.014, 4)
   return M
 }
