@@ -233,3 +233,15 @@ test('driven off a roof towards a taller building across a narrow alley, the car
     `down in the alley (${sim.pos.y.toFixed(1)} m, the roof ${pair.t.y1.toFixed(1)} m)`
   )
 })
+
+test('a quick correction at speed with W held is no lurch: the understeer control waits for a held turn', () => {
+  // a quarter-second tap of A at 80 km/h on full throttle: the car keeps pulling, the tyres only
+  // sharing their grip with the turn (the understeer control once cut most of the power for every
+  // tap, the car lurching at each correction), and it answers without jolting sideways
+  const r = drive(80, t => (t > 0.2 && t < 0.45 ? [W, A] : [W]), 1.2)
+  const during = r.log.filter(l => l.t > 0.3 && l.t < 0.8)
+  const pull = Math.min(...during.map(l => l.lon)) / G
+  assert.ok(pull > 0.82, `still pulling at ${pull.toFixed(2)} g`)
+  const side = Math.max(...during.map(l => Math.abs(l.lat))) / G
+  assert.ok(side < 0.85, `${side.toFixed(2)} g sideways`)
+})

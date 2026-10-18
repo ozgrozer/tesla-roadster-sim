@@ -1,15 +1,15 @@
 import { roofAt, STEP } from './roofs.js'
 import { TRACK, SOLIDS } from './track.js'
-import { feel, gripOf, dragOf, kerbDist } from './street.js'
-import { collideCity, bumpCars, loadBody, storeBody } from './collide.js'
-import { G, CAR, LIFT_ACC, clamp, wrapPi } from './constants.js'
 import { smooth, tyreCurve, steer } from './tyres.js'
+import { feel, gripOf, dragOf, kerbDist } from './street.js'
+import { G, CAR, LIFT_ACC, clamp, wrapPi } from './constants.js'
+import { collideCity, bumpCars, loadBody, storeBody } from './collide.js'
 import {
   BURN_V,
   BURN_GRIP,
   trackMode,
-  trackDrive,
   burnCreep,
+  trackDrive,
   driftMoment
 } from './drift.js'
 
@@ -48,7 +48,9 @@ const DRIVE_FLOOR = 0.12,
   BRAKE_FLOOR = 0.35
 const TRANSFER = 0.09 // s: how far behind the acceleration the weight's shift onto an axle follows
 const PUSH_IN = 0.08, // s: the understeer control's cut eases in, and the power back
-  PUSH_OUT = 0.2
+  PUSH_OUT = 0.2,
+  HELD_AT = 0.9, // the wheel held this far over (of full lock on the keys) ...
+  HELD_T = 0.3 // ... for this long (s) is a turn the understeer control tightens
 const REV_MAX = 9 // m/s: as fast as the car backs up
 // the share of an axle's speed into the kerb the car loses as it climbs it (a tyre meeting an 8 cm
 // edge rolls over it at about 39 degrees), and the most a strike takes (m/s)
@@ -168,14 +170,19 @@ export function stepGround (s, dt, c, main, lift) {
   if (throttle > 0 && u < CAR.vMax)
     Fdrive +=
       throttle * Math.min(m * CAR.driveAccelMax, CAR.powerW / Math.max(au, 1))
-  // Understeer control, as a Tesla's stability control does it: while the wheel asks the fronts for
-  // more than they can grip, the motors' torque is taken away, so on full lock with W held the car
-  // comes round at the tyres' limit instead of piling on speed and running ever wider (not in Track
-  // Mode: drifting, the driver has the power)
+  // Understeer control, as a Tesla's stability control does it: while the wheel is held over, asking
+  // the fronts for more than they can grip, the motors' torque is taken away, so on full lock with W
+  // held the car comes round at the tyres' limit instead of piling on speed and running ever wider
+  // (not in Track Mode: drifting, the driver has the power). Only while the turn is held (s.held
+  // builds over HELD_T s with the wheel over HELD_AT or more, and is gone at once without): a tap of
+  // the keys at speed, a lane change, is no turn to tighten, and cutting the power for it lurched
+  // the car at every correction.
+  s.held = Math.abs(c.steer) >= HELD_AT ? Math.min(1, s.held + dt / HELD_T) : 0
+  const pushT = push * s.held
   // (eased: the cut comes in over PUSH_IN s and the power back over PUSH_OUT s, as the motors'
   // torque is ramped, rather than switching in one step as the wheel sweeps through the band)
   s.pushF +=
-    (push - s.pushF) * Math.min(1, dt / (push > s.pushF ? PUSH_IN : PUSH_OUT))
+    (pushT - s.pushF) * Math.min(1, dt / (pushT > s.pushF ? PUSH_IN : PUSH_OUT))
   if (!s.track) Fdrive *= 1 - s.pushF
   s.push = s.track || throttle === 0 ? 0 : s.pushF
   // (backing up, the motors ease off as the car nears its reverse limit, REV_MAX m/s)

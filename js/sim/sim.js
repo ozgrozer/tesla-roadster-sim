@@ -2,9 +2,9 @@
 // Uses only THREE math types, so it runs headless in Node for tests.
 import * as THREE from 'three'
 import { knock } from './collide.js'
+import { stepRamp } from './ramp.js'
 import { stepAir } from './flight.js'
 import { stepGround } from './ground.js'
-import { stepRamp } from './ramp.js'
 import { SPAWN, query } from './city.js'
 import { TRACK, SOLIDS } from './track.js'
 import { drift, donuts } from './stunts.js'
@@ -98,6 +98,7 @@ export class Sim {
     this.abs = 0 // how hard the ABS is working, 0 to 1 (ground.js)
     this.push = 0 // how much of the power the understeer control is holding back, 0 to 1
     this.pushF = 0 // (the same, eased, whatever the throttle: ground.js)
+    this.held = 0 // how long the wheel has been held over, for the understeer control (0 to 1)
     this.track = false // Track Mode: the handbrake has the electronics stand back (ground.js)
     this.calm = 0
     this.driftA = 0 // the drift angle a step ago
