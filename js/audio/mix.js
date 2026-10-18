@@ -6,12 +6,12 @@
 // makes are watched for in watch.js, and ears.js says how loud, where and how dull a thing sounds.
 // Everything is written into objects kept from frame to frame, so a frame allocates nothing.
 import * as THREE from 'three'
+import { OUTER } from '../sim/city.js'
+import { TYPES } from '../sim/traffic.js'
 import { camera } from '../render/scene.js'
 import { clamp } from '../sim/constants.js'
-import { TYPES } from '../sim/traffic.js'
-import { OUTER } from '../sim/city.js'
-import { hearing, panOf, blocked, dullness, placeOf, ray } from './ears.js'
 import { watch, forget, ALARM } from './watch.js'
+import { hearing, panOf, blocked, dullness, placeOf, ray } from './ears.js'
 
 export { hearing, panOf, dullness, placeOf }
 
@@ -244,13 +244,18 @@ export function mixSound (sound, app, traffic, dt, clock, peds) {
     sound.fresh = false
     forget(traffic)
     panicWas = peds?.panic || 0
-    for (const p of peds?.list || NONE) p.sndPh = Math.floor((p.phase || 0) / Math.PI)
+    for (const p of peds?.list || NONE)
+      p.sndPh = Math.floor((p.phase || 0) / Math.PI)
   }
   if (on && world) {
     watch(sound, app, traffic)
     if ((frame & 3) === 0) wash(traffic)
   }
-  const w = on ? ((frame & 3) === 1 || !wallsAt ? (wallsAt = walls()) : wallsAt) : null
+  const w = on
+    ? (frame & 3) === 1 || !wallsAt
+      ? (wallsAt = walls())
+      : wallsAt
+    : null
   // how shut in by walls the camera is, for the reverb
   const shut = w
     ? (clamp(1 - w.left / 45, 0, 1) + clamp(1 - w.right / 45, 0, 1)) / 2
@@ -294,9 +299,7 @@ export function mixSound (sound, app, traffic, dt, clock, peds) {
   st.track = !!sim.track
   // (sim.rearSpin, 0 to 1, how much the driven rears spin past the road; about 10 m/s at full spin,
   // and in a burnout the sim says how fast)
-  st.spin = ground
-    ? Math.max((sim.rearSpin || 0) * 10, sim.burnSpin || 0)
-    : 0
+  st.spin = ground ? Math.max((sim.rearSpin || 0) * 10, sim.burnSpin || 0) : 0
   st.burning = ground && !!sim.burning
   st.main = sim.thrMain
   st.lift = sim.thrLift

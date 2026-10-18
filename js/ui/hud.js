@@ -180,11 +180,7 @@ export class Hud {
       put(el.suck, 'text', `${(sim.suction * CAR.suctionG).toFixed(1)} G`)
       put(el.suck, 'class', 'v status-on')
     } else {
-      put(
-        el.suck,
-        'text',
-        !app.auto && app.fanMode === 'auto' ? 'AUTO' : 'OFF'
-      )
+      put(el.suck, 'text', !app.auto && app.fanMode === 'auto' ? 'AUTO' : 'OFF')
       put(el.suck, 'class', 'v')
     }
     const kw = Math.round(sim.drivePower / 1000)
@@ -209,11 +205,7 @@ export class Hud {
           : 'tag'
     }
     put(el.air, 'html', `${Math.round(sim.air)}<small>kg</small>`)
-    put(
-      el.airBar,
-      'transform',
-      `scaleX(${(sim.air / CAR.airMass).toFixed(3)})`
-    )
+    put(el.airBar, 'transform', `scaleX(${(sim.air / CAR.airMass).toFixed(3)})`)
     put(el.airBar, 'background', sim.air < 50 ? 'var(--warn)' : 'var(--jet)')
     put(
       el.thrAir,
@@ -228,11 +220,11 @@ export class Hud {
       el.thrTotal,
       'text',
       `${Math.round(
-      (sim.thrMain * CAR.mainThrust +
-        sim.thrLift * CAR.liftThrust +
-        sim.thrSide * CAR.sideThrust) /
-        1000
-    )} kN`
+        (sim.thrMain * CAR.mainThrust +
+          sim.thrLift * CAR.liftThrust +
+          sim.thrSide * CAR.sideThrust) /
+          1000
+      )} kN`
     )
     put(el.score, 'text', app.score.toLocaleString('en-US'))
     if (app.auto) {

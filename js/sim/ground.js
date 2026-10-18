@@ -1,6 +1,6 @@
 import { roofAt, STEP } from './roofs.js'
-import { feel, gripOf, dragOf } from './street.js'
 import { TRACK, SOLIDS } from './track.js'
+import { feel, gripOf, dragOf } from './street.js'
 import { collideCity, bumpCars } from './collide.js'
 import { G, CAR, LIFT_ACC, clamp, wrapPi } from './constants.js'
 
@@ -199,8 +199,7 @@ export function stepGround (s, dt, c, main, lift) {
       aLim = (1.5 * FmaxF) / CAR.corneringF,
       ab = Math.abs(beta)
     slide = smooth((ab - 0.1) / 0.14)
-    const into =
-      c.steer * beta < 0 ? 1 - smooth((ab - 0.35) / 0.4) * 0.9 : 1,
+    const into = c.steer * beta < 0 ? 1 - smooth((ab - 0.35) / 0.4) * 0.9 : 1,
       // (rad/s it is swinging further round)
       grow = (ab - (s.driftA ?? ab)) / dt,
       catchIt =
@@ -218,8 +217,7 @@ export function stepGround (s, dt, c, main, lift) {
   // spinning through them as the wheels follow a slide)
   const centring =
     Math.abs(steerT) < Math.abs(s.steerAng) && steerT * s.steerAng >= 0
-  const rate =
-    HANDS * (1 + 2 * slide) + (centring ? CENTRE * Math.abs(u) : 0)
+  const rate = HANDS * (1 + 2 * slide) + (centring ? CENTRE * Math.abs(u) : 0)
   s.steerAng += clamp(steerT - s.steerAng, -rate * dt, rate * dt)
   const cd = Math.cos(s.steerAng),
     sd = Math.sin(s.steerAng)
@@ -301,8 +299,7 @@ export function stepGround (s, dt, c, main, lift) {
   else Fxr = -su * Math.min(FmaxR, s.ebLock * FmaxR + Math.max(0, -su * Fxr))
   if (burn) {
     // the rears' push against the fronts' brakes nets out at a creep, quicker on full lock
-    const creep =
-      BURN_CREEP * (0.3 + 0.7 * Math.abs(c.steer)) * c.throttle
+    const creep = BURN_CREEP * (0.3 + 0.7 * Math.abs(c.steer)) * c.throttle
     Fxf = clamp(m * 3 * (creep - u), -FmaxF, FmaxF)
     Fxr = 0
     spin = 1
@@ -377,11 +374,7 @@ export function stepGround (s, dt, c, main, lift) {
   // (the angle asked for, from where the drift began: deeper, unwinding, or unwinding fast)
   if (s.driftDir && !c.ebrake) {
     const k =
-      into > 0
-        ? DRIFT_INTO * into
-        : into < 0
-        ? DRIFT_OUT * into
-        : -DRIFT_UNWIND
+      into > 0 ? DRIFT_INTO * into : into < 0 ? DRIFT_OUT * into : -DRIFT_UNWIND
     s.driftWant = clamp(s.driftWant + k * dt, 0, DRIFT_MAX_A)
   } else if (s.driftDir)
     s.driftWant = Math.max(s.driftWant, Math.min(ab, DRIFT_MAX_A))

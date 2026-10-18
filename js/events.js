@@ -1,8 +1,8 @@
 // What the sim reports (scores, landings, drifts, near misses, knocks, kerbs, honks, crashes),
 // turned into popups, sounds, camera shake, a gamepad's rumble and particles.
 import { HORNS, AIR_HORN } from './audio/shots.js'
-import { hearing, panOf, dullness, placeOf } from './audio/mix.js'
 import { burst, knockFx, sparkBurst } from './render/effects.js'
+import { hearing, panOf, dullness, placeOf } from './audio/mix.js'
 
 const CONTACT = { x: 0, y: 0, z: 0 }
 function contactAt (x, y, z) {

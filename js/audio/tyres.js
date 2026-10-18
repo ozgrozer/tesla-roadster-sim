@@ -55,13 +55,13 @@ export const TYRES = {
     to(n.sand.connect(grains), n.sand.gain)
     this.bank.ready('sand', b => (n.sandSrc = loop(b)).connect(n.sand))
     n.crunch = gain(0)
-    to(brown.connect(n.crunch).connect(filt('lowpass', 260, 0.7)), n.crunch.gain)
+    to(
+      brown.connect(n.crunch).connect(filt('lowpass', 260, 0.7)),
+      n.crunch.gain
+    )
     n.grass = gain(0)
     const blades = gain(0.6)
-    pink
-      .connect(n.grass)
-      .connect(filt('bandpass', 1800, 0.7))
-      .connect(blades)
+    pink.connect(n.grass).connect(filt('bandpass', 1800, 0.7)).connect(blades)
     loop(this.flutter).connect(gain(0.4)).connect(blades.gain)
     to(blades, n.grass.gain)
     // the wind: broadband, gusting and buffeting, and a whistle off the canopy's seals
@@ -125,10 +125,7 @@ export const TYRES = {
     n.lockChat = loop(this.chatter)
     n.lockChat.connect(gain(0.35)).connect(n.lockAM.gain)
     n.hop = gain(0)
-    brown
-      .connect(n.hop)
-      .connect(filt('lowpass', 140, 0.8))
-      .connect(n.lockAM)
+    brown.connect(n.hop).connect(filt('lowpass', 140, 0.8)).connect(n.lockAM)
     to(n.lockAM, n.lock.gain, n.hop.gain)
     // a slide on loose ground: grit or turf scrubbed and thrown
     n.scrub = gain(0)
@@ -280,8 +277,8 @@ export const TYRES = {
     const locked = eb
       ? smooth(0, 1, st.skidR) * smooth(0.5, 5, v)
       : st.burning
-        ? 0.5 * smooth(0, 1, st.skidR)
-        : 0
+      ? 0.5 * smooth(0, 1, st.skidR)
+      : 0
     const lock = locked * (SQUEAL[surf] + 0.1) * (inside ? 0.6 : 0.9)
     R(n.lock.gain, lock, locked ? 0.04 : 0.12)
     R(n.hop.gain, lock * 0.2, locked ? 0.04 : 0.12)

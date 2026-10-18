@@ -1,12 +1,12 @@
 // The vehicle simulation: state, mode switching (ground / ramp / air / crash), the wall ride and scoring.
 // Uses only THREE math types, so it runs headless in Node for tests.
 import * as THREE from 'three'
-import { drift, donuts } from './stunts.js'
 import { knock } from './collide.js'
 import { stepAir } from './flight.js'
 import { stepGround } from './ground.js'
 import { SPAWN, query } from './city.js'
 import { TRACK, SOLIDS } from './track.js'
+import { drift, donuts } from './stunts.js'
 import { enterCrash, stepCrash } from './crash.js'
 import {
   G,
