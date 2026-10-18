@@ -100,7 +100,8 @@ export class Speedo {
     // (ABS: as the sim says it is working; ESC flickers as a dashboard's does)
     const moving = sim.groundSpeed() > 1
     put(el.abs, '.on', (sim.abs || 0) > 0.5 && moving)
-    put(el.esc, '.on', !!sim.escActive)
+    // (the stability control catching a slide, or holding the power back while the fronts push wide)
+    put(el.esc, '.on', !!sim.escActive || (sim.push || 0) > 0.4)
     put(el.track, '.on', !!sim.track)
     put(el.brake, '.on', !!sim.ebrakeOn)
   }
