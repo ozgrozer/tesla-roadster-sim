@@ -2,7 +2,7 @@
 // fast as ever), shows it in place of the test site, and keeps the traffic, signals, sky, sea and
 // antenna beacons moving, and the city's long shadows up to date (sunShadow.js).
 import * as THREE from 'three'
-import { buildSea } from './citySea.js'
+import { buildEdges } from './cityEdges.js'
 import { Sky, SUN } from './citySky.js'
 import { scene, site, renderer } from './scene.js'
 import { CityShadow } from './sunShadow.js'
@@ -45,7 +45,7 @@ export class CityView {
     this.sky = new Sky(g)
     buildGround(g)
     buildStreet(g)
-    this.sea = buildSea(g)
+    this.edges = buildEdges(g) // (past the ring road: the sea, the hills, the freeway)
     this.buildings = buildBuildings(g)
     const props = (this.props = buildProps(g))
     const top = Math.max(...BUILDINGS.map(b => b.h)) + 30 // (and the masts on top)
@@ -74,7 +74,7 @@ export class CityView {
     const k = on ? 1 : 0
     NIGHT.value = k
     this.sky.setNight(on)
-    this.sea.night(k)
+    this.edges.night(k)
     this.buildings.night(k)
     this.props.night(k)
     this.cars.night = on
@@ -115,7 +115,7 @@ export class CityView {
   update (dt, clock, traffic, camera, peds) {
     if (!this.on) return
     this.sky.follow(camera)
-    this.sea(clock, camera)
+    this.edges.update(clock, camera)
     let falling = false
     for (const f of Object.values(this.fallers)) {
       f.update(dt)
