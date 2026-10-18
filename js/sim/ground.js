@@ -1,52 +1,31 @@
 import { roofAt, STEP } from './roofs.js'
 import { TRACK, SOLIDS } from './track.js'
-import { feel, gripOf, dragOf } from './street.js'
-import { collideCity, bumpCars } from './collide.js'
+import { feel, gripOf, dragOf, kerbDist } from './street.js'
+import { collideCity, bumpCars, loadBody, storeBody } from './collide.js'
 import { G, CAR, LIFT_ACC, clamp, wrapPi } from './constants.js'
+import { smooth, tyreCurve, steer } from './tyres.js'
+import {
+  BURN_V,
+  BURN_GRIP,
+  trackMode,
+  trackDrive,
+  burnCreep,
+  driftMoment
+} from './drift.js'
 
-// Planar two-axle tyre model: slip angles, a tyre curve that peaks and falls away, friction circle,
-// AWD split, load transfer, rolling resistance, aero drag, coast regen, a steering rack turned at the
-// speed of a driver's hands, brakes shared out by the load on each axle with ABS, stability control
-// that backs the rears' brakes and regen off before they let go sideways, and an e-brake: pulled
-// with the wheel straight, an emergency stop on all four wheels at their grip whatever the throttle
-// is doing; turned, a handbrake on the rear wheels only, biting in a twentieth of a second and
-// locking them, so they slide (at the sliding tyre's grip) the way they are going; the fronts still
-// steer. Let go, and the rear wheels spin back up with the road in a few hundredths of a second; a
-// car well sideways by then is past its tyres' peak and slides on until they bite, or the driver
-// catches it.
-// Track Mode: pulled at speed, the handbrake also has traction and stability control stand back
-// and the drive shift to the rears, as in a Tesla's Track Mode with its balance set to the rear, so
-// the throttle holds a drift: on the power the driven rears spin up and slide, and the two rear
-// motors, one to each wheel, share the torque out between them to hold the drift at the angle the
-// driver asks for: steering into the turn holds it or takes it deeper, leaving the wheel be lets it
-// slowly unwind (a small flick is a short slide, a big one a long drift), and steering out of it
-// unwinds it fast; held there with the power on, the car swings on through straight into a drift
-// the other way (a linked drift); lift off and the rears grip and the car straightens. Held in a
-// drift, the throttle keeps the pace the drift began at rather than piling on speed, as a drifter
-// feathers it, so the tyres' grip carries the car round the corner instead of out wide. Once it is
-// lined up again the electronics are back.
-// Three GTA-style touches on top: the handbrake with the wheel turned swings the car round at once,
-// a car spinning faster than its tyres could carry it is caught once the handbrake is let go, and
-// the throttle and brake together at a crawl are a burnout (steered, a donut).
+// Planar two-axle tyre model: slip angles, a tyre curve that peaks and falls away (tyres.js),
+// friction circle, AWD split, load transfer through the springs, rolling resistance, aero drag,
+// coast regen, a steering rack turned at the speed of a driver's hands (tyres.js), brakes shared out
+// by the load on each axle with ABS, stability control that backs the rears' brakes and regen off
+// before they let go sideways and takes the power away while the fronts push wide, and an e-brake:
+// pulled with the wheel straight, an emergency stop on all four wheels at their grip whatever the
+// throttle is doing; turned, a handbrake on the rear wheels only, biting in a twentieth of a second
+// and locking them, so they slide (at the sliding tyre's grip) the way they are going; the fronts
+// still steer. Let go, and the rear wheels spin back up with the road in a few hundredths of a
+// second; a car well sideways by then is past its tyres' peak and slides on until they bite, or the
+// driver catches it. Track Mode's drifts, the handbrake's swing, catching a spin and the burnout's
+// donut are in drift.js.
 
-// A tyre's grip against its slip, x: the slip angle in units of its grip over its cornering
-// stiffness, so that the force starts out at the stiffness times the slip. It builds like a sine to
-// its peak at x = pi / 2 (about 11 degrees on the fronts), then falls away to what a sliding tyre
-// keeps (CAR.slideMu), so a tyre pushed past its limit gives less, not more.
-const PEAK = Math.PI / 2
-export function tyreCurve (x) {
-  const a = Math.abs(x)
-  const f =
-    a < PEAK
-      ? Math.sin(a)
-      : CAR.slideMu + (1 - CAR.slideMu) * Math.exp(-((a - PEAK) ** 2) / 1.2)
-  return Math.sign(x) * f
-}
-// the steering rack: how fast hands turn the road wheels (rad/s, full lock in a third of a second),
-// and the extra speed they come back to the middle at as the car rolls (the tyres' self-aligning
-// torque, per m/s)
-const HANDS = 1.8,
-  CENTRE = 0.08
 // the rear wheels spinning back up with the road after the e-brake: the share of their grip they get
 // back per second
 const SPIN_UP = 12
@@ -64,65 +43,63 @@ const EB_ON = 0.06,
 // handbrake.)
 const ESC_CUT = 0.9,
   ESC_CUT_W = 0.5
-const LOCK = 0.62 // the road wheels' full lock (rad)
-const smooth = x => (x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x))
-// Track Mode: the e-brake at more than this speed (m/s) switches it on, and it switches itself off
-// once the rear axle has run within this much slip (rad) of straight for CALM s; the drive's front
-// share meanwhile (none: the rears take it all, or the front motor pulling on counter-steered wheels
-// would drag the nose straight)
-const TRACK_IN = 5,
-  TRACK_STRAIGHT = 0.09,
-  CALM = 0.4,
-  TRACK_FRONT = 0
-// The handbrake pulled with the wheel turned, GTA-style: the locked rears step out at once rather
-// than waiting for the fronts to drag the car round. The yaw moment it adds (N m at full lock, from
-// a jog upwards, fading out as the car comes round past HB_FADE rad so it doesn't spin on its own)
-const HB_YAW = 7000,
-  HB_FADE = 0.9
-// Catching a spin, as a driver's hands and GTA's forgiving cars do: off the handbrake, a car turning
-// faster than its tyres could carry it round (its grip over its speed, or what the wheel asks for,
-// and SPIN_OK rad/s to spare) is eased back, SPIN_K N m per rad/s too fast, at most SPIN_MAX, so a
-// handbrake turn stops swinging soon after the handbrake is let go instead of spinning on round.
-const SPIN_OK = 0.35,
-  SPIN_K = 11000,
-  SPIN_MAX = 13000
-// A burnout, GTA-style: the throttle and the brake together under BURN_V m/s, the fronts held on
-// their brakes and the rears spinning against them in a cloud of smoke; turn the wheel and the rears
-// swing out round the fronts, the car turning at up to BURN_R rad/s on full lock (the rears' push
-// worked out as a moment of at most BURN_YAW N m, BURN_K N m per rad/s short of it) while it creeps
-// forward at up to BURN_CREEP m/s: a donut. Let go of the brake and it leaves on spinning rears, in
-// Track Mode.
-export const BURN_V = 6
-const BURN_R = 2.6,
-  BURN_K = 14000,
-  BURN_YAW = 17000,
-  BURN_CREEP = 1.6,
-  BURN_GRIP = 0.15 // the share of their grip spinning rears keep sideways
-// the drift the rear motors hold (rad, at most DRIFT_MAX_A), and how it changes (rad/s): deeper
-// steering into the turn, unwinding slowly with the wheel left alone and fast steering out; and how
-// hard they work at it: N m per rad off, N m per rad/s it is swinging, and at most N m (all of one
-// rear tyre's grip against none of the other's, across the track)
-const DRIFT_MAX_A = 0.7,
-  DRIFT_INTO = 0.5,
-  DRIFT_UNWIND = 0.3,
-  DRIFT_OUT = 1.2,
-  DRIFT_K = 40000,
-  DRIFT_D = 9000,
-  DRIFT_MAX = 15000
-// The drift's pace: held in a drift, the rears get DRIFT_PUSH of their drive at the pace it began
-// at, more below it and none DRIFT_BAND m/s or so above (the pace creeping up by DRIFT_GAIN m/s each
-// second the power stays on, and coming down to wherever the brakes take it). As the car comes
-// round further than asked, the rears are spun less (all of it DRIFT_EASE rad further round), so
-// they bite and bring it back; and it hands back to the electronics once it is within DRIFT_END rad
-// of straight, not while it is still well sideways (the rears gripping at once would snap it round).
-// Steering out with the power on, the drift links: swung DRIFT_LINK rad the other way, it is a drift
-// that way.
-const DRIFT_PUSH = 0.3,
-  DRIFT_BAND = 2,
-  DRIFT_GAIN = 0.3,
-  DRIFT_EASE = 0.3,
-  DRIFT_END = 0.2,
-  DRIFT_LINK = 0.15
+// The shares of the tyres' grip the drive and the brakes keep, however hard they corner
+const DRIVE_FLOOR = 0.12,
+  BRAKE_FLOOR = 0.35
+const TRANSFER = 0.09 // s: how far behind the acceleration the weight's shift onto an axle follows
+const PUSH_IN = 0.08, // s: the understeer control's cut eases in, and the power back
+  PUSH_OUT = 0.2
+const REV_MAX = 9 // m/s: as fast as the car backs up
+// the share of an axle's speed into the kerb the car loses as it climbs it (a tyre meeting an 8 cm
+// edge rolls over it at about 39 degrees), and the most a strike takes (m/s)
+const KERB_LOSS = 0.22,
+  KERB_DV = 1.6
+// the drive's front share in Track Mode (none: the rears take it all, or the front motor pulling on
+// counter-steered wheels would drag the nose straight), and otherwise
+const TRACK_FRONT = 0,
+  FRONT = 0.4
+
+// An axle mounting the kerb at speed: the wheels climb its edge and the car loses KERB_LOSS of the
+// speed it had into it at that axle (at most KERB_DV m/s a strike: the body's momentum comes through
+// the springs, so slamming square into a kerb costs a jolt and some speed, not most of it), and a
+// wheel hitting it at an angle knocks the nose (or the tail) away from it, so a kerb clipped fast
+// unsettles the car rather than being only a bump in the springs. sg: 1 the front axle, -1 the rear.
+function kerb (s, sg) {
+  const fx = Math.cos(s.yaw),
+    fz = -Math.sin(s.yaw)
+  const rx = fx * CAR.halfWB * sg,
+    rz = fz * CAR.halfWB * sg
+  const x = s.pos.x + rx,
+    z = s.pos.z + rz
+  // (the kerb's line, from how its distance changes round the axle; its normal turned to face the
+  // axle as it comes, whichever side it climbs from: off the road, or up from the beach or a verge)
+  const e = 0.05,
+    gx = kerbDist(x + e, z) - kerbDist(x - e, z),
+    gz = kerbDist(x, z + e) - kerbDist(x, z - e),
+    l = Math.hypot(gx, gz)
+  if (l < 1e-6) return
+  let nx = gx / l,
+    nz = gz / l
+  const w = s.yawRate,
+    vx = s.vel.x + w * rz,
+    vz = s.vel.z - w * rx
+  let vn = vx * nx + vz * nz
+  if (vn > 0) {
+    nx = -nx
+    nz = -nz
+    vn = -vn
+  }
+  // the impulse that takes that much off the axle's speed into the kerb, through the car's mass and
+  // its turning inertia about its middle (as collide.js's impulse works it out)
+  const cr = rz * nx - rx * nz,
+    k = 1 / CAR.mass + (cr * cr) / CAR.Iz,
+    j = Math.min(-vn * KERB_LOSS, KERB_DV) / k
+  const b = loadBody(s)
+  b.vx += (nx * j) / CAR.mass
+  b.vz += (nz * j) / CAR.mass
+  b.w += (rz * nx * j - rx * nz * j) / CAR.Iz
+  storeBody(s)
+}
 
 export function stepGround (s, dt, c, main, lift) {
   const m = CAR.mass,
@@ -146,11 +123,16 @@ export function stepGround (s, dt, c, main, lift) {
   const a = CAR.halfWB,
     b = CAR.halfWB,
     mu = CAR.tireMu * gripOf(s) // (less on grass and sand: street.js)
-  const dN = clamp(
+  // the weight thrown forward or back as the car brakes or pulls away, through the springs: it
+  // follows the acceleration a moment behind (TRANSFER s), as the body pitches onto the nose or the
+  // tail, rather than all at once
+  const dNT = clamp(
     (m * s.accLong * CAR.comH) / CAR.wheelbase,
     -0.2 * Ntot,
     0.2 * Ntot
   )
+  s.dN += (dNT - s.dN) * Math.min(1, dt / TRANSFER)
+  const dN = s.dN
   const Nf = Ntot / 2 - dN,
     Nr = Ntot / 2 + dN
   // the e-brake biting (0 to 1), how straight the wheel is for an emergency stop (1: straight),
@@ -166,59 +148,13 @@ export function stepGround (s, dt, c, main, lift) {
   // How far the car is sliding: the rear axle's slip (rolling round a tight bend, the car's middle
   // runs at an angle to its nose, but the rear axle runs straight: only a slide moves it sideways)
   const beta = Math.atan2(w - b * r, Math.max(Math.abs(u), 2))
-  // Track Mode (s.track): on with the handbrake at speed, off once the car runs straight again
-  if (c.ebrake && Math.abs(u) > TRACK_IN) {
-    if (!s.track) s.emit('track')
-    s.track = true
-    s.calm = 0
-  } else if (s.track) {
-    const straight = Math.abs(beta) < TRACK_STRAIGHT || Math.abs(u) < 3
-    s.calm = straight ? s.calm + dt : 0
-    // (over once the car has run straight a moment, or swung on through straight: the electronics
-    // catch whatever comes next, unless the driver is linking it into a drift the other way)
-    const through = s.driftDir && s.driftDir * beta > 0.03
-    if ((s.calm > CALM || through) && !s.linking) s.track = false
-  }
+  trackMode(s, c, u, beta, dt)
   const track = s.track && !c.ebrake
   const FmaxF = mu * Nf,
     FmaxR = mu * CAR.rearGrip * Nr * s.rearGrip
 
-  // speed-sensitive steering so a keyboard stays controllable
-  const steerMax = 0.6 / (1 + (u * u) / 300)
-  // the driver's feel for the limit: the fronts are turned no further than just short of their
-  // peak, where they grip hardest (past it they would only scrub and push wide). Sliding, the front
-  // wheels follow the slide (the caster: let go of the wheel and they swing round to point the way
-  // the car is going, as a real car's do), and the driver steers from there: no input lets the slide
-  // run out (hands off, a touch of counter-steer catching the car as it swings further round, as a
-  // driver's would), the way into the turn holds it (less, the further round the car is, so it
-  // doesn't spin) and the other way catches it.
-  let steerT = c.steer * steerMax,
-    slide = 0
-  if (u > 3) {
-    const aKin = Math.atan2(w + a * r, u),
-      aLim = (1.5 * FmaxF) / CAR.corneringF,
-      ab = Math.abs(beta)
-    slide = smooth((ab - 0.1) / 0.14)
-    const into = c.steer * beta < 0 ? 1 - smooth((ab - 0.35) / 0.4) * 0.9 : 1,
-      // (rad/s it is swinging further round)
-      grow = (ab - (s.driftA ?? ab)) / dt,
-      catchIt =
-        c.steer === 0 ? Math.sign(beta) * clamp(grow / 1.2, 0, 1) * 0.8 : 0
-    const slid = aKin + (c.steer * into + catchIt) * aLim
-    if (c.ebrake) {
-      // (handbrake held: the wheel is the driver's, but let go of it, it follows the slide)
-      if (c.steer === 0) steerT = aKin * slide
-    } else
-      steerT =
-        clamp(steerT, aKin - aLim, aKin + aLim) * (1 - slide) + slid * slide
-    steerT = clamp(steerT, -LOCK, LOCK)
-  }
-  // the rack: turned at the speed of hands, and coming back quicker the faster the car rolls (or
-  // spinning through them as the wheels follow a slide)
-  const centring =
-    Math.abs(steerT) < Math.abs(s.steerAng) && steerT * s.steerAng >= 0
-  const rate = HANDS * (1 + 2 * slide) + (centring ? CENTRE * Math.abs(u) : 0)
-  s.steerAng += clamp(steerT - s.steerAng, -rate * dt, rate * dt)
+  // the driver's hands on the wheel (tyres.js)
+  const { slide, push } = steer(s, c, u, w, r, beta, FmaxF, track, dt)
   const cd = Math.cos(s.steerAng),
     sd = Math.sin(s.steerAng)
 
@@ -232,7 +168,19 @@ export function stepGround (s, dt, c, main, lift) {
   if (throttle > 0 && u < CAR.vMax)
     Fdrive +=
       throttle * Math.min(m * CAR.driveAccelMax, CAR.powerW / Math.max(au, 1))
-  if (c.reverse > 0 && u > -10) Fdrive -= c.reverse * m * 5
+  // Understeer control, as a Tesla's stability control does it: while the wheel asks the fronts for
+  // more than they can grip, the motors' torque is taken away, so on full lock with W held the car
+  // comes round at the tyres' limit instead of piling on speed and running ever wider (not in Track
+  // Mode: drifting, the driver has the power)
+  // (eased: the cut comes in over PUSH_IN s and the power back over PUSH_OUT s, as the motors'
+  // torque is ramped, rather than switching in one step as the wheel sweeps through the band)
+  s.pushF +=
+    (push - s.pushF) * Math.min(1, dt / (push > s.pushF ? PUSH_IN : PUSH_OUT))
+  if (!s.track) Fdrive *= 1 - s.pushF
+  s.push = s.track || throttle === 0 ? 0 : s.pushF
+  // (backing up, the motors ease off as the car nears its reverse limit, REV_MAX m/s)
+  if (c.reverse > 0)
+    Fdrive -= c.reverse * m * 5 * clamp((REV_MAX + u) / 1.5, 0, 1)
   const coasting =
     c.throttle === 0 && c.reverse === 0 && c.brake === 0 && !c.ebrake
   const Fregen = coasting
@@ -252,13 +200,13 @@ export function stepGround (s, dt, c, main, lift) {
     s.calm = 0
   }
   // (in Track Mode most of the drive goes to the rears)
-  const front = track ? TRACK_FRONT : 0.4
+  const front = track ? TRACK_FRONT : FRONT
   // (the brakes shared out by the load on each axle, as electronic brake-force distribution does,
   // so the rears, light under braking, are never asked for more than the fronts: a fixed split
   // would have them give up first and the tail come round)
   const bias = Nf / Ntot
   // (the rears let off their brakes and regen near their limit sideways: ESC_CUT; the rear axle's
-  // slip in units of its grip over its stiffness, peaking at PEAK)
+  // slip in units of its grip over its stiffness, peaking at PEAK: tyres.js)
   const esc = !c.ebrake && !track && !burn && s.rearGrip >= 1 && au > 3
   const xR = (CAR.corneringR * Math.abs(beta)) / FmaxR
   const cut = esc ? smooth((xR - ESC_CUT) / ESC_CUT_W) : 0
@@ -266,41 +214,35 @@ export function stepGround (s, dt, c, main, lift) {
   let Fxf = front * Fdrive - su * (bias * Fbrake + 0.5 * Fregen)
   let Fxr =
     (1 - front) * Fdrive - su * ((1 - bias) * Fbrake + 0.5 * Fregen) * (1 - cut)
-  // traction control + ABS: keep the grip the tyres are using to corner, leave at least 35% for drive/brakes
-  const capF = Math.sqrt(
-    Math.max(0.1225 * FmaxF * FmaxF, FmaxF * FmaxF - s.lastFyf * s.lastFyf)
-  )
-  const capR = Math.sqrt(
-    Math.max(0.1225 * FmaxR * FmaxR, FmaxR * FmaxR - s.lastFyr * s.lastFyr)
-  )
+  // traction control and ABS: the drive and the brakes get the grip the tyres aren't using to
+  // corner, as the friction circle allows (the drive at least DRIVE_FLOOR of it, so a car cornering
+  // at the limit still creeps on rather than stalls; the brakes at least BRAKE_FLOOR, so a corner
+  // can always be braked in)
+  const cap = (Fmax, Fy, Fx) =>
+    Math.sqrt(
+      Math.max(
+        (Fx * su < 0 ? BRAKE_FLOOR : DRIVE_FLOOR) ** 2 * Fmax * Fmax,
+        Fmax * Fmax - Fy * Fy
+      )
+    )
+  const capF = cap(FmaxF, s.lastFyf, Fxf)
+  const capR = cap(FmaxR, s.lastFyr, Fxr)
   // (how hard the ABS is working: the fronts asked to brake harder than they can grip)
   s.abs = Fbrake > 0 ? smooth((-su * Fxf - 0.97 * capF) / (0.06 * capF)) : 0
   Fxf = clamp(Fxf, -capF, capF)
-  // In Track Mode the rears may spin: driven harder than they can grip, they transmit most of it
-  // and slide sideways, the spin easing in rather than all at once (spin: how much they spin)
+  // In Track Mode the rears may spin (drift.js)
   let spin = 0
   if (track && Fxr > 0) {
-    // (and past fifty degrees round, the drive to them fades, so they grip and catch it)
-    Fxr *= 1 - smooth((Math.abs(beta) - 0.85) / 0.45)
-    spin = clamp(Fxr / FmaxR - 0.6, 0, 1)
-    Fxr = 0.95 * FmaxR * Math.tanh(Fxr / FmaxR)
-    // (in a drift: spun less the further round it is than asked, and no faster than its pace)
-    if (s.driftDir) {
-      spin *= 1 - smooth((Math.abs(beta) - s.driftWant - 0.05) / DRIFT_EASE)
-      Fxr *= clamp(
-        DRIFT_PUSH + (s.driftV - Math.hypot(u, w)) / DRIFT_BAND,
-        0,
-        1
-      )
-    }
+    const td = trackDrive(s, Fxr, FmaxR, beta, Math.hypot(u, w))
+    Fxr = td.Fxr
+    spin = td.spin
   } else if (!c.ebrake) Fxr = clamp(Fxr, -capR, capR)
   // (the e-brake on the rears short of locking them: biting, or held at their peak by the ABS in an
   // emergency stop; their motor's share no longer reaches the road)
   else Fxr = -su * Math.min(FmaxR, s.ebLock * FmaxR + Math.max(0, -su * Fxr))
   if (burn) {
-    // the rears' push against the fronts' brakes nets out at a creep, quicker on full lock
-    const creep = BURN_CREEP * (0.3 + 0.7 * Math.abs(c.steer)) * c.throttle
-    Fxf = clamp(m * 3 * (creep - u), -FmaxF, FmaxF)
+    // (the rears' push against the fronts' brakes nets out at a creep: drift.js)
+    Fxf = burnCreep(c, u, FmaxF)
     Fxr = 0
     spin = 1
   }
@@ -356,79 +298,8 @@ export function stepGround (s, dt, c, main, lift) {
   Fu += Fxr2 + main * CAR.mainThrust
   Fw += Fyr
   Mz -= b * Fyr
-  // drift control: the rear motors' torque split taking on the rear tyres' own pull straight and
-  // turning the car towards the drift angle asked for, the way the drift began (never flicking the
-  // car over into one the other way); steering out of the drift, they let it go once it is nearly
-  // straight
-  const ab = Math.abs(beta),
-    swing = (ab - (s.driftA ?? ab)) / dt,
-    d = -Math.sign(beta), // 1: the car rotated left of where it is going
-    into = c.steer * d
-  s.driftA = ab
-  if (!track) s.driftDir = 0
-  else if (!s.driftDir && ab > 0.15) {
-    s.driftDir = d
-    s.driftWant = Math.min(ab, DRIFT_MAX_A)
-    s.driftV = Math.hypot(u, w)
-  }
-  // (the angle asked for, from where the drift began: deeper, unwinding, or unwinding fast)
-  if (s.driftDir && !c.ebrake) {
-    const k =
-      into > 0 ? DRIFT_INTO * into : into < 0 ? DRIFT_OUT * into : -DRIFT_UNWIND
-    s.driftWant = clamp(s.driftWant + k * dt, 0, DRIFT_MAX_A)
-  } else if (s.driftDir)
-    s.driftWant = Math.max(s.driftWant, Math.min(ab, DRIFT_MAX_A))
-  // (the pace: creeping up on the power, down to wherever the brakes take it)
-  if (s.driftDir) {
-    if (throttle > 0.2) s.driftV += DRIFT_GAIN * dt
-    if (c.brake > 0) s.driftV = Math.min(s.driftV, Math.hypot(u, w))
-  }
-  const letGo = s.driftWant < 0.08 && ab < 0.15
-  // (steering out of it with the power on: linking it into a drift the other way, once the car has
-  // swung through)
-  s.linking =
-    track && !!s.driftDir && throttle > 0.5 && c.steer * s.driftDir < -0.5
-  if (s.linking && d === -s.driftDir && ab > DRIFT_LINK) {
-    s.driftDir = d
-    s.driftWant = Math.min(ab, DRIFT_MAX_A)
-    s.linking = false
-  }
-  // (unwound all the way and nearly straight, the drift is over: the electronics are back to catch
-  // what is left of it)
-  if (
-    s.driftDir &&
-    !c.ebrake &&
-    !s.linking &&
-    s.driftWant < 0.03 &&
-    ab < DRIFT_END
-  )
-    s.track = false
-  if (burn)
-    Mz += clamp(
-      BURN_K * (c.steer * c.throttle * BURN_R - r),
-      -BURN_YAW,
-      BURN_YAW
-    )
-  else if (track && s.driftDir === d && !letGo && throttle > 0.2 && au > 4) {
-    const want = s.driftWant * clamp((throttle - 0.2) / 0.5, 0, 1)
-    const hold = 0.75 * b * Math.abs(Fyr) // (most of the rear tyres' pull straight)
-    Mz +=
-      d *
-      clamp(
-        hold + DRIFT_K * (want - ab) - DRIFT_D * swing,
-        -DRIFT_MAX,
-        DRIFT_MAX
-      )
-  }
-  // (going forwards only, and fading as the car comes round from the way it is travelling: the
-  // rear axle's slip comes back towards nothing once the car is going backwards)
-  if (c.ebrake && c.steer !== 0 && u > 2)
-    Mz +=
-      c.steer *
-      HB_YAW *
-      s.ebLock *
-      smooth((u - 2) / 8) *
-      (1 - smooth((Math.abs(Math.atan2(w, u)) - HB_FADE) / 0.6))
+  // the drift's motors, a donut, the handbrake's swing and the spin catch (drift.js)
+  Mz += driftMoment(s, c, track, throttle, burn, beta, Fyr, u, w, r, mu, dt)
   s.lastFyf = wantF
   s.lastFyr = wantR
   // stability control: when the car rotates faster than the steering asks for, brake a front wheel to
@@ -451,15 +322,6 @@ export function stepGround (s, dt, c, main, lift) {
   if (cut > 0.3 && slow !== 0) s.escActive = true
 
   const spd = Math.hypot(u, w)
-  if (!c.ebrake && !burn && spd > 4) {
-    const rOk =
-      Math.max(
-        Math.abs(u * Math.tan(s.steerAng)) / CAR.wheelbase,
-        (1.1 * mu * G) / spd
-      ) + SPIN_OK
-    if (Math.abs(r) > rOk)
-      Mz -= Math.sign(r) * Math.min(SPIN_K * (Math.abs(r) - rOk), SPIN_MAX)
-  }
 
   // rolling resistance + aero drag oppose the motion
   const Fres =
@@ -528,7 +390,16 @@ export function stepGround (s, dt, c, main, lift) {
     Math.min(1, dt * 10)
   s.syncPose()
   if (s.world === 'city') {
+    // (an axle that was on the road a step ago, not reset somewhere else, and is now up on the kerb)
+    const st = s.feel,
+      near = !!st && Math.hypot(s.pos.x - st.x, s.pos.z - st.z) < 3,
+      wasF = near && st.kerb[0],
+      wasR = near && st.kerb[1]
     feel(s) // the kerb, manholes and the surface underfoot
+    if (s.floor === 0) {
+      if (wasF && !st.kerb[0]) kerb(s, 1)
+      if (wasR && !st.kerb[1]) kerb(s, -1)
+    }
     collideCity(s)
     // on a roof: driven off its edge, down it goes; onto the next roof at about the same height (the
     // building next door, or the other half of a split block), it carries on there
