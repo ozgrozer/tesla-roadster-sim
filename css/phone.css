@@ -1,0 +1,212 @@
+/* Tesla Roadster Sim: small windows and touch screens (load last). On a phone the drive pad owns
+   the bottom corners: the radar sits over the left cluster, where you are over the right one. */
+
+/* short windows: the keys card a little higher and tighter */
+@media (max-height: 760px) and (min-width: 761px) {
+  .help {
+    top: 150px;
+  }
+  .help li {
+    padding-block: 1px;
+  }
+}
+
+/* narrow windows */
+@media (max-width: 760px) {
+  .brand h1 {
+    font-size: 15px;
+  }
+  .brand p,
+  .credit,
+  .help {
+    display: none;
+  }
+  .btn {
+    font-size: 10.5px;
+    padding: 7px 9px;
+    letter-spacing: 0.08em;
+  }
+  .controls-top {
+    gap: 4px;
+  }
+  .radarbox {
+    width: 168px;
+  }
+  .sp-v {
+    font-size: 44px;
+  }
+  .sp-pow {
+    width: 140px;
+  }
+  .pl-big {
+    font-size: 24px;
+  }
+  .pl-top {
+    font-size: 14px;
+  }
+  .place.car .pl-big {
+    font-size: 28px;
+  }
+  .schematic {
+    display: none;
+  }
+  .context-hint {
+    display: none;
+  }
+  .caption {
+    top: 16%;
+  }
+  .caption .sub {
+    font-size: 12px;
+  }
+  body:not(.quiet) .score {
+    margin-top: 0;
+  }
+  .score .v {
+    font-size: 30px;
+  }
+}
+
+/* touch screens: the drive pad, and everything else clear of it */
+@media (pointer: coarse) {
+  .touch {
+    display: flex;
+  }
+  .help,
+  .context-hint {
+    display: none;
+  }
+  .in-city .credit {
+    display: none;
+  }
+  .radarbox {
+    bottom: calc(var(--pad-b) + var(--pad-h, 116px) + 14px);
+    width: 160px;
+  }
+  .br {
+    bottom: calc(var(--pad-b) + var(--pad-h, 116px) + 14px);
+  }
+  .helpbox p {
+    font-size: 13.5px;
+  }
+}
+
+/* phones upright: the title over the buttons, smaller pads so both fit across */
+@media (pointer: coarse) and (orientation: portrait) {
+  .touch {
+    --tb: 50px;
+  }
+  /* (the pad's height: two 50 px rows and the gap) */
+  .hud {
+    --pad-h: 108px;
+  }
+  .top {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+  .controls-top {
+    justify-content: flex-start;
+  }
+  /* (narrow enough to leave the score its corner) */
+  .helpbox {
+    top: 108px;
+    max-width: calc(100vw - var(--pad-l) - var(--pad-r) - 124px);
+  }
+  .score {
+    top: 108px;
+  }
+  body:not(.quiet) .score {
+    margin-top: 0;
+  }
+  .notices {
+    top: 32%;
+  }
+  .caption {
+    top: 17%;
+  }
+  .instruments {
+    padding: 6px 9px;
+  }
+  /* (a long street and cross street wraps rather than run into the radar) */
+  .place {
+    max-width: calc(100vw - var(--pad-l) - var(--pad-r) - 176px);
+  }
+}
+
+/* phones on their side: little height, so the speedometer goes between the two clusters */
+@media (pointer: coarse) and (orientation: landscape) and (max-height: 540px) {
+  .brand p,
+  .credit,
+  .schematic {
+    display: none;
+  }
+  .brand h1 {
+    font-size: 14px;
+  }
+  .btn {
+    font-size: 10px;
+    padding: 6px 8px;
+    letter-spacing: 0.06em;
+  }
+  .controls-top {
+    gap: 4px;
+  }
+  .radarbox {
+    width: 150px;
+  }
+  .speedo {
+    position: fixed;
+    left: 50%;
+    bottom: var(--pad-b);
+    transform: translateX(-50%);
+    justify-items: center;
+  }
+  .sp-v {
+    font-size: 40px;
+  }
+  .sp-pow {
+    width: 130px;
+  }
+  .place {
+    min-height: 0;
+  }
+  .pl-big {
+    font-size: 20px;
+  }
+  .pl-top {
+    font-size: 12.5px;
+  }
+  .place.car .pl-big {
+    font-size: 24px;
+  }
+  .helpbox {
+    top: 50px;
+    max-width: 46vw;
+    padding: 8px 12px;
+  }
+  .score {
+    top: 48px;
+  }
+  body:not(.quiet) .score {
+    margin-top: 0;
+  }
+  .score .v {
+    font-size: 26px;
+  }
+  .notices {
+    top: 38%;
+  }
+  .n-title {
+    font-size: 34px;
+  }
+  .caption {
+    top: 14%;
+  }
+  .caption .title {
+    font-size: 26px;
+  }
+  .countdown {
+    font-size: 96px;
+  }
+}

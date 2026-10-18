@@ -1,17 +1,33 @@
-/* Tesla Roadster Sim: design tokens, page frame, top bar and captions. Fonts live in fonts.css. */
+/* Tesla Roadster Sim: design tokens, page frame, the top bar (and its fade while driving), captions
+   and the countdown. Fonts live in fonts.css; the HUD in hud.css, notify.css and panels.css. */
 :root {
   color-scheme: dark;
   --night: #05060a;
+  --ink: #f4f5f6;
+  --dim: #a3abb6;
   --panel: rgba(10, 12, 18, 0.62);
   --panel-edge: rgba(238, 240, 242, 0.12);
+  --box: rgba(0, 0, 0, 0.72); /* GTA's help box and menus */
   --ano: #eef0f2;
-  --dim: #8a93a0;
   --led: #ff3b3b;
   --jet: #bfe9ff;
-  --gold: #d6a84e;
+  --gold: #f0c24b; /* GTA's yellow: titles, points, the gridlock blip */
+  --health: #5bae5e; /* the car's condition, GTA's health green */
+  --armour: #3d9ddb; /* the thrusters' air, GTA's armour blue */
+  --red: #e5463b;
   --ok: #59e3a0;
   --warn: #ffb340;
   --grape: #a98bf0;
+  /* a thin black outline round white text, readable over a bright facade or the night sky */
+  --outline: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000,
+    0 2px 8px rgba(0, 0, 0, 0.45);
+  --outline-2: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000,
+    2px 2px 0 #000, 0 -2px 0 #000, 0 2px 0 #000, -2px 0 0 #000, 2px 0 0 #000,
+    0 4px 14px rgba(0, 0, 0, 0.5);
+  --pad-t: max(14px, env(safe-area-inset-top, 0px));
+  --pad-r: max(16px, env(safe-area-inset-right, 0px));
+  --pad-b: max(14px, env(safe-area-inset-bottom, 0px));
+  --pad-l: max(16px, env(safe-area-inset-left, 0px));
   --display: 'Saira Semi Condensed', 'Arial Narrow', 'Helvetica Neue', Arial,
     sans-serif;
   --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas,
@@ -22,7 +38,7 @@ body {
   height: 100%;
   margin: 0;
   background: var(--night);
-  color: var(--ano);
+  color: var(--ink);
   overflow: hidden;
 }
 body {
@@ -44,84 +60,105 @@ body {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  padding: max(14px, env(safe-area-inset-top, 0px))
-    max(16px, env(safe-area-inset-right, 0px))
-    max(14px, env(safe-area-inset-bottom, 0px))
-    max(16px, env(safe-area-inset-left, 0px));
+  padding: var(--pad-t) var(--pad-r) var(--pad-b) var(--pad-l);
 }
 .hud button,
 .hud .interactive {
   pointer-events: auto;
 }
+/* what belongs to one world only */
+.in-city .site-only,
+body:not(.in-city) .city-only {
+  display: none !important;
+}
 
-/* top bar */
+/* top bar: the title and the buttons, faded out while driving (GTA's empty screen) */
 .top {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: 12px;
+  transition: opacity 0.3s, transform 0.3s;
+}
+.credit {
+  transition: opacity 0.3s;
+}
+.quiet .top,
+.quiet .credit {
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: opacity 0.9s, transform 0.9s;
+}
+.quiet .top:focus-within {
+  opacity: 1;
+  transform: none;
+}
+/* (out of sight, out of reach: the first tap only wakes the bar, the next presses a button) */
+.quiet .top button {
+  pointer-events: none;
+}
+.quiet .top:focus-within button {
+  pointer-events: auto;
 }
 .brand {
   display: grid;
-  gap: 2px;
-  /* readable over a bright city facade as well as the night sky */
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.75), 0 0 16px rgba(0, 0, 0, 0.45);
+  gap: 1px;
+  text-shadow: var(--outline);
 }
 .brand h1 {
   margin: 0;
   font-weight: 800;
-  font-size: 18px;
-  letter-spacing: 0.22em;
+  font-style: italic;
+  font-size: 20px;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 .brand p {
   margin: 0;
-  font-family: var(--mono);
-  font-size: 10.5px;
-  color: var(--dim);
-  letter-spacing: 0.04em;
+  font-weight: 600;
+  font-size: 11.5px;
+  color: rgba(244, 245, 246, 0.8);
+  letter-spacing: 0.06em;
 }
 .controls-top {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
   justify-content: flex-end;
 }
+/* GTA V's menu buttons: dark translucent, white caps; a pressed one white with black text */
 .btn {
   font-family: var(--display);
   font-weight: 600;
   font-size: 12px;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--ano);
-  background: var(--panel);
-  border: 1px solid var(--panel-edge);
-  border-radius: 3px;
+  color: var(--ink);
+  background: rgba(0, 0, 0, 0.6);
+  border: 0;
+  border-radius: 2px;
   padding: 8px 12px;
   cursor: pointer;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 .btn:hover {
-  border-color: rgba(238, 240, 242, 0.35);
+  background: rgba(0, 0, 0, 0.8);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3);
 }
 .btn:focus-visible {
-  outline: 2px solid var(--jet);
+  outline: 2px solid #fff;
   outline-offset: 2px;
 }
 .btn[aria-pressed='true'] {
-  border-color: var(--led);
-  box-shadow: inset 0 0 0 1px var(--led);
+  background: #f2f2f2;
+  color: #0d0d0d;
+  box-shadow: none;
 }
 .btn-world {
   display: inline-flex;
   align-items: center;
   gap: 7px;
   color: var(--gold);
-  border-color: rgba(214, 168, 78, 0.55);
-}
-.btn-world:hover {
-  border-color: var(--gold);
 }
 .btn-world svg {
   width: 14px;
@@ -147,49 +184,77 @@ body {
   background: var(--ok);
   box-shadow: 0 0 8px var(--ok);
 }
+.credit {
+  position: absolute;
+  right: var(--pad-r);
+  top: 56px;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: rgba(200, 206, 214, 0.75);
+  text-align: right;
+  max-width: 260px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
 
-/* phase caption */
+/* the test site's caption, a mission title: eyebrow, title, a line under it */
 .caption {
   position: absolute;
   left: 50%;
-  top: 13%;
+  top: 10%;
   transform: translateX(-50%);
   text-align: center;
-  width: min(92vw, 720px);
+  width: min(92vw, 760px);
   transition: opacity 0.35s;
 }
 .caption .eyebrow {
-  font-family: var(--mono);
-  font-size: 11px;
-  letter-spacing: 0.28em;
-  color: var(--led);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.3em;
+  color: var(--gold);
   text-transform: uppercase;
+  text-shadow: var(--outline);
 }
 .caption .title {
+  margin-top: 2px;
   font-weight: 800;
-  font-size: clamp(22px, 4.2vw, 42px);
-  letter-spacing: 0.08em;
+  font-style: italic;
+  font-size: clamp(26px, 4.4vw, 52px);
+  letter-spacing: 0.02em;
   text-transform: uppercase;
-  line-height: 1.05;
+  line-height: 1.02;
   text-wrap: balance;
-  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.8);
+  text-shadow: var(--outline-2);
 }
 .caption .sub {
   margin-top: 6px;
-  font-family: var(--mono);
-  font-size: 12px;
-  color: #b7bec8;
-  letter-spacing: 0.06em;
-  text-shadow: 0 1px 3px #000, 0 0 14px rgba(0, 0, 0, 0.9);
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  text-shadow: var(--outline);
 }
 .countdown {
   position: absolute;
   left: 50%;
-  top: 40%;
+  top: 42%;
   transform: translate(-50%, -50%);
   font-weight: 800;
-  font-size: clamp(64px, 14vw, 140px);
-  color: var(--ano);
+  font-style: italic;
+  font-size: clamp(80px, 15vw, 168px);
+  line-height: 1;
+  color: #fff;
   opacity: 0;
-  text-shadow: 0 0 40px rgba(255, 59, 59, 0.6);
+  text-shadow: var(--outline-2), 0 0 50px rgba(240, 194, 75, 0.55);
+}
+.countdown.go {
+  color: #7be08a;
+}
+.fade {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s;
+  z-index: 5;
 }

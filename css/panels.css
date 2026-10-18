@@ -1,354 +1,330 @@
-/* Tesla Roadster Sim: keys panel, touch pad, loading screen and responsive rules (load last). */
-/* help */
+/* Tesla Roadster Sim: the keys card (a GTA pause-menu card), the touch pad and the loading title
+   card. Phone and small-window rules are in phone.css (load it last). */
+
+/* the keys card: a title, tab-like headers, rows of keys in GTA's white key boxes */
 .help {
   position: absolute;
-  left: max(16px, env(safe-area-inset-left, 0px));
-  top: 64px;
-  padding: 12px 16px 12px 14px;
-  background: var(--panel);
-  border: 1px solid var(--panel-edge);
-  border-radius: 4px;
-  font-family: var(--mono);
-  font-size: 11px;
-  line-height: 1.5;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
-.help h2 {
-  margin: 0 0 4px;
-  font-family: var(--display);
-  font-size: 11px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--dim);
+  left: var(--pad-l);
+  top: 168px;
+  width: 520px;
+  color: var(--ink);
   font-weight: 600;
+  font-size: 12.5px;
+  line-height: 1.3;
 }
-.help h2 + ul {
-  margin-bottom: 7px;
+.help[hidden] {
+  display: none;
 }
-.help li {
-  margin: 1px 0;
+.help-head {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  padding: 0 2px 6px;
+  text-shadow: var(--outline);
+}
+.help-head h2 {
+  margin: 0;
+  font-weight: 800;
+  font-style: italic;
+  font-size: 30px;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+.help-head span {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.help-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.help section {
+  background: var(--box);
+  padding-bottom: 6px;
+}
+.help h3 {
+  margin: 0 0 3px;
+  padding: 5px 10px 4px;
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #0d0d0d;
+  background: #f2f2f2;
+}
+.help ul + h3 {
+  margin-top: 6px;
 }
 .help ul {
   list-style: none;
   margin: 0;
   padding: 0;
 }
-.help kbd {
-  font-family: var(--mono);
-  font-size: 10px;
-  color: var(--ano);
-  border: 1px solid rgba(238, 240, 242, 0.25);
-  border-bottom-width: 2px;
-  border-radius: 3px;
-  padding: 0 4px;
-  margin-right: 4px;
-}
-/* one action per line: the keys in a column of their own, the words beside them, never wrapped */
+/* one action per row: the keys in a column of their own, the words beside them */
 .help li {
   display: grid;
-  grid-template-columns: 72px auto;
+  grid-template-columns: 86px auto;
   align-items: center;
-  color: var(--dim);
+  padding: 2px 10px;
   white-space: nowrap;
+}
+.help li:nth-child(even) {
+  background: rgba(255, 255, 255, 0.045);
 }
 .help .k {
   display: flex;
-  gap: 3px;
+  align-items: center;
+  gap: 2px;
+  font-size: 10px;
 }
-.help .k kbd {
-  margin-right: 0;
+.help kbd {
+  font-size: 10.5px;
 }
 .help .note {
-  margin: 6px 0 0;
+  margin: 6px 10px 0;
+  font-weight: 400;
+  font-size: 11.5px;
+  line-height: 1.35;
   color: var(--dim);
-  font-size: 10px;
-  white-space: nowrap;
 }
 .help .blip {
   display: inline-block;
-  width: 7px;
-  height: 7px;
-  margin-right: 7px;
+  width: 8px;
+  height: 8px;
+  margin-right: 6px;
   border-radius: 50%;
   background: var(--gold);
-  vertical-align: 0;
+  box-shadow: 0 0 0 1px #000;
 }
 
-.context-hint {
-  position: absolute;
-  left: 50%;
-  bottom: 112px;
-  transform: translateX(-50%);
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--dim);
-  white-space: nowrap;
-  text-shadow: 0 1px 6px #000;
+/* with the card open on a wide screen, the stunt titles and the caption move into the space beside
+   it (a little smaller) rather than over it */
+@media (min-width: 1000px) {
+  .help:not([hidden]) ~ .notices,
+  .help:not([hidden]) ~ .caption {
+    left: calc(50% + 268px);
+    width: min(calc(100vw - 600px), 760px);
+  }
+  .help:not([hidden]) ~ .notices .n-title {
+    font-size: clamp(28px, 3.6vw, 54px);
+  }
+  .help:not([hidden]) ~ .caption .title {
+    font-size: clamp(24px, 3.2vw, 44px);
+  }
 }
 
-/* touch pad */
+/* touch pad: each button behaves like its key (input.js) */
 .touch {
   position: absolute;
-  inset: auto 0 112px 0;
+  inset: auto 0 var(--pad-b) 0;
   display: none;
   justify-content: space-between;
-  padding: 0 16px;
+  padding: 0 var(--pad-r) 0 var(--pad-l);
 }
 .touch .cluster {
   display: grid;
-  grid-template-columns: repeat(3, 54px);
-  grid-template-rows: repeat(2, 54px);
+  grid-template-columns: repeat(3, var(--tb, 54px));
+  grid-template-rows: repeat(2, var(--tb, 54px));
   gap: 8px;
 }
 .touch .tb {
   pointer-events: auto;
   border-radius: 50%;
-  border: 1px solid rgba(238, 240, 242, 0.25);
-  background: rgba(10, 12, 18, 0.5);
-  color: var(--ano);
+  border: 0;
+  background: rgba(0, 0, 0, 0.45);
+  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.28);
+  color: #fff;
   font-family: var(--display);
-  font-weight: 600;
+  font-weight: 800;
   font-size: 11px;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   display: grid;
   place-items: center;
   touch-action: none;
 }
 .touch .tb.active {
-  background: rgba(255, 59, 59, 0.35);
-  border-color: var(--led);
-}
-@media (pointer: coarse) {
-  .touch {
-    display: flex;
-  }
-  .help {
-    display: none;
-  }
-  .context-hint {
-    display: none;
-  }
-  .score {
-    bottom: auto;
-    top: 72px;
-  }
+  background: rgba(242, 242, 242, 0.92);
+  color: #0d0d0d;
 }
 
-/* city radar, bottom left like the games it borrows from */
-.radar {
-  position: absolute;
-  left: max(16px, env(safe-area-inset-left, 0px));
-  bottom: max(14px, env(safe-area-inset-bottom, 0px));
-  width: 172px;
-  height: 172px;
-  border-radius: 50%;
-  border: 2px solid rgba(238, 240, 242, 0.28);
-  background: rgba(10, 12, 18, 0.55);
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
-  display: none;
-}
-.in-city .radar {
-  display: block;
-}
-.in-city .score {
-  left: auto;
-  right: max(16px, env(safe-area-inset-right, 0px));
-  top: 104px;
-  bottom: auto;
-  text-align: right;
-}
-.city-only,
-.in-city .site-only {
-  display: none;
-}
-.help .city-only,
-.in-city .help .site-only {
-  display: none;
-}
-.in-city .help li.city-only {
-  display: grid;
-}
-.in-city .help p.city-only {
-  display: block;
-}
-@media (pointer: coarse) {
-  /* the drive pad owns the bottom corners on touch screens */
-  .radar {
-    left: auto;
-    right: max(16px, env(safe-area-inset-right, 0px));
-    bottom: auto;
-    top: 64px;
-    width: 118px;
-    height: 118px;
-  }
-  .in-city .credit {
-    display: none;
-  }
-  .in-city .score {
-    top: 194px;
-  }
-}
-.fade {
-  position: fixed;
-  inset: 0;
-  background: #000;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.25s;
-  z-index: 5;
-}
-
+/* the loading title card: golden hour over the skyline and the palms, the title, a tip, a spinner */
 .loading {
   position: fixed;
   inset: 0;
-  display: grid;
-  place-items: center;
-  background: var(--night);
   z-index: 10;
+  overflow: hidden;
+  background: var(--night);
   transition: opacity 0.6s;
 }
-.loading div {
-  font-family: var(--mono);
-  font-size: 12px;
-  letter-spacing: 0.2em;
-  color: var(--dim);
-  text-transform: uppercase;
-  text-align: center;
-  padding-inline: 16px;
-}
-.credit {
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+.ld-sky {
   position: absolute;
-  right: max(16px, env(safe-area-inset-right, 0px));
-  top: 56px;
-  font-family: var(--mono);
-  font-size: 9.5px;
-  color: rgba(138, 147, 160, 0.7);
-  text-align: right;
-  max-width: 260px;
+  inset: 0;
+  background: radial-gradient(
+      circle at 70% 76%,
+      #ffe2a6 0 3.6vmin,
+      rgba(255, 196, 120, 0.6) 3.8vmin,
+      rgba(255, 140, 70, 0) 30vmin
+    ),
+    linear-gradient(
+      180deg,
+      #0c0f24 0%,
+      #281c44 28%,
+      #6a3358 52%,
+      #c2584a 70%,
+      #f09a55 84%,
+      #f7c46c 100%
+    );
 }
-/* grape.cool, in the bottom right corner */
-.promo {
+.ld-skyline {
   position: absolute;
-  right: max(16px, env(safe-area-inset-right, 0px));
-  bottom: max(14px, env(safe-area-inset-bottom, 0px));
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 10px 6px 8px;
-  font-family: var(--mono);
-  font-size: 11px;
-  letter-spacing: 0.04em;
-  color: var(--ano);
-  text-decoration: none;
-  background: var(--panel);
-  border: 1px solid var(--panel-edge);
-  border-radius: 3px;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  pointer-events: auto;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 44%;
 }
-.promo:hover {
-  border-color: var(--grape);
+.ld-skyline .city {
+  fill: #140d1b;
 }
-.promo:focus-visible {
-  outline: 2px solid var(--jet);
-  outline-offset: 2px;
-}
-.promo svg {
-  width: 14px;
-  height: 14px;
-  fill: var(--grape);
-}
-.promo .leaf {
-  fill: var(--ok);
-  stroke: var(--ok);
-  stroke-width: 0.8;
+.ld-skyline .trunk,
+.ld-skyline .fronds {
+  fill: none;
+  stroke: #0c0811;
   stroke-linecap: round;
 }
-/* the telemetry strip reaches the corner on narrower screens: sit just above it */
-@media (max-width: 1020px) {
-  .promo {
-    bottom: calc(max(14px, env(safe-area-inset-bottom, 0px)) + 73px);
-    padding: 4px 8px 4px 6px;
+.ld-skyline .trunk {
+  stroke-width: 5;
+}
+.ld-skyline .fronds {
+  stroke-width: 3.4;
+}
+.ld-card {
+  position: absolute;
+  left: max(7vw, 24px);
+  top: 16vh;
+}
+.ld-title {
+  margin: 0;
+  font-weight: 800;
+  font-style: italic;
+  font-size: clamp(52px, 11vw, 150px);
+  line-height: 0.84;
+  letter-spacing: -0.005em;
+  text-transform: uppercase;
+  color: #fff;
+  text-shadow: 0 5px 0 rgba(0, 0, 0, 0.35), 0 12px 50px rgba(0, 0, 0, 0.4);
+}
+.ld-sub {
+  margin: 0.55em 0 0 0.2em;
+  font-weight: 600;
+  font-style: italic;
+  font-size: clamp(16px, 2.6vw, 34px);
+  letter-spacing: 0.46em;
+  text-transform: uppercase;
+  color: var(--gold);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.55);
+}
+.ld-tips {
+  position: absolute;
+  left: max(7vw, 24px);
+  bottom: max(8vh, 28px);
+  width: min(540px, calc(100vw - 48px - 120px));
+  height: 5.6em;
+}
+.ld-tips p {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  margin: 0;
+  padding: 11px 15px 12px;
+  background: var(--box);
+  color: #fff;
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 1.45;
+  opacity: 0;
+  animation: tip 40s linear infinite both;
+  animation-delay: calc(var(--i) * 5s + var(--start, 0s));
+}
+.ld-tips b {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+/* (eight tips, five seconds each) */
+@keyframes tip {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
   }
-  .schematic {
-    bottom: 118px;
+  1.5%,
+  11% {
+    opacity: 1;
+    transform: none;
+  }
+  12.5%,
+  100% {
+    opacity: 0;
   }
 }
-
-@media (max-width: 760px) {
-  .schematic {
-    display: none;
-  }
-  /* the thruster schematic is gone at this size: the radar takes its corner */
-  .radar {
-    left: auto;
-    right: max(16px, env(safe-area-inset-right, 0px));
-    top: auto;
-    bottom: 106px;
-    width: 104px;
-    height: 104px;
-  }
-  .in-city .score {
-    left: max(16px, env(safe-area-inset-left, 0px));
-    right: auto;
-    top: auto;
-    bottom: 92px;
-    text-align: left;
-  }
-  .in-city .context-hint {
-    display: none;
-  }
-  .score {
-    bottom: 92px;
-  }
-  .cell {
-    padding: 7px 8px 6px;
-    min-width: 0;
-  }
-  .cell .v {
-    font-size: 14px;
-  }
-  .cell.speed .v {
-    font-size: 22px;
-  }
-  .cell.hide-sm {
-    display: none;
-  }
-  .brand h1 {
-    font-size: 14px;
-  }
-  .brand p {
-    display: none;
-  }
-  .credit {
-    display: none;
-  }
-  .promo {
-    bottom: calc(max(14px, env(safe-area-inset-bottom, 0px)) + 62px);
-  }
-  .help {
-    display: none;
-  }
-  .caption {
-    top: 18%;
-  }
+/* a failure to start, said in place of the tips and the spinner */
+.ld-msg {
+  position: absolute;
+  z-index: 1;
+  left: max(7vw, 24px);
+  bottom: max(8vh, 28px);
+  max-width: min(540px, calc(100vw - 48px));
+  padding: 12px 16px;
+  background: var(--box);
+  color: #fff;
+  font-weight: 600;
+  font-size: 15px;
+  line-height: 1.45;
 }
-@media (max-width: 760px) and (pointer: coarse) {
-  /* phones: clear of the drive pad */
-  .radar {
-    bottom: 244px;
-  }
-  .in-city .score {
-    top: 72px;
-    bottom: auto;
+.ld-msg:empty {
+  display: none;
+}
+.loading:has(.ld-msg:not(:empty)) .ld-tips,
+.loading:has(.ld-msg:not(:empty)) .ld-spin {
+  display: none;
+}
+.ld-spin {
+  position: absolute;
+  right: max(5vw, 24px);
+  bottom: max(8vh, 28px);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+}
+.ld-spin i {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.25);
+  border-top-color: #fff;
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(1turn);
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .popup {
-    animation-duration: 0.01s;
-    animation-fill-mode: forwards;
+  .ld-tips p {
+    animation: none;
+  }
+  .ld-tips p:first-child {
+    opacity: 1;
   }
 }

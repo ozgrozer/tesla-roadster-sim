@@ -1,200 +1,361 @@
-/* Tesla Roadster Sim: telemetry strip, thruster schematic, stunt score and popups. */
-/* telemetry strip */
-.telemetry {
+/* Tesla Roadster Sim: the driving HUD. The radar bottom left with the car's condition and its air
+   under it; bottom right the engineering instruments (only when they matter), the speedometer and
+   where you are. */
+
+/* the radar: a rounded rectangle, GTA V's shape, city only */
+.radarbox {
   position: absolute;
-  left: 50%;
-  bottom: max(14px, env(safe-area-inset-bottom, 0px));
-  transform: translateX(-50%);
-  display: flex;
-  align-items: stretch;
-  gap: 0;
-  background: var(--panel);
-  border: 1px solid var(--panel-edge);
-  border-radius: 4px;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  max-width: calc(100vw - 32px);
-}
-.cell {
-  padding: 9px 14px 8px;
-  display: grid;
-  gap: 1px;
-  min-width: 64px;
-  border-left: 1px solid var(--panel-edge);
-}
-.cell:first-child {
-  border-left: 0;
-}
-.cell .k {
-  font-family: var(--mono);
-  font-size: 9.5px;
-  color: var(--dim);
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
-.cell .v {
-  font-family: var(--mono);
-  font-weight: 600;
-  font-size: 19px;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-.cell .v small {
-  font-size: 10px;
-  color: var(--dim);
-  font-weight: 400;
-  margin-left: 3px;
-}
-.cell.speed .v {
-  font-size: 30px;
-  line-height: 1;
-}
-.bar {
-  height: 4px;
-  background: rgba(238, 240, 242, 0.12);
-  border-radius: 2px;
-  overflow: hidden;
-  margin-top: 4px;
-}
-.bar i {
-  display: block;
-  height: 100%;
-  width: 100%;
-  background: var(--jet);
-  transform-origin: left;
-}
-.status-on {
-  color: var(--ok);
-}
-.cell.speed {
-  position: relative;
-}
-.tag {
-  position: absolute;
-  left: 8px;
-  top: -24px;
-  font-style: normal;
-  font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.14em;
-  white-space: nowrap;
-  color: var(--led);
-  background: var(--panel);
-  border: 1px solid currentColor;
-  border-radius: 3px;
-  padding: 2px 6px;
-}
-.tag:empty {
+  left: var(--pad-l);
+  bottom: var(--pad-b);
+  width: clamp(190px, 19vw, 300px);
   display: none;
+  transition: opacity 0.5s;
 }
-.tag.esc {
-  color: var(--warn);
+.in-city .radarbox {
+  display: block;
 }
-.status-warn {
-  color: var(--warn);
+.radar {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1.6;
+  border-radius: 9px;
+  background: #3b3f46;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.6), 0 6px 22px rgba(0, 0, 0, 0.45);
+}
+/* under it, GTA's bars: the car's condition (its dents) and the thrusters' air */
+.vitals {
+  display: flex;
+  gap: 4px;
+  margin-top: 5px;
+  height: 7px;
+}
+.vbar {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  border-radius: 1px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.55);
+}
+.vbar i {
+  position: absolute;
+  inset: 0;
+  transform-origin: left;
+  transition: transform 0.25s;
+}
+.vbar.cond {
+  background: rgba(36, 70, 38, 0.82);
+}
+.vbar.cond i {
+  background: var(--health);
+}
+.vbar.air {
+  background: rgba(22, 56, 82, 0.82);
+}
+.vbar.air i {
+  background: var(--armour);
+}
+.vbar.low i {
+  background: var(--red);
+  animation: blink 0.9s steps(2) infinite;
+}
+@keyframes blink {
+  50% {
+    opacity: 0.35;
+  }
 }
 
-/* thruster schematic */
-.schematic {
+/* bottom right, stacked up from the corner: where you are, the speedometer, the instruments */
+.br {
   position: absolute;
-  right: max(16px, env(safe-area-inset-right, 0px));
-  bottom: 98px;
-  width: 148px;
-  padding: 10px 10px 8px;
-  background: var(--panel);
-  border: 1px solid var(--panel-edge);
-  border-radius: 4px;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
-.schematic .k {
-  font-family: var(--mono);
-  font-size: 9.5px;
-  color: var(--dim);
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
+  right: var(--pad-r);
+  bottom: var(--pad-b);
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+/* the speedometer: big digits, the unit, the drive selector, power and regen, the lamps */
+.speedo {
+  display: grid;
+  justify-items: end;
+  gap: 4px;
+  transition: opacity 0.5s;
+}
+.sp-main {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+.sp-v {
+  font-weight: 800;
+  font-style: italic;
+  font-size: clamp(46px, 4.2vw, 68px);
+  line-height: 0.86;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+  text-shadow: var(--outline-2);
+  min-width: 2.1ch;
+  text-align: right;
+}
+.sp-side {
+  display: grid;
+  justify-items: start;
+  gap: 1px;
+  padding-bottom: 1px;
+}
+.sp-unit {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: clamp(13px, 1.1vw, 17px);
+  line-height: 1.1;
+  color: #fff;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-shadow: var(--outline);
+}
+.sp-unit:hover {
+  color: var(--gold);
+}
+.sp-unit:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+.sp-gear {
+  display: flex;
+  gap: 4px;
+  font-weight: 800;
+  font-size: clamp(13px, 1.1vw, 17px);
+  line-height: 1.1;
+}
+.sp-gear i {
+  font-style: normal;
+  color: rgba(255, 255, 255, 0.42);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+}
+.sp-gear i.on {
+  color: #fff;
+  text-shadow: var(--outline);
+}
+/* power and regen from the zero: regen in green to the left, power in white to the right */
+.sp-pow {
+  display: grid;
+  grid-template-columns: 1fr 3fr;
+  gap: 2px;
+  width: clamp(140px, 13vw, 230px);
+  height: 4px;
+}
+.sp-pow i {
+  display: block;
+  background: rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+  position: relative;
+  overflow: hidden;
+}
+.sp-pow b {
+  position: absolute;
+  inset: 0;
+  transform: scaleX(0);
+}
+.sp-regen b {
+  background: var(--ok);
+  transform-origin: right;
+}
+.sp-power b {
+  background: #fff;
+  transform-origin: left;
+}
+/* the dashboard's lamps: out of sight until they light, as on a real dash */
+.sp-lamps {
+  display: flex;
+  gap: 4px;
+  min-height: 15px;
+}
+.lamp {
+  font-family: var(--mono);
+  font-weight: 600;
+  font-size: clamp(9.5px, 0.75vw, 12px);
+  line-height: 1.3;
+  letter-spacing: 0.06em;
+  padding: 0 5px;
+  border-radius: 3px;
+  border: 1px solid currentColor;
+  color: var(--warn);
+  background: rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.lamp.on {
+  opacity: 1;
+}
+.lamp.blink.on {
+  animation: blink 0.5s steps(2) infinite;
+}
+.lamp.track {
+  color: #ff8a4a;
+}
+.lamp.brake {
+  color: var(--red);
+}
+
+/* where you are, GTA V's corner: the street over the neighbourhood, fading out after a while */
+.place {
+  display: grid;
+  justify-items: end;
+  text-align: right;
+  min-height: clamp(52px, 4.4vw, 68px);
+  align-content: end;
+  opacity: 0;
+  transform: translateX(8px);
+  transition: opacity 0.7s, transform 0.7s;
+  text-shadow: var(--outline);
+}
+.place.on {
+  opacity: 1;
+  transform: none;
+  transition: opacity 0.3s, transform 0.3s;
+}
+.pl-top {
+  font-weight: 600;
+  font-size: clamp(14px, 1.25vw, 20px);
+  line-height: 1.2;
+  color: #fff;
+}
+.pl-big {
+  font-weight: 800;
+  font-size: clamp(24px, 2.35vw, 38px);
+  line-height: 1;
+  color: #fff;
+  text-shadow: var(--outline-2);
+}
+/* the car's name when it first drives off */
+.place.car .pl-top {
+  font-size: clamp(12px, 1vw, 16px);
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.place.car .pl-big {
+  font-style: italic;
+  font-size: clamp(28px, 2.8vw, 46px);
+}
+
+/* the engineering instruments: the thrusters from above and a few figures, tucked away */
+.instruments {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px 8px 8px;
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 3px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(6px);
+  transition: opacity 0.35s, transform 0.35s, visibility 0s 0.35s;
+}
+.instruments.on {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition: opacity 0.35s, transform 0.35s;
+}
+.schematic {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
 }
 .schematic svg {
   display: block;
-  width: 100%;
+  width: 50px;
   height: auto;
-  margin-top: 6px;
 }
-.schematic .legend {
+.schematic span {
   font-family: var(--mono);
-  font-size: 9px;
-  color: var(--dim);
-  margin-top: 4px;
-  line-height: 1.5;
-}
-
-/* score + popups */
-.score {
-  position: absolute;
-  left: max(16px, env(safe-area-inset-left, 0px));
-  bottom: 98px;
-  font-family: var(--mono);
-  display: grid;
-  gap: 2px;
-}
-.score .k {
   font-size: 9.5px;
   color: var(--dim);
-  letter-spacing: 0.16em;
+  white-space: nowrap;
 }
-.score .v {
-  font-size: 22px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-.popups {
-  position: absolute;
-  left: 50%;
-  top: 21%;
-  transform: translateX(-50%);
-  /* as wide as its lines need (up to the screen), not half the screen from left: 50% */
-  width: max-content;
-  max-width: calc(100vw - 32px);
+.figs {
+  margin: 0;
   display: grid;
-  gap: 6px;
-  justify-items: center;
-  text-align: center;
+  grid-template-columns: auto auto;
+  gap: 2px 16px;
 }
-.popup {
-  font-weight: 800;
-  font-size: clamp(18px, 3vw, 28px);
+.figs div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 96px;
+}
+.figs dt {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--dim);
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--ano);
-  text-shadow: 0 0 18px rgba(191, 233, 255, 0.55);
-  animation: pop 2.2s ease-out forwards;
 }
-.popup b {
-  color: var(--gold);
-  font-weight: 800;
+.figs dd {
+  margin: 0;
+  font-family: var(--mono);
+  font-weight: 600;
+  font-size: 13px;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
-/* how to do something, rather than a score: small, and readable over a bright street */
-.popup.hint {
-  font-size: clamp(12px, 1.2vw, 14px);
-  letter-spacing: 0.14em;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8), 0 0 12px rgba(0, 0, 0, 0.45);
+.figs dd small {
+  font-size: 9px;
+  color: var(--dim);
+  font-weight: 400;
+  margin-left: 2px;
 }
-@keyframes pop {
-  0% {
-    opacity: 0;
-    transform: translateY(12px) scale(0.92);
-  }
-  12% {
-    opacity: 1;
-    transform: none;
-  }
-  75% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-14px);
-  }
+.figs .on {
+  color: var(--ok);
+}
+.figs .low {
+  color: var(--warn);
+}
+
+/* grape.cool, in the corner under where you are */
+.promo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px 4px 7px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  text-decoration: none;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 2px;
+  pointer-events: auto;
+}
+.promo:hover {
+  background: rgba(0, 0, 0, 0.75);
+  box-shadow: inset 0 0 0 1px var(--grape);
+}
+.promo:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+.promo svg {
+  width: 13px;
+  height: 13px;
+  fill: var(--grape);
+}
+.promo .leaf {
+  fill: var(--ok);
+  stroke: var(--ok);
+  stroke-width: 0.8;
+  stroke-linecap: round;
+}
+
+/* while Optimus gets in, a cutscene: no radar or speedometer */
+.cine .radarbox,
+.cine .speedo {
+  opacity: 0;
 }
