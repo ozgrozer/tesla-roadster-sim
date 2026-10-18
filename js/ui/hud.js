@@ -194,13 +194,19 @@ export class Hud {
       ? 'E-BRAKE'
       : sim.escActive
       ? 'ESC'
+      : sim.abs > 0.5 && sim.groundSpeed() > 1
+      ? 'ABS'
       : sim.regenOn && sim.groundSpeed() > 1
       ? 'REGEN'
       : ''
     if (el.tag.textContent !== tag) {
       el.tag.textContent = tag
       el.tag.className =
-        tag === 'ESC' ? 'tag esc' : tag === 'REGEN' ? 'tag status-on' : 'tag'
+        tag === 'ESC' || tag === 'ABS'
+          ? 'tag esc'
+          : tag === 'REGEN'
+          ? 'tag status-on'
+          : 'tag'
     }
     put(el.air, 'html', `${Math.round(sim.air)}<small>kg</small>`)
     put(
