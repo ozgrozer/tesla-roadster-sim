@@ -397,10 +397,10 @@ test('Track Mode: on the power after a handbrake flick the car holds a drift for
   assert.ok(alone.slip[10] > 15, 'still drifting a second later')
   assert.ok(alone.slip.slice(-5).every(a => a < 5), 'unwound by the end')
   assert.ok(!alone.sim.track, 'and out of Track Mode')
-  // steering out of it, or lifting off: straight in a moment, and never over into a drift the
-  // other way
+  // a tap out of it, or lifting off: straight in a moment, and never over into a drift the other
+  // way (held out of it on the power, it links into one: drift.test.mjs)
   for (const [how, steer, throttle] of [
-    ['steering out', () => -1, () => 1],
+    ['a tap out of it', s => (s < 0.4 ? -1 : 0), () => 1],
     ['lifting off', () => 0, s => (s < 1 ? 1 : 0)]
   ]) {
     const r = flick(steer, throttle, 3.5)
