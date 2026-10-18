@@ -37,7 +37,7 @@ test('the kerb runs down each street, round each corner and along the promenade'
   )
 })
 
-test("surfaces: road, pavement, a park's grass and the beach's sand", () => {
+test("surfaces: road, pavement, a park's grass, the beach's sand, the verge and the pier", () => {
   assert.equal(surfaceAt(ROADS[3] + 30, LANE_OFF[0]), 'road')
   assert.equal(surfaceAt(ROADS[3] + 30, ROAD_HW + 2), 'walk')
   const park = BLOCKS.find(b => b.kind === 'park')
@@ -48,7 +48,14 @@ test("surfaces: road, pavement, a park's grass and the beach's sand", () => {
     'walk',
     'the park has a pavement round it'
   )
-  assert.equal(surfaceAt(PROMENADE + 5, 0), 'sand')
+  // past the promenade: the beach on the west, the verge's grass on the other three sides, and the
+  // pier's planks out from the end of Wilshire
+  assert.equal(surfaceAt(-PROMENADE - 5, ROADS[3]), 'sand')
+  assert.equal(surfaceAt(PROMENADE + 5, 0), 'grass')
+  assert.equal(surfaceAt(0, -PROMENADE - 5), 'grass')
+  assert.equal(surfaceAt(ROADS[7], PROMENADE + 5), 'grass')
+  assert.equal(surfaceAt(-PROMENADE - 5, 0), 'wood')
+  assert.equal(surfaceAt(-650, 3), 'wood')
   // the street's ironwork stays on the road
   for (const m of MANHOLES)
     assert.ok(kerbDist(m.x, m.z) > 0.5, 'a manhole out in a lane')
@@ -71,7 +78,7 @@ function launch (at, t) {
 test('the tyres grip less on sand, and the sand drags at them', () => {
   const south = -Math.PI / 2
   const road = launch({ x: ROADS[0], z: ROADS[3] + 20, yaw: south }, 2)
-  const sand = launch({ x: PROMENADE + 10, z: ROADS[3] + 20, yaw: south }, 2)
+  const sand = launch({ x: -PROMENADE - 10, z: ROADS[3] + 20, yaw: south }, 2)
   assert.equal(sand.surface, 'sand')
   assert.equal(road.surface, 'road')
   assert.ok(

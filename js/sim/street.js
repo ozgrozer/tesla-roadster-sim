@@ -1,9 +1,11 @@
 // What is underfoot in the city: the kerb's line (straight down each street, round each corner, and
-// along the promenade), the surface a point is on (asphalt, pavement, a park's grass or the beach's
-// sand, each with its own grip and drag), and the street's ironwork: manholes out in the lanes and
-// drain grates in the gutter by every corner. The Roadster feels the kerb as it mounts or drops off
-// it, and each manhole a wheel runs over (s.suspV kicks the visual suspension; 'kerb' and 'manhole'
-// events carry it to the sound), and its tyres grip less on grass and less still on sand.
+// along the promenade), the surface a point is on (asphalt, pavement, a park's grass, the verge's
+// grass past the promenade on the north, east and south, the beach's sand on the west and the pier's
+// timber deck, each with its own grip and drag), and the street's ironwork: manholes out in the lanes
+// and drain grates in the gutter by every corner. The Roadster feels the kerb as it mounts or drops
+// off it, and each manhole a wheel runs over (s.suspV kicks the visual suspension; 'kerb' and
+// 'manhole' events carry it to the sound), and its tyres grip less on the pier's planks and grass and
+// less still on sand.
 import {
   N,
   HALF,
@@ -17,6 +19,7 @@ import {
   LANE_OFF,
   rng
 } from './city.js'
+import { onDeck } from './edge.js'
 import { CAR } from './constants.js'
 
 // How far (x, z) is from the kerb, positive out on the road: folded into one quadrant of the
@@ -34,16 +37,23 @@ export function kerbDist (x, z) {
   return d
 }
 
-// grip (a share of the tyres' own) and extra rolling drag, by surface
+// grip (a share of the tyres' own) and extra rolling drag, by surface (the pier's weathered planks
+// a little slippier than the road, and their joints dragging a little)
 export const SURFACES = {
   road: { grip: 1, drag: 0 },
   walk: { grip: 1, drag: 0 },
+  wood: { grip: 0.88, drag: 0.02 },
   grass: { grip: 0.84, drag: 0.05 },
   sand: { grip: 0.62, drag: 0.12 }
 }
+// past the promenade's edge, off its level: the sand and the verges lie a little below it, the pier's
+// deck level with it
+const offEdge = (x, z) =>
+  (Math.abs(x) > PROMENADE || Math.abs(z) > PROMENADE) && !onDeck(x, z)
 // the surface at (x, z) on the city's ground (roofs are concrete, like the pavement)
 export function surfaceAt (x, z) {
-  if (Math.abs(x) > PROMENADE || Math.abs(z) > PROMENADE) return 'sand'
+  if (x < -PROMENADE) return onDeck(x, z) ? 'wood' : 'sand'
+  if (Math.abs(x) > PROMENADE || Math.abs(z) > PROMENADE) return 'grass'
   if (kerbDist(x, z) > 0) return 'road'
   const bx = Math.floor((x + HALF) / PITCH),
     bz = Math.floor((z + HALF) / PITCH)
@@ -120,15 +130,13 @@ export function feel (s) {
   st.x = x
   st.z = z
   if (s.floor > 0) return
-  // each axle mounting or dropping off the kerb (the promenade's edge onto the sand too)
+  // each axle mounting or dropping off the kerb (the promenade's edge onto the sand or the verge
+  // too; not onto the pier, which is level with it)
   for (let a = 0; a < 2; a++) {
     const sg = a === 0 ? 1 : -1,
       ax = x + fx * CAR.halfWB * sg,
       az = z + fz * CAR.halfWB * sg
-    const onRoad =
-      kerbDist(ax, az) > 0 ||
-      Math.abs(ax) > PROMENADE ||
-      Math.abs(az) > PROMENADE
+    const onRoad = kerbDist(ax, az) > 0 || offEdge(ax, az)
     if (!fresh && onRoad !== st.kerb[a] && v > 0.8) {
       s.suspV += (onRoad ? -1 : 1) * Math.min(0.9, 0.12 + v * 0.035)
       s.emit('kerb', { v, up: !onRoad, front: a === 0 })
