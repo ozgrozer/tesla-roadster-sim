@@ -54584,8 +54584,284 @@ if ( typeof window !== 'undefined' ) {
 __export(__exports, { "ACESFilmicToneMapping": () => ACESFilmicToneMapping, "AddEquation": () => AddEquation, "AddOperation": () => AddOperation, "AdditiveAnimationBlendMode": () => AdditiveAnimationBlendMode, "AdditiveBlending": () => AdditiveBlending, "AgXToneMapping": () => AgXToneMapping, "AlphaFormat": () => AlphaFormat, "AlwaysCompare": () => AlwaysCompare, "AlwaysDepth": () => AlwaysDepth, "AlwaysStencilFunc": () => AlwaysStencilFunc, "AmbientLight": () => AmbientLight, "AnimationAction": () => AnimationAction, "AnimationClip": () => AnimationClip, "AnimationLoader": () => AnimationLoader, "AnimationMixer": () => AnimationMixer, "AnimationObjectGroup": () => AnimationObjectGroup, "AnimationUtils": () => AnimationUtils, "ArcCurve": () => ArcCurve, "ArrayCamera": () => ArrayCamera, "ArrowHelper": () => ArrowHelper, "AttachedBindMode": () => AttachedBindMode, "Audio": () => Audio, "AudioAnalyser": () => AudioAnalyser, "AudioContext": () => AudioContext, "AudioListener": () => AudioListener, "AudioLoader": () => AudioLoader, "AxesHelper": () => AxesHelper, "BackSide": () => BackSide, "BasicDepthPacking": () => BasicDepthPacking, "BasicShadowMap": () => BasicShadowMap, "BatchedMesh": () => BatchedMesh, "Bone": () => Bone, "BooleanKeyframeTrack": () => BooleanKeyframeTrack, "Box2": () => Box2, "Box3": () => Box3, "Box3Helper": () => Box3Helper, "BoxGeometry": () => BoxGeometry, "BoxHelper": () => BoxHelper, "BufferAttribute": () => BufferAttribute, "BufferGeometry": () => BufferGeometry, "BufferGeometryLoader": () => BufferGeometryLoader, "ByteType": () => ByteType, "Cache": () => Cache, "Camera": () => Camera, "CameraHelper": () => CameraHelper, "CanvasTexture": () => CanvasTexture, "CapsuleGeometry": () => CapsuleGeometry, "CatmullRomCurve3": () => CatmullRomCurve3, "CineonToneMapping": () => CineonToneMapping, "CircleGeometry": () => CircleGeometry, "ClampToEdgeWrapping": () => ClampToEdgeWrapping, "Clock": () => Clock, "Color": () => Color, "ColorKeyframeTrack": () => ColorKeyframeTrack, "ColorManagement": () => ColorManagement, "CompressedArrayTexture": () => CompressedArrayTexture, "CompressedCubeTexture": () => CompressedCubeTexture, "CompressedTexture": () => CompressedTexture, "CompressedTextureLoader": () => CompressedTextureLoader, "ConeGeometry": () => ConeGeometry, "ConstantAlphaFactor": () => ConstantAlphaFactor, "ConstantColorFactor": () => ConstantColorFactor, "Controls": () => Controls, "CubeCamera": () => CubeCamera, "CubeReflectionMapping": () => CubeReflectionMapping, "CubeRefractionMapping": () => CubeRefractionMapping, "CubeTexture": () => CubeTexture, "CubeTextureLoader": () => CubeTextureLoader, "CubeUVReflectionMapping": () => CubeUVReflectionMapping, "CubicBezierCurve": () => CubicBezierCurve, "CubicBezierCurve3": () => CubicBezierCurve3, "CubicInterpolant": () => CubicInterpolant, "CullFaceBack": () => CullFaceBack, "CullFaceFront": () => CullFaceFront, "CullFaceFrontBack": () => CullFaceFrontBack, "CullFaceNone": () => CullFaceNone, "Curve": () => Curve, "CurvePath": () => CurvePath, "CustomBlending": () => CustomBlending, "CustomToneMapping": () => CustomToneMapping, "CylinderGeometry": () => CylinderGeometry, "Cylindrical": () => Cylindrical, "Data3DTexture": () => Data3DTexture, "DataArrayTexture": () => DataArrayTexture, "DataTexture": () => DataTexture, "DataTextureLoader": () => DataTextureLoader, "DataUtils": () => DataUtils, "DecrementStencilOp": () => DecrementStencilOp, "DecrementWrapStencilOp": () => DecrementWrapStencilOp, "DefaultLoadingManager": () => DefaultLoadingManager, "DepthFormat": () => DepthFormat, "DepthStencilFormat": () => DepthStencilFormat, "DepthTexture": () => DepthTexture, "DetachedBindMode": () => DetachedBindMode, "DirectionalLight": () => DirectionalLight, "DirectionalLightHelper": () => DirectionalLightHelper, "DiscreteInterpolant": () => DiscreteInterpolant, "DodecahedronGeometry": () => DodecahedronGeometry, "DoubleSide": () => DoubleSide, "DstAlphaFactor": () => DstAlphaFactor, "DstColorFactor": () => DstColorFactor, "DynamicCopyUsage": () => DynamicCopyUsage, "DynamicDrawUsage": () => DynamicDrawUsage, "DynamicReadUsage": () => DynamicReadUsage, "EdgesGeometry": () => EdgesGeometry, "EllipseCurve": () => EllipseCurve, "EqualCompare": () => EqualCompare, "EqualDepth": () => EqualDepth, "EqualStencilFunc": () => EqualStencilFunc, "EquirectangularReflectionMapping": () => EquirectangularReflectionMapping, "EquirectangularRefractionMapping": () => EquirectangularRefractionMapping, "Euler": () => Euler, "EventDispatcher": () => EventDispatcher, "ExtrudeGeometry": () => ExtrudeGeometry, "FileLoader": () => FileLoader, "Float16BufferAttribute": () => Float16BufferAttribute, "Float32BufferAttribute": () => Float32BufferAttribute, "FloatType": () => FloatType, "Fog": () => Fog, "FogExp2": () => FogExp2, "FramebufferTexture": () => FramebufferTexture, "FrontSide": () => FrontSide, "Frustum": () => Frustum, "GLBufferAttribute": () => GLBufferAttribute, "GLSL1": () => GLSL1, "GLSL3": () => GLSL3, "GreaterCompare": () => GreaterCompare, "GreaterDepth": () => GreaterDepth, "GreaterEqualCompare": () => GreaterEqualCompare, "GreaterEqualDepth": () => GreaterEqualDepth, "GreaterEqualStencilFunc": () => GreaterEqualStencilFunc, "GreaterStencilFunc": () => GreaterStencilFunc, "GridHelper": () => GridHelper, "Group": () => Group, "HalfFloatType": () => HalfFloatType, "HemisphereLight": () => HemisphereLight, "HemisphereLightHelper": () => HemisphereLightHelper, "IcosahedronGeometry": () => IcosahedronGeometry, "ImageBitmapLoader": () => ImageBitmapLoader, "ImageLoader": () => ImageLoader, "ImageUtils": () => ImageUtils, "IncrementStencilOp": () => IncrementStencilOp, "IncrementWrapStencilOp": () => IncrementWrapStencilOp, "InstancedBufferAttribute": () => InstancedBufferAttribute, "InstancedBufferGeometry": () => InstancedBufferGeometry, "InstancedInterleavedBuffer": () => InstancedInterleavedBuffer, "InstancedMesh": () => InstancedMesh, "Int16BufferAttribute": () => Int16BufferAttribute, "Int32BufferAttribute": () => Int32BufferAttribute, "Int8BufferAttribute": () => Int8BufferAttribute, "IntType": () => IntType, "InterleavedBuffer": () => InterleavedBuffer, "InterleavedBufferAttribute": () => InterleavedBufferAttribute, "Interpolant": () => Interpolant, "InterpolateDiscrete": () => InterpolateDiscrete, "InterpolateLinear": () => InterpolateLinear, "InterpolateSmooth": () => InterpolateSmooth, "InvertStencilOp": () => InvertStencilOp, "KeepStencilOp": () => KeepStencilOp, "KeyframeTrack": () => KeyframeTrack, "LOD": () => LOD, "LatheGeometry": () => LatheGeometry, "Layers": () => Layers, "LessCompare": () => LessCompare, "LessDepth": () => LessDepth, "LessEqualCompare": () => LessEqualCompare, "LessEqualDepth": () => LessEqualDepth, "LessEqualStencilFunc": () => LessEqualStencilFunc, "LessStencilFunc": () => LessStencilFunc, "Light": () => Light, "LightProbe": () => LightProbe, "Line": () => Line, "Line3": () => Line3, "LineBasicMaterial": () => LineBasicMaterial, "LineCurve": () => LineCurve, "LineCurve3": () => LineCurve3, "LineDashedMaterial": () => LineDashedMaterial, "LineLoop": () => LineLoop, "LineSegments": () => LineSegments, "LinearFilter": () => LinearFilter, "LinearInterpolant": () => LinearInterpolant, "LinearMipMapLinearFilter": () => LinearMipMapLinearFilter, "LinearMipMapNearestFilter": () => LinearMipMapNearestFilter, "LinearMipmapLinearFilter": () => LinearMipmapLinearFilter, "LinearMipmapNearestFilter": () => LinearMipmapNearestFilter, "LinearSRGBColorSpace": () => LinearSRGBColorSpace, "LinearToneMapping": () => LinearToneMapping, "LinearTransfer": () => LinearTransfer, "Loader": () => Loader, "LoaderUtils": () => LoaderUtils, "LoadingManager": () => LoadingManager, "LoopOnce": () => LoopOnce, "LoopPingPong": () => LoopPingPong, "LoopRepeat": () => LoopRepeat, "LuminanceAlphaFormat": () => LuminanceAlphaFormat, "LuminanceFormat": () => LuminanceFormat, "MOUSE": () => MOUSE, "Material": () => Material, "MaterialLoader": () => MaterialLoader, "MathUtils": () => MathUtils, "Matrix2": () => Matrix2, "Matrix3": () => Matrix3, "Matrix4": () => Matrix4, "MaxEquation": () => MaxEquation, "Mesh": () => Mesh, "MeshBasicMaterial": () => MeshBasicMaterial, "MeshDepthMaterial": () => MeshDepthMaterial, "MeshDistanceMaterial": () => MeshDistanceMaterial, "MeshLambertMaterial": () => MeshLambertMaterial, "MeshMatcapMaterial": () => MeshMatcapMaterial, "MeshNormalMaterial": () => MeshNormalMaterial, "MeshPhongMaterial": () => MeshPhongMaterial, "MeshPhysicalMaterial": () => MeshPhysicalMaterial, "MeshStandardMaterial": () => MeshStandardMaterial, "MeshToonMaterial": () => MeshToonMaterial, "MinEquation": () => MinEquation, "MirroredRepeatWrapping": () => MirroredRepeatWrapping, "MixOperation": () => MixOperation, "MultiplyBlending": () => MultiplyBlending, "MultiplyOperation": () => MultiplyOperation, "NearestFilter": () => NearestFilter, "NearestMipMapLinearFilter": () => NearestMipMapLinearFilter, "NearestMipMapNearestFilter": () => NearestMipMapNearestFilter, "NearestMipmapLinearFilter": () => NearestMipmapLinearFilter, "NearestMipmapNearestFilter": () => NearestMipmapNearestFilter, "NeutralToneMapping": () => NeutralToneMapping, "NeverCompare": () => NeverCompare, "NeverDepth": () => NeverDepth, "NeverStencilFunc": () => NeverStencilFunc, "NoBlending": () => NoBlending, "NoColorSpace": () => NoColorSpace, "NoToneMapping": () => NoToneMapping, "NormalAnimationBlendMode": () => NormalAnimationBlendMode, "NormalBlending": () => NormalBlending, "NotEqualCompare": () => NotEqualCompare, "NotEqualDepth": () => NotEqualDepth, "NotEqualStencilFunc": () => NotEqualStencilFunc, "NumberKeyframeTrack": () => NumberKeyframeTrack, "Object3D": () => Object3D, "ObjectLoader": () => ObjectLoader, "ObjectSpaceNormalMap": () => ObjectSpaceNormalMap, "OctahedronGeometry": () => OctahedronGeometry, "OneFactor": () => OneFactor, "OneMinusConstantAlphaFactor": () => OneMinusConstantAlphaFactor, "OneMinusConstantColorFactor": () => OneMinusConstantColorFactor, "OneMinusDstAlphaFactor": () => OneMinusDstAlphaFactor, "OneMinusDstColorFactor": () => OneMinusDstColorFactor, "OneMinusSrcAlphaFactor": () => OneMinusSrcAlphaFactor, "OneMinusSrcColorFactor": () => OneMinusSrcColorFactor, "OrthographicCamera": () => OrthographicCamera, "PCFShadowMap": () => PCFShadowMap, "PCFSoftShadowMap": () => PCFSoftShadowMap, "PMREMGenerator": () => PMREMGenerator, "Path": () => Path, "PerspectiveCamera": () => PerspectiveCamera, "Plane": () => Plane, "PlaneGeometry": () => PlaneGeometry, "PlaneHelper": () => PlaneHelper, "PointLight": () => PointLight, "PointLightHelper": () => PointLightHelper, "Points": () => Points, "PointsMaterial": () => PointsMaterial, "PolarGridHelper": () => PolarGridHelper, "PolyhedronGeometry": () => PolyhedronGeometry, "PositionalAudio": () => PositionalAudio, "PropertyBinding": () => PropertyBinding, "PropertyMixer": () => PropertyMixer, "QuadraticBezierCurve": () => QuadraticBezierCurve, "QuadraticBezierCurve3": () => QuadraticBezierCurve3, "Quaternion": () => Quaternion, "QuaternionKeyframeTrack": () => QuaternionKeyframeTrack, "QuaternionLinearInterpolant": () => QuaternionLinearInterpolant, "RED_GREEN_RGTC2_Format": () => RED_GREEN_RGTC2_Format, "RED_RGTC1_Format": () => RED_RGTC1_Format, "REVISION": () => REVISION, "RGBADepthPacking": () => RGBADepthPacking, "RGBAFormat": () => RGBAFormat, "RGBAIntegerFormat": () => RGBAIntegerFormat, "RGBA_ASTC_10x10_Format": () => RGBA_ASTC_10x10_Format, "RGBA_ASTC_10x5_Format": () => RGBA_ASTC_10x5_Format, "RGBA_ASTC_10x6_Format": () => RGBA_ASTC_10x6_Format, "RGBA_ASTC_10x8_Format": () => RGBA_ASTC_10x8_Format, "RGBA_ASTC_12x10_Format": () => RGBA_ASTC_12x10_Format, "RGBA_ASTC_12x12_Format": () => RGBA_ASTC_12x12_Format, "RGBA_ASTC_4x4_Format": () => RGBA_ASTC_4x4_Format, "RGBA_ASTC_5x4_Format": () => RGBA_ASTC_5x4_Format, "RGBA_ASTC_5x5_Format": () => RGBA_ASTC_5x5_Format, "RGBA_ASTC_6x5_Format": () => RGBA_ASTC_6x5_Format, "RGBA_ASTC_6x6_Format": () => RGBA_ASTC_6x6_Format, "RGBA_ASTC_8x5_Format": () => RGBA_ASTC_8x5_Format, "RGBA_ASTC_8x6_Format": () => RGBA_ASTC_8x6_Format, "RGBA_ASTC_8x8_Format": () => RGBA_ASTC_8x8_Format, "RGBA_BPTC_Format": () => RGBA_BPTC_Format, "RGBA_ETC2_EAC_Format": () => RGBA_ETC2_EAC_Format, "RGBA_PVRTC_2BPPV1_Format": () => RGBA_PVRTC_2BPPV1_Format, "RGBA_PVRTC_4BPPV1_Format": () => RGBA_PVRTC_4BPPV1_Format, "RGBA_S3TC_DXT1_Format": () => RGBA_S3TC_DXT1_Format, "RGBA_S3TC_DXT3_Format": () => RGBA_S3TC_DXT3_Format, "RGBA_S3TC_DXT5_Format": () => RGBA_S3TC_DXT5_Format, "RGBDepthPacking": () => RGBDepthPacking, "RGBFormat": () => RGBFormat, "RGBIntegerFormat": () => RGBIntegerFormat, "RGB_BPTC_SIGNED_Format": () => RGB_BPTC_SIGNED_Format, "RGB_BPTC_UNSIGNED_Format": () => RGB_BPTC_UNSIGNED_Format, "RGB_ETC1_Format": () => RGB_ETC1_Format, "RGB_ETC2_Format": () => RGB_ETC2_Format, "RGB_PVRTC_2BPPV1_Format": () => RGB_PVRTC_2BPPV1_Format, "RGB_PVRTC_4BPPV1_Format": () => RGB_PVRTC_4BPPV1_Format, "RGB_S3TC_DXT1_Format": () => RGB_S3TC_DXT1_Format, "RGDepthPacking": () => RGDepthPacking, "RGFormat": () => RGFormat, "RGIntegerFormat": () => RGIntegerFormat, "RawShaderMaterial": () => RawShaderMaterial, "Ray": () => Ray, "Raycaster": () => Raycaster, "RectAreaLight": () => RectAreaLight, "RedFormat": () => RedFormat, "RedIntegerFormat": () => RedIntegerFormat, "ReinhardToneMapping": () => ReinhardToneMapping, "RenderTarget": () => RenderTarget, "RepeatWrapping": () => RepeatWrapping, "ReplaceStencilOp": () => ReplaceStencilOp, "ReverseSubtractEquation": () => ReverseSubtractEquation, "RingGeometry": () => RingGeometry, "SIGNED_RED_GREEN_RGTC2_Format": () => SIGNED_RED_GREEN_RGTC2_Format, "SIGNED_RED_RGTC1_Format": () => SIGNED_RED_RGTC1_Format, "SRGBColorSpace": () => SRGBColorSpace, "SRGBTransfer": () => SRGBTransfer, "Scene": () => Scene, "ShaderChunk": () => ShaderChunk, "ShaderLib": () => ShaderLib, "ShaderMaterial": () => ShaderMaterial, "ShadowMaterial": () => ShadowMaterial, "Shape": () => Shape, "ShapeGeometry": () => ShapeGeometry, "ShapePath": () => ShapePath, "ShapeUtils": () => ShapeUtils, "ShortType": () => ShortType, "Skeleton": () => Skeleton, "SkeletonHelper": () => SkeletonHelper, "SkinnedMesh": () => SkinnedMesh, "Source": () => Source, "Sphere": () => Sphere, "SphereGeometry": () => SphereGeometry, "Spherical": () => Spherical, "SphericalHarmonics3": () => SphericalHarmonics3, "SplineCurve": () => SplineCurve, "SpotLight": () => SpotLight, "SpotLightHelper": () => SpotLightHelper, "Sprite": () => Sprite, "SpriteMaterial": () => SpriteMaterial, "SrcAlphaFactor": () => SrcAlphaFactor, "SrcAlphaSaturateFactor": () => SrcAlphaSaturateFactor, "SrcColorFactor": () => SrcColorFactor, "StaticCopyUsage": () => StaticCopyUsage, "StaticDrawUsage": () => StaticDrawUsage, "StaticReadUsage": () => StaticReadUsage, "StereoCamera": () => StereoCamera, "StreamCopyUsage": () => StreamCopyUsage, "StreamDrawUsage": () => StreamDrawUsage, "StreamReadUsage": () => StreamReadUsage, "StringKeyframeTrack": () => StringKeyframeTrack, "SubtractEquation": () => SubtractEquation, "SubtractiveBlending": () => SubtractiveBlending, "TOUCH": () => TOUCH, "TangentSpaceNormalMap": () => TangentSpaceNormalMap, "TetrahedronGeometry": () => TetrahedronGeometry, "Texture": () => Texture, "TextureLoader": () => TextureLoader, "TextureUtils": () => TextureUtils, "TorusGeometry": () => TorusGeometry, "TorusKnotGeometry": () => TorusKnotGeometry, "Triangle": () => Triangle, "TriangleFanDrawMode": () => TriangleFanDrawMode, "TriangleStripDrawMode": () => TriangleStripDrawMode, "TrianglesDrawMode": () => TrianglesDrawMode, "TubeGeometry": () => TubeGeometry, "UVMapping": () => UVMapping, "Uint16BufferAttribute": () => Uint16BufferAttribute, "Uint32BufferAttribute": () => Uint32BufferAttribute, "Uint8BufferAttribute": () => Uint8BufferAttribute, "Uint8ClampedBufferAttribute": () => Uint8ClampedBufferAttribute, "Uniform": () => Uniform, "UniformsGroup": () => UniformsGroup, "UniformsLib": () => UniformsLib, "UniformsUtils": () => UniformsUtils, "UnsignedByteType": () => UnsignedByteType, "UnsignedInt248Type": () => UnsignedInt248Type, "UnsignedInt5999Type": () => UnsignedInt5999Type, "UnsignedIntType": () => UnsignedIntType, "UnsignedShort4444Type": () => UnsignedShort4444Type, "UnsignedShort5551Type": () => UnsignedShort5551Type, "UnsignedShortType": () => UnsignedShortType, "VSMShadowMap": () => VSMShadowMap, "Vector2": () => Vector2, "Vector3": () => Vector3, "Vector4": () => Vector4, "VectorKeyframeTrack": () => VectorKeyframeTrack, "VideoTexture": () => VideoTexture, "WebGL3DRenderTarget": () => WebGL3DRenderTarget, "WebGLArrayRenderTarget": () => WebGLArrayRenderTarget, "WebGLCoordinateSystem": () => WebGLCoordinateSystem, "WebGLCubeRenderTarget": () => WebGLCubeRenderTarget, "WebGLMultipleRenderTargets": () => WebGLMultipleRenderTargets, "WebGLRenderTarget": () => WebGLRenderTarget, "WebGLRenderer": () => WebGLRenderer, "WebGLUtils": () => WebGLUtils, "WebGPUCoordinateSystem": () => WebGPUCoordinateSystem, "WireframeGeometry": () => WireframeGeometry, "WrapAroundEnding": () => WrapAroundEnding, "ZeroCurvatureEnding": () => ZeroCurvatureEnding, "ZeroFactor": () => ZeroFactor, "ZeroSlopeEnding": () => ZeroSlopeEnding, "ZeroStencilOp": () => ZeroStencilOp, "createCanvasElement": () => createCanvasElement })
 })
 
-// ---- js/sim/constants.js
+// ---- js/ui/dom.js
 __define(1, function (__exports) {
+// Small DOM helpers the HUD's pieces share. `put` writes a node's text, markup, class, style or
+// attribute only when it changes: even an unchanged write costs the browser a style and layout pass,
+// and the HUD updates every frame.
+const $ = id => document.getElementById(id)
+
+const last = new WeakMap()
+// what: 'text', 'html', 'class' (the whole class list), '.name' (that one class, on or off),
+// '@name' (an attribute) or a style property
+function put (node, what, value) {
+  let was = last.get(node)
+  if (!was) last.set(node, (was = {}))
+  if (was[what] === value) return
+  was[what] = value
+  if (what === 'text') node.textContent = value
+  else if (what === 'html') node.innerHTML = value
+  else if (what === 'class') node.className = value
+  else if (what[0] === '.') node.classList.toggle(what.slice(1), !!value)
+  else if (what[0] === '@') node.setAttribute(what.slice(1), value)
+  else node.style[what] = value
+}
+__export(__exports, { "$": () => $, "put": () => put })
+})
+
+// ---- js/sim/areas.js
+__define(2, function (__exports) {
+// The city's neighbourhoods and street names, laid out the way Los Angeles is: the Pacific to the
+// west, with Santa Monica and its pier at the end of Wilshire and Venice south of it along the
+// beach; the hills to the north, with Beverly Hills' estates and Hollywood's boulevards below them;
+// Century City's towers round the central avenue, Mid-City's low strips and lots to the south, and
+// Downtown's skyline to the east. Pure data (no DOM, no three.js, no imports, so anything can read
+// it): what the city builds on each block (city.js), how it looks (render/) and where the HUD says
+// the car is.
+
+// blocks across, and m between road centre lines (as city.js: tests/areas.test.mjs checks)
+const N = 10,
+  PITCH = 96,
+  HALF = (N / 2) * PITCH,
+  ROAD_HW = 7
+
+// Each neighbourhood: its name, and its character, which decides what is built there
+//   beach: a beach town's mid-rise, two to six storeys of stucco and brick over shops, palms
+//   venice: one- and two-storey bungalows and shopfronts, painted bright, murals, palms
+//   estates: big houses on lawns behind hedges, drives, tall palms down every street
+//   boulevard: Hollywood's strip: one to four storeys of shops, theatres, signs, a few mid-rises
+//   towers: Century City's glass office towers on plazas
+//   strip: Mid-City: strip malls and their car parks, gas stations, two- and three-storey
+//          apartments over carports, the odd mid-rise
+//   downtown: the skyline: the tallest towers, older brick and stone blocks between them
+const AREAS = {
+  santaMonica: { name: 'Santa Monica', kind: 'beach' },
+  venice: { name: 'Venice', kind: 'venice' },
+  beverlyHills: { name: 'Beverly Hills', kind: 'estates' },
+  hollywood: { name: 'Hollywood', kind: 'boulevard' },
+  centuryCity: { name: 'Century City', kind: 'towers' },
+  midCity: { name: 'Mid-City', kind: 'strip' },
+  downtown: { name: 'Downtown', kind: 'downtown' }
+}
+// The block grid, north (top row, bz = 0) to south, west (bx = 0) to east. The spawn is in Santa
+// Monica on Wilshire (the central avenue) heading east, Century City's towers ahead round the
+// gridlocked block (jam.js, between the second and third roads).
+const S = 'santaMonica',
+  V = 'venice',
+  B = 'beverlyHills',
+  H = 'hollywood',
+  C = 'centuryCity',
+  M = 'midCity',
+  D = 'downtown'
+// prettier-ignore
+const GRID = [
+  [S, S, B, B, B, H, H, H, D, D],
+  [S, S, B, B, B, H, H, H, D, D],
+  [S, S, B, B, B, H, H, H, D, D],
+  [S, S, C, C, C, M, H, D, D, D],
+  [S, S, C, C, C, M, M, D, D, D],
+  [S, S, C, C, C, M, M, D, D, D],
+  [V, V, M, M, M, M, M, D, D, D],
+  [V, V, M, M, M, M, M, M, D, D],
+  [V, V, V, M, M, M, M, M, D, D],
+  [V, V, V, M, M, M, M, M, D, D]
+]
+// the key of the neighbourhood a block (bx, bz) is in
+const areaOf = (bx, bz) =>
+  GRID[Math.max(0, Math.min(N - 1, bz))][Math.max(0, Math.min(N - 1, bx))]
+
+// The edges of the map: the ocean and its beach to the west (past the ring road), the hills to the
+// north, and more city to the east and south, out of reach beyond the ring road.
+const COAST = 'west'
+const HILLS = 'north'
+
+// Street names. East-west streets (along x, at z = road centre), north to south: the ring road at
+// the foot of the hills, Wilshire down the middle (it runs from Downtown to the ocean), Jefferson
+// along the south. North-south streets (along z, at x = road centre), west to east: Ocean Avenue
+// along the beach, La Cienega down the middle, Alameda past Downtown.
+const STREETS_EW = [
+  'Franklin Ave',
+  'Hollywood Blvd',
+  'Sunset Blvd',
+  'Santa Monica Blvd',
+  'Melrose Ave',
+  'Wilshire Blvd',
+  'Olympic Blvd',
+  'Pico Blvd',
+  'Venice Blvd',
+  'Washington Blvd',
+  'Jefferson Blvd'
+]
+const STREETS_NS = [
+  'Ocean Ave',
+  'Lincoln Blvd',
+  'Sepulveda Blvd',
+  'Westwood Blvd',
+  'Beverly Dr',
+  'La Cienega Blvd',
+  'Fairfax Ave',
+  'La Brea Ave',
+  'Vine St',
+  'Figueroa St',
+  'Alameda St'
+]
+// The landmarks, for the radar and the city's look (sim/edge.js makes what is solid out there from
+// these; render/cityPier.js and cityHills.js build them). The pier runs out to sea from the
+// promenade at the end of Wilshire: x, z is the middle of its run, its deck is rectangles that meet
+// edge to edge (x0 < x1, z0 < z1: the long run out from the promenade's edge, the amusement park on
+// its south side, the carousel's plaza on its north side, and a wider end to turn round on), and the
+// Ferris wheel stands in the park by the deck. The sign stands on the face of the hills at the head of
+// La Brea, the observatory on a spur east of it. The freeways run behind the sound walls on the east
+// and the south: their centre lines, from end to end.
+const PROM = HALF + ROAD_HW + 5.5 // the promenade's outer edge (city.js PROMENADE)
+const LANDMARKS = {
+  pier: {
+    x: -627.5,
+    z: 0,
+    deck: [
+      { x0: -724, x1: -PROM, z0: -9, z1: 9 },
+      { x0: -612, x1: -536, z0: 9, z1: 46 },
+      { x0: -566, x1: -520, z0: -28, z1: -9 },
+      { x0: -762.5, x1: -724, z0: -16, z1: 16 }
+    ],
+    wheel: { x: -588, z: 21 }
+  },
+  sign: { x: 2 * PITCH, z: -680 },
+  observatory: { x: 400, z: -640 },
+  freeways: [
+    { x0: 532, z0: -1500, x1: 532, z1: 2000 },
+    { x0: -470, z0: 532, x1: 2000, z1: 532 }
+  ]
+}
+
+// Where (x, z) is, as the HUD says it: the neighbourhood, and the street (or the crossing, at a
+// junction) the car is on or beside; off the grid, the beach or the hills.
+const _out = { area: '', street: '', cross: '' }
+function whereIs (x, z, out = _out) {
+  const ix = Math.round(x / PITCH + N / 2),
+    iz = Math.round(z / PITCH + N / 2)
+  const dx = Math.abs(x - (ix - N / 2) * PITCH),
+    dz = Math.abs(z - (iz - N / 2) * PITCH)
+  const onX = ix >= 0 && ix <= N && dx < ROAD_HW + 6, // beside a north-south street
+    onZ = iz >= 0 && iz <= N && dz < ROAD_HW + 6
+  const bx = Math.floor(x / PITCH + N / 2),
+    bz = Math.floor(z / PITCH + N / 2)
+  out.cross = ''
+  if (x < -HALF - ROAD_HW - 6) {
+    out.area = 'Santa Monica Beach'
+    out.street = Math.abs(z - LANDMARKS.pier.z) < 12 ? 'Santa Monica Pier' : ''
+    return out
+  }
+  out.area = AREAS[areaOf(bx, bz)].name
+  if (onX && onZ) {
+    out.street = STREETS_EW[iz]
+    out.cross = STREETS_NS[ix]
+  } else if (onX && !(onZ && dz < dx)) out.street = STREETS_NS[ix]
+  else if (onZ) out.street = STREETS_EW[iz]
+  // (inside a block: the nearer of the streets round it)
+  else
+    out.street =
+      dx < dz
+        ? STREETS_NS[Math.max(0, Math.min(N, ix))]
+        : STREETS_EW[Math.max(0, Math.min(N, iz))]
+  return out
+}
+__export(__exports, { "AREAS": () => AREAS, "areaOf": () => areaOf, "COAST": () => COAST, "HILLS": () => HILLS, "STREETS_EW": () => STREETS_EW, "STREETS_NS": () => STREETS_NS, "LANDMARKS": () => LANDMARKS, "whereIs": () => whereIs })
+})
+
+// ---- js/ui/place.js
+__define(3, function (__exports) {
+// Where the car is, bottom right as in GTA V: the street (and the cross street, at a junction) over
+// the neighbourhood (areas.js), shown when it changes and fading out a few seconds later; the car's
+// name when it first drives off, and the test site's name on arriving there.
+const { $, put } = __require(1)
+const { whereIs } = __require(2)
+const SHOW_S = 4.5 // s a place stays up
+const CAR_S = 3.2 // s the car's name stays up
+const SETTLE_S = 0.4 // s a new place has to hold before it is said (not at every kerb)
+const whole = name => name.replace(/ /g, ' ')
+
+class Place {
+  constructor () {
+    this.el = { box: $('place'), top: $('plTop'), big: $('plBig') }
+    this.world = ''
+    this.left = 0 // s the current words stay up
+    this.carDue = false // the car's name, the first time it drives off
+    this.key = '' // the place said last, and the one it may be about to say
+    this.cand = ''
+    this.candT = 0
+    this.street = ''
+    this.area = ''
+    this.at = { area: '', street: '', cross: '' }
+  }
+
+  say (top, big, s, car = false) {
+    put(this.el.top, 'text', top)
+    put(this.el.big, 'text', big)
+    put(this.el.box, '.car', car)
+    this.left = s
+  }
+
+  // a new world: the test site's name now, the city's car name once it drives off
+  arrive (world) {
+    this.world = world
+    this.key = this.cand = this.street = this.area = ''
+    this.left = 0
+    if (world === 'site') this.say('Test site', 'McGregor, Texas', SHOW_S)
+    else this.carDue = true
+  }
+
+  update (dt, app) {
+    if (app.world !== this.world) this.arrive(app.world)
+    this.left -= dt
+    put(this.el.box, '.on', this.left > 0)
+    if (this.world !== 'city' || app.intro) return
+    const { sim } = app
+    if (this.carDue) {
+      const c = app.lastCtl
+      if (!app.auto && !(sim.groundSpeed() > 0.5 || c.throttle > 0)) return
+      this.carDue = false
+      this.say('Tesla', 'Roadster', CAR_S, true)
+      return
+    }
+    // (the car's name has its moment before the street comes up)
+    if (this.el.box.classList.contains('car') && this.left > 0) return
+    const p = sim.mode === 'ground' ? sim.pos : sim.com
+    const at = whereIs(p.x, p.z, this.at)
+    let street = at.street,
+      cross = at.cross
+    // at a junction, the street the car is going along first
+    if (cross) {
+      const f = sim.fwd()
+      if (Math.abs(f.z) > Math.abs(f.x)) [street, cross] = [cross, street]
+    }
+    const key = `${street}|${cross}|${at.area}`
+    if (key !== this.cand) {
+      this.cand = key
+      this.candT = 0
+      return
+    }
+    this.candT += dt
+    if (key === this.key || this.candT < SETTLE_S) return
+    // (out of a junction onto the street it was already on: no need to say it again)
+    const again = !cross && street === this.street && at.area === this.area
+    this.key = key
+    this.street = street
+    this.area = at.area
+    // (each name kept whole, so a narrow screen wraps the line at the slash)
+    const line = cross ? `${whole(street)} / ${whole(cross)}` : street
+    if (again) {
+      if (this.left > 0) put(this.el.top, 'text', line)
+      return
+    }
+    this.say(line, at.area, SHOW_S)
+  }
+}
+__export(__exports, { "Place": () => Place })
+})
+
+// ---- js/sim/constants.js
+__define(4, function (__exports) {
 // Physical constants, the car's spec sheet and small math helpers shared by the simulation.
 const THREE = __require(0)
 const G = 9.81
@@ -54625,8 +54901,10 @@ const CAR = {
   recharge: 6, // kg/s while driving without thrust (game assist)
   Iz: 4300, // yaw inertia, kg m^2
   rearGrip: 1.14, // staggered tyres: wider rears keep the car stable (understeer at the limit)
-  corneringF: 105000,
-  corneringR: 120000, // tyre cornering stiffness per axle, N/rad
+  // tyre cornering stiffness per axle (N/rad): a performance tyre's, about 90 to 100 kN/rad a
+  // tyre, so each axle reaches its peak grip at about 7 degrees of slip
+  corneringF: 175000,
+  corneringR: 200000,
   rollRes: 0.015, // rolling resistance coefficient
   regenAccel: 1.3, // lift-off regen (one-pedal driving), m/s^2
   regenPowerW: 250000,
@@ -54668,36 +54946,1328 @@ for (const sx of [-1, 1])
 __export(__exports, { "G": () => G, "DEG": () => DEG, "TAU": () => TAU, "clamp": () => clamp, "clamp01": () => clamp01, "wrapPi": () => wrapPi, "AX_X": () => AX_X, "AX_Y": () => AX_Y, "AX_Z": () => AX_Z, "CAR": () => CAR, "LIFT_ACC": () => LIFT_ACC, "makeControls": () => makeControls, "CORNERS": () => CORNERS })
 })
 
-// ---- js/ui/hud.js
-__define(2, function (__exports) {
-// HUD: telemetry strip, thruster schematic, captions, countdown, popups, top-bar buttons and the hint line.
-const { CAR } = __require(1)
-const $ = id => document.getElementById(id)
-const SVG_NS = 'http://www.w3.org/2000/svg'
-// Write a node's text, markup, class, style or attribute only when it changes: even an unchanged
-// write costs the browser a style and layout pass, and the HUD has a couple of dozen of them.
-const last = new WeakMap()
-function put (node, what, value) {
-  let was = last.get(node)
-  if (!was) last.set(node, (was = {}))
-  if (was[what] === value) return
-  was[what] = value
-  if (what === 'text') node.textContent = value
-  else if (what === 'html') node.innerHTML = value
-  else if (what === 'class') node.className = value
-  else if (what[0] === '@') node.setAttribute(what.slice(1), value)
-  else node.style[what] = value
-}
-const FAN_TEXT = {
-  auto: 'Suction fan <b>auto</b> · spins up for the wall',
-  on: 'Suction fan <b>on</b> · 2.1 G of grip',
-  off: 'Suction fan <b>off</b>'
+// ---- js/ui/prefs.js
+__define(5, function (__exports) {
+// Settings remembered between visits (the speed unit, whether the keys card has been seen), in
+// localStorage when the browser allows it: in a private window, with storage blocked or in a
+// sandboxed frame it just forgets.
+const PREFIX = 'roadster.'
+
+function recall (name, fallback = '') {
+  try {
+    const v = window.localStorage.getItem(PREFIX + name)
+    return v === null ? fallback : v
+  } catch {
+    return fallback
+  }
 }
 
-class Hud {
+function remember (name, value) {
+  try {
+    window.localStorage.setItem(PREFIX + name, String(value))
+  } catch {}
+}
+__export(__exports, { "recall": () => recall, "remember": () => remember })
+})
+
+// ---- js/ui/speedo.js
+__define(6, function (__exports) {
+// The speedometer, bottom right over where you are: the speed in big digits (km/h or mph: U, or a
+// click on the unit, switches, and it is remembered), a power meter from its zero (regen in green to
+// the left, power in white to the right), the drive selector (P R N D) and the lamps a dashboard
+// lights while they work: ABS, ESC, Track Mode and the e-brake.
+const { CAR } = __require(4)
+const { $, put } = __require(1)
+const { recall, remember } = __require(5)
+const UNITS = {
+  kmh: { k: 3.6, label: 'km/h' },
+  mph: { k: 2.23694, label: 'mph' }
+}
+const PARK_S = 1.5 // s at a standstill with nothing pressed before it shows P
+const POWER_KW = CAR.powerW / 1000
+const REGEN_KW = CAR.regenPowerW / 1000
+
+class Speedo {
+  constructor () {
+    this.el = {
+      v: $('spV'),
+      unit: $('spUnit'),
+      gears: [...$('spGear').children],
+      regen: $('spRegen'),
+      power: $('spPow'),
+      abs: $('lAbs'),
+      esc: $('lEsc'),
+      track: $('lTrack'),
+      brake: $('lBrake')
+    }
+    this.unit = recall('units') === 'mph' ? 'mph' : 'kmh'
+    this.still = 0 // s at a standstill with nothing pressed
+    this.gear = 'P'
+    this.onToggle = null // (the HUD says which unit it is now)
+    this.el.unit.addEventListener('click', e => {
+      // (let go of focus after a click, or Space, the e-brake, would press it again)
+      if (e.detail) this.el.unit.blur()
+      this.toggle()
+    })
+    this.showUnit()
+  }
+
+  // km/h to mph and back; returns the unit's name
+  toggle () {
+    this.unit = this.unit === 'kmh' ? 'mph' : 'kmh'
+    remember('units', this.unit)
+    this.showUnit()
+    const label = UNITS[this.unit].label
+    this.onToggle?.(label)
+    return label
+  }
+  showUnit () {
+    const now = UNITS[this.unit].label,
+      other = UNITS[this.unit === 'kmh' ? 'mph' : 'kmh'].label
+    put(this.el.unit, 'text', now)
+    put(this.el.unit, '@aria-label', `Speed in ${now}: switch to ${other} (U)`)
+  }
+
+  // P at a standstill with nothing pressed for a moment (and while Optimus gets in), R backing up
+  // (the driver's reverse, not a slide that has turned the car round), N with the wheels off the
+  // ground, D otherwise
+  selector (dt, sim, c, parked) {
+    if (parked) return 'P'
+    if (sim.mode === 'air' || sim.mode === 'crash') {
+      this.still = 0
+      return 'N'
+    }
+    const v = sim.mode === 'ramp' ? sim.v : sim.speed
+    const busy =
+      c.throttle > 0.02 ||
+      c.brake > 0.02 ||
+      c.reverse > 0.02 ||
+      c.burnout ||
+      c.ebrake ||
+      c.main > 0 ||
+      c.lift > 0 ||
+      Math.abs(c.steer) > 0.05
+    this.still = Math.abs(v) < 0.15 && !busy ? this.still + dt : 0
+    if (this.still > PARK_S) return 'P'
+    if (c.reverse > 0.02) return 'R'
+    // (still in reverse while it rolls back to a stop after S is let go)
+    return this.gear === 'R' && v < 0.3 && !(c.throttle > 0.02) ? 'R' : 'D'
+  }
+
+  update (dt, app) {
+    const { sim } = app,
+      el = this.el
+    put(
+      el.v,
+      'text',
+      String(Math.round(sim.groundSpeed() * UNITS[this.unit].k))
+    )
+    // power on a square-root scale, so cruising shows; regen is a quarter of the meter
+    const kw = sim.drivePower / 1000
+    const power = kw > 0 ? Math.sqrt(Math.min(1, kw / POWER_KW)) : 0
+    const regen = kw < 0 ? Math.min(1, -kw / REGEN_KW) : 0
+    put(el.power, 'transform', `scaleX(${power.toFixed(3)})`)
+    put(el.regen, 'transform', `scaleX(${regen.toFixed(3)})`)
+    this.gear = this.selector(dt, sim, app.lastCtl, app.intro)
+    for (const g of el.gears) put(g, '.on', g.textContent === this.gear)
+    // (ABS: as the sim says it is working; ESC flickers as a dashboard's does)
+    const moving = sim.groundSpeed() > 1
+    put(el.abs, '.on', (sim.abs || 0) > 0.5 && moving)
+    // (the stability control catching a slide, or holding the power back while the fronts push wide)
+    put(el.esc, '.on', !!sim.escActive || (sim.push || 0) > 0.4)
+    put(el.track, '.on', !!sim.track)
+    put(el.brake, '.on', !!sim.ebrakeOn)
+  }
+}
+__export(__exports, { "Speedo": () => Speedo })
+})
+
+// ---- js/ui/gamepad.js
+__define(7, function (__exports) {
+// A gamepad, any with the standard layout (Xbox, PlayStation and most others): the left stick steers
+// (and in the air pitches and rolls), the triggers are an analog throttle and brake, the right stick
+// looks round the car (and yaws it in the air), and the buttons press the keys they stand for, so
+// they do everything the keys do. It rumbles for knocks, kerbs, landings and crashes.
+//
+//   RT throttle   LT brake, reverse   A e-brake   RB boost (main thrusters)   LB fly (lift thrusters)
+//   X horn   Y camera   D-pad up / down backflip / kickflip   View reset   Menu Autopilot
+const BUTTONS = {
+  0: 'Space',
+  2: 'KeyH',
+  3: 'KeyV',
+  4: 'KeyF',
+  5: 'ShiftLeft',
+  8: 'KeyR',
+  9: 'KeyP',
+  12: 'KeyX',
+  13: 'KeyK'
+}
+const DEAD = 0.12
+// a stick's axis past its dead zone, rescaled to 0..1 and eased in, for fine control near the centre
+const axis = v => {
+  const a = Math.abs(v)
+  if (a < DEAD) return 0
+  const u = (a - DEAD) / (1 - DEAD)
+  return Math.sign(v) * u * (0.4 + 0.6 * u)
+}
+
+class Pad {
+  // press(code) and release(code): what pressing a key would do; onConnect(name): a pad is here
+  constructor ({ press, release, onConnect }) {
+    Object.assign(this, { press, release, onConnect })
+    this.index = -1
+    this.down = new Set()
+    this.steer = this.throttle = this.brake = 0
+    this.stickX = this.stickY = this.lookX = this.lookY = 0
+    this.active = false // the analog controls are in use
+    window.addEventListener('gamepadconnected', e => {
+      if (e.gamepad.mapping === 'standard') this.onConnect?.(e.gamepad.id)
+    })
+  }
+  get () {
+    // (a page in a frame the gamepads aren't allowed into gets none, rather than an error)
+    let pads = []
+    try {
+      pads = navigator.getGamepads?.() || []
+    } catch {}
+    const p = pads[this.index]
+    if (p?.connected) return p
+    this.index = -1
+    for (const q of pads)
+      if (q?.connected && q.mapping === 'standard') {
+        this.index = q.index
+        return q
+      }
+    return null
+  }
+  // once a frame: read the sticks and triggers, and press or release the buttons' keys
+  poll () {
+    const p = this.get()
+    if (!p) {
+      for (const code of this.down) this.release(code)
+      this.down.clear()
+      this.active = false
+      return
+    }
+    const b = p.buttons
+    this.stickX = axis(p.axes[0])
+    this.stickY = axis(p.axes[1])
+    this.lookX = axis(p.axes[2])
+    this.lookY = axis(p.axes[3])
+    this.throttle = b[7]?.value || 0
+    this.brake = b[6]?.value || 0
+    this.steer = -this.stickX
+    const on =
+      this.throttle > 0.05 || this.brake > 0.05 || Math.abs(this.stickX) > 0.05
+    // the first touch of the sticks or triggers takes the wheel, like a drive key
+    if (on && !this.active) this.press('Pad')
+    this.active = on
+    for (const [i, code] of Object.entries(BUTTONS)) {
+      const held = !!b[i]?.pressed
+      if (held && !this.down.has(code)) {
+        this.down.add(code)
+        this.press(code)
+      } else if (!held && this.down.has(code)) {
+        this.down.delete(code)
+        this.release(code)
+      }
+    }
+  }
+  // strong: the big low motor, weak: the small fast one (0..1), for ms
+  rumble (strong, weak, ms = 120) {
+    const p = this.index >= 0 ? this.get() : null
+    p?.vibrationActuator
+      ?.playEffect?.('dual-rumble', {
+        duration: ms,
+        strongMagnitude: Math.min(1, strong),
+        weakMagnitude: Math.min(1, weak)
+      })
+      .catch?.(() => {})
+  }
+}
+__export(__exports, { "Pad": () => Pad })
+})
+
+// ---- js/sim/track.js
+__define(8, function (__exports) {
+// The 21 m curved wall, the parked lineup and the solid obstacles around them.
+const { DEG } = __require(4)
+// ---------- The wall: arc-length parametrised profile in the x-y plane ----------
+const TRACK = (() => {
+  const W = 6.6,
+    X0 = -4
+  const segs = [
+    { len: 4, a0: 0, a1: 0 }, // entry lip
+    { len: 15.5, a0: 0, a1: 86 }, // bottom transition
+    { len: 3, a0: 86, a1: 100 }, // past vertical
+    { len: 12.5, a0: 100, a1: 170 }, // over the top
+    { len: 6, a0: 170, a1: 170 } // inverted lip, 170 deg pitch
+  ]
+  let acc = 0
+  for (const g of segs) {
+    g.s0 = acc
+    acc += g.len
+    g.a0r = g.a0 * DEG
+    g.a1r = g.a1 * DEG
+  }
+  const L = acc
+  const seg = s => {
+    for (const g of segs) if (s < g.s0 + g.len) return g
+    return segs[segs.length - 1]
+  }
+  function theta (s) {
+    if (s <= 0) return 0
+    if (s >= L) return segs[segs.length - 1].a1r
+    const g = seg(s),
+      u = (s - g.s0) / g.len
+    return g.a0r + (g.a1r - g.a0r) * (3 * u * u - 2 * u * u * u)
+  }
+  function kappa (s) {
+    if (s <= 0 || s >= L) return 0
+    const g = seg(s),
+      u = (s - g.s0) / g.len
+    return ((g.a1r - g.a0r) * 6 * u * (1 - u)) / g.len
+  }
+  const ds = 0.1,
+    n = Math.round(L / ds) + 1
+  const xs = new Float64Array(n),
+    ys = new Float64Array(n)
+  let x = X0,
+    y = 0
+  xs[0] = x
+  ys[0] = y
+  const sub = 20,
+    h = ds / sub
+  for (let i = 1; i < n; i++) {
+    for (let j = 0; j < sub; j++) {
+      const t = theta((i - 1) * ds + (j + 0.5) * h)
+      x += Math.cos(t) * h
+      y += Math.sin(t) * h
+    }
+    xs[i] = x
+    ys[i] = y
+  }
+  const sEnd = (n - 1) * ds,
+    thEnd = theta(L)
+  function point (s, out) {
+    if (s <= 0) {
+      out.x = X0 + s
+      out.y = 0
+      return out
+    }
+    if (s >= sEnd) {
+      const e = s - sEnd
+      out.x = xs[n - 1] + Math.cos(thEnd) * e
+      out.y = ys[n - 1] + Math.sin(thEnd) * e
+      return out
+    }
+    const f = s / ds,
+      i = Math.floor(f),
+      t = f - i
+    out.x = xs[i] + (xs[i + 1] - xs[i]) * t
+    out.y = ys[i] + (ys[i + 1] - ys[i]) * t
+    return out
+  }
+  let maxX = -Infinity
+  for (let i = 0; i < n; i++) maxX = Math.max(maxX, xs[i])
+  const lip = { x: xs[n - 1], y: ys[n - 1] }
+  const slab = 0.45
+  return {
+    W,
+    X0,
+    L,
+    segs,
+    ds,
+    n,
+    xs,
+    ys,
+    theta,
+    kappa,
+    point,
+    maxX,
+    lip,
+    slab,
+    sHold: L - 4.0,
+    baseS: 2.3, // start mark: the whole car on the flat beginning of the platform, rear at its edge
+    lipStart: L - 6,
+    towerX0: maxX + slab + 0.6,
+    towerX1: maxX + slab + 3.6,
+    towerTop: lip.y + 3.4
+  }
+})()
+
+// Parked lineup for stunt 2 (broadside, long axis along z)
+const LINEUP = [
+  {
+    name: 'Cybercab',
+    kind: 'cab',
+    x: -252.0,
+    w: 1.95,
+    h: 1.45,
+    l: 4.2,
+    color: 0xc9b37e
+  },
+  {
+    name: 'Cybertruck',
+    kind: 'truck',
+    x: -256.3,
+    w: 2.2,
+    h: 1.9,
+    l: 5.7,
+    color: 0xa9adb3
+  },
+  {
+    name: 'Semi',
+    kind: 'semi',
+    x: -261.0,
+    w: 2.6,
+    h: 3.9,
+    l: 6.4,
+    color: 0xc9cdd3
+  },
+  {
+    name: 'Model Y',
+    kind: 'y',
+    x: -265.7,
+    w: 1.98,
+    h: 1.62,
+    l: 4.75,
+    color: 0x1d3f8f
+  },
+  {
+    name: 'Model 3',
+    kind: 'm3',
+    x: -270.0,
+    w: 1.93,
+    h: 1.44,
+    l: 4.72,
+    color: 0xb3121b
+  }
+]
+for (const c of LINEUP)
+  c.box = {
+    x0: c.x - c.w / 2,
+    x1: c.x + c.w / 2,
+    y0: 0,
+    y1: c.h,
+    z0: -c.l / 2,
+    z1: c.l / 2
+  }
+const LINEUP_FIRST = Math.max(...LINEUP.map(c => c.box.x1))
+const LINEUP_LAST = Math.min(...LINEUP.map(c => c.box.x0))
+const SOLIDS = [
+  ...LINEUP.map(c => ({ ...c.box, name: c.name, kind: 'car' })),
+  {
+    name: 'tower',
+    x0: TRACK.towerX0,
+    x1: TRACK.towerX1,
+    y0: 0,
+    y1: TRACK.towerTop,
+    z0: -TRACK.W / 2 - 0.6,
+    z1: TRACK.W / 2 + 0.6
+  },
+  {
+    name: 'gantry',
+    x0: TRACK.lip.x - 0.4,
+    x1: TRACK.towerX1,
+    y0: TRACK.lip.y + 0.55,
+    y1: TRACK.towerTop,
+    z0: -TRACK.W / 2 - 0.6,
+    z1: TRACK.W / 2 + 0.6
+  }
+]
+__export(__exports, { "TRACK": () => TRACK, "LINEUP": () => LINEUP, "LINEUP_FIRST": () => LINEUP_FIRST, "LINEUP_LAST": () => LINEUP_LAST, "SOLIDS": () => SOLIDS })
+})
+
+// ---- js/sim/tyres.js
+__define(9, function (__exports) {
+// The tyres and the driver's hands on the wheel: a tyre's grip against its slip, how far the keys
+// turn the road wheels at speed, and the steering itself: the feel for the limit (the fronts turned
+// no further than where they grip hardest), the front wheels following a slide on their caster,
+// steering into a slide to hold it or out of it to catch it, unwinding the opposite lock as the car
+// swings back, and the rack turned at the speed of hands. ground.js runs it every step on the road.
+const { CAR, clamp } = __require(4)
+const smooth = x => (x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x))
+
+// A tyre's grip against its slip, x: the slip angle in units of its grip over its cornering
+// stiffness, so that the force starts out at the stiffness times the slip. It builds like a sine to
+// its peak at x = pi / 2 (about 7 degrees, CAR.corneringF and R), then falls away to what a sliding
+// tyre keeps (CAR.slideMu), so a tyre pushed past its limit gives less, not more.
+const PEAK = Math.PI / 2
+function tyreCurve (x) {
+  const a = Math.abs(x)
+  const f =
+    a < PEAK
+      ? Math.sin(a)
+      : CAR.slideMu + (1 - CAR.slideMu) * Math.exp(-((a - PEAK) ** 2) / 1.2)
+  return Math.sign(x) * f
+}
+
+// Speed-sensitive steering, so a keyboard stays controllable: how far full lock on the keys turns the
+// road wheels at u m/s (rad)
+const steerMax = u => 0.6 / (1 + (u * u) / 300)
+const LOCK = 0.62 // the road wheels' full lock (rad)
+// the steering rack: how fast hands turn the road wheels (rad/s, full lock in a third of a second),
+// and the extra speed they come back to the middle at as the car rolls (the tyres' self-aligning
+// torque, per m/s)
+const HANDS = 1.8,
+  CENTRE = 0.08
+// The understeer control (ground.js) starts taking the power away once the wheel asks the fronts for
+// PUSH_0 of the slip they grip hardest at, and has all of it PUSH_W further on
+const PUSH_0 = 0.85,
+  PUSH_W = 0.35
+const UNWIND = 0.3 // s: how far ahead a driver unwinds the opposite lock out of a slide
+
+// The driver's feel for the limit: the fronts are turned no further than just short of their peak,
+// where they grip hardest (past it they would only scrub and push wide). Sliding, the front wheels
+// follow the slide (the caster: let go of the wheel and they swing round to point the way the car is
+// going, as a real car's do), and the driver steers from there: no input lets the slide run out
+// (hands off, a touch of counter-steer catching the car as it swings further round, as a driver's
+// would), the way into the turn holds it (less, the further round the car is, so it doesn't spin;
+// with the electronics on, hardly at all) and the other way catches it, the opposite lock unwound
+// as the car swings back towards straight.
+// u, w: the car's speed along and across itself (m/s), r its yaw rate, beta the rear axle's slip,
+// FmaxF the fronts' grip (N), track: Track Mode. Turns s.steerAng and returns how far the car is
+// sliding (0 to 1) in out.slide, and the understeer control's cue in out.push: how far past the
+// fronts' grip the wheel asks them to go (0 to 1).
+const _out = { slide: 0, push: 0 }
+function steer (s, c, u, w, r, beta, FmaxF, track, dt) {
+  let steerT = c.steer * steerMax(u),
+    slide = 0,
+    push = 0
+  if (u > 3) {
+    const aKin = Math.atan2(w + CAR.halfWB * r, u),
+      aLim = (1.5 * FmaxF) / CAR.corneringF,
+      ab = Math.abs(beta)
+    slide = smooth((ab - 0.1) / 0.14)
+    push =
+      smooth((Math.abs(steerT - aKin) / aLim - PUSH_0) / PUSH_W) * (1 - slide)
+    const deep = track ? 0.35 : 0.08,
+      into =
+        c.steer * beta < 0
+          ? 1 - smooth((ab - deep) / (track ? 0.4 : 0.15)) * 0.9
+          : 1,
+      // (rad/s it is swinging further round)
+      grow = (ab - (s.driftA ?? ab)) / dt,
+      catchIt =
+        c.steer === 0 ? Math.sign(beta) * clamp(grow / 1.2, 0, 1) * 0.8 : 0,
+      // (steering out of it, the opposite lock is unwound as the car swings back towards straight,
+      // all of it once it will be there within UNWIND s: held on, the fronts would swing it on
+      // through and over into a slide the other way)
+      out =
+        c.steer * beta > 0 ? 1 - smooth((-grow * UNWIND - ab) / 0.08) : 1
+    const slid = aKin + (c.steer * into * out + catchIt) * aLim
+    if (c.ebrake) {
+      // (handbrake held: the wheel is the driver's, but let go of it, it follows the slide)
+      if (c.steer === 0) steerT = aKin * slide
+    } else
+      steerT =
+        clamp(steerT, aKin - aLim, aKin + aLim) * (1 - slide) + slid * slide
+    steerT = clamp(steerT, -LOCK, LOCK)
+  }
+  // the rack: turned at the speed of hands, and coming back quicker the faster the car rolls (or
+  // spinning through them as the wheels follow a slide)
+  const centring =
+    Math.abs(steerT) < Math.abs(s.steerAng) && steerT * s.steerAng >= 0
+  const rate = HANDS * (1 + 2 * slide) + (centring ? CENTRE * Math.abs(u) : 0)
+  s.steerAng += clamp(steerT - s.steerAng, -rate * dt, rate * dt)
+  _out.slide = slide
+  _out.push = push
+  return _out
+}
+__export(__exports, { "smooth": () => smooth, "PEAK": () => PEAK, "tyreCurve": () => tyreCurve, "steerMax": () => steerMax, "steer": () => steer })
+})
+
+// ---- js/sim/drift.js
+__define(10, function (__exports) {
+// Track Mode and its drifts, and the GTA-style moves on the ground: the handbrake's swing, catching
+// a spin, and the burnout's donut. ground.js asks it each step for the rears' drive and the yaw
+// moment these add.
+// Track Mode: pulled at speed, the handbrake also has traction and stability control stand back
+// and the drive shift to the rears, as in a Tesla's Track Mode with its balance set to the rear, so
+// the throttle holds a drift: on the power the driven rears spin up and slide, and the two rear
+// motors, one to each wheel, share the torque out between them to hold the drift at the angle the
+// driver asks for: steering into the turn holds it or takes it deeper, leaving the wheel be lets it
+// slowly unwind (a small flick is a short slide, a big one a long drift), and steering out of it
+// unwinds it fast; held there with the power on, the car swings on through straight into a drift
+// the other way (a linked drift); lift off and the rears grip and the car straightens. Held in a
+// drift, the throttle keeps the pace the drift began at rather than piling on speed, as a drifter
+// feathers it, so the tyres' grip carries the car round the corner instead of out wide. Once it is
+// lined up again the electronics are back.
+const { G, CAR, clamp } = __require(4)
+const { smooth } = __require(9)
+// Track Mode: the e-brake at more than this speed (m/s) switches it on, and it switches itself off
+// once the rear axle has run within this much slip (rad) of straight for CALM s
+const TRACK_IN = 5,
+  TRACK_STRAIGHT = 0.09,
+  CALM = 0.4
+// The handbrake pulled with the wheel turned, GTA-style: the locked rears step out at once rather
+// than waiting for the fronts to drag the car round. The yaw moment it adds (N m at full lock, from
+// a jog upwards, fading out as the car comes round past HB_FADE rad so it doesn't spin on its own)
+const HB_YAW = 7000,
+  HB_FADE = 0.9
+// Catching a spin, as a driver's hands and GTA's forgiving cars do: off the handbrake, a car turning
+// faster than its tyres could carry it round (its grip over its speed, or what the wheel asks for,
+// and SPIN_OK rad/s to spare) is eased back, SPIN_K N m per rad/s too fast, at most SPIN_MAX, so a
+// handbrake turn stops swinging soon after the handbrake is let go instead of spinning on round.
+const SPIN_OK = 0.35,
+  SPIN_K = 11000,
+  SPIN_MAX = 13000
+// A burnout, GTA-style: the throttle and the brake together under BURN_V m/s, the fronts held on
+// their brakes and the rears spinning against them in a cloud of smoke; turn the wheel and the rears
+// swing out round the fronts, the car turning at up to BURN_R rad/s on full lock (the rears' push
+// worked out as a moment of at most BURN_YAW N m, BURN_K N m per rad/s short of it) while it creeps
+// forward at up to BURN_CREEP m/s: a donut. Let go of the brake and it leaves on spinning rears, in
+// Track Mode.
+const BURN_V = 6
+const BURN_R = 2.6,
+  BURN_K = 14000,
+  BURN_YAW = 17000,
+  BURN_CREEP = 1.6
+const BURN_GRIP = 0.15 // the share of their grip spinning rears keep sideways
+// the drift the rear motors hold (rad, at most DRIFT_MAX_A), and how it changes (rad/s): deeper
+// steering into the turn, unwinding slowly with the wheel left alone and fast steering out; and how
+// hard they work at it: N m per rad off, N m per rad/s it is swinging, and at most N m (all of one
+// rear tyre's grip against none of the other's, across the track)
+const DRIFT_MAX_A = 0.7,
+  DRIFT_INTO = 0.5,
+  DRIFT_UNWIND = 0.3,
+  DRIFT_OUT = 1.2,
+  DRIFT_K = 40000,
+  DRIFT_D = 9000,
+  DRIFT_MAX = 15000
+// The drift's pace: held in a drift, the rears get DRIFT_PUSH of their drive at the pace it began
+// at, more below it and none DRIFT_BAND m/s or so above (the pace creeping up by DRIFT_GAIN m/s each
+// second the power stays on, and coming down to wherever the brakes take it). As the car comes
+// round further than asked, the rears are spun less (all of it DRIFT_EASE rad further round), so
+// they bite and bring it back; and it hands back to the electronics once it is within DRIFT_END rad
+// of straight, not while it is still well sideways (the rears gripping at once would snap it round).
+// Steering out with the power on, the drift links: swung DRIFT_LINK rad the other way, it is a drift
+// that way.
+const DRIFT_PUSH = 0.3,
+  DRIFT_BAND = 2,
+  DRIFT_GAIN = 0.3,
+  DRIFT_EASE = 0.3,
+  DRIFT_END = 0.2,
+  DRIFT_LINK = 0.15
+
+// Track Mode (s.track) on with the handbrake at speed, off once the car runs straight again. u: the
+// car's speed along itself (m/s), beta: the rear axle's slip (rad)
+function trackMode (s, c, u, beta, dt) {
+  if (c.ebrake && Math.abs(u) > TRACK_IN) {
+    if (!s.track) s.emit('track')
+    s.track = true
+    s.calm = 0
+  } else if (s.track) {
+    const straight = Math.abs(beta) < TRACK_STRAIGHT || Math.abs(u) < 3
+    s.calm = straight ? s.calm + dt : 0
+    // (over once the car has run straight a moment, or swung on through straight: the electronics
+    // catch whatever comes next, unless the driver is linking it into a drift the other way)
+    const through = s.driftDir && s.driftDir * beta > 0.03
+    if ((s.calm > CALM || through) && !s.linking) s.track = false
+  }
+}
+
+// In Track Mode the rears may spin: driven harder than they can grip (Fxr against FmaxR, N), they
+// transmit most of it and slide sideways, the spin easing in rather than all at once. Returns the
+// drive they put down, and how much they spin (0 to 1) in out.spin. spd: the car's speed (m/s)
+const _drive = { Fxr: 0, spin: 0 }
+function trackDrive (s, Fxr, FmaxR, beta, spd) {
+  // (and past fifty degrees round, the drive to them fades, so they grip and catch it)
+  Fxr *= 1 - smooth((Math.abs(beta) - 0.85) / 0.45)
+  let spin = clamp(Fxr / FmaxR - 0.6, 0, 1)
+  Fxr = 0.95 * FmaxR * Math.tanh(Fxr / FmaxR)
+  // (in a drift: spun less the further round it is than asked, and no faster than its pace)
+  if (s.driftDir) {
+    spin *= 1 - smooth((Math.abs(beta) - s.driftWant - 0.05) / DRIFT_EASE)
+    Fxr *= clamp(DRIFT_PUSH + (s.driftV - spd) / DRIFT_BAND, 0, 1)
+  }
+  _drive.Fxr = Fxr
+  _drive.spin = spin
+  return _drive
+}
+
+// a burnout's creep: the rears' push against the fronts' brakes nets out at a walking pace, quicker
+// on full lock; the fronts' force (N) to hold it there
+function burnCreep (c, u, FmaxF) {
+  const creep = BURN_CREEP * (0.3 + 0.7 * Math.abs(c.steer)) * c.throttle
+  return clamp(CAR.mass * 3 * (creep - u), -FmaxF, FmaxF)
+}
+
+// The yaw moment (N m) the drift's motors, a burnout's donut, the handbrake's swing and the spin
+// catch add. track: Track Mode with the handbrake off; throttle: the throttle reaching the motors;
+// burn: a burnout; beta: the rear axle's slip; Fyr: the rears' grip sideways (N); u, w: the car's
+// speed along and across itself, r its yaw rate; mu: the tyres' grip
+function driftMoment (
+  s,
+  c,
+  track,
+  throttle,
+  burn,
+  beta,
+  Fyr,
+  u,
+  w,
+  r,
+  mu,
+  dt
+) {
+  let Mz = 0
+  // drift control: the rear motors' torque split taking on the rear tyres' own pull straight and
+  // turning the car towards the drift angle asked for, the way the drift began (never flicking the
+  // car over into one the other way); steering out of the drift, they let it go once it is nearly
+  // straight
+  const ab = Math.abs(beta),
+    swing = (ab - (s.driftA ?? ab)) / dt,
+    d = -Math.sign(beta), // 1: the car rotated left of where it is going
+    into = c.steer * d
+  s.driftA = ab
+  if (!track) s.driftDir = 0
+  else if (!s.driftDir && ab > 0.15) {
+    s.driftDir = d
+    s.driftWant = Math.min(ab, DRIFT_MAX_A)
+    s.driftV = Math.hypot(u, w)
+  }
+  // (the angle asked for, from where the drift began: deeper, unwinding, or unwinding fast)
+  if (s.driftDir && !c.ebrake) {
+    const k =
+      into > 0 ? DRIFT_INTO * into : into < 0 ? DRIFT_OUT * into : -DRIFT_UNWIND
+    s.driftWant = clamp(s.driftWant + k * dt, 0, DRIFT_MAX_A)
+  } else if (s.driftDir)
+    s.driftWant = Math.max(s.driftWant, Math.min(ab, DRIFT_MAX_A))
+  // (the pace: creeping up on the power, down to wherever the brakes take it)
+  if (s.driftDir) {
+    if (throttle > 0.2) s.driftV += DRIFT_GAIN * dt
+    if (c.brake > 0) s.driftV = Math.min(s.driftV, Math.hypot(u, w))
+  }
+  const letGo = s.driftWant < 0.08 && ab < 0.15
+  // (steering out of it with the power on: linking it into a drift the other way, once the car has
+  // swung through)
+  s.linking =
+    track && !!s.driftDir && throttle > 0.5 && c.steer * s.driftDir < -0.5
+  if (s.linking && d === -s.driftDir && ab > DRIFT_LINK) {
+    s.driftDir = d
+    s.driftWant = Math.min(ab, DRIFT_MAX_A)
+    s.linking = false
+  }
+  // (unwound all the way and nearly straight, the drift is over: the electronics are back to catch
+  // what is left of it)
+  if (
+    s.driftDir &&
+    !c.ebrake &&
+    !s.linking &&
+    s.driftWant < 0.03 &&
+    ab < DRIFT_END
+  )
+    s.track = false
+  const au = Math.abs(u)
+  if (burn)
+    Mz += clamp(
+      BURN_K * (c.steer * c.throttle * BURN_R - r),
+      -BURN_YAW,
+      BURN_YAW
+    )
+  else if (track && s.driftDir === d && !letGo && throttle > 0.2 && au > 4) {
+    const want = s.driftWant * clamp((throttle - 0.2) / 0.5, 0, 1)
+    const hold = 0.75 * CAR.halfWB * Math.abs(Fyr) // (most of the rear tyres' pull straight)
+    Mz +=
+      d *
+      clamp(
+        hold + DRIFT_K * (want - ab) - DRIFT_D * swing,
+        -DRIFT_MAX,
+        DRIFT_MAX
+      )
+  }
+  // the handbrake's swing (going forwards only, and fading as the car comes round from the way it
+  // is travelling: the rear axle's slip comes back towards nothing once the car is going backwards)
+  if (c.ebrake && c.steer !== 0 && u > 2)
+    Mz +=
+      c.steer *
+      HB_YAW *
+      s.ebLock *
+      smooth((u - 2) / 8) *
+      (1 - smooth((Math.abs(Math.atan2(w, u)) - HB_FADE) / 0.6))
+  // and the spin catch, off the handbrake
+  const spd = Math.hypot(u, w)
+  if (!c.ebrake && !burn && spd > 4) {
+    const rOk =
+      Math.max(
+        Math.abs(u * Math.tan(s.steerAng)) / CAR.wheelbase,
+        (1.1 * mu * G) / spd
+      ) + SPIN_OK
+    if (Math.abs(r) > rOk)
+      Mz -= Math.sign(r) * Math.min(SPIN_K * (Math.abs(r) - rOk), SPIN_MAX)
+  }
+  return Mz
+}
+__export(__exports, { "BURN_V": () => BURN_V, "BURN_GRIP": () => BURN_GRIP, "trackMode": () => trackMode, "trackDrive": () => trackDrive, "burnCreep": () => burnCreep, "driftMoment": () => driftMoment })
+})
+
+// ---- js/ui/input.js
+__define(11, function (__exports) {
+// Keyboard, gamepad and touch input: held drive keys, one-shot command keys, and the manual control
+// mapping (a gamepad's sticks and triggers are analog: gamepad.js).
+const { Pad } = __require(7)
+const { TRACK } = __require(8)
+const { BURN_V } = __require(10)
+const { clamp, makeControls } = __require(4)
+// The steering keys ease the wheel over rather than throwing it to full lock: full in KEY_T s at a
+// standstill and KEY_T_V s more per m/s (up to KEY_V_TOP m/s: past it the wheel turns no slower, as
+// the steering's reach is already small up there), so at speed a tap is a small correction, holding
+// the key a lane change, then a turn at the tyres' limit; with the handbrake pulled, or the car
+// sliding, as fast as at a standstill (a handbrake turn, a slide to catch). Let go and it comes back
+// KEY_BACK times as fast.
+const KEY_T = 0.1,
+  KEY_T_V = 0.008,
+  KEY_V_TOP = 35,
+  KEY_BACK = 2.5
+// The brake key squeezes the pedal rather than stamping on it: the brakes come on over BRAKE_T s,
+// as a foot pushes the pedal down and the calipers build pressure (about how long a real hard stop
+// takes to reach its full bite), so a tap slows the car a little and holding it is a full stop; let
+// go, they are off in BRAKE_OFF s. Held through a stop, it keeps the car on its brakes for STOP_HOLD
+// s, as a driver stops and then selects reverse, before it backs up (pressed afresh at a standstill
+// it backs up at once), the motor's pull easing in over BRAKE_T s.
+const BRAKE_T = 0.3,
+  BRAKE_OFF = 0.1,
+  STOP_HOLD = 0.5
+// The throttle key presses the pedal down over GAS_T s, as a foot does (and the motors' torque
+// builds), rather than all at once: a tap creeps the car forward, holding it is full power a moment
+// later; let go, it is up in GAS_OFF s.
+const GAS_T = 0.2,
+  GAS_OFF = 0.06
+// k eased towards want (-1, 0 or 1) at up per s, and back to the middle at down per s
+function easeKey (k, want, up, down, dt) {
+  if (want !== 0 && k * want >= 0)
+    return want > 0 ? Math.min(want, k + up * dt) : Math.max(want, k - up * dt)
+  return k > 0 ? Math.max(0, k - down * dt) : Math.min(0, k + down * dt)
+}
+
+const DRIVE_KEYS = new Set([
+  'KeyW',
+  'KeyA',
+  'KeyS',
+  'KeyD',
+  'KeyQ',
+  'KeyE',
+  'KeyF',
+  'ArrowUp',
+  'ArrowDown',
+  'ArrowLeft',
+  'ArrowRight',
+  'Space',
+  'ShiftLeft',
+  'ShiftRight'
+])
+
+class Input {
+  // onDrive(code, firstPress) fires for held driving keys (and a gamepad's sticks and triggers),
+  // onCommand(code) for everything else, onRelease(code) when any key comes back up (the horn sounds
+  // for as long as H is held), and onPad(name) when a gamepad is plugged in
+  constructor ({ onDrive, onCommand, onRelease = () => {}, onPad }) {
+    this.keys = new Set()
+    this.stale = new Set() // held since before lift-off: they don't fly the car until pressed again
+    this.wasAir = false
+    this.lastT = -1
+    this.down = new Set() // every key held, drive or not
+    const press = code => {
+      if (code === 'Pad') return onDrive(code, true)
+      this.down.add(code)
+      if (DRIVE_KEYS.has(code)) {
+        const first = !this.keys.has(code)
+        this.keys.add(code)
+        this.stale.delete(code)
+        onDrive(code, first)
+      } else onCommand(code)
+    }
+    window.addEventListener('keydown', e => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return
+      if (DRIVE_KEYS.has(e.code)) e.preventDefault()
+      if (!e.repeat) press(e.code)
+    })
+    const release = code => {
+      this.keys.delete(code)
+      if (this.down.delete(code)) onRelease(code)
+    }
+    window.addEventListener('keyup', e => release(e.code))
+    window.addEventListener('blur', () => {
+      for (const code of this.down) release(code)
+      this.keys.clear()
+    })
+    this.pad = new Pad({ press, release, onConnect: onPad })
+    this.padStale = false // a stick held over since before lift-off
+    // the brake key's pedal (0 to 1), the reverse it eases into, and how long it has held the car
+    // at a standstill (-1: not braked to one)
+    this.keyBrake = this.backing = this.keyGas = 0
+    this.stopT = -1
+    // on-screen pad for touch screens: each button behaves like its key
+    for (const b of document.querySelectorAll('.tb')) {
+      const code = b.dataset.key
+      const down = e => {
+        e.preventDefault()
+        b.classList.add('active')
+        b.setPointerCapture?.(e.pointerId)
+        press(code)
+      }
+      const up = () => {
+        b.classList.remove('active')
+        release(code)
+      }
+      b.addEventListener('pointerdown', down)
+      b.addEventListener('pointerup', up)
+      b.addEventListener('pointercancel', up)
+      b.addEventListener('lostpointercapture', up)
+    }
+  }
+
+  // once a frame: the gamepad's buttons, sticks and triggers
+  poll () {
+    this.pad.poll()
+  }
+
+  // `fresh`: leave out keys still held from before lift-off
+  held (a, b, fresh = false) {
+    const on = k => this.keys.has(k) && !(fresh && this.stale.has(k))
+    return on(a) || (b !== undefined && on(b))
+  }
+
+  // Map held keys to controls. Same keys drive on the ground and fly in the air, but a key held
+  // through lift-off only flies once it is pressed again: W held for the run-up would otherwise
+  // pitch the nose straight back down into the ground.
+  controls (sim, fanMode) {
+    const c = makeControls()
+    const air = sim.mode === 'air'
+    // (the first call after the autopilot hands over, or after a reset, is not a lift-off)
+    const pad = this.pad
+    if (air && !this.wasAir && Math.abs(sim.time - this.lastT) < 0.05) {
+      for (const k of this.keys) this.stale.add(k)
+      this.padStale = Math.hypot(pad.stickX, pad.stickY) > 0.3
+    }
+    if (!air) this.stale.clear()
+    // (a stick that was steering only flies the car once it has come back to the middle)
+    if (!air || Math.hypot(pad.stickX, pad.stickY) < 0.2) this.padStale = false
+    this.wasAir = air
+    const dt = clamp(sim.time - this.lastT, 0, 0.05)
+    this.lastT = sim.time
+    const W = this.held('KeyW', 'ArrowUp', air),
+      S = this.held('KeyS', 'ArrowDown', air)
+    const A = this.held('KeyA', 'ArrowLeft', air),
+      D = this.held('KeyD', 'ArrowRight', air)
+    const nearWall =
+      sim.world === 'site' &&
+      sim.pos.x > TRACK.X0 - 25 &&
+      sim.pos.x < TRACK.towerX1 &&
+      Math.abs(sim.pos.z) < TRACK.W &&
+      Math.cos(sim.yaw) > 0.3
+    c.fan =
+      fanMode === 'on' ||
+      (fanMode === 'auto' && (sim.mode === 'ramp' || nearWall))
+    // Space is the handbrake, as in GTA; F (fly) fires the lift thrusters
+    c.ebrake = this.keys.has('Space')
+    c.main = this.held('ShiftLeft', 'ShiftRight') ? 1 : 0
+    c.lift = this.keys.has('KeyF') ? 1 : 0
+    // a key wins over the stick; the stick and triggers are analog
+    const or = (key, analog) => key || analog
+    if (air) {
+      this.keyBrake = this.backing = this.keyGas = 0
+      this.stopT = -1
+      const live = !this.padStale
+      c.pitch = or((S ? 1 : 0) - (W ? 1 : 0), live ? pad.stickY : 0)
+      c.roll = or((D ? 1 : 0) - (A ? 1 : 0), live ? pad.stickX : 0)
+      c.yaw = or(
+        (this.keys.has('KeyQ') ? 1 : 0) - (this.keys.has('KeyE') ? 1 : 0),
+        -pad.lookX
+      )
+    } else {
+      this.keyGas = easeKey(this.keyGas, W ? 1 : 0, 1 / GAS_T, 1 / GAS_OFF, dt)
+      c.throttle = Math.max(this.keyGas, pad.throttle)
+      // (sliding: the rear axle running ten degrees or more off the line of the car)
+      const sliding = sim.mode === 'ground' && Math.abs(sim.slipR) > 0.17
+      const T =
+        c.ebrake || sliding
+          ? KEY_T
+          : KEY_T + KEY_T_V * Math.min(KEY_V_TOP, sim.groundSpeed())
+      this.keySteer = easeKey(
+        this.keySteer || 0,
+        (A ? 1 : 0) - (D ? 1 : 0),
+        1 / T,
+        KEY_BACK / T,
+        dt
+      )
+      c.steer = or(this.keySteer, pad.steer)
+      this.keyBrake = easeKey(
+        this.keyBrake,
+        S ? 1 : 0,
+        1 / BRAKE_T,
+        1 / BRAKE_OFF,
+        dt
+      )
+      const brake = Math.max(this.keyBrake, pad.brake)
+      // the throttle and the brake together at a crawl: a burnout (and with the wheel turned, a
+      // donut), as in GTA
+      let rev = false
+      if (
+        Math.max(W ? 1 : 0, pad.throttle) > 0.5 &&
+        Math.max(S ? 1 : 0, pad.brake) > 0.5 &&
+        !c.ebrake &&
+        sim.mode === 'ground' &&
+        sim.groundSpeed() < BURN_V
+      )
+        c.burnout = true
+      else if (brake > 0.02) {
+        // S brakes while rolling forward, holds the car once it has stopped, then reverses (also
+        // back down the wall). (stopT: s held at a standstill after braking the car to it, -1 if
+        // it was pressed there)
+        const fwd = sim.mode === 'ramp' ? sim.v : sim.speed
+        if (fwd > 0.5) {
+          c.brake = brake
+          this.stopT = 0
+        } else if (this.stopT >= 0 && this.stopT < STOP_HOLD) {
+          c.brake = brake
+          this.stopT += dt
+        } else {
+          // (from holding the car, the motor's pull eases in; pressed at a standstill, the
+          // pedal or trigger is already easing in)
+          rev = true
+          c.reverse =
+            this.stopT >= 0
+              ? Math.min(brake, this.backing + dt / BRAKE_T)
+              : brake
+        }
+      } else this.stopT = -1
+      this.backing = rev ? c.reverse : 0
+    }
+    return c
+  }
+}
+__export(__exports, { "easeKey": () => easeKey, "DRIVE_KEYS": () => DRIVE_KEYS, "Input": () => Input })
+})
+
+// ---- js/ui/instruments.js
+__define(12, function (__exports) {
+// The engineering instruments, only when they matter (at the test site, in the air, on the wall or
+// while the thrusters fire), tucked away over the speedometer: the car from above with each of its
+// ten nozzles lit as it fires and the total thrust, the altitude, pitch, G load and air, and at the
+// test site the suction fan and the 0-60 time.
+const { CAR } = __require(4)
+const { $, put } = __require(1)
+const SVG_NS = 'http://www.w3.org/2000/svg'
+const HOLD_S = 2.5 // s they stay up once they no longer matter (a burst of boost, a hop)
+
+class Instruments {
   constructor (RS) {
     this.RS = RS
+    this.el = {
+      box: $('instruments'),
+      dots: $('thrDots'),
+      total: $('thrTotal'),
+      alt: $('tAlt'),
+      pitch: $('tPitch'),
+      g: $('tG'),
+      air: $('tAir'),
+      suck: $('tSuck'),
+      z60: $('t060')
+    }
+    this.dots = RS.nozzles.map(nz => this.makeDot(nz))
+    this.hold = 0
+    this.on = false
+  }
+
+  // a nozzle on the schematic, top-down with the nose at the top
+  makeDot (nz) {
+    let x = 60,
+      y = 86
+    if (nz.kind === 'main') {
+      x = 60 + nz.local.z * 56
+      y = 141
+    } else if (nz.kind === 'lift') {
+      x = nz.local.z < 0 ? 34 : 86
+      y = nz.local.x > 0 ? 24 : 122
+    } else x = nz.kind === 'sideL' ? 23 : 97
+    const c = document.createElementNS(SVG_NS, 'circle')
+    c.setAttribute('cx', x)
+    c.setAttribute('cy', y)
+    c.setAttribute('r', nz.kind.startsWith('side') ? 5 : 6.5)
+    c.setAttribute('fill', '#bfe9ff')
+    c.setAttribute('fill-opacity', '0')
+    c.setAttribute('stroke', '#f0c24b')
+    c.setAttribute('stroke-width', '1.6')
+    this.el.dots.appendChild(c)
+    return c
+  }
+
+  // every frame while they are up: the nozzles flicker with the thrust
+  nozzles () {
+    if (!this.on) return
+    this.RS.nozzles.forEach((nz, i) =>
+      put(this.dots[i], '@fill-opacity', nz.level.toFixed(2))
+    )
+  }
+
+  update (dt, app) {
+    const { sim } = app,
+      el = this.el
+    const firing = sim.thrMain + sim.thrLift + sim.thrSide > 0.02
+    const matters =
+      app.world === 'site' ||
+      sim.mode === 'air' ||
+      sim.mode === 'ramp' ||
+      firing
+    this.hold = matters ? HOLD_S : this.hold - dt
+    this.on = this.hold > 0 && !app.intro
+    put(el.box, '.on', this.on)
+    if (!this.on) return
+    put(el.pitch, 'text', `${Math.round(sim.pitchDeg())}°`)
+    put(el.g, 'html', `${sim.gLoad.toFixed(2)}<small>G</small>`)
+    const alt =
+      sim.mode === 'air' || sim.mode === 'crash'
+        ? Math.max(0, sim.com.y - CAR.comH)
+        : sim.pos.y
+    put(el.alt, 'html', `${alt.toFixed(1)}<small>m</small>`)
+    put(el.air, 'html', `${Math.round(sim.air)}<small>kg</small>`)
+    put(el.air, '.low', sim.air < 50)
+    put(
+      el.total,
+      'text',
+      `${Math.round(
+        (sim.thrMain * CAR.mainThrust +
+          sim.thrLift * CAR.liftThrust +
+          sim.thrSide * CAR.sideThrust) /
+          1000
+      )} kN`
+    )
+    if (app.world !== 'site') return
+    if (sim.suction > 0.05) {
+      put(el.suck, 'text', `${(sim.suction * CAR.suctionG).toFixed(1)} G`)
+      put(el.suck, '.on', true)
+    } else {
+      put(el.suck, 'text', !app.auto && app.fanMode === 'auto' ? 'AUTO' : 'OFF')
+      put(el.suck, '.on', false)
+    }
+    if (sim.z60.last)
+      put(el.z60, 'html', `${sim.z60.last.toFixed(2)}<small>s</small>`)
+  }
+}
+__export(__exports, { "Instruments": () => Instruments })
+})
+
+// ---- js/ui/notify.js
+__define(13, function (__exports) {
+// What the game tells the player, GTA-style: stunt titles that punch in mid-screen and fade (the same
+// stunt again soon after counts on: NEAR MISS ×3), hints in a help box top left that wait their
+// turn, and the score top right in GTA's money style, the last gain under it.
+const { put } = __require(1)
+const UP_S = 2.4 // s a stunt title stays up
+const CHAIN_S = 3.5 // s after the last one in which the same stunt again counts on
+const GAP_S = 0.3 // s between one hint and the next
+const MIN_S = 2.2 // s a hint stays up at least, when others are waiting their turn
+const STALE_S = 9 // s a hint may wait before it is no longer worth showing
+const SCORE_S = 5 // s the score stays up after it changes
+
+class Notices {
+  constructor (box) {
+    this.box = box
+    this.cur = null // the title up now: { key, el, timer }
+    // the run of one stunt counting on (it outlives its title: a near miss 3 s after the last
+    // still counts on, though the title had gone)
+    this.run = { key: '', at: -1e9, count: 0, pts: 0 }
+    // (no punch for a stunt counting on, for a player who would rather the screen kept still)
+    const still = window.matchMedia?.('(prefers-reduced-motion: reduce)')
+    this.still = !!still?.matches
+  }
+
+  // n: { title, sub, pts, big (shown in place of the points), tone ('red', 'blue', 'plain'),
+  // key (what kind of stunt), n (its count, where the sim keeps one), chain (the same key again
+  // within CHAIN_S counts on and adds its points), html (the title is markup), ms }
+  show (n) {
+    const now = performance.now(),
+      run = this.run
+    let count = n.n || 1,
+      pts = n.pts || 0
+    if (n.chain) {
+      if (run.key === n.key && now - run.at < CHAIN_S * 1000) {
+        count = run.count + 1
+        pts += run.pts
+      }
+      Object.assign(run, { key: n.key, at: now, count, pts })
+    }
+    const c = this.cur
+    // (the same run still up: count on in place, with a punch)
+    if (c && n.chain && c.key === n.key) {
+      this.fill(c.el, n, count, pts)
+      if (!this.still)
+        c.el.animate?.([{ transform: 'scale(1.18)' }, { transform: 'none' }], {
+          duration: 300,
+          easing: 'cubic-bezier(0.2, 1.4, 0.4, 1)'
+        })
+      this.hold(c, n.ms)
+      return
+    }
+    if (c) this.retire(c)
+    const el = document.createElement('div')
+    el.className = n.tone ? `notice ${n.tone}` : 'notice'
+    el.innerHTML =
+      '<div class="n-title"></div><div class="n-pts"></div><div class="n-sub"></div>'
+    this.fill(el, n, count, pts)
+    this.box.appendChild(el)
+    this.cur = { key: n.key || '', el, timer: 0 }
+    this.hold(this.cur, n.ms)
+  }
+
+  // the title (×count after it from the second), the points or the big figure, the line under
+  fill (el, n, count, pts) {
+    const [title, points, sub] = el.children
+    if (n.html) title.innerHTML = n.title
+    else title.textContent = n.title
+    if (count > 1) {
+      const x = document.createElement('span')
+      x.className = 'x'
+      x.textContent = `×${count}`
+      title.appendChild(x)
+    }
+    points.textContent = n.big || (pts ? `+${pts.toLocaleString('en-US')}` : '')
+    sub.textContent = n.sub || ''
+  }
+
+  hold (c, ms = UP_S * 1000) {
+    clearTimeout(c.timer)
+    c.timer = setTimeout(() => this.retire(c), ms)
+  }
+
+  retire (c) {
+    clearTimeout(c.timer)
+    if (this.cur === c) this.cur = null
+    c.el.classList.add('out')
+    setTimeout(() => c.el.remove(), 420)
+  }
+}
+
+class HelpBox {
+  constructor (box, text) {
+    this.box = box
+    this.text = text
+    this.queue = []
+    this.cur = null
+    this.gap = 0
+    this.t = 0
+  }
+
+  // html: the hint, with the keys in <b>; ms: how long it stays up once its turn comes; slot: hints
+  // about the same thing (the fan, the units) replace one another rather than queue
+  push (html, ms = 3000, slot = '') {
+    const same = h => h.html === html || (slot && h.slot === slot)
+    const h = { html, slot, left: ms / 1000, up: 0, born: this.t }
+    if (this.cur && same(this.cur)) {
+      this.cur = h
+      put(this.text, 'html', html)
+      return
+    }
+    const i = this.queue.findIndex(same)
+    if (i >= 0) this.queue[i] = h
+    else this.queue.push(h)
+    if (this.queue.length > 4) this.queue.shift()
+  }
+
+  // a new world: the hints still waiting were about the old one
+  clear () {
+    this.queue.length = 0
+    if (this.cur) this.cur.left = 0
+  }
+
+  update (dt) {
+    this.t += dt
+    const c = this.cur
+    if (c) {
+      c.up += dt
+      c.left -= dt
+      // (its turn is shorter when others are waiting)
+      if (c.left > 0 && !(this.queue.length && c.up > MIN_S)) return
+      this.cur = null
+      put(this.box, '.on', false)
+      this.gap = GAP_S
+      return
+    }
+    if (this.gap > 0) {
+      this.gap -= dt
+      return
+    }
+    while (this.queue.length && this.t - this.queue[0].born > STALE_S)
+      this.queue.shift()
+    const next = this.queue.shift()
+    if (!next) return
+    this.cur = next
+    put(this.text, 'html', next.html)
+    put(this.box, '.on', true)
+  }
+}
+
+class Score {
+  constructor (box, value) {
+    this.box = box
+    this.value = value
+    this.was = 0
+    this.up = 0
+    this.gain = null
+  }
+
+  // awake: the top bar is up, so the score is too
+  update (dt, score, awake) {
+    if (score !== this.was) {
+      if (score > this.was) this.added(score - this.was)
+      this.was = score
+      put(this.value, 'text', score.toLocaleString('en-US'))
+    }
+    this.up -= dt
+    put(this.box, '.on', score > 0 && (this.up > 0 || awake))
+  }
+
+  // the gain, under the score, fading out
+  added (pts) {
+    this.up = SCORE_S
+    this.gain?.remove()
+    const d = document.createElement('span')
+    d.className = 'd'
+    d.textContent = `+${pts.toLocaleString('en-US')}`
+    this.box.appendChild(d)
+    this.gain = d
+  }
+}
+__export(__exports, { "Notices": () => Notices, "HelpBox": () => HelpBox, "Score": () => Score })
+})
+
+// ---- js/ui/hud.js
+__define(14, function (__exports) {
+// The HUD, in the spirit of GTA V: a clean screen while driving (the title and the buttons fade away
+// until the mouse moves or a key that isn't a drive key is pressed), the radar bottom left with the
+// car's condition and its air under it (minimap.js), the speedometer over where you are bottom right
+// (speedo.js, place.js), the engineering instruments only when they matter (instruments.js), stunt
+// titles, the help box and the score (notify.js), the keys card, and the test site's captions and
+// countdown.
+const { $, put } = __require(1)
+const { Place } = __require(3)
+const { Speedo } = __require(6)
+const { DRIVE_KEYS } = __require(11)
+const { CAR } = __require(4)
+const { recall, remember } = __require(5)
+const { Instruments } = __require(12)
+const { Notices, HelpBox, Score } = __require(13)
+const FAN_TEXT = {
+  auto: 'Suction fan: auto · it spins up for the wall · <b>G</b> to change',
+  on: 'Suction fan: on · 2.1 G of grip',
+  off: 'Suction fan: off'
+}
+const WAKE_S = 3 // s the title and the buttons stay up after the mouse last moved, while driving
+// the keys that drive or fly the car (the keys card's Drive and Fly), and the radio's: they keep
+// the screen clean
+const PLAY_KEYS = new Set([...DRIVE_KEYS, 'KeyH', 'KeyG', 'KeyX', 'KeyK', 'KeyB'])
+const LINE_S = 7 // s the line of keys along the bottom stays up after it changes
+const DENTED = 1 // m of dents (damage.js's amount) that take the condition bar down to nothing
+
+class Hud {
+  // RS: the Roadster (its nozzles light the schematic); damage: its dents (the condition bar)
+  constructor (RS, damage) {
+    this.damage = damage
     this.clock = 0
+    this.acc = 0
     this.el = {
       mode: $('btnMode'),
       modeLabel: $('modeLabel'),
@@ -54712,68 +56282,84 @@ class Hud {
       capT: $('capTitle'),
       capS: $('capSub'),
       countdown: $('countdown'),
-      popups: $('popups'),
-      score: $('score'),
       hint: $('hint'),
-      speed: $('tSpeed'),
-      tag: $('tTag'),
-      pitch: $('tPitch'),
-      g: $('tG'),
-      alt: $('tAlt'),
-      pow: $('tPow'),
-      suck: $('tSuck'),
-      air: $('tAir'),
-      airBar: $('tAirBar'),
-      z60: $('t060'),
-      thrTotal: $('thrTotal'),
-      thrAir: $('thrAir'),
-      dots: $('thrDots'),
       loading: $('loading'),
       world: $('btnWorld'),
       worldLabel: $('worldLabel'),
       brandSub: $('brandSub'),
-      fade: $('fade')
+      fade: $('fade'),
+      cond: $('condBar'),
+      condBox: $('condBox'),
+      air: $('airBar'),
+      airBox: $('airBox'),
+      radio: $('radioTag'),
+      radioFreq: $('radioFreq'),
+      radioName: $('radioName')
     }
+    this.radioLeft = 0 // s the radio's station stays up
     this.world = 'site'
     this.siteSub = this.el.brandSub.textContent
-    this.dots = RS.nozzles.map(nz => this.makeDot(nz))
+    this.instruments = new Instruments(RS)
+    this.speedo = new Speedo()
+    this.speedo.onToggle = unit =>
+      this.helpbox.push(`Speed in ${unit} · <b>U</b> to switch`, 1800, 'units')
+    this.place = new Place()
+    this.notices = new Notices($('notices'))
+    this.helpbox = new HelpBox($('helpbox'), $('helpText'))
+    this.score = new Score($('scoreBox'), $('score'))
+    this.line = '' // the line of keys along the bottom, how long it has been up, whether it is
+    this.lineT = 0 // new, and the lines already shown in this world (each once: a clean screen)
+    this.fresh = false
+    this.lines = new Set()
+    // GTA's empty screen: the time of the last wake (the mouse moved, the screen was touched away
+    // from the drive pad, a key that isn't a drive key) and of the last driving
+    this.wokeAt = 0
+    this.droveAt = -1
+    const wake = () => (this.wokeAt = this.clock)
+    window.addEventListener('pointermove', e => {
+      if (e.pointerType === 'mouse') wake()
+    })
+    window.addEventListener('pointerdown', e => {
+      if (!e.target?.closest?.('.touch')) wake()
+    })
+    window.addEventListener('keydown', e => {
+      if (!PLAY_KEYS.has(e.code)) wake()
+      else this.droveAt = this.clock
+    })
+    // the keys card: on the first visit only, afterwards a hint (there are no keys on a phone),
+    // given on the first update (the world set up at boot clears the help box)
+    const touch = !!window.matchMedia?.('(pointer: coarse)')?.matches
+    this.keysHint = false
+    if (recall('keysSeen') === '1' || touch) {
+      this.showHelp(false)
+      this.keysHint = !touch
+    } else remember('keysSeen', '1')
   }
 
-  // thruster schematic, top-down with the nose at the top
-  makeDot (nz) {
-    let x = 60,
-      y = 86
-    if (nz.kind === 'main') {
-      x = 60 + nz.local.z * 56
-      y = 141
-    } else if (nz.kind === 'lift') {
-      x = nz.local.z < 0 ? 34 : 86
-      y = nz.local.x > 0 ? 24 : 122
-    } else x = nz.kind === 'sideL' ? 23 : 97
-    const c = document.createElementNS(SVG_NS, 'circle')
-    c.setAttribute('cx', x)
-    c.setAttribute('cy', y)
-    c.setAttribute('r', nz.kind.startsWith('side') ? 4 : 5)
-    c.setAttribute('fill', '#bfe9ff')
-    c.setAttribute('fill-opacity', '0')
-    c.setAttribute('stroke', '#d6a84e')
-    c.setAttribute('stroke-width', '1.2')
-    this.el.dots.appendChild(c)
-    return c
-  }
-
-  // kind 'hint' for how to do something: smaller than a score or a crash
+  // a hint goes in the help box (kind 'hint'); anything else is a title mid-screen
   popup (html, ms = 2300, kind = '') {
-    const d = document.createElement('div')
-    d.className = kind ? `popup ${kind}` : 'popup'
-    d.innerHTML = html
-    this.el.popups.appendChild(d)
-    while (this.el.popups.children.length > 4)
-      this.el.popups.firstChild.remove()
-    setTimeout(() => d.remove(), ms)
+    if (kind === 'hint') this.helpbox.push(html, ms)
+    else this.notices.show({ title: html, html: true, tone: 'plain', ms })
+  }
+  // a stunt, a record or a crash (events.js): see Notices.show
+  notify (n) {
+    this.notices.show(n)
   }
   fanPopup (mode) {
-    this.popup(FAN_TEXT[mode], 1600, 'hint')
+    this.helpbox.push(FAN_TEXT[mode], 1800, 'fan')
+  }
+  // B: the radio's station (null: off) at the top of the screen as GTA shows it; undefined: the
+  // sound is off, so the radio is too
+  radio (st) {
+    if (st === undefined)
+      return this.helpbox.push('The sound is off · <b>N</b> to turn it on', 1800)
+    put(this.el.radioFreq, 'text', st ? `${st.freq} FM` : '')
+    put(this.el.radioName, 'text', st ? st.name : 'Radio off')
+    this.radioLeft = 2.6
+  }
+  // U: km/h or mph
+  toggleUnits () {
+    this.speedo.toggle()
   }
 
   setMode (auto) {
@@ -54791,8 +56377,10 @@ class Hud {
       city ? 'Back to the test site' : 'Drive in the city'
     )
     this.el.brandSub.textContent = city
-      ? 'Free roam · downtown grid · live traffic and signals'
+      ? 'Los Angeles · free roam · live traffic and signals'
       : this.siteSub
+    this.lines.clear()
+    this.helpbox.clear()
   }
   // black out, run fn (the world switch) behind it, then fade back in
   fade (fn) {
@@ -54813,10 +56401,12 @@ class Hud {
     this.el.sound.textContent = on ? 'Sound: on' : 'Sound: off'
     this.el.sound.setAttribute('aria-pressed', String(on))
   }
-  toggleHelp () {
-    const show = this.el.help.hidden
+  showHelp (show) {
     this.el.help.hidden = !show
     this.el.helpBtn.setAttribute('aria-pressed', String(show))
+  }
+  toggleHelp () {
+    this.showHelp(this.el.help.hidden)
   }
   hideLoading () {
     const l = this.el.loading
@@ -54831,115 +56421,108 @@ class Hud {
   }
 
   update (dt, app) {
-    const { sim, ap } = app,
-      el = this.el
-    this.RS.nozzles.forEach((nz, i) =>
-      put(this.dots[i], '@fill-opacity', nz.level.toFixed(2))
-    )
+    const { sim } = app
     this.clock += dt
-    if (this.clock < 0.07) return
-    this.clock = 0
-    put(el.speed, 'text', String(Math.round(sim.groundSpeed() * 3.6)))
-    put(el.pitch, 'text', `${Math.round(sim.pitchDeg())}°`)
-    put(el.g, 'html', `${sim.gLoad.toFixed(2)}<small>G</small>`)
-    const alt =
-      sim.mode === 'air' || sim.mode === 'crash'
-        ? Math.max(0, sim.com.y - CAR.comH)
-        : sim.pos.y
-    put(el.alt, 'html', `${alt.toFixed(1)}<small>m</small>`)
-    if (sim.suction > 0.05) {
-      put(el.suck, 'text', `${(sim.suction * CAR.suctionG).toFixed(1)} G`)
-      put(el.suck, 'class', 'v status-on')
-    } else {
-      put(el.suck, 'text', !app.auto && app.fanMode === 'auto' ? 'AUTO' : 'OFF')
-      put(el.suck, 'class', 'v')
+    this.instruments.nozzles()
+    this.acc += dt
+    if (this.acc < 0.07) return
+    dt = this.acc
+    this.acc = 0
+    // (driving: a drive key, or the car moving under the player's hands, a gamepad's too)
+    const manual = !app.auto && !app.intro
+    if (manual && sim.groundSpeed() > 2) this.droveAt = this.clock
+    const quiet =
+      manual && this.droveAt > this.wokeAt && this.clock - this.wokeAt > WAKE_S
+    put(document.body, '.quiet', quiet)
+    put(document.body, '.cine', !!app.intro)
+    if (this.keysHint) {
+      this.keysHint = false
+      this.helpbox.push('Press <b>I</b> for the controls', 4000)
     }
-    const kw = Math.round(sim.drivePower / 1000)
-    put(el.pow, 'html', `${kw > 0 ? '+' : ''}${kw}<small>kW</small>`)
-    put(el.pow, 'class', kw < 0 ? 'v status-on' : 'v')
-    const tag = sim.ebrakeOn
-      ? 'E-BRAKE'
-      : sim.escActive
-      ? 'ESC'
-      : sim.abs > 0.5 && sim.groundSpeed() > 1
-      ? 'ABS'
-      : sim.regenOn && sim.groundSpeed() > 1
-      ? 'REGEN'
-      : ''
-    if (el.tag.textContent !== tag) {
-      el.tag.textContent = tag
-      el.tag.className =
-        tag === 'ESC' || tag === 'ABS'
-          ? 'tag esc'
-          : tag === 'REGEN'
-          ? 'tag status-on'
-          : 'tag'
-    }
-    put(el.air, 'html', `${Math.round(sim.air)}<small>kg</small>`)
-    put(el.airBar, 'transform', `scaleX(${(sim.air / CAR.airMass).toFixed(3)})`)
-    put(el.airBar, 'background', sim.air < 50 ? 'var(--warn)' : 'var(--jet)')
-    put(
-      el.thrAir,
-      'text',
-      `${Math.round(sim.air)} kg air · ${Math.round(
-        (380 * sim.air) / CAR.airMass
-      )} bar`
-    )
-    if (sim.z60.last)
-      put(el.z60, 'html', `${sim.z60.last.toFixed(2)}<small>s</small>`)
-    put(
-      el.thrTotal,
-      'text',
-      `${Math.round(
-        (sim.thrMain * CAR.mainThrust +
-          sim.thrLift * CAR.liftThrust +
-          sim.thrSide * CAR.sideThrust) /
-          1000
-      )} kN`
-    )
-    put(el.score, 'text', app.score.toLocaleString('en-US'))
-    if (app.auto) {
-      const [e, t, s] = ap.cap
-      this.setText(el.capE, e)
-      this.setText(el.capT, t)
-      this.setText(el.capS, s)
-      const cd = ap.countdown
-      put(el.countdown, 'opacity', cd === null ? '0' : '1')
-      if (cd !== null) put(el.countdown, 'text', cd === 0 ? 'GO' : String(cd))
-      const what =
-        this.world === 'city' ? 'Autopilot on' : 'Autopilot demo running'
-      this.setText(
-        el.hint,
-        app.soundOn
-          ? `${what} · press any drive key to take over`
-          : `${what} · click or press N for sound · any drive key takes over`
-      )
-    } else {
+    this.radioLeft -= dt
+    put(this.el.radio, '.on', this.radioLeft > 0)
+    this.speedo.update(dt, app)
+    this.place.update(dt, app)
+    this.instruments.update(dt, app)
+    this.helpbox.update(dt)
+    this.score.update(dt, app.score, !quiet)
+    this.vitals(sim)
+    this.captions(app)
+    this.keysLine(dt, app)
+  }
+
+  // under the radar: the car's condition (its dents) and the thrusters' air
+  vitals (sim) {
+    const el = this.el
+    const cond = Math.max(0, 1 - (this.damage?.amount || 0) / DENTED)
+    put(el.cond, 'transform', `scaleX(${cond.toFixed(3)})`)
+    put(el.condBox, '.low', cond < 0.3)
+    put(el.air, 'transform', `scaleX(${(sim.air / CAR.airMass).toFixed(3)})`)
+    put(el.airBox, '.low', sim.air < 50)
+  }
+
+  // the autopilot's caption and countdown (the test site's demo, Autopilot in the city)
+  captions (app) {
+    const el = this.el
+    if (!app.auto) {
       put(el.countdown, 'opacity', '0')
-      this.setText(
-        el.hint,
-        app.intro
-          ? 'Optimus is getting in · any drive key skips'
-          : this.world === 'city' && sim.mode === 'ground'
-          ? 'W throttle · S brake · A/D steer · Space e-brake · Shift boost · F fly · H horn · C test site'
-          : sim.mode === 'air'
-          ? 'W/S pitch · A/D roll · Q/E yaw · F lift · Shift boost · X backflip · K kickflip'
-          : sim.mode === 'ramp'
-          ? 'W climb · S brake, then reverse down · Space hold · Shift main burn off the lip'
-          : sim.mode === 'crash'
-          ? sim.up().y > 0.95
-            ? 'Crashed · W to drive on · R to reset · P to watch the autopilot'
-            : 'Upside down · A/D to roll it back over · R to reset'
-          : 'W throttle · release to coast · S brake · Space e-brake · A/D steer · Shift boost · F fly'
-      )
+      return
     }
+    const [e, t, s] = app.ap.cap
+    put(el.capE, 'text', e)
+    put(el.capT, 'text', t)
+    put(el.capS, 'text', s)
+    const cd = app.ap.countdown
+    put(el.countdown, 'opacity', cd === null ? '0' : '1')
+    if (cd !== null) put(el.countdown, 'text', cd === 0 ? 'GO' : String(cd))
+    put(el.countdown, '.go', cd === 0)
+  }
+
+  // the keys for what the car is doing, along the bottom: for good while Autopilot drives, Optimus
+  // gets in or the car is wrecked, otherwise for a few seconds the first time each comes up
+  keysLine (dt, app) {
+    const text = this.lineFor(app)
+    if (text !== this.line) {
+      this.line = text
+      this.lineT = 0
+      this.fresh = !this.lines.has(text)
+      this.lines.add(text)
+    } else this.lineT += dt
+    const sticky = app.auto || app.intro || app.sim.mode === 'crash'
+    put(this.el.hint, 'text', text)
+    put(
+      this.el.hint,
+      '.on',
+      !!text && (sticky || (this.fresh && this.lineT < LINE_S))
+    )
+  }
+  lineFor (app) {
+    const { sim } = app
+    if (app.auto) {
+      const what = this.world === 'city' ? 'Autopilot on' : 'Autopilot demo'
+      return app.soundOn
+        ? `${what} · press any drive key to take over`
+        : `${what} · click or press N for sound · any drive key takes over`
+    }
+    if (app.intro) return 'Optimus is getting in · any drive key skips'
+    if (sim.mode === 'crash')
+      return sim.up().y > 0.95
+        ? 'Crashed · W to drive on · R to reset · P to watch the autopilot'
+        : 'Upside down · A/D to roll it back over · R to reset'
+    if (sim.mode === 'air')
+      return 'W/S pitch · A/D roll · Q/E yaw · F lift · Shift boost · X backflip · K kickflip'
+    if (sim.mode === 'ramp')
+      return 'W climb · S brake, then reverse down · Space hold · Shift main burn off the lip'
+    return this.world === 'city'
+      ? 'W throttle · S brake · A/D steer · Space e-brake · Shift boost · F fly · H horn'
+      : 'W throttle · release to coast · S brake · Space e-brake · A/D steer · Shift boost · F fly'
   }
 }
 __export(__exports, { "Hud": () => Hud })
 })
 
 // ---- js/sim/signals.js
-__define(3, function (__exports) {
+__define(15, function (__exports) {
 // The city's traffic lights (city.js re-exports all of it): every junction's cycle, east-west then
 // north-south with an all-red gap between, lights held one way for Autopilot, and how long an amber
 // has left or a red has been on.
@@ -55022,14 +56605,13 @@ function cycle (node, dir, t) {
 __export(__exports, { "RED": () => RED, "YELLOW": () => YELLOW, "GREEN": () => GREEN, "SIGNAL": () => SIGNAL, "CYCLE": () => CYCLE, "signal": () => signal, "holdLight": () => holdLight, "releaseLight": () => releaseLight, "amberLeft": () => amberLeft, "redAge": () => redAge })
 })
 
-// ---- js/sim/city.js
-__define(4, function (__exports) {
-// The city: a grid of two-lane-each-way roads around downtown blocks, the lane graph its traffic
-// drives on, the signal plan at every intersection and the solid footprints the Roadster can hit.
-// Pure data and math (no DOM, no three.js), so traffic and collisions run headless in tests.
-
-// the signal plan at every junction is in signals.js
-const { RED, YELLOW, GREEN, SIGNAL, CYCLE, signal, holdLight, releaseLight, amberLeft, redAge } = __require(3)
+// ---- js/sim/grid.js
+__define(16, function (__exports) {
+// The street grid's measurements, in metres, and the seeded random numbers the city is laid out
+// with. city.js builds the lane graph on them and passes them on (everything else imports them from
+// there); what stands on the blocks (lots.js and the neighbourhoods' builders) takes them from here,
+// as city.js imports those in turn. (areas.js keeps its own copy of N, PITCH and ROAD_HW, checked
+// against these by its test.)
 
 const N = 10 // blocks across
 const PITCH = 96 // m between road centre lines
@@ -55068,8 +56650,1758 @@ function rng (seed) {
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296
   }
 }
-const R = rng(20261015)
+__export(__exports, { "N": () => N, "PITCH": () => PITCH, "LANE_W": () => LANE_W, "ROAD_HW": () => ROAD_HW, "WALK": () => WALK, "CURB_H": () => CURB_H, "CURB_R": () => CURB_R, "STOP": () => STOP, "HALF": () => HALF, "EDGE": () => EDGE, "OUTER": () => OUTER, "ROADS": () => ROADS, "LANE_OFF": () => LANE_OFF, "DIRS": () => DIRS, "SPAWN": () => SPAWN, "rng": () => rng })
+})
+
+// ---- js/sim/plots.js
+__define(17, function (__exports) {
+// What stands on the blocks, and the helpers the neighbourhoods are built with (lots.js lays out
+// each block by its neighbourhood: towers.js, shops.js, homes.js). Buildings are boxes stacked in
+// tiers (setbacks), each solid and landable on top; a tier may carry a hip roof instead of a flat
+// one, and a tower may be drawn round, three-sided or sail-topped (its shafts) while the sim keeps
+// to boxes that follow its plan. Pure data, as city.js.
+const { ROADS, rng } = __require(16)
+const BLOCKS = []
+const BUILDINGS = []
+const TREES = [] // round-headed trees: { x, z, s } (the parks' first)
+const PALMS = [] // { x, z, h, fan }: a tall, thin Mexican fan palm, or a stout date palm
+const STALLS = [] // parking spaces: { x, z, yaw, taken }
+// other solid things on the lots, each a box: hedges and garden walls, a gas station's canopy (on
+// its columns) and pumps, a billboard's board on its pole. kind as the colliders' (city.js): a
+// 'building' is landable on top, 'plant' is not; posts have r; look says how each is drawn.
+const SOLIDS = []
+// signs and pictures for the renderer: billboards, pylon signs, marquees, blade signs, rooftop
+// signs, murals, helipads: { kind, x, z, y, w, h, face (the way it faces: 0 north, 1 east, 2
+// south, 3 west), ... }
+const SIGNS = []
+
+const R = rng(1015)
+const range = (a, b) => a + R() * (b - a)
 const pick = arr => arr[Math.floor(R() * arr.length)]
+const chance = p => R() < p
+
+// the main streets, with shops along them and palms down them (indices into ROADS): Hollywood,
+// Sunset, Santa Monica and Wilshire Boulevards and Venice Boulevard east-west; Ocean Avenue, La
+// Cienega and Vine north-south (areas.js names them)
+const MAIN_EW = new Set([1, 2, 3, 5, 8])
+const MAIN_NS = new Set([0, 5, 8])
+// the street along side s of block (bx, bz) (0 north, 1 east, 2 south, 3 west): its index in
+// ROADS, and whether it runs east-west
+const streetOf = (bx, bz, s) =>
+  s === 0 ? bz : s === 2 ? bz + 1 : s === 1 ? bx + 1 : bx
+const isMain = (bx, bz, s) =>
+  (s % 2 === 0 ? MAIN_EW : MAIN_NS).has(streetOf(bx, bz, s))
+const MAIN = { EW: MAIN_EW, NS: MAIN_NS }
+
+// facade colours by style
+const TINTS = {
+  glass: [0x8fb8d0, 0x7a9fc0, 0x9cc4bf, 0xc4ab88, 0x8796ad, 0xa3b8c9],
+  dark: [0x5d6670, 0x4f5862, 0x6b7076], // black and smoked glass
+  office: [0xe8e2d6, 0xd6d1c8, 0xcdd2d6, 0xe3d6c0, 0xbfc4c9],
+  stone: [0xeadfca, 0xe2d2b4, 0xd9c6a5, 0xefe6d6, 0xd8cfc0],
+  brick: [0xf2ece6, 0xe6d6ca, 0xd6cbc4, 0xc9c0bb],
+  stucco: [0xf3e3c8, 0xf2cdb5, 0xd8e6cf, 0xf0d5cf, 0xe9e0c2, 0xcfe1e6],
+  white: [0xf6f2ea, 0xf1ebe0, 0xefe6d6, 0xf7f4ee, 0xe9e4da],
+  bright: [
+    0x5cc6d6,
+    0xf2876a,
+    0xf6d06a,
+    0xb89be0,
+    0x8fd49a,
+    0xf4a6c8,
+    0x6fa8e6,
+    0xf2b05e,
+    0xe86f6f,
+    0x7fd8c0
+  ]
+}
+
+// Local frames along a lot's sides. side s of the lot [x0, x1] x [z0, z1]: u runs along the street
+// (0 to the side's length), v in from it (0 at the pavement). f(u0, u1, v0, v1) is the box
+// [x0, x1, z0, z1] in the world.
+function frame (lot, s) {
+  const { x0, x1, z0, z1 } = lot
+  if (s === 0) return (u0, u1, v0, v1) => [x0 + u0, x0 + u1, z0 + v0, z0 + v1]
+  if (s === 1) return (u0, u1, v0, v1) => [x1 - v1, x1 - v0, z0 + u0, z0 + u1]
+  if (s === 2) return (u0, u1, v0, v1) => [x1 - u1, x1 - u0, z1 - v1, z1 - v0]
+  return (u0, u1, v0, v1) => [x0 + v0, x0 + v1, z1 - u1, z1 - u0]
+}
+// the length of side s of a lot
+const sideLen = (lot, s) => (s % 2 ? lot.z1 - lot.z0 : lot.x1 - lot.x0)
+
+// ---------- buildings ----------
+// A building, its look in o: style and tint (the facade), shop (storefronts round the ground
+// floor), u (where the facade's window pattern starts, so neighbours differ), and its tiers added
+// after with tier().
+function building (area, o = {}) {
+  const b = {
+    x0: Infinity,
+    x1: -Infinity,
+    z0: Infinity,
+    z1: -Infinity,
+    h: 0,
+    area,
+    style: 'stucco',
+    tint: 0xffffff,
+    u: R(),
+    shop: false,
+    antenna: false,
+    tiers: [],
+    ...o
+  }
+  BUILDINGS.push(b)
+  return b
+}
+// A tier: a box from y0 to y1. extra: its own style or tint, hip (the rise of a hip roof on it, m),
+// eave (how far that roof overhangs), deck (a flat roof the car can land on: false for a hip roof)
+function tier (b, x0, x1, z0, z1, y0, y1, extra) {
+  const t = { x0, x1, z0, z1, y0, y1, ...extra }
+  b.tiers.push(t)
+  b.x0 = Math.min(b.x0, x0)
+  b.x1 = Math.max(b.x1, x1)
+  b.z0 = Math.min(b.z0, z0)
+  b.z1 = Math.max(b.z1, z1)
+  b.h = Math.max(b.h, y1)
+  return t
+}
+// A box building on [x0, x1] x [z0, z1], h tall, stepping in as it rises: steps setbacks, each
+// tier a share of what is left of the height, the next inset by 2 to 5.5 m
+function stack (b, x0, x1, z0, z1, h, steps = 1, y = 0) {
+  let ins = 0
+  for (let t = 0; t < steps; t++) {
+    const top =
+      t === steps - 1 ? h : y + (h - y) * (t === 0 ? 0.5 + R() * 0.2 : 0.6)
+    const w = Math.min(x1 - x0, z1 - z0) / 2 - ins
+    if (t > 0 && w < 5) break
+    tier(b, x0 + ins, x1 - ins, z0 + ins, z1 - ins, y, top)
+    y = top
+    ins += 2 + R() * 3.5
+  }
+  return b
+}
+
+// ---------- shaped towers ----------
+// A shaft: a prism on a convex plan (pts, [x, z] round it anticlockwise seen from above) from y0
+// to y1, drawn as it is (smooth: a round one's walls shade smoothly). The sim gets boxes for it:
+// strips across its plan (along z), each as wide as the plan is across the strip's middle.
+function shaft (b, pts, y0, y1, o = {}) {
+  const s = { pts, y0, y1, smooth: false, ...o }
+  ;(b.shafts = b.shafts || []).push(s)
+  b.form = 'shaft'
+  const zs = pts.map(p => p[1]),
+    lo = Math.min(...zs),
+    hi = Math.max(...zs)
+  const n = Math.max(3, Math.min(10, Math.round((hi - lo) / 6)))
+  for (let k = 0; k < n; k++) {
+    const za = lo + ((hi - lo) * k) / n,
+      zb = lo + ((hi - lo) * (k + 1)) / n
+    const [xa, xb] = across(pts, (za + zb) / 2)
+    if (xb - xa > 0.5) tier(b, xa, xb, za, zb, y0, y1, { strip: true })
+  }
+  return s
+}
+// where a horizontal line at z crosses a convex plan: [x0, x1]
+function across (pts, z) {
+  let a = Infinity,
+    c = -Infinity
+  for (let i = 0; i < pts.length; i++) {
+    const [x0, z0] = pts[i],
+      [x1, z1] = pts[(i + 1) % pts.length]
+    if ((z0 - z) * (z1 - z) > 0 || z0 === z1) continue
+    const x = x0 + ((x1 - x0) * (z - z0)) / (z1 - z0)
+    a = Math.min(a, x)
+    c = Math.max(c, x)
+  }
+  return [a, c]
+}
+// a round plan: n points on a circle (or an ellipse, rx by rz) round (cx, cz), turned by a
+const ring = (cx, cz, rx, rz = rx, n = 28, a = 0) =>
+  Array.from({ length: n }, (_, i) => {
+    const t = a - (i / n) * Math.PI * 2
+    return [cx + rx * Math.cos(t), cz + rz * Math.sin(t)]
+  })
+// a regular polygon's corners cut off by c (m): a triangle with its tips trimmed, an octagon...
+function trimmed (cx, cz, r, sides, c, a = 0) {
+  const pts = []
+  for (let i = 0; i < sides; i++) {
+    const t0 = a - (i / sides) * Math.PI * 2,
+      t1 = a - ((i + 1) / sides) * Math.PI * 2
+    const p = [cx + r * Math.cos(t0), cz + r * Math.sin(t0)],
+      q = [cx + r * Math.cos(t1), cz + r * Math.sin(t1)]
+    const L = Math.hypot(q[0] - p[0], q[1] - p[1]),
+      k = c / L
+    pts.push([p[0] + (q[0] - p[0]) * k, p[1] + (q[1] - p[1]) * k])
+    pts.push([q[0] - (q[0] - p[0]) * k, q[1] - (q[1] - p[1]) * k])
+  }
+  return pts
+}
+
+// ---------- on the ground ----------
+// a surface on a block's lot, over its base: grass, asphalt (a car park), concrete (a drive or a
+// forecourt), plaza (paving), pool (water)
+function ground (blk, k, x0, x1, z0, z1) {
+  ;(blk.ground = blk.ground || []).push({ k, x0, x1, z0, z1 })
+}
+function solid (x0, x1, z0, z1, y0, y1, kind, look, extra) {
+  const s = { x0, x1, z0, z1, y0, y1, kind, look, ...extra }
+  SOLIDS.push(s)
+  return s
+}
+// a hedge (or a garden wall: look 'wall') along [x0, x1] x [z0, z1], h tall
+const hedge = (x0, x1, z0, z1, h, look = 'hedge') =>
+  solid(x0, x1, z0, z1, 0, h, 'plant', look, { tint: R() })
+// a post on the lot: a billboard's or a sign's pole
+const post = (x, z, r, h, look) =>
+  solid(x - r, x + r, z - r, z + r, 0, h, 'mast', look, { x, z, r })
+// A row of parking spaces along x (axis 0) or z (axis 1) from a to b at c, the cars' noses
+// pointing towards +c (dir 1) or -c (dir -1); fill: how full the car park is, about
+function stalls (axis, a, b, c, dir, fill = 0.6) {
+  for (let t = a + 1.35; t + 1.35 <= b; t += 2.7) {
+    const yaw =
+      axis === 0
+        ? dir > 0
+          ? -Math.PI / 2
+          : Math.PI / 2
+        : dir > 0
+        ? 0
+        : Math.PI
+    STALLS.push({
+      x: axis === 0 ? t : c,
+      z: axis === 0 ? c : t,
+      yaw,
+      fill,
+      taken: false
+    })
+  }
+}
+// A car park on [x0, x1] x [z0, z1]: rows of nose-in spaces either side of aisles, along x
+function carPark (blk, x0, x1, z0, z1, fill = 0.55) {
+  ground(blk, 'asphalt', x0, x1, z0, z1)
+  // (a row pair is 5.4 + 6.5 + 5.4: spaces, aisle, spaces)
+  let z = z0 + 0.4
+  while (z + 5.4 <= z1 - 0.4) {
+    stalls(0, x0 + 1, x1 - 1, z + 2.7, -1, fill)
+    z += 5.4 + 6.5
+    if (z + 5.4 > z1 - 0.4) break
+    stalls(0, x0 + 1, x1 - 1, z + 2.7, 1, fill)
+    z += 5.4 + 0.6
+  }
+}
+// Which spaces have a car in: n of them, each car park about as full as it asks. (The traffic
+// draws each parked car's make from the same random numbers as the drivers it deals after them,
+// traffic.js: n stays at the 267 the city always had, so the drivers on the streets are the same.)
+function parkCars (n) {
+  const keys = STALLS.map(s => [R() / s.fill, s])
+  keys.sort((a, b) => a[0] - b[0])
+  keys.forEach(([, s], i) => (s.taken = i < n))
+}
+// Whether (x, z) is m clear of the buildings and solid things put up on this block so far (lots.js
+// marks where each block's begin), so a palm never stands in a wall
+let fromB = 0,
+  fromS = 0
+function mark () {
+  fromB = BUILDINGS.length
+  fromS = SOLIDS.length
+}
+const inBox = (c, x, z, m) =>
+  x > c.x0 - m && x < c.x1 + m && z > c.z0 - m && z < c.z1 + m
+function free (x, z, m = 1.2) {
+  for (let i = fromB; i < BUILDINGS.length; i++)
+    if (BUILDINGS[i].tiers.some(t => inBox(t, x, z, m))) return false
+  for (let i = fromS; i < SOLIDS.length; i++)
+    if (inBox(SOLIDS[i], x, z, m)) return false
+  return true
+}
+// a palm or a tree on a lot, where there is room for it
+const palm = (x, z, h, fan) => free(x, z) && PALMS.push({ x, z, h, fan })
+const tree = (x, z, s) => free(x, z, 2) && TREES.push({ x, z, s })
+// A sign or a picture for the renderer (and, for a billboard or a pylon, its post: post())
+const sign = (kind, o) => {
+  const s = { kind, ...o }
+  SIGNS.push(s)
+  return s
+}
+__export(__exports, { "BLOCKS": () => BLOCKS, "BUILDINGS": () => BUILDINGS, "TREES": () => TREES, "PALMS": () => PALMS, "STALLS": () => STALLS, "SOLIDS": () => SOLIDS, "SIGNS": () => SIGNS, "R": () => R, "range": () => range, "pick": () => pick, "chance": () => chance, "streetOf": () => streetOf, "isMain": () => isMain, "MAIN": () => MAIN, "TINTS": () => TINTS, "frame": () => frame, "sideLen": () => sideLen, "building": () => building, "tier": () => tier, "stack": () => stack, "shaft": () => shaft, "ring": () => ring, "trimmed": () => trimmed, "ground": () => ground, "solid": () => solid, "hedge": () => hedge, "post": () => post, "stalls": () => stalls, "carPark": () => carPark, "parkCars": () => parkCars, "mark": () => mark, "free": () => free, "palm": () => palm, "tree": () => tree, "sign": () => sign, "ROADS": () => ROADS })
+})
+
+// ---- js/sim/towers.js
+__define(18, function (__exports) {
+// The towers: Downtown's skyline and Century City's. Downtown's tallest stand round the middle of
+// it, on Wilshire, and fall away from there: a stepped cylinder with a lit glass crown and a helipad
+// on top (as the US Bank Tower), a sail-topped glass tower with a spire on the corner of Wilshire
+// and Figueroa (as the Wilshire Grand), black slabs, and most of the rest flat-topped with a big
+// H-marked helipad on the roof, as Los Angeles' fire code had them; between and round them, the
+// older ten- to fifteen-storey stone and brick blocks of the historic core, and low brick
+// warehouses out at the edges. Century City is a cluster of glass office towers on plazas round a
+// pair of matching three-sided towers (as the Century Plaza Towers), with palms in planters.
+const { R, TINTS, pick, range, chance, building, tier, stack, shaft, ring, trimmed, ground, palm, tree, solid, sign, isMain } = __require(17)
+// Split [a, b] into n parts of roughly equal size.
+function splits (a, b, n) {
+  const out = [a]
+  for (let i = 1; i < n; i++)
+    out.push(a + (b - a) * (i / n + (R() - 0.5) * (0.18 / n)))
+  out.push(b)
+  return out
+}
+// A grid of nx by nz buildings on a lot, alleys gap wide between them, set back set from the
+// pavement; mk(x0, x1, z0, z1, i, j) builds each (it may leave one out)
+function cells (lot, nx, nz, gap, set, mk) {
+  const xs = splits(lot.x0, lot.x1, nx),
+    zs = splits(lot.z0, lot.z1, nz)
+  for (let i = 0; i < nx; i++)
+    for (let j = 0; j < nz; j++)
+      mk(
+        xs[i] + (i ? gap / 2 : set),
+        xs[i + 1] - (i < nx - 1 ? gap / 2 : set),
+        zs[j] + (j ? gap / 2 : set),
+        zs[j + 1] - (j < nz - 1 ? gap / 2 : set),
+        i,
+        j
+      )
+}
+// which sides of the lot cell (i, j) of nx by nz faces: [north, east, south, west]
+const faces = (i, j, nx, nz = nx) => [
+  j === 0,
+  i === nx - 1,
+  j === nz - 1,
+  i === 0
+]
+
+// A helipad on a building's top: a pad of radius r round (x, z) (the roof stays clear round it)
+function helipad (b, x, z, r) {
+  b.helipad = { x, z, r, y: b.h }
+}
+// the middle of a building's top tier, and its half-size
+function topOf (b) {
+  const t = b.tiers[b.tiers.length - 1]
+  return {
+    x: (t.x0 + t.x1) / 2,
+    z: (t.z0 + t.z1) / 2,
+    r: Math.min(t.x1 - t.x0, t.z1 - t.z0) / 2
+  }
+}
+// A box tower h tall on [x0, x1] x [z0, z1], stepping back as it rises, helipad on the roof
+function tower (area, x0, x1, z0, z1, h, o = {}) {
+  const look = o.look || pick(['glass', 'glass', 'dark', 'office', 'office'])
+  const b = building(area, {
+    style: look === 'dark' ? 'glass' : look,
+    tint: o.tint ?? pick(TINTS[look])
+  })
+  stack(b, x0, x1, z0, z1, h, o.steps ?? (h > 150 ? 3 : h > 80 ? 2 : 1))
+  const top = topOf(b)
+  if (o.helipad !== false && h > 70 && top.r > 8 && R() < 0.85)
+    helipad(b, top.x, top.z, Math.min(11, top.r - 2.5))
+  else b.antenna = h > 120 && chance(0.5)
+  // a band of glass round the top storeys, lit at night (cityBuildings.js)
+  if (h > 100 && chance(0.4)) b.crownBand = range(5, 9)
+  return b
+}
+
+// ---------- the landmarks ----------
+// a stepped cylinder in grey granite, its glass crown lit at night and a round helipad on it
+function steppedCylinder (cx, cz) {
+  const b = building('downtown', { style: 'office', tint: 0xcfd0cc })
+  shaft(b, ring(cx, cz, 23), 0, 150, { smooth: true })
+  shaft(b, ring(cx, cz, 20), 150, 228, { smooth: true })
+  shaft(b, ring(cx, cz, 17), 228, 286, { smooth: true })
+  shaft(b, ring(cx, cz, 14), 286, 300, { smooth: true, crown: true })
+  helipad(b, cx, cz, 10)
+  return b
+}
+// a glass tower on a long six-sided plan on a hotel podium, its top a sail of glass sloping up to
+// the east, lit at night, and a spire over its high end
+function sailTower (cx, cz, podium) {
+  const b = building('downtown', { style: 'glass', tint: 0x9fb9cc, shop: true })
+  const hx = 26,
+    hz = 14
+  const pts = [
+    [cx + hx, cz],
+    [cx + hx - 9, cz - hz],
+    [cx - hx + 9, cz - hz],
+    [cx - hx, cz],
+    [cx - hx + 9, cz + hz],
+    [cx + hx - 9, cz + hz]
+  ]
+  tier(b, ...podium, 0, 26)
+  shaft(b, pts, 26, 252)
+  b.sail = { pts, y0: 252, y1: 286 } // (rising from the west end to the east)
+  // the sail is no roof to land on: boxes stepping up under its slope
+  for (let k = 0; k < 3; k++)
+    solid(
+      cx - hx + (2 * hx * k) / 3,
+      cx - hx + (2 * hx * (k + 1)) / 3,
+      cz - hz,
+      cz + hz,
+      252,
+      252 + (34 * (k + 1)) / 3,
+      'plant',
+      'none'
+    )
+  b.spire = { x: cx + hx - 6, z: cz, y: 286, h: 30 }
+  return b
+}
+// a pair of three-sided towers in opposite corners of their plaza, turned half a turn to each
+// other, a point of each aimed at the fountain between them
+function triangleTwins (lot) {
+  const m = 20
+  for (const [x, z, a] of [
+    [lot.x0 + m, lot.z0 + m, Math.PI / 4],
+    [lot.x1 - m, lot.z1 - m, (-3 * Math.PI) / 4]
+  ]) {
+    const b = building('towers', { style: 'office', tint: 0xd4d8dc })
+    shaft(b, trimmed(x, z, 19.5, 3, 4.5, a), 0, 172)
+    helipad(b, x, z, 7.5)
+  }
+}
+// a granite and glass tower with its corners cut back (as Fox Plaza)
+function chamfered (area, cx, cz, r, h, tint) {
+  const b = building(area, { style: 'office', tint })
+  shaft(b, trimmed(cx, cz, r, 4, r * 0.32, Math.PI / 4), 0, h * 0.88)
+  shaft(b, trimmed(cx, cz, r * 0.8, 4, r * 0.26, Math.PI / 4), h * 0.88, h)
+  helipad(b, cx, cz, Math.min(9, r * 0.45))
+  return b
+}
+
+// ---------- plazas ----------
+// planters round a plaza (the rect it covers): strips of grass with palms or trees along its sides,
+// clear of the towers on it
+function planters (blk, rect, area, inset) {
+  for (const s of [0, 1, 2, 3]) {
+    if (!chance(0.75)) continue
+    const along = s % 2 === 0
+    const a = (along ? rect.x0 : rect.z0) + inset,
+      b = (along ? rect.x1 : rect.z1) - inset
+    const c =
+      s === 0
+        ? rect.z0 + 2.5
+        : s === 2
+        ? rect.z1 - 2.5
+        : s === 1
+        ? rect.x1 - 2.5
+        : rect.x0 + 2.5
+    const fan = area === 'towers' || chance(0.4)
+    for (let t = a + 4; t < b - 2; t += fan ? 9 : 11) {
+      const x = along ? t : c,
+        z = along ? c : t
+      if (fan ? palm(x, z, 16 + R() * 9, true) : tree(x, z, 0.75 + R() * 0.3)) {
+        if (along) ground(blk, 'grass', x - 2.2, x + 2.2, c - 1.3, c + 1.3)
+        else ground(blk, 'grass', c - 1.3, c + 1.3, z - 2.2, z + 2.2)
+      }
+    }
+  }
+}
+// a fountain: a shallow pool in the plaza
+const fountain = (blk, x, z, w, d) =>
+  ground(blk, 'pool', x - w / 2, x + w / 2, z - d / 2, z + d / 2)
+
+// ---------- older blocks ----------
+// A stone or brick block of the historic core, h tall, shops round its foot on the main streets,
+// sometimes an old sign on its roof
+function oldBlock (blk, x0, x1, z0, z1, h, side) {
+  const look = chance(0.45) ? 'brick' : 'stone'
+  const b = building('downtown', {
+    style: look,
+    tint: pick(TINTS[look]),
+    shop: side.some((f, s) => f && isMain(blk.bx, blk.bz, s)) || chance(0.5)
+  })
+  tier(b, x0, x1, z0, z1, 0, h)
+  const s = side.findIndex(f => f)
+  if (h > 30 && s >= 0 && chance(0.18)) roofSign(b, s, 'hotel')
+  return b
+}
+// an old hotel's sign on the roof, along its street side s, its letters lit at night
+function roofSign (b, s, kind) {
+  const t = b.tiers[b.tiers.length - 1],
+    along = s % 2 === 0,
+    len = (along ? t.x1 - t.x0 : t.z1 - t.z0) * 0.7
+  const w = Math.min(len, 22),
+    h = 3.2 + w * 0.08
+  const x = along ? (t.x0 + t.x1) / 2 : s === 1 ? t.x1 - 1.2 : t.x0 + 1.2
+  const z = along ? (s === 0 ? t.z0 + 1.2 : t.z1 - 1.2) : (t.z0 + t.z1) / 2
+  b.roofSign = sign(kind, { x, z, y: t.y1 + 1, w, h, face: s, k: R() })
+  return b.roofSign
+}
+// a brick warehouse or loft, two to six storeys, now and then a mural on its side
+function warehouse (blk, x0, x1, z0, z1, side) {
+  const b = building('downtown', {
+    style: 'brick',
+    tint: pick(TINTS.brick),
+    shop: chance(0.3)
+  })
+  tier(b, x0, x1, z0, z1, 0, range(7.5, 22))
+  const s = side.findIndex(f => f)
+  if (s >= 0 && chance(0.35)) mural(b, s)
+  return b
+}
+// a mural painted on side s of a building's lowest tier
+function mural (b, s) {
+  const t = b.tiers[0],
+    along = s % 2 === 0
+  const len = along ? t.x1 - t.x0 : t.z1 - t.z0
+  const w = Math.min(len - 2, 18),
+    h = Math.min(t.y1 - 1, w * 0.45)
+  if (w < 5 || h < 2.5) return
+  sign('mural', {
+    x: along ? (t.x0 + t.x1) / 2 : s === 1 ? t.x1 : t.x0,
+    z: along ? (s === 0 ? t.z0 : t.z1) : (t.z0 + t.z1) / 2,
+    y: Math.max(0.5, (t.y1 - h) / 2),
+    w,
+    h,
+    face: s,
+    k: R()
+  })
+}
+
+// ---------- Downtown ----------
+// the skyline's middle, between the stepped cylinder and the sail tower
+const CORE = { x: 336, z: -20 }
+function downtown (blk, lot) {
+  const cx = (lot.x0 + lot.x1) / 2,
+    cz = (lot.z0 + lot.z1) / 2
+  const d = Math.hypot(cx - CORE.x, cz - CORE.z)
+  const peak = 300 * Math.exp(-((d / 185) ** 2)) // how tall towers get here
+  const key = `${blk.bx},${blk.bz}`
+  const old = (h0, h1, nx, nz) => (x0, x1, z0, z1, i, j) =>
+    oldBlock(blk, x0, x1, z0, z1, range(h0, h1), faces(i, j, nx, nz))
+  if (key === '8,4') {
+    // the stepped cylinder on its plaza, older blocks along its east side
+    steppedCylinder(lot.x0 + 30, cz + 2)
+    cells({ ...lot, x0: lot.x0 + 56 }, 1, 3, 2.5, 0.4, old(36, 54, 1, 3))
+    planters(blk, { ...lot, x1: lot.x0 + 55 }, 'downtown', 4)
+    return
+  }
+  if (key === '8,5') {
+    // the sail tower on the corner of Wilshire and Figueroa, its podium along Wilshire, older
+    // blocks to the south
+    sailTower(lot.x1 - 30, lot.z0 + 22, [
+      lot.x0 + 14,
+      lot.x1 - 0.4,
+      lot.z0 + 0.4,
+      lot.z0 + 40
+    ])
+    cells({ ...lot, z0: lot.z0 + 44 }, 3, 1, 2.5, 0.4, old(24, 52, 3, 1))
+    planters(blk, { ...lot, x1: lot.x0 + 13, z1: lot.z0 + 42 }, 'downtown', 2)
+    return
+  }
+  if (key === '9,5') {
+    // twin black slabs either side of a plaza with a fountain
+    for (const x of [lot.x0 + 15, lot.x1 - 15])
+      tower('downtown', x - 12, x + 12, lot.z0 + 14, lot.z1 - 14, 205, {
+        look: 'dark',
+        steps: 1,
+        tint: 0x4a525a
+      })
+    fountain(blk, cx, cz, 10, 22)
+    planters(blk, lot, 'downtown', 4)
+    return
+  }
+  if (key === '9,4') {
+    // a tall dark slab, its long side to the avenue
+    tower('downtown', lot.x0 + 8, lot.x1 - 8, lot.z0 + 22, lot.z1 - 16, 236, {
+      look: 'dark',
+      steps: 1,
+      tint: 0x5b636b
+    })
+    planters(blk, lot, 'downtown', 6)
+    return
+  }
+  if (peak > 120) {
+    // a tower on a plaza, two side by side, or a tower and older blocks on the rest of the block
+    const plan = R()
+    if (plan < 0.35) {
+      const ins = range(8, 14)
+      tower(
+        'downtown',
+        lot.x0 + ins,
+        lot.x1 - ins,
+        lot.z0 + ins,
+        lot.z1 - ins,
+        peak * range(0.7, 1)
+      )
+      planters(blk, lot, 'downtown', ins * 0.5)
+    } else if (plan < 0.65) {
+      const mid = cx + range(-5, 5)
+      tower(
+        'downtown',
+        lot.x0 + 5,
+        mid - 4,
+        lot.z0 + range(6, 14),
+        lot.z1 - range(6, 14),
+        peak * range(0.7, 1)
+      )
+      if (chance(0.4))
+        chamfered(
+          'downtown',
+          (mid + lot.x1) / 2,
+          cz,
+          17,
+          peak * range(0.5, 0.8),
+          pick(TINTS.glass)
+        )
+      else
+        tower(
+          'downtown',
+          mid + 4,
+          lot.x1 - 5,
+          lot.z0 + range(8, 16),
+          lot.z1 - range(8, 16),
+          peak * range(0.45, 0.8)
+        )
+      planters(blk, lot, 'downtown', 3)
+    } else {
+      const split = lot.x0 + (lot.x1 - lot.x0) * range(0.5, 0.6)
+      const hT = peak * range(0.65, 0.95)
+      if (chance(0.35))
+        chamfered(
+          'downtown',
+          (lot.x0 + split) / 2,
+          cz,
+          21,
+          hT,
+          pick(TINTS.glass)
+        )
+      else tower('downtown', lot.x0 + 4, split - 4, lot.z0 + 8, lot.z1 - 8, hT)
+      cells({ ...lot, x0: split + 1 }, 1, 2, 2, 0.4, old(30, 54, 1, 2))
+    }
+    return
+  }
+  if (peak > 45) {
+    // the historic core: older blocks, a mid-height tower among them now and then
+    cells(lot, 3, 3, range(2, 3.5), 0.4, (x0, x1, z0, z1, i, j) => {
+      if (i === 1 && j === 1) {
+        if (chance(0.5)) return // (a light well, or a car park)
+        if (chance(0.5)) {
+          tower('downtown', x0, x1, z0, z1, peak * range(0.6, 1), { steps: 1 })
+          return
+        }
+      }
+      const h = chance(0.35) ? range(14, 26) : range(34, 56)
+      oldBlock(blk, x0, x1, z0, z1, h, faces(i, j, 3))
+    })
+    return
+  }
+  // out at the edges: lofts and warehouses, an old block or two
+  const n = chance(0.5) ? 3 : 2
+  cells(lot, n, n, range(2.5, 6), 0.4, (x0, x1, z0, z1, i, j) => {
+    if (chance(0.08)) return
+    if (chance(0.25))
+      oldBlock(blk, x0, x1, z0, z1, range(24, 46), faces(i, j, n))
+    else warehouse(blk, x0, x1, z0, z1, faces(i, j, n))
+  })
+}
+
+// ---------- Century City ----------
+function centuryCity (blk, lot) {
+  const cx = (lot.x0 + lot.x1) / 2,
+    cz = (lot.z0 + lot.z1) / 2
+  const key = `${blk.bx},${blk.bz}`
+  if (key === '3,4') {
+    triangleTwins(lot)
+    fountain(blk, cx, cz, 9, 9)
+    planters(blk, lot, 'towers', 4)
+    return
+  }
+  if (key === '4,4') {
+    chamfered('towers', cx, cz, 26, 150, 0xd8b8a4)
+    planters(blk, lot, 'towers', 5)
+    return
+  }
+  if (key === '3,5') {
+    // a long, low hotel slab and its gardens
+    const b = building('towers', { style: 'stucco', tint: 0xf1ece2 })
+    tier(b, lot.x0 + 6, lot.x1 - 6, cz - 9, cz + 9, 0, 62)
+    ground(blk, 'grass', lot.x0 + 4, lot.x1 - 4, cz + 13, lot.z1 - 4)
+    fountain(blk, cx, cz + 22, 16, 7)
+    for (let x = lot.x0 + 8; x < lot.x1 - 6; x += 10)
+      palm(x, lot.z1 - 7, 18 + R() * 8, true)
+    return
+  }
+  // a glass tower or two on a plaza
+  const peak = range(85, 160)
+  if (chance(0.55)) {
+    const ins = range(9, 15)
+    tower(
+      'towers',
+      lot.x0 + ins,
+      lot.x1 - ins,
+      lot.z0 + ins,
+      lot.z1 - ins,
+      peak,
+      {
+        look: pick(['glass', 'glass', 'office', 'dark'])
+      }
+    )
+    planters(blk, lot, 'towers', ins * 0.5)
+  } else {
+    const mid = cx + range(-4, 4)
+    tower('towers', lot.x0 + 7, mid - 5, lot.z0 + 10, lot.z1 - 10, peak, {
+      look: 'glass'
+    })
+    tower(
+      'towers',
+      mid + 5,
+      lot.x1 - 7,
+      lot.z0 + 10,
+      lot.z1 - 10,
+      peak * range(0.6, 0.9),
+      {
+        look: pick(['office', 'glass'])
+      }
+    )
+    planters(blk, lot, 'towers', 4)
+  }
+}
+__export(__exports, { "cells": () => cells, "faces": () => faces, "tower": () => tower, "roofSign": () => roofSign, "mural": () => mural, "downtown": () => downtown, "centuryCity": () => centuryCity })
+})
+
+// ---- js/sim/shops.js
+__define(19, function (__exports) {
+// The shopping streets. Santa Monica: two to six storeys of stucco, Art Deco and brick over shops
+// along the main streets, apartments on the side streets, courtyards with palms, and Deco hotels
+// facing the ocean with their names in neon on the roof. Hollywood: a strip of narrow one- to
+// four-storey shops along every street, with billboards on their roofs and blade signs on their
+// fronts, a theatre with a lit marquee on Hollywood Boulevard, a motel on Sunset round its car park
+// under a tall neon sign, a few older mid-rises on the corners, and a round tower of stacked floors
+// with a spire by Hollywood and Vine (as the Capitol Records Building).
+const { R, TINTS, pick, range, chance, building, tier, shaft, ring, ground, palm, stalls, carPark, sign, post, solid, frame, isMain } = __require(17)
+const { cells, faces, roofSign, mural } = __require(18)
+const SHOP = 4.6 // the storefronts' height (cityBuildings.js)
+const FLOOR = 3.5
+// a building with shops round its foot and n storeys over them
+const over = n => SHOP + n * FLOOR
+
+// ---------- Santa Monica ----------
+function santaMonica (blk, lot) {
+  cells(lot, 3, 3, range(3, 4.5), 0.4, (x0, x1, z0, z1, i, j) => {
+    const side = faces(i, j, 3)
+    const main = side.some((f, s) => f && isMain(blk.bx, blk.bz, s))
+    if (i === 1 && j === 1 && chance(0.6)) {
+      // a courtyard with palms
+      ground(blk, 'grass', x0 + 2, x1 - 2, z0 + 2, z1 - 2)
+      palm((x0 + x1) / 2, (z0 + z1) / 2, 9 + R() * 4, false)
+      if (chance(0.5)) palm(x0 + 4, z0 + 4, 16 + R() * 8, true)
+      return
+    }
+    if (blk.bx === 0 && side[3] && chance(0.7)) {
+      // a Deco hotel looking out over the ocean, its name on the roof
+      const b = building('beach', {
+        style: 'stone',
+        tint: pick([0xcfe8e2, 0xf3e3c8, 0xf2d4c8, 0xe8eef2, 0xf6efe0]),
+        shop: true,
+        fins: true
+      })
+      tier(b, x0, x1, z0, z1, 0, over(5 + Math.floor(R() * 5)))
+      roofSign(b, 3, 'hotel')
+      return
+    }
+    if (main) {
+      // shops with two to six storeys of offices or flats over them
+      const look = pick(['stucco', 'stucco', 'stone', 'brick', 'white'])
+      const b = building('beach', {
+        style: look === 'white' ? 'stucco' : look,
+        tint: pick(TINTS[look === 'stone' ? 'stucco' : look]),
+        shop: true,
+        fins: look === 'stone'
+      })
+      tier(b, x0, x1, z0, z1, 0, over(1 + Math.floor(R() * 5)))
+      return
+    }
+    // apartments, two to four storeys, set back behind a strip of garden
+    const b = building('beach', {
+      style: 'stucco',
+      tint: pick(chance(0.5) ? TINTS.white : TINTS.stucco)
+    })
+    tier(
+      b,
+      x0 + 1,
+      x1 - 1,
+      z0 + 1,
+      z1 - 1,
+      0,
+      (2 + Math.floor(R() * 3)) * FLOOR
+    )
+  })
+}
+
+// ---------- Hollywood ----------
+// the round tower of stacked floors by Hollywood and Vine, its spire over it
+function recordsTower (cx, cz) {
+  const b = building('boulevard', {
+    style: 'glass',
+    tint: 0xd8dcdc,
+    records: true
+  })
+  shaft(b, ring(cx, cz, 12, 12, 24), 0, 46, { smooth: true })
+  b.spire = { x: cx, z: cz, y: 46, h: 28, beacon: true }
+  return b
+}
+// a theatre: a tall, plain auditorium behind a stone front, a marquee over the pavement lit with
+// bulbs, and its name up a blade sign over it
+function theatre (box, s) {
+  const [x0, x1, z0, z1] = box
+  const b = building('boulevard', {
+    style: 'stone',
+    tint: pick([0xe6cfae, 0xd9b48f, 0xecdcc4]),
+    shop: false,
+    fins: true
+  })
+  // (an auditorium has no windows: a plain wall, Deco fins up it)
+  tier(b, x0, x1, z0, z1, 0, range(15, 18), { blank: true })
+  const along = s % 2 === 0
+  const fx = along ? (x0 + x1) / 2 : s === 1 ? x1 : x0,
+    fz = along ? (s === 0 ? z0 : z1) : (z0 + z1) / 2
+  const w = Math.min(16, (along ? x1 - x0 : z1 - z0) - 4)
+  b.marquee = sign('marquee', {
+    x: fx,
+    z: fz,
+    y: 4.4,
+    w,
+    h: 2.2,
+    d: 3.2,
+    face: s,
+    k: R()
+  })
+  sign('blade', { x: fx, z: fz, y: 6.9, w: 2.4, h: 9, d: 0.7, face: s, k: R() })
+  return b
+}
+// a motel: two storeys of rooms in an L round its car park, a tall sign at the street (f: the
+// frame along its side of the block, s)
+function motel (blk, s, f) {
+  const b = building('boulevard', { style: 'stucco', tint: pick(TINTS.stucco) })
+  // (the wings: along the back of the lot and down one side)
+  const back = f(0, 40, 22, 30),
+    wing = f(0, 10, 0.4, 22)
+  tier(b, back[0], back[1], back[2], back[3], 0, 6.6)
+  tier(b, wing[0], wing[1], wing[2], wing[3], 0, 6.6)
+  const yard = f(10.5, 40, 0.4, 21.5)
+  ground(blk, 'asphalt', yard[0], yard[1], yard[2], yard[3])
+  const along = s % 2 === 0
+  const u0 = along ? yard[0] : yard[2],
+    u1 = along ? yard[1] : yard[3]
+  const c = s === 0 ? yard[3] : s === 2 ? yard[2] : s === 1 ? yard[0] : yard[1]
+  stalls(
+    along ? 0 : 1,
+    u0 + 1,
+    u1 - 1,
+    c + (s === 0 || s === 3 ? -2.7 : 2.7),
+    s === 0 || s === 3 ? 1 : -1,
+    0.5
+  )
+  const p = f(36, 38, 1.2, 3)
+  const px = (p[0] + p[1]) / 2,
+    pz = (p[2] + p[3]) / 2
+  post(px, pz, 0.3, 12, 'pole')
+  sign('motel', { x: px, z: pz, y: 7.5, w: 5, h: 4.5, d: 0.6, face: s, k: R() })
+  return b
+}
+// a shop of n storeys (and a billboard on its roof, or a blade sign, now and then)
+function shopfront (box, s, n) {
+  const [x0, x1, z0, z1] = box
+  const look =
+    n > 6
+      ? pick(['stone', 'brick'])
+      : pick(['stucco', 'stucco', 'brick', 'stone', 'white'])
+  const b = building('boulevard', {
+    style: look === 'white' ? 'stucco' : look,
+    tint: pick(TINTS[look === 'white' ? 'white' : look]),
+    shop: true
+  })
+  const h = n ? over(n) : SHOP + range(1, 2.2)
+  tier(b, x0, x1, z0, z1, 0, h)
+  const along = s % 2 === 0,
+    len = along ? x1 - x0 : z1 - z0
+  if (n <= 2 && len > 9 && chance(0.3)) {
+    // a billboard on the roof, facing the street, on a frame standing back from the front
+    const w = Math.min(len - 1, 13),
+      bh = w * 0.36
+    const fx = along ? (x0 + x1) / 2 : s === 1 ? x1 - 3 : x0 + 3,
+      fz = along ? (s === 0 ? z0 + 3 : z1 - 3) : (z0 + z1) / 2
+    sign('billboard', {
+      x: fx,
+      z: fz,
+      y: h + 1.6,
+      w,
+      h: bh,
+      d: 0.5,
+      face: s,
+      k: R()
+    })
+    const hw = along ? w / 2 : 0.4,
+      hd = along ? 0.4 : w / 2
+    // (solid, on the roof: roofs.js keeps it with the plant)
+    b.plant = [
+      solid(
+        fx - hw,
+        fx + hw,
+        fz - hd,
+        fz + hd,
+        h,
+        h + 1.6 + bh,
+        'plant',
+        'none'
+      )
+    ]
+  } else if (n >= 1 && n <= 4 && chance(0.35)) {
+    const fx = along ? x0 + 2 + R() * (x1 - x0 - 4) : s === 1 ? x1 : x0,
+      fz = along ? (s === 0 ? z0 : z1) : z0 + 2 + R() * (z1 - z0 - 4)
+    sign('blade', {
+      x: fx,
+      z: fz,
+      y: SHOP + 0.6,
+      w: 1.4,
+      h: Math.min(h - SHOP - 1, 6),
+      d: 0.35,
+      face: s,
+      k: R()
+    })
+  }
+  if (chance(0.12)) mural(b, (s + (chance(0.5) ? 1 : 3)) % 4)
+  return b
+}
+function hollywood (blk, lot) {
+  const key = `${blk.bx},${blk.bz}`
+  const theatreOn = key === '6,0' ? 2 : key === '5,1' ? 0 : -1
+  const motelOn = key === '5,2' ? 0 : -1
+  // a row of narrow buildings along each street, the north and south rows full width, the east
+  // and west ones between them (a theatre's or a motel's row runs deeper); a car park in the middle
+  const dep = [range(16, 26), range(14, 22), range(16, 26), range(14, 22)]
+  if (theatreOn >= 0) dep[theatreOn] = range(34, 40)
+  if (motelOn >= 0) dep[motelOn] = 30
+  const L = lot.x1 - lot.x0
+  if (key === '7,0') recordsTower(lot.x1 - 15, lot.z1 - 15)
+  for (const s of [0, 1, 2, 3]) {
+    const f = frame(lot, s)
+    const a = s % 2 ? dep[s === 1 ? 0 : 2] + 1 : 0,
+      b = s % 2 ? L - dep[s === 1 ? 2 : 0] - 1 : L
+    // (the stretch a theatre or a motel takes)
+    const held = s === theatreOn ? [24, 52] : s === motelOn ? [0, 40] : null
+    if (s === theatreOn) theatre(f(24, 52, 0.4, dep[s]), s)
+    if (s === motelOn) motel(blk, s, f)
+    let u = held && held[0] === 0 ? held[1] : a
+    while (u < b - 0.5) {
+      const end = held && u < held[0] ? held[0] : b
+      let w = range(8, 20)
+      if (end - (u + w) < 8) w = end - u
+      const box = f(u, u + w, 0.4, dep[s])
+      const corner = u === a || u + w >= b - 0.5
+      u += w
+      if (held && u === held[0]) u = held[1]
+      // (by the records tower, nothing)
+      if (key === '7,0' && box[1] > lot.x1 - 30 && box[3] > lot.z1 - 30)
+        continue
+      // (mostly one or two storeys; an older mid-rise on a corner now and then)
+      const n =
+        corner && chance(0.09)
+          ? 7 + Math.floor(R() * 6)
+          : pick([0, 0, 0, 0, 1, 1, 1, 2, 3])
+      shopfront(box, s, n)
+    }
+  }
+  // the middle: a car park behind the shops
+  const m = {
+    x0: lot.x0 + dep[3] + 2,
+    x1: lot.x1 - dep[1] - 2,
+    z0: lot.z0 + dep[0] + 2,
+    z1: lot.z1 - dep[2] - 2
+  }
+  if (key === '7,0') m.x1 = Math.min(m.x1, lot.x1 - 30)
+  if (m.x1 - m.x0 > 14 && m.z1 - m.z0 > 12) {
+    // (one pair of rows of spaces, the rest of it paved)
+    ground(blk, 'asphalt', m.x0, m.x1, m.z0, m.z1)
+    const z = (m.z0 + m.z1) / 2 - 9
+    if (m.z1 - m.z0 > 19) carPark(blk, m.x0, m.x1, z, z + 18.1, 0.45)
+  }
+}
+__export(__exports, { "santaMonica": () => santaMonica, "hollywood": () => hollywood })
+})
+
+// ---- js/sim/strip.js
+__define(20, function (__exports) {
+// Mid-City: low and spread out. Strip malls set back behind their car parks (the cars in them are
+// the traffic's parked ones, plots.js stalls), gas stations on the corners of the main streets under
+// their canopies, fast-food stands with their signs up on poles and a drive-through round the back,
+// a donut stand with a giant donut on its roof, two- and three-storey stucco apartment blocks on
+// the side streets, billboards on poles over it all, and now and then an office mid-rise in its
+// own car park.
+const { R, TINTS, pick, range, chance, building, tier, ground, palm, carPark, stalls, sign, post, solid, frame, isMain } = __require(17)
+let stations = 0 // (gas stations so far: four in the city)
+
+// A billboard on a pole at (x, z) facing side s, its board up at 9 to 14 m: the pole and the board
+// are solid
+function billboard (x, z, s) {
+  const w = 14.6,
+    h = 4.9,
+    y = 9.5
+  post(x, z, 0.45, y, 'pole')
+  sign('billboard', { x, z, y, w, h, d: 0.6, face: s, k: R(), pole: true })
+  const along = s % 2 === 0
+  const hw = along ? w / 2 : 0.4,
+    hd = along ? 0.4 : w / 2
+  solid(x - hw, x + hw, z - hd, z + hd, y, y + h, 'plant', 'none')
+}
+
+// A gas station on a 34 by 32 m corner of the lot (the box [x0, x1, z0, z1]), its pumps under a
+// canopy (landable) on four columns, its shop at the back, its prices up on a pole at the corner
+// (cx, cz), the corner's two streets along sides a and b
+function gasStation (blk, box, cx, cz) {
+  const [x0, x1, z0, z1] = box
+  ground(blk, 'concrete', x0, x1, z0, z1)
+  const mx = (x0 + x1) / 2,
+    mz = (z0 + z1) / 2
+  // the canopy over the forecourt, nearer the corner; the shop behind it
+  const ux = Math.sign(cx - mx),
+    uz = Math.sign(cz - mz)
+  const kx = mx + ux * 3,
+    kz = mz + uz * 3
+  const hw = 11,
+    hd = 6.5
+  const brand = Math.floor(R() * 4)
+  solid(kx - hw, kx + hw, kz - hd, kz + hd, 4.7, 5.5, 'building', 'canopy', {
+    brand
+  })
+  for (const sx of [-1, 1])
+    for (const sz of [-1, 1])
+      post(kx + sx * (hw - 2.5), kz + sz * (hd - 2), 0.28, 4.7, 'column')
+  // two islands of pumps
+  for (const sz of [-1, 1]) {
+    const z = kz + sz * 2.2
+    solid(kx - 3.8, kx + 3.8, z - 0.55, z + 0.55, 0, 0.18, 'building', 'island')
+    for (const sx of [-1, 1])
+      solid(
+        kx + sx * 2 - 0.35,
+        kx + sx * 2 + 0.35,
+        z - 0.45,
+        z + 0.45,
+        0,
+        1.75,
+        'plant',
+        'pump',
+        { brand }
+      )
+  }
+  // the shop in the far corner
+  const sx0 = ux > 0 ? x0 + 0.6 : x1 - 13.6,
+    sz0 = uz > 0 ? z0 + 0.6 : z1 - 10.6
+  const b = building('strip', {
+    style: 'stucco',
+    tint: 0xf4f1ea,
+    shop: true,
+    kiosk: brand
+  })
+  tier(b, sx0, sx0 + 13, sz0, sz0 + 10, 0, 5.4)
+  post(cx - ux * 1.6, cz - uz * 1.6, 0.18, 2.6, 'pole')
+  sign('price', {
+    x: cx - ux * 1.6,
+    z: cz - uz * 1.6,
+    y: 2.6,
+    w: 2.6,
+    h: 3.6,
+    d: 0.4,
+    face: uz > 0 ? 2 : 0,
+    k: brand / 4
+  })
+}
+
+// a fast-food stand: one storey in bright colours, its sign up on a pole by the street, a lane
+// round it for the drive-through and a few spaces
+function fastFood (blk, box, s, f) {
+  const [x0, x1, z0, z1] = box
+  ground(blk, 'asphalt', x0, x1, z0, z1)
+  const b = building('strip', {
+    style: 'stucco',
+    tint: pick([0xd9452f, 0xf2c14e, 0xf4f1ea, 0xe8742a]),
+    shop: true
+  })
+  const m = f(8, 22, 8, 20)
+  tier(b, m[0], m[1], m[2], m[3], 0, 5.6)
+  const p = f(2, 3, 1.5, 2.5)
+  post((p[0] + p[1]) / 2, (p[2] + p[3]) / 2, 0.3, 8, 'pole')
+  sign('food', {
+    x: (p[0] + p[1]) / 2,
+    z: (p[2] + p[3]) / 2,
+    y: 8,
+    w: 4.4,
+    h: 3,
+    d: 0.6,
+    face: s,
+    k: R()
+  })
+  // (a row of spaces beside it, noses towards it)
+  const q = f(24, 30, 4, 28)
+  if (s % 2 === 0)
+    stalls(1, q[2], q[3], (q[0] + q[1]) / 2, s === 0 ? -1 : 1, 0.5)
+  else stalls(0, q[0], q[1], (q[2] + q[3]) / 2, s === 1 ? -1 : 1, 0.5)
+}
+
+// a little donut stand with a giant donut on its roof
+function donutStand (blk, box, s) {
+  const [x0, x1, z0, z1] = box
+  ground(blk, 'asphalt', x0, x1, z0, z1)
+  const cx = (x0 + x1) / 2,
+    cz = (z0 + z1) / 2
+  const b = building('strip', { style: 'stucco', tint: 0xf4f1ea, shop: true })
+  tier(b, cx - 5, cx + 5, cz - 4, cz + 4, 0, 5)
+  // (the donut: 5.5 m round its middle, 1.6 m thick, standing on two posts 1.6 m up; citySigns.js)
+  b.donut = { x: cx, z: cz, y: 5, r: 5.5, face: s }
+  const along = s % 2 === 0
+  b.plant = [
+    solid(
+      cx - (along ? 7.1 : 1.6),
+      cx + (along ? 7.1 : 1.6),
+      cz - (along ? 1.6 : 7.1),
+      cz + (along ? 1.6 : 7.1),
+      5,
+      19.2,
+      'plant',
+      'none'
+    )
+  ]
+}
+
+// a strip mall facing side s: one storey of shops in an L at the back of a car park, a strip of
+// lawn with palms along the street, its sign by the street; f: the frame along side s
+function stripMall (blk, s, f) {
+  const deep = 74 - 0.4
+  const back = f(4, 70, deep - 21, deep),
+    wing = f(4, 18, deep - 44, deep - 21)
+  const b = building('strip', {
+    style: 'stucco',
+    tint: pick([...TINTS.white, ...TINTS.stucco]),
+    shop: true
+  })
+  const h = range(5.6, 6.6)
+  tier(b, back[0], back[1], back[2], back[3], 0, h)
+  tier(b, wing[0], wing[1], wing[2], wing[3], 0, h)
+  // the car park: two pairs of rows of spaces across it
+  const lot = f(19, 70, deep - 57, deep - 22)
+  if (s % 2 === 0) carPark(blk, lot[0], lot[1], lot[2], lot[3], 0.6)
+  else carParkZ(blk, lot)
+  ground(blk, 'asphalt', ...f(19, 70, 9, deep - 57))
+  ground(blk, 'grass', ...f(4, 70, 0.4, 7))
+  for (let k = 0; k < 4; k++) {
+    const p = at(f, 8 + k * 19, 3.6)
+    palm(p[0], p[1], 18 + R() * 9, true)
+  }
+  const p = at(f, 66, 4.5)
+  post(p[0], p[1], 0.3, 6.5, 'pole')
+  sign('mall', {
+    x: p[0],
+    z: p[1],
+    y: 6.5,
+    w: 3.2,
+    h: 5,
+    d: 0.5,
+    face: s,
+    k: R()
+  })
+  return b
+}
+// a car park with its rows running north-south
+function carParkZ (blk, [x0, x1, z0, z1]) {
+  ground(blk, 'asphalt', x0, x1, z0, z1)
+  let x = x0 + 0.4
+  while (x + 5.4 <= x1 - 0.4) {
+    stalls(1, z0 + 1, z1 - 1, x + 2.7, -1, 0.55)
+    x += 5.4 + 6.5
+    if (x + 5.4 > x1 - 0.4) break
+    stalls(1, z0 + 1, z1 - 1, x + 2.7, 1, 0.55)
+    x += 5.4 + 0.6
+  }
+}
+
+// a stucco apartment block, two or three storeys, behind a strip of lawn
+function apartments (blk, box) {
+  const [x0, x1, z0, z1] = box
+  const b = building('strip', {
+    style: 'stucco',
+    tint: pick(chance(0.6) ? TINTS.stucco : TINTS.white)
+  })
+  tier(b, x0, x1, z0, z1, 0, (2 + (chance(0.45) ? 1 : 0)) * 3.5 + 0.4)
+  return b
+}
+// an office mid-rise in its own car park
+function office (blk, lot) {
+  const cx = (lot.x0 + lot.x1) / 2,
+    cz = (lot.z0 + lot.z1) / 2
+  const look = pick(['office', 'glass', 'stone'])
+  const b = building('strip', {
+    style: look,
+    tint: pick(TINTS[look]),
+    shop: look === 'stone'
+  })
+  const w = range(14, 20),
+    d = range(12, 18)
+  tier(b, cx - w, cx + w, cz - d, cz + d, 0, range(24, 44))
+  // (one pair of rows of spaces in front)
+  const z1 = Math.min(cz - d - 2, lot.z0 + 19)
+  carPark(blk, lot.x0 + 2, lot.x1 - 2, lot.z0 + 1, z1, 0.5)
+  ground(blk, 'asphalt', lot.x0 + 2, lot.x1 - 2, z1, cz - d - 1)
+}
+
+// side by side along side s, from u = a to b, d deep: apartments behind their strips of lawn, a gap
+// between each
+function row (blk, f, a, b, d) {
+  for (let u = a; u < b - 10; ) {
+    let w = range(16, 24)
+    if (b - (u + w) < 12) w = b - u
+    const set = range(3, 5)
+    apartments(blk, f(u, u + w, set, d))
+    ground(blk, 'grass', ...f(u, u + w, 0.4, set - 0.6))
+    u += w + range(2, 4)
+  }
+}
+// a courtyard apartment: two blocks facing each other across a lawn with a pool and a palm, from
+// u0 to u1 and v0 to v1 in frame f
+function courtyard (blk, f, u0, u1, v0, v1) {
+  const d = (v1 - v0 - 10) / 2
+  if (d < 8 || u1 - u0 < 16) return
+  apartments(blk, f(u0, u1, v0, v0 + d))
+  apartments(blk, f(u0, u1, v1 - d, v1))
+  ground(blk, 'grass', ...f(u0, u1, v0 + d, v1 - d))
+  const m = (u0 + u1) / 2
+  ground(blk, 'pool', ...f(m - 6, m + 6, v0 + d + 2.5, v1 - d - 2.5))
+  const p = at(f, u0 + 3, v0 + d + 5)
+  palm(p[0], p[1], 9 + R() * 4, false)
+}
+
+function midCity (blk, lot) {
+  blk.base = 'asphalt'
+  const mains = [0, 1, 2, 3].filter(s => isMain(blk.bx, blk.bz, s))
+  const L = lot.x1 - lot.x0
+  const donut = blk.bx === 4 && blk.bz === 6
+  // a corner of two main streets: a gas station on it, a fast-food stand on the next corner
+  const s0 = mains.find(s => mains.includes((s + 1) % 4))
+  if (s0 !== undefined && stations < 4 && !donut) {
+    stations++
+    // (the corner between side s0 and side s0 + 1: the end of side s0's frame)
+    const f = frame(lot, s0)
+    const box = f(L - 34, L - 0.4, 0.4, 32)
+    const cx = s0 <= 1 ? box[1] : box[0],
+      cz = s0 === 0 || s0 === 3 ? box[2] : box[3]
+    gasStation(blk, box, cx, cz)
+    fastFood(blk, f(0, 32, 0.4, 32), s0, f)
+    row(blk, frame(lot, (s0 + 2) % 4), 0, L, 18)
+    courtyard(blk, f, 6, 68, 35, 54)
+    if (chance(0.7)) billboard(...at(f, 36, 1.5), s0)
+    return
+  }
+  const plan = R()
+  if (mains.length && plan < 0.45 && !donut) {
+    const s = pick(mains)
+    stripMall(blk, s, frame(lot, s))
+    if (chance(0.6)) billboard(...at(frame(lot, s), 11, 12), s)
+    return
+  }
+  if (plan < 0.6 && !donut) {
+    office(blk, lot)
+    return
+  }
+  // apartments along two opposite sides, a corner with a fast-food stand or the donut stand
+  const s = mains.length ? mains[0] : Math.floor(R() * 4)
+  const f = frame(lot, s)
+  if (donut) donutStand(blk, f(0, 26, 0.4, 24), s)
+  else if (chance(0.5)) fastFood(blk, f(0, 32, 0.4, 32), s, f)
+  else row(blk, f, 0, 32, 16)
+  row(blk, f, 36, L, 16)
+  row(blk, frame(lot, (s + 2) % 4), 0, L, 18)
+  courtyard(blk, f, 36, 70, 20, 53)
+  if (chance(0.5)) billboard(...at(f, 34, 1.5), s)
+}
+// a point u along and v in from a side's frame
+function at (f, u, v) {
+  const b = f(u, u, v, v)
+  return [b[0], b[2]]
+}
+__export(__exports, { "billboard": () => billboard, "midCity": () => midCity })
+})
+
+// ---- js/sim/homes.js
+__define(21, function (__exports) {
+// Where people live in houses. Beverly Hills: big two-storey houses on lawns, back to back down the
+// middle of each block, Spanish revival (white stucco under red clay tile hip roofs, a one-storey
+// garage wing out the back) or modern boxes (glass below, a white box above standing out over the
+// lawn), behind hedges along the pavement, a drive down one side and a pool out the back. Venice:
+// one-storey bungalows on narrow lots, painted bright, behind low hedges, with now and then a
+// two-storey modern box among them, and a row of bright shopfronts with murals on their side walls
+// along the boulevard and facing the beach.
+const { R, TINTS, pick, range, chance, building, tier, ground, palm, tree, hedge, frame, isMain } = __require(17)
+const { mural } = __require(18)
+const SHOP = 4.6
+const FLOOR = 3.5
+
+// ---------- Beverly Hills ----------
+// A house on the lot from u0 to u1 along side s's street, D deep (f: that side's frame); drive:
+// the side the drive runs down (-1 near u0, 1 near u1)
+function bigHouse (blk, f, s, u0, u1, D, drive) {
+  const W = u1 - u0,
+    dw = 3.4
+  const w = range(13, W - 8),
+    d = range(11, 14.5),
+    sb = range(7, 10)
+  const du = drive < 0 ? u0 + 1.2 : u1 - 1.2 - dw
+  const hu = drive < 0 ? du + dw + 1.4 : du - 1.4 - w
+  const spanish = chance(0.66)
+  const b = building('estates', {
+    style: 'house',
+    tint: spanish ? pick(TINTS.white) : pick([0xf4f4f2, 0xe3e5e6, 0xd7d4cf]),
+    roofs: spanish ? 'tile' : 'flat'
+  })
+  const two = !spanish || chance(0.75)
+  const h = two ? 2 * FLOOR : FLOOR + 0.4
+  if (spanish) {
+    const m = f(hu, hu + w, sb, sb + d)
+    tier(b, m[0], m[1], m[2], m[3], 0, h, {
+      hip: 0.42 * (Math.min(w, d) / 2),
+      eave: 0.6
+    })
+    // the garage wing out the back, at the end of the drive
+    const gw = 7,
+      g =
+        drive < 0
+          ? f(hu, hu + gw, sb + d, sb + d + 6.5)
+          : f(hu + w - gw, hu + w, sb + d, sb + d + 6.5)
+    tier(b, g[0], g[1], g[2], g[3], 0, FLOOR - 0.3, { hip: 1.3, eave: 0.45 })
+  } else {
+    // glass below, a white box above standing out over the lawn
+    const m = f(hu, hu + w, sb, sb + d)
+    tier(b, m[0], m[1], m[2], m[3], 0, FLOOR + 0.3, {
+      style: 'glass',
+      tint: 0xd5dde2
+    })
+    const top = f(hu + 1.5, hu + w - 1, sb - 2.5, sb + d - 2)
+    tier(b, top[0], top[1], top[2], top[3], FLOOR + 0.3, 2 * FLOOR + 0.6)
+  }
+  // the drive, the path to the front door and the pool out the back
+  ground(blk, 'concrete', ...f(du, du + dw, 0, sb + d + 6.5))
+  const door = hu + w * range(0.35, 0.65)
+  ground(blk, 'concrete', ...f(door - 0.7, door + 0.7, 1.4, sb))
+  b.door = { ...at(f, door, sb), face: s, k: R() }
+  const pw = range(7, 10),
+    pd = range(3.6, 5),
+    pv = sb + d + range(3, 5)
+  if (pv + pd < D - 1.5) {
+    const pu = drive < 0 ? hu + w - pw - 1 : hu + 1
+    ground(blk, 'pool', ...f(pu, pu + pw, pv, pv + pd))
+  }
+  // the hedge along the pavement, open for the drive and the path
+  const hh = chance(0.35) ? range(2.6, 3.6) : range(1.2, 2.2),
+    wall = chance(0.2)
+  const stretch = (a, c) => {
+    if (c - a > 0.8)
+      hedge(
+        ...f(a, c, 0.3, wall ? 0.75 : 1.3),
+        wall ? 1 : hh,
+        wall ? 'wall' : 'hedge'
+      )
+  }
+  const gaps = [
+    [du - 0.2, du + dw + 0.2],
+    [door - 0.9, door + 0.9]
+  ].sort((a, c) => a[0] - c[0])
+  stretch(u0 + 0.3, gaps[0][0])
+  stretch(gaps[0][1], gaps[1][0])
+  stretch(gaps[1][1], u1 - 0.3)
+  // a palm on the front lawn, a tree behind
+  const pu = drive < 0 ? u1 - 3 : u0 + 3
+  if (chance(0.6)) palm(...pt(f, pu, sb * 0.55), 17 + R() * 9, true)
+  if (chance(0.5))
+    tree(...pt(f, drive < 0 ? u1 - 4 : u0 + 4, D - 4), 0.8 + R() * 0.4)
+}
+// the world point u along and v in, in frame f: as [x, z], and as { x, z }
+function pt (f, u, v) {
+  const b = f(u, u, v, v)
+  return [b[0], b[2]]
+}
+function at (f, u, v) {
+  const [x, z] = pt(f, u, v)
+  return { x, z }
+}
+
+function beverlyHills (blk, lot) {
+  blk.base = 'grass'
+  const L = lot.x1 - lot.x0
+  // back to back: the houses face one pair of opposite streets, their side yards the other
+  const sides = chance(0.5) ? [0, 2] : [1, 3]
+  const n = 3,
+    W = L / n,
+    D = L / 2
+  for (const s of sides) {
+    const f = frame(lot, s)
+    for (let i = 0; i < n; i++)
+      bigHouse(
+        blk,
+        f,
+        s,
+        i * W,
+        (i + 1) * W,
+        D,
+        i === 0 ? 1 : i === n - 1 ? -1 : chance(0.5) ? 1 : -1
+      )
+  }
+  // hedges along the side streets
+  for (const s of [0, 1, 2, 3].filter(s => !sides.includes(s))) {
+    const f = frame(lot, s),
+      hh = range(1.4, 3)
+    hedge(...f(0.3, L / 2 - 1, 0.3, 1.3), hh)
+    hedge(...f(L / 2 + 1, L - 0.3, 0.3, 1.3), hh)
+  }
+}
+
+// ---------- Venice ----------
+// a bungalow from u0 to u1 along the street on side s (f: its frame), D deep
+function bungalow (blk, f, s, u0, u1, D) {
+  const W = u1 - u0
+  const w = Math.min(W - 2.6, range(7.5, 9.5)),
+    d = range(9, 13),
+    sb = range(4, 6)
+  const hu = u0 + (W - w) / 2 + range(-0.6, 0.6)
+  const m = f(hu, hu + w, sb, sb + d)
+  let b
+  if (chance(0.22)) {
+    // a modern two-storey box among them
+    b = building('venice', {
+      style: 'stucco',
+      tint: chance(0.5) ? pick(TINTS.white) : pick(TINTS.bright)
+    })
+    tier(b, m[0], m[1], m[2], m[3], 0, 2 * FLOOR + 0.4)
+  } else {
+    b = building('venice', {
+      style: 'house',
+      tint: pick(TINTS.bright),
+      roofs: 'shingle'
+    })
+    tier(b, m[0], m[1], m[2], m[3], 0, range(3.6, 4.2), {
+      hip: range(1.4, 2),
+      eave: 0.5
+    })
+    if (chance(0.12)) mural(b, chance(0.5) ? 1 : 3)
+  }
+  b.door = { ...at(f, hu + w / 2, sb), face: s, k: R() }
+  // a garage or a little back house at the end of the yard
+  if (chance(0.55)) {
+    const g = building('venice', {
+      style: 'stucco',
+      tint: pick(chance(0.5) ? TINTS.bright : TINTS.white)
+    })
+    const gw = Math.min(W - 2.4, range(5.5, 7))
+    const r = f(u0 + 1.2, u0 + 1.2 + gw, D - range(7, 8.5), D - 1)
+    tier(g, r[0], r[1], r[2], r[3], 0, range(3, 3.6))
+  }
+  // a low hedge or a picket fence along the front, a palm or a tree in the yard
+  const gate = hu + w / 2
+  const look = chance(0.5) ? 'fence' : 'hedge',
+    hh = look === 'fence' ? 1 : range(0.8, 1.3)
+  if (gate - 0.8 - (u0 + 0.3) > 0.8)
+    hedge(
+      ...f(u0 + 0.3, gate - 0.8, 0.3, look === 'fence' ? 0.45 : 0.9),
+      hh,
+      look
+    )
+  if (u1 - 0.3 - (gate + 0.8) > 0.8)
+    hedge(
+      ...f(gate + 0.8, u1 - 0.3, 0.3, look === 'fence' ? 0.45 : 0.9),
+      hh,
+      look
+    )
+  ground(blk, 'concrete', ...f(gate - 0.6, gate + 0.6, 0.5, sb))
+  if (chance(0.3)) palm(...pt(f, u0 + 1.6, sb * 0.5), 8 + R() * 4, false)
+  else if (chance(0.3)) tree(...pt(f, u0 + 2.2, D - 3.5), 0.7 + R() * 0.3)
+}
+// a row of one- and two-storey shopfronts along side s (f: its frame), painted bright, flush with
+// the pavement, murals on the walls at its ends
+function shopRow (f, s, a, b, dep) {
+  for (let u = a; u < b - 0.5; ) {
+    let w = range(8, 14)
+    if (b - (u + w) < 7) w = b - u
+    const two = chance(0.45)
+    const sh = building('venice', {
+      style: 'stucco',
+      tint: pick(TINTS.bright),
+      shop: true
+    })
+    const m = f(u, u + w, 0.4, dep)
+    tier(
+      sh,
+      m[0],
+      m[1],
+      m[2],
+      m[3],
+      0,
+      two ? SHOP + FLOOR + 0.3 : SHOP + range(0.9, 1.8)
+    )
+    if (u === a && chance(0.6)) mural(sh, (s + 3) % 4)
+    u += w
+    if (u >= b - 0.5 && chance(0.6)) mural(sh, (s + 1) % 4)
+  }
+}
+
+function venice (blk, lot) {
+  blk.base = 'grass'
+  const L = lot.x1 - lot.x0
+  // the beach blocks face the ocean and the street behind; the rest north and south
+  const sides = blk.bx === 0 ? [3, 1] : [0, 2]
+  for (const s of sides) {
+    const f = frame(lot, s)
+    const shops = isMain(blk.bx, blk.bz, s) || (blk.bx === 0 && s === 3)
+    if (shops) {
+      shopRow(f, s, 0, L, range(14, 20))
+      continue
+    }
+    const n = 6,
+      W = L / n
+    for (let i = 0; i < n; i++) bungalow(blk, f, s, i * W, (i + 1) * W, L / 2)
+  }
+}
+__export(__exports, { "beverlyHills": () => beverlyHills, "venice": () => venice })
+})
+
+// ---- js/sim/lots.js
+__define(22, function (__exports) {
+// What is built on each block, by its neighbourhood (areas.js): Downtown's skyline and Century City's
+// towers (towers.js), Santa Monica's and Hollywood's shops (shops.js), Mid-City's strip malls and
+// gas stations (strip.js), Beverly Hills' houses and Venice's bungalows (homes.js); and the parks and
+// parking lots. Most of the city is low, one to four storeys: the towers stand downtown and in
+// Century City, and that contrast is the look. Each block: { bx, bz, x0, x1, z0, z1 } inside its
+// kerb, kind ('park', 'parking' or 'city'), area (the neighbourhood's kind), base (what covers its
+// lot: plaza, grass or asphalt) and ground (lawns, drives, car parks and pools over it: plots.js).
+const { N, ROADS, ROAD_HW, WALK } = __require(16)
+const { AREAS, areaOf } = __require(2)
+const { BLOCKS, BUILDINGS, TREES, PALMS, STALLS, SOLIDS, SIGNS, R, palm, mark, parkCars } = __require(17)
+const { downtown, centuryCity } = __require(18)
+const { santaMonica, hollywood } = __require(19)
+const { midCity } = __require(20)
+const { beverlyHills, venice } = __require(21)
+
+const PARKS = new Set(['6,3', '2,7'])
+const PARKING = new Set(['7,7']) // (a big surface lot in Mid-City)
+const BUILD = {
+  downtown,
+  towers: centuryCity,
+  beach: santaMonica,
+  boulevard: hollywood,
+  strip: midCity,
+  estates: beverlyHills,
+  venice
+}
+
+for (let bz = 0; bz < N; bz++)
+  for (let bx = 0; bx < N; bx++) {
+    const key = `${bx},${bz}`
+    const blk = {
+      bx,
+      bz,
+      x0: ROADS[bx] + ROAD_HW,
+      x1: ROADS[bx + 1] - ROAD_HW,
+      z0: ROADS[bz] + ROAD_HW,
+      z1: ROADS[bz + 1] - ROAD_HW,
+      kind: PARKS.has(key) ? 'park' : PARKING.has(key) ? 'parking' : 'city',
+      area: AREAS[areaOf(bx, bz)].kind,
+      base: 'plaza',
+      ground: []
+    }
+    BLOCKS.push(blk)
+    mark()
+    const lot = {
+      x0: blk.x0 + WALK,
+      x1: blk.x1 - WALK,
+      z0: blk.z0 + WALK,
+      z1: blk.z1 - WALK
+    }
+    const { x0: lx0, x1: lx1, z0: lz0, z1: lz1 } = lot
+    if (blk.kind === 'park') {
+      blk.base = 'grass'
+      for (let i = 0; i < 46; i++) {
+        const x = lx0 + 3 + R() * (lx1 - lx0 - 6),
+          z = lz0 + 3 + R() * (lz1 - lz0 - 6)
+        // keep the crossing footpaths clear
+        if (
+          Math.abs(x - (lx0 + lx1) / 2) < 3 ||
+          Math.abs(z - (lz0 + lz1) / 2) < 3
+        )
+          continue
+        TREES.push({ x, z, s: 0.8 + R() * 0.6 })
+      }
+      continue
+    }
+    if (blk.kind === 'parking') {
+      blk.base = 'asphalt'
+      // rows of nose-in stalls either side of three aisles
+      for (let row = 0; row < 4; row++) {
+        const z = lz0 + 6 + row * 17.5
+        for (let x = lx0 + 3; x < lx1 - 2; x += 2.7)
+          for (const side of [-1, 1])
+            STALLS.push({
+              x: x + 1.35,
+              z: z + side * 2.7,
+              yaw: side > 0 ? Math.PI / 2 : -Math.PI / 2, // nose in, towards the row's centre line
+              fill: 0.62,
+              taken: false
+            })
+      }
+      // and a tall palm at each end of the middle aisles
+      for (const z of [lz0 + 14.75, lz0 + 32.25, lz0 + 49.75])
+        for (const x of [lx0 + 1.2, lx1 - 1.2]) palm(x, z, 19 + R() * 8, true)
+      continue
+    }
+    BUILD[blk.area](blk, lot)
+  }
+parkCars(267)
+__export(__exports, { "BLOCKS": () => BLOCKS, "BUILDINGS": () => BUILDINGS, "TREES": () => TREES, "PALMS": () => PALMS, "STALLS": () => STALLS, "SOLIDS": () => SOLIDS, "SIGNS": () => SIGNS })
+})
+
+// ---- js/sim/kerbside.js
+__define(23, function (__exports) {
+// What stands along the pavements, by the neighbourhood behind them. A street light every 24 m on
+// both sides (a cobra head on a steel pole; on Mid-City's and Venice's side streets, on one side, on
+// a wooden power pole carrying the wires along the street and over the junctions), and in a line a
+// little further in, palms and trees: tall, thin Mexican fan palms every 12 m down the main
+// boulevards, Ocean Avenue's promenade and every street in Beverly Hills, stouter date palms on
+// Santa Monica's and Venice's side streets, a scattering of tall palms on Mid-City's main streets,
+// and round street trees downtown and on Hollywood's and Mid-City's side streets. Bus benches on the
+// main streets, a hydrant by most corners, litter bins on the shopping streets (these three only to
+// look at).
+const { N, ROADS, ROAD_HW, STOP } = __require(16)
+const { BLOCKS, TREES, PALMS } = __require(22)
+const { R, MAIN } = __require(17)
+const LAMPS = [] // street lights: { x, z, ax, az, wood } with the arm pointing (ax, az) over the road
+// the wires between wooden poles: [i, j], each a pair of indices into LAMPS
+const WIRES = []
+// things on the pavement only to look at: { kind: 'bench', 'hydrant' or 'bin', x, z, yaw }
+const DECOR = []
+
+// what is behind the pavement on one side of a street: the neighbourhood's kind, or 'park' or
+// 'parking', or 'west', 'north', 'east', 'south' for the promenade round the outside
+function behind (bx, bz) {
+  if (bx < 0) return 'west'
+  if (bx >= N) return 'east'
+  if (bz < 0) return 'north'
+  if (bz >= N) return 'south'
+  const b = BLOCKS[bz * N + bx]
+  return b.kind === 'city' ? b.area : b.kind
+}
+// what grows along a pavement: 'fan' palms every 12 m, every 24 m ('fan24'), 'date' palms every
+// 24 m, 'trees' every 12 or 24 m ('trees24'), or nothing
+function planting (area, main) {
+  switch (area) {
+    case 'estates':
+    case 'west':
+      return 'fan'
+    case 'beach':
+    case 'venice':
+    case 'towers':
+      return main ? 'fan' : 'date'
+    case 'boulevard':
+      return main ? 'fan' : 'trees24'
+    case 'strip':
+      return main ? 'fan24' : 'trees24'
+    case 'parking':
+      return main ? 'fan24' : ''
+    case 'downtown':
+      return main ? 'fan24' : 'trees24'
+    case 'north':
+      return 'date'
+    default:
+      return 'trees24'
+  }
+}
+// sides of streets where the power lines run, on wooden poles
+const POWER = new Set(['strip', 'venice'])
+// the last pole along each side of each street so far, to wire the next block's first one to
+const lastWood = new Map()
+const key = (c, side, alongZ) => `${c} ${side} ${alongZ}`
+const along = (p, alongZ) => (alongZ ? p.z : p.x)
+
+for (let i = 0; i <= N; i++)
+  for (let j = 0; j < N; j++) {
+    const c = ROADS[i],
+      a = ROADS[j] + STOP + 3,
+      b = ROADS[j + 1] - STOP - 3
+    for (const side of [-1, 1]) {
+      // (the blocks behind: along the road that runs along z at x = c, then along x at z = c)
+      const k = side < 0 ? i - 1 : i
+      for (const alongZ of [true, false]) {
+        const area = alongZ ? behind(k, j) : behind(j, k)
+        const main = (alongZ ? MAIN.NS : MAIN.EW).has(i)
+        const other = alongZ
+          ? behind(side < 0 ? i : i - 1, j)
+          : behind(j, side < 0 ? i : i - 1)
+        // power on one side of a street only: the north or west side, unless only the other has it
+        const wood = !main && POWER.has(area) && (side < 0 || !POWER.has(other))
+        lay(c, a, b, side, alongZ, area, main, wood)
+      }
+    }
+  }
+
+// one side of one block's length of street: c the road's centre line, a to b along it
+function lay (c, a, b, side, alongZ, area, main, wood) {
+  const at = (t, off) => {
+    const o = c + side * (ROAD_HW + off)
+    return alongZ ? { x: o, z: t } : { x: t, z: o }
+  }
+  const ax = alongZ ? -side : 0,
+    az = alongZ ? 0 : -side
+  const plant = planting(area, main)
+  let first = -1
+  for (let t = a + 4; t < b; t += 24) {
+    // the street light (on a power pole: wired to the last one)
+    const p = at(t, 0.6)
+    LAMPS.push({ x: p.x, z: p.z, ax, az, wood })
+    if (wood) {
+      const n = LAMPS.length - 1
+      if (first < 0) first = n
+      else WIRES.push([n - 1, n])
+    }
+    // palms and trees in a line further in
+    for (const dt of plant === 'fan' || plant === 'trees' ? [6, 18] : [12]) {
+      if (t + dt >= b || !plant) continue
+      const q = at(t + dt, 1.6)
+      if (plant.startsWith('trees'))
+        TREES.push({ ...q, s: 0.72 + R() * 0.3, street: true })
+      else if (plant === 'date')
+        PALMS.push({ ...q, h: 8 + R() * 5, fan: false })
+      else PALMS.push({ ...q, h: 21 + R() * 9, fan: true })
+    }
+  }
+  // (the wires carry on over the junction to the next block's first pole along this side)
+  if (wood && first >= 0) {
+    const prev = lastWood.get(key(c, side, alongZ))
+    if (
+      prev !== undefined &&
+      Math.abs(along(LAMPS[prev], alongZ) - along(LAMPS[first], alongZ)) < 60
+    )
+      WIRES.push([prev, first])
+    lastWood.set(key(c, side, alongZ), LAMPS.length - 1)
+  } else lastWood.delete(key(c, side, alongZ))
+  // a bus bench on the main streets, a hydrant near the corner, a bin on the shopping streets
+  const shops = ['beach', 'boulevard', 'downtown', 'towers', 'venice'].includes(
+    area
+  )
+  const yaw = Math.atan2(-az, ax) // (the way the bench faces: the road)
+  if (main && R() < 0.6) DECOR.push({ kind: 'bench', ...at(a + 16, 2.1), yaw })
+  if (R() < 0.7) DECOR.push({ kind: 'hydrant', ...at(a + 1.5, 0.5), yaw })
+  if (shops && R() < 0.7) DECOR.push({ kind: 'bin', ...at(a + 22, 0.55), yaw })
+}
+__export(__exports, { "LAMPS": () => LAMPS, "WIRES": () => WIRES, "DECOR": () => DECOR, "TREES": () => TREES, "PALMS": () => PALMS })
+})
+
+// ---- js/sim/city.js
+__define(24, function (__exports) {
+// The city: a grid of two-lane-each-way roads around its blocks, the lane graph its traffic drives
+// on, the signal plan at every intersection and the solid footprints the Roadster can hit (what is
+// built on the blocks is laid out in lots.js, by neighbourhood; what stands along the pavements in
+// kerbside.js). Pure data and math (no DOM, no three.js), so traffic and collisions run headless in
+// tests.
+
+// the signal plan at every junction is in signals.js
+const { RED, YELLOW, GREEN, SIGNAL, CYCLE, signal, holdLight, releaseLight, amberLeft, redAge } = __require(15)
+// the street grid's measurements (grid.js), passed on
+const { N, PITCH, LANE_W, ROAD_HW, WALK, CURB_H, CURB_R, STOP, HALF, EDGE, OUTER, ROADS, LANE_OFF, DIRS, SPAWN, rng } = __require(16)
+// what stands on the blocks (lots.js) and along the pavements (kerbside.js)
+const { BLOCKS, BUILDINGS, TREES, PALMS, STALLS, SOLIDS, SIGNS } = __require(22)
+const { LAMPS, WIRES, DECOR } = __require(23)
+
+
+const R = rng(20261015)
 
 // ---------- lane graph ----------
 const NODES = [] // intersections
@@ -55209,178 +58541,8 @@ for (const n of NODES)
     }
   }
 
-// ---------- blocks and buildings ----------
-// distance from downtown in blocks: 0.5 for the four central blocks, up to 4.5 at the edge
-const ringOf = (bx, bz) =>
-  Math.max(Math.abs(bx - (N - 1) / 2), Math.abs(bz - (N - 1) / 2))
-const PARKS = new Set(['6,3', '2,7'])
-const PARKING = new Set(['7,7', '1,2'])
-const TINTS = {
-  glass: [0x8fb8d0, 0x7a9fc0, 0x9cc4bf, 0xc4ab88, 0x8796ad, 0xa3b8c9],
-  office: [0xe8e2d6, 0xd6d1c8, 0xcdd2d6, 0xe3d6c0, 0xbfc4c9],
-  brick: [0xf2ece6, 0xe6d6ca, 0xd6cbc4, 0xc9c0bb],
-  stucco: [0xf3e3c8, 0xf2cdb5, 0xd8e6cf, 0xf0d5cf, 0xe9e0c2, 0xcfe1e6]
-}
-const BASE_H = [175, 95, 48, 24, 14] // typical height by ring, m
-
-const BLOCKS = []
-const BUILDINGS = []
-const TREES = [] // round park trees: { x, z, s }
-const PALMS = [] // { x, z, h }
-const LAMPS = [] // street lights: { x, z, ax, az } with the arm pointing (ax, az) over the road
+// ---------- signal masts ----------
 const POLES = [] // signal masts: { node, dir, x, z }
-const STALLS = [] // parking spaces: { x, z, yaw, taken }
-
-function splits (a, b, n) {
-  const out = [a]
-  for (let i = 1; i < n; i++) {
-    const f = i / n + (R() - 0.5) * (0.18 / n)
-    out.push(a + (b - a) * f)
-  }
-  out.push(b)
-  return out
-}
-function addBuilding (x0, x1, z0, z1, d) {
-  const h = Math.max(7, BASE_H[Math.min(4, Math.floor(d))] * (0.55 + R() * 0.9))
-  const style =
-    d < 1
-      ? R() < 0.7
-        ? 'glass'
-        : 'office'
-      : d < 2
-      ? pick(['glass', 'glass', 'office', 'office', 'brick'])
-      : d < 3
-      ? pick(['office', 'office', 'brick', 'stucco', 'stucco', 'glass'])
-      : pick(['stucco', 'stucco', 'stucco', 'brick', 'office'])
-  const b = {
-    x0,
-    x1,
-    z0,
-    z1,
-    h,
-    style,
-    tint: pick(TINTS[style]),
-    u: R(), // texture offset, so neighbours don't share a window pattern
-    shop: style !== 'glass' && d > 0.5 && R() < 0.75,
-    antenna: h > 130 && R() < 0.6,
-    tiers: []
-  }
-  // setbacks: taller buildings step in as they rise
-  const nt = h > 140 ? 3 : h > 55 && R() < 0.6 ? 2 : 1
-  let y = 0,
-    ins = 0
-  for (let t = 0; t < nt; t++) {
-    const top =
-      t === nt - 1 ? h : y + (h - y) * (t === 0 ? 0.5 + R() * 0.2 : 0.6)
-    const w = Math.min(x1 - x0, z1 - z0) / 2 - ins
-    if (t > 0 && w < 5) break
-    b.tiers.push({
-      x0: x0 + ins,
-      x1: x1 - ins,
-      z0: z0 + ins,
-      z1: z1 - ins,
-      y0: y,
-      y1: top
-    })
-    y = top
-    ins += 2 + R() * 3.5
-  }
-  b.h = b.tiers[b.tiers.length - 1].y1
-  BUILDINGS.push(b)
-  return b
-}
-
-for (let bz = 0; bz < N; bz++)
-  for (let bx = 0; bx < N; bx++) {
-    const key = `${bx},${bz}`,
-      d = ringOf(bx, bz)
-    const blk = {
-      bx,
-      bz,
-      x0: ROADS[bx] + ROAD_HW,
-      x1: ROADS[bx + 1] - ROAD_HW,
-      z0: ROADS[bz] + ROAD_HW,
-      z1: ROADS[bz + 1] - ROAD_HW,
-      kind: PARKS.has(key) ? 'park' : PARKING.has(key) ? 'parking' : 'city'
-    }
-    BLOCKS.push(blk)
-    const lx0 = blk.x0 + WALK,
-      lx1 = blk.x1 - WALK,
-      lz0 = blk.z0 + WALK,
-      lz1 = blk.z1 - WALK
-    if (blk.kind === 'park') {
-      for (let i = 0; i < 46; i++) {
-        const x = lx0 + 3 + R() * (lx1 - lx0 - 6),
-          z = lz0 + 3 + R() * (lz1 - lz0 - 6)
-        // keep the crossing footpaths clear
-        if (
-          Math.abs(x - (lx0 + lx1) / 2) < 3 ||
-          Math.abs(z - (lz0 + lz1) / 2) < 3
-        )
-          continue
-        TREES.push({ x, z, s: 0.8 + R() * 0.6 })
-      }
-      continue
-    }
-    if (blk.kind === 'parking') {
-      // rows of nose-in stalls either side of three aisles
-      for (let row = 0; row < 4; row++) {
-        const z = lz0 + 6 + row * 17.5
-        for (let x = lx0 + 3; x < lx1 - 2; x += 2.7)
-          for (const side of [-1, 1])
-            STALLS.push({
-              x: x + 1.35,
-              z: z + side * 2.7,
-              yaw: side > 0 ? Math.PI / 2 : -Math.PI / 2, // nose in, towards the row's centre line
-              taken: R() < 0.62
-            })
-      }
-      continue
-    }
-    // downtown blocks sometimes hold one landmark tower on a plaza
-    if (d < 1 && R() < 0.4) {
-      addBuilding(lx0 + 9, lx1 - 9, lz0 + 9, lz1 - 9, 0)
-      continue
-    }
-    const n = d < 1 ? 2 : d < 3 ? 2 + (R() < 0.5 ? 1 : 0) : 3
-    const xs = splits(lx0, lx1, n),
-      zs = splits(lz0, lz1, n)
-    const gap = d < 1 ? 1.5 : 2 + R() * 3 // alleys between buildings
-    const set = d < 2 ? 0.4 : 1 + R() * 3 // setback from the sidewalk
-    for (let i = 0; i < n; i++)
-      for (let j = 0; j < n; j++) {
-        if (d > 3 && R() < 0.12) continue // an empty lot now and then
-        addBuilding(
-          xs[i] + (i ? gap / 2 : set),
-          xs[i + 1] - (i < n - 1 ? gap / 2 : set),
-          zs[j] + (j ? gap / 2 : set),
-          zs[j + 1] - (j < n - 1 ? gap / 2 : set),
-          d
-        )
-      }
-  }
-
-// street furniture along every sidewalk: lights every 24 m, palms on the boulevards
-const BOULEVARD = new Set([0, N / 2, N]) // the two central avenues and the ring road
-for (let i = 0; i <= N; i++)
-  for (let j = 0; j < N; j++) {
-    const c = ROADS[i],
-      a = ROADS[j] + STOP + 3,
-      b = ROADS[j + 1] - STOP - 3
-    for (const side of [-1, 1]) {
-      const off = c + side * (ROAD_HW + 0.6)
-      for (let t = a + 4, k = 0; t < b; t += 24, k++) {
-        // roads along z at x = c (index i) and along x at z = c
-        LAMPS.push({ x: off, z: t, ax: -side, az: 0 })
-        LAMPS.push({ x: t, z: off, ax: 0, az: -side })
-        if (BOULEVARD.has(i) && t + 12 < b) {
-          const po = c + side * (ROAD_HW + 1.6)
-          PALMS.push({ x: po, z: t + 12, h: 9 + R() * 5 })
-          PALMS.push({ x: t + 12, z: po, h: 9 + R() * 5 })
-        }
-      }
-    }
-  }
 // a signal mast on the far-right corner of every approach, its arm reaching back over the lanes
 for (const n of NODES)
   for (let k = 0; k < 4; k++) {
@@ -55410,7 +58572,9 @@ function addCollider (c) {
 }
 for (const b of BUILDINGS)
   for (const t of b.tiers) addCollider({ ...t, kind: 'building' })
-// (street lights, palms, trees and signal masts: breakables.js)
+// hedges, garden walls, canopies, pumps, billboards and their poles (lots.js)
+for (const c of SOLIDS) addCollider(c)
+// (street lights, palms, trees and signal masts: breakables.js; rooftop plant: roofs.js)
 // the promenade: the sidewalk round the outside of the ring road ends here and the beach begins,
 // open all the way down to the water (OUTER)
 const PROMENADE = EDGE + 1.5
@@ -55511,56 +58675,101 @@ function onRoad (x, z) {
     (near(x) || near(z))
   )
 }
-__export(__exports, { "N": () => N, "PITCH": () => PITCH, "LANE_W": () => LANE_W, "ROAD_HW": () => ROAD_HW, "WALK": () => WALK, "CURB_H": () => CURB_H, "CURB_R": () => CURB_R, "STOP": () => STOP, "HALF": () => HALF, "EDGE": () => EDGE, "OUTER": () => OUTER, "ROADS": () => ROADS, "LANE_OFF": () => LANE_OFF, "DIRS": () => DIRS, "SPAWN": () => SPAWN, "rng": () => rng, "NODES": () => NODES, "EDGES": () => EDGES, "LANES": () => LANES, "nodeAt": () => nodeAt, "pointAt": () => pointAt, "BLOCKS": () => BLOCKS, "BUILDINGS": () => BUILDINGS, "TREES": () => TREES, "PALMS": () => PALMS, "LAMPS": () => LAMPS, "POLES": () => POLES, "STALLS": () => STALLS, "COLLIDERS": () => COLLIDERS, "addCollider": () => addCollider, "PROMENADE": () => PROMENADE, "standUp": () => standUp, "query": () => query, "raycast": () => raycast, "nearestLane": () => nearestLane, "onRoad": () => onRoad, "RED": () => RED, "YELLOW": () => YELLOW, "GREEN": () => GREEN, "SIGNAL": () => SIGNAL, "CYCLE": () => CYCLE, "signal": () => signal, "holdLight": () => holdLight, "releaseLight": () => releaseLight, "amberLeft": () => amberLeft, "redAge": () => redAge })
+__export(__exports, { "NODES": () => NODES, "EDGES": () => EDGES, "LANES": () => LANES, "nodeAt": () => nodeAt, "pointAt": () => pointAt, "POLES": () => POLES, "COLLIDERS": () => COLLIDERS, "addCollider": () => addCollider, "PROMENADE": () => PROMENADE, "standUp": () => standUp, "query": () => query, "raycast": () => raycast, "nearestLane": () => nearestLane, "onRoad": () => onRoad, "RED": () => RED, "YELLOW": () => YELLOW, "GREEN": () => GREEN, "SIGNAL": () => SIGNAL, "CYCLE": () => CYCLE, "signal": () => signal, "holdLight": () => holdLight, "releaseLight": () => releaseLight, "amberLeft": () => amberLeft, "redAge": () => redAge, "N": () => N, "PITCH": () => PITCH, "LANE_W": () => LANE_W, "ROAD_HW": () => ROAD_HW, "WALK": () => WALK, "CURB_H": () => CURB_H, "CURB_R": () => CURB_R, "STOP": () => STOP, "HALF": () => HALF, "EDGE": () => EDGE, "OUTER": () => OUTER, "ROADS": () => ROADS, "LANE_OFF": () => LANE_OFF, "DIRS": () => DIRS, "SPAWN": () => SPAWN, "rng": () => rng, "BLOCKS": () => BLOCKS, "BUILDINGS": () => BUILDINGS, "TREES": () => TREES, "PALMS": () => PALMS, "STALLS": () => STALLS, "SOLIDS": () => SOLIDS, "SIGNS": () => SIGNS, "LAMPS": () => LAMPS, "WIRES": () => WIRES, "DECOR": () => DECOR })
 })
 
 // ---- js/sim/roofs.js
-__define(5, function (__exports) {
+__define(25, function (__exports) {
 // Roofs: the flat top of every building tier is somewhere to land and drive, with plant on the top
 // tier (a stair and lift housing, air-handling units and sometimes a mast) to steer round. The edge is
 // only a low lip the wheels roll over, so the car can drive straight off a tall roof and drop onto a
-// lower one across the alley (or onto the tier below).
-const { BUILDINGS, rng, query, addCollider } = __require(4)
+// lower one across the alley (or onto the tier below). A helipad's circle is kept clear of plant; a
+// one-storey roof gets only a few air-handling units. A hip roof (a house's tiles) is solid but no
+// roof to land on: what comes down on it rides its ridge and slides off the way it overhangs, as off
+// any edge (collide.js), and the walls' top under it is never reached. Spires and masts are posts.
+const { BUILDINGS, rng, query, addCollider } = __require(24)
 const LIP = 0.3 // the roof's edging: m wide
 const LIP_H = 0.1 // and m high, drawn only (the wheels roll over it)
 const STEP = 0.3 // a roof up to this much higher than the one the car is on is driven onto
 
-// plant, kept on each building as b.plant for the renderer
+// plant, kept on each building as b.plant for the renderer, with whatever else is solid on the
+// roof (a hip roof, a sign's frame, a billboard: each with its look, and not drawn as plant)
 const R = rng(4242)
 for (const b of BUILDINGS) {
+  b.plant = b.plant || []
+  const box = (x0, x1, z0, z1, y0, h, look) =>
+    b.plant.push(
+      addCollider({ x0, x1, z0, z1, y0, y1: y0 + h, kind: 'plant', look })
+    )
+  for (const t of b.tiers) {
+    if (!t.hip) continue
+    const e = t.eave || 0
+    box(t.x0 - e, t.x1 + e, t.z0 - e, t.z1 + e, t.y1, t.hip, 'hip')
+  }
+  const mast = (x, z, y, h, r) =>
+    addCollider({
+      x0: x - r,
+      x1: x + r,
+      z0: z - r,
+      z1: z + r,
+      y0: y,
+      y1: y + h,
+      x,
+      z,
+      r,
+      kind: 'mast'
+    })
+  if (b.spire) mast(b.spire.x, b.spire.z, b.spire.y, b.spire.h, 0.6)
+  // an old sign's frame along the roof's edge
+  const sg = b.roofSign
+  if (sg) {
+    const along = sg.face % 2 === 0,
+      hw = along ? sg.w / 2 : 0.3,
+      hd = along ? 0.3 : sg.w / 2
+    box(sg.x - hw, sg.x + hw, sg.z - hd, sg.z + hd, sg.y - 1, sg.h + 1, 'frame')
+  }
+  if (b.form === 'shaft') continue // (a shaped tower's top is its crown or its helipad)
   const t = b.tiers[b.tiers.length - 1],
     w = t.x1 - t.x0,
     d = t.z1 - t.z0
-  b.plant = []
-  const box = (x0, x1, z0, z1, h) =>
-    b.plant.push(
-      addCollider({ x0, x1, z0, z1, y0: t.y1, y1: t.y1 + h, kind: 'plant' })
+  if (t.hip) continue
+  // (clear of the helipad's circle and the sign)
+  const pad = b.helipad
+  const clear = (x0, x1, z0, z1) =>
+    !(
+      pad &&
+      Math.max(x0 - pad.x, 0, pad.x - x1) ** 2 +
+        Math.max(z0 - pad.z, 0, pad.z - z1) ** 2 <
+        (pad.r + 1.5) ** 2
+    ) &&
+    !(
+      sg &&
+      x1 > sg.x - sg.w / 2 - 1 &&
+      x0 < sg.x + sg.w / 2 + 1 &&
+      z1 > sg.z - sg.w / 2 - 1 &&
+      z0 < sg.z + sg.w / 2 + 1
     )
-  if (w > 10 && d > 10) {
-    const hx = t.x0 + 3 + R() * (w - 10),
-      hz = t.z0 + 3 + R() * (d - 10)
-    box(hx, hx + 4 + R() * 2, hz, hz + 3 + R() * 2, 3.2)
-    for (let i = 0; i < 3; i++) {
-      const ax = t.x0 + 2 + R() * (w - 6),
-        az = t.z0 + 2 + R() * (d - 6)
-      box(ax, ax + 1.6 + R() * 1.4, az, az + 1.2 + R(), 1.1 + R() * 0.8)
+  const place = (sx, sz, h, tries = 6) => {
+    for (let k = 0; k < tries; k++) {
+      const x = t.x0 + 1.5 + R() * (w - sx - 3),
+        z = t.z0 + 1.5 + R() * (d - sz - 3)
+      if (clear(x, x + sx, z, z + sz)) return box(x, x + sx, z, z + sz, t.y1, h)
     }
+  }
+  const low = t.y1 < 8 // (one storey: a shop or a house)
+  if (w > 10 && d > 10 && !low) {
+    place(4 + R() * 2, 3 + R() * 2, 3.2)
+    for (let i = 0; i < 3; i++)
+      place(1.6 + R() * 1.4, 1.2 + R(), 1.1 + R() * 0.8)
+  } else if (w > 6 && d > 6 && b.area !== 'estates') {
+    const n = Math.floor(R() * (low ? 3 : 2))
+    for (let i = 0; i < n; i++)
+      place(1.4 + R() * 1.2, 1.1 + R() * 0.8, 0.9 + R() * 0.6)
   }
   if (b.antenna) {
     const cx = (t.x0 + t.x1) / 2,
       cz = (t.z0 + t.z1) / 2
-    addCollider({
-      x0: cx - 0.3,
-      x1: cx + 0.3,
-      z0: cz - 0.3,
-      z1: cz + 0.3,
-      y0: t.y1,
-      y1: t.y1 + 14,
-      x: cx,
-      z: cz,
-      r: 0.3,
-      kind: 'mast'
-    })
+    mast(cx, cz, t.y1, 14, 0.3)
   }
 }
 
@@ -55586,12 +58795,12 @@ __export(__exports, { "LIP": () => LIP, "LIP_H": () => LIP_H, "STEP": () => STEP
 })
 
 // ---- js/sim/breakables.js
-__define(6, function (__exports) {
+__define(26, function (__exports) {
 // Street furniture that snaps off at the base when it is hit hard enough: street lights, signal
 // masts, park trees and palms. Each is a post collider with breakAt, the closing speed (m/s) it takes
 // to snap it, and mass (kg), what the car then has to shove out of the way; i is its place in LAMPS,
 // POLES, TREES or PALMS. Hit any slower and it stands: the car bounces off it (collide.js).
-const { LAMPS, PALMS, TREES, POLES, addCollider } = __require(4)
+const { LAMPS, PALMS, TREES, POLES, addCollider } = __require(24)
 const post = (x, z, r, h, kind, i, breakAt, mass) =>
   addCollider({
     x0: x - r,
@@ -55608,15 +58817,23 @@ const post = (x, z, r, h, kind, i, breakAt, mass) =>
     breakAt,
     mass
   })
-// A street light is a breakaway pole that gives at a walking pace. A signal mast is heavy steel bolted
-// down: only a hit at nearly 50 km/h shears it. Trees and palms go by the size of their trunk.
-LAMPS.forEach((l, i) => post(l.x, l.z, 0.16, 8, 'lamp', i, 3, 150))
+// A street light is a breakaway pole that gives at a walking pace; on a wooden power pole it takes
+// a harder knock, about 30 km/h. A signal mast is heavy steel bolted down: only a hit at nearly
+// 50 km/h shears it. Trees and palms go by the size of their trunk: a tall fan palm's is thin for
+// its height (it goes at about 40 km/h), a date palm's stout.
+LAMPS.forEach((l, i) =>
+  l.wood
+    ? post(l.x, l.z, 0.15, 10, 'lamp', i, 8, 450)
+    : post(l.x, l.z, 0.16, 8, 'lamp', i, 3, 150)
+)
 POLES.forEach((p, i) => post(p.x, p.z, 0.2, 7, 'signal', i, 13, 500))
 TREES.forEach((t, i) =>
   post(t.x, t.z, 0.3 * t.s, 6 * t.s, 'tree', i, 5 + 4 * t.s, 260 * t.s ** 3)
 )
 PALMS.forEach((p, i) =>
-  post(p.x, p.z, 0.28, p.h, 'palm', i, 6 + 0.4 * p.h, 30 * p.h)
+  p.fan
+    ? post(p.x, p.z, 0.2, p.h, 'palm', i, 5 + 0.25 * p.h, 18 * p.h)
+    : post(p.x, p.z, 0.36, p.h, 'palm', i, 6 + 0.5 * p.h, 45 * p.h)
 )
 
 // Whatever hit post c (body: { vx, vz }, of mass m), with the contact normal (nx, nz) pointing from
@@ -55648,23 +58865,338 @@ function snap (body, c, nx, nz, m) {
 __export(__exports, { "snap": () => snap })
 })
 
+// ---- js/sim/edge.js
+__define(27, function (__exports) {
+// The edges of the map, past the ring road's outer pavement (the promenade): to the west the beach
+// and the sea, with Santa Monica's pier running out from the end of Wilshire; to the north the
+// Hollywood Hills, behind a planted verge and a retaining wall; to the east and south more city,
+// behind a verge and a freeway's sound wall. What is solid out there (the walls, rock groynes across
+// the beach at its ends, the pier's railings, buildings and rides), where the car may go (the beach,
+// the verges and the pier's deck), and the hills' shape: the same heights the renderer draws, so a
+// car flown into a hillside is held up by it rather than passing through. Pure data and math, like
+// city.js, so it runs headless in the tests.
+const { LANDMARKS } = __require(2)
+const { PROMENADE, OUTER, addCollider } = __require(24)
+const WALL = 505 // the walls' inner face, north, east and south: the verge runs out to it
+const WALL_H = { north: 3.2, side: 4.8 } // the retaining wall, and the sound walls
+const SHORE = OUTER + 1 // where the beach's flat sand ends and slopes down into the sea
+const PIER = LANDMARKS.pier
+const RAIL_FROM = PROMENADE + 14 // the pier's railings begin out here (on and off the beach before)
+const DEEP = 3 // a wall's collider runs this far back from its face, so nothing gets past it
+const sstep = (a, b, x) => {
+  const t = Math.min(1, Math.max(0, (x - a) / (b - a)))
+  return t * t * (3 - 2 * t)
+}
+const solid = (x0, x1, z0, z1, y1, kind = 'wall', y0 = 0) =>
+  addCollider({ x0, x1, z0, z1, y0, y1, kind })
+
+// ---------- the walls ----------
+// the retaining wall at the foot of the hills, from the beach to the corner, and the sound walls
+// east and south; then a groyne of rocks across the beach at each end, out into the sea
+solid(-PROMENADE, WALL + DEEP, -WALL - DEEP, -WALL, WALL_H.north)
+solid(WALL, WALL + DEEP, -WALL - DEEP, WALL + DEEP, WALL_H.side)
+solid(-PROMENADE, WALL + DEEP, WALL, WALL + DEEP, WALL_H.side)
+const GROYNE = { x0: -SHORE - 34, x1: -PROMENADE, w: 4, h: 1.8 }
+solid(GROYNE.x0, GROYNE.x1, -WALL - GROYNE.w, -WALL, GROYNE.h)
+solid(GROYNE.x0, GROYNE.x1, WALL, WALL + GROYNE.w, GROYNE.h)
+
+// ---------- the pier ----------
+// whether (x, z) is on the pier's deck
+function onDeck (x, z) {
+  for (const d of PIER.deck)
+    if (x >= d.x0 && x <= d.x1 && z >= d.z0 && z <= d.z1) return true
+  return false
+}
+// [a0, a1] less the cuts, as a list of [from, to]
+function minus (a0, a1, cuts) {
+  let parts = a1 - a0 > 0.01 ? [[a0, a1]] : []
+  for (const [c0, c1] of cuts)
+    parts = parts.flatMap(([p0, p1]) =>
+      c1 <= p0 || c0 >= p1
+        ? [[p0, p1]]
+        : [
+            [p0, Math.max(p0, c0)],
+            [Math.min(p1, c1), p1]
+          ].filter(([u, v]) => v - u > 0.01)
+    )
+  return parts
+}
+// The railings: every stretch of a deck rectangle's side with no deck beyond it, out past where the
+// pier leaves the beach: { x0, x1, z0, z1 } (a line along x or along z) and the way out (nx, nz).
+const RAILS = []
+for (const d of PIER.deck) {
+  const others = PIER.deck.filter(o => o !== d)
+  for (const [z, nz] of [
+    [d.z0, -1],
+    [d.z1, 1]
+  ]) {
+    const beyond = others.filter(o =>
+      nz < 0 ? o.z0 < z && o.z1 >= z : o.z1 > z && o.z0 <= z
+    )
+    const cuts = beyond.map(o => [o.x0, o.x1])
+    for (const [a, b] of minus(d.x0, Math.min(d.x1, -RAIL_FROM), cuts))
+      RAILS.push({ x0: a, x1: b, z0: z, z1: z, nx: 0, nz })
+  }
+  for (const [x, nx] of [
+    [d.x0, -1],
+    [d.x1, 1]
+  ]) {
+    if (x > -RAIL_FROM) continue
+    const beyond = others.filter(o =>
+      nx < 0 ? o.x0 < x && o.x1 >= x : o.x1 > x && o.x0 <= x
+    )
+    for (const [a, b] of minus(
+      d.z0,
+      d.z1,
+      beyond.map(o => [o.z0, o.z1])
+    ))
+      RAILS.push({ x0: x, x1: x, z0: a, z1: b, nx, nz: 0 })
+  }
+}
+const RAIL_H = 1.1
+// (each railing's collider is its thickness on the deck's edge and a deep block out over the water)
+for (const r of RAILS)
+  solid(
+    r.nx < 0 ? r.x0 - DEEP : r.nx > 0 ? r.x0 - 0.15 : r.x0,
+    r.nx > 0 ? r.x1 + DEEP : r.nx < 0 ? r.x1 + 0.15 : r.x1,
+    r.nz < 0 ? r.z0 - DEEP : r.nz > 0 ? r.z0 - 0.15 : r.z0,
+    r.nz > 0 ? r.z1 + DEEP : r.nz < 0 ? r.z1 + 0.15 : r.z1,
+    RAIL_H
+  )
+
+// The Ferris wheel: its hub, radius, and the way its rim runs across the ground (dir, from +x
+// towards +z): across the pier, so it shows its face down Wilshire and out at sea, and turns a
+// three-quarter face to the beach either side; the feet of its two A-frames, either side of it.
+const DIR = Math.PI / 2
+const WHEEL = {
+  ...PIER.wheel,
+  hub: 15.5,
+  r: 13,
+  dir: DIR,
+  feet: [-1, 1].flatMap(f =>
+    [-1, 1].map(side => ({
+      x: PIER.wheel.x + Math.cos(DIR) * 7 * f - Math.sin(DIR) * 3.2 * side,
+      z: PIER.wheel.z + Math.sin(DIR) * 7 * f + Math.cos(DIR) * 3.2 * side
+    }))
+  )
+}
+// the arch over the way onto the pier: its posts either side of the deck
+const ARCH = { x: -PROMENADE - 6, w: 8.5 }
+// The roller coaster: its track through these points (x, y, z), a closed loop round the east of the
+// park, out of the station over the lift hill and down; a column under each.
+const COASTER = [
+  [-572, 3, 41],
+  [-560, 3.2, 42],
+  [-550, 8.5, 42],
+  [-543, 14.5, 41],
+  [-539, 12, 36],
+  [-539, 3.5, 28],
+  [-541, 4.5, 20],
+  [-546, 9, 15],
+  [-555, 7, 13],
+  [-564, 3.5, 14],
+  [-571, 7.5, 18],
+  [-574, 9.5, 25],
+  [-574, 6, 33],
+  [-575, 3.2, 38]
+]
+// The pier's buildings (the renderer draws each by its name): the carousel's hall on the plaza, the
+// arcade in the park, the coaster's station, the restaurant at the end and a few kiosks along it. You
+// can land on their roofs, like the city's.
+const PIER_HOUSES = [
+  { name: 'carousel', x0: -560, x1: -538, z0: -26, z1: -12, h: 10.5 },
+  { name: 'arcade', x0: -611, x1: -598, z0: 31, z1: 45, h: 7 },
+  { name: 'station', x0: -579, x1: -566, z0: 38.5, z1: 45, h: 4.6 },
+  { name: 'restaurant', x0: -761, x1: -744, z0: -15, z1: -2, h: 6 },
+  ...[-596, -628, -660, -692].map(x => ({
+    name: 'kiosk',
+    x0: x - 2.2,
+    x1: x + 2.2,
+    z0: -8.7,
+    z1: -5.7,
+    h: 3.4
+  }))
+]
+for (const b of PIER_HOUSES) solid(b.x0, b.x1, b.z0, b.z1, b.h, 'building')
+// the arch's posts; the wheel's base and legs, and (for a car flying into it) its rim; the coaster's
+// columns
+for (const sg of [-1, 1])
+  solid(ARCH.x - 0.5, ARCH.x + 0.5, sg * ARCH.w - 0.5, sg * ARCH.w + 0.5, 8.6)
+solid(WHEEL.x - 6, WHEEL.x + 6, WHEEL.z - 4, WHEEL.z + 4, 3.5)
+for (const f of WHEEL.feet)
+  addCollider({
+    ...{ x0: f.x - 0.6, x1: f.x + 0.6, z0: f.z - 0.6, z1: f.z + 0.6 },
+    ...{ y0: 0, y1: 9, x: f.x, z: f.z, r: 0.6 },
+    kind: 'mast'
+  })
+for (const t of [-11, -5.5, 0, 5.5, 11]) {
+  const x = WHEEL.x + Math.cos(WHEEL.dir) * t,
+    z = WHEEL.z + Math.sin(WHEEL.dir) * t
+  addCollider({
+    ...{ x0: x - 2.5, x1: x + 2.5, z0: z - 2.5, z1: z + 2.5 },
+    ...{ y0: WHEEL.hub - WHEEL.r, y1: WHEEL.hub + WHEEL.r, x, z, r: 2.5 },
+    kind: 'mast'
+  })
+}
+for (const [x, y, z] of COASTER)
+  addCollider({
+    ...{ x0: x - 0.4, x1: x + 0.4, z0: z - 0.4, z1: z + 0.4 },
+    ...{ y0: 0, y1: y, x, z, r: 0.4 },
+    kind: 'mast'
+  })
+
+// ---------- keeping the car on the map ----------
+// On the ground: the beach ends at the sea, but for the pier's deck; and a car come down past a
+// wall (flown over it) is put back on the verge in front of it.
+const BACK = 2.6 // (its half length, and a little)
+function keepIn (s) {
+  const p = s.pos,
+    v = s.vel
+  if (p.x < -OUTER && !onDeck(p.x, p.z)) {
+    p.x = -OUTER
+    if (v.x < 0) v.x = 0
+  }
+  if (p.x > WALL) {
+    p.x = WALL - BACK
+    if (v.x > 0) v.x = 0
+  }
+  if (Math.abs(p.z) > WALL) {
+    p.z = Math.sign(p.z) * (WALL - BACK)
+    if (v.z * p.z > 0) v.z = 0
+  }
+}
+
+// ---------- the hills ----------
+// value noise on a unit lattice, smooth, 0 to 1 (hashed, so the hills are the same every time)
+function lattice (i, j) {
+  let h = Math.imul(i, 374761393) + Math.imul(j, 668265263) + 1013904223
+  h = Math.imul(h ^ (h >>> 13), 1274126177)
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967296
+}
+function noise (x, z) {
+  const i = Math.floor(x),
+    j = Math.floor(z)
+  let u = x - i,
+    v = z - j
+  u = u * u * (3 - 2 * u)
+  v = v * v * (3 - 2 * v)
+  const a = lattice(i, j),
+    b = lattice(i + 1, j),
+    c = lattice(i, j + 1),
+    d = lattice(i + 1, j + 1)
+  return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v
+}
+// ridges: noise folded over, sharp along its crests, a few octaves of it (0 to 1)
+function ridges (x, z) {
+  let s = 0,
+    a = 0.5
+  for (let k = 0; k < 4; k++) {
+    s += a * (1 - Math.abs(2 * noise(x, z) - 1))
+    x = x * 2.03 + 17.1
+    z = z * 2.03 - 5.3
+    a *= 0.5
+  }
+  return s / 0.9375
+}
+// canyons running back into the hills (their floors' x), opening onto the flats at the wall; the
+// pass the east freeway takes north; the peak behind the sign; the observatory's terrace
+const CANYONS = [-300, -95, 70, 310, 860, 1180]
+const PASS = LANDMARKS.freeways[0].x0
+const SIGN = LANDMARKS.sign
+const OBS = LANDMARKS.observatory
+const TERRACE = 74 // the observatory's terrace, m up
+// The ground's height north of the wall: from the wall's top, a steep face rising to a crest a few
+// hundred metres back, down its back into the valley beyond, cut by canyons and roughed with ridges
+// and spurs; down to the beach at the west end, level with the flats past the east wall.
+function hillHeight (x, z) {
+  const u = -z - WALL
+  if (u < 0 || x < -PROMENADE) return 0
+  const base =
+    WALL_H.north *
+    sstep(-PROMENADE, -PROMENADE + 10, x) *
+    (1 - sstep(WALL, WALL + 30, x))
+  const crest = 255 + 45 * Math.sin(x / 330 + 0.6) + 50 * noise(x / 210, 3.7)
+  let top = 140 + 70 * noise(x / 290, 9.2)
+  // (lower toward the sea in the west, and far off in the east)
+  top *=
+    (0.4 + 0.6 * sstep(-PROMENADE, -120, x)) * (1 - 0.55 * sstep(1100, 2400, x))
+  // (the slope eases in from the wall: a shelf behind it before it climbs)
+  let h =
+    (u < crest
+      ? top * (1 - Math.pow(1 - u / crest, 1.35))
+      : top - (top - 40) * sstep(crest, crest + 450, u)) *
+    (1 - Math.exp(-u / 22))
+  // the peak behind the sign
+  h +=
+    30 * Math.exp(-((x - SIGN.x + 10) ** 2 + (u - 310) ** 2) / (2 * 150 ** 2))
+  let cut = 0
+  for (const c of CANYONS) cut = Math.max(cut, Math.exp(-(((x - c) / 60) ** 2)))
+  h *= 1 - 0.5 * cut * sstep(0, 160, u)
+  h += 38 * (ridges(x / 170, u / 170) - 0.45) * sstep(0, 140, u)
+  // the pass: a broad floor, steep sides
+  h = Math.min(h, 3 + Math.max(0, Math.abs(x - PASS) - 45) * 1.1)
+  // the observatory's terrace, on its spur
+  const d = Math.hypot(x - OBS.x, z - OBS.z)
+  h += (TERRACE - h) * (1 - sstep(34, 75, d))
+  // the bluffs down to the beach
+  h *= sstep(-PROMENADE, -PROMENADE + 45, x)
+  return Math.max(base, base + h)
+}
+// the hillside's slope under (x, z): its upward normal into out
+function hillNormal (x, z, out) {
+  const e = 1.5
+  const gx = (hillHeight(x + e, z) - hillHeight(x - e, z)) / (2 * e),
+    gz = (hillHeight(x, z + e) - hillHeight(x, z - e)) / (2 * e)
+  const l = Math.hypot(gx, 1, gz)
+  out.x = -gx / l
+  out.y = 1 / l
+  out.z = -gz / l
+  return out
+}
+
+// In the air over the hills: a car that comes down on a hillside, or flies into one, is held up by
+// it: lifted back onto the ground under it, with whatever speed it had into the slope gone, and it
+// slides on down (it can only land on the flat). bottom: its lowest corner's height.
+const _n = { x: 0, y: 1, z: 0 }
+function hillside (s, bottom) {
+  const p = s.com
+  if (p.z > -WALL) return
+  const h = hillHeight(p.x, p.z)
+  if (bottom >= h) return
+  hillNormal(p.x, p.z, _n)
+  p.y += h - bottom
+  const v = s.vel,
+    vn = v.x * _n.x + v.y * _n.y + v.z * _n.z
+  if (vn < 0) {
+    v.x -= vn * _n.x
+    v.y -= vn * _n.y
+    v.z -= vn * _n.z
+  }
+  v.multiplyScalar(0.995) // (scrubbing along the ground)
+  s.syncPose()
+}
+__export(__exports, { "WALL": () => WALL, "WALL_H": () => WALL_H, "SHORE": () => SHORE, "PIER": () => PIER, "GROYNE": () => GROYNE, "onDeck": () => onDeck, "RAILS": () => RAILS, "RAIL_H": () => RAIL_H, "WHEEL": () => WHEEL, "ARCH": () => ARCH, "COASTER": () => COASTER, "PIER_HOUSES": () => PIER_HOUSES, "keepIn": () => keepIn, "noise": () => noise, "TERRACE": () => TERRACE, "hillHeight": () => hillHeight, "hillNormal": () => hillNormal, "hillside": () => hillside })
+})
+
 // ---- js/sim/collide.js
-__define(7, function (__exports) {
+__define(28, function (__exports) {
 // Contacts in the ground plane: oriented boxes (cars, building footprints) and posts (lamps, palms,
 // signal masts), resolved with impulses (restitution, friction, spin) so cars bounce off each other
 // and off the city. No hit tumbles the Roadster, on the road or flying, as in GTA: it bounces off
 // and the driver keeps the wheel.
 const THREE = __require(0)
-const { STEP } = __require(5)
-const { snap } = __require(6)
-const { query, OUTER } = __require(4)
-const { G, CAR, clamp } = __require(1)
+const { STEP } = __require(25)
+const { snap } = __require(26)
+const { query } = __require(24)
+const { keepIn, hillside } = __require(27)
+const { G, CAR, clamp } = __require(4)
 // The most yaw rate (rad/s) a knock adds on the ground: the tyres on the road soak up the rest, so a
 // clipped car or wall corner twitches the Roadster instead of spinning it out of the driver's hands.
 const KNOCK_SPIN = 1.8
 // A building the car only dips this far into from above (m), it rides on the edge of rather than
 // being shoved off sideways: the roof it is driving off, or one it is coming down onto.
 const EDGE = 0.35
+const EDGE_HOLD = 0.8 // s at most an edge holds the car up
 
 // Rectangles are { x, z, fx, fz, hl, hw }: centre, unit forward axis, half length and half width.
 // The side axis is (-fz, fx).
@@ -55911,12 +59443,8 @@ function collideCity (s) {
     storeBody(s)
     if (impact > 0.6) bump(s, impact, c.kind, hit)
   }
-  // the beach past the ring road ends at the sea
-  for (const k of ['x', 'z'])
-    if (Math.abs(s.pos[k]) > OUTER) {
-      s.pos[k] = Math.sign(s.pos[k]) * OUTER
-      if (s.vel[k] * s.pos[k] > 0) s.vel[k] = 0
-    }
+  // the beach ends at the sea (but for the pier), and nothing gets past the walls (edge.js)
+  keepIn(s)
   s.syncPose()
 }
 
@@ -55943,6 +59471,11 @@ function knock (s, c, nx, nz) {
 function collideAir (s, bottom, top, dt) {
   const me = playerRect(s)
   query(me.x - 4, me.z - 4, me.x + 4, me.z + 4, hits)
+  // (how long an edge has held the car up: one can't for ever, or a car driven off a roof towards a
+  // taller building across an alley narrower than itself would hang there, held up by the edge it
+  // left and pushed back onto it by the wall in front; after EDGE_HOLD s it drops into the alley)
+  const held = s.edgeT || 0
+  let onEdge = false
   for (const c of hits) {
     if (c.down || bottom >= c.y1 || top <= c.y0) continue
     const hit = c.r ? rectPost(me, c) : rectRect(me, boxRect(c))
@@ -55950,6 +59483,8 @@ function collideAir (s, bottom, top, dt) {
     if (c.breakAt && knock(s, c, hit.nx, hit.nz)) continue
     const dip = c.y1 - bottom
     if (!c.r && dip < EDGE && dip < hit.depth && s.vel.y <= 0) {
+      onEdge = true
+      if (held > EDGE_HOLD) continue // (let go: it drops)
       // held up by the edge, and sliding off it the way it overhangs
       s.com.y += dip
       s.vel.y = 0
@@ -55964,6 +59499,9 @@ function collideAir (s, bottom, top, dt) {
     me.z = BODY.z
     if (impact > 0.6) bump(s, impact, c.kind, hit)
   }
+  // (the time on an edge goes on counting while it stays on one, held or let go)
+  s.edgeT = onEdge ? held + dt : 0
+  hillside(s, bottom) // (and a hillside holds it up: edge.js)
   s.syncPose()
 }
 
@@ -56031,205 +59569,14 @@ function bounceCity (s) {
 __export(__exports, { "rectRect": () => rectRect, "rectPost": () => rectPost, "boxRect": () => boxRect, "carRect": () => carRect, "impulse": () => impulse, "BODY": () => BODY, "playerRect": () => playerRect, "loadBody": () => loadBody, "storeBody": () => storeBody, "nudge": () => nudge, "CONTACT_Y": () => CONTACT_Y, "carFrame": () => carFrame, "bump": () => bump, "collideCity": () => collideCity, "knock": () => knock, "collideAir": () => collideAir, "bumpCars": () => bumpCars, "pushOut": () => pushOut, "bounceCity": () => bounceCity })
 })
 
-// ---- js/sim/track.js
-__define(8, function (__exports) {
-// The 21 m curved wall, the parked lineup and the solid obstacles around them.
-const { DEG } = __require(1)
-// ---------- The wall: arc-length parametrised profile in the x-y plane ----------
-const TRACK = (() => {
-  const W = 6.6,
-    X0 = -4
-  const segs = [
-    { len: 4, a0: 0, a1: 0 }, // entry lip
-    { len: 15.5, a0: 0, a1: 86 }, // bottom transition
-    { len: 3, a0: 86, a1: 100 }, // past vertical
-    { len: 12.5, a0: 100, a1: 170 }, // over the top
-    { len: 6, a0: 170, a1: 170 } // inverted lip, 170 deg pitch
-  ]
-  let acc = 0
-  for (const g of segs) {
-    g.s0 = acc
-    acc += g.len
-    g.a0r = g.a0 * DEG
-    g.a1r = g.a1 * DEG
-  }
-  const L = acc
-  const seg = s => {
-    for (const g of segs) if (s < g.s0 + g.len) return g
-    return segs[segs.length - 1]
-  }
-  function theta (s) {
-    if (s <= 0) return 0
-    if (s >= L) return segs[segs.length - 1].a1r
-    const g = seg(s),
-      u = (s - g.s0) / g.len
-    return g.a0r + (g.a1r - g.a0r) * (3 * u * u - 2 * u * u * u)
-  }
-  function kappa (s) {
-    if (s <= 0 || s >= L) return 0
-    const g = seg(s),
-      u = (s - g.s0) / g.len
-    return ((g.a1r - g.a0r) * 6 * u * (1 - u)) / g.len
-  }
-  const ds = 0.1,
-    n = Math.round(L / ds) + 1
-  const xs = new Float64Array(n),
-    ys = new Float64Array(n)
-  let x = X0,
-    y = 0
-  xs[0] = x
-  ys[0] = y
-  const sub = 20,
-    h = ds / sub
-  for (let i = 1; i < n; i++) {
-    for (let j = 0; j < sub; j++) {
-      const t = theta((i - 1) * ds + (j + 0.5) * h)
-      x += Math.cos(t) * h
-      y += Math.sin(t) * h
-    }
-    xs[i] = x
-    ys[i] = y
-  }
-  const sEnd = (n - 1) * ds,
-    thEnd = theta(L)
-  function point (s, out) {
-    if (s <= 0) {
-      out.x = X0 + s
-      out.y = 0
-      return out
-    }
-    if (s >= sEnd) {
-      const e = s - sEnd
-      out.x = xs[n - 1] + Math.cos(thEnd) * e
-      out.y = ys[n - 1] + Math.sin(thEnd) * e
-      return out
-    }
-    const f = s / ds,
-      i = Math.floor(f),
-      t = f - i
-    out.x = xs[i] + (xs[i + 1] - xs[i]) * t
-    out.y = ys[i] + (ys[i + 1] - ys[i]) * t
-    return out
-  }
-  let maxX = -Infinity
-  for (let i = 0; i < n; i++) maxX = Math.max(maxX, xs[i])
-  const lip = { x: xs[n - 1], y: ys[n - 1] }
-  const slab = 0.45
-  return {
-    W,
-    X0,
-    L,
-    segs,
-    ds,
-    n,
-    xs,
-    ys,
-    theta,
-    kappa,
-    point,
-    maxX,
-    lip,
-    slab,
-    sHold: L - 4.0,
-    baseS: 2.3, // start mark: the whole car on the flat beginning of the platform, rear at its edge
-    lipStart: L - 6,
-    towerX0: maxX + slab + 0.6,
-    towerX1: maxX + slab + 3.6,
-    towerTop: lip.y + 3.4
-  }
-})()
-
-// Parked lineup for stunt 2 (broadside, long axis along z)
-const LINEUP = [
-  {
-    name: 'Cybercab',
-    kind: 'cab',
-    x: -252.0,
-    w: 1.95,
-    h: 1.45,
-    l: 4.2,
-    color: 0xc9b37e
-  },
-  {
-    name: 'Cybertruck',
-    kind: 'truck',
-    x: -256.3,
-    w: 2.2,
-    h: 1.9,
-    l: 5.7,
-    color: 0xa9adb3
-  },
-  {
-    name: 'Semi',
-    kind: 'semi',
-    x: -261.0,
-    w: 2.6,
-    h: 3.9,
-    l: 6.4,
-    color: 0xc9cdd3
-  },
-  {
-    name: 'Model Y',
-    kind: 'y',
-    x: -265.7,
-    w: 1.98,
-    h: 1.62,
-    l: 4.75,
-    color: 0x1d3f8f
-  },
-  {
-    name: 'Model 3',
-    kind: 'm3',
-    x: -270.0,
-    w: 1.93,
-    h: 1.44,
-    l: 4.72,
-    color: 0xb3121b
-  }
-]
-for (const c of LINEUP)
-  c.box = {
-    x0: c.x - c.w / 2,
-    x1: c.x + c.w / 2,
-    y0: 0,
-    y1: c.h,
-    z0: -c.l / 2,
-    z1: c.l / 2
-  }
-const LINEUP_FIRST = Math.max(...LINEUP.map(c => c.box.x1))
-const LINEUP_LAST = Math.min(...LINEUP.map(c => c.box.x0))
-const SOLIDS = [
-  ...LINEUP.map(c => ({ ...c.box, name: c.name, kind: 'car' })),
-  {
-    name: 'tower',
-    x0: TRACK.towerX0,
-    x1: TRACK.towerX1,
-    y0: 0,
-    y1: TRACK.towerTop,
-    z0: -TRACK.W / 2 - 0.6,
-    z1: TRACK.W / 2 + 0.6
-  },
-  {
-    name: 'gantry',
-    x0: TRACK.lip.x - 0.4,
-    x1: TRACK.towerX1,
-    y0: TRACK.lip.y + 0.55,
-    y1: TRACK.towerTop,
-    z0: -TRACK.W / 2 - 0.6,
-    z1: TRACK.W / 2 + 0.6
-  }
-]
-__export(__exports, { "TRACK": () => TRACK, "LINEUP": () => LINEUP, "LINEUP_FIRST": () => LINEUP_FIRST, "LINEUP_LAST": () => LINEUP_LAST, "SOLIDS": () => SOLIDS })
-})
-
 // ---- js/sim/flight.js
-__define(9, function (__exports) {
+__define(29, function (__exports) {
 // Free flight: gravity, cold-gas thrust, attitude control (manoeuvres + stability assist) and contacts.
 const THREE = __require(0)
-const { roofAt } = __require(5)
+const { roofAt } = __require(25)
 const { TRACK, SOLIDS } = __require(8)
-const { bumpCars, collideAir } = __require(7)
-const { G, CAR, AX_X, AX_Y, AX_Z, clamp, CORNERS, LIFT_ACC } = __require(1)
+const { bumpCars, collideAir } = __require(28)
+const { G, CAR, AX_X, AX_Y, AX_Z, clamp, CORNERS, LIFT_ACC } = __require(4)
 const _a = new THREE.Vector3(),
   _b = new THREE.Vector3(),
   _c = new THREE.Vector3(),
@@ -56442,15 +59789,18 @@ __export(__exports, { "stepAir": () => stepAir, "checkRampContact": () => checkR
 })
 
 // ---- js/sim/street.js
-__define(10, function (__exports) {
+__define(30, function (__exports) {
 // What is underfoot in the city: the kerb's line (straight down each street, round each corner, and
-// along the promenade), the surface a point is on (asphalt, pavement, a park's grass or the beach's
-// sand, each with its own grip and drag), and the street's ironwork: manholes out in the lanes and
-// drain grates in the gutter by every corner. The Roadster feels the kerb as it mounts or drops off
-// it, and each manhole a wheel runs over (s.suspV kicks the visual suspension; 'kerb' and 'manhole'
-// events carry it to the sound), and its tyres grip less on grass and less still on sand.
-const { N, HALF, PITCH, BLOCKS, CURB_R, LANES, WALK, ROAD_HW, PROMENADE, LANE_OFF, rng } = __require(4)
-const { CAR } = __require(1)
+// along the promenade), the surface a point is on (asphalt, pavement, a park's grass, the verge's
+// grass past the promenade on the north, east and south, the beach's sand on the west and the pier's
+// timber deck, each with its own grip and drag), and the street's ironwork: manholes out in the lanes
+// and drain grates in the gutter by every corner. The Roadster feels the kerb as it mounts or drops
+// off it, and each manhole a wheel runs over (s.suspV kicks the visual suspension; 'kerb' and
+// 'manhole' events carry it to the sound), and its tyres grip less on the pier's planks and grass and
+// less still on sand.
+const { N, HALF, PITCH, BLOCKS, CURB_R, LANES, WALK, ROAD_HW, PROMENADE, LANE_OFF, rng } = __require(24)
+const { onDeck } = __require(27)
+const { CAR } = __require(4)
 // How far (x, z) is from the kerb, positive out on the road: folded into one quadrant of the
 // nearest junction, where each block's corner is rounded to CURB_R; outside the ring road, the
 // promenade's kerb runs straight.
@@ -56466,30 +59816,52 @@ function kerbDist (x, z) {
   return d
 }
 
-// grip (a share of the tyres' own) and extra rolling drag, by surface
+// grip (a share of the tyres' own) and extra rolling drag, by surface (the pier's weathered planks
+// a little slippier than the road, and their joints dragging a little)
 const SURFACES = {
   road: { grip: 1, drag: 0 },
   walk: { grip: 1, drag: 0 },
+  wood: { grip: 0.88, drag: 0.02 },
   grass: { grip: 0.84, drag: 0.05 },
   sand: { grip: 0.62, drag: 0.12 }
 }
+// past the promenade's edge, off its level: the sand and the verges lie a little below it, the pier's
+// deck level with it
+const offEdge = (x, z) =>
+  (Math.abs(x) > PROMENADE || Math.abs(z) > PROMENADE) && !onDeck(x, z)
 // the surface at (x, z) on the city's ground (roofs are concrete, like the pavement)
 function surfaceAt (x, z) {
-  if (Math.abs(x) > PROMENADE || Math.abs(z) > PROMENADE) return 'sand'
+  if (x < -PROMENADE) return onDeck(x, z) ? 'wood' : 'sand'
+  if (Math.abs(x) > PROMENADE || Math.abs(z) > PROMENADE) return 'grass'
   if (kerbDist(x, z) > 0) return 'road'
   const bx = Math.floor((x + HALF) / PITCH),
     bz = Math.floor((z + HALF) / PITCH)
   const b = bx >= 0 && bz >= 0 && bx < N && bz < N ? BLOCKS[bz * N + bx] : null
   if (
-    b?.kind === 'park' &&
-    x > b.x0 + WALK &&
-    x < b.x1 - WALK &&
-    z > b.z0 + WALK &&
-    z < b.z1 - WALK
+    !b ||
+    x <= b.x0 + WALK ||
+    x >= b.x1 - WALK ||
+    z <= b.z0 + WALK ||
+    z >= b.z1 - WALK
   )
-    return 'grass'
-  return 'walk'
+    return 'walk'
+  if (b.kind === 'park') return 'grass'
+  // on the block's lot: what is laid over its base (a lawn, a drive, a car park; the last laid on
+  // top), or the base itself (city.js: plots.js)
+  let k = b.base
+  const g = b.ground
+  if (g)
+    for (let i = g.length - 1; i >= 0; i--) {
+      const r = g[i]
+      if (x > r.x0 && x < r.x1 && z > r.z0 && z < r.z1) {
+        k = r.k
+        break
+      }
+    }
+  return LOT[k] || 'walk'
 }
+// what a lot's ground is to the tyres: lawns grass, car parks asphalt, the rest paving
+const LOT = { grass: 'grass', asphalt: 'road' }
 
 // ---------- the street's ironwork ----------
 const R = rng(3141)
@@ -56552,15 +59924,13 @@ function feel (s) {
   st.x = x
   st.z = z
   if (s.floor > 0) return
-  // each axle mounting or dropping off the kerb (the promenade's edge onto the sand too)
+  // each axle mounting or dropping off the kerb (the promenade's edge onto the sand or the verge
+  // too; not onto the pier, which is level with it)
   for (let a = 0; a < 2; a++) {
     const sg = a === 0 ? 1 : -1,
       ax = x + fx * CAR.halfWB * sg,
       az = z + fz * CAR.halfWB * sg
-    const onRoad =
-      kerbDist(ax, az) > 0 ||
-      Math.abs(ax) > PROMENADE ||
-      Math.abs(az) > PROMENADE
+    const onRoad = kerbDist(ax, az) > 0 || offEdge(ax, az)
     if (!fresh && onRoad !== st.kerb[a] && v > 0.8) {
       s.suspV += (onRoad ? -1 : 1) * Math.min(0.9, 0.12 + v * 0.035)
       s.emit('kerb', { v, up: !onRoad, front: a === 0 })
@@ -56591,55 +59961,27 @@ __export(__exports, { "kerbDist": () => kerbDist, "SURFACES": () => SURFACES, "s
 })
 
 // ---- js/sim/ground.js
-__define(11, function (__exports) {
-const { roofAt, STEP } = __require(5)
+__define(31, function (__exports) {
+const { roofAt, STEP } = __require(25)
 const { TRACK, SOLIDS } = __require(8)
-const { feel, gripOf, dragOf } = __require(10)
-const { collideCity, bumpCars } = __require(7)
-const { G, CAR, LIFT_ACC, clamp, wrapPi } = __require(1)
-// Planar two-axle tyre model: slip angles, a tyre curve that peaks and falls away, friction circle,
-// AWD split, load transfer, rolling resistance, aero drag, coast regen, a steering rack turned at the
-// speed of a driver's hands, brakes shared out by the load on each axle with ABS, stability control
-// that backs the rears' brakes and regen off before they let go sideways, and an e-brake: pulled
-// with the wheel straight, an emergency stop on all four wheels at their grip whatever the throttle
-// is doing; turned, a handbrake on the rear wheels only, biting in a twentieth of a second and
-// locking them, so they slide (at the sliding tyre's grip) the way they are going; the fronts still
-// steer. Let go, and the rear wheels spin back up with the road in a few hundredths of a second; a
-// car well sideways by then is past its tyres' peak and slides on until they bite, or the driver
-// catches it.
-// Track Mode: pulled at speed, the handbrake also has traction and stability control stand back
-// and the drive shift to the rears, as in a Tesla's Track Mode with its balance set to the rear, so
-// the throttle holds a drift: on the power the driven rears spin up and slide, and the two rear
-// motors, one to each wheel, share the torque out between them to hold the drift at the angle the
-// driver asks for: steering into the turn holds it or takes it deeper, leaving the wheel be lets it
-// slowly unwind (a small flick is a short slide, a big one a long drift), and steering out of it
-// unwinds it fast; held there with the power on, the car swings on through straight into a drift
-// the other way (a linked drift); lift off and the rears grip and the car straightens. Held in a
-// drift, the throttle keeps the pace the drift began at rather than piling on speed, as a drifter
-// feathers it, so the tyres' grip carries the car round the corner instead of out wide. Once it is
-// lined up again the electronics are back.
-// Three GTA-style touches on top: the handbrake with the wheel turned swings the car round at once,
-// a car spinning faster than its tyres could carry it is caught once the handbrake is let go, and
-// the throttle and brake together at a crawl are a burnout (steered, a donut).
+const { feel, gripOf, dragOf, kerbDist } = __require(30)
+const { collideCity, bumpCars, loadBody, storeBody } = __require(28)
+const { G, CAR, LIFT_ACC, clamp, wrapPi } = __require(4)
+const { smooth, tyreCurve, steer } = __require(9)
+const { BURN_V, BURN_GRIP, trackMode, trackDrive, burnCreep, driftMoment } = __require(10)
+// Planar two-axle tyre model: slip angles, a tyre curve that peaks and falls away (tyres.js),
+// friction circle, AWD split, load transfer through the springs, rolling resistance, aero drag,
+// coast regen, a steering rack turned at the speed of a driver's hands (tyres.js), brakes shared out
+// by the load on each axle with ABS, stability control that backs the rears' brakes and regen off
+// before they let go sideways and takes the power away while the fronts push wide, and an e-brake:
+// pulled with the wheel straight, an emergency stop on all four wheels at their grip whatever the
+// throttle is doing; turned, a handbrake on the rear wheels only, biting in a twentieth of a second
+// and locking them, so they slide (at the sliding tyre's grip) the way they are going; the fronts
+// still steer. Let go, and the rear wheels spin back up with the road in a few hundredths of a
+// second; a car well sideways by then is past its tyres' peak and slides on until they bite, or the
+// driver catches it. Track Mode's drifts, the handbrake's swing, catching a spin and the burnout's
+// donut are in drift.js.
 
-// A tyre's grip against its slip, x: the slip angle in units of its grip over its cornering
-// stiffness, so that the force starts out at the stiffness times the slip. It builds like a sine to
-// its peak at x = pi / 2 (about 11 degrees on the fronts), then falls away to what a sliding tyre
-// keeps (CAR.slideMu), so a tyre pushed past its limit gives less, not more.
-const PEAK = Math.PI / 2
-function tyreCurve (x) {
-  const a = Math.abs(x)
-  const f =
-    a < PEAK
-      ? Math.sin(a)
-      : CAR.slideMu + (1 - CAR.slideMu) * Math.exp(-((a - PEAK) ** 2) / 1.2)
-  return Math.sign(x) * f
-}
-// the steering rack: how fast hands turn the road wheels (rad/s, full lock in a third of a second),
-// and the extra speed they come back to the middle at as the car rolls (the tyres' self-aligning
-// torque, per m/s)
-const HANDS = 1.8,
-  CENTRE = 0.08
 // the rear wheels spinning back up with the road after the e-brake: the share of their grip they get
 // back per second
 const SPIN_UP = 12
@@ -56657,65 +59999,63 @@ const EB_ON = 0.06,
 // handbrake.)
 const ESC_CUT = 0.9,
   ESC_CUT_W = 0.5
-const LOCK = 0.62 // the road wheels' full lock (rad)
-const smooth = x => (x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x))
-// Track Mode: the e-brake at more than this speed (m/s) switches it on, and it switches itself off
-// once the rear axle has run within this much slip (rad) of straight for CALM s; the drive's front
-// share meanwhile (none: the rears take it all, or the front motor pulling on counter-steered wheels
-// would drag the nose straight)
-const TRACK_IN = 5,
-  TRACK_STRAIGHT = 0.09,
-  CALM = 0.4,
-  TRACK_FRONT = 0
-// The handbrake pulled with the wheel turned, GTA-style: the locked rears step out at once rather
-// than waiting for the fronts to drag the car round. The yaw moment it adds (N m at full lock, from
-// a jog upwards, fading out as the car comes round past HB_FADE rad so it doesn't spin on its own)
-const HB_YAW = 7000,
-  HB_FADE = 0.9
-// Catching a spin, as a driver's hands and GTA's forgiving cars do: off the handbrake, a car turning
-// faster than its tyres could carry it round (its grip over its speed, or what the wheel asks for,
-// and SPIN_OK rad/s to spare) is eased back, SPIN_K N m per rad/s too fast, at most SPIN_MAX, so a
-// handbrake turn stops swinging soon after the handbrake is let go instead of spinning on round.
-const SPIN_OK = 0.35,
-  SPIN_K = 11000,
-  SPIN_MAX = 13000
-// A burnout, GTA-style: the throttle and the brake together under BURN_V m/s, the fronts held on
-// their brakes and the rears spinning against them in a cloud of smoke; turn the wheel and the rears
-// swing out round the fronts, the car turning at up to BURN_R rad/s on full lock (the rears' push
-// worked out as a moment of at most BURN_YAW N m, BURN_K N m per rad/s short of it) while it creeps
-// forward at up to BURN_CREEP m/s: a donut. Let go of the brake and it leaves on spinning rears, in
-// Track Mode.
-const BURN_V = 6
-const BURN_R = 2.6,
-  BURN_K = 14000,
-  BURN_YAW = 17000,
-  BURN_CREEP = 1.6,
-  BURN_GRIP = 0.15 // the share of their grip spinning rears keep sideways
-// the drift the rear motors hold (rad, at most DRIFT_MAX_A), and how it changes (rad/s): deeper
-// steering into the turn, unwinding slowly with the wheel left alone and fast steering out; and how
-// hard they work at it: N m per rad off, N m per rad/s it is swinging, and at most N m (all of one
-// rear tyre's grip against none of the other's, across the track)
-const DRIFT_MAX_A = 0.7,
-  DRIFT_INTO = 0.5,
-  DRIFT_UNWIND = 0.3,
-  DRIFT_OUT = 1.2,
-  DRIFT_K = 40000,
-  DRIFT_D = 9000,
-  DRIFT_MAX = 15000
-// The drift's pace: held in a drift, the rears get DRIFT_PUSH of their drive at the pace it began
-// at, more below it and none DRIFT_BAND m/s or so above (the pace creeping up by DRIFT_GAIN m/s each
-// second the power stays on, and coming down to wherever the brakes take it). As the car comes
-// round further than asked, the rears are spun less (all of it DRIFT_EASE rad further round), so
-// they bite and bring it back; and it hands back to the electronics once it is within DRIFT_END rad
-// of straight, not while it is still well sideways (the rears gripping at once would snap it round).
-// Steering out with the power on, the drift links: swung DRIFT_LINK rad the other way, it is a drift
-// that way.
-const DRIFT_PUSH = 0.3,
-  DRIFT_BAND = 2,
-  DRIFT_GAIN = 0.3,
-  DRIFT_EASE = 0.3,
-  DRIFT_END = 0.2,
-  DRIFT_LINK = 0.15
+// The shares of the tyres' grip the drive and the brakes keep, however hard they corner
+const DRIVE_FLOOR = 0.12,
+  BRAKE_FLOOR = 0.35
+const TRANSFER = 0.09 // s: how far behind the acceleration the weight's shift onto an axle follows
+const PUSH_IN = 0.08, // s: the understeer control's cut eases in, and the power back
+  PUSH_OUT = 0.2
+const REV_MAX = 9 // m/s: as fast as the car backs up
+// the share of an axle's speed into the kerb the car loses as it climbs it (a tyre meeting an 8 cm
+// edge rolls over it at about 39 degrees), and the most a strike takes (m/s)
+const KERB_LOSS = 0.22,
+  KERB_DV = 1.6
+// the drive's front share in Track Mode (none: the rears take it all, or the front motor pulling on
+// counter-steered wheels would drag the nose straight), and otherwise
+const TRACK_FRONT = 0,
+  FRONT = 0.4
+
+// An axle mounting the kerb at speed: the wheels climb its edge and the car loses KERB_LOSS of the
+// speed it had into it at that axle (at most KERB_DV m/s a strike: the body's momentum comes through
+// the springs, so slamming square into a kerb costs a jolt and some speed, not most of it), and a
+// wheel hitting it at an angle knocks the nose (or the tail) away from it, so a kerb clipped fast
+// unsettles the car rather than being only a bump in the springs. sg: 1 the front axle, -1 the rear.
+function kerb (s, sg) {
+  const fx = Math.cos(s.yaw),
+    fz = -Math.sin(s.yaw)
+  const rx = fx * CAR.halfWB * sg,
+    rz = fz * CAR.halfWB * sg
+  const x = s.pos.x + rx,
+    z = s.pos.z + rz
+  // (the kerb's line, from how its distance changes round the axle; its normal turned to face the
+  // axle as it comes, whichever side it climbs from: off the road, or up from the beach or a verge)
+  const e = 0.05,
+    gx = kerbDist(x + e, z) - kerbDist(x - e, z),
+    gz = kerbDist(x, z + e) - kerbDist(x, z - e),
+    l = Math.hypot(gx, gz)
+  if (l < 1e-6) return
+  let nx = gx / l,
+    nz = gz / l
+  const w = s.yawRate,
+    vx = s.vel.x + w * rz,
+    vz = s.vel.z - w * rx
+  let vn = vx * nx + vz * nz
+  if (vn > 0) {
+    nx = -nx
+    nz = -nz
+    vn = -vn
+  }
+  // the impulse that takes that much off the axle's speed into the kerb, through the car's mass and
+  // its turning inertia about its middle (as collide.js's impulse works it out)
+  const cr = rz * nx - rx * nz,
+    k = 1 / CAR.mass + (cr * cr) / CAR.Iz,
+    j = Math.min(-vn * KERB_LOSS, KERB_DV) / k
+  const b = loadBody(s)
+  b.vx += (nx * j) / CAR.mass
+  b.vz += (nz * j) / CAR.mass
+  b.w += (rz * nx * j - rx * nz * j) / CAR.Iz
+  storeBody(s)
+}
 
 function stepGround (s, dt, c, main, lift) {
   const m = CAR.mass,
@@ -56739,11 +60079,16 @@ function stepGround (s, dt, c, main, lift) {
   const a = CAR.halfWB,
     b = CAR.halfWB,
     mu = CAR.tireMu * gripOf(s) // (less on grass and sand: street.js)
-  const dN = clamp(
+  // the weight thrown forward or back as the car brakes or pulls away, through the springs: it
+  // follows the acceleration a moment behind (TRANSFER s), as the body pitches onto the nose or the
+  // tail, rather than all at once
+  const dNT = clamp(
     (m * s.accLong * CAR.comH) / CAR.wheelbase,
     -0.2 * Ntot,
     0.2 * Ntot
   )
+  s.dN += (dNT - s.dN) * Math.min(1, dt / TRANSFER)
+  const dN = s.dN
   const Nf = Ntot / 2 - dN,
     Nr = Ntot / 2 + dN
   // the e-brake biting (0 to 1), how straight the wheel is for an emergency stop (1: straight),
@@ -56759,59 +60104,13 @@ function stepGround (s, dt, c, main, lift) {
   // How far the car is sliding: the rear axle's slip (rolling round a tight bend, the car's middle
   // runs at an angle to its nose, but the rear axle runs straight: only a slide moves it sideways)
   const beta = Math.atan2(w - b * r, Math.max(Math.abs(u), 2))
-  // Track Mode (s.track): on with the handbrake at speed, off once the car runs straight again
-  if (c.ebrake && Math.abs(u) > TRACK_IN) {
-    if (!s.track) s.emit('track')
-    s.track = true
-    s.calm = 0
-  } else if (s.track) {
-    const straight = Math.abs(beta) < TRACK_STRAIGHT || Math.abs(u) < 3
-    s.calm = straight ? s.calm + dt : 0
-    // (over once the car has run straight a moment, or swung on through straight: the electronics
-    // catch whatever comes next, unless the driver is linking it into a drift the other way)
-    const through = s.driftDir && s.driftDir * beta > 0.03
-    if ((s.calm > CALM || through) && !s.linking) s.track = false
-  }
+  trackMode(s, c, u, beta, dt)
   const track = s.track && !c.ebrake
   const FmaxF = mu * Nf,
     FmaxR = mu * CAR.rearGrip * Nr * s.rearGrip
 
-  // speed-sensitive steering so a keyboard stays controllable
-  const steerMax = 0.6 / (1 + (u * u) / 300)
-  // the driver's feel for the limit: the fronts are turned no further than just short of their
-  // peak, where they grip hardest (past it they would only scrub and push wide). Sliding, the front
-  // wheels follow the slide (the caster: let go of the wheel and they swing round to point the way
-  // the car is going, as a real car's do), and the driver steers from there: no input lets the slide
-  // run out (hands off, a touch of counter-steer catching the car as it swings further round, as a
-  // driver's would), the way into the turn holds it (less, the further round the car is, so it
-  // doesn't spin) and the other way catches it.
-  let steerT = c.steer * steerMax,
-    slide = 0
-  if (u > 3) {
-    const aKin = Math.atan2(w + a * r, u),
-      aLim = (1.5 * FmaxF) / CAR.corneringF,
-      ab = Math.abs(beta)
-    slide = smooth((ab - 0.1) / 0.14)
-    const into = c.steer * beta < 0 ? 1 - smooth((ab - 0.35) / 0.4) * 0.9 : 1,
-      // (rad/s it is swinging further round)
-      grow = (ab - (s.driftA ?? ab)) / dt,
-      catchIt =
-        c.steer === 0 ? Math.sign(beta) * clamp(grow / 1.2, 0, 1) * 0.8 : 0
-    const slid = aKin + (c.steer * into + catchIt) * aLim
-    if (c.ebrake) {
-      // (handbrake held: the wheel is the driver's, but let go of it, it follows the slide)
-      if (c.steer === 0) steerT = aKin * slide
-    } else
-      steerT =
-        clamp(steerT, aKin - aLim, aKin + aLim) * (1 - slide) + slid * slide
-    steerT = clamp(steerT, -LOCK, LOCK)
-  }
-  // the rack: turned at the speed of hands, and coming back quicker the faster the car rolls (or
-  // spinning through them as the wheels follow a slide)
-  const centring =
-    Math.abs(steerT) < Math.abs(s.steerAng) && steerT * s.steerAng >= 0
-  const rate = HANDS * (1 + 2 * slide) + (centring ? CENTRE * Math.abs(u) : 0)
-  s.steerAng += clamp(steerT - s.steerAng, -rate * dt, rate * dt)
+  // the driver's hands on the wheel (tyres.js)
+  const { slide, push } = steer(s, c, u, w, r, beta, FmaxF, track, dt)
   const cd = Math.cos(s.steerAng),
     sd = Math.sin(s.steerAng)
 
@@ -56825,7 +60124,19 @@ function stepGround (s, dt, c, main, lift) {
   if (throttle > 0 && u < CAR.vMax)
     Fdrive +=
       throttle * Math.min(m * CAR.driveAccelMax, CAR.powerW / Math.max(au, 1))
-  if (c.reverse > 0 && u > -10) Fdrive -= c.reverse * m * 5
+  // Understeer control, as a Tesla's stability control does it: while the wheel asks the fronts for
+  // more than they can grip, the motors' torque is taken away, so on full lock with W held the car
+  // comes round at the tyres' limit instead of piling on speed and running ever wider (not in Track
+  // Mode: drifting, the driver has the power)
+  // (eased: the cut comes in over PUSH_IN s and the power back over PUSH_OUT s, as the motors'
+  // torque is ramped, rather than switching in one step as the wheel sweeps through the band)
+  s.pushF +=
+    (push - s.pushF) * Math.min(1, dt / (push > s.pushF ? PUSH_IN : PUSH_OUT))
+  if (!s.track) Fdrive *= 1 - s.pushF
+  s.push = s.track || throttle === 0 ? 0 : s.pushF
+  // (backing up, the motors ease off as the car nears its reverse limit, REV_MAX m/s)
+  if (c.reverse > 0)
+    Fdrive -= c.reverse * m * 5 * clamp((REV_MAX + u) / 1.5, 0, 1)
   const coasting =
     c.throttle === 0 && c.reverse === 0 && c.brake === 0 && !c.ebrake
   const Fregen = coasting
@@ -56845,13 +60156,13 @@ function stepGround (s, dt, c, main, lift) {
     s.calm = 0
   }
   // (in Track Mode most of the drive goes to the rears)
-  const front = track ? TRACK_FRONT : 0.4
+  const front = track ? TRACK_FRONT : FRONT
   // (the brakes shared out by the load on each axle, as electronic brake-force distribution does,
   // so the rears, light under braking, are never asked for more than the fronts: a fixed split
   // would have them give up first and the tail come round)
   const bias = Nf / Ntot
   // (the rears let off their brakes and regen near their limit sideways: ESC_CUT; the rear axle's
-  // slip in units of its grip over its stiffness, peaking at PEAK)
+  // slip in units of its grip over its stiffness, peaking at PEAK: tyres.js)
   const esc = !c.ebrake && !track && !burn && s.rearGrip >= 1 && au > 3
   const xR = (CAR.corneringR * Math.abs(beta)) / FmaxR
   const cut = esc ? smooth((xR - ESC_CUT) / ESC_CUT_W) : 0
@@ -56859,41 +60170,35 @@ function stepGround (s, dt, c, main, lift) {
   let Fxf = front * Fdrive - su * (bias * Fbrake + 0.5 * Fregen)
   let Fxr =
     (1 - front) * Fdrive - su * ((1 - bias) * Fbrake + 0.5 * Fregen) * (1 - cut)
-  // traction control + ABS: keep the grip the tyres are using to corner, leave at least 35% for drive/brakes
-  const capF = Math.sqrt(
-    Math.max(0.1225 * FmaxF * FmaxF, FmaxF * FmaxF - s.lastFyf * s.lastFyf)
-  )
-  const capR = Math.sqrt(
-    Math.max(0.1225 * FmaxR * FmaxR, FmaxR * FmaxR - s.lastFyr * s.lastFyr)
-  )
+  // traction control and ABS: the drive and the brakes get the grip the tyres aren't using to
+  // corner, as the friction circle allows (the drive at least DRIVE_FLOOR of it, so a car cornering
+  // at the limit still creeps on rather than stalls; the brakes at least BRAKE_FLOOR, so a corner
+  // can always be braked in)
+  const cap = (Fmax, Fy, Fx) =>
+    Math.sqrt(
+      Math.max(
+        (Fx * su < 0 ? BRAKE_FLOOR : DRIVE_FLOOR) ** 2 * Fmax * Fmax,
+        Fmax * Fmax - Fy * Fy
+      )
+    )
+  const capF = cap(FmaxF, s.lastFyf, Fxf)
+  const capR = cap(FmaxR, s.lastFyr, Fxr)
   // (how hard the ABS is working: the fronts asked to brake harder than they can grip)
   s.abs = Fbrake > 0 ? smooth((-su * Fxf - 0.97 * capF) / (0.06 * capF)) : 0
   Fxf = clamp(Fxf, -capF, capF)
-  // In Track Mode the rears may spin: driven harder than they can grip, they transmit most of it
-  // and slide sideways, the spin easing in rather than all at once (spin: how much they spin)
+  // In Track Mode the rears may spin (drift.js)
   let spin = 0
   if (track && Fxr > 0) {
-    // (and past fifty degrees round, the drive to them fades, so they grip and catch it)
-    Fxr *= 1 - smooth((Math.abs(beta) - 0.85) / 0.45)
-    spin = clamp(Fxr / FmaxR - 0.6, 0, 1)
-    Fxr = 0.95 * FmaxR * Math.tanh(Fxr / FmaxR)
-    // (in a drift: spun less the further round it is than asked, and no faster than its pace)
-    if (s.driftDir) {
-      spin *= 1 - smooth((Math.abs(beta) - s.driftWant - 0.05) / DRIFT_EASE)
-      Fxr *= clamp(
-        DRIFT_PUSH + (s.driftV - Math.hypot(u, w)) / DRIFT_BAND,
-        0,
-        1
-      )
-    }
+    const td = trackDrive(s, Fxr, FmaxR, beta, Math.hypot(u, w))
+    Fxr = td.Fxr
+    spin = td.spin
   } else if (!c.ebrake) Fxr = clamp(Fxr, -capR, capR)
   // (the e-brake on the rears short of locking them: biting, or held at their peak by the ABS in an
   // emergency stop; their motor's share no longer reaches the road)
   else Fxr = -su * Math.min(FmaxR, s.ebLock * FmaxR + Math.max(0, -su * Fxr))
   if (burn) {
-    // the rears' push against the fronts' brakes nets out at a creep, quicker on full lock
-    const creep = BURN_CREEP * (0.3 + 0.7 * Math.abs(c.steer)) * c.throttle
-    Fxf = clamp(m * 3 * (creep - u), -FmaxF, FmaxF)
+    // (the rears' push against the fronts' brakes nets out at a creep: drift.js)
+    Fxf = burnCreep(c, u, FmaxF)
     Fxr = 0
     spin = 1
   }
@@ -56949,79 +60254,8 @@ function stepGround (s, dt, c, main, lift) {
   Fu += Fxr2 + main * CAR.mainThrust
   Fw += Fyr
   Mz -= b * Fyr
-  // drift control: the rear motors' torque split taking on the rear tyres' own pull straight and
-  // turning the car towards the drift angle asked for, the way the drift began (never flicking the
-  // car over into one the other way); steering out of the drift, they let it go once it is nearly
-  // straight
-  const ab = Math.abs(beta),
-    swing = (ab - (s.driftA ?? ab)) / dt,
-    d = -Math.sign(beta), // 1: the car rotated left of where it is going
-    into = c.steer * d
-  s.driftA = ab
-  if (!track) s.driftDir = 0
-  else if (!s.driftDir && ab > 0.15) {
-    s.driftDir = d
-    s.driftWant = Math.min(ab, DRIFT_MAX_A)
-    s.driftV = Math.hypot(u, w)
-  }
-  // (the angle asked for, from where the drift began: deeper, unwinding, or unwinding fast)
-  if (s.driftDir && !c.ebrake) {
-    const k =
-      into > 0 ? DRIFT_INTO * into : into < 0 ? DRIFT_OUT * into : -DRIFT_UNWIND
-    s.driftWant = clamp(s.driftWant + k * dt, 0, DRIFT_MAX_A)
-  } else if (s.driftDir)
-    s.driftWant = Math.max(s.driftWant, Math.min(ab, DRIFT_MAX_A))
-  // (the pace: creeping up on the power, down to wherever the brakes take it)
-  if (s.driftDir) {
-    if (throttle > 0.2) s.driftV += DRIFT_GAIN * dt
-    if (c.brake > 0) s.driftV = Math.min(s.driftV, Math.hypot(u, w))
-  }
-  const letGo = s.driftWant < 0.08 && ab < 0.15
-  // (steering out of it with the power on: linking it into a drift the other way, once the car has
-  // swung through)
-  s.linking =
-    track && !!s.driftDir && throttle > 0.5 && c.steer * s.driftDir < -0.5
-  if (s.linking && d === -s.driftDir && ab > DRIFT_LINK) {
-    s.driftDir = d
-    s.driftWant = Math.min(ab, DRIFT_MAX_A)
-    s.linking = false
-  }
-  // (unwound all the way and nearly straight, the drift is over: the electronics are back to catch
-  // what is left of it)
-  if (
-    s.driftDir &&
-    !c.ebrake &&
-    !s.linking &&
-    s.driftWant < 0.03 &&
-    ab < DRIFT_END
-  )
-    s.track = false
-  if (burn)
-    Mz += clamp(
-      BURN_K * (c.steer * c.throttle * BURN_R - r),
-      -BURN_YAW,
-      BURN_YAW
-    )
-  else if (track && s.driftDir === d && !letGo && throttle > 0.2 && au > 4) {
-    const want = s.driftWant * clamp((throttle - 0.2) / 0.5, 0, 1)
-    const hold = 0.75 * b * Math.abs(Fyr) // (most of the rear tyres' pull straight)
-    Mz +=
-      d *
-      clamp(
-        hold + DRIFT_K * (want - ab) - DRIFT_D * swing,
-        -DRIFT_MAX,
-        DRIFT_MAX
-      )
-  }
-  // (going forwards only, and fading as the car comes round from the way it is travelling: the
-  // rear axle's slip comes back towards nothing once the car is going backwards)
-  if (c.ebrake && c.steer !== 0 && u > 2)
-    Mz +=
-      c.steer *
-      HB_YAW *
-      s.ebLock *
-      smooth((u - 2) / 8) *
-      (1 - smooth((Math.abs(Math.atan2(w, u)) - HB_FADE) / 0.6))
+  // the drift's motors, a donut, the handbrake's swing and the spin catch (drift.js)
+  Mz += driftMoment(s, c, track, throttle, burn, beta, Fyr, u, w, r, mu, dt)
   s.lastFyf = wantF
   s.lastFyr = wantR
   // stability control: when the car rotates faster than the steering asks for, brake a front wheel to
@@ -57044,15 +60278,6 @@ function stepGround (s, dt, c, main, lift) {
   if (cut > 0.3 && slow !== 0) s.escActive = true
 
   const spd = Math.hypot(u, w)
-  if (!c.ebrake && !burn && spd > 4) {
-    const rOk =
-      Math.max(
-        Math.abs(u * Math.tan(s.steerAng)) / CAR.wheelbase,
-        (1.1 * mu * G) / spd
-      ) + SPIN_OK
-    if (Math.abs(r) > rOk)
-      Mz -= Math.sign(r) * Math.min(SPIN_K * (Math.abs(r) - rOk), SPIN_MAX)
-  }
 
   // rolling resistance + aero drag oppose the motion
   const Fres =
@@ -57121,7 +60346,16 @@ function stepGround (s, dt, c, main, lift) {
     Math.min(1, dt * 10)
   s.syncPose()
   if (s.world === 'city') {
+    // (an axle that was on the road a step ago, not reset somewhere else, and is now up on the kerb)
+    const st = s.feel,
+      near = !!st && Math.hypot(s.pos.x - st.x, s.pos.z - st.z) < 3,
+      wasF = near && st.kerb[0],
+      wasR = near && st.kerb[1]
     feel(s) // the kerb, manholes and the surface underfoot
+    if (s.floor === 0) {
+      if (wasF && !st.kerb[0]) kerb(s, 1)
+      if (wasR && !st.kerb[1]) kerb(s, -1)
+    }
     collideCity(s)
     // on a roof: driven off its edge, down it goes; onto the next roof at about the same height (the
     // building next door, or the other half of a split block), it carries on there
@@ -57175,18 +60409,129 @@ function stepGround (s, dt, c, main, lift) {
   bumpCars(s, SOLIDS)
   if (s.hitSolid()) s.toCrash('Hit the tower')
 }
-__export(__exports, { "tyreCurve": () => tyreCurve, "BURN_V": () => BURN_V, "stepGround": () => stepGround })
+__export(__exports, { "stepGround": () => stepGround })
+})
+
+// ---- js/sim/ramp.js
+__define(32, function (__exports) {
+// The wall ride at the test site: the car on the curved wall, held on by its tyres and the suction
+// fan (with the 2 G fan it hangs upside down at the top), driven, braked and backed down it, and
+// thrown off into the air past its lip or off its sides. sim.js runs it while s.mode is 'ramp'.
+const { TRACK } = __require(8)
+const { G, CAR, clamp, LIFT_ACC } = __require(4)
+function stepRamp (s, dt, c, main, lift) {
+  const m = CAR.mass,
+    T = TRACK
+  const th = T.theta(s.s),
+    k = T.kappa(s.s)
+  const Fs = s.suction * CAR.suctionG * G
+  const liftA = lift * LIFT_ACC
+  let v = s.v
+  const N = v * v * k + G * Math.cos(th) + Fs - liftA // contact normal accel
+  if (N < 0) {
+    leaveRamp(s)
+    s.toAir(0.4)
+    return
+  }
+  const grip = CAR.tireMu * N
+  const gT = -G * Math.sin(th)
+  let a = gT
+  const driveMax = Math.min(
+    CAR.driveAccelMax,
+    CAR.powerW / (m * Math.max(Math.abs(v), 1)),
+    grip
+  )
+  if (c.throttle > 0) a += c.throttle * driveMax
+  if (c.reverse > 0 && v > -10) a -= c.reverse * Math.min(5, grip)
+  a += (main * CAR.mainThrust) / m
+  const av = Math.abs(v),
+    coasting =
+      c.throttle === 0 &&
+      main === 0 &&
+      c.brake === 0 &&
+      !c.ebrake &&
+      !c.reverse
+  const regen = coasting ? CAR.regenAccel * clamp(av / 2.5, 0, 1) : 0
+  a -=
+    Math.sign(v) *
+    (CAR.rollRes * N * Math.min(1, av / 0.5) + CAR.dragK * v * v + regen)
+  s.drivePower = (c.throttle * driveMax * v - regen * av) * m
+  s.regenOn = regen > 0
+  const brk = Math.max(c.brake, c.ebrake ? 1 : 0)
+  if (brk > 0) {
+    const bmax = brk * Math.min(CAR.brakeAccel, grip)
+    if (Math.abs(v) <= 0.3 && c.throttle === 0 && main === 0 && !c.reverse) {
+      // static hold: tires can resist gravity along the slope
+      if (Math.abs(gT) <= bmax) {
+        a = 0
+        v = 0
+      } else a = gT - Math.sign(gT) * bmax
+    } else a -= Math.sign(v) * bmax
+  }
+  v += a * dt
+  s.accLong = a
+  s.v = v
+  s.s += v * dt
+  s.dVel = -c.steer * Math.abs(v) * 0.1
+  s.d += s.dVel * dt
+  s.steerAng += (c.steer * 0.25 - s.steerAng) * Math.min(1, dt * 8)
+  s.maxRampS = Math.max(s.maxRampS, s.s)
+  s.gLoad +=
+    ((v * v * k + G * Math.cos(th) + liftA) / G - s.gLoad) *
+    Math.min(1, dt * 12)
+  if (Math.cos(th) < -0.5) s.invertedTime += dt
+  if (!s.topAwarded && s.s > T.lipStart) {
+    s.topAwarded = true
+    s.emit('trick', { text: 'Inverted at 170°', pts: 600 })
+  }
+
+  if (s.s < 0) {
+    leaveRamp(s)
+    s.setMode('ground')
+    s.pos.x = T.X0 + s.s
+    s.pos.z = s.d
+    s.yaw = 0
+    s.yawRate = 0
+    s.speed = v
+    s.vel.set(v, 0, 0)
+    s.syncPose()
+    return
+  }
+  if (Math.abs(s.d) > T.W / 2 - 0.45) {
+    s.syncPose()
+    leaveRamp(s)
+    s.toAir(0.5)
+    return
+  }
+  if (s.s >= T.L) {
+    s.syncPose()
+    leaveRamp(s)
+    s.toAir(0.5)
+    return
+  }
+  s.syncPose()
+}
+
+function leaveRamp (s) {
+  if (s.invertedTime > 1.5)
+    s.emit('trick', {
+      text: `Inverted hold ${s.invertedTime.toFixed(1)} s`,
+      pts: Math.round(s.invertedTime * 120)
+    })
+  s.invertedTime = 0
+}
+__export(__exports, { "stepRamp": () => stepRamp })
 })
 
 // ---- js/sim/stunts.js
-__define(12, function (__exports) {
+__define(33, function (__exports) {
 // Street stunts, scored alongside the flips and landings (sim.js): a drift, the car held well
 // sideways at speed, scored once it straightens up by how long it lasted and how far sideways it
 // went (lost if it ends in a crash), drifts linked one into the next the other way scoring as one,
 // half as much again for each link; and a near miss, flashing past a car in traffic close enough to
 // touch without touching it, worth more the faster it went by and double if it was coming the other
 // way.
-const { CAR } = __require(1)
+const { CAR } = __require(4)
 const SIDEWAYS = 0.26 // rad of slip (15 degrees) that counts as a drift; past 1.4 it is a spin
 const LINK_BONUS = 0.5 // the share more a drift scores for each one linked on to it
 const DRIFT_SPEED = 9 // m/s, about 30 km/h
@@ -57291,13 +60636,13 @@ __export(__exports, { "donuts": () => donuts, "drift": () => drift, "nearMisses"
 })
 
 // ---- js/sim/crash.js
-__define(13, function (__exports) {
+__define(34, function (__exports) {
 // Crashes: a rigid box tumbling on the ground with impulse-based contact and friction, and getting
 // back on the road afterwards, GTA-style.
 const THREE = __require(0)
-const { G, TAU, CAR, AX_Y, CORNERS, clamp } = __require(1)
-const { roofAt } = __require(5)
-const { pushOut, bounceCity } = __require(7)
+const { G, TAU, CAR, AX_Y, CORNERS, clamp } = __require(4)
+const { roofAt } = __require(25)
+const { pushOut, bounceCity } = __require(28)
 const _a = new THREE.Vector3(),
   _b = new THREE.Vector3(),
   _c = new THREE.Vector3(),
@@ -57511,18 +60856,19 @@ __export(__exports, { "enterCrash": () => enterCrash, "stepCrash": () => stepCra
 })
 
 // ---- js/sim/sim.js
-__define(14, function (__exports) {
+__define(35, function (__exports) {
 // The vehicle simulation: state, mode switching (ground / ramp / air / crash), the wall ride and scoring.
 // Uses only THREE math types, so it runs headless in Node for tests.
 const THREE = __require(0)
-const { knock } = __require(7)
-const { stepAir } = __require(9)
-const { stepGround } = __require(11)
-const { SPAWN, query } = __require(4)
+const { knock } = __require(28)
+const { stepAir } = __require(29)
+const { stepGround } = __require(31)
+const { stepRamp } = __require(32)
+const { SPAWN, query } = __require(24)
 const { TRACK, SOLIDS } = __require(8)
-const { drift, donuts } = __require(12)
-const { enterCrash, stepCrash } = __require(13)
-const { G, DEG, TAU, CAR, AX_X, AX_Y, AX_Z, clamp, wrapPi, clamp01, CORNERS, LIFT_ACC } = __require(1)
+const { drift, donuts } = __require(33)
+const { enterCrash, stepCrash } = __require(34)
+const { G, DEG, TAU, CAR, AX_X, AX_Y, AX_Z, clamp, wrapPi, clamp01, CORNERS } = __require(4)
 const _a = new THREE.Vector3(),
   _b = new THREE.Vector3(),
   _c = new THREE.Vector3(),
@@ -57587,6 +60933,7 @@ class Sim {
     this.roof = null
     this.crashReason = ''
     this.accLong = 0
+    this.dN = 0 // the weight shifted from the front axle to the rear (N: ground.js)
     this.latAcc = 0
     this.yawRate = 0
     this.lastFyf = 0
@@ -57595,6 +60942,8 @@ class Sim {
     this.ebLock = 0 // how hard the e-brake bites, 0 to 1 (ground.js)
     this.rearLocked = false // the rear wheels locked by the handbrake (a turn: ground.js)
     this.abs = 0 // how hard the ABS is working, 0 to 1 (ground.js)
+    this.push = 0 // how much of the power the understeer control is holding back, 0 to 1
+    this.pushF = 0 // (the same, eased, whatever the throttle: ground.js)
     this.track = false // Track Mode: the handbrake has the electronics stand back (ground.js)
     this.calm = 0
     this.driftA = 0 // the drift angle a step ago
@@ -57728,7 +61077,7 @@ class Sim {
       this.air = Math.min(CAR.airMass, this.air + CAR.recharge * dt)
 
     if (this.mode === 'ground') stepGround(this, dt, c, main, lift)
-    else if (this.mode === 'ramp') this.stepRamp(dt, c, main, lift)
+    else if (this.mode === 'ramp') stepRamp(this, dt, c, main, lift)
     else if (this.mode === 'air') stepAir(this, dt, c, main, lift)
     else stepCrash(this, dt, c)
 
@@ -57752,6 +61101,7 @@ class Sim {
       this.burnSpin = 0
       this.rearSpin = 0
       this.abs = 0
+      this.push = 0
       this.ebLock = 0
       this.rearLocked = false
       this.skid = this.skidF = this.skidR = 0
@@ -57784,108 +61134,6 @@ class Sim {
   setMode (m) {
     this.mode = m
     this.modeTime = 0
-  }
-
-  stepRamp (dt, c, main, lift) {
-    const m = CAR.mass,
-      T = TRACK
-    const th = T.theta(this.s),
-      k = T.kappa(this.s)
-    const Fs = this.suction * CAR.suctionG * G
-    const liftA = lift * LIFT_ACC
-    let v = this.v
-    const N = v * v * k + G * Math.cos(th) + Fs - liftA // contact normal accel
-    if (N < 0) {
-      this.leaveRamp()
-      this.toAir(0.4)
-      return
-    }
-    const grip = CAR.tireMu * N
-    const gT = -G * Math.sin(th)
-    let a = gT
-    const driveMax = Math.min(
-      CAR.driveAccelMax,
-      CAR.powerW / (m * Math.max(Math.abs(v), 1)),
-      grip
-    )
-    if (c.throttle > 0) a += c.throttle * driveMax
-    if (c.reverse > 0 && v > -10) a -= c.reverse * Math.min(5, grip)
-    a += (main * CAR.mainThrust) / m
-    const av = Math.abs(v),
-      coasting =
-        c.throttle === 0 &&
-        main === 0 &&
-        c.brake === 0 &&
-        !c.ebrake &&
-        !c.reverse
-    const regen = coasting ? CAR.regenAccel * clamp(av / 2.5, 0, 1) : 0
-    a -=
-      Math.sign(v) *
-      (CAR.rollRes * N * Math.min(1, av / 0.5) + CAR.dragK * v * v + regen)
-    this.drivePower = (c.throttle * driveMax * v - regen * av) * m
-    this.regenOn = regen > 0
-    const brk = Math.max(c.brake, c.ebrake ? 1 : 0)
-    if (brk > 0) {
-      const bmax = brk * Math.min(CAR.brakeAccel, grip)
-      if (Math.abs(v) <= 0.3 && c.throttle === 0 && main === 0 && !c.reverse) {
-        // static hold: tires can resist gravity along the slope
-        if (Math.abs(gT) <= bmax) {
-          a = 0
-          v = 0
-        } else a = gT - Math.sign(gT) * bmax
-      } else a -= Math.sign(v) * bmax
-    }
-    v += a * dt
-    this.accLong = a
-    this.v = v
-    this.s += v * dt
-    this.dVel = -c.steer * Math.abs(v) * 0.1
-    this.d += this.dVel * dt
-    this.steerAng += (c.steer * 0.25 - this.steerAng) * Math.min(1, dt * 8)
-    this.maxRampS = Math.max(this.maxRampS, this.s)
-    this.gLoad +=
-      ((v * v * k + G * Math.cos(th) + liftA) / G - this.gLoad) *
-      Math.min(1, dt * 12)
-    if (Math.cos(th) < -0.5) this.invertedTime += dt
-    if (!this.topAwarded && this.s > T.lipStart) {
-      this.topAwarded = true
-      this.emit('trick', { text: 'Inverted at 170°', pts: 600 })
-    }
-
-    if (this.s < 0) {
-      this.leaveRamp()
-      this.setMode('ground')
-      this.pos.x = T.X0 + this.s
-      this.pos.z = this.d
-      this.yaw = 0
-      this.yawRate = 0
-      this.speed = v
-      this.vel.set(v, 0, 0)
-      this.syncPose()
-      return
-    }
-    if (Math.abs(this.d) > T.W / 2 - 0.45) {
-      this.syncPose()
-      this.leaveRamp()
-      this.toAir(0.5)
-      return
-    }
-    if (this.s >= T.L) {
-      this.syncPose()
-      this.leaveRamp()
-      this.toAir(0.5)
-      return
-    }
-    this.syncPose()
-  }
-
-  leaveRamp () {
-    if (this.invertedTime > 1.5)
-      this.emit('trick', {
-        text: `Inverted hold ${this.invertedTime.toFixed(1)} s`,
-        pts: Math.round(this.invertedTime * 120)
-      })
-    this.invertedTime = 0
   }
 
   toAir (cooldown = 0.4) {
@@ -58005,351 +61253,12 @@ class Sim {
 __export(__exports, { "Sim": () => Sim })
 })
 
-// ---- js/ui/gamepad.js
-__define(15, function (__exports) {
-// A gamepad, any with the standard layout (Xbox, PlayStation and most others): the left stick steers
-// (and in the air pitches and rolls), the triggers are an analog throttle and brake, the right stick
-// looks round the car (and yaws it in the air), and the buttons press the keys they stand for, so
-// they do everything the keys do. It rumbles for knocks, kerbs, landings and crashes.
-//
-//   RT throttle   LT brake, reverse   A e-brake   RB boost (main thrusters)   LB fly (lift thrusters)
-//   X horn   Y camera   D-pad up / down backflip / kickflip   View reset   Menu Autopilot
-const BUTTONS = {
-  0: 'Space',
-  2: 'KeyH',
-  3: 'KeyV',
-  4: 'KeyF',
-  5: 'ShiftLeft',
-  8: 'KeyR',
-  9: 'KeyP',
-  12: 'KeyX',
-  13: 'KeyK'
-}
-const DEAD = 0.12
-// a stick's axis past its dead zone, rescaled to 0..1 and eased in, for fine control near the centre
-const axis = v => {
-  const a = Math.abs(v)
-  if (a < DEAD) return 0
-  const u = (a - DEAD) / (1 - DEAD)
-  return Math.sign(v) * u * (0.4 + 0.6 * u)
-}
-
-class Pad {
-  // press(code) and release(code): what pressing a key would do; onConnect(name): a pad is here
-  constructor ({ press, release, onConnect }) {
-    Object.assign(this, { press, release, onConnect })
-    this.index = -1
-    this.down = new Set()
-    this.steer = this.throttle = this.brake = 0
-    this.stickX = this.stickY = this.lookX = this.lookY = 0
-    this.active = false // the analog controls are in use
-    window.addEventListener('gamepadconnected', e => {
-      if (e.gamepad.mapping === 'standard') this.onConnect?.(e.gamepad.id)
-    })
-  }
-  get () {
-    // (a page in a frame the gamepads aren't allowed into gets none, rather than an error)
-    let pads = []
-    try {
-      pads = navigator.getGamepads?.() || []
-    } catch {}
-    const p = pads[this.index]
-    if (p?.connected) return p
-    this.index = -1
-    for (const q of pads)
-      if (q?.connected && q.mapping === 'standard') {
-        this.index = q.index
-        return q
-      }
-    return null
-  }
-  // once a frame: read the sticks and triggers, and press or release the buttons' keys
-  poll () {
-    const p = this.get()
-    if (!p) {
-      for (const code of this.down) this.release(code)
-      this.down.clear()
-      this.active = false
-      return
-    }
-    const b = p.buttons
-    this.stickX = axis(p.axes[0])
-    this.stickY = axis(p.axes[1])
-    this.lookX = axis(p.axes[2])
-    this.lookY = axis(p.axes[3])
-    this.throttle = b[7]?.value || 0
-    this.brake = b[6]?.value || 0
-    this.steer = -this.stickX
-    const on =
-      this.throttle > 0.05 || this.brake > 0.05 || Math.abs(this.stickX) > 0.05
-    // the first touch of the sticks or triggers takes the wheel, like a drive key
-    if (on && !this.active) this.press('Pad')
-    this.active = on
-    for (const [i, code] of Object.entries(BUTTONS)) {
-      const held = !!b[i]?.pressed
-      if (held && !this.down.has(code)) {
-        this.down.add(code)
-        this.press(code)
-      } else if (!held && this.down.has(code)) {
-        this.down.delete(code)
-        this.release(code)
-      }
-    }
-  }
-  // strong: the big low motor, weak: the small fast one (0..1), for ms
-  rumble (strong, weak, ms = 120) {
-    const p = this.index >= 0 ? this.get() : null
-    p?.vibrationActuator
-      ?.playEffect?.('dual-rumble', {
-        duration: ms,
-        strongMagnitude: Math.min(1, strong),
-        weakMagnitude: Math.min(1, weak)
-      })
-      .catch?.(() => {})
-  }
-}
-__export(__exports, { "Pad": () => Pad })
-})
-
-// ---- js/ui/input.js
-__define(16, function (__exports) {
-// Keyboard, gamepad and touch input: held drive keys, one-shot command keys, and the manual control
-// mapping (a gamepad's sticks and triggers are analog: gamepad.js).
-const { Pad } = __require(15)
-const { TRACK } = __require(8)
-const { BURN_V } = __require(11)
-const { clamp, makeControls } = __require(1)
-// The steering keys ease the wheel over rather than throwing it to full lock: full in KEY_T s at a
-// standstill and KEY_T_V s more per m/s (up to KEY_V_TOP m/s: past it the wheel turns no slower, as
-// the steering's reach is already small up there), so at speed a tap is a small correction, holding
-// the key a lane change, then a turn at the tyres' limit; with the handbrake pulled, or the car
-// sliding, as fast as at a standstill (a handbrake turn, a slide to catch). Let go and it comes back
-// KEY_BACK times as fast.
-const KEY_T = 0.1,
-  KEY_T_V = 0.008,
-  KEY_V_TOP = 35,
-  KEY_BACK = 2.5
-// The brake key squeezes the pedal rather than stamping on it: the brakes come on over BRAKE_T s,
-// as a foot pushes the pedal down and the calipers build pressure (about how long a real hard stop
-// takes to reach its full bite), so a tap slows the car a little and holding it is a full stop; let
-// go, they are off in BRAKE_OFF s. Held through a stop, it keeps the car on its brakes for STOP_HOLD
-// s, as a driver stops and then selects reverse, before it backs up (pressed afresh at a standstill
-// it backs up at once), the motor's pull easing in over BRAKE_T s.
-const BRAKE_T = 0.3,
-  BRAKE_OFF = 0.1,
-  STOP_HOLD = 0.5
-// k eased towards want (-1, 0 or 1) at up per s, and back to the middle at down per s
-function easeKey (k, want, up, down, dt) {
-  if (want !== 0 && k * want >= 0)
-    return want > 0 ? Math.min(want, k + up * dt) : Math.max(want, k - up * dt)
-  return k > 0 ? Math.max(0, k - down * dt) : Math.min(0, k + down * dt)
-}
-
-const DRIVE_KEYS = new Set([
-  'KeyW',
-  'KeyA',
-  'KeyS',
-  'KeyD',
-  'KeyQ',
-  'KeyE',
-  'KeyF',
-  'ArrowUp',
-  'ArrowDown',
-  'ArrowLeft',
-  'ArrowRight',
-  'Space',
-  'ShiftLeft',
-  'ShiftRight'
-])
-
-class Input {
-  // onDrive(code, firstPress) fires for held driving keys (and a gamepad's sticks and triggers),
-  // onCommand(code) for everything else, onRelease(code) when any key comes back up (the horn sounds
-  // for as long as H is held), and onPad(name) when a gamepad is plugged in
-  constructor ({ onDrive, onCommand, onRelease = () => {}, onPad }) {
-    this.keys = new Set()
-    this.stale = new Set() // held since before lift-off: they don't fly the car until pressed again
-    this.wasAir = false
-    this.lastT = -1
-    this.down = new Set() // every key held, drive or not
-    const press = code => {
-      if (code === 'Pad') return onDrive(code, true)
-      this.down.add(code)
-      if (DRIVE_KEYS.has(code)) {
-        const first = !this.keys.has(code)
-        this.keys.add(code)
-        this.stale.delete(code)
-        onDrive(code, first)
-      } else onCommand(code)
-    }
-    window.addEventListener('keydown', e => {
-      if (e.metaKey || e.ctrlKey || e.altKey) return
-      if (DRIVE_KEYS.has(e.code)) e.preventDefault()
-      if (!e.repeat) press(e.code)
-    })
-    const release = code => {
-      this.keys.delete(code)
-      if (this.down.delete(code)) onRelease(code)
-    }
-    window.addEventListener('keyup', e => release(e.code))
-    window.addEventListener('blur', () => {
-      for (const code of this.down) release(code)
-      this.keys.clear()
-    })
-    this.pad = new Pad({ press, release, onConnect: onPad })
-    this.padStale = false // a stick held over since before lift-off
-    // the brake key's pedal (0 to 1), the reverse it eases into, and how long it has held the car
-    // at a standstill (-1: not braked to one)
-    this.keyBrake = this.backing = 0
-    this.stopT = -1
-    // on-screen pad for touch screens: each button behaves like its key
-    for (const b of document.querySelectorAll('.tb')) {
-      const code = b.dataset.key
-      const down = e => {
-        e.preventDefault()
-        b.classList.add('active')
-        b.setPointerCapture?.(e.pointerId)
-        press(code)
-      }
-      const up = () => {
-        b.classList.remove('active')
-        release(code)
-      }
-      b.addEventListener('pointerdown', down)
-      b.addEventListener('pointerup', up)
-      b.addEventListener('pointercancel', up)
-      b.addEventListener('lostpointercapture', up)
-    }
-  }
-
-  // once a frame: the gamepad's buttons, sticks and triggers
-  poll () {
-    this.pad.poll()
-  }
-
-  // `fresh`: leave out keys still held from before lift-off
-  held (a, b, fresh = false) {
-    const on = k => this.keys.has(k) && !(fresh && this.stale.has(k))
-    return on(a) || (b !== undefined && on(b))
-  }
-
-  // Map held keys to controls. Same keys drive on the ground and fly in the air, but a key held
-  // through lift-off only flies once it is pressed again: W held for the run-up would otherwise
-  // pitch the nose straight back down into the ground.
-  controls (sim, fanMode) {
-    const c = makeControls()
-    const air = sim.mode === 'air'
-    // (the first call after the autopilot hands over, or after a reset, is not a lift-off)
-    const pad = this.pad
-    if (air && !this.wasAir && Math.abs(sim.time - this.lastT) < 0.05) {
-      for (const k of this.keys) this.stale.add(k)
-      this.padStale = Math.hypot(pad.stickX, pad.stickY) > 0.3
-    }
-    if (!air) this.stale.clear()
-    // (a stick that was steering only flies the car once it has come back to the middle)
-    if (!air || Math.hypot(pad.stickX, pad.stickY) < 0.2) this.padStale = false
-    this.wasAir = air
-    const dt = clamp(sim.time - this.lastT, 0, 0.05)
-    this.lastT = sim.time
-    const W = this.held('KeyW', 'ArrowUp', air),
-      S = this.held('KeyS', 'ArrowDown', air)
-    const A = this.held('KeyA', 'ArrowLeft', air),
-      D = this.held('KeyD', 'ArrowRight', air)
-    const nearWall =
-      sim.world === 'site' &&
-      sim.pos.x > TRACK.X0 - 25 &&
-      sim.pos.x < TRACK.towerX1 &&
-      Math.abs(sim.pos.z) < TRACK.W &&
-      Math.cos(sim.yaw) > 0.3
-    c.fan =
-      fanMode === 'on' ||
-      (fanMode === 'auto' && (sim.mode === 'ramp' || nearWall))
-    // Space is the handbrake, as in GTA; F (fly) fires the lift thrusters
-    c.ebrake = this.keys.has('Space')
-    c.main = this.held('ShiftLeft', 'ShiftRight') ? 1 : 0
-    c.lift = this.keys.has('KeyF') ? 1 : 0
-    // a key wins over the stick; the stick and triggers are analog
-    const or = (key, analog) => key || analog
-    if (air) {
-      this.keyBrake = this.backing = 0
-      this.stopT = -1
-      const live = !this.padStale
-      c.pitch = or((S ? 1 : 0) - (W ? 1 : 0), live ? pad.stickY : 0)
-      c.roll = or((D ? 1 : 0) - (A ? 1 : 0), live ? pad.stickX : 0)
-      c.yaw = or(
-        (this.keys.has('KeyQ') ? 1 : 0) - (this.keys.has('KeyE') ? 1 : 0),
-        -pad.lookX
-      )
-    } else {
-      c.throttle = Math.max(W ? 1 : 0, pad.throttle)
-      // (sliding: the rear axle running ten degrees or more off the line of the car)
-      const sliding = sim.mode === 'ground' && Math.abs(sim.slipR) > 0.17
-      const T =
-        c.ebrake || sliding
-          ? KEY_T
-          : KEY_T + KEY_T_V * Math.min(KEY_V_TOP, sim.groundSpeed())
-      this.keySteer = easeKey(
-        this.keySteer || 0,
-        (A ? 1 : 0) - (D ? 1 : 0),
-        1 / T,
-        KEY_BACK / T,
-        dt
-      )
-      c.steer = or(this.keySteer, pad.steer)
-      this.keyBrake = easeKey(
-        this.keyBrake,
-        S ? 1 : 0,
-        1 / BRAKE_T,
-        1 / BRAKE_OFF,
-        dt
-      )
-      const brake = Math.max(this.keyBrake, pad.brake)
-      // the throttle and the brake together at a crawl: a burnout (and with the wheel turned, a
-      // donut), as in GTA
-      let rev = false
-      if (
-        c.throttle > 0.5 &&
-        Math.max(S ? 1 : 0, pad.brake) > 0.5 &&
-        !c.ebrake &&
-        sim.mode === 'ground' &&
-        sim.groundSpeed() < BURN_V
-      )
-        c.burnout = true
-      else if (brake > 0.02) {
-        // S brakes while rolling forward, holds the car once it has stopped, then reverses (also
-        // back down the wall). (stopT: s held at a standstill after braking the car to it, -1 if
-        // it was pressed there)
-        const fwd = sim.mode === 'ramp' ? sim.v : sim.speed
-        if (fwd > 0.5) {
-          c.brake = brake
-          this.stopT = 0
-        } else if (this.stopT >= 0 && this.stopT < STOP_HOLD) {
-          c.brake = brake
-          this.stopT += dt
-        } else {
-          // (from holding the car, the motor's pull eases in; pressed at a standstill, the
-          // pedal or trigger is already easing in)
-          rev = true
-          c.reverse =
-            this.stopT >= 0
-              ? Math.min(brake, this.backing + dt / BRAKE_T)
-              : brake
-        }
-      } else this.stopT = -1
-      this.backing = rev ? c.reverse : 0
-    }
-    return c
-  }
-}
-__export(__exports, { "easeKey": () => easeKey, "DRIVE_KEYS": () => DRIVE_KEYS, "Input": () => Input })
-})
-
 // ---- js/sim/jam.js
-__define(17, function (__exports) {
+__define(36, function (__exports) {
 // The jammed street: one block of the central avenue, straight ahead of the city's spawn point,
 // stands gridlocked both ways, nose to tail, for the Roadster to jump. Its lanes are closed:
 // traffic and Autopilot go round, and a wrecked Roadster is never put back inside it.
-const { N, PITCH, ROAD_HW, nodeAt } = __require(4)
+const { N, PITCH, ROAD_HW, nodeAt } = __require(24)
 const west = nodeAt(2, N / 2),
   east = nodeAt(3, N / 2)
 const JAM = [...west.out[0], ...east.out[2]] // both lanes each way
@@ -58363,18 +61272,292 @@ const atJam = (x, z) =>
 __export(__exports, { "JAM": () => JAM, "JAM_AT": () => JAM_AT, "atJam": () => atJam })
 })
 
+// ---- js/ui/radarMap.js
+__define(37, function (__exports) {
+// The radar's map (minimap.js). The city inside the ring road is drawn once, a pixel a metre: the
+// streets, the blocks, parks and car parks, the buildings (lighter the taller). What lies round it is
+// drawn as shapes every time, so it stays sharp at any zoom, as the edges of the map are built
+// (sim/edge.js): the beach and the ocean to the west with the pier's deck and its big wheel, the
+// verges out to the walls on the other three sides, the hills past the north wall, the freeways past
+// the east and south walls, and more city out of reach beyond them.
+const { N, HALF, EDGE, WALK, PITCH, CURB_R, BLOCKS, ROAD_HW, BUILDINGS } = __require(24)
+const { COAST, HILLS, LANDMARKS } = __require(2)
+const { WALL, SHORE, PIER } = __require(27)
+const MAP = {
+  road: '#9ba1a9',
+  block: '#4a4f58',
+  park: '#4f7048',
+  lot: '#555b64',
+  low: '#575d67', // buildings by height
+  mid: '#626873',
+  tall: '#6e7581',
+  far: '#7d838b', // the city out of reach: its streets and blocks
+  farBlock: '#474c54',
+  hills: '#4b573f',
+  contour: 'rgba(170, 192, 140, 0.3)',
+  sand: '#bba97d',
+  water: '#3f7197',
+  deep: '#365f83',
+  pier: '#8f8068',
+  verge: '#56654a',
+  wall: '#c9ccd1',
+  freeway: '#8a9099',
+  lane: 'rgba(240, 242, 245, 0.35)'
+}
+// a lot's ground on the map, by what it is (city.js's blocks: plots.js)
+const GROUND = { grass: MAP.park, asphalt: MAP.lot, pool: MAP.water }
+const FAR = 6000 // m: how far the shapes reach (well past anything the radar shows)
+// the four sides, as the way out from the middle
+const OUT = { east: [1, 0], south: [0, 1], west: [-1, 0], north: [0, -1] }
+const angleOf = side => Math.atan2(OUT[side][1], OUT[side][0])
+
+// the city inside the ring road's outer pavement, once: { canvas, ext } (ext: m from the middle)
+function cityMap () {
+  const ext = Math.ceil(EDGE + 1),
+    cv = document.createElement('canvas')
+  cv.width = cv.height = ext * 2
+  const g = cv.getContext('2d')
+  g.translate(ext, ext)
+  g.fillStyle = MAP.block // (the ring road's outer pavement)
+  g.fillRect(-EDGE, -EDGE, EDGE * 2, EDGE * 2)
+  const r = HALF + ROAD_HW
+  g.fillStyle = MAP.road
+  g.fillRect(-r, -r, r * 2, r * 2)
+  for (const b of BLOCKS) {
+    g.fillStyle =
+      b.kind === 'park' ? MAP.park : b.kind === 'parking' ? MAP.lot : MAP.block
+    g.beginPath()
+    g.roundRect(b.x0, b.z0, b.x1 - b.x0, b.z1 - b.z0, CURB_R)
+    g.fill()
+    // (on a lot: its lawns, car parks and pools, inside the pavement round the block)
+    const lot =
+      b.base === 'grass' ? MAP.park : b.base === 'asphalt' ? MAP.lot : 0
+    if (lot && b.kind !== 'park') {
+      g.fillStyle = lot
+      g.fillRect(
+        b.x0 + WALK,
+        b.z0 + WALK,
+        b.x1 - b.x0 - 2 * WALK,
+        b.z1 - b.z0 - 2 * WALK
+      )
+    }
+    for (const r of b.ground || []) {
+      const c = GROUND[r.k]
+      if (!c) continue
+      g.fillStyle = c
+      g.fillRect(r.x0, r.z0, r.x1 - r.x0, r.z1 - r.z0)
+    }
+  }
+  for (const b of BUILDINGS) {
+    g.fillStyle = b.h < 15 ? MAP.low : b.h < 45 ? MAP.mid : MAP.tall
+    g.fillRect(b.x0, b.z0, b.x1 - b.x0, b.z1 - b.z0)
+  }
+  return { canvas: cv, ext }
+}
+
+// the shoreline and the hills' contours, made once, drawn as if the coast were west and the hills
+// north (drawSurroundings turns them to where they are)
+let SEA = null,
+  CONTOURS = null
+function shapes () {
+  SEA = new Path2D()
+  SEA.moveTo(-FAR, -FAR)
+  for (let z = -FAR; z <= FAR; z += 25)
+    SEA.lineTo(-SHORE + 2.5 * Math.sin(z / 37) + 1.5 * Math.sin(z / 11), z)
+  SEA.lineTo(-FAR, FAR)
+  SEA.closePath()
+  CONTOURS = new Path2D()
+  for (const d of [45, 100, 170, 250, 340, 450, 580, 730]) {
+    for (let x = -FAR; x <= FAR; x += 30) {
+      const z =
+        -WALL -
+        d +
+        (8 + d * 0.05) * Math.sin(x / 170 + d) +
+        (3 + d * 0.02) * Math.sin(x / 61 + 2 * d)
+      if (x === -FAR) CONTOURS.moveTo(x, z)
+      else CONTOURS.lineTo(x, z)
+    }
+  }
+}
+
+// what lies round the city, under the map. The canvas is in world metres (minimap.js); p: the
+// middle of the view, reach: as far from it as the radar sees (m), px: metres a screen pixel
+function drawSurroundings (g, p, reach, px) {
+  if (!SEA) shapes()
+  // more city all round, out of reach: its streets, and its blocks near the view
+  g.fillStyle = MAP.far
+  g.fillRect(p.x - reach, p.z - reach, reach * 2, reach * 2)
+  g.fillStyle = MAP.farBlock
+  const i0 = Math.floor((p.x - reach + HALF) / PITCH),
+    i1 = Math.ceil((p.x + reach + HALF) / PITCH),
+    j0 = Math.floor((p.z - reach + HALF) / PITCH),
+    j1 = Math.ceil((p.z + reach + HALF) / PITCH),
+    w = PITCH - 2 * ROAD_HW
+  g.beginPath()
+  for (let i = i0; i <= i1; i++)
+    for (let j = j0; j <= j1; j++) {
+      if (i >= 0 && i < N && j >= 0 && j < N) continue // (the city's own, on the map)
+      g.roundRect(
+        i * PITCH - HALF + ROAD_HW,
+        j * PITCH - HALF + ROAD_HW,
+        w,
+        w,
+        CURB_R
+      )
+    }
+  g.fill()
+  // the freeways behind the sound walls, their decks with a line down each carriageway
+  for (const f of LANDMARKS.freeways || []) {
+    g.strokeStyle = MAP.freeway
+    g.lineWidth = 28
+    g.beginPath()
+    g.moveTo(f.x0, f.z0)
+    g.lineTo(f.x1, f.z1)
+    g.stroke()
+    g.strokeStyle = MAP.lane
+    g.lineWidth = 1.2 * px
+    g.stroke()
+  }
+  // the verges out to the walls, and the walls
+  g.fillStyle = MAP.verge
+  g.fillRect(-WALL, -WALL, WALL * 2, WALL * 2)
+  g.strokeStyle = MAP.wall
+  g.lineWidth = Math.max(1.5, 1.6 * px)
+  g.beginPath()
+  g.moveTo(-EDGE, -WALL)
+  g.lineTo(WALL, -WALL)
+  g.lineTo(WALL, WALL)
+  g.lineTo(-EDGE, WALL)
+  g.stroke()
+  // the hills, with their contours
+  g.save()
+  g.rotate(angleOf(HILLS) - angleOf('north'))
+  g.fillStyle = MAP.hills
+  g.fillRect(-FAR, -FAR, FAR * 2, FAR - WALL - 1)
+  g.strokeStyle = MAP.contour
+  g.lineWidth = 1.3 * px
+  g.stroke(CONTOURS)
+  g.restore()
+  // the beach and the ocean, deeper further out
+  g.save()
+  g.rotate(angleOf(COAST) - angleOf('west'))
+  g.fillStyle = MAP.sand
+  g.fillRect(-FAR, -WALL, FAR - EDGE, WALL * 2)
+  g.fillStyle = MAP.water
+  g.fill(SEA)
+  g.fillStyle = MAP.deep
+  g.fillRect(-FAR, -FAR, FAR - SHORE - 140, FAR * 2)
+  g.restore()
+  pier(g)
+}
+
+// the pier's deck, out from the promenade into the sea, and its big wheel
+function pier (g) {
+  if (!PIER?.deck) return
+  g.fillStyle = MAP.pier
+  for (const d of PIER.deck) g.fillRect(d.x0, d.z0, d.x1 - d.x0, d.z1 - d.z0)
+  if (PIER.wheel) {
+    g.strokeStyle = MAP.wall
+    g.lineWidth = 2.5
+    g.beginPath()
+    g.arc(PIER.wheel.x, PIER.wheel.z, 7, 0, Math.PI * 2)
+    g.stroke()
+  }
+}
+__export(__exports, { "MAP": () => MAP, "cityMap": () => cityMap, "drawSurroundings": () => drawSurroundings })
+})
+
 // ---- js/ui/minimap.js
-__define(18, function (__exports) {
-// GTA-style radar for the city: the street map turns under a fixed arrow, heading-up with the
-// camera, zooming out with speed; traffic shows as dots, wrecks in amber, the jammed street as a
-// gold blip.
-const { JAM_AT } = __require(17)
-const { HALF, CURB_R, BLOCKS, ROAD_HW, BUILDINGS, PROMENADE } = __require(4)
+__define(38, function (__exports) {
+// GTA V-style radar for the city: a rounded rectangle, the map turning under the car's arrow
+// (heading-up, with the camera), zooming out with speed and with height; traffic as dots, wrecks in
+// amber, the jammed street as a gold blip, the landmarks (the pier, the sign) as blips held on the
+// rim while they are off the map, and the north marker on the rim. The map itself: radarMap.js.
+const { JAM_AT } = __require(36)
+const { LANDMARKS } = __require(2)
+const { cityMap, drawSurroundings } = __require(37)
+const TAU = Math.PI * 2
+const REF_H = 150 // CSS px: the radar height its marks are sized for (they scale with it)
+const AHEAD = 0.66 // the arrow sits this far down: more road ahead than behind
+const SPAN = 170 // m the radar's height covers at a standstill...
+const SPAN_V = 250 // ...this much more at speed (from 45 m/s)...
+const SPAN_UP = 320 // ...and up to this much more the higher the car flies
+const RIM = 11 // px in from the edge that a blip off the map is held at
 const DOTS = [
-  { color: '#6d747e', is: car => !car.loose && !!car.parked },
-  { color: '#d6dbe2', is: car => !car.loose && !car.parked },
-  { color: '#e0a92a', is: car => !!car.loose }
+  { color: '#2f343b', r: 2, is: car => !car.loose && !!car.parked },
+  { color: '#f1f3f5', r: 2.3, is: car => !car.loose && !car.parked },
+  { color: '#f0a12a', r: 2.7, is: car => !!car.loose }
 ]
+// a blip's glyph, drawn round (0, 0) at scale k
+const GLYPHS = {
+  // the gridlock: a jump
+  jam (g, k) {
+    g.moveTo(-3 * k, 1.8 * k)
+    g.lineTo(0, -1.6 * k)
+    g.lineTo(3 * k, 1.8 * k)
+  },
+  // the pier: its big wheel
+  pier (g, k) {
+    const r = 3.3 * k
+    g.moveTo(r, 0)
+    g.arc(0, 0, r, 0, TAU)
+    for (let i = 0; i < 4; i++) {
+      const a = (i * Math.PI) / 4
+      g.moveTo(Math.cos(a) * r, Math.sin(a) * r)
+      g.lineTo(-Math.cos(a) * r, -Math.sin(a) * r)
+    }
+  },
+  // the sign on the hills: the peaks it stands on
+  sign (g, k) {
+    g.moveTo(-4 * k, 2.6 * k)
+    g.lineTo(-1.2 * k, -2 * k)
+    g.lineTo(0.6 * k, 0.6 * k)
+    g.lineTo(1.9 * k, -0.9 * k)
+    g.lineTo(4 * k, 2.6 * k)
+  }
+}
+const COLOR = { jam: '#f0c24b' }
+
+// this frame's view: the middle of the map (px, pz), the turn and zoom (c, s), the arrow's place
+// (cx, cy), the radar's size (W, H) and the rim a blip is held at (m), all in device pixels
+const V = { px: 0, pz: 0, c: 0, s: 0, cx: 0, cy: 0, W: 0, H: 0, m: 0 }
+// where (x, z) in the world goes on the radar: where it is, or on the rim towards it while that is
+// off the map (along the line from the arrow)
+const _b = { x: 0, y: 0 }
+function toRadar (x, z) {
+  const dx = x - V.px,
+    dz = z - V.pz
+  const vx = dx * V.c - dz * V.s,
+    vy = dx * V.s + dz * V.c
+  const bx = V.cx + vx,
+    by = V.cy + vy
+  let t = 1
+  if (bx < V.m) t = Math.min(t, (V.m - V.cx) / vx)
+  if (bx > V.W - V.m) t = Math.min(t, (V.W - V.m - V.cx) / vx)
+  if (by < V.m) t = Math.min(t, (V.m - V.cy) / vy)
+  if (by > V.H - V.m) t = Math.min(t, (V.H - V.m - V.cy) / vy)
+  _b.x = V.cx + vx * t
+  _b.y = V.cy + vy * t
+  return _b
+}
+
+function blip (g, x, y, k, fill, glyph) {
+  g.save()
+  g.translate(x, y)
+  g.beginPath()
+  g.arc(0, 0, 6.5 * k, 0, TAU)
+  g.fillStyle = fill
+  g.fill()
+  g.lineWidth = 1.5 * k
+  g.strokeStyle = 'rgba(10, 12, 18, 0.9)'
+  g.stroke()
+  if (glyph) {
+    g.beginPath()
+    glyph(g, k)
+    g.stroke()
+  }
+  g.restore()
+}
 
 class Minimap {
   constructor (canvas) {
@@ -58382,140 +61565,144 @@ class Minimap {
     this.g = canvas.getContext('2d')
     this.map = null
     this.clock = 0
-    this.zoom = 1.2
+    this.zoom = 0
   }
-  // the whole city drawn once at 1 px per metre
-  drawMap () {
-    const ext = Math.ceil(PROMENADE + 20),
-      cv = document.createElement('canvas')
-    cv.width = cv.height = ext * 2
-    const g = cv.getContext('2d')
-    g.translate(ext, ext)
-    g.fillStyle = '#2c3127'
-    g.fillRect(-ext, -ext, ext * 2, ext * 2)
-    const r = HALF + ROAD_HW
-    g.fillStyle = '#8a9099'
-    g.fillRect(-r, -r, r * 2, r * 2)
-    for (const b of BLOCKS) {
-      g.fillStyle =
-        b.kind === 'park'
-          ? '#3f6440'
-          : b.kind === 'parking'
-          ? '#454b54'
-          : '#3a4049'
-      g.beginPath()
-      g.roundRect(b.x0, b.z0, b.x1 - b.x0, b.z1 - b.z0, CURB_R)
-      g.fill()
-    }
-    g.fillStyle = '#4c535e'
-    for (const b of BUILDINGS) g.fillRect(b.x0, b.z0, b.x1 - b.x0, b.z1 - b.z0)
-    this.map = cv
-    this.ext = ext
-  }
+
   // heading: the camera's yaw, so the map turns with the view
   update (dt, sim, traffic, heading) {
     this.clock += dt
     if (this.clock < 1 / 30) return
+    dt = this.clock
     this.clock = 0
-    if (!this.map) this.drawMap()
     const cv = this.cv,
       dpr = Math.min(2, window.devicePixelRatio || 1)
-    const size = Math.round(cv.clientWidth * dpr)
-    if (!size) return
-    if (cv.width !== size) cv.width = cv.height = size
+    const W = Math.round(cv.clientWidth * dpr),
+      H = Math.round(cv.clientHeight * dpr)
+    if (!W || !H) return
+    if (cv.width !== W || cv.height !== H) {
+      cv.width = W
+      cv.height = H
+    }
+    if (!this.map) this.map = cityMap()
     const g = this.g,
-      c = size / 2
+      k = H / REF_H
     const p = sim.mode === 'ground' ? sim.pos : sim.com
-    const want = (size / 172) * (1.5 - Math.min(0.9, sim.groundSpeed() / 70))
-    this.zoom += (want - this.zoom) * 0.15
-    g.clearRect(0, 0, size, size)
+    // (a block and a half at a standstill, more at speed, more again in the air)
+    const up = sim.mode === 'ground' ? 0 : Math.max(0, p.y - (sim.floor || 0))
+    const span =
+      SPAN +
+      Math.min(1, sim.groundSpeed() / 45) * SPAN_V +
+      Math.min(SPAN_UP, up * 3)
+    const want = H / span
+    this.zoom = this.zoom
+      ? this.zoom + (want - this.zoom) * Math.min(1, dt * 3)
+      : want
+    const z = this.zoom,
+      ang = heading - Math.PI / 2
+    V.px = p.x
+    V.pz = p.z
+    V.c = Math.cos(ang) * z
+    V.s = Math.sin(ang) * z
+    V.cx = W / 2
+    V.cy = H * AHEAD
+    V.W = W
+    V.H = H
+    V.m = RIM * k
     g.save()
     g.beginPath()
-    g.arc(c, c, c - 1, 0, Math.PI * 2)
+    g.roundRect(0, 0, W, H, 9 * dpr)
     g.clip()
-    g.translate(c, c * 1.18) // a little more road ahead than behind
-    g.rotate(heading - Math.PI / 2)
-    g.scale(this.zoom, this.zoom)
+    // the map, in world metres: turned so the camera's view is up
+    g.translate(V.cx, V.cy)
+    g.rotate(ang)
+    g.scale(z, z)
     g.translate(-p.x, -p.z)
-    g.drawImage(this.map, -this.ext, -this.ext)
-    const reach = (c * 1.4) / this.zoom
-    // (parked cars, then moving ones, then wrecks on top: one colour set for each)
+    drawSurroundings(g, p, Math.hypot(W, H) / z, 1 / z)
+    g.drawImage(this.map.canvas, -this.map.ext, -this.map.ext)
+    // the rest in screen pixels
+    g.setTransform(1, 0, 0, 1, 0, 0)
+    this.dots(g, traffic, k)
+    // the landmarks and the gridlock, held on the rim while they are off the map
+    for (const name in LANDMARKS) {
+      const at = toRadar(LANDMARKS[name].x, LANDMARKS[name].z)
+      blip(g, at.x, at.y, k, COLOR[name] || '#f2f2f2', GLYPHS[name])
+    }
+    const jam = toRadar(JAM_AT.x, JAM_AT.z)
+    blip(g, jam.x, jam.y, k, COLOR.jam, GLYPHS.jam)
+    this.arrow(g, sim, heading, k)
+    this.north(g, k)
+    g.restore()
+  }
+
+  // traffic: parked cars, moving ones, then wrecks on top, one colour at a time
+  dots (g, traffic, k) {
+    const { px, pz, c, s, cx, cy, W, H } = V
+    g.lineWidth = k
+    g.strokeStyle = 'rgba(0, 0, 0, 0.5)'
     for (const kind of DOTS) {
+      const r = kind.r * k
       g.fillStyle = kind.color
+      g.beginPath()
       for (const car of traffic.cars) {
         if (!kind.is(car)) continue
-        if (Math.abs(car.x - p.x) > reach || Math.abs(car.z - p.z) > reach)
-          continue
-        g.fillRect(car.x - 1.8, car.z - 1.8, 3.6, 3.6)
+        const dx = car.x - px,
+          dz = car.z - pz
+        const x = cx + dx * c - dz * s,
+          y = cy + dx * s + dz * c
+        if (x < -r || y < -r || x > W + r || y > H + r) continue
+        g.moveTo(x + r, y)
+        g.arc(x, y, r, 0, TAU)
       }
+      g.fill()
+      g.stroke()
     }
-    g.restore()
-    // the jammed street: a gold blip with a jump chevron, held on the rim while it is off the map
-    const k = size / 172,
-      ang = heading - Math.PI / 2,
-      dx = JAM_AT.x - p.x,
-      dz = JAM_AT.z - p.z
-    let bx = (dx * Math.cos(ang) - dz * Math.sin(ang)) * this.zoom,
-      by = (dx * Math.sin(ang) + dz * Math.cos(ang)) * this.zoom + c * 0.18
-    const rim = c - 12 * k,
-      d = Math.hypot(bx, by)
-    if (d > rim) {
-      bx *= rim / d
-      by *= rim / d
-    }
+  }
+
+  // the Roadster: a white arrow at the middle, turned by how far it points from the camera
+  arrow (g, sim, heading, k) {
+    const f = sim.fwd(),
+      yaw = Math.atan2(-f.z, f.x)
     g.save()
-    g.translate(c + bx, c + by)
-    g.fillStyle = '#d6a84e'
-    g.strokeStyle = 'rgba(10,12,18,0.9)'
-    g.lineWidth = 1.5 * k
-    g.beginPath()
-    g.arc(0, 0, 6.5 * k, 0, Math.PI * 2)
-    g.fill()
-    g.stroke()
-    g.beginPath()
-    g.moveTo(-3 * k, 1.8 * k)
-    g.lineTo(0, -1.6 * k)
-    g.lineTo(3 * k, 1.8 * k)
-    g.stroke()
-    g.restore()
-    // the Roadster: an arrow at the centre, turned by how far it points from the camera
-    const yaw = Math.atan2(-sim.fwd().z, sim.fwd().x)
-    g.save()
-    g.translate(c, c * 1.18)
+    g.translate(V.cx, V.cy)
     g.rotate(heading - yaw)
-    g.fillStyle = '#ff3b3b'
-    g.strokeStyle = '#fff'
-    g.lineWidth = 1.5 * (size / 172)
-    const a = 8 * (size / 172)
+    const a = 7.5 * k
     g.beginPath()
     g.moveTo(0, -a)
-    g.lineTo(a * 0.7, a * 0.8)
-    g.lineTo(0, a * 0.4)
-    g.lineTo(-a * 0.7, a * 0.8)
+    g.lineTo(a * 0.72, a * 0.85)
+    g.lineTo(0, a * 0.42)
+    g.lineTo(-a * 0.72, a * 0.85)
     g.closePath()
+    g.fillStyle = '#fff'
     g.fill()
+    g.lineWidth = 1.6 * k
+    g.strokeStyle = 'rgba(0, 0, 0, 0.75)'
     g.stroke()
     g.restore()
-    // north marker on the rim
-    const n = heading - Math.PI / 2 - Math.PI / 2
-    const nx = c + Math.cos(n) * (c - 11 * (size / 172)),
-      ny = c + Math.sin(n) * (c - 11 * (size / 172))
-    g.fillStyle = 'rgba(10,12,18,0.85)'
+  }
+
+  // north, on the rim
+  north (g, k) {
+    const n = toRadar(V.px, V.pz - 1e5)
     g.beginPath()
-    g.arc(nx, ny, 8 * (size / 172), 0, Math.PI * 2)
+    g.arc(n.x, n.y, 7 * k, 0, TAU)
+    g.fillStyle = 'rgba(10, 12, 18, 0.88)'
     g.fill()
-    g.fillStyle = '#eef0f2'
-    g.font = `600 ${10 * (size / 172)}px "JetBrains Mono", monospace`
+    g.fillStyle = '#f2f2f2'
+    if (this.fontK !== k) {
+      this.fontK = k
+      this.font = `800 ${10 * k}px "Saira Semi Condensed", sans-serif`
+    }
+    g.font = this.font
     g.textAlign = 'center'
     g.textBaseline = 'middle'
-    g.fillText('N', nx, ny + 0.5)
+    g.fillText('N', n.x, n.y + 0.5 * k)
   }
 }
 __export(__exports, { "Minimap": () => Minimap })
 })
 
 // ---- vendor/three/addons/environments/RoomEnvironment.js
-__define(19, function (__exports) {
+__define(39, function (__exports) {
 /**
  * https://github.com/google/model-viewer/blob/master/packages/model-viewer/src/three-components/EnvironmentScene.ts
  */
@@ -58654,12 +61841,12 @@ __export(__exports, { "RoomEnvironment": () => RoomEnvironment })
 })
 
 // ---- js/render/scene.js
-__define(20, function (__exports) {
+__define(40, function (__exports) {
 // Renderer, scene, procedural textures, shared materials, lights and the test-site surroundings.
 // Everything that belongs to the test site hangs off `site`, so it can be hidden for the city.
 const THREE = __require(0)
-const { TAU } = __require(1)
-const { RoomEnvironment } = __require(19)
+const { TAU } = __require(4)
+const { RoomEnvironment } = __require(39)
 const canvas = document.getElementById('c')
 let renderer
 try {
@@ -59045,7 +62232,7 @@ __export(__exports, { "canvas": () => canvas, "renderer": () => renderer, "scene
 })
 
 // ---- js/render/smoke.js
-__define(21, function (__exports) {
+__define(41, function (__exports) {
 // Smoke, vapor and dust. Each puff is carried by the air rather than flung: it relaxes towards the air
 // around it, which is a light breeze, a swirl that changes from place to place (so a cloud billows and
 // curls instead of drifting off in one piece) and the wake the car drags along behind it. Hot tyre
@@ -59055,8 +62242,8 @@ __define(21, function (__exports) {
 // at the edges against the low sun, darker on the side away from it), faded where they meet the ground
 // and in the haze, and sorted far to near so the clouds layer properly.
 const THREE = __require(0)
-const { TAU } = __require(1)
-const { scene, key, hemi, keyOffset } = __require(20)
+const { TAU } = __require(4)
+const { scene, key, hemi, keyOffset } = __require(40)
 // Kinds of smoke: colour (albedo), life (s), start and end size (m), opacity, drag towards the air
 // (1/s), buoyancy (m/s^2: + rises, - sinks) and how long it lasts before the puff is at the air's
 // temperature (s), the strength of the swirl (m/s) and how much of its fall a puff turns into spread
@@ -59523,7 +62710,7 @@ __export(__exports, { "VAPOR": () => VAPOR, "TYRE": () => TYRE, "DUST": () => DU
 })
 
 // ---- js/render/geo.js
-__define(22, function (__exports) {
+__define(42, function (__exports) {
 // Geometry helpers for the city: merging thousands of small pieces into a handful of buffers (so a
 // whole district draws in a few calls), vertex tints, and instanced flat marks for road paint.
 const THREE = __require(0)
@@ -59607,7 +62794,7 @@ __export(__exports, { "LAYER": () => LAYER, "merge": () => merge, "tint": () => 
 })
 
 // ---- js/render/loft.js
-__define(23, function (__exports) {
+__define(43, function (__exports) {
 // Lofted bodies: a half section swept through stations along x and mirrored to both sides, with
 // normals smoothed across gentle bends and kept sharp at creases, so a body reads as smooth panels
 // with crisp character lines. Used for the Roadster and the traffic cars.
@@ -59791,15 +62978,15 @@ __export(__exports, { "loftGeos": () => loftGeos, "loft": () => loft, "creaseNor
 })
 
 // ---- js/render/optimus.js
-__define(24, function (__exports) {
+__define(44, function (__exports) {
 // Optimus, the Roadster's driver, after the Gen 2 robot: satin white shells over black actuators, a
 // gloss black egg of a head ringed in cyan, a black yoke across the shoulders, a boxy chest over a
 // black belly, ribbed elbow pads, black shin actuators and jointed silver hands. Built on a skeleton
 // of joints (facing +x, up +y, hips at the root), each joint's parts merged into one mesh per
 // material, and posed by a walk cycle or by reaching its feet and hands for given points.
 const THREE = __require(0)
-const { merge } = __require(22)
-const { creaseNormals } = __require(23)
+const { merge } = __require(42)
+const { creaseNormals } = __require(43)
 const WHITE = new THREE.MeshPhysicalMaterial({
   color: 0xd8dadd,
   roughness: 0.4,
@@ -60370,16 +63557,16 @@ __export(__exports, { "HIP_STAND": () => HIP_STAND, "buildOptimus": () => buildO
 })
 
 // ---- js/render/roadsterCabin.js
-__define(25, function (__exports) {
+__define(45, function (__exports) {
 // The Roadster's cabin, seen through the glass and the open doors and from the driver's seat (the
 // Cockpit camera): a black tub with two bucket seats, the console between them, dark linings behind
 // the doors, the dash under the windshield with a touchscreen on it (the speed, the drive selector,
 // power and regen, and a map of the streets round the car, turning with it), and the yoke, which
 // turns with the steering, Optimus's hands going round with its grips.
 const THREE = __require(0)
-const { MAT } = __require(20)
-const { ROADS, ROAD_HW } = __require(4)
-const { ANKLE_UP, poseOptimus } = __require(24)
+const { MAT } = __require(40)
+const { ROADS, ROAD_HW } = __require(24)
+const { ANKLE_UP, poseOptimus } = __require(44)
 // The yoke, its grips either side of the hub, and the driver: Optimus sat back in the bucket seat, feet
 // on the floor and hands round the grips
 const YOKE = [-0.02, 0.7, -0.36]
@@ -60587,7 +63774,7 @@ __export(__exports, { "YOKE": () => YOKE, "DRIVER": () => DRIVER, "buildCabin": 
 })
 
 // ---- js/render/intro.js
-__define(26, function (__exports) {
+__define(46, function (__exports) {
 // The city's opening scene: Optimus walks up to the parked Roadster from behind (the camera low at
 // its heels, like the reveal's photo) as the driver's door swings up, and gets in the way a person
 // gets into a low car: the inside foot over the sill into the footwell, ducking under the roof rail
@@ -60596,9 +63783,9 @@ __define(26, function (__exports) {
 // door is down (onCue hears 'unlock' and 'lock'). Any drive key skips it, locking the car at once.
 // While it runs it owns the camera; when it ends the follow camera eases in from wherever it left off.
 const THREE = __require(0)
-const { clamp } = __require(1)
-const { DRIVER, YOKE } = __require(25)
-const { poseOptimus, HIP_STAND, ANKLE_UP } = __require(24)
+const { clamp } = __require(4)
+const { DRIVER, YOKE } = __require(45)
+const { poseOptimus, HIP_STAND, ANKLE_UP } = __require(44)
 const T = {
   walk: 4.4, // reaches the door
   unlock: 2.6,
@@ -60875,7 +64062,7 @@ __export(__exports, { "Intro": () => Intro })
 })
 
 // ---- js/render/tween.js
-__define(27, function (__exports) {
+__define(47, function (__exports) {
 // Drawing between physics steps. The sim runs at a fixed 120 Hz and the screen at whatever rate it
 // likes (60, 120, 144 Hz, never quite even), so a frame lands part of the way through a step. Drawn
 // as the last step left it, the car (and the traffic, and the camera chasing the car) moves on by 0,
@@ -60883,7 +64070,7 @@ __define(27, function (__exports) {
 // air. So for each frame the sim is put that fraction of the way from the step before to the last
 // one, drawn, and put back exactly as it was before the next step.
 const THREE = __require(0)
-const { wrapPi } = __require(1)
+const { wrapPi } = __require(4)
 const FAR = 25 // m², a jump further than this in one step is a reset: no blending across it
 
 class Tween {
@@ -60972,7 +64159,7 @@ __export(__exports, { "Tween": () => Tween })
 })
 
 // ---- js/sim/crowd.js
-__define(28, function (__exports) {
+__define(48, function (__exports) {
 // How people on foot behave beyond getting about (peds.js), mixed into Peds: some walk in pairs,
 // some stand about (on the phone, chatting, waiting), a few jog; heads turn to follow the Roadster
 // when it goes by loud and fast; and when it drives along the pavement, crashes, comes down from the
@@ -60980,10 +64167,10 @@ __define(28, function (__exports) {
 // (screaming: peds.panic counts them, peds.scream those who have just started), and calm down a few
 // seconds later. Now and then someone jaywalks, straight over the street from the pavement, once
 // they have looked and the traffic is far enough off to stop for them (it does: traffic.peds).
-const { atJam } = __require(17)
-const { clamp, wrapPi } = __require(1)
-const { kerbDist } = __require(10)
-const { N, PITCH, HALF, ROAD_HW, BLOCKS } = __require(4)
+const { atJam } = __require(36)
+const { clamp, wrapPi } = __require(4)
+const { kerbDist } = __require(30)
+const { N, PITCH, HALF, ROAD_HW, BLOCKS } = __require(24)
 const KERB = ROAD_HW + 0.5
 const STILL = ['phone', 'wait', 'chat'] // what someone standing about is doing
 
@@ -61288,13 +64475,13 @@ __export(__exports, { "CROWD": () => CROWD })
 })
 
 // ---- js/sim/manners.js
-__define(29, function (__exports) {
+__define(49, function (__exports) {
 // Traffic drivers' manners: indicators for lane changes and turns (on before the car moves over),
 // hazards on a car knocked loose (wrecks.js), honking at a Roadster that holds them up or cuts them
 // up (sooner for an impatient driver), an impatient toot stuck behind something that won't move, and
 // getting out of the way when the Roadster honks at them from behind: over to the kerb lane, or
 // tucked in towards the kerb and slowing to let it by.
-const { LANE_OFF } = __require(4)
+const { LANE_OFF } = __require(24)
 // Indicators, a honk at a Roadster in the way (mine: it is what holds the car up), and moving over
 // when it honks from behind.
 function temper (tr, car, dt, mine, gap, acc) {
@@ -61366,7 +64553,7 @@ __export(__exports, { "temper": () => temper, "honk": () => honk })
 })
 
 // ---- js/sim/react.js
-__define(30, function (__exports) {
+__define(50, function (__exports) {
 // How traffic reacts to the Roadster, mixed into Traffic (traffic.js), the way GTA's drivers do: one
 // coming at a car, or cutting in hard in front of it, has its driver stamp on the brakes and swerve
 // away from it with a blast of the horn; the Roadster coming down on the road from the air panics
@@ -61374,9 +64561,9 @@ __define(30, function (__exports) {
 // what drivers do about whatever holds them up: two cars each waiting for the other to move (turning
 // across each other in a junction) sort it out, the one that came in later backing up to let the
 // other by.
-const { clamp } = __require(1)
-const { NODES, LANE_OFF, ROAD_HW } = __require(4)
-const { honk } = __require(29)
+const { clamp } = __require(4)
+const { NODES, LANE_OFF, ROAD_HW } = __require(24)
+const { honk } = __require(49)
 const REACT = {
   // The Roadster bearing down on this car: closing fast, in its path (or about to be) within about a
   // second and a half.
@@ -61574,11 +64761,11 @@ __export(__exports, { "REACT": () => REACT })
 })
 
 // ---- js/sim/sight.js
-__define(31, function (__exports) {
+__define(51, function (__exports) {
 // What a traffic driver sees, mixed into Traffic (traffic.js): the car ahead in its path, the
 // Roadster or a knocked or crossing car in the way, the oncoming traffic a left turn would cut, and
 // whether there is room beyond a junction to pull into it.
-const { DIRS, pointAt } = __require(4)
+const { DIRS, pointAt } = __require(24)
 const LOOK = 70 // m a driver watches ahead
 const STOP_DECEL = 4 // on yellow, go if stopping would need more than this
 
@@ -61857,17 +65044,17 @@ __export(__exports, { "LOOK": () => LOOK, "STOP_DECEL": () => STOP_DECEL, "OB": 
 })
 
 // ---- js/sim/wrecks.js
-__define(32, function (__exports) {
+__define(52, function (__exports) {
 // Traffic knocked out of its lane: the Roadster's hits on cars, the slide to a stop on locked-up
 // tyres (off walls and posts, through a post it hits hard enough to snap, and into other cars, which
 // it knocks loose in turn), and what the driver does then: sits there a few seconds with the hazards
 // on (leaning on the horn if the Roadster is still about), then, if the car is still more or less
 // on its road and facing the right way, steers back into the lane and drives on.
-const { query } = __require(4)
-const { honk } = __require(29)
-const { CAR } = __require(1)
-const { snap } = __require(6)
-const { BODY, nudge, boxRect, impulse, carRect, rectRect, rectPost, loadBody, storeBody, playerRect } = __require(7)
+const { query } = __require(24)
+const { honk } = __require(49)
+const { CAR } = __require(4)
+const { snap } = __require(26)
+const { BODY, nudge, boxRect, impulse, carRect, rectRect, rectPost, loadBody, storeBody, playerRect } = __require(28)
 const near = []
 const A = { x: 0, z: 0, fx: 1, fz: 0, hl: 0, hw: 0 }
 
@@ -62046,7 +65233,7 @@ __export(__exports, { "slide": () => slide, "bumpLoose": () => bumpLoose, "colli
 })
 
 // ---- js/sim/drivers.js
-__define(33, function (__exports) {
+__define(53, function (__exports) {
 // The people at the wheel of the traffic, mixed into Traffic (traffic.js). Each driver is their own:
 // how fast they like to go (a few dawdle, most keep to about the limit, a fifth press on), how close
 // they follow, how hard they pull away and brake, how quickly they react, how bold they are at an
@@ -62058,10 +65245,10 @@ __define(33, function (__exports) {
 // lane change is signalled first, then eased over, and anything that takes a car off its lane's line
 // (a swerve, going round a wreck, pulling back into lane after a knock) is steered: the heading turns
 // no faster than the tyres allow at that speed, and the car only moves sideways as it rolls forward.
-const { LOOK, OB } = __require(31)
-const { temper } = __require(29)
-const { clamp, wrapPi } = __require(1)
-const { RED, NODES, GREEN, YELLOW, redAge, signal, pointAt, amberLeft } = __require(4)
+const { LOOK, OB } = __require(51)
+const { temper } = __require(49)
+const { clamp, wrapPi } = __require(4)
+const { RED, NODES, GREEN, YELLOW, redAge, signal, pointAt, amberLeft } = __require(24)
 const CHANGE = 30 // m of road a lane change takes at speed (less, slower)
 const QUINTIC = u => u * u * u * (10 + u * (-15 + 6 * u)) // 0 to 1, flat at both ends
 const P = { x: 0, z: 0, hx: 1, hz: 0 }
@@ -62536,7 +65723,7 @@ __export(__exports, { "temperament": () => temperament, "DRIVE": () => DRIVE })
 })
 
 // ---- js/sim/traffic.js
-__define(34, function (__exports) {
+__define(54, function (__exports) {
 // City traffic: each driver their own (drivers.js), following the lane graph, keeping their
 // distance (intelligent driver model, eased on the pedals), stopping for red lights, slowing for
 // corners and for the Roadster, and knocked loose when it hits them (wrecks.js). They signal before
@@ -62547,15 +65734,16 @@ __define(34, function (__exports) {
 // Traffic lives in a bubble round the player: cars far behind are recycled into the streets ahead.
 // Cars far off are driven less often (a longer step every second or fourth one), and a car that has
 // not moved for a long while out of sight is taken off the road.
-const { JAM, atJam } = __require(17)
-const { REACT } = __require(30)
-const { SIGHT } = __require(31)
-const { nearMisses } = __require(12)
-const { slide, collidePlayer, bumpLoose } = __require(32)
-const { DRIVE, temperament } = __require(33)
-const { rng, NODES, EDGES, LANES, STALLS, pointAt, LANE_OFF } = __require(4)
+const { JAM, atJam } = __require(36)
+const { REACT } = __require(50)
+const { SIGHT } = __require(51)
+const { nearMisses } = __require(33)
+const { slide, collidePlayer, bumpLoose } = __require(52)
+const { DRIVE, temperament } = __require(53)
+const { rng, NODES, EDGES, LANES, STALLS, pointAt, LANE_OFF } = __require(24)
 // cruise: the speed an ordinary driver likes (m/s); acc, brake: how hard they pull away and brake;
-// lat: the sideways acceleration they take a corner at
+// lat: the sideways acceleration they take a corner at; share: how many in a hundred cars are of
+// the type (the odd police car and sports car among them)
 // prettier-ignore
 const TYPES = [
   { name: 'sedan', len: 4.7, wid: 1.85, hgt: 1.45, m: 1600, share: 30, cruise: 13.4, acc: 2.6, brake: 3.2, lat: 2.9 },
@@ -62564,7 +65752,9 @@ const TYPES = [
   { name: 'taxi', len: 4.8, wid: 1.85, hgt: 1.62, m: 1650, share: 9, cruise: 14, acc: 2.8, brake: 3.4, lat: 3 },
   { name: 'pickup', len: 5.4, wid: 2.0, hgt: 1.85, m: 2300, share: 10, cruise: 13.4, acc: 2.2, brake: 3, lat: 2.4 },
   { name: 'van', len: 6.4, wid: 2.15, hgt: 2.8, m: 3800, share: 7, cruise: 12.4, acc: 1.7, brake: 2.8, lat: 2.1 },
-  { name: 'bus', len: 11.6, wid: 2.55, hgt: 3.15, m: 12500, share: 3, cruise: 10.6, acc: 1.15, brake: 2.4, lat: 1.6 }
+  { name: 'bus', len: 11.6, wid: 2.55, hgt: 3.15, m: 12500, share: 3, cruise: 10.6, acc: 1.15, brake: 2.4, lat: 1.6 },
+  { name: 'police', len: 5.05, wid: 2.0, hgt: 1.86, m: 2300, share: 2, cruise: 13.6, acc: 2.7, brake: 3.4, lat: 2.8 },
+  { name: 'sports', len: 4.5, wid: 1.9, hgt: 1.28, m: 1500, share: 3, cruise: 14.2, acc: 3.2, brake: 3.6, lat: 3.3 }
 ]
 const BUS = TYPES.findIndex(t => t.name === 'bus')
 const SHARES = TYPES.reduce((a, t) => a + t.share, 0)
@@ -62989,12 +66179,12 @@ __export(__exports, { "TYPES": () => TYPES, "warm": () => warm, "Traffic": () =>
 })
 
 // ---- js/sim/pavement.js
-__define(35, function (__exports) {
+__define(55, function (__exports) {
 // The pavements people walk (peds.js): each block's ring of pavement at a given distance in from
 // the kerb, the point and heading at any distance round it, the crossings from each corner, and
 // when the walk is on at a junction.
-const { clamp } = __require(1)
-const { N, HALF, PITCH, CYCLE, BLOCKS, CURB_R, ROAD_HW, nodeAt } = __require(4)
+const { clamp } = __require(4)
+const { N, HALF, PITCH, CYCLE, BLOCKS, CURB_R, ROAD_HW, nodeAt } = __require(24)
 const CROSS_AT = 9.1 // the crosswalk's middle, from the junction's centre (cityGround.js)
 const KERB = ROAD_HW + 0.5 // where people wait and step off, from the road's centre line
 const WALK_FOR = 4 // s into the cross street's green during which people start over
@@ -63155,7 +66345,7 @@ __export(__exports, { "ring": () => ring, "ringAt": () => ringAt, "nearestOn": (
 })
 
 // ---- js/sim/peds.js
-__define(36, function (__exports) {
+__define(56, function (__exports) {
 // People on foot: they walk the pavements round the blocks, keeping to a line a metre or three in
 // from the kerb, each at their own pace (and a few jogging), some in pairs, some standing about, and
 // at each corner some of them cross: they step to the kerb by the crosswalk, wait for the walk (the
@@ -63165,12 +66355,12 @@ __define(36, function (__exports) {
 // Roadster's way (or a car's it sent sliding) dives clear, then walks back to the pavement; nobody
 // is ever left under the car; and when it does something frightening close by, people run.
 // They live in a bubble round the player, like the traffic: those left far behind turn up ahead.
-const { kerbDist } = __require(10)
-const { CROWD } = __require(28)
-const { warm } = __require(34)
-const { CAR, clamp } = __require(1)
-const { rng, BLOCKS } = __require(4)
-const { ring, ringAt, walkOn, crossings, nearestOn, blockNear, standBack } = __require(35)
+const { kerbDist } = __require(30)
+const { CROWD } = __require(48)
+const { warm } = __require(54)
+const { CAR, clamp } = __require(4)
+const { rng, BLOCKS } = __require(24)
+const { ring, ringAt, walkOn, crossings, nearestOn, blockNear, standBack } = __require(55)
 
 let WARM = false
 
@@ -63564,7 +66754,7 @@ __export(__exports, { "Peds": () => Peds, "ringAt": () => ringAt, "walkOn": () =
 })
 
 // ---- js/audio/buffers.js
-__define(37, function (__exports) {
+__define(57, function (__exports) {
 // Sample buffers synthesised once at start-up (nothing to download): loopable noise in three
 // colours, slow and fast random modulators (gusts, a tyre's stick-slip, the rhythm of speech), and
 // a bank of short recordings-to-be built from physics: sheet steel ringing and buckling, glass
@@ -64047,8 +67237,374 @@ function wave (ctx, amps) {
 __export(__exports, { "rng": () => rng, "noises": () => noises, "bandNoise": () => bandNoise, "wobble": () => wobble, "later": () => later, "bank": () => bank, "wave": () => wave })
 })
 
+// ---- js/audio/cars.js
+__define(58, function (__exports) {
+// The traffic round the camera, mixed into the SoundEngine (sound.js): six voices for the nearest
+// cars, each handed to a car and kept on it while it stays near (a voice let go fades out before it
+// is given to another car). Most cars burn petrol: an engine is a periodic wave on its cycle (two
+// turns of the crank), with its firing order strong and the rest of the orders round it (a four's
+// even thrum, a three's lumpy one, a V6's growl, a V8's burble), exhaust noise pulsing in time with
+// it, and a lowpass that opens up with the throttle. Each engine has an automatic gearbox: it idles
+// at the lights, the torque converter lets it rev on pulling away, it shifts up as the revs climb
+// (sooner when it is gentle, later when it is pushed, dipping as each shift goes through) and down
+// as it slows, on the overrun quieter and darker. The vans and buses are diesels, with a clatter
+// and a turbo's whistle that spools up behind the throttle; the taxis are hybrids, quiet at low
+// speed and starting their engine to pull away hard or to cruise; about a third of the cars are
+// electric, a whine of their motor and, below 30 km/h, the soft hum that warns people on foot.
+// Every car's tyres roar with its speed. Each voice is shifted by its doppler (its tyres' noise
+// too), fades with its distance, loses its highs to the air the further off it is, is dulled and
+// quietened when a building stands between it and the camera, and has more of it in the reverb the
+// further it is.
+const { clamp } = __require(4)
+const { wave, bandNoise } = __require(57)
+const VOICES = 5
+const AUTO6 = [405, 243, 162, 121, 95, 78] // rpm per m/s in each gear (overall ratio, tyre)
+const AUTO5 = [361, 196, 144, 103, 77] // a bus's
+// cyl: cylinders; idle rpm; w: its wave; k: how loud; dsl: a diesel; turbo
+const ENGINES = {
+  i4: { cyl: 4, idle: 760, w: 'i4', k: 1, gears: AUTO6 },
+  i3: { cyl: 3, idle: 820, w: 'i3', k: 0.9, gears: AUTO6 },
+  v6: { cyl: 6, idle: 680, w: 'v6', k: 1.1, gears: AUTO6, turbo: 0.4 },
+  v8: { cyl: 8, idle: 620, w: 'v8', k: 1.5, gears: AUTO6 },
+  dsl4: {
+    cyl: 4,
+    idle: 780,
+    w: 'dsl',
+    k: 1.3,
+    gears: AUTO6,
+    dsl: true,
+    turbo: 1
+  },
+  dsl6: {
+    cyl: 6,
+    idle: 600,
+    w: 'dsl6',
+    k: 2.6,
+    gears: AUTO5,
+    dsl: true,
+    turbo: 1.4
+  },
+  hybrid: { cyl: 4, idle: 1000, w: 'i4', k: 0.8, gears: AUTO6, hybrid: true }
+}
+const KIND = {
+  sedan: 'i4',
+  hatch: 'i3',
+  suv: 'v6',
+  taxi: 'hybrid',
+  pickup: 'v8',
+  van: 'dsl4',
+  bus: 'dsl6',
+  police: 'v6',
+  sports: 'v8'
+}
+// the orders of each engine, as harmonics of its cycle (half the crank's turn rate): the firing
+// order and its multiples strong, the rest (the cylinders never quite alike) round them
+function engineWaves (ctx) {
+  const w =
+    (fire, extra, rich = 0.5) =>
+    () => {
+      const a = {}
+      for (let k = 1; k <= 48; k++)
+        a[k] =
+          (k % fire === 0 ? 1.1 : 0.12 * rich) /
+          Math.pow(k / fire, k % fire === 0 ? 0.9 : 0.6)
+      Object.assign(a, extra)
+      return wave(ctx, a)
+    }
+  const make = {
+    i4: w(4, { 2: 0.3, 1: 0.12, 6: 0.18 }),
+    i3: w(3, { 2: 0.45, 1: 0.3, 4: 0.2, 5: 0.15 }),
+    v6: w(6, { 3: 0.5, 2: 0.25, 9: 0.35, 1: 0.12 }),
+    v8: w(
+      8,
+      { 2: 0.6, 4: 0.55, 6: 0.45, 1: 0.25, 3: 0.35, 5: 0.25, 7: 0.25 },
+      0.8
+    ),
+    dsl: w(4, { 2: 0.35, 1: 0.15 }, 1.6),
+    dsl6: w(6, { 3: 0.3, 2: 0.2, 1: 0.1 }, 1.8),
+    // an electric car's motor and gears (orders of its shaft), and its warning hum
+    ev: () =>
+      wave(ctx, {
+        1: 0.05,
+        6: 0.25,
+        18: 0.15,
+        17: 0.12,
+        19: 0.12,
+        34: 0.3,
+        36: 0.2,
+        54: 0.08
+      }),
+    avas: () => wave(ctx, { 1: 1, 2: 0.5, 3: 0.35, 4: 0.12, 5: 0.2, 7: 0.08 }),
+    sine: () => wave(ctx, { 1: 1 })
+  }
+  // (each made the first time a car needs it: making a wave's tables takes a few milliseconds)
+  const made = {}
+  return name => made[name] || (made[name] = make[name]())
+}
+
+const listed = (cars, key) => {
+  for (const c of cars) if (c.key === key) return true
+  return false
+}
+
+const CARS = {
+  buildCars () {
+    const { ctx, gain, filt, osc, loop } = this
+    this.carWaves = engineWaves(ctx)
+    // the exhaust's noise, a petrol engine's band and a diesel's, shared by every voice; the tyres'
+    this.puffLo = loop(bandNoise(ctx, 2, 1100, 0.8, false, 31))
+    this.puffHi = loop(bandNoise(ctx, 2, 2400, 0.8, false, 32))
+    this.tyreNoise = bandNoise(ctx, 2, 900, 0.6, true, 33)
+    this.carState = new Map()
+    this.carVoices = []
+    for (let i = 0; i < VOICES; i++) {
+      const v = { car: null, freeAt: 0, kind: '' }
+      v.out = gain(0)
+      v.air = filt('lowpass', 20000, 0.5)
+      v.pan = ctx.createStereoPanner()
+      v.send = gain(0.2)
+      v.out.connect(v.air).connect(v.pan)
+      // the engine and its exhaust's pulsing noise (each level first, so a silent voice rests)
+      v.eng = osc('sine', 20)
+      v.engLP = filt('lowpass', 600, 1.2)
+      v.engG = gain(0)
+      v.eng.connect(v.engG).connect(v.engLP).connect(v.out)
+      v.puff = gain(0)
+      v.puffAM = gain(0.35)
+      v.puffSrc = this.puffLo
+      v.puffSrc.connect(v.puff).connect(v.puffAM)
+      this.lane([v.puff.gain], v.puffAM, v.out)
+      v.eng.connect(gain(0.65)).connect(v.puffAM.gain)
+      // a motor's whine, or a turbo's whistle
+      v.whine = osc('sine', 400)
+      v.whineG = gain(0)
+      v.whine.connect(v.whineG)
+      this.lane([v.whineG.gain], v.whineG, v.out)
+      // tyres (noise already filtered to their band, played faster or slower for the doppler)
+      v.tyre = loop(this.tyreNoise)
+      v.tyreG = gain(0)
+      v.tyre.connect(v.tyreG)
+      this.lane([v.tyreG.gain], v.tyreG, v.out)
+      // (the whole voice joins the world only while it sounds)
+      v.pan.connect(v.send)
+      this.lane(
+        [v.out.gain, v.engG.gain, v.puff.gain, v.whineG.gain, v.tyreG.gain],
+        v.pan,
+        this.world,
+        v.send,
+        this.verb
+      )
+      this.carVoices.push(v)
+    }
+  },
+  // a car's engine state, kept while it is near: gear, revs, how hard it is pulling
+  engineOf (c) {
+    let s = this.carState.get(c.key)
+    if (!s) {
+      const kind = c.ev ? 'ev' : KIND[c.type] || 'i4'
+      s = {
+        kind,
+        E: ENGINES[kind] || null,
+        v: c.v,
+        a: 0,
+        gear: 0,
+        rpm: 800,
+        load: 0,
+        shiftT: 0,
+        boost: 0,
+        on: 1,
+        seed: Math.random() * 6.28,
+        seen: 0
+      }
+      if (s.E) {
+        while (s.gear < s.E.gears.length - 1 && c.v * s.E.gears[s.gear] > 2000)
+          s.gear++
+      }
+      this.carState.set(c.key, s)
+    }
+    return s
+  },
+  // the automatic gearbox and the throttle, from how the car's speed is changing
+  drive (s, c, dt) {
+    // (the driver's own pedal, when the sim keeps it; otherwise from the change in speed)
+    const E = s.E,
+      a = Number.isFinite(c.acc) ? c.acc : (c.v - s.v) / Math.max(dt, 1e-3)
+    s.v = c.v
+    s.a += (clamp(a, -8, 6) - s.a) * Math.min(1, dt * 4)
+    const big = E && E.gears === AUTO5
+    const need = s.a + 0.15 + 0.0004 * c.v * c.v
+    const load = s.a < -0.4 ? 0 : clamp(need / (big ? 1.2 : 2.4), 0.08, 1)
+    s.load += (load - s.load) * Math.min(1, dt * 6)
+    if (!E) return
+    const g = E.gears
+    // (backing up: the reverse gear, as low as first)
+    if (c.rev) s.gear = 0
+    let rpm = c.v * g[s.gear]
+    const up = (big ? 1500 : 1700) + (big ? 600 : 2300) * s.load,
+      down = (big ? 900 : 1050) + 600 * s.load
+    if (rpm > up && s.gear < g.length - 1 && !c.rev) {
+      s.gear++
+      s.shiftT = big ? 0.5 : 0.3
+    } else if (rpm < down && s.gear > 0) {
+      s.gear--
+      s.shiftT = 0.2
+    }
+    s.shiftT = Math.max(0, s.shiftT - dt)
+    rpm = c.v * g[s.gear]
+    // the torque converter slipping as it pulls away, and the idle, never quite steady
+    const slip = s.load * (big ? 700 : 1500) * clamp(1 - c.v / 5, 0, 1)
+    const idle = E.idle * (1 + 0.012 * Math.sin(this.now * 1.7 + s.seed))
+    s.rpm = Math.max(idle + slip, rpm)
+    // a hybrid runs on its battery at low speed, starting its engine to pull away hard or to cruise
+    if (E.hybrid)
+      s.on += ((s.load > 0.5 || c.v > 12 ? 1 : 0) - s.on) * Math.min(1, dt * 3)
+    if (E.turbo)
+      s.boost +=
+        (s.load * clamp(s.rpm / 2600, 0, 1.3) - s.boost) * Math.min(1, dt * 1.8)
+  },
+  // st.cars: [{ key, d, pan, doppler, v, type, ev, occl }], nearest first
+  updateCars (st) {
+    const R = this.R,
+      cars = st.cars || [],
+      ps = st.pitch,
+      dt = st.dt
+    const voices = this.carVoices
+    for (const v of voices) {
+      if (v.car !== null && !listed(cars, v.car)) {
+        v.car = null
+        v.freeAt = this.now + 0.25
+      }
+      // (a free voice falls silent, and once it is, rests)
+      if (v.car === null) {
+        R(v.out.gain, 0, 0.04)
+        R(v.engG.gain, 0, 0.04)
+        R(v.puff.gain, 0, 0.04)
+        R(v.whineG.gain, 0, 0.04)
+        R(v.tyreG.gain, 0, 0.04)
+      }
+    }
+    for (const c of cars) {
+      const s = this.engineOf(c)
+      s.seen = this.now
+      this.drive(s, c, dt)
+      let v = null
+      for (const x of voices) if (x.car === c.key) v = x
+      if (!v) {
+        for (const x of voices)
+          if (!v && x.car === null && this.now >= x.freeAt) v = x
+        if (!v) continue
+        v.car = c.key
+        v.fresh = true
+        if (v.kind !== s.kind) {
+          v.kind = s.kind
+          const src = s.E && s.E.dsl ? this.puffHi : this.puffLo
+          if (src !== v.puffSrc) {
+            v.puffSrc.disconnect(v.puff)
+            v.puffSrc = src
+            src.connect(v.puff)
+          }
+          v.eng.setPeriodicWave(this.carWaves(s.kind === 'ev' ? 'avas' : s.E.w))
+          v.whine.setPeriodicWave(
+            this.carWaves(s.kind === 'ev' ? 'ev' : 'sine')
+          )
+        }
+      }
+      this.voice(v, s, c, ps)
+    }
+    // forget engines that have been out of earshot for a while
+    if (this.carState.size > 40)
+      for (const [k, s] of this.carState)
+        if (this.now - s.seen > 5) this.carState.delete(k)
+  },
+  voice (v, s, c, ps) {
+    // (pitches jump straight to the new car's on a voice just handed to it; levels ease in)
+    const R = this.R,
+      F = v.fresh ? (p, x) => this.J(p, x) : R,
+      E = s.E,
+      dop = c.doppler * ps,
+      sp = c.v
+    if (E) {
+      const fire = (s.rpm / 120) * dop
+      const shift = s.shiftT > 0 ? 0.35 : 1
+      const load = s.load * shift
+      const lvl =
+        E.k *
+        s.on *
+        (0.2 + 0.8 * load) *
+        (0.55 + 0.45 * Math.min(1.5, s.rpm / 2500))
+      F(v.eng.frequency, fire, s.shiftT > 0 ? 0.06 : 0.05)
+      F(v.engLP.frequency, (250 + s.rpm * (0.12 + 0.5 * load)) * dop, 0.06)
+      R(v.engG.gain, lvl * 0.12, 0.05)
+      R(v.puff.gain, lvl * 0.12 * (E.dsl ? 0.5 : 0.18) * (0.3 + load), 0.08)
+      // a turbo's whistle (a hybrid's electric whine, under the engine)
+      const t = E.turbo || 0
+      // (backing up, the reverse gear's straight-cut teeth whine instead)
+      const rev = c.rev && sp > 0.3
+      F(
+        v.whine.frequency,
+        (rev
+          ? (s.rpm / 60) * 17
+          : E.hybrid
+          ? 40 + sp * 30
+          : 2400 + s.boost * 4200) * dop,
+        0.1
+      )
+      R(
+        v.whineG.gain,
+        rev
+          ? 0.012 * Math.min(1, sp / 2)
+          : E.hybrid
+          ? (1 - s.on) * 0.004 * Math.min(1, sp / 3)
+          : t * s.boost * 0.006,
+        0.1
+      )
+    } else {
+      // electric: the warning hum under 30 km/h, and the motor's whine
+      const avas = clamp(1 - (sp - 6) / 3, 0, 1) * Math.min(1, 0.4 + sp)
+      F(v.eng.frequency, (110 + sp * 14) * dop, 0.08)
+      F(v.engLP.frequency, 1600, 0.2)
+      R(v.engG.gain, avas * 0.03, 0.1)
+      R(v.puff.gain, 0, 0.1)
+      F(v.whine.frequency, (sp / 2.07) * 9 * dop, 0.05)
+      R(v.whineG.gain, Math.min(1, sp / 4) * (0.2 + 0.8 * s.load) * 0.03, 0.08)
+    }
+    // tyres: about v^1.8, a bus's louder; a car knocked sliding on locked tyres scrubs and howls,
+    // and a startled driver stamping on the brakes makes them squeal
+    const big = c.type === 'bus' || c.type === 'van'
+    const roll = Math.min(1.5, Math.pow(sp / 14, 1.8)) * (big ? 0.4 : 0.25)
+    const stamp = !c.loose && c.panic && sp > 4 && s.a < -4
+    R(
+      v.tyreG.gain,
+      c.loose
+        ? Math.min(1, sp / 6) * 0.9
+        : stamp
+        ? Math.min(1, sp / 10) * 1.4
+        : roll,
+      0.05
+    )
+    // (the band, at 900 Hz, played slower for a bus's or a wreck's scrub, faster for a screech)
+    const band = c.loose ? 0.65 + sp * 0.02 : stamp ? 1.2 : big ? 0.78 : 1
+    F(v.tyre.playbackRate, clamp(dop * band, 0.4, 2.2), 0.05)
+    // distance, the air and walls in the way, left or right
+    const near = Math.min(1.4, 6 / Math.max(c.d, 2.5))
+    R(v.out.gain, near * (1 - 0.6 * c.occl), 0.06)
+    F(
+      v.air.frequency,
+      clamp(20000 * Math.exp(-c.d / 90), 2200, 20000) *
+        (1 - 0.85 * c.occl) *
+        (1 - 0.35 * (c.back || 0)),
+      0.08
+    )
+    F(v.pan.pan, c.pan, 0.06)
+    R(v.send.gain, clamp(0.15 + c.d / 70 + c.occl * 0.3, 0, 0.8), 0.2)
+    v.fresh = false
+  }
+}
+__export(__exports, { "CARS": () => CARS })
+})
+
 // ---- js/audio/space.js
-__define(38, function (__exports) {
+__define(59, function (__exports) {
 // Where the sound is heard, mixed into the SoundEngine (sound.js): the Roadster's own sound placed
 // where the car is from the camera (late by the time the sound takes to get there, so a car racing
 // past a far camera has its doppler, panned, duller the further off), everything outside heard
@@ -64057,8 +67613,8 @@ __define(38, function (__exports) {
 // start-up), thin out in the open (the beach, the test site) where only a few far reflections come
 // back, and the slapback of the car's sound off the walls either side, each echo as late as the
 // round trip to its wall.
-const { clamp } = __require(1)
-const { rng, later } = __require(37)
+const { clamp } = __require(4)
+const { rng, later } = __require(57)
 // A stereo impulse response: a decaying noise tail in three bands, each dying at its own rate (the
 // lows linger, the highs go first), a few early reflections, and flutter (a sound bouncing between
 // the two faces of a street) on top.
@@ -64297,7 +67853,7 @@ __export(__exports, { "SPACE": () => SPACE })
 })
 
 // ---- js/audio/motor.js
-__define(39, function (__exports) {
+__define(60, function (__exports) {
 // The Roadster's drive units, mixed into the SoundEngine (sound.js). Three motors: one on the front
 // axle and a pair on the rear, one per wheel, each through a two-stage reduction gearbox. What a
 // real one sings with is its orders, tones locked to the shaft's speed: the electromagnetic ones
@@ -64313,8 +67869,8 @@ __define(39, function (__exports) {
 // as well: two tones either side of its carrier, one rising and one falling as the car speeds up,
 // that step up a carrier at a time, like a real Tesla's at walking pace; then a low hum through the
 // drivetrain under load, and a soft clunk as the gears' lash is taken up when the torque reverses.
-const { clamp } = __require(1)
-const { wave } = __require(37)
+const { clamp } = __require(4)
+const { wave } = __require(57)
 const WHEEL_R = 0.36
 // teeth: stage 1 (on the motor shaft) and stage 2 (on the intermediate shaft), and the reduction
 const UNITS = {
@@ -64552,7 +68108,7 @@ __export(__exports, { "DRIVE": () => DRIVE })
 })
 
 // ---- js/audio/tyres.js
-__define(40, function (__exports) {
+__define(61, function (__exports) {
 // The Roadster's tyres and the air round it, mixed into the SoundEngine (sound.js). Rolling: the
 // roar of tread on asphalt (broad, peaking round 1 kHz, rising about 11 dB for each doubling of
 // speed, so above about 60 km/h it is most of what you hear), a low rumble of the road's texture
@@ -64568,15 +68124,22 @@ __define(40, function (__exports) {
 // higher; and on grass or sand there is no squeal at all, but the grit and turf being scrubbed. The
 // air: wind noise rising steeply with speed (about the cube of it), in gusts that never repeat,
 // buffeting faster and faster, and from the driver's seat a thin whistle off the canopy's seals.
-const { clamp } = __require(1)
+const { clamp } = __require(4)
 const smooth = (a, b, x) => {
   const t = clamp((x - a) / (b - a), 0, 1)
   return t * t * (3 - 2 * t)
 }
-// how much each surface squeals, and how much it roars, under a rolling tyre
-const SQUEAL = { road: 1, walk: 0.8, grass: 0.04, sand: 0 }
-const ROAR = { road: 1, walk: 0.7, grass: 0.12, sand: 0.08 }
+// how much each surface squeals, and how much it roars, under a rolling tyre (the pier's planks
+// a hollow drumming, quieter than the road)
+const SQUEAL = { road: 1, walk: 0.8, wood: 0.7, grass: 0.04, sand: 0 }
+const ROAR = { road: 1, walk: 0.7, wood: 0.5, grass: 0.12, sand: 0.08 }
 const SLAB = 1.6 // m between joints in the pavement's concrete
+// the knock of each joint the wheels run over: the pavement's slabs, and on the pier the deck's
+// beams on their piles (further apart, deeper and hollow, ringing under the deck)
+const JOINTS = {
+  walk: { gap: SLAB, k: 0.08, rate: [1.6, 1.5], lp: 900, verb: 0.05 },
+  wood: { gap: 2.6, k: 0.1, rate: [0.85, 0.8], lp: 520, verb: 0.14 }
+}
 
 const TYRES = {
   // (each layer's level comes first, straight after its source, so that when it is silent the
@@ -64701,9 +68264,14 @@ const TYRES = {
     R(n.roar.gain, roar, 0.08)
     R(n.patchK.gain, roll > 0 ? 0.25 : 0, 0.1)
     R(n.patch.playbackRate, clamp(v / 15, 0.05, 4), 0.2)
-    R(n.roarPk.frequency, (surf === 'walk' ? 1300 : 950) * ps, 0.3)
+    R(
+      n.roarPk.frequency,
+      (surf === 'walk' ? 1300 : surf === 'wood' ? 620 : 950) * ps,
+      0.3
+    )
     R(n.roarLP.frequency, (inside ? 900 : 2200 + v * 45) * ps, 0.1)
-    const bumpy = surf === 'grass' ? 2 : surf === 'sand' ? 1.2 : 1
+    const bumpy =
+      surf === 'grass' ? 2 : surf === 'wood' ? 1.7 : surf === 'sand' ? 1.2 : 1
     R(
       n.low.gain,
       g * Math.min(1.6, Math.pow(v / 28, 1.3)) * bumpy * (inside ? 0.5 : 0.15),
@@ -64726,17 +68294,18 @@ const TYRES = {
     R(n.crunch.gain, sand * 0.6, 0.1)
     if (n.sandSrc) R(n.sandSrc.playbackRate, clamp(0.6 + v / 20, 0.6, 2), 0.2)
     R(n.grass.gain, (surf === 'grass' ? g : 0) * smooth(0, 14, v) * 0.1, 0.1)
-    // the pavement's slab joints, front axle and then rear
-    if (surf === 'walk' && g && v > 1.5) {
+    // the pavement's slab joints (or the pier's beams), front axle and then rear
+    const j = JOINTS[surf]
+    if (j && g && v > 1.5) {
       this.slabD += v * dt
-      if (this.slabD > SLAB) {
-        this.slabD -= SLAB
-        const k = Math.min(1, v / 15) * 0.08
-        this.play('thud', k, { rate: 1.6, lp: 900, verb: 0.05 })
+      if (this.slabD > j.gap) {
+        this.slabD -= j.gap
+        const k = Math.min(1, v / 15) * j.k
+        this.play('thud', k, { rate: j.rate[0], lp: j.lp, verb: j.verb })
         this.play('thud', k * 0.8, {
-          rate: 1.5,
-          lp: 900,
-          verb: 0.05,
+          rate: j.rate[1],
+          lp: j.lp,
+          verb: j.verb,
           delay: 2.9 / v
         })
       }
@@ -64852,8 +68421,791 @@ const TYRES = {
 __export(__exports, { "TYRES": () => TYRES })
 })
 
+// ---- js/audio/radioSynth.js
+__define(62, function (__exports) {
+// The radio's instruments, synthesised note by note: an 808-style kick and a snare, claps and hats
+// from noise, a sawtooth bass with its filter swept by each note, a pad of detuned sawtooths, a
+// plucked arpeggio, a gliding lead, and an electric piano made by frequency modulation (a tine's
+// bell over a soft body, as a Rhodes sounds). Each takes the time to start at, so the radio can lay
+// its notes down a moment ahead of the music (radio.js), and frees its nodes once the note is over.
+const mtof = m => 440 * Math.pow(2, (m - 69) / 12)
+
+// an envelope on a gain: up to `peak` in `a` s, down to `sus` of it with time constant `d`, then
+// released from `end` over time constant `r`; returns when it is silent
+function env (g, t, peak, a, d, sus, end, r) {
+  g.gain.setValueAtTime(0, t)
+  g.gain.linearRampToValueAtTime(peak, t + a)
+  g.gain.setTargetAtTime(peak * sus, t + a, d)
+  g.gain.setTargetAtTime(0, Math.max(end, t + a), r)
+  return Math.max(end, t + a) + r * 6
+}
+function osc (ctx, type, f, t, stop) {
+  const o = ctx.createOscillator()
+  o.type = type
+  o.frequency.setValueAtTime(f, t)
+  o.start(t)
+  o.stop(stop)
+  return o
+}
+function noiseSrc (ctx, buf, t, stop) {
+  const s = ctx.createBufferSource()
+  s.buffer = buf
+  s.start(t, Math.random() * (buf.duration - 1))
+  s.stop(stop)
+  return s
+}
+const filt = (ctx, type, f, q = 0.7) => {
+  const b = ctx.createBiquadFilter()
+  b.type = type
+  b.frequency.value = f
+  b.Q.value = q
+  return b
+}
+
+// kick: a sine swept down from the beater's click to the drum's body
+function kick (ctx, out, t, vel, low = 48) {
+  const end = t + 0.5
+  const o = osc(ctx, 'sine', 150, t, end)
+  o.frequency.exponentialRampToValueAtTime(low, t + 0.09)
+  const g = ctx.createGain()
+  env(g, t, 0.9 * vel, 0.002, 0.18, 0, t + 0.002, 0.12)
+  o.connect(g).connect(out)
+  // (the click)
+  const c = osc(ctx, 'triangle', 1200, t, t + 0.02)
+  const cg = ctx.createGain()
+  env(cg, t, 0.12 * vel, 0.001, 0.004, 0, t, 0.004)
+  c.connect(cg).connect(out)
+}
+
+// snare: a drum's two body modes under a burst of the wires' noise
+function snare (ctx, out, t, vel, noise, tone = 190) {
+  const end = t + 0.45
+  const n = noiseSrc(ctx, noise, t, end)
+  const bp = filt(ctx, 'bandpass', 2400, 0.8)
+  const g = ctx.createGain()
+  env(g, t, 0.55 * vel, 0.001, 0.07, 0, t, 0.06)
+  n.connect(bp).connect(g).connect(out)
+  for (const f of [tone, tone * 1.62]) {
+    const o = osc(ctx, 'triangle', f * 1.3, t, end)
+    o.frequency.exponentialRampToValueAtTime(f, t + 0.03)
+    const og = ctx.createGain()
+    env(og, t, 0.3 * vel, 0.001, 0.035, 0, t, 0.03)
+    o.connect(og).connect(out)
+  }
+}
+
+// clap: a few quick slaps of noise, then the room's tail
+function clap (ctx, out, t, vel, noise) {
+  const n = noiseSrc(ctx, noise, t, t + 0.5)
+  const bp = filt(ctx, 'bandpass', 1500, 1.4)
+  const g = ctx.createGain()
+  g.gain.setValueAtTime(0, t)
+  for (let i = 0; i < 3; i++) {
+    g.gain.setValueAtTime(0.55 * vel, t + i * 0.011)
+    g.gain.setTargetAtTime(0.05 * vel, t + i * 0.011 + 0.001, 0.003)
+  }
+  g.gain.setValueAtTime(0.4 * vel, t + 0.034)
+  g.gain.setTargetAtTime(0, t + 0.034, 0.06)
+  n.connect(bp).connect(g).connect(out)
+}
+
+// hat: bright noise, closed short or open ringing
+function hat (ctx, out, t, vel, noise, open = false) {
+  const len = open ? 0.12 : 0.025
+  const n = noiseSrc(ctx, noise, t, t + len * 8)
+  const hp = filt(ctx, 'highpass', 7500, 0.7)
+  const pk = filt(ctx, 'peaking', 10500, 1.5)
+  pk.gain.value = 6
+  const g = ctx.createGain()
+  env(g, t, 0.22 * vel, 0.001, len, 0, t, len)
+  n.connect(hp).connect(pk).connect(g).connect(out)
+}
+
+// bass: a sawtooth and a sine an octave down, the filter opening with each note and closing again
+function bass (ctx, out, t, midi, dur, vel, bright = 600) {
+  const f = mtof(midi),
+    end = t + dur + 0.3
+  const lp = filt(ctx, 'lowpass', bright, 4)
+  lp.frequency.setValueAtTime(bright * 2.8, t)
+  lp.frequency.setTargetAtTime(bright, t, 0.06)
+  const g = ctx.createGain()
+  const stop = env(g, t, 0.42 * vel, 0.004, 0.2, 0.75, t + dur, 0.03)
+  osc(ctx, 'sawtooth', f, t, stop).connect(lp)
+  const sub = osc(ctx, 'sine', f / 2, t, stop)
+  const sg = ctx.createGain()
+  sg.gain.value = 0.7
+  sub.connect(sg).connect(g)
+  lp.connect(g).connect(out)
+}
+
+// pad: each chord note two sawtooths a few cents apart, softly filtered, swelling in and fading
+function pad (ctx, out, t, notes, dur, vel, bright = 1800) {
+  const lp = filt(ctx, 'lowpass', bright, 0.5)
+  const g = ctx.createGain()
+  const stop = env(g, t, 0.075 * vel, 0.35, 0.8, 0.85, t + dur, 0.45)
+  for (const m of notes)
+    for (const c of [-7, 7]) {
+      const o = osc(ctx, 'sawtooth', mtof(m), t, stop)
+      o.detune.value = c
+      o.connect(lp)
+    }
+  lp.connect(g).connect(out)
+}
+
+// pluck: a square (or sawtooth) note with a filter that closes fast, for arpeggios
+function pluck (ctx, out, t, midi, dur, vel, type = 'square') {
+  const lp = filt(ctx, 'lowpass', 3800, 2)
+  lp.frequency.setValueAtTime(5200, t)
+  lp.frequency.setTargetAtTime(900, t, 0.07)
+  const g = ctx.createGain()
+  const stop = env(g, t, 0.12 * vel, 0.002, 0.09, 0.25, t + dur, 0.05)
+  osc(ctx, type, mtof(midi), t, stop).connect(lp)
+  lp.connect(g).connect(out)
+}
+
+// lead: a sawtooth with a fifth above it, gliding from the last note, vibrato after it settles
+function lead (ctx, out, t, midi, dur, vel, from = midi) {
+  const f = mtof(midi)
+  const g = ctx.createGain()
+  const stop = env(g, t, 0.13 * vel, 0.02, 0.4, 0.7, t + dur, 0.12)
+  const lp = filt(ctx, 'lowpass', 2600, 1.2)
+  const vib = osc(ctx, 'sine', 5.2, t, stop)
+  const depth = ctx.createGain()
+  depth.gain.setValueAtTime(0, t)
+  depth.gain.linearRampToValueAtTime(f * 0.006, t + Math.min(dur, 0.6))
+  vib.connect(depth)
+  for (const [k, lvl] of [
+    [1, 1],
+    [1.5, 0.25]
+  ]) {
+    const o = osc(ctx, 'sawtooth', mtof(from) * k, t, stop)
+    o.frequency.setTargetAtTime(f * k, t, 0.03)
+    depth.connect(o.frequency)
+    const og = ctx.createGain()
+    og.gain.value = lvl
+    o.connect(og).connect(lp)
+  }
+  lp.connect(g).connect(out)
+}
+
+// electric piano: each note a sine modulated by a sine at its own pitch (the body, the brightness
+// falling away as the note rings) and a short high bell (the tine)
+function epiano (ctx, out, t, notes, dur, vel) {
+  const g = ctx.createGain()
+  const stop = env(g, t, 0.11 * vel, 0.003, 0.9, 0.35, t + dur, 0.25)
+  for (const m of notes) {
+    const f = mtof(m)
+    const car = osc(ctx, 'sine', f, t, stop)
+    const mod = osc(ctx, 'sine', f, t, stop)
+    const idx = ctx.createGain()
+    idx.gain.setValueAtTime(f * 1.6 * vel, t)
+    idx.gain.setTargetAtTime(f * 0.25, t, 0.25)
+    mod.connect(idx).connect(car.frequency)
+    car.connect(g)
+    const tine = osc(ctx, 'sine', f * 7, t, t + 0.6)
+    const tg = ctx.createGain()
+    env(tg, t, 0.18, 0.001, 0.05, 0, t, 0.05)
+    tine.connect(tg).connect(g)
+  }
+  g.connect(out)
+}
+
+// a stab: a chord's short organ-like hit (sawtooths through a resonant filter), for house
+function stab (ctx, out, t, notes, vel) {
+  const lp = filt(ctx, 'lowpass', 2200, 3)
+  lp.frequency.setValueAtTime(3200, t)
+  lp.frequency.setTargetAtTime(900, t, 0.08)
+  const g = ctx.createGain()
+  const stop = env(g, t, 0.08 * vel, 0.003, 0.1, 0.2, t + 0.12, 0.08)
+  for (const m of notes) osc(ctx, 'sawtooth', mtof(m), t, stop).connect(lp)
+  lp.connect(g).connect(out)
+}
+__export(__exports, { "kick": () => kick, "snare": () => snare, "clap": () => clap, "hat": () => hat, "bass": () => bass, "pad": () => pad, "pluck": () => pluck, "lead": () => lead, "epiano": () => epiano, "stab": () => stab })
+})
+
+// ---- js/audio/radio.js
+__define(63, function (__exports) {
+// The car's radio, GTA-style: B tunes through the stations and off. Every song is written on the
+// spot (no recordings): a key, a tempo and a chord progression drawn by chance, the chords voiced
+// close and led smoothly from one to the next, a bassline, an arpeggio, a melody built from a
+// motif and its answer, and an arrangement that builds up, drops back and comes in again. Three
+// stations: synthwave (pumping pads, a plucked arpeggio and a gliding lead through a ping-pong
+// delay), lo-fi (lazy swung drums, an electric piano's seventh chords, tape wow and vinyl crackle,
+// all of it a little dull) and house (four on the floor, offbeat hats, chord stabs). Between songs,
+// the station's chime. The notes are laid down a third of a second ahead of the music on the audio
+// clock, so the frame rate never shows in the timing; heard from outside, the radio is muffled by
+// the car round it.
+const { rng } = __require(24)
+const S = __require(62)
+const STATIONS = [
+  { name: 'Sunset Synth FM', freq: '101.7', style: 'synth' },
+  { name: 'Palm Lo-Fi', freq: '94.3', style: 'lofi' },
+  { name: 'Downtown House', freq: '105.9', style: 'house' }
+]
+// per style: tempo range, swing (a share of a 16th), each drum's steps in a bar of 16 (kick2: the
+// busier kick some songs take), the chord instrument, the bassline, how wet, how pumped under the
+// kick (duck) and how bright (lp, Hz) it all is, and its level, so the stations sound as loud
+// prettier-ignore
+const STYLE = {
+  synth: { bpm: [92, 112], swing: 0, kick: [0, 8], kick2: [0, 4, 8, 12], snare: [4, 12], hats: [0, 2, 4, 6, 8, 10, 12, 14], open: [], chords: 'pad', arp: true, lead: true, verb: 0.5, delay: 0.3, duck: 0.45, lp: 9000, bass: 'eighths', gain: 1 },
+  lofi: { bpm: [72, 86], swing: 0.28, kick: [0, 7, 10], kick2: [0, 3, 7, 10], snare: [4, 12], hats: [0, 2, 4, 6, 8, 10, 12, 14], open: [], chords: 'epiano', arp: false, lead: true, verb: 0.3, delay: 0.12, duck: 0.15, lp: 3400, bass: 'roots', gain: 1.3 },
+  house: { bpm: [118, 124], swing: 0.05, kick: [0, 4, 8, 12], kick2: [0, 4, 8, 12], snare: [4, 12], hats: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], open: [2, 6, 10, 14], chords: 'stab', arp: false, lead: false, verb: 0.25, delay: 0.2, duck: 0.4, lp: 11000, bass: 'offbeat', gain: 1.8 }
+}
+// minor-key progressions, as semitones above the tonic with each chord's quality
+// prettier-ignore
+const PROGRESSIONS = [
+  [[0, 'm'], [8, 'M'], [3, 'M'], [10, 'M']], // i VI III VII
+  [[0, 'm'], [5, 'm'], [8, 'M'], [7, 'm']], // i iv VI v
+  [[0, 'm'], [10, 'M'], [8, 'M'], [10, 'M']], // i VII VI VII
+  [[8, 'M'], [10, 'M'], [0, 'm'], [0, 'm']], // VI VII i i
+  [[0, 'm'], [3, 'M'], [10, 'M'], [5, 'm']] // i III VII iv
+]
+const MINOR = [0, 2, 3, 5, 7, 8, 10] // the natural minor scale
+// the sections: bars, and what plays (k kick, s snare, h hats, b bass, c chords, a arp, l lead)
+const FORM = [
+  [4, 'ch'],
+  [4, 'kshc'],
+  [8, 'kshbca'],
+  [8, 'kshbcal'],
+  [4, 'hca'],
+  [8, 'kshbcal'],
+  [4, 'kshbca'],
+  [4, 'c']
+]
+const BARS = FORM.reduce((n, [b]) => n + b, 0)
+const AHEAD = 0.35 // s: how far ahead of the music its notes are laid down
+
+// a chord's notes, voiced close and led from the last voicing by the least movement. deg: its root
+// in semitones above the key's tonic; sevenths: with its seventh, the one the scale has (a major
+// seventh on III and VI, a minor one on VII and the minor chords)
+function voice (root, deg, quality, sevenths, last) {
+  const tones = [0, quality === 'm' ? 3 : 4, 7]
+  if (sevenths) tones.push(MINOR.includes((deg + 11) % 12) ? 11 : 10)
+  let best = null,
+    bestCost = Infinity
+  for (let base = 52; base < 64; base++) {
+    const notes = tones.map(t => {
+      let m = root + t
+      while (m < base) m += 12
+      while (m >= base + 12) m -= 12
+      return m
+    })
+    notes.sort((a, b) => a - b)
+    const cost = last
+      ? notes.reduce((c, m, i) => c + Math.abs(m - (last[i] ?? m)), 0)
+      : Math.abs(notes[0] - 57)
+    if (cost < bestCost) {
+      bestCost = cost
+      best = notes
+    }
+  }
+  return best
+}
+
+// A song from one seed: its key, tempo, chords and melody (a two-bar motif of notes, each a step in
+// the scale on a 16th of the first bar, spread over two, with its length; and its answer, the motif
+// with its ending changed)
+function writeSong (style, seed) {
+  const R = rng(seed),
+    st = STYLE[style]
+  const pick = a => a[Math.floor(R() * a.length)]
+  const key = 33 + Math.floor(R() * 8) // A1 to E2: the bass's tonic
+  const bpm = st.bpm[0] + R() * (st.bpm[1] - st.bpm[0])
+  let last = null
+  const chords = pick(PROGRESSIONS).map(([deg, q]) => {
+    last = voice(key + 24 + deg, deg, q, style !== 'synth' || R() < 0.3, last)
+    return { bass: key + deg, notes: last }
+  })
+  const motif = []
+  let step = Math.floor(R() * 3)
+  for (const at of pick([
+    [0, 3, 6, 8, 10, 14],
+    [0, 2, 4, 7, 10, 12],
+    [0, 4, 6, 8, 12],
+    [2, 4, 6, 10, 12, 14]
+  ])) {
+    step = Math.max(-2, Math.min(7, step + pick([-2, -1, -1, 1, 1, 2, 0])))
+    motif.push({ at: at * 2, step, len: pick([2, 2, 3, 4]) * 2 })
+  }
+  const answer = motif.map((n, i) =>
+    i < motif.length - 2 ? n : { ...n, step: n.step + pick([-3, -2, 2, 3]) }
+  )
+  return { style, st, key, bpm, chords, motif, answer, R, kick2: R() < 0.5 }
+}
+
+class Radio {
+  constructor (eng) {
+    this.eng = eng
+    this.on = -1 // the station playing (-1: off)
+    this.song = null
+    this.next = 0 // the next 16th's time on the audio clock, and its number in the song
+    this.step = 0
+    this.lastLead = null
+    this.seed = Math.floor(Math.random() * 1e9)
+  }
+
+  // The radio's own chain: the drums into mix, the rest (ducked under the kick) into it through
+  // duck; a reverb fed from all of it and a ping-pong delay fed from the arpeggio and the lead; then
+  // the station's colour (dull for lo-fi, with the tape's wow: a delay line wobbling its length) and
+  // the car's speakers, heard muffled through the body from outside
+  build () {
+    const { ctx, gain, filt } = this.eng
+    const post = filt('highpass', 70, 0.7)
+    this.mix = gain(1) // (every song's buses sum here: see take)
+    this.mix.connect(post)
+    this.verbIn = gain(0)
+    const conv = ctx.createConvolver()
+    conv.buffer = this.impulse(1.6)
+    this.mix.connect(this.verbIn).connect(conv).connect(post)
+    this.delayIn = gain(1)
+    this.delayOut = gain(0)
+    const dl = (this.dl = ctx.createDelay(1)),
+      dr = (this.dr = ctx.createDelay(1)),
+      fb = gain(0.35),
+      pl = ctx.createStereoPanner(),
+      pr = ctx.createStereoPanner()
+    pl.pan.value = -0.6
+    pr.pan.value = 0.6
+    this.delayIn.connect(dl)
+    dl.connect(dr).connect(fb).connect(dl)
+    dl.connect(pl).connect(this.delayOut)
+    dr.connect(pr).connect(this.delayOut)
+    this.delayOut.connect(post)
+    this.tone = filt('lowpass', 9000, 0.5)
+    const wow = ctx.createDelay(0.05)
+    wow.delayTime.value = 0.012
+    this.wow = gain(0)
+    const lfo = ctx.createOscillator()
+    lfo.frequency.value = 0.55
+    lfo.connect(this.wow).connect(wow.delayTime)
+    lfo.start()
+    this.speaker = filt('lowpass', 16000, 0.6)
+    this.level = gain(0)
+    post
+      .connect(this.tone)
+      .connect(wow)
+      .connect(this.speaker)
+      .connect(this.level)
+    // (a lane: switched off, nothing of the radio is worked out at all: sound.js)
+    this.eng.lane([this.level.gain], this.level, this.eng.mixIn)
+    // (a record's surface, for lo-fi)
+    this.crackle = gain(0)
+    const cr = ctx.createBufferSource()
+    cr.buffer = this.crackles()
+    cr.loop = true
+    cr.connect(this.crackle).connect(this.tone)
+    cr.start()
+  }
+  // A song's own buses into the chain: the drums (out), the rest ducked under the kick (duck), and
+  // the arpeggio and the lead, dry and to the delay. Tuning away fades them out at once and lets
+  // them go, so the notes the last station had laid down ahead don't play on under the new one.
+  take () {
+    const { gain } = this.eng
+    const t = { out: gain(1), duck: gain(1), arp: gain(1), lead: gain(1) }
+    t.out.connect(this.mix)
+    t.duck.connect(t.out)
+    t.arp.connect(t.duck)
+    t.arp.connect(this.delayIn)
+    t.lead.connect(t.out)
+    t.lead.connect(this.delayIn)
+    return t
+  }
+  drop (t) {
+    const now = this.eng.ctx.currentTime
+    for (const g of [t.out, t.arp, t.lead]) {
+      g.gain.cancelScheduledValues(now)
+      g.gain.setTargetAtTime(0, now, 0.012)
+    }
+    setTimeout(() => {
+      for (const g of [t.out, t.arp, t.lead]) g.disconnect()
+    }, 250)
+  }
+  // a stereo room's tail: decaying noise
+  impulse (len) {
+    const { ctx } = this.eng,
+      n = Math.floor(ctx.sampleRate * len)
+    const b = ctx.createBuffer(2, n, ctx.sampleRate)
+    for (let c = 0; c < 2; c++) {
+      const d = b.getChannelData(c)
+      for (let i = 0; i < n; i++)
+        d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 3.2) * 0.5
+    }
+    return b
+  }
+  // a record's surface: sparse clicks over a faint hiss, four seconds of it
+  crackles () {
+    const { ctx } = this.eng,
+      n = ctx.sampleRate * 4
+    const b = ctx.createBuffer(1, n, ctx.sampleRate)
+    const d = b.getChannelData(0)
+    for (let i = 0; i < n; i++) {
+      d[i] = (Math.random() * 2 - 1) * 0.01
+      if (Math.random() < 0.0004) d[i] += (Math.random() < 0.5 ? -1 : 1) * 0.4
+    }
+    return b
+  }
+
+  // B: the next station, or off after the last; returns the station (null: off)
+  tune () {
+    this.on = this.on + 1 >= STATIONS.length ? -1 : this.on + 1
+    this.song = null
+    if (this.cur) this.drop(this.cur)
+    this.cur = null
+    return this.on < 0 ? null : STATIONS[this.on]
+  }
+
+  // once a frame (sound.js): lay down the notes due in the next third of a second. inside: the
+  // camera in the driver's seat
+  update (inside) {
+    const eng = this.eng
+    if (!this.mix) {
+      if (this.on < 0) return // (never switched on: nothing built)
+      this.build()
+    }
+    const now = eng.ctx.currentTime
+    // (a few dB over the street at a standstill, so the car's own sound comes through it at speed;
+    // the stations matched in loudness)
+    const gain = this.on < 0 ? 0 : 0.2 * (this.song ? this.song.st.gain : 1)
+    eng.R(this.level.gain, gain, 0.15)
+    eng.R(this.speaker.frequency, inside ? 15000 : 8000, 0.2)
+    if (this.on < 0) return
+    if (!this.song) {
+      this.song = writeSong(STATIONS[this.on].style, (this.seed += 7919))
+      this.cur = this.take()
+      // (tuned in: the station is already part way through the song)
+      this.step = 16 * Math.floor(Math.random() * 12)
+      this.next = now + 0.1
+      this.restyle(this.next)
+    }
+    // (back from a pause or a stall: pick up from now rather than play the backlog at once)
+    if (this.next < now) this.next = now + 0.05
+    const sixteenth = 60 / this.song.bpm / 4
+    while (this.next < now + AHEAD) {
+      this.play(this.step, this.next, sixteenth)
+      this.step++
+      this.next += sixteenth
+      if (this.step >= BARS * 16) {
+        this.chime(this.next)
+        this.song = writeSong(this.song.style, (this.seed += 7919))
+        this.step = 0
+        this.next += 1.4
+        this.restyle(this.next)
+        break
+      }
+    }
+  }
+  // The station's sound for the song from its first note (at): its tone, reverb, delay, wow and
+  // crackle. The delay's echoes are held back over the change: its length retuned with the last
+  // song's echoes still going round in it would chirp them.
+  restyle (at) {
+    const song = this.song,
+      st = song.st,
+      lofi = song.style === 'lofi',
+      now = this.eng.ctx.currentTime
+    const set = (p, v) => {
+      p.cancelScheduledValues(at)
+      p.setTargetAtTime(v, at, 0.05)
+    }
+    set(this.tone.frequency, st.lp)
+    set(this.verbIn.gain, st.verb)
+    set(this.wow.gain, lofi ? 0.0009 : 0)
+    set(this.crackle.gain, lofi ? 1 : 0)
+    const d = this.delayOut.gain,
+      echo = (60 / song.bpm) * 0.75 // (a dotted eighth)
+    d.cancelScheduledValues(now)
+    d.setTargetAtTime(0, Math.max(now, at - 0.25), 0.02)
+    for (const dl of [this.dl, this.dr]) {
+      dl.delayTime.cancelScheduledValues(now)
+      dl.delayTime.setValueAtTime(echo, at)
+    }
+    d.setTargetAtTime(st.delay, at + 0.03, 0.05)
+  }
+
+  // the notes on one 16th of the song, at time t (six: a 16th's length in s)
+  play (step, t, six) {
+    const ctx = this.eng.ctx,
+      song = this.song,
+      st = song.st,
+      R = song.R
+    const bar = Math.floor(step / 16),
+      s = step % 16
+    // which section, and what plays in it
+    let b = bar,
+      parts = ''
+    for (const [n, p] of FORM) {
+      if (b < n) {
+        parts = p
+        break
+      }
+      b -= n
+    }
+    // (swung: every other 16th a little late)
+    if (s % 2) t += st.swing * six
+    const chord = song.chords[bar % song.chords.length]
+    const noise = this.eng.white,
+      vel = 0.85 + R() * 0.15,
+      bus = this.cur
+    if (parts.includes('k') && (song.kick2 ? st.kick2 : st.kick).includes(s)) {
+      S.kick(ctx, bus.out, t, vel)
+      // (everything else ducks under it and swells back)
+      const g = bus.duck.gain
+      g.cancelScheduledValues(t)
+      g.setValueAtTime(1 - st.duck, t)
+      g.setTargetAtTime(1, t + 0.02, 0.09)
+    }
+    if (parts.includes('s') && st.snare.includes(s)) {
+      if (song.style === 'house') S.clap(ctx, bus.out, t, vel, noise)
+      else S.snare(ctx, bus.out, t, vel, noise)
+    }
+    if (parts.includes('h')) {
+      if (st.hats.includes(s))
+        S.hat(ctx, bus.out, t, (s % 4 ? 0.55 : 0.9) * vel, noise)
+      if (st.open.includes(s)) S.hat(ctx, bus.out, t, 0.6 * vel, noise, true)
+    }
+    if (parts.includes('b')) {
+      const m = chord.bass
+      if (st.bass === 'eighths' && s % 2 === 0)
+        S.bass(ctx, bus.duck, t, s % 8 === 6 ? m + 12 : m, six * 1.6, vel, 520)
+      else if (st.bass === 'roots' && (s === 0 || s === 10))
+        S.bass(ctx, bus.duck, t, m, six * (s ? 5 : 9), vel * 0.9, 380)
+      else if (st.bass === 'offbeat' && s % 4 === 2)
+        S.bass(ctx, bus.duck, t, s === 14 ? m + 7 : m, six * 1.5, vel, 700)
+    }
+    if (parts.includes('c')) {
+      if (st.chords === 'pad' && s === 0)
+        S.pad(ctx, bus.duck, t, chord.notes, six * 16, 1, 2000)
+      else if (st.chords === 'epiano' && (s === 0 || (s === 11 && R() < 0.5)))
+        S.epiano(ctx, bus.duck, t, chord.notes, six * 9, vel * 0.9)
+      else if (
+        st.chords === 'stab' &&
+        (s === 3 || s === 10 || (s === 14 && bar % 2))
+      )
+        S.stab(ctx, bus.duck, t, chord.notes, vel)
+    }
+    if (parts.includes('a') && st.arp) {
+      const n = chord.notes,
+        up = [0, 1, 2, 1][Math.floor(s / 4)]
+      const m = n[(s + up) % n.length] + 12
+      S.pluck(ctx, bus.arp, t, m, six * 0.9, vel * (s % 4 ? 0.7 : 1))
+    }
+    if (parts.includes('l') && st.lead) {
+      const phrase = bar % 4 < 2 ? song.motif : song.answer,
+        at = (bar % 2) * 16 + s
+      for (const n of phrase) {
+        if (n.at !== at) continue
+        const m = this.scaleNote(song.key + 36, n.step, chord)
+        if (song.style === 'lofi')
+          S.epiano(ctx, bus.lead, t, [m], six * n.len, 0.7)
+        else S.lead(ctx, bus.lead, t, m, six * n.len, 0.9, this.lastLead ?? m)
+        this.lastLead = m
+      }
+    }
+  }
+  // a melody's step in the key's scale, pulled onto the chord's nearest tone on the even steps
+  scaleNote (tonic, step, chord) {
+    const deg = ((step % 7) + 7) % 7
+    let m = tonic + 12 * Math.floor(step / 7) + MINOR[deg]
+    if (step % 2 === 0) {
+      let best = m,
+        bd = 99
+      for (const c of chord.notes)
+        for (const o of [-12, 0, 12, 24]) {
+          const d = Math.abs(c + o - m)
+          if (d < bd) {
+            bd = d
+            best = c + o
+          }
+        }
+      m = best
+    }
+    return m
+  }
+  // the station's chime between songs: a rising major arpeggio on the electric piano
+  chime (t) {
+    ;[0, 4, 7, 12].forEach((iv, i) =>
+      S.epiano(this.eng.ctx, this.cur.out, t + i * 0.12, [72 + iv], 0.5, 0.9)
+    )
+  }
+}
+__export(__exports, { "STATIONS": () => STATIONS, "BARS": () => BARS, "writeSong": () => writeSong, "Radio": () => Radio })
+})
+
+// ---- js/audio/street.js
+__define(64, function (__exports) {
+// The city's bed of sound, mixed into the SoundEngine (sound.js): the wash of traffic a few streets
+// away (a low roar on each side, as loud as the traffic over there is busy, swelling as cars come
+// and go), the wind between the buildings (gusting, louder up on the roofs and out by the sea, a
+// hollow whistle down the tall street canyons), the surf on the beach with a wave breaking every
+// few seconds and gulls over it (louder the nearer the water), songbirds by day and crickets at
+// night, a few of them, each chirping at its own rate from its own side; and by the walls east and
+// south, the freeway's roar beyond them, its tyres' hiss dulled by the wall.
+const { clamp } = __require(4)
+const STREET = {
+  buildStreet () {
+    const { ctx, n, gain, filt, loop } = this
+    // far traffic, left and right
+    n.wash = [-0.7, 0.7].map(side => {
+      const g = gain(0),
+        p = ctx.createStereoPanner(),
+        swell = gain(1)
+      p.pan.value = side
+      // (the left side shares the engine's noise, the right has its own, so they are not alike)
+      ;(side < 0 ? this.src.brown : loop(this.brown)).connect(g)
+      g.connect(filt('lowpass', 320, 0.5)).connect(swell)
+      const hiss = gain(0)
+      ;(side < 0 ? this.src.pink : loop(this.pink))
+        .connect(hiss)
+        .connect(filt('bandpass', 750, 0.5))
+        .connect(swell)
+      g.hiss = hiss
+      const s = loop(this.gust)
+      s.playbackRate.value = side < 0 ? 2.3 : 2.9
+      s.connect(gain(0.45)).connect(swell.gain)
+      swell.connect(p)
+      this.lane(
+        [g.gain, hiss.gain],
+        p,
+        this.world,
+        p.connect(gain(0.3)),
+        this.verb
+      )
+      return g
+    })
+    // the wind between the buildings, and its whistle down a tall street
+    n.breeze = gain(0)
+    const gusts = gain(0.6)
+    this.src.pink
+      .connect(n.breeze)
+      .connect(filt('bandpass', 520, 0.45))
+      .connect(gusts)
+    n.howl = gain(0)
+    n.pipe = filt('bandpass', 820, 7)
+    this.src.white.connect(n.howl).connect(n.pipe).connect(gusts)
+    // (the gusts swell the wind; the howl's pitch wanders, set now and then: see updateStreet)
+    const g2 = loop(this.gust)
+    g2.playbackRate.value = 0.7
+    g2.connect(gain(0.5)).connect(gusts.gain)
+    this.lane([n.breeze.gain, n.howl.gain], gusts, this.world)
+    this.howlT = 0
+    // the surf: a low roar and the hiss of the wash, swelling as each wave breaks
+    n.surf = gain(0)
+    n.surfHiss = gain(0)
+    n.swell = gain(0.3)
+    this.src.brown
+      .connect(n.surf)
+      .connect(filt('lowpass', 520, 0.5))
+      .connect(n.swell)
+    this.src.pink
+      .connect(n.surfHiss)
+      .connect(filt('bandpass', 2600, 0.45))
+      .connect(n.swell)
+    this.lane(
+      [n.surf.gain, n.surfHiss.gain],
+      n.swell,
+      this.world,
+      n.swell.connect(gain(0.2)),
+      this.verb
+    )
+    this.waveT = 1.5
+    this.gullT = 5
+    // the freeway: a deep roar of engines and a hiss of tyres, heard over the sound wall (so dulled)
+    n.fwy = gain(0)
+    n.fwyHiss = gain(0)
+    n.fwyPan = ctx.createStereoPanner()
+    loop(this.brown)
+      .connect(n.fwy)
+      .connect(filt('lowpass', 420, 0.6))
+      .connect(n.fwyPan)
+    loop(this.pink)
+      .connect(n.fwyHiss)
+      .connect(filt('bandpass', 1100, 0.6))
+      .connect(n.fwyPan)
+    this.lane(
+      [n.fwy.gain, n.fwyHiss.gain],
+      n.fwyPan,
+      this.world,
+      n.fwyPan.connect(gain(0.25)),
+      this.verb
+    )
+  },
+  // crickets: a high tone pulsed in quick trains of chirps (on only while both the pulse and the
+  // train are), three of them; made the first time night falls
+  buildCrickets () {
+    const { ctx, n, gain, filt, osc } = this
+    n.crickets = gain(0)
+    const curve = Float32Array.from([0, 0, 0, 1])
+    for (const [f, rate, train, side] of [
+      [4300, 28, 2.6, -0.6],
+      [4650, 31, 3.1, 0.55],
+      [3950, 25, 2.2, 0.1]
+    ]) {
+      const chirp = gain(0),
+        p = ctx.createStereoPanner(),
+        sum = gain(0.5),
+        gate = ctx.createWaveShaper()
+      gate.curve = curve
+      p.pan.value = side
+      osc('sine', f).connect(chirp).connect(p).connect(n.crickets)
+      osc('square', rate).connect(sum)
+      osc('square', train).connect(sum)
+      sum.connect(gate).connect(filt('lowpass', 180, 0.7)).connect(chirp.gain)
+    }
+    this.lane(
+      [n.crickets.gain],
+      n.crickets,
+      this.world,
+      n.crickets.connect(gain(0.3)),
+      this.verb
+    )
+  },
+  // st.washL, st.washR: how busy the traffic is off to each side (0 to 1); st.sea (0 to 1, how near
+  // the water); st.camY (m, how high the camera is); st.enclosed
+  updateStreet (st) {
+    const { n, R } = this,
+      now = this.now,
+      city = st.city
+    const quiet = st.night ? 0.6 : 1
+    for (let i = 0; i < 2; i++) {
+      const g = n.wash[i],
+        w = city ? (0.006 + 0.05 * ((i ? st.washR : st.washL) || 0)) * quiet : 0
+      R(g.gain, w, 0.5)
+      R(g.hiss.gain, w * 0.35, 0.5)
+    }
+    const sea = st.sea || 0,
+      up = clamp(((st.camY || 2) - 6) / 40, 0, 1)
+    R(n.breeze.gain, city ? 0.012 + 0.03 * up + 0.015 * sea : 0, 0.6)
+    R(n.howl.gain, city ? 0.04 * (st.enclosed ?? 0) + 0.25 * up : 0, 0.8)
+    if (city && (this.howlT -= st.dt) < 0) {
+      this.howlT = 0.6 + Math.random()
+      R(n.pipe.frequency, 700 + Math.random() * 260, 0.5)
+    }
+    // a wave breaks every 5 to 10 s: a swell up over a second, then the wash running back
+    R(n.surf.gain, city ? sea * sea * 0.5 : 0, 0.5)
+    R(n.surfHiss.gain, city ? sea * sea * 0.27 : 0, 0.5)
+    if (sea > 0.02 && (this.waveT -= st.dt) < 0) {
+      this.waveT = 5 + Math.random() * 5
+      n.swell.gain.setTargetAtTime(1, now, 0.45)
+      n.swell.gain.setTargetAtTime(0.3, now + 1.4, 1.3)
+    }
+    if (sea > 0.15 && (this.gullT -= st.dt) < 0) {
+      this.gullT = 4 + Math.random() * 9
+      this.gull(0.02 * sea, Math.random() * 1.6 - 0.8)
+    }
+    // (a steady roar by the wall, over the street's own sounds; gone a couple of hundred metres in;
+    // a little quieter at night)
+    const fwy = city ? (st.freeway || 0) ** 2 * (st.night ? 0.8 : 1) : 0
+    R(n.fwy.gain, fwy * 0.22, 0.6)
+    R(n.fwyHiss.gain, fwy * 0.06, 0.6)
+    if (fwy > 0) R(n.fwyPan.pan, clamp(st.freewayPan || 0, -0.8, 0.8), 0.3)
+    if (st.night && !n.crickets) this.buildCrickets()
+    if (n.crickets) R(n.crickets.gain, city && st.night ? 0.005 : 0, 0.8)
+  }
+}
+__export(__exports, { "STREET": () => STREET })
+})
+
 // ---- js/audio/impacts.js
-__define(41, function (__exports) {
+__define(65, function (__exports) {
 // Knocks, crashes and breakages, mixed into the SoundEngine (sound.js): layers from the sample bank
 // (buffers.js), picked and scaled by how hard the hit was and what was hit. A light touch is a dull
 // knock; harder, a plastic bumper cracks over the thud; harder still the steel buckles and
@@ -64863,7 +69215,7 @@ __define(41, function (__exports) {
 // lid, landings (and the suspension bottoming out on a hard one), poles and trees snapping and
 // falling are here too. Everything the Roadster does is heard from the car (carBus); what happens
 // elsewhere is placed by its own pan and distance.
-const { clamp } = __require(1)
+const { clamp } = __require(4)
 const MAX_VOICES = 28
 const pick = list => list[Math.floor(Math.random() * list.length)]
 const vary = (a = 0.08) => 1 - a + Math.random() * 2 * a
@@ -64928,7 +69280,11 @@ const IMPACTS = {
   // side: a little left or right of the car, where it was hit
   bump (v, what = 'car', at = null, side = 0) {
     const k = clamp(v / 12, 0, 1.2) * (at ? at.k : 1)
-    const wall = what === 'building' || what === 'plant' || what === 'mast'
+    const wall =
+      what === 'building' ||
+      what === 'plant' ||
+      what === 'mast' ||
+      what === 'wall'
     const post = what === 'lamp' || what === 'signal'
     const tree = what === 'tree' || what === 'palm'
     const lp = at ? at.lp : 20000
@@ -65057,12 +69413,12 @@ __export(__exports, { "IMPACTS": () => IMPACTS })
 })
 
 // ---- js/audio/shots.js
-__define(42, function (__exports) {
+__define(66, function (__exports) {
 // One-shot sounds, mixed into the SoundEngine (sound.js): each can sit anywhere left to right
 // (pan), dulled by distance or a building in the way (lp), and send some of itself into the reverb
 // (verb). By default they are out in the world; o.to 'car' puts one at the Roadster, 'ui' straight
 // into the mix (the game's own chimes, never muffled or echoed).
-const { clamp } = __require(1)
+const { clamp } = __require(4)
 const R = Math.random
 
 // a few stock two-tone horns (Hz): traffic picks one per car
@@ -65376,524 +69732,15 @@ const ONE_SHOTS = {
 __export(__exports, { "HORNS": () => HORNS, "AIR_HORN": () => AIR_HORN, "ONE_SHOTS": () => ONE_SHOTS })
 })
 
-// ---- js/audio/cars.js
-__define(43, function (__exports) {
-// The traffic round the camera, mixed into the SoundEngine (sound.js): six voices for the nearest
-// cars, each handed to a car and kept on it while it stays near (a voice let go fades out before it
-// is given to another car). Most cars burn petrol: an engine is a periodic wave on its cycle (two
-// turns of the crank), with its firing order strong and the rest of the orders round it (a four's
-// even thrum, a three's lumpy one, a V6's growl, a V8's burble), exhaust noise pulsing in time with
-// it, and a lowpass that opens up with the throttle. Each engine has an automatic gearbox: it idles
-// at the lights, the torque converter lets it rev on pulling away, it shifts up as the revs climb
-// (sooner when it is gentle, later when it is pushed, dipping as each shift goes through) and down
-// as it slows, on the overrun quieter and darker. The vans and buses are diesels, with a clatter
-// and a turbo's whistle that spools up behind the throttle; the taxis are hybrids, quiet at low
-// speed and starting their engine to pull away hard or to cruise; about a third of the cars are
-// electric, a whine of their motor and, below 30 km/h, the soft hum that warns people on foot.
-// Every car's tyres roar with its speed. Each voice is shifted by its doppler (its tyres' noise
-// too), fades with its distance, loses its highs to the air the further off it is, is dulled and
-// quietened when a building stands between it and the camera, and has more of it in the reverb the
-// further it is.
-const { clamp } = __require(1)
-const { wave, bandNoise } = __require(37)
-const VOICES = 5
-const AUTO6 = [405, 243, 162, 121, 95, 78] // rpm per m/s in each gear (overall ratio, tyre)
-const AUTO5 = [361, 196, 144, 103, 77] // a bus's
-// cyl: cylinders; idle rpm; w: its wave; k: how loud; dsl: a diesel; turbo
-const ENGINES = {
-  i4: { cyl: 4, idle: 760, w: 'i4', k: 1, gears: AUTO6 },
-  i3: { cyl: 3, idle: 820, w: 'i3', k: 0.9, gears: AUTO6 },
-  v6: { cyl: 6, idle: 680, w: 'v6', k: 1.1, gears: AUTO6, turbo: 0.4 },
-  v8: { cyl: 8, idle: 620, w: 'v8', k: 1.5, gears: AUTO6 },
-  dsl4: {
-    cyl: 4,
-    idle: 780,
-    w: 'dsl',
-    k: 1.3,
-    gears: AUTO6,
-    dsl: true,
-    turbo: 1
-  },
-  dsl6: {
-    cyl: 6,
-    idle: 600,
-    w: 'dsl6',
-    k: 2.6,
-    gears: AUTO5,
-    dsl: true,
-    turbo: 1.4
-  },
-  hybrid: { cyl: 4, idle: 1000, w: 'i4', k: 0.8, gears: AUTO6, hybrid: true }
-}
-const KIND = {
-  sedan: 'i4',
-  hatch: 'i3',
-  suv: 'v6',
-  taxi: 'hybrid',
-  pickup: 'v8',
-  van: 'dsl4',
-  bus: 'dsl6'
-}
-// the orders of each engine, as harmonics of its cycle (half the crank's turn rate): the firing
-// order and its multiples strong, the rest (the cylinders never quite alike) round them
-function engineWaves (ctx) {
-  const w =
-    (fire, extra, rich = 0.5) =>
-    () => {
-      const a = {}
-      for (let k = 1; k <= 48; k++)
-        a[k] =
-          (k % fire === 0 ? 1.1 : 0.12 * rich) /
-          Math.pow(k / fire, k % fire === 0 ? 0.9 : 0.6)
-      Object.assign(a, extra)
-      return wave(ctx, a)
-    }
-  const make = {
-    i4: w(4, { 2: 0.3, 1: 0.12, 6: 0.18 }),
-    i3: w(3, { 2: 0.45, 1: 0.3, 4: 0.2, 5: 0.15 }),
-    v6: w(6, { 3: 0.5, 2: 0.25, 9: 0.35, 1: 0.12 }),
-    v8: w(
-      8,
-      { 2: 0.6, 4: 0.55, 6: 0.45, 1: 0.25, 3: 0.35, 5: 0.25, 7: 0.25 },
-      0.8
-    ),
-    dsl: w(4, { 2: 0.35, 1: 0.15 }, 1.6),
-    dsl6: w(6, { 3: 0.3, 2: 0.2, 1: 0.1 }, 1.8),
-    // an electric car's motor and gears (orders of its shaft), and its warning hum
-    ev: () =>
-      wave(ctx, {
-        1: 0.05,
-        6: 0.25,
-        18: 0.15,
-        17: 0.12,
-        19: 0.12,
-        34: 0.3,
-        36: 0.2,
-        54: 0.08
-      }),
-    avas: () => wave(ctx, { 1: 1, 2: 0.5, 3: 0.35, 4: 0.12, 5: 0.2, 7: 0.08 }),
-    sine: () => wave(ctx, { 1: 1 })
-  }
-  // (each made the first time a car needs it: making a wave's tables takes a few milliseconds)
-  const made = {}
-  return name => made[name] || (made[name] = make[name]())
-}
-
-const listed = (cars, key) => {
-  for (const c of cars) if (c.key === key) return true
-  return false
-}
-
-const CARS = {
-  buildCars () {
-    const { ctx, gain, filt, osc, loop } = this
-    this.carWaves = engineWaves(ctx)
-    // the exhaust's noise, a petrol engine's band and a diesel's, shared by every voice; the tyres'
-    this.puffLo = loop(bandNoise(ctx, 2, 1100, 0.8, false, 31))
-    this.puffHi = loop(bandNoise(ctx, 2, 2400, 0.8, false, 32))
-    this.tyreNoise = bandNoise(ctx, 2, 900, 0.6, true, 33)
-    this.carState = new Map()
-    this.carVoices = []
-    for (let i = 0; i < VOICES; i++) {
-      const v = { car: null, freeAt: 0, kind: '' }
-      v.out = gain(0)
-      v.air = filt('lowpass', 20000, 0.5)
-      v.pan = ctx.createStereoPanner()
-      v.send = gain(0.2)
-      v.out.connect(v.air).connect(v.pan)
-      // the engine and its exhaust's pulsing noise (each level first, so a silent voice rests)
-      v.eng = osc('sine', 20)
-      v.engLP = filt('lowpass', 600, 1.2)
-      v.engG = gain(0)
-      v.eng.connect(v.engG).connect(v.engLP).connect(v.out)
-      v.puff = gain(0)
-      v.puffAM = gain(0.35)
-      v.puffSrc = this.puffLo
-      v.puffSrc.connect(v.puff).connect(v.puffAM)
-      this.lane([v.puff.gain], v.puffAM, v.out)
-      v.eng.connect(gain(0.65)).connect(v.puffAM.gain)
-      // a motor's whine, or a turbo's whistle
-      v.whine = osc('sine', 400)
-      v.whineG = gain(0)
-      v.whine.connect(v.whineG)
-      this.lane([v.whineG.gain], v.whineG, v.out)
-      // tyres (noise already filtered to their band, played faster or slower for the doppler)
-      v.tyre = loop(this.tyreNoise)
-      v.tyreG = gain(0)
-      v.tyre.connect(v.tyreG)
-      this.lane([v.tyreG.gain], v.tyreG, v.out)
-      // (the whole voice joins the world only while it sounds)
-      v.pan.connect(v.send)
-      this.lane(
-        [v.out.gain, v.engG.gain, v.puff.gain, v.whineG.gain, v.tyreG.gain],
-        v.pan,
-        this.world,
-        v.send,
-        this.verb
-      )
-      this.carVoices.push(v)
-    }
-  },
-  // a car's engine state, kept while it is near: gear, revs, how hard it is pulling
-  engineOf (c) {
-    let s = this.carState.get(c.key)
-    if (!s) {
-      const kind = c.ev ? 'ev' : KIND[c.type] || 'i4'
-      s = {
-        kind,
-        E: ENGINES[kind] || null,
-        v: c.v,
-        a: 0,
-        gear: 0,
-        rpm: 800,
-        load: 0,
-        shiftT: 0,
-        boost: 0,
-        on: 1,
-        seed: Math.random() * 6.28,
-        seen: 0
-      }
-      if (s.E) {
-        while (s.gear < s.E.gears.length - 1 && c.v * s.E.gears[s.gear] > 2000)
-          s.gear++
-      }
-      this.carState.set(c.key, s)
-    }
-    return s
-  },
-  // the automatic gearbox and the throttle, from how the car's speed is changing
-  drive (s, c, dt) {
-    // (the driver's own pedal, when the sim keeps it; otherwise from the change in speed)
-    const E = s.E,
-      a = Number.isFinite(c.acc) ? c.acc : (c.v - s.v) / Math.max(dt, 1e-3)
-    s.v = c.v
-    s.a += (clamp(a, -8, 6) - s.a) * Math.min(1, dt * 4)
-    const big = E && E.gears === AUTO5
-    const need = s.a + 0.15 + 0.0004 * c.v * c.v
-    const load = s.a < -0.4 ? 0 : clamp(need / (big ? 1.2 : 2.4), 0.08, 1)
-    s.load += (load - s.load) * Math.min(1, dt * 6)
-    if (!E) return
-    const g = E.gears
-    // (backing up: the reverse gear, as low as first)
-    if (c.rev) s.gear = 0
-    let rpm = c.v * g[s.gear]
-    const up = (big ? 1500 : 1700) + (big ? 600 : 2300) * s.load,
-      down = (big ? 900 : 1050) + 600 * s.load
-    if (rpm > up && s.gear < g.length - 1 && !c.rev) {
-      s.gear++
-      s.shiftT = big ? 0.5 : 0.3
-    } else if (rpm < down && s.gear > 0) {
-      s.gear--
-      s.shiftT = 0.2
-    }
-    s.shiftT = Math.max(0, s.shiftT - dt)
-    rpm = c.v * g[s.gear]
-    // the torque converter slipping as it pulls away, and the idle, never quite steady
-    const slip = s.load * (big ? 700 : 1500) * clamp(1 - c.v / 5, 0, 1)
-    const idle = E.idle * (1 + 0.012 * Math.sin(this.now * 1.7 + s.seed))
-    s.rpm = Math.max(idle + slip, rpm)
-    // a hybrid runs on its battery at low speed, starting its engine to pull away hard or to cruise
-    if (E.hybrid)
-      s.on += ((s.load > 0.5 || c.v > 12 ? 1 : 0) - s.on) * Math.min(1, dt * 3)
-    if (E.turbo)
-      s.boost +=
-        (s.load * clamp(s.rpm / 2600, 0, 1.3) - s.boost) * Math.min(1, dt * 1.8)
-  },
-  // st.cars: [{ key, d, pan, doppler, v, type, ev, occl }], nearest first
-  updateCars (st) {
-    const R = this.R,
-      cars = st.cars || [],
-      ps = st.pitch,
-      dt = st.dt
-    const voices = this.carVoices
-    for (const v of voices) {
-      if (v.car !== null && !listed(cars, v.car)) {
-        v.car = null
-        v.freeAt = this.now + 0.25
-      }
-      // (a free voice falls silent, and once it is, rests)
-      if (v.car === null) {
-        R(v.out.gain, 0, 0.04)
-        R(v.engG.gain, 0, 0.04)
-        R(v.puff.gain, 0, 0.04)
-        R(v.whineG.gain, 0, 0.04)
-        R(v.tyreG.gain, 0, 0.04)
-      }
-    }
-    for (const c of cars) {
-      const s = this.engineOf(c)
-      s.seen = this.now
-      this.drive(s, c, dt)
-      let v = null
-      for (const x of voices) if (x.car === c.key) v = x
-      if (!v) {
-        for (const x of voices)
-          if (!v && x.car === null && this.now >= x.freeAt) v = x
-        if (!v) continue
-        v.car = c.key
-        v.fresh = true
-        if (v.kind !== s.kind) {
-          v.kind = s.kind
-          const src = s.E && s.E.dsl ? this.puffHi : this.puffLo
-          if (src !== v.puffSrc) {
-            v.puffSrc.disconnect(v.puff)
-            v.puffSrc = src
-            src.connect(v.puff)
-          }
-          v.eng.setPeriodicWave(this.carWaves(s.kind === 'ev' ? 'avas' : s.E.w))
-          v.whine.setPeriodicWave(
-            this.carWaves(s.kind === 'ev' ? 'ev' : 'sine')
-          )
-        }
-      }
-      this.voice(v, s, c, ps)
-    }
-    // forget engines that have been out of earshot for a while
-    if (this.carState.size > 40)
-      for (const [k, s] of this.carState)
-        if (this.now - s.seen > 5) this.carState.delete(k)
-  },
-  voice (v, s, c, ps) {
-    // (pitches jump straight to the new car's on a voice just handed to it; levels ease in)
-    const R = this.R,
-      F = v.fresh ? (p, x) => this.J(p, x) : R,
-      E = s.E,
-      dop = c.doppler * ps,
-      sp = c.v
-    if (E) {
-      const fire = (s.rpm / 120) * dop
-      const shift = s.shiftT > 0 ? 0.35 : 1
-      const load = s.load * shift
-      const lvl =
-        E.k *
-        s.on *
-        (0.2 + 0.8 * load) *
-        (0.55 + 0.45 * Math.min(1.5, s.rpm / 2500))
-      F(v.eng.frequency, fire, s.shiftT > 0 ? 0.06 : 0.05)
-      F(v.engLP.frequency, (250 + s.rpm * (0.12 + 0.5 * load)) * dop, 0.06)
-      R(v.engG.gain, lvl * 0.12, 0.05)
-      R(v.puff.gain, lvl * 0.12 * (E.dsl ? 0.5 : 0.18) * (0.3 + load), 0.08)
-      // a turbo's whistle (a hybrid's electric whine, under the engine)
-      const t = E.turbo || 0
-      // (backing up, the reverse gear's straight-cut teeth whine instead)
-      const rev = c.rev && sp > 0.3
-      F(
-        v.whine.frequency,
-        (rev
-          ? (s.rpm / 60) * 17
-          : E.hybrid
-            ? 40 + sp * 30
-            : 2400 + s.boost * 4200) * dop,
-        0.1
-      )
-      R(
-        v.whineG.gain,
-        rev
-          ? 0.012 * Math.min(1, sp / 2)
-          : E.hybrid
-            ? (1 - s.on) * 0.004 * Math.min(1, sp / 3)
-            : t * s.boost * 0.006,
-        0.1
-      )
-    } else {
-      // electric: the warning hum under 30 km/h, and the motor's whine
-      const avas = clamp(1 - (sp - 6) / 3, 0, 1) * Math.min(1, 0.4 + sp)
-      F(v.eng.frequency, (110 + sp * 14) * dop, 0.08)
-      F(v.engLP.frequency, 1600, 0.2)
-      R(v.engG.gain, avas * 0.03, 0.1)
-      R(v.puff.gain, 0, 0.1)
-      F(v.whine.frequency, (sp / 2.07) * 9 * dop, 0.05)
-      R(v.whineG.gain, Math.min(1, sp / 4) * (0.2 + 0.8 * s.load) * 0.03, 0.08)
-    }
-    // tyres: about v^1.8, a bus's louder; a car knocked sliding on locked tyres scrubs and howls,
-    // and a startled driver stamping on the brakes makes them squeal
-    const big = c.type === 'bus' || c.type === 'van'
-    const roll = Math.min(1.5, Math.pow(sp / 14, 1.8)) * (big ? 0.4 : 0.25)
-    const stamp = !c.loose && c.panic && sp > 4 && s.a < -4
-    R(
-      v.tyreG.gain,
-      c.loose
-        ? Math.min(1, sp / 6) * 0.9
-        : stamp
-          ? Math.min(1, sp / 10) * 1.4
-          : roll,
-      0.05
-    )
-    // (the band, at 900 Hz, played slower for a bus's or a wreck's scrub, faster for a screech)
-    const band = c.loose ? 0.65 + sp * 0.02 : stamp ? 1.2 : big ? 0.78 : 1
-    F(v.tyre.playbackRate, clamp(dop * band, 0.4, 2.2), 0.05)
-    // distance, the air and walls in the way, left or right
-    const near = Math.min(1.4, 6 / Math.max(c.d, 2.5))
-    R(v.out.gain, near * (1 - 0.6 * c.occl), 0.06)
-    F(
-      v.air.frequency,
-      clamp(20000 * Math.exp(-c.d / 90), 2200, 20000) *
-        (1 - 0.85 * c.occl) *
-        (1 - 0.35 * (c.back || 0)),
-      0.08
-    )
-    F(v.pan.pan, c.pan, 0.06)
-    R(v.send.gain, clamp(0.15 + c.d / 70 + c.occl * 0.3, 0, 0.8), 0.2)
-    v.fresh = false
-  }
-}
-__export(__exports, { "CARS": () => CARS })
-})
-
-// ---- js/audio/street.js
-__define(44, function (__exports) {
-// The city's bed of sound, mixed into the SoundEngine (sound.js): the wash of traffic a few streets
-// away (a low roar on each side, as loud as the traffic over there is busy, swelling as cars come
-// and go), the wind between the buildings (gusting, louder up on the roofs and out by the sea, a
-// hollow whistle down the tall street canyons), the surf on the beach with a wave breaking every
-// few seconds and gulls over it (louder the nearer the water), songbirds by day and crickets at
-// night, a few of them, each chirping at its own rate from its own side.
-const { clamp } = __require(1)
-const STREET = {
-  buildStreet () {
-    const { ctx, n, gain, filt, loop } = this
-    // far traffic, left and right
-    n.wash = [-0.7, 0.7].map(side => {
-      const g = gain(0),
-        p = ctx.createStereoPanner(),
-        swell = gain(1)
-      p.pan.value = side
-      // (the left side shares the engine's noise, the right has its own, so they are not alike)
-      ;(side < 0 ? this.src.brown : loop(this.brown)).connect(g)
-      g.connect(filt('lowpass', 320, 0.5)).connect(swell)
-      const hiss = gain(0)
-      ;(side < 0 ? this.src.pink : loop(this.pink))
-        .connect(hiss)
-        .connect(filt('bandpass', 750, 0.5))
-        .connect(swell)
-      g.hiss = hiss
-      const s = loop(this.gust)
-      s.playbackRate.value = side < 0 ? 2.3 : 2.9
-      s.connect(gain(0.45)).connect(swell.gain)
-      swell.connect(p)
-      this.lane([g.gain, hiss.gain], p, this.world, p.connect(gain(0.3)), this.verb)
-      return g
-    })
-    // the wind between the buildings, and its whistle down a tall street
-    n.breeze = gain(0)
-    const gusts = gain(0.6)
-    this.src.pink
-      .connect(n.breeze)
-      .connect(filt('bandpass', 520, 0.45))
-      .connect(gusts)
-    n.howl = gain(0)
-    n.pipe = filt('bandpass', 820, 7)
-    this.src.white.connect(n.howl).connect(n.pipe).connect(gusts)
-    // (the gusts swell the wind; the howl's pitch wanders, set now and then: see updateStreet)
-    const g2 = loop(this.gust)
-    g2.playbackRate.value = 0.7
-    g2.connect(gain(0.5)).connect(gusts.gain)
-    this.lane([n.breeze.gain, n.howl.gain], gusts, this.world)
-    this.howlT = 0
-    // the surf: a low roar and the hiss of the wash, swelling as each wave breaks
-    n.surf = gain(0)
-    n.surfHiss = gain(0)
-    n.swell = gain(0.3)
-    this.src.brown
-      .connect(n.surf)
-      .connect(filt('lowpass', 520, 0.5))
-      .connect(n.swell)
-    this.src.pink
-      .connect(n.surfHiss)
-      .connect(filt('bandpass', 2600, 0.45))
-      .connect(n.swell)
-    this.lane(
-      [n.surf.gain, n.surfHiss.gain],
-      n.swell,
-      this.world,
-      n.swell.connect(gain(0.2)),
-      this.verb
-    )
-    this.waveT = 1.5
-    this.gullT = 5
-  },
-  // crickets: a high tone pulsed in quick trains of chirps (on only while both the pulse and the
-  // train are), three of them; made the first time night falls
-  buildCrickets () {
-    const { ctx, n, gain, filt, osc } = this
-    n.crickets = gain(0)
-    const curve = Float32Array.from([0, 0, 0, 1])
-    for (const [f, rate, train, side] of [
-      [4300, 28, 2.6, -0.6],
-      [4650, 31, 3.1, 0.55],
-      [3950, 25, 2.2, 0.1]
-    ]) {
-      const chirp = gain(0),
-        p = ctx.createStereoPanner(),
-        sum = gain(0.5),
-        gate = ctx.createWaveShaper()
-      gate.curve = curve
-      p.pan.value = side
-      osc('sine', f).connect(chirp).connect(p).connect(n.crickets)
-      osc('square', rate).connect(sum)
-      osc('square', train).connect(sum)
-      sum
-        .connect(gate)
-        .connect(filt('lowpass', 180, 0.7))
-        .connect(chirp.gain)
-    }
-    this.lane(
-      [n.crickets.gain],
-      n.crickets,
-      this.world,
-      n.crickets.connect(gain(0.3)),
-      this.verb
-    )
-  },
-  // st.washL, st.washR: how busy the traffic is off to each side (0 to 1); st.sea (0 to 1, how near
-  // the water); st.camY (m, how high the camera is); st.enclosed
-  updateStreet (st) {
-    const { n, R } = this,
-      now = this.now,
-      city = st.city
-    const quiet = st.night ? 0.6 : 1
-    for (let i = 0; i < 2; i++) {
-      const g = n.wash[i],
-        w = city ? (0.006 + 0.05 * ((i ? st.washR : st.washL) || 0)) * quiet : 0
-      R(g.gain, w, 0.5)
-      R(g.hiss.gain, w * 0.35, 0.5)
-    }
-    const sea = st.sea || 0,
-      up = clamp(((st.camY || 2) - 6) / 40, 0, 1)
-    R(n.breeze.gain, city ? 0.012 + 0.03 * up + 0.015 * sea : 0, 0.6)
-    R(n.howl.gain, city ? 0.04 * (st.enclosed ?? 0) + 0.25 * up : 0, 0.8)
-    if (city && (this.howlT -= st.dt) < 0) {
-      this.howlT = 0.6 + Math.random()
-      R(n.pipe.frequency, 700 + Math.random() * 260, 0.5)
-    }
-    // a wave breaks every 5 to 10 s: a swell up over a second, then the wash running back
-    R(n.surf.gain, city ? sea * sea * 0.5 : 0, 0.5)
-    R(n.surfHiss.gain, city ? sea * sea * 0.27 : 0, 0.5)
-    if (sea > 0.02 && (this.waveT -= st.dt) < 0) {
-      this.waveT = 5 + Math.random() * 5
-      n.swell.gain.setTargetAtTime(1, now, 0.45)
-      n.swell.gain.setTargetAtTime(0.3, now + 1.4, 1.3)
-    }
-    if (sea > 0.15 && (this.gullT -= st.dt) < 0) {
-      this.gullT = 4 + Math.random() * 9
-      this.gull(0.02 * sea, Math.random() * 1.6 - 0.8)
-    }
-    if (st.night && !n.crickets) this.buildCrickets()
-    if (n.crickets) R(n.crickets.gain, city && st.night ? 0.005 : 0, 0.8)
-  }
-}
-__export(__exports, { "STREET": () => STREET })
-})
-
 // ---- js/audio/ambience.js
-__define(45, function (__exports) {
+__define(67, function (__exports) {
 // Life in the city round the car, mixed into the SoundEngine (sound.js): now and then a bird by
 // day, a horn a few streets away (once drivers honk at all), a siren wailing or yelping somewhere
 // across town and drifting past, a dog barking, building work (a jackhammer, a reversing lorry's
 // beeper, a steel beam's clang) by day; and the people on the pavement: a murmur of voices as the
 // camera nears a crowd, and the footsteps of anyone walking close by. Everything far off is dulled
 // by the distance and mostly heard in the reverb.
-const { HORNS } = __require(42)
+const { HORNS } = __require(66)
 const R = Math.random
 // the first two formants (Hz) of a few vowels: as in "heed", "head", "had", "hod", "who'd", "hut"
 const VOWELS = [
@@ -66277,7 +70124,7 @@ __export(__exports, { "AMBIENCE": () => AMBIENCE })
 })
 
 // ---- js/audio/sound.js
-__define(46, function (__exports) {
+__define(68, function (__exports) {
 // Sound, synthesised with Web Audio (nothing to download). This is the engine: the context, the
 // buses and the master chain, the thrusters, fan and horn; the rest is mixed in from its own
 // module: buffers.js (the noise and sample bank, built at start-up), space.js (where things are
@@ -66286,15 +70133,16 @@ __define(46, function (__exports) {
 // (one-shots: horns, air brakes, birds, locks), cars.js (the traffic's engines and tyres),
 // street.js (the city's bed: far traffic, wind, surf, birds, crickets) and ambience.js (sirens,
 // dogs, building work and the people on the pavement).
-const { noises, bank, wobble, wave } = __require(37)
-const { SPACE } = __require(38)
-const { DRIVE } = __require(39)
-const { TYRES } = __require(40)
-const { IMPACTS } = __require(41)
-const { ONE_SHOTS, HORNS } = __require(42)
-const { CARS } = __require(43)
-const { STREET } = __require(44)
-const { AMBIENCE } = __require(45)
+const { CARS } = __require(58)
+const { SPACE } = __require(59)
+const { DRIVE } = __require(60)
+const { TYRES } = __require(61)
+const { Radio } = __require(63)
+const { STREET } = __require(64)
+const { IMPACTS } = __require(65)
+const { AMBIENCE } = __require(67)
+const { ONE_SHOTS, HORNS } = __require(66)
+const { noises, bank, wobble, wave } = __require(57)
 class SoundEngine {
   constructor () {
     this.ctx = null
@@ -66361,7 +70209,8 @@ class SoundEngine {
         // (and a context started again while paused, by a key press during a stall, say, is
         // stopped again)
         if (this.paused) {
-          if (this.ctx.state === 'running' && now - this.pausedAt > 100) this.ctx.suspend()
+          if (this.ctx.state === 'running' && now - this.pausedAt > 100)
+            this.ctx.suspend()
           return
         }
         if (!this.enabled || idle < 330) return
@@ -66430,7 +70279,11 @@ class SoundEngine {
     this.lane([n.roar2.gain], n.roarLP2, this.carBus)
     // and the crackle of the shocks in a supersonic jet, at full thrust
     n.crackle = gain(0)
-    this.lane([n.crackle.gain], n.crackle.connect(filt('highpass', 900, 0.6)), this.carBus)
+    this.lane(
+      [n.crackle.gain],
+      n.crackle.connect(filt('highpass', 900, 0.6)),
+      this.carBus
+    )
     this.bank.ready('gravel', b => {
       n.crackleSrc = this.loop(b)
       n.crackleSrc.playbackRate.value = 1.7
@@ -66459,7 +70312,13 @@ class SoundEngine {
     // (connected only while it sounds, and a moment after)
     n.hornOn = gain(0)
     n.horn.connect(n.hornOn).connect(bite)
-    this.lane([n.hornOn.gain], bite, this.carBus, bite.connect(gain(0.4)), this.verb)
+    this.lane(
+      [n.hornOn.gain],
+      bite,
+      this.carBus,
+      bite.connect(gain(0.4)),
+      this.verb
+    )
     this.hornOff = 0
     // the desert's breath at the test site
     n.desert = gain(0)
@@ -66471,6 +70330,7 @@ class SoundEngine {
     this.buildCars()
     this.buildStreet()
     this.buildAmbience()
+    this.radio = this.radio || new Radio(this)
     return true
   }
   // N, or the sound button: on fades in (and the street's watchers start afresh); off fades out and
@@ -66628,7 +70488,14 @@ class SoundEngine {
       }
       st.dt = dt
     }
+    this.radio.update(st.inside)
     this.gateLanes()
+  }
+  // B: the radio tuned to its next station, or off after the last; the station (null: off), or
+  // undefined with the sound off
+  tuneRadio () {
+    if (!this.enabled || !this.ensure()) return undefined
+    return this.radio.tune()
   }
 }
 // a disc horn's spectrum: every harmonic, falling off slowly, the diaphragm slapping its stop
@@ -66655,14 +70522,14 @@ __export(__exports, { "SoundEngine": () => SoundEngine })
 })
 
 // ---- js/sim/autopilot.js
-__define(47, function (__exports) {
+__define(69, function (__exports) {
 // Autopilot: flies the reveal-night sequence through the same controls a player uses.
 //  Stunt 1: from the foot of the wall, climb and hang inverted, reverse back to the start, then a
 //           full-speed run off the lip, roll upright and come straight down on the thrusters.
 //  Stunt 2: full speed and full thrust over the parked lineup with a kickflip, thruster landing.
 const THREE = __require(0)
 const { TRACK, LINEUP_FIRST, LINEUP_LAST } = __require(8)
-const { G, TAU, CAR, clamp, wrapPi, clamp01, LIFT_ACC, makeControls } = __require(1)
+const { G, TAU, CAR, clamp, wrapPi, clamp01, LIFT_ACC, makeControls } = __require(4)
 const _a = new THREE.Vector3()
 const _b = new THREE.Vector3()
 const JUMP_SPEED = 50 // m/s for the lineup jump (180 km/h), built up with the main thrusters
@@ -66994,13 +70861,13 @@ __export(__exports, { "CAPS": () => CAPS, "Autopilot": () => Autopilot })
 })
 
 // ---- js/sim/cityHop.js
-__define(48, function (__exports) {
+__define(70, function (__exports) {
 // Autopilot's way out of a traffic jam: the route to the gridlock, a clear spot on the road beyond
 // whatever holds the car up, and the hop there: straight up on the lift thrusters until it clears the
 // cars, along the street on the main thrusters, then down on a landing burn onto the open road.
-const { JAM } = __require(17)
-const { LANES } = __require(4)
-const { G, CAR, LIFT_ACC, clamp, wrapPi, makeControls } = __require(1)
+const { JAM } = __require(36)
+const { LANES } = __require(24)
+const { G, CAR, LIFT_ACC, clamp, wrapPi, makeControls } = __require(4)
 const ALT = 8.5 // m over the road: clear of a bus, and of the signal heads over the junctions
 const CLEAR = 4.6 // m up before it moves forward over the car in front
 const CRUISE = 25 // m/s along the street
@@ -67167,15 +71034,16 @@ __export(__exports, { "routeToJam": () => routeToJam, "landingSpot": () => landi
 })
 
 // ---- js/sim/cityPilot.js
-__define(49, function (__exports) {
+__define(71, function (__exports) {
 // Autopilot in the city: drives the Roadster round the streets through the normal controls, on
 // the same lane graph as the traffic. It steers by pure pursuit along its lane, keeps its distance
 // to the cars ahead, slows for corners, stops for red lights and gives way when turning left.
 // Started, it heads for the gridlock downtown, sits in it, leans on the horn and then flies over it
 // (cityHop.js); after that it drives on, and hops over any other jam it gets stuck in.
-const { Hop, landingSpot, routeToJam } = __require(48)
-const { CAR, clamp, wrapPi, makeControls } = __require(1)
-const { LANES, NODES, GREEN, YELLOW, signal, pointAt, holdLight, releaseLight } = __require(4)
+const { Hop, landingSpot, routeToJam } = __require(70)
+const { CAR, clamp, wrapPi, makeControls } = __require(4)
+const { steerMax } = __require(9)
+const { LANES, NODES, GREEN, YELLOW, signal, pointAt, holdLight, releaseLight } = __require(24)
 const CAPS = {
   jam: [
     'Autopilot · City',
@@ -67355,7 +71223,7 @@ class CityPilot {
     const dist = Math.max(1, Math.hypot(P.x - x, P.z - z))
     const alpha = wrapPi(Math.atan2(-(P.z - z), P.x - x) - sim.yaw)
     const steer = Math.atan((2 * CAR.wheelbase * Math.sin(alpha)) / dist)
-    c.steer = clamp(steer / (0.6 / (1 + (v * v) / 300)), -1, 1)
+    c.steer = clamp(steer / steerMax(v), -1, 1)
 
     // what is ahead: traffic in the lane, anything knocked loose, the signal at the end of the lane
     const hx = Math.cos(sim.yaw),
@@ -67581,10 +71449,10 @@ __export(__exports, { "CityPilot": () => CityPilot })
 })
 
 // ---- js/render/lineup.js
-__define(50, function (__exports) {
+__define(72, function (__exports) {
 // The parked Tesla lineup for stunt 2: extruded low-poly profiles, parked broadside to the jump.
 const THREE = __require(0)
-const { site, MAT } = __require(20)
+const { site, MAT } = __require(40)
 const { LINEUP } = __require(8)
 // ---------- parked lineup ----------
 function extrudeProfile (pts, depth, mat, bevel = 0.05) {
@@ -67773,14 +71641,15 @@ __export(__exports, { "buildLineup": () => buildLineup })
 })
 
 // ---- js/render/effects.js
-__define(51, function (__exports) {
+__define(73, function (__exports) {
 // Particles (jet cores, sparks, leaves), supersonic shock-diamond jets, and what the car throws up:
 // thruster vapor, tyre smoke, dust and the beach's sand (smoke.js), and the debris of whatever it
 // knocks over.
 const THREE = __require(0)
-const { scene, softTex } = __require(20)
-const { TAU, clamp01 } = __require(1)
-const { smoke, VAPOR, TYRE, DUST } = __require(21)
+const { scene, softTex } = __require(40)
+const { TAU, clamp01 } = __require(4)
+const { PALMS, TREES } = __require(24)
+const { smoke, VAPOR, TYRE, DUST } = __require(41)
 class Particles {
   // splash: whether it skips off the ground (sparks, leaves) or is gone when it gets there (jet cores)
   constructor (
@@ -68187,7 +72056,13 @@ function sparkBurst (p, n, floor = 0) {
 // crown, sparks off a steel pole, and dust and grit from its foot, thrown the way the car was going.
 function knockFx (e) {
   const tree = e.kind === 'tree' || e.kind === 'palm'
-  const top = e.kind === 'palm' ? 10 : e.kind === 'tree' ? 4.4 : 7
+  // (from the crown: a palm's head up its trunk, 21 to 30 m on the tall fan palms, a tree's crown)
+  const top =
+    e.kind === 'palm'
+      ? (PALMS[e.i]?.h ?? 11) - 1
+      : e.kind === 'tree'
+      ? 4.4 * (TREES[e.i]?.s ?? 1)
+      : 7
   const v = Math.min(20, e.impact)
   if (tree)
     for (let i = 0; i < 70 + v * 6; i++) {
@@ -68231,13 +72106,13 @@ __export(__exports, { "ALL_PARTICLES": () => ALL_PARTICLES, "attachDiamonds": ()
 })
 
 // ---- js/audio/ears.js
-__define(52, function (__exports) {
+__define(74, function (__exports) {
 // How something in the world sounds from where the camera is: how loud, how far left or right,
 // whether a building stands in the way, and how dull the distance and the walls make it.
 const THREE = __require(0)
-const { camera } = __require(20)
-const { clamp } = __require(1)
-const { query, raycast } = __require(4)
+const { camera } = __require(40)
+const { clamp } = __require(4)
+const { query, raycast } = __require(24)
 // how loud something at (x, z) sounds from the camera, 0 to 1
 const hearing = (x, z) =>
   clamp(
@@ -68301,14 +72176,14 @@ __export(__exports, { "hearing": () => hearing, "panOf": () => panOf, "ray": () 
 })
 
 // ---- js/audio/watch.js
-__define(53, function (__exports) {
+__define(75, function (__exports) {
 // What happens round the camera that the sound engine hears as one-shots, watched each frame from
 // the sim's state: things rushing past the Roadster, brakes squealing and buses' air brakes, parked
 // cars' alarms, wrecks hitting each other, Optimus's footsteps, and the car's side grinding along a
 // wall or its wreck along the road.
-const { CAR } = __require(1)
-const { query } = __require(4)
-const { hearing, panOf, dullness, placeOf } = __require(52)
+const { CAR } = __require(4)
+const { query } = __require(24)
+const { hearing, panOf, dullness, placeOf } = __require(74)
 const NONE = []
 
 // Things the Roadster passes close and fast: the moment each one is abeam (it stops closing and
@@ -68484,7 +72359,7 @@ __export(__exports, { "ALARM": () => ALARM, "forget": () => forget, "watch": () 
 })
 
 // ---- js/audio/mix.js
-__define(54, function (__exports) {
+__define(76, function (__exports) {
 // What the sound engine hears each frame, from where the camera is: the Roadster's drive state (the
 // motors' force, worked out from the power the sim reports, its wheels and tyres), where the car is
 // from the camera, the cars nearest the camera with their doppler and whether a building stands in
@@ -68493,12 +72368,13 @@ __define(54, function (__exports) {
 // makes are watched for in watch.js, and ears.js says how loud, where and how dull a thing sounds.
 // Everything is written into objects kept from frame to frame, so a frame allocates nothing.
 const THREE = __require(0)
-const { OUTER } = __require(4)
-const { TYPES } = __require(34)
-const { camera } = __require(20)
-const { clamp } = __require(1)
-const { watch, forget, ALARM } = __require(53)
-const { hearing, panOf, blocked, dullness, placeOf, ray } = __require(52)
+const { OUTER } = __require(24)
+const { TYPES } = __require(54)
+const { LANDMARKS } = __require(2)
+const { camera } = __require(40)
+const { clamp } = __require(4)
+const { watch, forget, ALARM } = __require(75)
+const { hearing, panOf, blocked, dullness, placeOf, ray } = __require(74)
 
 const _right = new THREE.Vector3()
 
@@ -68707,6 +72583,32 @@ let frame = 0,
   crowd = 0
 const NONE = []
 const _cp = new THREE.Vector3()
+// How near the camera is to the nearest freeway (1 at its sound wall, nothing a couple of hundred
+// metres into the city), and FWY.pan, the side it is heard from
+const FWY = { pan: 0 }
+function freeway (x, z) {
+  let best = Infinity,
+    bx = 0,
+    bz = 0
+  for (const f of LANDMARKS.freeways || []) {
+    const dx = f.x1 - f.x0,
+      dz = f.z1 - f.z0,
+      l2 = dx * dx + dz * dz
+    const t = clamp(((x - f.x0) * dx + (z - f.z0) * dz) / l2, 0, 1)
+    const px = f.x0 + dx * t,
+      pz = f.z0 + dz * t,
+      d = Math.hypot(x - px, z - pz)
+    if (d < best) {
+      best = d
+      bx = px
+      bz = pz
+    }
+  }
+  if (best === Infinity) return 0
+  FWY.pan = panOf(bx, bz)
+  return clamp(1 - (best - 30) / 230, 0, 1)
+}
+
 function mixSound (sound, app, traffic, dt, clock, peds) {
   const sim = app.sim
   const ground = sim.mode === 'ground',
@@ -68748,7 +72650,7 @@ function mixSound (sound, app, traffic, dt, clock, peds) {
   const was = app.enclosed ?? 1
   app.enclosed = was + (shut - was) * clamp(dt * 2, 0, 1)
   const cp = camera.position,
-    shore = OUTER + 3 - Math.max(Math.abs(cp.x), Math.abs(cp.z))
+    shore = OUTER + 3 + cp.x // (the sea is to the west)
   const c = app.lastCtl,
     u = Math.max(gs, 0.5)
   // the motors' force: the power over the speed, or at a standstill what the throttle asks for
@@ -68815,6 +72717,9 @@ function mixSound (sound, app, traffic, dt, clock, peds) {
   st.alarm = ALARM
   st.enclosed = app.enclosed
   st.sea = city ? clamp(1 - shore / 140, 0, 1) : 0
+  // the freeways beyond the walls east and south: how near the nearest is, and which side it is on
+  st.freeway = city ? freeway(cp.x, cp.z) : 0
+  st.freewayPan = FWY.pan
   st.surface = ground && city ? sim.surface : null
   st.dt = dt
   st.world = world
@@ -68827,12 +72732,13 @@ __export(__exports, { "mixSound": () => mixSound, "hearing": () => hearing, "pan
 })
 
 // ---- js/events.js
-__define(55, function (__exports) {
+__define(77, function (__exports) {
 // What the sim reports (scores, landings, drifts, near misses, knocks, kerbs, honks, crashes),
-// turned into popups, sounds, camera shake, a gamepad's rumble and particles.
-const { HORNS, AIR_HORN } = __require(42)
-const { burst, knockFx, sparkBurst } = __require(51)
-const { hearing, panOf, dullness, placeOf } = __require(54)
+// turned into GTA-style stunt titles and hints (hud.js), sounds, camera shake, a gamepad's rumble
+// and particles.
+const { HORNS, AIR_HORN } = __require(66)
+const { burst, knockFx, sparkBurst } = __require(73)
+const { hearing, panOf, dullness, placeOf } = __require(76)
 const CONTACT = { x: 0, y: 0, z: 0 }
 function contactAt (x, y, z) {
   CONTACT.x = x
@@ -68841,15 +72747,42 @@ function contactAt (x, y, z) {
   return CONTACT
 }
 
+// a trick from the sim: a donut (the sim counts them: '3× Donut'), or a stunt bonus (the wall, a
+// wall catch)
+function trick (e) {
+  const d = /^(?:(\d+)× )?Donut$/.exec(e.text)
+  if (d)
+    return { key: 'donut', title: 'Donut', n: Number(d[1] || 1), pts: e.pts }
+  return { key: 'trick', title: 'Stunt bonus', sub: e.text, pts: e.pts }
+}
+// a landing: the more tricks on the way down, the bigger the title
+const LANDING = ['Clean landing', 'Stunt bonus', 'Double stunt bonus']
+function landing (e) {
+  const n = e.tricks.length
+  return {
+    title: LANDING[n] || 'Insane stunt bonus',
+    sub: [
+      ...e.tricks,
+      `${e.airtime.toFixed(1)} s air`,
+      `${e.g.toFixed(1)} G`
+    ].join(' · '),
+    pts: e.pts
+  }
+}
+
 function handleEvents (g) {
   const { sim, app, hud, sound, rig, cityView, ap, clock, pad } = g
   for (const e of sim.events) {
     if (e.type === 'z60') {
-      hud.popup(`0–60 mph · <b>${e.t.toFixed(2)} s</b>`)
+      hud.notify({
+        title: '0–60 mph',
+        big: `${e.t.toFixed(2)} s`,
+        tone: 'blue'
+      })
       sound.chime()
     } else if (e.type === 'trick') {
       app.score += e.pts
-      hud.popup(`${e.text} <b>+${e.pts}</b>`)
+      hud.notify(trick(e))
       sound.chime()
     } else if (e.type === 'track') {
       // the handbrake at speed: Track Mode, the first time it comes on, says what it does
@@ -68863,26 +72796,31 @@ function handleEvents (g) {
         )
       }
     } else if (e.type === 'drift') {
+      // (linked drifts, one into the next the other way, score as one: DRIFT ×3)
       app.score += e.pts
       const deg = Math.round(e.angle * 57.3)
-      const what = e.links ? `Linked drift ×${e.links + 1}` : 'Drift'
-      hud.popup(`${what} ${e.t.toFixed(1)} s · ${deg}° <b>+${e.pts}</b>`)
+      hud.notify({
+        key: 'drift',
+        title: 'Drift',
+        n: (e.links || 0) + 1,
+        sub: `${e.links ? 'Linked · ' : ''}${e.t.toFixed(1)} s · ${deg}°`,
+        pts: e.pts
+      })
       sound.chime()
     } else if (e.type === 'nearMiss') {
+      // (one after another, they count on: NEAR MISS ×3, their points added up)
       app.score += e.pts
-      hud.popup(
-        `${e.oncoming ? 'Oncoming near miss' : 'Near miss'} <b>+${e.pts}</b>`,
-        1300
-      )
+      hud.notify({
+        key: 'nearMiss',
+        chain: true,
+        title: 'Near miss',
+        sub: e.oncoming ? 'Oncoming · double points' : '',
+        pts: e.pts
+      })
       sound.chime()
     } else if (e.type === 'landing') {
       app.score += e.pts
-      hud.popup(
-        `${e.tricks.length ? e.tricks.join(' + ') : 'Clean landing'} <b>+${
-          e.pts
-        }</b>`
-      )
-      hud.popup(`Airtime ${e.airtime.toFixed(1)} s · ${e.g.toFixed(1)} G`, 2000)
+      hud.notify(landing(e))
       sound.chime()
     } else if (e.type === 'touchdown') {
       burst(
@@ -68968,7 +72906,7 @@ function handleEvents (g) {
       app.restHint = false
       sound.crash()
       pad?.rumble(1, 1, 500)
-      hud.popup(`Crash · ${e.reason}`, 2600)
+      hud.notify({ title: 'Wrecked', sub: e.reason, tone: 'red', ms: 2600 })
     }
   }
   sim.events.length = 0
@@ -68976,207 +72914,62 @@ function handleEvents (g) {
 __export(__exports, { "handleEvents": () => handleEvents })
 })
 
-// ---- js/render/citySea.js
-__define(56, function (__exports) {
-// The sea round the city: past the promenade a strip of beach runs down to the water, which goes out to
-// the hills on the horizon. The water is a shader: a few rolling swells and ripples for its surface,
-// the evening sky in it at a glancing angle, a glitter path under the low sun, clear turquoise over
-// the shallows, deep blue further out, and surf breaking along the beach.
-const THREE = __require(0)
-const { OUTER } = __require(4)
-const { LAYER } = __require(22)
-const { canvasTex, speckle } = __require(20)
-const SHORE = OUTER + 3 // where the beach starts down into the water (square, like the city)
-const WATER = -0.5 // the sea's level
-const WET = [SHORE - 1, SHORE + 6] // the wet sand sloping down under the water: from, to
-const FLOOR = -1.4 // the sea bed where the slope ends
-const SUN = new THREE.Vector3(-66, 30, 28).normalize() // as in citySky.js
-
-function sandTexture () {
-  const t = canvasTex(512, (g, S) => {
-    g.fillStyle = '#d9c49b'
-    g.fillRect(0, 0, S, S)
-    for (let i = 0; i < 40; i++) {
-      const x = Math.random() * S,
-        y = Math.random() * S,
-        r = 30 + Math.random() * 90
-      const gr = g.createRadialGradient(x, y, 0, x, y, r)
-      gr.addColorStop(
-        0,
-        Math.random() < 0.5 ? 'rgba(170,140,95,0.14)' : 'rgba(255,245,220,0.12)'
-      )
-      gr.addColorStop(1, 'rgba(0,0,0,0)')
-      g.fillStyle = gr
-      g.fillRect(x - r, y - r, r * 2, r * 2)
-    }
-    speckle(g, 16000, S, 0.14, false)
-    speckle(g, 9000, S, 0.16, true)
-  })
-  t.repeat.set(1 / 14, 1 / 14)
-  return t
-}
-
-function seaMaterial () {
-  return new THREE.ShaderMaterial({
-    uniforms: THREE.UniformsUtils.merge([
-      THREE.UniformsLib.fog,
-      {
-        uTime: { value: 0 },
-        uNight: { value: 0 },
-        uSun: { value: SUN.clone() },
-        uShore: {
-          value:
-            SHORE + ((WET[1] - WET[0]) * (-0.03 - WATER)) / (-0.03 - FLOOR) - 1
-        }
-      }
-    ]),
-    fog: true,
-    vertexShader: `varying vec3 vW;
-      #include <fog_pars_vertex>
-      void main(){
-        vec4 w = modelMatrix * vec4(position, 1.0);
-        vW = w.xyz;
-        vec4 mvPosition = viewMatrix * w;
-        gl_Position = projectionMatrix * mvPosition;
-        #include <fog_vertex>
-      }`,
-    fragmentShader: `uniform float uTime; uniform float uNight; uniform vec3 uSun; uniform float uShore; varying vec3 vW;
-      #include <fog_pars_fragment>
-      float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-      float noise(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
-        return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y); }
-      // the surface's slope: long swells, then shorter chop and ripples, each drifting its own way
-      vec2 slope(vec2 p, float t){
-        vec2 s = vec2(0.0);
-        vec3 W[5];
-        W[0] = vec3(0.86, 0.5, 0.045); W[1] = vec3(0.3, 0.95, 0.07); W[2] = vec3(-0.6, 0.8, 0.13);
-        W[3] = vec3(0.95, -0.3, 0.21); W[4] = vec3(-0.2, -0.98, 0.33);
-        for (int i = 0; i < 5; i++) {
-          float k = W[i].z, a = 0.9 / (1.0 + float(i) * 1.6);
-          float ph = dot(W[i].xy, p) * k + t * sqrt(9.81 * k);
-          s += W[i].xy * k * a * cos(ph);
-        }
-        float n1 = noise(p * 0.55 + t * 0.4), n2 = noise(p * 0.55 + vec2(5.2, 1.3) - t * 0.35);
-        s += vec2(n1 - 0.5, n2 - 0.5) * 0.18;
-        return s;
-      }
-      void main(){
-        vec3 toCam = cameraPosition - vW;
-        float dist = length(toCam);
-        vec3 v = toCam / dist;
-        // ripples fade with distance (a far sea reads smooth), the swells stay
-        vec2 s = slope(vW.xz, uTime) * mix(1.0, 0.35, smoothstep(60.0, 600.0, dist));
-        vec3 n = normalize(vec3(-s.x, 1.0, -s.y));
-        float fres = 0.02 + 0.98 * pow(1.0 - max(dot(n, v), 0.0), 5.0);
-        vec3 r = reflect(-v, n);
-        r.y = abs(r.y);
-        // the evening sky, as in citySky.js
-        vec3 horizon = vec3(1.0, 0.56, 0.32), mid = vec3(0.62, 0.42, 0.52), zenith = vec3(0.13, 0.2, 0.42);
-        vec3 sky = mix(horizon, mid, smoothstep(0.0, 0.16, r.y));
-        sky = mix(sky, zenith, smoothstep(0.12, 0.62, r.y));
-        // (at night: the dark sky, the city's glow low down)
-        vec3 nsky = mix(vec3(0.06, 0.05, 0.06), vec3(0.006, 0.01, 0.03), smoothstep(0.0, 0.4, r.y));
-        sky = mix(sky, nsky, uNight);
-        float sd = max(dot(r, uSun), 0.0);
-        sky += mix(vec3(1.0, 0.55, 0.25), vec3(0.3, 0.32, 0.4), uNight) * pow(sd, 8.0) * 0.6;
-        // deep blue out at sea, turquoise over the shallows by the beach
-        float out_ = max(abs(vW.x), abs(vW.z)) - uShore;
-        vec3 deep = vec3(0.008, 0.08, 0.27), shallow = vec3(0.05, 0.42, 0.5);
-        vec3 body = mix(shallow, deep, smoothstep(2.0, 70.0, out_));
-        body = mix(body, vec3(0.003, 0.012, 0.03), uNight * 0.92);
-        // light coming up through a wave's face
-        body += vec3(0.02, 0.12, 0.13) * max(0.0, s.x * 0.8 + s.y * 0.4) ;
-        // (the sky in it a little cooler than the sky itself: the water's own blue shows through)
-        vec3 col = mix(body, sky * vec3(0.78, 0.88, 1.08), fres * mix(0.7, 0.4, uNight));
-        // the sun's glitter path (the moon's at night, cold and fainter)
-        vec3 glint = mix(vec3(1.0, 0.75, 0.45), vec3(0.75, 0.8, 1.0) * 0.35, uNight);
-        col += glint * pow(sd, 260.0) * 9.0;
-        col += mix(vec3(1.0, 0.6, 0.3), vec3(0.2, 0.22, 0.3), uNight) * pow(sd, 40.0) * 0.35;
-        // surf: a foam line rolling up the beach, and streaks of it just offshore
-        float swash = sin(out_ * 0.9 - uTime * 1.6 + noise(vW.xz * 0.08) * 6.0);
-        float foam = smoothstep(2.6, 0.0, out_) * (0.55 + 0.45 * swash);
-        foam += smoothstep(14.0, 4.0, out_) * smoothstep(0.75, 0.95, swash) * noise(vW.xz * 0.6 + uTime * 0.3) * 0.7;
-        col = mix(col, vec3(0.92, 0.9, 0.86) * (1.0 - 0.8 * uNight), clamp(foam, 0.0, 0.9));
-        gl_FragColor = vec4(col, 1.0);
-        #include <fog_fragment>
-      }`
-  })
-}
-
-// returns a per-frame update (the water moves), with .night(k) to turn it to night (k = 1)
-function buildSea (group) {
-  const sand = new THREE.MeshStandardMaterial({
-    map: sandTexture(),
-    roughness: 0.96
-  })
-  // the beach: flat sand from under the city out past the promenade, then a frame of wet sand sloping
-  // down under the water (UVs in metres for the sand texture)
-  const pos = [],
-    uvs = []
-  const quad = (a, b, c, d) => {
-    for (const p of [a, b, c, a, c, d]) {
-      pos.push(...p)
-      uvs.push(p[0], p[2])
-    }
-  }
-  const [i, o] = WET,
-    y0 = -0.03
-  quad([-i, y0, i], [i, y0, i], [i, y0, -i], [-i, y0, -i])
-  for (let k = 0; k < 4; k++) {
-    // corners of the inner and outer squares, turned a quarter each time
-    const rot = ([x, y, z]) => {
-      for (let n = 0; n < k; n++) [x, z] = [-z, x]
-      return [x, y, z]
-    }
-    quad(
-      rot([-o, FLOOR, o]),
-      rot([o, FLOOR, o]),
-      rot([i, y0, i]),
-      rot([-i, y0, i])
-    )
-  }
-  const beach = new THREE.BufferGeometry()
-  beach.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3))
-  beach.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2))
-  beach.computeVertexNormals()
-  const sandMesh = new THREE.Mesh(beach, sand)
-  sandMesh.receiveShadow = true
-  sandMesh.renderOrder = LAYER.beach
-  group.add(sandMesh)
-  // the water, out to the horizon
-  const mat = seaMaterial()
-  const sea = new THREE.Mesh(
-    new THREE.PlaneGeometry(4200, 4200).rotateX(-Math.PI / 2),
-    mat
-  )
-  sea.position.y = WATER
-  sea.renderOrder = LAYER.sea
-  group.add(sea)
-  const update = (t, camera) => {
-    mat.uniforms.uTime.value = t
-    // the plane follows the camera so the horizon never runs out
-    sea.position.x = camera.position.x
-    sea.position.z = camera.position.z
-  }
-  update.night = k => (mat.uniforms.uNight.value = k)
-  return update
-}
-__export(__exports, { "buildSea": () => buildSea })
-})
-
 // ---- js/render/citySky.js
-__define(57, function (__exports) {
-// The city's evening: a sunset sky dome with streaky cloud, hazy hills round the horizon, a matching
-// environment map for reflections, and the switch between the night test site and the city's light.
-// At night (L), the same dome turns deep blue with stars, a moon low where the sun was (so the city's
-// shadows still fall the same way, only faintly), and the city's own glow along the horizon.
+__define(78, function (__exports) {
+// The city's evening, Los Angeles at golden hour: a clean sky, deep blue overhead and gold toward the
+// sun as it goes down over the Pacific, a few streaks of high cloud lit from below, and the smog's
+// warm haze in a band low round the horizon (golden on the sun's side, a dusty brown-pink away from
+// it) that the far hills and the city fade into. The mountains ring the horizon: the San Gabriels high
+// in the north and north-east behind the hills, the Santa Monica Mountains running down into the sea
+// in the north-west, Palos Verdes and Catalina low across the bay to the south-west, the open sea
+// west under the sun. A matching environment map for reflections, and the switch between the night
+// test site and the city's light. At night (L) the same dome turns deep blue with stars, a moon low
+// where the sun was (so the city's shadows still fall the same way, only faintly), and the city's
+// orange glow along the horizon, everywhere but out over the sea.
 const THREE = __require(0)
-const { LAYER } = __require(22)
-const { rng } = __require(4)
-const { scene, pmrem, renderer, hemi, key, keyOffset } = __require(20)
+const { LAYER } = __require(42)
+const { rng } = __require(24)
+const { scene, pmrem, renderer, hemi, key, keyOffset } = __require(40)
 const SUN = new THREE.Vector3(-66, 30, 28) // where the low sun sits relative to the car
-const HAZE = new THREE.Color(0.86, 0.6, 0.48)
-const NIGHT_HAZE = new THREE.Color(0.035, 0.04, 0.065)
+const SUN_DIR = SUN.clone().normalize()
+const v3 = c => `vec3(${c.map(n => n.toFixed(3)).join(', ')})`
+// the haze low on the horizon, away from the sun and toward it (and the fog: the two blended)
+const HAZE_AWAY = [0.72, 0.52, 0.39],
+  HAZE_SUN = [1.0, 0.66, 0.36]
+const HAZE = new THREE.Color(0.76, 0.56, 0.43)
+const NIGHT_HAZE = new THREE.Color(0.04, 0.038, 0.06)
+
+// The sky's colour in direction d (a unit vector), without the sun's disc, the clouds and the stars:
+// shared with the sea (citySea.js), which mirrors it. sun: toward the sun; night: 0 to 1.
+const SKY_GLSL = `
+  vec3 hazeAt (vec3 d, vec3 sun) {
+    float az = dot(normalize(vec3(d.x, 0.0, d.z) + vec3(1e-5, 0.0, 0.0)), normalize(vec3(sun.x, 0.0, sun.z)));
+    return mix(${v3(HAZE_AWAY)}, ${v3(
+  HAZE_SUN
+)}, smoothstep(-0.25, 1.0, az) * smoothstep(-0.25, 1.0, az));
+  }
+  vec3 skyBase (vec3 d, vec3 sun, float night) {
+    float h = d.y, s = max(dot(d, sun), 0.0);
+    float az = dot(normalize(vec3(d.x, 0.0, d.z) + vec3(1e-5, 0.0, 0.0)), normalize(vec3(sun.x, 0.0, sun.z)));
+    // blue overhead, paler down toward the horizon and warmer on the sun's side
+    vec3 low = mix(vec3(0.6, 0.66, 0.77), vec3(0.95, 0.74, 0.48), smoothstep(-0.2, 1.0, az));
+    vec3 col = mix(low, vec3(0.3, 0.5, 0.82), smoothstep(0.03, 0.28, h));
+    col = mix(col, vec3(0.1, 0.23, 0.55), smoothstep(0.22, 0.8, h));
+    // the smog: a warm band low along the horizon, and below it nothing but haze
+    col = mix(col, hazeAt(d, sun), exp(-max(h, 0.0) * 16.0) * 0.9);
+    col = mix(col, hazeAt(d, sun) * 0.92, smoothstep(0.0, -0.06, h));
+    // the low sun's glow, gold rather than white
+    col += vec3(1.0, 0.55, 0.22) * (pow(s, 5.0) * 0.3 + pow(s, 48.0) * 0.5);
+    // night: deep blue overhead; low down the city's orange glow, from every side but the sea's (west)
+    float land = smoothstep(-0.75, 0.2, d.x / max(length(d.xz), 1e-4));
+    vec3 n = mix(vec3(0.034, 0.036, 0.062), vec3(0.004, 0.008, 0.026), smoothstep(0.0, 0.45, h));
+    n += vec3(0.24, 0.12, 0.05) * exp(-max(h, 0.0) * 11.0) * mix(0.18, 1.0, land);
+    n += vec3(0.6, 0.65, 0.8) * pow(s, 30.0) * 0.05;
+    n = mix(n, vec3(${NIGHT_HAZE.r}, ${NIGHT_HAZE.g}, ${
+  NIGHT_HAZE.b
+}) + vec3(0.12, 0.06, 0.025) * land, smoothstep(0.0, -0.06, h));
+    return mix(col, n, night);
+  }`
 
 // far: the dome seen from the city, pushed out to the far plane so it is drawn last, and only where
 // nothing else is (the one in the environment map's scene stays where it is)
@@ -69192,34 +72985,27 @@ function skyMaterial (uniforms, far = false) {
       float noise(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
         return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y); }
       float fbm(vec2 p){ float v = 0.0, a = 0.5; for (int i = 0; i < 5; i++) { v += a * noise(p); p *= 2.03; a *= 0.5; } return v; }
+      ${SKY_GLSL}
       void main(){
         vec3 d = normalize(vDir);
-        float h = d.y;
-        vec3 horizon = vec3(1.0, 0.56, 0.32), mid = vec3(0.62, 0.42, 0.52), zenith = vec3(0.13, 0.2, 0.42);
-        vec3 col = mix(horizon, mid, smoothstep(0.0, 0.16, h));
-        col = mix(col, zenith, smoothstep(0.12, 0.62, h));
-        float s = max(dot(d, uSun), 0.0);
-        col += vec3(1.0, 0.5, 0.2) * (pow(s, 6.0) * 0.55 + pow(s, 60.0) * 0.8);
-        col += vec3(1.0, 0.85, 0.6) * smoothstep(0.9994, 0.9998, s) * 6.0;
-        // long thin cloud streaks, lit from below by the low sun
+        float h = d.y, s = max(dot(d, uSun), 0.0);
+        vec3 col = skyBase(d, uSun, 0.0);
+        col += vec3(1.0, 0.86, 0.62) * smoothstep(0.9994, 0.9998, s) * 7.0;
+        // a few long streaks of high cloud, lit gold from below on the sun's side, pink away from it
         vec2 uv = d.xz / max(h + 0.12, 0.05);
-        float c = smoothstep(0.52, 0.8, fbm(uv * vec2(0.9, 3.2) + vec2(4.0, 1.0)));
-        c *= smoothstep(0.02, 0.1, h) * (1.0 - smoothstep(0.35, 0.6, h));
-        vec3 cloud = mix(vec3(0.55, 0.32, 0.38), vec3(1.0, 0.62, 0.42), pow(s, 2.0));
-        col = mix(col, cloud, c * 0.8);
-        col = mix(col, vec3(${HAZE.r}, ${HAZE.g}, ${HAZE.b}) * 0.8, smoothstep(0.0, -0.08, h));
-        // night: deep blue overhead, the city's glow along the horizon, stars, the moon and its halo,
-        // the clouds dark against the sky but for where the moon is behind them
-        vec3 night = mix(vec3(0.05, 0.046, 0.062), vec3(0.004, 0.008, 0.024), smoothstep(0.0, 0.45, h));
-        night += vec3(0.2, 0.11, 0.06) * exp(-max(h, 0.0) * 16.0) * 0.5;
+        float c = smoothstep(0.57, 0.84, fbm(uv * vec2(0.9, 3.2) + vec2(4.0, 1.0)));
+        c *= smoothstep(0.03, 0.12, h) * (1.0 - smoothstep(0.35, 0.6, h));
+        vec3 cloud = mix(vec3(0.86, 0.62, 0.6), vec3(1.05, 0.78, 0.5), pow(s, 2.0));
+        col = mix(col, cloud, c * 0.75);
+        // night: the stars, the moon and its halo, the clouds dark but for where the moon is behind them
+        vec3 night = skyBase(d, uSun, 1.0);
         vec3 sc = d * 420.0, cell = floor(sc);
         float star = step(0.9972, hash3(cell)) * smoothstep(0.45, 0.0, length(fract(sc) - 0.5));
-        star *= (0.4 + 0.6 * hash3(cell + 3.1)) * smoothstep(0.06, 0.2, h) * (1.0 - c);
+        star *= (0.4 + 0.6 * hash3(cell + 3.1)) * smoothstep(0.08, 0.25, h) * (1.0 - c);
         night += vec3(0.8, 0.85, 1.0) * star * 1.4;
-        night += vec3(0.6, 0.65, 0.8) * (pow(s, 300.0) * 0.25 + pow(s, 30.0) * 0.05);
+        night += vec3(0.6, 0.65, 0.8) * pow(s, 300.0) * 0.25;
         night += vec3(1.6, 1.62, 1.7) * smoothstep(0.99985, 0.99992, s);
-        night = mix(night, vec3(0.03, 0.03, 0.045) + vec3(0.12, 0.12, 0.14) * pow(s, 12.0), c * 0.75);
-        night = mix(night, vec3(${NIGHT_HAZE.r}, ${NIGHT_HAZE.g}, ${NIGHT_HAZE.b}), smoothstep(0.0, -0.08, h));
+        night = mix(night, vec3(0.03, 0.03, 0.045) + vec3(0.12, 0.12, 0.14) * pow(s, 12.0), c * 0.7 * step(0.0, h));
         gl_FragColor = vec4(mix(col, night, uNight), 1.0);
       }`,
     side: THREE.BackSide,
@@ -69228,21 +73014,51 @@ function skyMaterial (uniforms, far = false) {
   })
 }
 
-// hills: a ring of jagged ridges, darker on the sunward side
-function hills () {
+// ---------- the mountains round the horizon ----------
+// Each range: its middle and half-width (degrees round from east, through south: atan2(z, x)), its
+// height (m, on the ring), how jagged it is, and how far off (0 near, 1 lost in the haze).
+const RANGES = [
+  { at: 296, w: 62, h: 330, rough: 0.35, far: 0.25 }, // the San Gabriels
+  { at: 352, w: 30, h: 70, rough: 0.25, far: 0.75 }, // the low hills far off east
+  { at: 216, w: 34, h: 190, rough: 0.3, far: 0.3 }, // the Santa Monica Mountains, down to the sea
+  { at: 101, w: 10, h: 48, rough: 0.15, far: 0.6 }, // Palos Verdes
+  { at: 121, w: 7, h: 34, rough: 0.2, far: 0.85 } // Catalina
+]
+const RING = 1450
+function farHeight (deg, R) {
+  let h = -30
+  for (const r of RANGES) {
+    let d = Math.abs(((((deg - r.at) % 360) + 540) % 360) - 180) / r.w
+    if (d >= 1) continue
+    const shape = Math.pow(Math.cos((d * Math.PI) / 2), 0.7)
+    h = Math.max(h, r.h * shape * (1 - r.rough + r.rough * R(deg)))
+  }
+  return h
+}
+function mountains () {
   const R = rng(5),
-    n = 220,
+    n = 360,
     pos = [],
     col = []
-  const sun = Math.atan2(SUN.z, SUN.x)
-  let h0 = 0
-  const heights = []
+  const sunDeg = (Math.atan2(SUN.z, SUN.x) * 180) / Math.PI
+  // a jagged line: smoothed random heights, a value a degree
+  const jag = []
+  let j = 0.5
   for (let i = 0; i <= n; i++) {
-    const a = (i / n) * Math.PI * 2
-    h0 = 0.75 * h0 + 0.25 * (40 + R() * 110 + 70 * Math.sin(a * 3 + 1))
-    heights.push(i === n ? heights[0] : h0)
+    j = 0.6 * j + 0.4 * R()
+    jag.push(i === n ? jag[0] : j)
   }
-  for (let i = 0; i < n; i++) {
+  const heights = jag.map((_, i) => farHeight(i, d => jag[Math.round(d) % n]))
+  const haze = (deg, far) => {
+    const az = Math.cos(((deg - sunDeg) * Math.PI) / 180)
+    const t = THREE.MathUtils.smoothstep(az, -0.25, 1) ** 2
+    const c = new THREE.Color(...HAZE_AWAY).lerp(
+      new THREE.Color(...HAZE_SUN),
+      t
+    )
+    return { c, far, az }
+  }
+  for (let i = 0; i < n; i++)
     for (const [k, y] of [
       [i, 0],
       [i + 1, 0],
@@ -69252,17 +73068,26 @@ function hills () {
       [i, 1]
     ]) {
       const a = (k / n) * Math.PI * 2,
-        r = 1450
-      pos.push(Math.cos(a) * r, y * heights[k] - 10, Math.sin(a) * r)
-      const toward = 0.5 + 0.5 * Math.cos(a - sun)
-      const c = new THREE.Color(0.5, 0.4, 0.5).lerp(
-        new THREE.Color(0.27, 0.2, 0.27),
-        toward
+        h = heights[k]
+      pos.push(Math.cos(a) * RING, y ? h : -40, Math.sin(a) * RING)
+      // the ridges: blue-grey against the sun, a warm dusty rose lit by it, both hazier the further
+      // off they are; their feet lost in the haze
+      const r = RANGES.reduce(
+        (best, g) => {
+          const d = Math.abs(((((k - g.at) % 360) + 540) % 360) - 180) / g.w
+          return d < best.d ? { d, g } : best
+        },
+        { d: 9, g: RANGES[0] }
+      ).g
+      const { c, az } = haze(k, r.far)
+      const lit = new THREE.Color(0.36, 0.38, 0.47).lerp(
+        new THREE.Color(0.7, 0.55, 0.52),
+        THREE.MathUtils.smoothstep(-az, -0.4, 0.9)
       )
-      if (!y) c.lerp(HAZE, 0.5)
-      col.push(c.r, c.g, c.b)
+      const top = lit.lerp(c, 0.25 + 0.6 * r.far)
+      const out = y ? top : c.clone().multiplyScalar(0.96)
+      col.push(out.r, out.g, out.b)
     }
-  }
   const g = new THREE.BufferGeometry()
   g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3))
   g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3))
@@ -69279,7 +73104,7 @@ function hills () {
 class Sky {
   constructor (group) {
     const uniforms = {
-      uSun: { value: SUN.clone().normalize() },
+      uSun: { value: SUN_DIR.clone() },
       uNight: { value: 0 }
     }
     const mat = (this.mat = skyMaterial(uniforms))
@@ -69289,8 +73114,10 @@ class Sky {
     )
     this.dome.renderOrder = LAYER.sky
     this.dome.frustumCulled = false
-    this.hills = hills()
-    this.hills.renderOrder = LAYER.hills
+    this.hills = mountains()
+    // (behind the near hills, cityHills.js, and the sea; before the sky)
+    this.hills.renderOrder = LAYER.hills + 0.5
+    this.hills.frustumCulled = false
     group.add(this.dome, this.hills)
     // reflections come from the same sky, rendered once into an environment map (and once more at
     // night, the first time it falls)
@@ -69310,7 +73137,9 @@ class Sky {
       this.envNight = pmrem.fromScene(this.envScene, 0.02, 0.1, 200).texture
     }
     this.mat.uniforms.uNight.value = night ? 1 : 0
-    this.hills.material.color.setRGB(...(night ? [0.03, 0.035, 0.06] : [1, 1, 1]))
+    this.hills.material.color.setRGB(
+      ...(night ? [0.02, 0.022, 0.04] : [1, 1, 1])
+    )
     if (this.on) this.light()
   }
   follow (camera) {
@@ -69354,21 +73183,21 @@ class Sky {
     hemi.groundColor.setRGB(0.36, 0.3, 0.26)
     if (!this.night) {
       scene.background = HAZE.clone()
-      scene.fog = new THREE.FogExp2(HAZE.clone().multiplyScalar(0.92), 0.00105)
+      scene.fog = new THREE.FogExp2(HAZE.clone(), 0.00086)
       // a strong, warm low sun, and the shade lit only by the cooler sky (the whole city throws its
       // shadows now: sunShadow.js), for golden hour's contrast
       scene.environment = this.env
       scene.environmentIntensity = 0.5
       renderer.toneMappingExposure = 1.05
-      hemi.color.setRGB(0.72, 0.76, 0.92)
+      hemi.color.setRGB(0.7, 0.76, 0.94)
       hemi.intensity = 0.7
-      key.color.setRGB(1, 0.72, 0.48)
+      key.color.setRGB(1, 0.71, 0.46)
       key.intensity = 4.6
       return
     }
     // night: a cold, faint moon and a dark sky; the light is the city's own
     scene.background = NIGHT_HAZE.clone()
-    scene.fog = new THREE.FogExp2(NIGHT_HAZE.clone(), 0.0013)
+    scene.fog = new THREE.FogExp2(NIGHT_HAZE.clone(), 0.0011)
     scene.environment = this.envNight
     scene.environmentIntensity = 0.9
     renderer.toneMappingExposure = 1.2
@@ -69379,11 +73208,2865 @@ class Sky {
     key.intensity = 0.45
   }
 }
-__export(__exports, { "SUN": () => SUN, "Sky": () => Sky })
+__export(__exports, { "SUN": () => SUN, "SKY_GLSL": () => SKY_GLSL, "Sky": () => Sky })
+})
+
+// ---- js/render/citySea.js
+__define(79, function (__exports) {
+// The Pacific, west of the city: past the promenade a broad beach runs north and south along the coast
+// and drops down its steeper face into the water, which goes out to the horizon under the setting
+// sun. The water is a shader: a few rolling swells and ripples for its surface, the evening sky in it
+// at a glancing angle (the same sky: citySky.js), a glitter path under the low sun, clear turquoise
+// over the shallows, deep blue further out, surf breaking along the beach, the pier's shadow on it, and
+// at night the Ferris wheel's lights shimmering in it. Lifeguard towers stand along the beach, and a
+// groyne of rocks runs out into the sea at each end of it.
+const THREE = __require(0)
+const { LAYER, merge, box, tint } = __require(42)
+const { canvasTex, speckle } = __require(40)
+const { SUN, SKY_GLSL } = __require(78)
+const { PROMENADE, rng } = __require(24)
+const { SHORE, WALL, GROYNE, PIER, WHEEL } = __require(27)
+const SAND = -0.03 // the beach's level (a little under the promenade's top)
+const FACE = 12 // m: the beach's face, from the flat sand down to the sea bed
+const FLOOR = -3 // the sea bed at the foot of the face
+const WATER = -2.2 // the sea's level
+const COAST = 2600 // m north and south the beach runs on
+const SUN_DIR = SUN.clone().normalize()
+// where the water meets the sand (x = -WET), a little up the face
+const WET = SHORE + (FACE * (SAND - WATER)) / (SAND - FLOOR)
+
+function sandTexture () {
+  const t = canvasTex(512, (g, S) => {
+    g.fillStyle = '#dcc9a0'
+    g.fillRect(0, 0, S, S)
+    for (let i = 0; i < 40; i++) {
+      const x = Math.random() * S,
+        y = Math.random() * S,
+        r = 30 + Math.random() * 90
+      const gr = g.createRadialGradient(x, y, 0, x, y, r)
+      gr.addColorStop(
+        0,
+        Math.random() < 0.5 ? 'rgba(170,140,95,0.14)' : 'rgba(255,245,220,0.12)'
+      )
+      gr.addColorStop(1, 'rgba(0,0,0,0)')
+      g.fillStyle = gr
+      g.fillRect(x - r, y - r, r * 2, r * 2)
+    }
+    speckle(g, 16000, S, 0.14, false)
+    speckle(g, 9000, S, 0.16, true)
+  })
+  t.repeat.set(1 / 14, 1 / 14)
+  return t
+}
+
+// the pier's deck as it shades the water: each rectangle moved away from the sun by the height it
+// stands over the water
+function deckShadows () {
+  const k = (0.3 - WATER) / SUN_DIR.y
+  const dx = -SUN_DIR.x * k,
+    dz = -SUN_DIR.z * k
+  return PIER.deck.map(
+    d => new THREE.Vector4(d.x0 + dx, d.x1 + dx, d.z0 + dz, d.z1 + dz)
+  )
+}
+
+function seaMaterial () {
+  return new THREE.ShaderMaterial({
+    uniforms: THREE.UniformsUtils.merge([
+      THREE.UniformsLib.fog,
+      {
+        uTime: { value: 0 },
+        uNight: { value: 0 },
+        uSun: { value: SUN_DIR.clone() },
+        uShore: { value: WET - 1 },
+        uDeck: { value: deckShadows() },
+        uWheel: { value: new THREE.Vector3(WHEEL.x, WHEEL.hub, WHEEL.z) }
+      }
+    ]),
+    fog: true,
+    vertexShader: `varying vec3 vW;
+      #include <fog_pars_vertex>
+      void main(){
+        vec4 w = modelMatrix * vec4(position, 1.0);
+        vW = w.xyz;
+        vec4 mvPosition = viewMatrix * w;
+        gl_Position = projectionMatrix * mvPosition;
+        #include <fog_vertex>
+      }`,
+    fragmentShader: `uniform float uTime; uniform float uNight; uniform vec3 uSun; uniform float uShore;
+      uniform vec4 uDeck[${PIER.deck.length}]; uniform vec3 uWheel; varying vec3 vW;
+      #include <fog_pars_fragment>
+      float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+      float noise(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+        return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y); }
+      ${SKY_GLSL}
+      // the surface's slope: long swells, then shorter chop and ripples, each drifting its own way
+      vec2 slope(vec2 p, float t){
+        vec2 s = vec2(0.0);
+        vec3 W[5];
+        W[0] = vec3(0.86, 0.5, 0.045); W[1] = vec3(0.3, 0.95, 0.07); W[2] = vec3(-0.6, 0.8, 0.13);
+        W[3] = vec3(0.95, -0.3, 0.21); W[4] = vec3(-0.2, -0.98, 0.33);
+        for (int i = 0; i < 5; i++) {
+          float k = W[i].z, a = 0.9 / (1.0 + float(i) * 1.6);
+          float ph = dot(W[i].xy, p) * k + t * sqrt(9.81 * k);
+          s += W[i].xy * k * a * cos(ph);
+        }
+        float n1 = noise(p * 0.55 + t * 0.4), n2 = noise(p * 0.55 + vec2(5.2, 1.3) - t * 0.35);
+        s += vec2(n1 - 0.5, n2 - 0.5) * 0.18;
+        return s;
+      }
+      void main(){
+        vec3 toCam = cameraPosition - vW;
+        float dist = length(toCam);
+        vec3 v = toCam / dist;
+        // ripples fade with distance (a far sea reads smooth), the swells stay
+        vec2 s = slope(vW.xz, uTime) * mix(1.0, 0.35, smoothstep(60.0, 600.0, dist));
+        vec3 n = normalize(vec3(-s.x, 1.0, -s.y));
+        float fres = 0.02 + 0.98 * pow(1.0 - max(dot(n, v), 0.0), 5.0);
+        vec3 r = reflect(-v, n);
+        r.y = abs(r.y);
+        vec3 sky = skyBase(r, uSun, uNight);
+        float sd = max(dot(r, uSun), 0.0);
+        // the pier's shadow on the water, soft at its edges
+        float shade = 1.0;
+        for (int i = 0; i < ${PIER.deck.length}; i++) {
+          vec4 d = uDeck[i];
+          vec2 in2 = min(vW.xz - d.xz, d.yw - vW.xz);
+          shade = min(shade, 1.0 - 0.42 * smoothstep(-0.8, 0.8, min(in2.x, in2.y)));
+        }
+        // deep blue out at sea, turquoise over the shallows by the beach
+        float out_ = -vW.x - uShore;
+        vec3 deep = vec3(0.008, 0.07, 0.22), shallow = vec3(0.05, 0.31, 0.35);
+        vec3 body = mix(shallow, deep, smoothstep(2.0, 70.0, out_));
+        body = mix(body, vec3(0.003, 0.012, 0.03), uNight * 0.92);
+        // light coming up through a wave's face
+        body += vec3(0.02, 0.12, 0.13) * max(0.0, s.x * 0.8 + s.y * 0.4);
+        // (the sky in it a little cooler than the sky itself: the water's own blue shows through)
+        vec3 col = mix(body, sky * vec3(0.78, 0.88, 1.08), fres * mix(0.7, 0.4, uNight));
+        // the sun's glitter path (the moon's at night, cold and fainter), not where the pier shades it
+        vec3 glint = mix(vec3(1.0, 0.75, 0.45), vec3(0.75, 0.8, 1.0) * 0.35, uNight);
+        col += (glint * pow(sd, 260.0) * 9.0 + mix(vec3(1.0, 0.6, 0.3), vec3(0.2, 0.22, 0.3), uNight) * pow(sd, 40.0) * 0.35) * shade;
+        col *= mix(1.0, shade, 1.0 - uNight * 0.8);
+        // at night the Ferris wheel's lights shimmer in it
+        float wl = max(dot(r, normalize(uWheel - vW)), 0.0);
+        col += vec3(1.0, 0.55, 0.75) * (pow(wl, 900.0) * 5.0 + pow(wl, 90.0) * 0.12) * uNight;
+        // surf: a foam line rolling up the beach, and streaks of it just offshore
+        float swash = sin(out_ * 0.9 - uTime * 1.6 + noise(vW.xz * 0.08) * 6.0);
+        float foam = smoothstep(2.6, 0.0, out_) * (0.55 + 0.45 * swash);
+        foam += smoothstep(16.0, 4.0, out_) * smoothstep(0.75, 0.95, swash) * noise(vW.xz * 0.6 + uTime * 0.3) * 0.7;
+        col = mix(col, vec3(0.92, 0.9, 0.86) * (1.0 - 0.8 * uNight) * shade, clamp(foam, 0.0, 0.9));
+        gl_FragColor = vec4(col, 1.0);
+        #include <fog_fragment>
+      }`
+  })
+}
+
+// The beach: flat sand from under the promenade's edge out to SHORE, all along the coast, then its
+// face sloping down under the water (UVs in metres for the sand texture; the face darker, wet)
+function beach () {
+  const pos = [],
+    uvs = [],
+    col = []
+  const strip = (x0, y0, x1, y1, c0, c1) => {
+    const a = [x0, y0, -COAST],
+      b = [x1, y1, -COAST],
+      c = [x1, y1, COAST],
+      d = [x0, y0, COAST]
+    // (running west, x1 < x0: wound to face up)
+    for (const [p, k] of [
+      [a, c0],
+      [c, c1],
+      [d, c0],
+      [a, c0],
+      [b, c1],
+      [c, c1]
+    ]) {
+      pos.push(...p)
+      uvs.push(p[0], p[2])
+      col.push(k, k * 0.98, k * 0.95)
+    }
+  }
+  strip(-PROMENADE + 1, SAND, -SHORE, SAND, 1, 1)
+  strip(-SHORE, SAND, -SHORE - FACE, FLOOR, 1, 0.62)
+  strip(-SHORE - FACE, FLOOR, -SHORE - 60, -9, 0.62, 0.5)
+  const g = new THREE.BufferGeometry()
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3))
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2))
+  g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3))
+  g.computeVertexNormals()
+  return g
+}
+// the sand's height at x on the beach's face
+const sandAt = x =>
+  x > -SHORE ? SAND : SAND + (FLOOR - SAND) * Math.min(1, (-SHORE - x) / FACE)
+
+// LA County's lifeguard towers: a hut on four legs over the sand, facing the sea, with a deck and a
+// ramp down to the beach; and the groynes' rocks
+const R = rng(88)
+function tower (x, z, paint) {
+  const f = 1.5 // the floor, over the flat beach
+  const parts = [
+    tint(box(-1.9, f, -1.8, 1.9, f + 0.2, 1.8), 0xd8d4cc),
+    tint(box(-0.6, f + 0.2, -1.4, 1.6, f + 2.5, 1.4), paint),
+    tint(box(-0.66, f + 1.2, -1.2, -0.62, f + 2.1, 1.2), 0x1d2328),
+    tint(box(-1, f + 2.5, -1.8, 1.9, f + 2.68, 1.8), 0xefefea),
+    tint(box(-1.9, f + 0.2, -1.8, -1.84, f + 1.25, 1.8), 0xefefea),
+    tint(
+      box(-0.5, -0.1, 0, 0.5, 0.1, 5)
+        .rotateX(0.5)
+        .translate(0.9, f, 1.8),
+      0xb59a74
+    )
+  ]
+  for (const [lx, lz] of [
+    [-1.7, -1.6],
+    [1.7, -1.6],
+    [-1.7, 1.6],
+    [1.7, 1.6]
+  ])
+    parts.push(
+      tint(
+        box(lx - 0.1, sandAt(x + lx) - 0.3, lz - 0.1, lx + 0.1, f, lz + 0.1),
+        0x8d8d8a
+      )
+    )
+  return parts.map(p => p.translate(x, 0, z))
+}
+function rocks (z, out) {
+  for (let x = GROYNE.x1 + 1; x > GROYNE.x0 + 2; x -= 1.4 + R() * 0.8) {
+    const r = 0.9 + R() * 0.9
+    const g = new THREE.DodecahedronGeometry(r, 0)
+    g.scale(1 + R() * 0.5, 0.6 + R() * 0.4, 1 + R() * 0.5)
+    g.rotateY(R() * 6.3)
+    const y = Math.max(sandAt(x), FLOOR) + r * 0.3
+    g.translate(x, y, z + (R() - 0.5) * GROYNE.w * 0.6)
+    const k = 0.42 + R() * 0.16
+    out.push(tint(g, new THREE.Color(k, k * 0.95, k * 0.9)))
+  }
+}
+
+// returns { update (the water moves), night(k) (k = 1: night) }
+function buildSea (group) {
+  const sand = new THREE.MeshStandardMaterial({
+    map: sandTexture(),
+    vertexColors: true,
+    roughness: 0.96
+  })
+  const sandMesh = new THREE.Mesh(beach(), sand)
+  sandMesh.receiveShadow = true
+  sandMesh.renderOrder = LAYER.beach
+  group.add(sandMesh)
+  // the towers along the beach (out past where the car can drive, at the top of its face) and the
+  // rocks of the groynes
+  const parts = []
+  const paints = [0x8fc3dc, 0x9ad0c9, 0xe8c26a, 0x8fc3dc, 0xd88f7d, 0x8fc3dc]
+  ;[-1180, -820, -360, -170, 175, 365, 800, 1150].forEach((z, i) =>
+    parts.push(...tower(-SHORE - 4.5, z, paints[i % paints.length]))
+  )
+  rocks(-WALL - GROYNE.w / 2, parts)
+  rocks(WALL + GROYNE.w / 2, parts)
+  const things = new THREE.Mesh(
+    merge(parts),
+    new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85 })
+  )
+  things.receiveShadow = true
+  group.add(things)
+  // the water, out to the horizon (its near edge under the beach's face)
+  const mat = seaMaterial()
+  const w = 3600
+  const sea = new THREE.Mesh(
+    new THREE.PlaneGeometry(w, 2 * COAST + 2400)
+      .rotateX(-Math.PI / 2)
+      .translate(-SHORE - 6 - w / 2, 0, 0),
+    mat
+  )
+  sea.position.y = WATER
+  sea.renderOrder = LAYER.sea
+  group.add(sea)
+  return {
+    update: t => (mat.uniforms.uTime.value = t),
+    night: k => (mat.uniforms.uNight.value = k)
+  }
+}
+__export(__exports, { "buildSea": () => buildSea })
+})
+
+// ---- js/render/cityGlow.js
+__define(80, function (__exports) {
+// Lights seen from afar at night: the hills' windows, the city's street lights running off to the
+// horizon, the freeway's head and tail lights, the pier's lamps and the Ferris wheel's rim. Each is
+// a point drawn as a soft round glow, its size in metres (never less than a pixel and a half: a far
+// light fades rather than flickers), bright enough to bloom, and dimmed a little by the haze with
+// distance. All of a set in one draw call.
+const THREE = __require(0)
+const GLOW_SCALE = { value: 1 } // pixels per metre at 1 m: set each frame (cityEdges.js)
+const _c = new THREE.Color()
+
+// one glow material; scale: how big each glow is drawn against its size, haze: how much the far ones
+// fade, and the extra vertex code that may move each point (given position, defining p)
+function glowMaterial ({ haze = 0.55, move = '', uniforms = {} } = {}) {
+  return new THREE.ShaderMaterial({
+    uniforms: { uScale: GLOW_SCALE, uOn: { value: 0 }, ...uniforms },
+    vertexShader: `attribute float size; uniform float uScale, uOn; varying vec3 vC;
+      void main(){
+        vec3 p = position;
+        float k = 1.0; // (move may dim it, or colour it)
+        vec3 tint = vec3(1.0);
+        ${move}
+        vec4 mv = modelViewMatrix * vec4(p, 1.0);
+        gl_Position = projectionMatrix * mv;
+        float px = size * uScale / max(-mv.z, 0.1);
+        gl_PointSize = max(px, 1.5);
+        float far = -mv.z;
+        vC = color * tint * k * uOn * min(1.0, px / 1.5) * (1.0 - ${haze.toFixed(
+          2
+        )} * (1.0 - exp(-far * far * 1.1e-6)));
+        if (uOn < 0.01) gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
+      }`,
+    fragmentShader: `varying vec3 vC;
+      void main(){
+        float d = length(gl_PointCoord - 0.5) * 2.0;
+        float a = (1.0 - smoothstep(0.0, 1.0, d)) * (0.35 + 0.65 * (1.0 - smoothstep(0.0, 0.35, d)));
+        gl_FragColor = vec4(vC * a, 1.0);
+      }`,
+    vertexColors: true,
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending
+  })
+}
+
+// A set of glows: list of { x, y, z, color (THREE.Color or hex), size (m) }, drawn with mat.
+function glowPoints (list, mat) {
+  const pos = new Float32Array(list.length * 3),
+    col = new Float32Array(list.length * 3),
+    size = new Float32Array(list.length)
+  list.forEach((l, i) => {
+    pos.set([l.x, l.y, l.z], i * 3)
+    _c.set(l.color)
+    col.set([_c.r * (l.k ?? 1), _c.g * (l.k ?? 1), _c.b * (l.k ?? 1)], i * 3)
+    size[i] = l.size
+  })
+  const g = new THREE.BufferGeometry()
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3))
+  g.setAttribute('color', new THREE.BufferAttribute(col, 3))
+  g.setAttribute('size', new THREE.BufferAttribute(size, 1))
+  g.computeBoundingSphere()
+  const pts = new THREE.Points(g, mat)
+  pts.renderOrder = 1 // (after the solid city, like any transparent thing)
+  return pts
+}
+__export(__exports, { "GLOW_SCALE": () => GLOW_SCALE, "glowMaterial": () => glowMaterial, "glowPoints": () => glowPoints })
+})
+
+// ---- js/render/cityKit.js
+__define(81, function (__exports) {
+// What the scenery round the city is made of, shared by the verges, the hills and the sprawl: tall
+// skinny palms (LA's Mexican fan palms, a skirt of dead fronds under a small crown), round-headed
+// trees, the canvas textures of grass and concrete, and instancing split into chunks across the land,
+// so the camera and the shadow maps leave out the chunks they can't see.
+const THREE = __require(0)
+const { merge, tint } = __require(42)
+const { canvasTex, speckle } = __require(40)
+const { rng } = __require(24)
+const R = rng(707)
+const _m = new THREE.Matrix4(),
+  _q = new THREE.Quaternion(),
+  _p = new THREE.Vector3(),
+  _s = new THREE.Vector3(),
+  _e = new THREE.Euler(),
+  _c = new THREE.Color()
+
+// (each plant's colours are in its vertices: one material for all of them)
+const PLANT = new THREE.MeshStandardMaterial({
+  vertexColors: true,
+  roughness: 0.92
+})
+
+// A palm's trunk, 1 m tall (scaled to its height), and its crown at the top of it.
+function palmTrunk () {
+  return tint(
+    new THREE.CylinderGeometry(0.17, 0.26, 1, 5, 1, true).translate(0, 0.5, 0),
+    0x6f655a
+  )
+}
+function palmCrown () {
+  const parts = [
+    tint(
+      new THREE.CylinderGeometry(0.75, 0.3, 1.9, 6, 1, true).translate(
+        0,
+        -1.1,
+        0
+      ),
+      0x7a6a4c
+    )
+  ]
+  // the fronds: fans on stalks, drooping out all round
+  for (let i = 0; i < 9; i++) {
+    const a = (i / 9) * Math.PI * 2 + R() * 0.3,
+      up = i % 3 === 0 ? 0.5 : -0.15 - R() * 0.35
+    const f = new THREE.BufferGeometry()
+    const len = 1.9 + R() * 0.5
+    f.setAttribute(
+      'position',
+      new THREE.Float32BufferAttribute(
+        [0, 0, 0, len, up * len - 0.35, -0.75, len, up * len - 0.35, 0.75],
+        3
+      )
+    )
+    f.rotateY(a)
+    parts.push(tint(f, i % 2 ? 0x41552a : 0x4c6230))
+  }
+  const g = merge(parts)
+  g.computeVertexNormals()
+  return g
+}
+// A round-headed tree (a ficus, a sycamore, an oak on the hills): a trunk and three blobs of leaves,
+// darker underneath. About 5 m tall; scaled per tree.
+function roundTree (leaf = 0x3f5a2a) {
+  const parts = [
+    tint(
+      new THREE.CylinderGeometry(0.16, 0.24, 2.4, 5).translate(0, 1.2, 0),
+      0x5a4a3a
+    )
+  ]
+  for (const [x, y, z, r] of [
+    [0, 3.4, 0, 1.9],
+    [0.9, 3.0, 0.5, 1.4],
+    [-0.8, 3.1, -0.4, 1.5]
+  ]) {
+    const b = new THREE.IcosahedronGeometry(r, 0)
+      .scale(1, 0.8, 1)
+      .translate(x, y, z)
+    const n = b.attributes.position.count,
+      col = new Float32Array(n * 3)
+    _c.set(leaf)
+    for (let i = 0; i < n; i++) {
+      const k = 0.7 + 0.45 * ((b.attributes.position.getY(i) - y) / r + 0.5)
+      col.set([_c.r * k, _c.g * k, _c.b * k], i * 3)
+    }
+    b.setAttribute('color', new THREE.BufferAttribute(col, 3))
+    parts.push(b)
+  }
+  return merge(parts)
+}
+
+// Instances of geo scattered over the land, one instanced mesh to a chunk (cell m square), so each
+// chunk is left out where it can't be seen. list: things with x, z; place(it, m): its matrix into m
+// (pose() helps). Returns the meshes, added to group.
+function scatter (group, geo, mat, list, place, opts = {}) {
+  const { cell = 300, cast = false, receive = true, color = null } = opts
+  const cells = new Map()
+  for (const it of list) {
+    const k = `${Math.floor(it.x / cell)},${Math.floor(it.z / cell)}`
+    if (!cells.has(k)) cells.set(k, [])
+    cells.get(k).push(it)
+  }
+  const meshes = []
+  for (const items of cells.values()) {
+    const m = new THREE.InstancedMesh(geo, mat, items.length)
+    items.forEach((it, i) => {
+      m.setMatrixAt(i, place(it, _m))
+      if (color) m.setColorAt(i, color(it, _c))
+    })
+    m.castShadow = cast
+    m.receiveShadow = receive
+    m.computeBoundingSphere()
+    group.add(m)
+    meshes.push(m)
+  }
+  return meshes
+}
+// a matrix at (x, y, z) turned yaw about the vertical, scaled, leaning by tilt toward lean
+function pose (
+  m,
+  x,
+  y,
+  z,
+  yaw = 0,
+  sx = 1,
+  sy = 1,
+  sz = 1,
+  tilt = 0,
+  lean = 0
+) {
+  _e.set(Math.cos(lean) * tilt, yaw, Math.sin(lean) * tilt, 'YXZ')
+  return m.compose(_p.set(x, y, z), _q.setFromEuler(_e), _s.set(sx, sy, sz))
+}
+// a copy of geo moved by the matrix m (to be merged with others)
+const bake = (geo, m) => geo.clone().applyMatrix4(m)
+// A palm baked where it stands ({ x, z, h, lean, y? }): the trunk leaning a little toward lean, the
+// crown on its top. Returns its two pieces.
+const TILT = 0.04
+const TRUNK = palmTrunk(),
+  CROWN = palmCrown()
+function palmAt (p) {
+  const y = p.y || 0
+  return [
+    bake(TRUNK, pose(_bm, p.x, y, p.z, 0, 1, p.h, 1, TILT, p.lean)),
+    bake(
+      CROWN,
+      pose(
+        _bm,
+        p.x - Math.sin(p.lean) * TILT * p.h,
+        y + p.h,
+        p.z + Math.cos(p.lean) * TILT * p.h,
+        p.lean * 3
+      )
+    )
+  ]
+}
+const _bm = new THREE.Matrix4()
+// Palms instanced (for many of them: the sprawl's): trunks and crowns, one mesh each to a chunk.
+function palmsAt (group, palms, cast = false, cell = 300) {
+  scatter(
+    group,
+    TRUNK,
+    PLANT,
+    palms,
+    (p, m) => pose(m, p.x, p.y || 0, p.z, 0, 1, p.h, 1, TILT, p.lean),
+    { cast, cell }
+  )
+  scatter(
+    group,
+    CROWN,
+    PLANT,
+    palms,
+    (p, m) =>
+      pose(
+        m,
+        p.x - Math.sin(p.lean) * TILT * p.h,
+        (p.y || 0) + p.h,
+        p.z + Math.cos(p.lean) * TILT * p.h,
+        p.lean * 3
+      ),
+    { cast, cell }
+  )
+}
+// A lump of leaves r across, its shading smooth (normals straight out from its middle), in col (an
+// array, or a function of how far up the lump a vertex is, -1 to 1)
+function lump (r, col) {
+  const g = new THREE.IcosahedronGeometry(r, 0)
+  const p = g.attributes.position,
+    n = g.attributes.normal,
+    c = new Float32Array(p.count * 3)
+  for (let i = 0; i < p.count; i++) {
+    const x = p.getX(i),
+      y = p.getY(i),
+      z = p.getZ(i),
+      l = Math.hypot(x, y, z)
+    n.setXYZ(i, x / l, y / l, z / l)
+    c.set(typeof col === 'function' ? col(y / r) : col, i * 3)
+  }
+  g.setAttribute('color', new THREE.BufferAttribute(c, 3))
+  return g
+}
+
+// ---------- textures (UVs in metres) ----------
+// dry LA grass, more straw than green by the end of summer
+function grassTexture () {
+  const t = canvasTex(256, (g, S) => {
+    g.fillStyle = '#6f7a3f'
+    g.fillRect(0, 0, S, S)
+    for (let i = 0; i < 30; i++) {
+      const x = Math.random() * S,
+        y = Math.random() * S,
+        r = 10 + Math.random() * 45
+      const gr = g.createRadialGradient(x, y, 0, x, y, r)
+      gr.addColorStop(
+        0,
+        Math.random() < 0.5 ? 'rgba(150,140,80,0.35)' : 'rgba(50,70,25,0.3)'
+      )
+      gr.addColorStop(1, 'rgba(0,0,0,0)')
+      g.fillStyle = gr
+      g.fillRect(x - r, y - r, r * 2, r * 2)
+    }
+    for (let i = 0; i < 7000; i++) {
+      g.fillStyle = `rgba(${
+        Math.random() < 0.5 ? '45,60,20' : '170,165,95'
+      },${Math.random() * 0.4})`
+      g.fillRect(Math.random() * S, Math.random() * S, 1, 2 + Math.random() * 2)
+    }
+  })
+  t.repeat.set(1 / 7, 1 / 7)
+  return t
+}
+// a wall's face, w x h px for a tile of the given size in metres: concrete with its formwork's
+// lines and stains run down from the top, or concrete blocks (a sound wall) with ivy up its foot
+function wallTexture (kind) {
+  const blocks = kind === 'blocks'
+  const t = canvasTex(
+    512,
+    (g, W, H) => {
+      g.fillStyle = blocks ? '#b9ab93' : '#a29d93'
+      g.fillRect(0, 0, W, H)
+      speckle(g, 9000, W, 0.18, false)
+      speckle(g, 5000, W, 0.12, true)
+      g.strokeStyle = 'rgba(60,55,48,0.45)'
+      g.lineWidth = 2
+      g.beginPath()
+      if (blocks)
+        // 0.4 x 0.2 m blocks in a running bond: 8 m x 4 m to the tile
+        for (let r = 0; r < 20; r++) {
+          const y = (r * H) / 20
+          g.moveTo(0, y)
+          g.lineTo(W, y)
+          for (let c = 0; c < 20; c++) {
+            const x = ((c + (r % 2) * 0.5) * W) / 20
+            g.moveTo(x, y)
+            g.lineTo(x, y + H / 20)
+          }
+        }
+      else
+        for (const x of [0, W / 2]) {
+          g.moveTo(x, 0)
+          g.lineTo(x, H)
+        }
+      g.stroke()
+      // stains run down from the top
+      for (let i = 0; i < 26; i++) {
+        const x = Math.random() * W,
+          w = 4 + Math.random() * 16,
+          l = H * (0.2 + Math.random() * 0.6)
+        const gr = g.createLinearGradient(0, 0, 0, l)
+        gr.addColorStop(0, 'rgba(40,36,30,0.28)')
+        gr.addColorStop(1, 'rgba(40,36,30,0)')
+        g.fillStyle = gr
+        g.fillRect(x, 0, w, l)
+      }
+      if (blocks)
+        // ivy, thick at the foot and thinning out up the wall
+        for (let i = 0; i < 2600; i++) {
+          const y = H - Math.pow(Math.random(), 1.8) * H * 0.75,
+            x = Math.random() * W
+          g.fillStyle = `rgba(${
+            Math.random() < 0.5 ? '38,62,24' : '62,92,36'
+          },0.85)`
+          g.beginPath()
+          g.arc(x, y, 2 + Math.random() * 5, 0, 7)
+          g.fill()
+        }
+    },
+    1,
+    256
+  )
+  t.repeat.set(1 / 8, 1 / 4)
+  return t
+}
+__export(__exports, { "PLANT": () => PLANT, "palmTrunk": () => palmTrunk, "palmCrown": () => palmCrown, "roundTree": () => roundTree, "scatter": () => scatter, "pose": () => pose, "bake": () => bake, "palmAt": () => palmAt, "palmsAt": () => palmsAt, "lump": () => lump, "grassTexture": () => grassTexture, "wallTexture": () => wallTexture })
+})
+
+// ---- js/render/cityWalls.js
+__define(82, function (__exports) {
+// The verges and walls round the city on three sides: past the promenade's edge a strip of dry grass,
+// palms and the odd round-headed tree along it, then at the foot of the hills (north) a concrete
+// retaining wall with ivy spilling down it, and on the east and south a freeway's sound wall of
+// concrete blocks, ivy climbing its foot and a hedge of oleanders along it, pink and white. The walls
+// are solid (sim/edge.js). The planting is merged a stretch at a time, so the car's shadow map draws
+// only the stretch it is beside.
+const THREE = __require(0)
+const { merge } = __require(42)
+const { PROMENADE, rng } = __require(24)
+const { WALL, WALL_H } = __require(27)
+const { PLANT, roundTree, palmAt, bake, pose, lump, grassTexture, wallTexture } = __require(81)
+const R = rng(505)
+const T = 0.6 // the walls' thickness
+const GRASS_Y = 0.02 // (a little below the promenade's top: the car drops off its edge)
+const STRETCH = 400 // m of planting to a mesh
+const TREE = roundTree(0x405a2c)
+const _m = new THREE.Matrix4()
+
+// A box along a wall's run (axis 'x' or 'z', from a to b), its inner face at distance d out from the
+// middle, from y0 up h, thick through: UVs in metres along it and up it, on every face.
+function run (axis, d, a, b, y0, h, thick) {
+  const len = b - a,
+    g = new THREE.BoxGeometry(len, h, thick)
+  const uv = g.attributes.uv,
+    p = g.attributes.position
+  for (let i = 0; i < uv.count; i++)
+    uv.setXY(i, p.getX(i) + len / 2, p.getY(i) + y0 + h / 2)
+  g.translate((a + b) / 2, y0 + h / 2, 0)
+  if (axis === 'z') g.rotateY(-Math.PI / 2)
+  const o = Math.sign(d) * (Math.abs(d) + T / 2)
+  return axis === 'x' ? g.translate(0, 0, o) : g.translate(o, 0, 0)
+}
+
+// The planting along one side, from a to b (axis 'x' or 'z', the wall at d): a hedge of oleanders
+// at the wall's foot (where there is one), palms and trees out on the verge. Pieces, by stretch.
+function planting (axis, d, a, b, hedge) {
+  const stretches = new Map()
+  const put = (s, ...g) => {
+    const k = Math.floor((s - a) / STRETCH)
+    if (!stretches.has(k)) stretches.set(k, [])
+    stretches.get(k).push(...g)
+  }
+  const at = (s, off, y = 0) =>
+    axis === 'x' ? [s, y, Math.sign(d) * off] : [Math.sign(d) * off, y, s]
+  if (hedge)
+    for (let s = a + 1; s < b - 1; s += 1.4 + R() * 1.1) {
+      const r = 0.85 + R() * 0.5
+      const bloom =
+        R() < 0.4 ? (R() < 0.6 ? [0.74, 0.3, 0.42] : [0.82, 0.8, 0.76]) : null
+      const g = lump(r, up => {
+        const k = 0.65 + 0.3 * (up + 1)
+        return bloom && up > 0.1 && R() < 0.55
+          ? bloom
+          : [0.085 * k, 0.15 * k, 0.065 * k]
+      })
+      g.scale(1.25, 1.15, 0.95)
+      if (axis === 'z') g.rotateY(Math.PI / 2)
+      const [x, , z] = at(s, Math.abs(d) - 1 + (R() - 0.5) * 0.5)
+      put(s, g.translate(x, r * 0.9, z))
+    }
+  for (let s = a + 10; s < b - 6; s += 22 + R() * 10) {
+    const [x, , z] = at(s, PROMENADE + 3 + R() * 4)
+    if (R() < 0.75)
+      put(s, ...palmAt({ x, z, h: 13 + R() * 9, lean: R() * 6.3 }))
+    else {
+      const k = 1.1 + R() * 0.5
+      put(s, bake(TREE, pose(_m, x, 0, z, R() * 6.3, k, k, k)))
+    }
+  }
+  return [...stretches.values()]
+}
+
+function buildWalls (group) {
+  // the verges: north and south the whole way along, east between them
+  const grass = new THREE.MeshStandardMaterial({
+    map: grassTexture(),
+    roughness: 0.97
+  })
+  const strips = []
+  const flat = (x0, z0, x1, z1) => {
+    const g = new THREE.PlaneGeometry(x1 - x0, z1 - z0).rotateX(-Math.PI / 2)
+    const uv = g.attributes.uv
+    for (let i = 0; i < uv.count; i++)
+      uv.setXY(i, x0 + uv.getX(i) * (x1 - x0), z0 + uv.getY(i) * (z1 - z0))
+    strips.push(g.translate((x0 + x1) / 2, GRASS_Y, (z0 + z1) / 2))
+  }
+  const W = WALL + 0.02,
+    P = PROMENADE - 0.3 // (tucked under the promenade's edge)
+  flat(-PROMENADE, -W, W, -P)
+  flat(-PROMENADE, P, W, W)
+  flat(P, -P, W, P)
+  const verge = new THREE.Mesh(merge(strips), grass)
+  verge.receiveShadow = true
+  verge.renderOrder = 1 // (with the pavements: LAYER.ground)
+  group.add(verge)
+
+  // the walls, each with its cap: concrete at the foot of the hills, blocks behind the freeway
+  // (the two sound walls in one mesh)
+  const wall = (axis, d, a, b, h) => [
+    run(axis, d, a, b, 0, h, T),
+    run(axis, d, a - 0.08, b + 0.08, h, 0.18, T + 0.16)
+  ]
+  for (const [kind, runs] of [
+    ['concrete', wall('x', -WALL, -PROMENADE, WALL + T, WALL_H.north)],
+    [
+      'blocks',
+      [
+        ...wall('z', WALL, -WALL - T, WALL + T, WALL_H.side),
+        ...wall('x', WALL, -PROMENADE, WALL, WALL_H.side)
+      ]
+    ]
+  ]) {
+    const m = new THREE.Mesh(
+      merge(runs),
+      new THREE.MeshStandardMaterial({ map: wallTexture(kind), roughness: 0.9 })
+    )
+    m.castShadow = m.receiveShadow = true
+    group.add(m)
+  }
+  // the planting, a stretch to a mesh
+  for (const piece of [
+    ...planting('x', -WALL, -PROMENADE, WALL, false),
+    ...planting('z', WALL, -WALL + 2, WALL - 2, true),
+    ...planting('x', WALL, -PROMENADE + 3, WALL - 3, true)
+  ]) {
+    const m = new THREE.Mesh(merge(piece), PLANT)
+    m.castShadow = m.receiveShadow = true
+    group.add(m)
+  }
+  return {}
+}
+__export(__exports, { "buildWalls": () => buildWalls })
+})
+
+// ---- js/render/citySprawl.js
+__define(83, function (__exports) {
+// The city going on, east and south past the freeway, to the horizon: the street grid carried on
+// from the city's own (a street every 96 m, an avenue every fourth), low stucco boxes of one to three
+// storeys with flat pale roofs, yards, car parks and the odd turquoise pool between them, a few
+// towers far off, palms standing over the roofs, all fading into the haze. At night the streets glow
+// sodium orange off to the horizon, street lights and windows twinkling along them.
+const THREE = __require(0)
+const { LAYER, merge, box, tint } = __require(42)
+const { glowMaterial, glowPoints } = __require(80)
+const { palmsAt } = __require(81)
+const { PITCH, PROMENADE, rng } = __require(24)
+const { WALL } = __require(27)
+const { LANDMARKS } = __require(2)
+const R = rng(2024)
+const FAR = 2600 // the ground runs out this far
+const BUILT = 1750 // buildings this far (past it the haze has them)
+const [EAST, SOUTH] = LANDMARKS.freeways
+const near = (v, c, w) => Math.abs(v - c) < w
+// whether (x, z) is clear of the streets, the freeways and the city
+function clear (x, z, r) {
+  const sx = x - Math.round(x / PITCH) * PITCH,
+    sz = z - Math.round(z / PITCH) * PITCH
+  if (Math.abs(sx) < 9 + r || Math.abs(sz) < 9 + r) return false
+  if (near(x, EAST.x0, 17 + r) || near(z, SOUTH.z0, 17 + r)) return false
+  return x > WALL + 2 + r || z > WALL + 2 + r
+}
+
+function groundMaterial () {
+  return new THREE.ShaderMaterial({
+    uniforms: THREE.UniformsUtils.merge([
+      THREE.UniformsLib.fog,
+      { uNight: { value: 0 } }
+    ]),
+    vertexShader: `varying vec3 vW;
+      #include <fog_pars_vertex>
+      void main(){
+        vec4 w = modelMatrix * vec4(position, 1.0);
+        vW = w.xyz;
+        vec4 mvPosition = viewMatrix * w;
+        gl_Position = projectionMatrix * mvPosition;
+        #include <fog_vertex>
+      }`,
+    fragmentShader: `uniform float uNight; varying vec3 vW;
+      #include <fog_pars_fragment>
+      float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+      // how much of a line of width w every pitch m along v covers here, smoothed over a pixel
+      float lines(float v, float pitch, float w){
+        float d = abs(fract(v / pitch + 0.5) - 0.5) * pitch, f = fwidth(v);
+        return 1.0 - smoothstep(w * 0.5 - f, w * 0.5 + f, d);
+      }
+      void main(){
+        vec2 p = vW.xz;
+        float street = max(lines(p.x, ${PITCH.toFixed(
+          1
+        )}, 14.0), lines(p.y, ${PITCH.toFixed(1)}, 14.0));
+        float avenue = max(lines(p.x + ${PITCH.toFixed(1)}, ${(
+      PITCH * 4
+    ).toFixed(1)}, 22.0), lines(p.y + ${(PITCH * 2).toFixed(1)}, ${(
+      PITCH * 4
+    ).toFixed(1)}, 22.0));
+        street = max(street, avenue);
+        // the lots: grey and brown roofs, dry yards and car parks, trees' green, now and then a pool
+        vec2 lot = floor(p / 22.0);
+        float n = hash(lot), m = hash(lot + 17.3);
+        vec2 in_ = fract(p / 22.0);
+        vec3 col = mix(vec3(0.34, 0.32, 0.3), vec3(0.46, 0.43, 0.39), m);
+        col = mix(col, vec3(0.44, 0.39, 0.3), step(0.5, n));
+        col = mix(col, vec3(0.36, 0.36, 0.37), step(0.88, n));
+        // (trees round the lots' edges, in clumps)
+        float tree = step(0.55, hash(floor(p / 7.0) + 3.7)) * step(0.3, abs(in_.x - 0.5) + abs(in_.y - 0.5));
+        col = mix(col, vec3(0.16, 0.21, 0.11), tree * 0.85);
+        float pool = step(0.86, m) * step(0.3, in_.x) * step(in_.x, 0.55) * step(0.55, in_.y) * step(in_.y, 0.7);
+        col = mix(col, vec3(0.16, 0.52, 0.6), pool);
+        col = mix(col, vec3(0.2, 0.2, 0.21), street);
+        // (lit like the city's ground in the low sun)
+        vec3 day = col * vec3(0.8, 0.72, 0.64);
+        // night: the streets lit sodium orange, the blocks dark but for a few lit windows' spill
+        vec3 nite = col * 0.02 + vec3(1.0, 0.5, 0.18) * (street * 0.2 + avenue * 0.22 + 0.04 * hash(lot + 3.1));
+        gl_FragColor = vec4(mix(day, nite, uNight), 1.0);
+        #include <fog_fragment>
+      }`,
+    fog: true
+  })
+}
+
+function buildSprawl (group) {
+  // the ground: east past the wall, and south of it from the beach round to the east
+  const ground = groundMaterial()
+  const quad = (x0, z0, x1, z1) =>
+    new THREE.PlaneGeometry(x1 - x0, z1 - z0)
+      .rotateX(-Math.PI / 2)
+      .translate((x0 + x1) / 2, 0, (z0 + z1) / 2)
+  const land = new THREE.Mesh(
+    merge([quad(WALL, -WALL, FAR, FAR), quad(-PROMENADE, WALL, WALL, FAR)]),
+    ground
+  )
+  land.renderOrder = LAYER.hills
+  group.add(land)
+
+  // the buildings: a box for each, its walls the instance's colour and its roof paler
+  const list = []
+  const towers = [
+    { x: 1350, z: 260, r: 160 },
+    { x: 760, z: 1450, r: 140 }
+  ]
+  for (let x = WALL + 6; x < BUILT; x += 30)
+    for (let z = -WALL + 6; z < BUILT; z += 30) {
+      const cx = x + R() * 12,
+        cz = z + R() * 12
+      const w = 9 + R() * 12,
+        d = 9 + R() * 12
+      if (!clear(cx, cz, Math.max(w, d) / 2) || R() < 0.32) continue
+      let h = 3.5 + R() * 4 + (R() < 0.3 ? 3.5 : 0) + (R() < 0.12 ? 7 : 0)
+      for (const t of towers)
+        if (Math.hypot(cx - t.x, cz - t.z) < t.r && R() < 0.35)
+          h = 25 + R() * R() * 110
+      list.push({ x: cx, z: cz, w, d, h })
+    }
+  // (and south of the south wall, west of the east one)
+  for (let x = -PROMENADE + 8; x < WALL; x += 30)
+    for (let z = WALL + 6; z < BUILT; z += 30) {
+      const cx = x + R() * 12,
+        cz = z + R() * 12
+      const w = 9 + R() * 12,
+        d = 9 + R() * 12
+      if (!clear(cx, cz, Math.max(w, d) / 2) || R() < 0.32) continue
+      list.push({
+        x: cx,
+        z: cz,
+        w,
+        d,
+        h: 3.5 + R() * 4 + (R() < 0.3 ? 3.5 : 0)
+      })
+    }
+  // (a unit box on the ground, its top face, vertices 8 to 11, a paler grey)
+  const shape = tint(box(-0.5, 0, -0.5, 0.5, 1, 0.5), 0xffffff)
+  for (let i = 8; i < 12; i++)
+    shape.attributes.color.setXYZ(i, 0.72, 0.71, 0.69)
+  const mat = new THREE.MeshStandardMaterial({
+    vertexColors: true,
+    roughness: 0.9
+  })
+  const paints = [
+    0xd8ccb8,
+    0xc9b9a0,
+    0xd5c2b0,
+    0xbfbab0,
+    0xcab89e,
+    0xb3bbb8,
+    0xd4b896,
+    0xa8a196
+  ]
+  const _m = new THREE.Matrix4(),
+    _c = new THREE.Color()
+  // (a mesh for the east and one for the south: a draw call each, the frustum leaving out what is
+  // behind the camera)
+  const cells = new Map()
+  for (const b of list) {
+    const k = b.x > WALL ? 'east' : 'south'
+    if (!cells.has(k)) cells.set(k, [])
+    cells.get(k).push(b)
+  }
+  for (const items of cells.values()) {
+    const m = new THREE.InstancedMesh(shape, mat, items.length)
+    items.forEach((b, i) => {
+      m.setMatrixAt(i, _m.makeScale(b.w, b.h, b.d).setPosition(b.x, 0, b.z))
+      _c.set(paints[Math.floor(R() * paints.length)])
+      if (b.h > 20)
+        _c.setRGB(0.66 + R() * 0.2, 0.7 + R() * 0.15, 0.74 + R() * 0.12)
+      m.setColorAt(i, _c)
+    })
+    m.computeBoundingSphere()
+    m.receiveShadow = true
+    m.renderOrder = 0.5 // (after the city and the walls in front of it)
+    group.add(m)
+  }
+
+  // palms over the roofs, along the streets nearest the city and here and there beyond (not on the
+  // freeways, nor out in a street crossing the row)
+  const palms = []
+  const row = (x0, z0, x1, z1) => {
+    const len = Math.hypot(x1 - x0, z1 - z0)
+    for (let s = R() * 20; s < len; s += 16 + R() * 14) {
+      const x = x0 + ((x1 - x0) * s) / len,
+        z = z0 + ((z1 - z0) * s) / len
+      const across = x0 === x1 ? z : x
+      if (near(x, EAST.x0, 17) || near(z, SOUTH.z0, 17)) continue
+      if (Math.abs(across - Math.round(across / PITCH) * PITCH) < 8) continue
+      if (R() < 0.8) palms.push({ x, z, h: 16 + R() * 12, lean: R() * 6.3 })
+    }
+  }
+  for (const k of [6, 7, 9]) {
+    const c = k * PITCH + 9.5
+    row(-PROMENADE + 10, c, BUILT, c)
+    row(c, -WALL + 10, c, BUILT)
+  }
+  for (let i = 0; i < 160; i++) {
+    const x = WALL + R() * (BUILT - WALL),
+      z = -WALL + R() * (BUILT + WALL)
+    if (clear(x, z, 2)) palms.push({ x, z, h: 15 + R() * 14, lean: R() * 6.3 })
+  }
+  palmsAt(group, palms, false, 4000)
+
+  // night: the street lights along the streets, and windows lit in the buildings
+  const lights = []
+  for (let k = 6; k * PITCH < BUILT; k++)
+    for (let s = -WALL; s < BUILT; s += 32) {
+      const c = k * PITCH + 7.5
+      lights.push({
+        x: c,
+        y: 8,
+        z: s + R() * 4,
+        color: 0xffa04a,
+        size: 3.6,
+        k: 2.4
+      })
+      if (s > WALL + 10)
+        lights.push({
+          x: s + R() * 4,
+          y: 8,
+          z: c,
+          color: 0xffa04a,
+          size: 3.6,
+          k: 2.4
+        })
+    }
+  for (let s = -PROMENADE; s < WALL; s += 32)
+    for (let k = 6; k * PITCH < BUILT; k++)
+      lights.push({
+        x: s + R() * 4,
+        y: 8,
+        z: k * PITCH + 7.5,
+        color: 0xffa04a,
+        size: 3.6,
+        k: 2.4
+      })
+  for (const b of list)
+    if (R() < 0.6) {
+      const a = R() * 6.3
+      lights.push({
+        x: b.x + Math.cos(a) * b.w * 0.52,
+        y: 1.5 + R() * (b.h - 2),
+        z: b.z + Math.sin(a) * b.d * 0.52,
+        color: R() < 0.7 ? 0xffd9a0 : 0xd8e4ff,
+        size: b.h > 20 ? 2.4 : 1.8,
+        k: 1.2
+      })
+    }
+  const glow = glowMaterial({ haze: 0.5 })
+  const pts = glowPoints(lights, glow)
+  pts.visible = false
+  group.add(pts)
+
+  return {
+    night (k) {
+      ground.uniforms.uNight.value = k
+      glow.uniforms.uOn.value = k
+      pts.visible = k > 0.01
+    }
+  }
+}
+__export(__exports, { "buildSprawl": () => buildSprawl })
+})
+
+// ---- js/render/cityFreeway.js
+__define(84, function (__exports) {
+// The freeways behind the sound walls, east and south (LANDMARKS.freeways): concrete decks on
+// hammerhead columns ten metres up, three lanes each way between jersey barriers, the southern one
+// climbing over the eastern in a stack past the city's corner and, at its west end, coming down to
+// the ground and into a tunnel short of the beach. Their traffic is moved by the vertex shader alone
+// (nothing per car on the CPU, one draw call): each lane has its speed and its cars their place in
+// it, the evening rush crawling out of town on one side and flowing in on the other, and at night
+// streams of white headlights and red tail lights, glowing over the barriers.
+const THREE = __require(0)
+const { merge, box, tint } = __require(42)
+const { canvasTex, speckle } = __require(40)
+const { glowMaterial } = __require(80)
+const { LANDMARKS } = __require(2)
+const { rng } = __require(24)
+const R = rng(1010)
+const [EAST, SOUTH] = LANDMARKS.freeways
+const HW = 14 // the deck's half-width
+const LANE = 3.6
+const GIRDER = 1.8
+// how high each deck's top is along it (s, m from its start), between these points
+const PROFILES = [
+  [
+    [0, 9],
+    [EAST.z1 - EAST.z0, 9]
+  ],
+  [
+    [0, -9],
+    [24, -0.4],
+    [26, 0.05],
+    [40, 0.05],
+    [210, 9],
+    [850, 9],
+    [940, 18],
+    [1070, 18],
+    [1160, 9],
+    [SOUTH.x1 - SOUTH.x0, 9]
+  ]
+]
+const WAYS = [
+  // start (x, z), direction (x, z), length; and the stretch its traffic runs round (from, len):
+  // cars leave it out of sight, deep in the pass, far off in the haze or in the tunnel, and come
+  // back in at its other end
+  {
+    x: EAST.x0,
+    z: EAST.z0,
+    dx: 0,
+    dz: 1,
+    len: EAST.z1 - EAST.z0,
+    from: -1100 - EAST.z0,
+    run: 2600
+  },
+  {
+    x: SOUTH.x0,
+    z: SOUTH.z0,
+    dx: 1,
+    dz: 0,
+    len: SOUTH.x1 - SOUTH.x0,
+    from: 0,
+    run: 1970
+  }
+]
+function deckHeight (k, s) {
+  const p = PROFILES[k]
+  for (let i = 1; i < p.length; i++)
+    if (s <= p[i][0])
+      return (
+        p[i - 1][1] +
+        ((p[i][1] - p[i - 1][1]) * (s - p[i - 1][0])) / (p[i][0] - p[i - 1][0])
+      )
+  return p[p.length - 1][1]
+}
+// the same in GLSL: deck(k, s)
+const f = n => n.toFixed(2)
+const PROFILE_GLSL = `float deck (float k, float s) {
+  ${PROFILES.map(
+    (p, k) => `if (k < ${k}.5) {
+    ${p
+      .slice(1)
+      .map(
+        ([s1, y1], i) =>
+          `if (s <= ${f(s1)}) return ${f(p[i][1])} + ${f(
+            y1 - p[i][1]
+          )} * (s - ${f(p[i][0])}) / ${f(s1 - p[i][0])};`
+      )
+      .join('\n    ')}
+    return ${f(p[p.length - 1][1])};
+  }`
+  ).join('\n  ')}
+  return 9.0;
+}`
+
+// ---------- the structure ----------
+// where along freeway k (from s0) a station goes: at every break in its height, 48 m apart
+// between them, 12 m apart on the ramps
+function stations (k, s0) {
+  const out = [s0],
+    p = PROFILES[k]
+  for (let i = 1; i < p.length; i++) {
+    const [a, ya] = p[i - 1],
+      [b, yb] = p[i]
+    const step = ya === yb ? 48 : 12
+    for (let s = Math.max(a, s0) + step; s < b; s += step)
+      if (s > out[out.length - 1]) out.push(s)
+    if (b > s0) out.push(b)
+  }
+  return out
+}
+// a long box swept along a freeway between stations, its cross-section u0..u1 across, v0..v1 up
+// from the deck's top; each face its own colour (top, sides, underside: null leaves a face out,
+// where nothing would see it)
+function sweep (k, u0, u1, v0, v1, cols, out, s0 = 0) {
+  const w = WAYS[k],
+    pos = [],
+    col = [],
+    uv = []
+  // (u across, to the right of the way it runs; UVs in metres across and along)
+  const at = (s, u, v) => [
+    w.x + w.dx * s - w.dz * u,
+    deckHeight(k, s) + v,
+    w.z + w.dz * s + w.dx * u,
+    u + HW,
+    s
+  ]
+  function quad (a, b, c, d, c0) {
+    for (const p of [a, b, c, a, c, d]) {
+      pos.push(p[0], p[1], p[2])
+      uv.push(p[3], p[4])
+      col.push(...c0)
+    }
+  }
+  const st = stations(k, s0)
+  for (let i = 1; i < st.length; i++) {
+    const s = st[i - 1],
+      t = st[i]
+    // (each face wound to face out)
+    quad(at(s, u0, v1), at(s, u1, v1), at(t, u1, v1), at(t, u0, v1), cols[0])
+    if (cols[1]) {
+      quad(at(s, u1, v0), at(t, u1, v0), at(t, u1, v1), at(s, u1, v1), cols[1])
+      quad(at(s, u0, v0), at(s, u0, v1), at(t, u0, v1), at(t, u0, v0), cols[1])
+    }
+    if (cols[2])
+      quad(at(s, u0, v0), at(t, u0, v0), at(t, u1, v0), at(s, u1, v0), cols[2])
+  }
+  const g = new THREE.BufferGeometry()
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3))
+  g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3))
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2))
+  g.computeVertexNormals()
+  out.push(g)
+}
+function deckTexture () {
+  const t = canvasTex(256, (g, S) => {
+    g.fillStyle = '#4a4b4e'
+    g.fillRect(0, 0, S, S)
+    speckle(g, 6000, S, 0.25, false)
+    speckle(g, 2500, S, 0.12, true)
+    // lane lines (28 m across the tile, 12 m along it): dashes 3 m long between the lanes, solid
+    // along the shoulders
+    g.fillStyle = 'rgba(225,222,210,0.85)'
+    const m = S / 28
+    for (const u of [-8, -4.4, 4.4, 8])
+      g.fillRect((u + 14) * m - 1, 0, 2, S / 4)
+    for (const u of [-11.6, -0.8, 0.8, 11.6])
+      g.fillRect((u + 14) * m - 1, 0, 2, S)
+  })
+  t.repeat.set(1 / 28, 1 / 12)
+  return t
+}
+
+// ---------- the traffic ----------
+// per lane: the freeway, its offset across (to the right of the way it runs), which way its cars go,
+// their speed and spacing
+function lanes () {
+  const out = []
+  for (let k = 0; k < 2; k++)
+    for (const dir of [1, -1]) {
+      // (out of town is the jam: north on the east freeway, west on the south one; each way keeps
+      // to its right)
+      const jam = dir < 0
+      for (let l = 0; l < 3; l++) {
+        out.push({
+          k,
+          u: dir * (0.8 + LANE * (l + 0.5)),
+          dir,
+          speed: jam ? 3 + l * 2.2 + R() * 1.5 : 24 + l * 3 + R() * 2,
+          gap: jam ? 13 + l * 3 : 38 + R() * 14
+        })
+      }
+    }
+  return out
+}
+const CAR_COLORS = [
+  0xe8e8e6,
+  0x1c1d20,
+  0x8c9096,
+  0x5c6168,
+  0x9b2d2b,
+  0x2b4a72,
+  0xd8d2c4,
+  0x40463c
+]
+
+function buildFreeway (group) {
+  // the decks, barriers and columns: concrete in its vertex colours, the road on top textured
+  const concrete = [],
+    roads = []
+  const C = {
+    top: [0.74, 0.72, 0.68],
+    side: [0.66, 0.64, 0.6],
+    under: [0.34, 0.33, 0.32]
+  }
+  for (let k = 0; k < 2; k++) {
+    const s0 = k === 1 ? 25 : 0
+    sweep(k, -HW, HW, -GIRDER, 0, [C.top, C.side, C.under], concrete, s0)
+    for (const u of [-HW, HW - 0.45])
+      sweep(k, u, u + 0.45, 0, 0.95, [C.top, C.side, null], concrete, s0)
+    sweep(k, -0.3, 0.3, 0, 0.85, [C.top, C.side, null], concrete, s0)
+    sweep(
+      k,
+      -HW + 0.45,
+      HW - 0.45,
+      0.01,
+      0.02,
+      [[1, 1, 1], null, null],
+      roads,
+      s0
+    )
+    // hammerhead columns where it stands up off the ground (not over the other freeway)
+    const w = WAYS[k]
+    for (let s = s0 + 30; s < w.len; s += 36) {
+      const y = deckHeight(k, s) - GIRDER,
+        x = w.x + w.dx * s,
+        z = w.z + w.dz * s
+      if (y < 3 || (k === 1 && Math.abs(x - EAST.x0) < 22)) continue
+      const along = w.dx ? 'x' : 'z'
+      const col = box(-1.1, -2, -1.1, 1.1, y - 1.3, 1.1),
+        cap =
+          along === 'x'
+            ? box(-0.9, y - 1.4, -HW + 2.5, 0.9, y, HW - 2.5)
+            : box(-HW + 2.5, y - 1.4, -0.9, HW - 2.5, y, 0.9)
+      concrete.push(tint(col, 0xa8a49c).translate(x, 0, z))
+      concrete.push(tint(cap, 0x9c988f).translate(x, 0, z))
+    }
+  }
+  // the tunnel's portal, where the south freeway goes under the city by the beach
+  const px = SOUTH.x0 + 25
+  concrete.push(
+    tint(
+      box(px - 1.2, -1, SOUTH.z0 - HW - 3, px, 7.5, SOUTH.z0 + HW + 3),
+      0xb3ada2
+    ),
+    tint(
+      box(px - 0.4, 0, SOUTH.z0 - HW + 1, px + 0.02, 5.6, SOUTH.z0 + HW - 1),
+      0x050506
+    )
+  )
+  const structure = new THREE.Mesh(
+    merge(concrete),
+    new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.88 })
+  )
+  structure.receiveShadow = true
+  const road = new THREE.Mesh(
+    merge(roads),
+    new THREE.MeshStandardMaterial({ map: deckTexture(), roughness: 0.9 })
+  )
+  road.receiveShadow = true
+  group.add(structure, road)
+
+  // the cars: a body and a cabin, 4.6 m long (a truck now and then: scaled); per car its lane and
+  // where along it it starts
+  const L = lanes(),
+    list = []
+  L.forEach((l, i) => {
+    for (
+      let s = R() * l.gap;
+      s < WAYS[l.k].run - l.gap;
+      s += l.gap * (0.75 + R() * 0.5)
+    ) {
+      const truck = R() < 0.12
+      list.push({
+        i,
+        s,
+        truck,
+        color: CAR_COLORS[Math.floor(R() * CAR_COLORS.length)]
+      })
+    }
+  })
+  // (no bottoms: the deck hides them)
+  const open = g => {
+    const i = Array.from(g.index.array)
+    i.splice(18, 6)
+    g.setIndex(i)
+    return g
+  }
+  const body = merge([
+    tint(open(box(-2.3, 0.3, -0.9, 2.3, 1.05, 0.9)), 0xffffff),
+    tint(open(box(-1.2, 1.05, -0.8, 1.0, 1.5, 0.8)), 0x9aa0a8)
+  ])
+  const n = list.length
+  const lane = new Float32Array(n * 4),
+    phase = new Float32Array(n),
+    colors = new Float32Array(n * 3),
+    size = new Float32Array(n * 2)
+  const c = new THREE.Color()
+  list.forEach((car, j) => {
+    const l = L[car.i]
+    lane.set([l.k, l.u, l.dir, l.speed], j * 4)
+    phase[j] = car.s
+    c.set(car.truck ? 0xe9e6df : car.color)
+    colors.set([c.r, c.g, c.b], j * 3)
+    size.set(car.truck ? [3.4, 2.4] : [1, 1], j * 2)
+  })
+  const geo = new THREE.InstancedBufferGeometry().copy(body)
+  geo.instanceCount = n
+  geo.setAttribute('aLane', new THREE.InstancedBufferAttribute(lane, 4))
+  geo.setAttribute('aPhase', new THREE.InstancedBufferAttribute(phase, 1))
+  geo.setAttribute('aColor', new THREE.InstancedBufferAttribute(colors, 3))
+  geo.setAttribute('aSize', new THREE.InstancedBufferAttribute(size, 2))
+  geo.boundingSphere = new THREE.Sphere(new THREE.Vector3(500, 0, 300), 2000)
+  const uTime = { value: 0 },
+    uNight = { value: 0 }
+  const MOVE = `
+    float len = aLane.x < 0.5 ? ${f(WAYS[0].run)} : ${f(WAYS[1].run)};
+    float s = (aLane.x < 0.5 ? ${f(WAYS[0].from)} : ${f(
+    WAYS[1].from
+  )}) + mod(aPhase + aLane.z * aLane.w * uTime, len);
+    vec2 way = aLane.x < 0.5 ? vec2(0.0, 1.0) : vec2(1.0, 0.0);
+    vec2 from = aLane.x < 0.5 ? vec2(${f(WAYS[0].x)}, ${f(
+    WAYS[0].z
+  )}) : vec2(${f(WAYS[1].x)}, ${f(WAYS[1].z)});
+    vec2 at = from + way * s + vec2(-way.y, way.x) * aLane.y;
+    vec2 head = way * aLane.z;
+    float y = deck(aLane.x, s);`
+  const cars = new THREE.Mesh(
+    geo,
+    new THREE.ShaderMaterial({
+      uniforms: THREE.UniformsUtils.merge([
+        THREE.UniformsLib.fog,
+        {
+          uTime,
+          uNight,
+          uSun: { value: new THREE.Vector3(-66, 30, 28).normalize() }
+        }
+      ]),
+      vertexShader: `attribute vec4 aLane; attribute float aPhase; attribute vec3 aColor; attribute vec2 aSize;
+        uniform float uTime; varying vec3 vC, vN, vL;
+        #include <fog_pars_vertex>
+        ${PROFILE_GLSL}
+        void main(){
+          ${MOVE}
+          vec3 l = position * vec3(aSize.x, aSize.y, 1.0);
+          vL = vec3(l.x / aSize.x, l.y, l.z);
+          vec3 w = vec3(at.x + head.x * l.x - head.y * l.z, y + l.y, at.y + head.y * l.x + head.x * l.z);
+          vN = vec3(head.x * normal.x - head.y * normal.z, normal.y, head.y * normal.x + head.x * normal.z);
+          vC = aColor * color;
+          vec4 mvPosition = viewMatrix * vec4(w, 1.0);
+          gl_Position = projectionMatrix * mvPosition;
+          #include <fog_vertex>
+        }`,
+      fragmentShader: `uniform float uNight; uniform vec3 uSun; varying vec3 vC, vN, vL;
+        #include <fog_pars_fragment>
+        void main(){
+          vec3 n = normalize(vN);
+          vec3 col = vC * mix(0.5 + 0.35 * n.y + 1.1 * max(dot(n, uSun), 0.0) * vec3(1.0, 0.8, 0.6), vec3(0.05, 0.055, 0.08), uNight);
+          // head and tail lights, front and back at lamp height
+          float lamp = step(0.45, vL.y) * step(vL.y, 0.8) * step(0.35, abs(vL.z));
+          col += uNight * lamp * (step(2.29, vL.x) * vec3(3.0, 2.8, 2.4) + step(vL.x, -2.29) * vec3(2.6, 0.12, 0.08));
+          gl_FragColor = vec4(col, 1.0);
+          #include <fog_fragment>
+        }`,
+      vertexColors: true,
+      fog: true
+    })
+  )
+  cars.frustumCulled = true
+  group.add(cars)
+
+  // their lights' glow, at night: a head and a tail light's to each car, over the barriers
+  const glow = glowMaterial({
+    haze: 0.45,
+    move: `${MOVE}
+      p = vec3(at.x + head.x * position.x, y + 0.65, at.y + head.y * position.x);
+      // (a light shows only on its own side: no head light's glow round a car seen from behind)
+      vec3 toCam = normalize(cameraPosition - p);
+      k = smoothstep(-0.15, 0.35, dot(vec3(head.x, 0.0, head.y) * sign(position.x), toCam));`,
+    uniforms: { uTime }
+  })
+  glow.vertexShader = glow.vertexShader.replace(
+    'void main(){',
+    `attribute vec4 aLane; attribute float aPhase; uniform float uTime;
+    ${PROFILE_GLSL}
+    void main(){`
+  )
+  const gGeo = new THREE.InstancedBufferGeometry()
+  gGeo.setAttribute(
+    'position',
+    new THREE.Float32BufferAttribute([2.35, 0, 0, -2.35, 0, 0], 3)
+  )
+  gGeo.setAttribute(
+    'color',
+    new THREE.Float32BufferAttribute([2.2, 2.1, 1.8, 2.0, 0.1, 0.06], 3)
+  )
+  gGeo.setAttribute('size', new THREE.Float32BufferAttribute([3.2, 2.6], 1))
+  gGeo.setAttribute('aLane', geo.attributes.aLane)
+  gGeo.setAttribute('aPhase', geo.attributes.aPhase)
+  gGeo.instanceCount = n
+  gGeo.boundingSphere = geo.boundingSphere
+  const lights = new THREE.Points(gGeo, glow)
+  lights.renderOrder = 1
+  lights.visible = false
+  group.add(lights)
+
+  return {
+    update (t) {
+      uTime.value = t
+    },
+    night (k) {
+      uNight.value = k
+      glow.uniforms.uOn.value = k
+      lights.visible = k > 0.01
+    }
+  }
+}
+__export(__exports, { "deckHeight": () => deckHeight, "buildFreeway": () => buildFreeway })
+})
+
+// ---- js/render/citySign.js
+__define(85, function (__exports) {
+// The sign on the hills above Hollywood: LOS ANGELES in white sheet-metal letters twelve metres tall,
+// standing in a line across the face of the slope at the head of La Brea (LANDMARKS.sign), each a
+// little out of true with its neighbours, held up from behind by a steel frame dug into the hill; lit
+// by floodlights at night. The letters are drawn here (no fonts): a tall, plain sans.
+const THREE = __require(0)
+const { merge, box, tint } = __require(42)
+const { glowMaterial, glowPoints } = __require(80)
+const { LANDMARKS } = __require(2)
+const { hillHeight } = __require(27)
+const { rng } = __require(24)
+const H = 12 // the letters' height, m
+const T = 0.2 // their strokes' width (of the height)
+const DEPTH = 0.35 // the sheet metal and its framing, front to back
+const GAP = 0.18 // between letters (of the height)
+const R = rng(1923)
+
+// a stroke along a smooth line through pts (in letter units), w wide: an outline to fill
+function stroke (pts, w = T) {
+  const curve = new THREE.SplineCurve(pts.map(p => new THREE.Vector2(...p)))
+  const line = curve.getPoints(48),
+    left = [],
+    right = []
+  line.forEach((p, i) => {
+    const a = line[Math.max(0, i - 1)],
+      b = line[Math.min(line.length - 1, i + 1)]
+    const dx = b.x - a.x,
+      dy = b.y - a.y,
+      l = Math.hypot(dx, dy)
+    left.push(
+      new THREE.Vector2(p.x - (dy / l) * (w / 2), p.y + (dx / l) * (w / 2))
+    )
+    right.push(
+      new THREE.Vector2(p.x + (dy / l) * (w / 2), p.y - (dx / l) * (w / 2))
+    )
+  })
+  return new THREE.Shape([...left, ...right.reverse()])
+}
+const poly = pts => new THREE.Shape(pts.map(p => new THREE.Vector2(...p)))
+// an elliptical ring, centre (cx, cy), radii outside (rx, ry), the stroke w
+function ring (cx, cy, rx, ry, w = T) {
+  const s = new THREE.Shape()
+  s.absellipse(cx, cy, rx, ry, 0, Math.PI * 2, false)
+  const hole = new THREE.Path()
+  hole.absellipse(cx, cy, rx - w, ry - w * 0.8, 0, Math.PI * 2, true)
+  s.holes.push(hole)
+  return s
+}
+// each letter: its shapes and its width (the height is 1)
+const GLYPHS = {
+  L: {
+    w: 0.56,
+    shapes: () => [
+      poly([
+        [0, 0],
+        [0.56, 0],
+        [0.56, T],
+        [T, T],
+        [T, 1],
+        [0, 1]
+      ])
+    ]
+  },
+  O: { w: 0.66, shapes: () => [ring(0.33, 0.5, 0.33, 0.5)] },
+  S: {
+    w: 0.62,
+    shapes: () => [
+      stroke([
+        [0.56, 0.84],
+        [0.36, 0.91],
+        [0.14, 0.86],
+        [0.1, 0.68],
+        [0.3, 0.53],
+        [0.5, 0.42],
+        [0.53, 0.2],
+        [0.33, 0.09],
+        [0.07, 0.15]
+      ])
+    ]
+  },
+  A: {
+    w: 0.74,
+    shapes: () => {
+      const a = poly([
+        [0, 0],
+        [0.21, 0],
+        [0.28, 0.26],
+        [0.46, 0.26],
+        [0.53, 0],
+        [0.74, 0],
+        [0.47, 1],
+        [0.27, 1]
+      ])
+      const hole = new THREE.Path(
+        [
+          [0.32, 0.42],
+          [0.42, 0.42],
+          [0.37, 0.64]
+        ].map(p => new THREE.Vector2(...p))
+      )
+      a.holes.push(hole)
+      return [a]
+    }
+  },
+  N: {
+    w: 0.64,
+    shapes: () => [
+      poly([
+        [0, 0],
+        [0.19, 0],
+        [0.19, 0.6],
+        [0.45, 0],
+        [0.64, 0],
+        [0.64, 1],
+        [0.45, 1],
+        [0.45, 0.4],
+        [0.19, 1],
+        [0, 1]
+      ])
+    ]
+  },
+  G: {
+    w: 0.66,
+    shapes: () => {
+      const arc = []
+      for (let i = 0; i <= 12; i++) {
+        const a = 0.75 + (i / 12) * (Math.PI * 2 - 1.4)
+        arc.push([0.34 + Math.cos(a) * 0.24, 0.5 + Math.sin(a) * 0.4])
+      }
+      return [
+        stroke(arc),
+        poly([
+          [0.36, 0.34],
+          [0.66, 0.34],
+          [0.66, 0.5],
+          [0.36, 0.5]
+        ]),
+        poly([
+          [0.5, 0.14],
+          [0.66, 0.14],
+          [0.66, 0.42],
+          [0.5, 0.42]
+        ])
+      ]
+    }
+  },
+  E: {
+    w: 0.56,
+    shapes: () => [
+      poly([
+        [0, 0],
+        [0.56, 0],
+        [0.56, T],
+        [T, T],
+        [T, 0.41],
+        [0.48, 0.41],
+        [0.48, 0.59],
+        [T, 0.59],
+        [T, 0.8],
+        [0.56, 0.8],
+        [0.56, 1],
+        [0, 1]
+      ])
+    ]
+  }
+}
+
+function buildSign (group) {
+  const text = 'LOS ANGELES'
+  let width = -GAP
+  for (const ch of text) width += (ch === ' ' ? 0.42 : GLYPHS[ch].w) + GAP
+  const letters = [],
+    frame = [],
+    lamps = []
+  let cursor = LANDMARKS.sign.x - (width * H) / 2
+  const z0 = LANDMARKS.sign.z
+  for (const ch of text) {
+    if (ch === ' ') {
+      cursor += (0.42 + GAP) * H
+      continue
+    }
+    const gl = GLYPHS[ch],
+      w = gl.w * H
+    // stood on the slope: its foot a little over the ground under its front, a little out of line
+    const x = cursor,
+      z = z0 + (R() - 0.5) * 1.6
+    const y =
+      Math.max(hillHeight(x + w * 0.2, z), hillHeight(x + w * 0.8, z)) +
+      0.6 +
+      R() * 0.8
+    const g = new THREE.ExtrudeGeometry(gl.shapes(), {
+      depth: DEPTH,
+      bevelEnabled: false,
+      curveSegments: 10
+    })
+    g.scale(H, H, 1)
+      .rotateZ((R() - 0.5) * 0.03)
+      .rotateY((R() - 0.5) * 0.06)
+      .translate(x, y, z - DEPTH)
+    letters.push(tint(g, 0xf4f3ef))
+    // the frame behind: posts down into the hill, struts back up the slope
+    for (const f of [0.15, 0.5, 0.85]) {
+      const px = x + w * f,
+        pz = z - DEPTH - 0.4,
+        top = y + H * 0.92
+      const foot = hillHeight(px, pz) - 0.5
+      frame.push(
+        tint(
+          box(px - 0.12, foot, pz - 0.12, px + 0.12, top, pz + 0.12),
+          0x5d5a55
+        )
+      )
+      const back = pz - 5,
+        bf = hillHeight(px, back) - 0.4
+      const len = Math.hypot(top - 1 - bf, pz - back)
+      const strut = box(-0.09, 0, -0.09, 0.09, len, 0.09)
+        .rotateX(Math.atan2(pz - back, top - 1 - bf))
+        .translate(px, bf, back)
+      frame.push(tint(strut, 0x5d5a55))
+    }
+    for (const f of [0.25, 0.75]) {
+      const lx = x + w * f
+      lamps.push({
+        x: lx,
+        y: hillHeight(lx, z + 2.5) + 0.5,
+        z: z + 2.5,
+        color: 0xfff3dc,
+        size: 2.6,
+        k: 1.3
+      })
+    }
+    cursor += w + GAP * H
+  }
+  const white = new THREE.MeshStandardMaterial({
+    vertexColors: true,
+    roughness: 0.55
+  })
+  const sign = new THREE.Mesh(merge(letters), white)
+  const steel = new THREE.Mesh(
+    merge(frame),
+    new THREE.MeshStandardMaterial({
+      vertexColors: true,
+      roughness: 0.7,
+      metalness: 0.3
+    })
+  )
+  group.add(sign, steel)
+  const glow = glowMaterial({ haze: 0.35 })
+  const pts = glowPoints(lamps, glow)
+  pts.visible = false
+  group.add(pts)
+  return {
+    night (k) {
+      white.emissive.setRGB(0.62, 0.6, 0.55).multiplyScalar(k)
+      glow.uniforms.uOn.value = k
+      pts.visible = k > 0.01
+    }
+  }
+}
+__export(__exports, { "buildSign": () => buildSign })
+})
+
+// ---- js/render/cityHills.js
+__define(86, function (__exports) {
+// The Hollywood Hills, north of the city behind the retaining wall: steep faces of chaparral, dark
+// green scrub in clumps on dry gold grass and pale dirt, greener down the canyons and on the slopes
+// that face away from the sun, bare along the ridges; houses stacked up the lower slopes on their
+// stilts, white and cream and terracotta; trees down the canyons; the observatory on its terrace on a
+// spur, its domes dark against the sky; the freeway going north through the pass. The ground is the
+// sim's own (sim/edge.js hillHeight), so a car flown into it is held up where it is drawn. At night
+// the houses' windows and the observatory are lit. (The sign is in citySign.js.)
+const THREE = __require(0)
+const { LAYER, merge, box, tint } = __require(42)
+const { canvasTex, speckle } = __require(40)
+const { glowMaterial, glowPoints } = __require(80)
+const { PLANT, lump, scatter, pose } = __require(81)
+const { buildSign } = __require(85)
+const { PROMENADE, rng } = __require(24)
+const { LANDMARKS } = __require(2)
+const { WALL, hillHeight, hillNormal, noise, TERRACE } = __require(27)
+const R = rng(1919)
+const EAST = 2600 // the hills run this far east
+const BACK = 1300 // and this far back from the wall
+const OBS = LANDMARKS.observatory
+const SIGN = LANDMARKS.sign
+const PASS = LANDMARKS.freeways[0].x0
+const _n = { x: 0, y: 1, z: 0 }
+
+// the grid's lines: close together near the wall and the city, further apart out of the way
+function steps (from, to, near, grow, until) {
+  const out = [from]
+  let v = from,
+    d = near
+  while (v < to) {
+    if (v > until) d *= grow
+    v = Math.min(to, v + d)
+    out.push(v)
+  }
+  return out
+}
+
+// the chaparral's colour at (x, z): what grows there by its slope, which way it faces and how high
+function ground (x, z, h, n, out) {
+  const patch = noise(x / 38, z / 38),
+    fine = noise(x / 9 + 50, z / 9)
+  const steep = 1 - n.y // (0 flat, about 0.3 at 45 degrees)
+  const shade = THREE.MathUtils.clamp(-n.z * 1.6 - n.x * 0.4, 0, 1) // facing north: greener
+  const low = 1 - THREE.MathUtils.smoothstep(-z - WALL, 60, 240) // (gardens, low down)
+  // dry gold grass and dirt, with dark green scrub in clumps, more of it out of the sun and low down
+  const scrub = THREE.MathUtils.smoothstep(
+    patch + shade * 0.45 + fine * 0.25 + low * 0.3,
+    0.5,
+    0.8
+  )
+  let r = 0.62 + 0.08 * fine,
+    g = 0.5 + 0.06 * fine,
+    b = 0.33
+  const dirt = THREE.MathUtils.smoothstep(steep + 0.15 * fine, 0.3, 0.45)
+  r += (0.66 - r) * dirt
+  g += (0.53 - g) * dirt
+  b += (0.4 - b) * dirt
+  r += (0.17 - r) * scrub
+  g += (0.21 - g) * scrub
+  b += (0.11 - b) * scrub
+  // the observatory's lawn
+  const lawn =
+    1 -
+    THREE.MathUtils.smoothstep(Math.hypot(x - OBS.x, z - OBS.z - 18), 26, 34)
+  out.setRGB(
+    r + (0.28 - r) * lawn,
+    g + (0.36 - g) * lawn,
+    b + (0.15 - b) * lawn
+  )
+  return out
+}
+
+function terrain () {
+  const xs = steps(-PROMENADE, EAST, 8, 1.14, 700),
+    us = steps(0.6, BACK, 4, 1.1, 60)
+  const nx = xs.length,
+    nu = us.length
+  const pos = new Float32Array(nx * nu * 3),
+    col = new Float32Array(nx * nu * 3),
+    uv = new Float32Array(nx * nu * 2)
+  const c = new THREE.Color()
+  for (let j = 0; j < nu; j++)
+    for (let i = 0; i < nx; i++) {
+      const x = xs[i],
+        z = -WALL - us[j],
+        h = hillHeight(x, z),
+        k = j * nx + i
+      pos.set([x, h, z], k * 3)
+      uv.set([x / 30, z / 30], k * 2)
+      ground(x, z, h, hillNormal(x, z, _n), c)
+      col.set([c.r, c.g, c.b], k * 3)
+    }
+  const index = []
+  for (let j = 0; j < nu - 1; j++)
+    for (let i = 0; i < nx - 1; i++) {
+      const a = j * nx + i,
+        b = a + 1,
+        d = a + nx,
+        e = d + 1
+      // (wound to face up: the rows run north, away from the city)
+      index.push(a, b, d, b, e, d)
+    }
+  const g = new THREE.BufferGeometry()
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3))
+  g.setAttribute('color', new THREE.BufferAttribute(col, 3))
+  g.setAttribute('uv', new THREE.BufferAttribute(uv, 2))
+  g.setIndex(index)
+  g.computeVertexNormals()
+  return g
+}
+// close up, the scrub's clumps and the dirt between them: soft and fine, so it doesn't pattern
+function scrubTexture () {
+  return canvasTex(256, (g, S) => {
+    g.fillStyle = '#d6d0c4'
+    g.fillRect(0, 0, S, S)
+    for (let i = 0; i < 260; i++) {
+      const x = Math.random() * S,
+        y = Math.random() * S,
+        r = 4 + Math.random() * 14
+      const gr = g.createRadialGradient(x, y, 0, x, y, r)
+      gr.addColorStop(
+        0,
+        Math.random() < 0.55 ? 'rgba(90,92,70,0.3)' : 'rgba(255,248,230,0.25)'
+      )
+      gr.addColorStop(1, 'rgba(0,0,0,0)')
+      g.fillStyle = gr
+      g.fillRect(x - r, y - r, r * 2, r * 2)
+    }
+    speckle(g, 6000, S, 0.2, false)
+    speckle(g, 3000, S, 0.15, true)
+  })
+}
+// a hillside house's walls: plaster (the instance's colour) round a band of big windows, dark by
+// day and lit at night (lit: the windows alone, for the emissive map)
+function houseTexture (lit) {
+  return canvasTex(64, (g, S) => {
+    g.fillStyle = lit ? '#000' : '#fff'
+    g.fillRect(0, 0, S, S)
+    g.fillStyle = lit ? '#ffcf8a' : '#2a2f33'
+    g.fillRect(S * 0.12, S * 0.22, S * 0.76, S * 0.4)
+    if (!lit) {
+      g.fillStyle = '#d9d9d9'
+      for (const x of [0.36, 0.62]) g.fillRect(S * x, S * 0.22, 2, S * 0.4)
+    }
+  })
+}
+
+// The observatory: a long white hall with a big dark dome in the middle and a smaller one at each
+// end, a portico, the monument out on the lawn in front; facing the city.
+function observatory () {
+  const y = hillHeight(OBS.x, OBS.z)
+  const white = 0xebe6da,
+    dark = 0x3a3a38
+  const walls = [
+    tint(box(-24, 0, -8, 24, 11, 8), white),
+    tint(box(-7, 0, 8, 7, 9.5, 12), white),
+    tint(box(-27, 0, -6, -19, 13, 6), white),
+    tint(box(19, 0, -6, 27, 13, 6), white),
+    tint(
+      new THREE.CylinderGeometry(9.5, 9.5, 3.2, 24).translate(0, 12.6, 0),
+      white
+    ),
+    tint(box(-0.7, 0, 34, 0.7, 12, 35.4), 0xd9d3c4)
+  ]
+  const domes = [
+    tint(
+      new THREE.SphereGeometry(
+        9.6,
+        24,
+        10,
+        0,
+        Math.PI * 2,
+        0,
+        Math.PI / 2
+      ).translate(0, 14.2, 0),
+      dark
+    ),
+    tint(
+      new THREE.SphereGeometry(
+        4.6,
+        16,
+        8,
+        0,
+        Math.PI * 2,
+        0,
+        Math.PI / 2
+      ).translate(-23, 13, 0),
+      dark
+    ),
+    tint(
+      new THREE.SphereGeometry(
+        4.6,
+        16,
+        8,
+        0,
+        Math.PI * 2,
+        0,
+        Math.PI / 2
+      ).translate(23, 13, 0),
+      dark
+    )
+  ]
+  const at = g => merge(g).translate(OBS.x, y - 0.5, OBS.z)
+  return { walls: at(walls), domes: at(domes), y }
+}
+
+function buildHills (group) {
+  const land = new THREE.Mesh(
+    terrain(),
+    new THREE.MeshStandardMaterial({
+      vertexColors: true,
+      map: scrubTexture(),
+      roughness: 0.98
+    })
+  )
+  land.renderOrder = LAYER.hills
+  land.receiveShadow = true
+  group.add(land)
+
+  // houses up the lower slopes (not on the sign's face, the observatory's spur or in the pass), and
+  // trees, most of them down the canyons
+  const houses = [],
+    trees = [],
+    lights = []
+  const paints = [
+    0xd9cdb8,
+    0xcbb89c,
+    0xbfa58a,
+    0xc4876a,
+    0xa9a49b,
+    0xe0d6c8,
+    0x8e8a83,
+    0xd2c3a8
+  ]
+  for (let i = 0; i < 2600; i++) {
+    const x = -440 + R() * 1470,
+      u = 30 + Math.pow(R(), 1.2) * 260,
+      z = -WALL - u
+    hillNormal(x, z, _n)
+    if (_n.y < 0.72 || Math.abs(x - PASS) < 60) continue
+    if (Math.abs(x - SIGN.x) < 80 && Math.abs(z - SIGN.z) < 70) continue
+    if (Math.hypot(x - OBS.x, z - OBS.z) < 80) continue
+    // (each among trees: a garden's worth round it)
+    if (R() < 0.45) {
+      const tx = x + (R() - 0.5) * 22,
+        tz = z + (R() - 0.5) * 18
+      trees.push({ x: tx, z: tz, y: hillHeight(tx, tz), s: 1.4 + R() * 1.5 })
+    }
+    if (R() < 0.45 + u / 600) continue
+    // a body of one or two storeys on the uphill ground, stilts down to the slope below it
+    const w = 7 + R() * 6,
+      d = 6 + R() * 4
+    const hs = [-1, 1].flatMap(a =>
+      [-1, 1].map(b => hillHeight(x + (a * w) / 2, z + (b * d) / 2))
+    )
+    const lo = Math.min(...hs),
+      hi = Math.max(...hs) - 0.4
+    const top = hi + 3.2 + (R() < 0.5 ? 3 : 0)
+    houses.push({
+      x,
+      z,
+      w,
+      d,
+      lo: lo - 0.5,
+      hi,
+      top,
+      yaw: (R() - 0.5) * 0.3,
+      color: paints[Math.floor(R() * paints.length)]
+    })
+    if (R() < 0.7)
+      lights.push({
+        x: x + (R() - 0.5) * w * 0.5,
+        y: top - 1.8,
+        z: z + d / 2 + 0.3,
+        color: R() < 0.8 ? 0xffd29a : 0xdfe8ff,
+        size: 2,
+        k: 1.4
+      })
+  }
+  for (let i = 0; i < 560; i++) {
+    const x = -480 + R() * 2900,
+      u = 10 + R() * 650,
+      z = -WALL - u
+    const canyon =
+      hillNormal(x, z, _n).z < -0.15 || noise(x / 60, z / 60) > 0.62
+    if (canyon || R() < 0.25)
+      trees.push({ x, z, y: hillHeight(x, z), s: 1.8 + R() * 2.2 })
+  }
+  // (a unit box: its roof, vertices 8 to 11, greyer and on the plain wall of the texture)
+  const shape = tint(box(-0.5, 0, -0.5, 0.5, 1, 0.5), 0xffffff)
+  for (let i = 8; i < 12; i++) {
+    shape.attributes.color.setXYZ(i, 0.72, 0.7, 0.68)
+    shape.attributes.uv.setXY(i, 0.04, 0.04)
+  }
+  const homes = new THREE.MeshStandardMaterial({
+    vertexColors: true,
+    roughness: 0.85,
+    map: houseTexture(false),
+    emissiveMap: houseTexture(true)
+  })
+  // (at night only some houses' windows are lit: which, by where each stands)
+  homes.onBeforeCompile = s => {
+    s.vertexShader = s.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying float vLit;')
+      .replace(
+        '#include <begin_vertex>',
+        `#include <begin_vertex>
+        #ifdef USE_INSTANCING
+          vLit = fract(sin(dot(instanceMatrix[3].xz, vec2(12.9898, 78.233))) * 43758.5453);
+        #endif`
+      )
+    s.fragmentShader = s.fragmentShader
+      .replace('#include <common>', '#include <common>\nvarying float vLit;')
+      .replace(
+        '#include <emissivemap_fragment>',
+        '#include <emissivemap_fragment>\ntotalEmissiveRadiance *= step(0.42, vLit);'
+      )
+  }
+  scatter(
+    group,
+    shape,
+    homes,
+    houses,
+    (h, m) => pose(m, h.x, h.hi, h.z, h.yaw, h.w, h.top - h.hi, h.d),
+    { cell: 1600, color: (h, c) => c.set(h.color) }
+  )
+  const stilts = tint(box(-0.5, 0, -0.5, 0.5, 1, 0.5), 0x34302c)
+  scatter(
+    group,
+    stilts,
+    PLANT,
+    houses.filter(h => h.hi - h.lo > 1),
+    (h, m) =>
+      pose(m, h.x, h.lo, h.z, h.yaw, h.w * 0.82, h.hi - h.lo, h.d * 0.8),
+    { cell: 1600 }
+  )
+  const leaf = lump(1.6, up =>
+    [0.13, 0.17, 0.08].map(v => v * (0.75 + 0.3 * (up + 1)))
+  )
+  leaf.scale(1, 0.85, 1).translate(0, 1.1, 0)
+  scatter(
+    group,
+    leaf,
+    PLANT,
+    trees,
+    (t, m) => pose(m, t.x, t.y, t.z, 0, t.s, t.s, t.s),
+    {
+      cell: 1600
+    }
+  )
+
+  // the observatory, floodlit at night
+  const obs = observatory()
+  const walls = new THREE.MeshStandardMaterial({
+    vertexColors: true,
+    roughness: 0.7
+  })
+  const domes = new THREE.MeshStandardMaterial({
+    vertexColors: true,
+    roughness: 0.45,
+    metalness: 0.4
+  })
+  group.add(new THREE.Mesh(obs.walls, walls), new THREE.Mesh(obs.domes, domes))
+  for (const dx of [-26, -12, 0, 12, 26])
+    lights.push({
+      x: OBS.x + dx,
+      y: obs.y + 1,
+      z: OBS.z + 14,
+      color: 0xfff1d6,
+      size: 3,
+      k: 1.2
+    })
+
+  const glow = glowMaterial({ haze: 0.4 })
+  const pts = glowPoints(lights, glow)
+  pts.visible = false
+  group.add(pts)
+  const sign = buildSign(group)
+  return {
+    night (k) {
+      land.material.color.setScalar(1 - 0.6 * k) // (the hills dark under the moon)
+      walls.emissive.setRGB(0.45, 0.43, 0.38).multiplyScalar(k)
+      homes.emissive.setRGB(1, 0.85, 0.6).multiplyScalar(0.4 * k)
+      glow.uniforms.uOn.value = k
+      pts.visible = k > 0.01
+      sign.night(k)
+    }
+  }
+}
+__export(__exports, { "buildHills": () => buildHills })
+})
+
+// ---- js/render/cityRides.js
+__define(87, function (__exports) {
+// The pier's amusement park: the Ferris wheel, white steel turning slowly on its A-frames with its
+// gondolas hanging level, its rim and spokes lit at night in colours that chase round it; and the
+// roller coaster looping round the park on its columns (sim/edge.js COASTER), a train running round it,
+// hauled slowly up the lift hill and racing down.
+const THREE = __require(0)
+const { merge, box, tint } = __require(42)
+const { glowMaterial, glowPoints } = __require(80)
+const { CURB_H } = __require(24)
+const { WHEEL, COASTER } = __require(27)
+const TOP = CURB_H // the deck
+const STEEL = 0xe9e7e1
+const SPOKES = 16
+const CARS = 20 // gondolas
+const TURN = (2 * Math.PI) / 75 // rad/s: a turn every minute and a quarter
+const _m = new THREE.Matrix4(),
+  _q = new THREE.Quaternion(),
+  _p = new THREE.Vector3(),
+  _s = new THREE.Vector3(1, 1, 1),
+  _t = new THREE.Vector3(),
+  _up = new THREE.Vector3(0, 1, 0),
+  X = new THREE.Vector3(1, 0, 0)
+
+// the wheel, in its own frame: x across its face, y up, its axle along z
+function wheelGeometry () {
+  const parts = []
+  for (const z of [-0.9, 0.9]) {
+    parts.push(new THREE.TorusGeometry(WHEEL.r, 0.13, 5, 64).translate(0, 0, z))
+    parts.push(new THREE.TorusGeometry(4, 0.1, 4, 24).translate(0, 0, z))
+    for (let i = 0; i < SPOKES; i++)
+      parts.push(
+        box(0.6, -0.05, z - 0.05, WHEEL.r, 0.05, z + 0.05).rotateZ(
+          (i / SPOKES) * Math.PI * 2
+        )
+      )
+  }
+  // cross-bars between the two rims, where each gondola hangs
+  for (let i = 0; i < CARS; i++) {
+    const a = (i / CARS) * Math.PI * 2
+    parts.push(
+      box(-0.07, -0.07, -0.95, 0.07, 0.07, 0.95).translate(
+        Math.cos(a) * WHEEL.r,
+        Math.sin(a) * WHEEL.r,
+        0
+      )
+    )
+  }
+  parts.push(new THREE.CylinderGeometry(0.8, 0.8, 2.6, 12).rotateX(Math.PI / 2))
+  return tint(merge(parts), STEEL)
+}
+
+function buildRides (group) {
+  const steel = new THREE.MeshStandardMaterial({
+    vertexColors: true,
+    roughness: 0.45,
+    metalness: 0.3
+  })
+  const yaw = -WHEEL.dir
+  const hub = new THREE.Vector3(WHEEL.x, TOP + WHEEL.hub, WHEEL.z)
+  // the turning part, and the lights on it
+  const turning = new THREE.Group()
+  turning.position.copy(hub)
+  turning.rotation.set(0, yaw, 0)
+  const wheel = new THREE.Mesh(wheelGeometry(), steel)
+  wheel.castShadow = true
+  turning.add(wheel)
+  const bulbs = []
+  for (const z of [-1, 1]) {
+    for (let i = 0; i < 72; i++) {
+      const a = (i / 72) * Math.PI * 2
+      bulbs.push({
+        x: Math.cos(a) * WHEEL.r,
+        y: Math.sin(a) * WHEEL.r,
+        z,
+        color: 0xffffff,
+        size: 0.9,
+        k: 2.2
+      })
+    }
+    for (let i = 0; i < SPOKES; i++)
+      for (let k = 1; k <= 5; k++) {
+        const a = (i / SPOKES) * Math.PI * 2,
+          r = (k / 5.5) * WHEEL.r
+        bulbs.push({
+          x: Math.cos(a) * r,
+          y: Math.sin(a) * r,
+          z,
+          color: 0xffffff,
+          size: 0.75,
+          k: 1.6
+        })
+      }
+  }
+  const uTime = { value: 0 }
+  const chase = glowMaterial({
+    haze: 0.25,
+    uniforms: { uTime },
+    move: `float ang = atan(p.y, p.x), rad = length(p.xy);
+      float h = fract(ang / 6.2832 * 2.0 + uTime * 0.15 - rad * 0.02);
+      tint = clamp(abs(fract(h + vec3(0.0, 2.0, 1.0) / 3.0) * 6.0 - 3.0) - 1.0, 0.0, 1.0) * 0.85 + 0.15;
+      k = 0.65 + 0.35 * step(0.5, fract(rad * 0.4 - uTime * 1.2));`
+  })
+  chase.vertexShader = chase.vertexShader.replace(
+    'void main(){',
+    'uniform float uTime;\n      void main(){'
+  )
+  const lights = glowPoints(bulbs, chase)
+  lights.visible = false
+  turning.add(lights)
+  // what stands still: its A-frames and platform, and the coaster's track and columns
+  const fixed = []
+  const along = new THREE.Vector3(Math.cos(WHEEL.dir), 0, Math.sin(WHEEL.dir)),
+    axle = new THREE.Vector3(-Math.sin(WHEEL.dir), 0, Math.cos(WHEEL.dir))
+  for (const f of WHEEL.feet) {
+    const to = new THREE.Vector3(f.x, TOP, f.z)
+    const side = Math.sign(_t.subVectors(to, hub).dot(axle))
+    const from = hub.clone().addScaledVector(axle, side * 1.5)
+    const len = from.distanceTo(to)
+    const leg = box(-0.25, 0, -0.25, 0.25, len, 0.25)
+    _q.setFromUnitVectors(_up, _t.subVectors(from, to).normalize())
+    leg.applyMatrix4(_m.compose(to, _q, _s))
+    fixed.push(tint(leg, STEEL))
+  }
+  fixed.push(
+    tint(
+      box(WHEEL.x - 5, TOP, WHEEL.z - 3, WHEEL.x + 5, TOP + 1.2, WHEEL.z + 3),
+      0x9e9a92
+    )
+  )
+
+  // the gondolas: they hang level as the wheel turns
+  const cab = merge([
+    tint(box(-0.8, -1.9, -0.75, 0.8, -0.4, 0.75), 0xffffff),
+    tint(box(-0.95, -0.4, -0.9, 0.95, -0.25, 0.9), 0xd9d6cf),
+    tint(box(-0.04, -0.4, -0.04, 0.04, 0.05, 0.04), 0x777777)
+  ])
+  const cabs = new THREE.InstancedMesh(
+    cab,
+    new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.5 }),
+    CARS
+  )
+  const paints = [0xd8392b, 0xf2b632, 0x2c7fb8, 0x38a169, 0xe46a2e]
+  const c = new THREE.Color()
+  for (let i = 0; i < CARS; i++)
+    cabs.setColorAt(i, c.set(paints[i % paints.length]))
+  cabs.castShadow = true
+  // (they move: bounds round the whole wheel, set once, rather than none)
+  cabs.boundingSphere = new THREE.Sphere(hub, WHEEL.r + 3)
+  const cabTurn = new THREE.Quaternion().setFromAxisAngle(_up, yaw)
+
+  // the coaster: two rails along a smooth loop through its points, ties across them, a column under
+  // each point (where the sim has them), and a train
+  const pts = COASTER.map(([x, y, z]) => new THREE.Vector3(x, TOP + y, z))
+  const track = new THREE.CatmullRomCurve3(pts, true, 'centripetal')
+  const N = 220,
+    left = [],
+    right = [],
+    bulbs2 = []
+  for (let i = 0; i < N; i++) {
+    const p = track.getPointAt(i / N),
+      t = track.getTangentAt(i / N)
+    const side = new THREE.Vector3(-t.z, 0, t.x).normalize()
+    left.push(p.clone().addScaledVector(side, 0.55))
+    right.push(p.clone().addScaledVector(side, -0.55))
+    if (i % 2 === 0) {
+      const tie = box(-0.12, -0.18, -0.65, 0.12, -0.06, 0.65)
+      _q.setFromUnitVectors(new THREE.Vector3(0, 0, 1), side)
+      fixed.push(tint(tie.applyMatrix4(_m.compose(p, _q, _s)), 0x8a8780))
+    }
+    if (i % 3 === 0)
+      bulbs2.push({
+        x: p.x,
+        y: p.y - 0.25,
+        z: p.z,
+        color: 0xffe6b0,
+        size: 0.6,
+        k: 1.8
+      })
+  }
+  for (const rail of [left, right])
+    fixed.push(
+      tint(
+        new THREE.TubeGeometry(
+          new THREE.CatmullRomCurve3(rail, true),
+          N,
+          0.09,
+          5,
+          true
+        ),
+        0xf0eee8
+      )
+    )
+  for (const p of pts)
+    if (p.y - TOP > 1.6)
+      fixed.push(
+        tint(
+          new THREE.CylinderGeometry(0.3, 0.4, p.y - TOP - 0.2, 8).translate(
+            p.x,
+            TOP + (p.y - TOP - 0.2) / 2,
+            p.z
+          ),
+          0xb9b5ad
+        )
+      )
+  const still = new THREE.Mesh(merge(fixed), steel)
+  still.castShadow = still.receiveShadow = true
+  const train = new THREE.InstancedMesh(
+    merge([
+      tint(box(-0.95, 0, -0.6, 0.95, 0.75, 0.6), 0xc8352a),
+      tint(box(-0.95, 0.75, -0.6, -0.6, 1.05, 0.6), 0x222222)
+    ]),
+    new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.5 }),
+    4
+  )
+  train.castShadow = true
+  train.boundingSphere = new THREE.Box3()
+    .setFromPoints(pts)
+    .getBoundingSphere(new THREE.Sphere())
+  train.boundingSphere.radius += 3
+  const len = track.getLength()
+  let s = 0,
+    last = 0
+  const glow2 = glowMaterial({ haze: 0.25 })
+  const trackLights = glowPoints(bulbs2, glow2)
+  trackLights.visible = false
+  group.add(turning, still, cabs, train, trackLights)
+  const top = Math.max(...pts.map(p => p.y))
+
+  return {
+    update (t) {
+      const a = t * TURN
+      turning.rotation.z = a
+      uTime.value = t
+      for (let i = 0; i < CARS; i++) {
+        const b = a + (i / CARS) * Math.PI * 2
+        _p.copy(hub)
+          .addScaledVector(along, Math.cos(b) * WHEEL.r)
+          .add(_t.set(0, Math.sin(b) * WHEEL.r, 0))
+        cabs.setMatrixAt(i, _m.compose(_p, cabTurn, _s))
+      }
+      cabs.instanceMatrix.needsUpdate = true
+      // the train: up the lift hill (the climb from the station) at a walk, and down the rest as
+      // fast as its height lets it
+      const dt = Math.min(0.1, Math.max(0, t - last))
+      last = t
+      const y = track.getPointAt(s / len).y
+      const lift = s / len > 0.08 && s / len < 0.235
+      s =
+        (s + dt * (lift ? 3 : Math.sqrt(16 + 2 * 9.8 * Math.max(0, top - y)))) %
+        len
+      for (let i = 0; i < 4; i++) {
+        const u = ((s - i * 2.1 + len) % len) / len
+        // (the way it points: toward a point just ahead; three.js's getTangentAt makes new vectors)
+        track.getPointAt(u, _p)
+        track
+          .getPointAt((u + 0.003) % 1, _t)
+          .sub(_p)
+          .normalize()
+        _q.setFromUnitVectors(X, _t)
+        train.setMatrixAt(i, _m.compose(_p, _q, _s))
+      }
+      train.instanceMatrix.needsUpdate = true
+    },
+    night (k) {
+      chase.uniforms.uOn.value = k
+      lights.visible = k > 0.01
+      glow2.uniforms.uOn.value = k
+      trackLights.visible = k > 0.01
+    }
+  }
+}
+__export(__exports, { "buildRides": () => buildRides })
+})
+
+// ---- js/render/cityPier.js
+__define(88, function (__exports) {
+// Santa Monica's pier, out into the Pacific from the end of Wilshire (LANDMARKS.pier): a broad deck
+// of weathered planks level with the promenade, standing on rows of timber piles once it is out over
+// the sand, white railings round it and lamp posts along them; under an arch with the town's name, the
+// carousel's hall on its plaza to the north, the amusement park to the south (its rides: cityRides.js),
+// kiosks along the way out and a restaurant at the end. You drive on it (sim/edge.js keeps you to it).
+// At night the lamps light the deck in pools, and the arch's name glows.
+const THREE = __require(0)
+const { merge, box, tint } = __require(42)
+const { canvasTex, speckle, softTex, hdr } = __require(40)
+const { glowMaterial, glowPoints } = __require(80)
+const { buildRides } = __require(87)
+const { CURB_H, PROMENADE, rng } = __require(24)
+const { PIER, RAILS, RAIL_H, PIER_HOUSES, SHORE, ARCH } = __require(27)
+const R = rng(1909)
+const TOP = CURB_H // the deck's top, level with the promenade's
+const UNDER = TOP - 0.7 // the bottom of its joists and caps
+const BED = -7 // the piles go down to here
+const WHITE = 0xece8de
+const PIECE = 60 // m of the pier's railings and furniture to a mesh (for the car's shadow map)
+const _m = new THREE.Matrix4()
+
+// weathered planks laid across the pier, 2 m of them to the tile
+function plankTexture () {
+  const t = canvasTex(256, (g, S) => {
+    const n = 12
+    for (let i = 0; i < n; i++) {
+      const k = 0.85 + Math.random() * 0.3
+      g.fillStyle = `rgb(${Math.round(132 * k)},${Math.round(
+        114 * k
+      )},${Math.round(94 * k)})`
+      g.fillRect((i * S) / n, 0, S / n, S)
+    }
+    speckle(g, 7000, S, 0.22, false)
+    speckle(g, 3000, S, 0.12, true)
+    g.fillStyle = 'rgba(30,24,18,0.75)'
+    for (let i = 0; i < n; i++) g.fillRect((i * S) / n, 0, 1.5, S)
+    // the butt joints, staggered, and the nails along the joists
+    for (let i = 0; i < n; i++) {
+      g.fillRect((i * S) / n, (((i * 5) % 7) * S) / 7, S / n, 1.2)
+      for (const y of [0.25, 0.75]) {
+        g.fillStyle = 'rgba(25,22,20,0.6)'
+        g.fillRect((i * S) / n + 3, y * S, 2, 2)
+        g.fillRect(((i + 1) * S) / n - 5, y * S, 2, 2)
+      }
+      g.fillStyle = 'rgba(30,24,18,0.75)'
+    }
+  })
+  t.repeat.set(1 / 2, 1 / 2)
+  return t
+}
+// the arch's board: the town's name in tall letters, lit at night
+function nameTexture () {
+  return canvasTex(
+    512,
+    (g, W, H) => {
+      g.fillStyle = '#123a5c'
+      g.fillRect(0, 0, W, H)
+      g.strokeStyle = '#f1e7c8'
+      g.lineWidth = 6
+      g.strokeRect(6, 6, W - 12, H - 12)
+      g.fillStyle = '#f6efd8'
+      g.font = 'bold 74px Arial, Helvetica, sans-serif'
+      g.textAlign = 'center'
+      g.textBaseline = 'middle'
+      g.fillText('SANTA MONICA', W / 2, H / 2 + 4)
+    },
+    1,
+    128
+  )
+}
+
+// the ground under (x): the sand's level, and its face down into the sea (as citySea.js)
+const sand = x =>
+  x > -SHORE ? -0.03 : -0.03 - Math.min(3, ((-SHORE - x) * 3) / 12)
+
+function buildPier (group) {
+  const deck = [],
+    wood = [],
+    paint = []
+  // the deck: its planks on top (UVs in metres), its edges and joists below
+  for (const d of PIER.deck) {
+    const g = new THREE.PlaneGeometry(d.x1 - d.x0, d.z1 - d.z0).rotateX(
+      -Math.PI / 2
+    )
+    const uv = g.attributes.uv
+    for (let i = 0; i < uv.count; i++)
+      uv.setXY(
+        i,
+        d.x0 + uv.getX(i) * (d.x1 - d.x0),
+        d.z0 + uv.getY(i) * (d.z1 - d.z0)
+      )
+    deck.push(g.translate((d.x0 + d.x1) / 2, TOP, (d.z0 + d.z1) / 2))
+    wood.push(
+      tint(
+        box(
+          d.x0,
+          UNDER,
+          d.z0,
+          Math.min(d.x1, -PROMENADE - 0.5),
+          TOP - 0.01,
+          d.z1
+        ),
+        0x4b4035
+      )
+    )
+  }
+  // the piles: a bent across the deck every 6 m, a pile every 3 m along it, once it is over the
+  // sand's face; and a cap along each bent
+  const piles = []
+  for (const d of PIER.deck)
+    for (let x = d.x1 - 3; x > d.x0; x -= 6) {
+      if (sand(x) > UNDER - 0.2) continue
+      for (let z = d.z0 + 1; z < d.z1; z += 3) piles.push({ x, z })
+      wood.push(
+        tint(box(x - 0.3, UNDER - 0.45, d.z0, x + 0.3, UNDER, d.z1), 0x3e352c)
+      )
+    }
+  // the railings round its edge (posts every 2.4 m, a top rail and a middle one), white
+  const lamps = []
+  for (const r of RAILS) {
+    const len = Math.hypot(r.x1 - r.x0, r.z1 - r.z0),
+      along = r.x1 !== r.x0
+    // (the rails in pieces, so each lies in one stretch of the pier)
+    for (let a = 0; a < len; a += PIECE) {
+      const b = Math.min(len, a + PIECE)
+      const rail = (y, h) =>
+        along
+          ? box(r.x0 + a, y, r.z0 - 0.06, r.x0 + b, y + h, r.z0 + 0.06)
+          : box(r.x0 - 0.06, y, r.z0 + a, r.x0 + 0.06, y + h, r.z0 + b)
+      paint.push(
+        tint(rail(TOP + RAIL_H - 0.12, 0.12), WHITE),
+        tint(rail(TOP + 0.5, 0.09), WHITE)
+      )
+    }
+    for (let s = 0; s <= len; s += 2.4) {
+      const x = along ? r.x0 + s : r.x0,
+        z = along ? r.z0 : r.z0 + s
+      paint.push(
+        tint(
+          box(x - 0.07, TOP, z - 0.07, x + 0.07, TOP + RAIL_H, z + 0.07),
+          WHITE
+        )
+      )
+    }
+    // a lamp every 18 m (its light falls on the deck inside the railing)
+    for (let s = 6; s < len - 2; s += 18)
+      lamps.push(
+        along
+          ? { x: r.x0 + s, z: r.z0, nx: r.nx, nz: r.nz }
+          : { x: r.x0, z: r.z0 + s, nx: r.nx, nz: r.nz }
+      )
+  }
+  // the lamp posts: dark green iron, a pair of globes on a crossbar
+  const globes = []
+  for (const l of lamps) {
+    paint.push(
+      tint(
+        box(l.x - 0.09, TOP, l.z - 0.09, l.x + 0.09, TOP + 4.6, l.z + 0.09),
+        0x1f3a30
+      )
+    )
+    paint.push(
+      tint(
+        box(
+          l.x - 0.5,
+          TOP + 4.3,
+          l.z - 0.05,
+          l.x + 0.5,
+          TOP + 4.38,
+          l.z + 0.05
+        ),
+        0x1f3a30
+      )
+    )
+    for (const o of [-0.5, 0.5])
+      globes.push(
+        new THREE.SphereGeometry(0.22, 7, 4).translate(l.x + o, TOP + 4.6, l.z)
+      )
+  }
+  // the entrance arch, its name over the deck
+  const ax = ARCH.x,
+    aw = ARCH.w
+  for (const s of [-1, 1])
+    paint.push(
+      tint(
+        box(ax - 0.5, TOP, s * aw - 0.5, ax + 0.5, TOP + 8.2, s * aw + 0.5),
+        WHITE
+      )
+    )
+  paint.push(
+    tint(
+      box(ax - 0.4, TOP + 8.2, -aw - 0.6, ax + 0.4, TOP + 8.6, aw + 0.6),
+      WHITE
+    )
+  )
+  const board = new THREE.PlaneGeometry(14, 3.4)
+    .rotateY(Math.PI / 2)
+    .translate(ax + 0.45, TOP + 6.5, 0)
+  const boardBack = new THREE.PlaneGeometry(14, 3.4)
+    .rotateY(-Math.PI / 2)
+    .translate(ax - 0.45, TOP + 6.5, 0)
+  paint.push(
+    tint(box(ax - 0.4, TOP + 4.7, -7.2, ax + 0.4, TOP + 8.3, 7.2), 0x123a5c)
+  )
+
+  // the buildings
+  for (const b of PIER_HOUSES) house(b, paint)
+
+  // the meshes
+  const planks = new THREE.Mesh(
+    merge(deck),
+    new THREE.MeshStandardMaterial({ map: plankTexture(), roughness: 0.92 })
+  )
+  planks.receiveShadow = true
+  planks.renderOrder = 1 // (with the pavements)
+  const timber = new THREE.Mesh(
+    merge(wood),
+    new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95 })
+  )
+  // (the railings, lamp posts and buildings by stretch along the pier, so the car's shadow map,
+  // which reaches along the low sun a long way, draws only the stretch it is near)
+  const stretch = new Map()
+  for (const g of paint) {
+    g.computeBoundingBox()
+    const k = Math.floor(
+      (g.boundingBox.min.x + g.boundingBox.max.x) / 2 / PIECE
+    )
+    if (!stretch.has(k)) stretch.set(k, [])
+    stretch.get(k).push(g)
+  }
+  const painted = new THREE.MeshStandardMaterial({
+    vertexColors: true,
+    roughness: 0.7
+  })
+  const built = [...stretch.values()].map(geos => {
+    const m = new THREE.Mesh(merge(geos), painted)
+    m.castShadow = m.receiveShadow = true
+    return m
+  })
+  const pile = new THREE.CylinderGeometry(0.22, 0.26, 1, 6, 1, true).translate(
+    0,
+    0.5,
+    0
+  )
+  const pileMesh = new THREE.InstancedMesh(
+    pile,
+    new THREE.MeshStandardMaterial({ color: 0x4a3f34, roughness: 0.95 }),
+    piles.length
+  )
+  piles.forEach((p, i) =>
+    pileMesh.setMatrixAt(
+      i,
+      _m.makeScale(1, UNDER - BED, 1).setPosition(p.x, BED, p.z)
+    )
+  )
+  pileMesh.computeBoundingSphere()
+  const lit = new THREE.MeshBasicMaterial({ toneMapped: false })
+  lit.color = hdr(0.9, 0.88, 0.82)
+  const globeMesh = new THREE.Mesh(merge(globes), lit)
+  const name = new THREE.MeshStandardMaterial({
+    map: nameTexture(),
+    emissiveMap: nameTexture(),
+    roughness: 0.6
+  })
+  const sign = new THREE.Mesh(merge([board, boardBack]), name)
+  group.add(planks, timber, ...built, pileMesh, globeMesh, sign)
+
+  // at night: the lamps' light on the deck, and their glow
+  const pools = lamps.map(l =>
+    new THREE.PlaneGeometry(10, 10)
+      .rotateX(-Math.PI / 2)
+      .translate(l.x - l.nx * 2.5, TOP + 0.02, l.z - l.nz * 2.5)
+  )
+  const pool = new THREE.MeshBasicMaterial({
+    map: softTex,
+    color: new THREE.Color(1, 0.8, 0.55),
+    transparent: true,
+    opacity: 0,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    polygonOffset: true,
+    polygonOffsetFactor: -4,
+    polygonOffsetUnits: -4
+  })
+  const poolMesh = new THREE.Mesh(merge(pools), pool)
+  poolMesh.visible = false
+  const glow = glowMaterial({ haze: 0.3 })
+  const glows = glowPoints(
+    lamps.flatMap(l =>
+      [-0.5, 0.5].map(o => ({
+        x: l.x + o,
+        y: TOP + 4.6,
+        z: l.z,
+        color: 0xfff0d0,
+        size: 1.6,
+        k: 1.6
+      }))
+    ),
+    glow
+  )
+  glows.visible = false
+  group.add(poolMesh, glows)
+
+  const rides = buildRides(group)
+  return {
+    update (t) {
+      rides.update(t)
+    },
+    night (k) {
+      lit.color.copy(hdr(0.9, 0.88, 0.82)).lerp(hdr(3.2, 2.7, 2.0), k)
+      name.emissive.setRGB(1, 0.95, 0.85).multiplyScalar(1.6 * k)
+      pool.opacity = 0.5 * k
+      poolMesh.visible = k > 0.01
+      glow.uniforms.uOn.value = k
+      glows.visible = k > 0.01
+      rides.night(k)
+    }
+  }
+}
+
+// One of the pier's buildings, by its name: walls, a band of windows, a roof (and a sign).
+function house (b, out) {
+  const { x0, x1, z0, z1, h } = b
+  const cx = (x0 + x1) / 2,
+    cz = (z0 + z1) / 2
+  const y = TOP
+  const glass = (inset = 0.06) => [
+    tint(box(x0 - inset, y + 1, z0 + 1, x0, y + h * 0.55, z1 - 1), 0x283038),
+    tint(box(x1, y + 1, z0 + 1, x1 + inset, y + h * 0.55, z1 - 1), 0x283038),
+    tint(box(x0 + 1, y + 1, z0 - inset, x1 - 1, y + h * 0.55, z0), 0x283038),
+    tint(box(x0 + 1, y + 1, z1, x1 - 1, y + h * 0.55, z1 + inset), 0x283038)
+  ]
+  if (b.name === 'carousel') {
+    // the hall: cream walls, arched windows (a band), a hipped roof and a cupola
+    out.push(tint(box(x0, y, z0, x1, y + h * 0.62, z1), 0xefe3c4), ...glass())
+    // (a hip roof: a box over the walls, its top narrowed to a ridge)
+    const roof = new THREE.BoxGeometry(x1 - x0 + 0.8, h * 0.38, z1 - z0 + 0.8)
+    const p = roof.attributes.position
+    for (let i = 0; i < p.count; i++)
+      if (p.getY(i) > 0)
+        p.setXYZ(i, p.getX(i) * 0.55, p.getY(i), p.getZ(i) * 0.1)
+    roof.computeVertexNormals()
+    roof.translate(cx, y + h * 0.62 + h * 0.19, cz)
+    out.push(
+      tint(roof, 0x55615a),
+      tint(
+        box(cx - 1.4, y + h, cz - 1.4, cx + 1.4, y + h + 2.4, cz + 1.4),
+        0xefe3c4
+      )
+    )
+    out.push(
+      tint(
+        new THREE.ConeGeometry(1.8, 2, 8).translate(cx, y + h + 3.4, cz),
+        0x55615a
+      )
+    )
+    return
+  }
+  if (b.name === 'station') {
+    // the coaster's station: an open shed on posts
+    for (const [x, z] of [
+      [x0, z0],
+      [x1, z0],
+      [x0, z1],
+      [x1, z1]
+    ])
+      out.push(
+        tint(box(x - 0.2, y, z - 0.2, x + 0.2, y + h - 0.5, z + 0.2), 0xd9d2c0)
+      )
+    out.push(
+      tint(
+        box(x0 - 0.6, y + h - 0.5, z0 - 0.6, x1 + 0.6, y + h, z1 + 0.6),
+        0xc7472f
+      )
+    )
+    return
+  }
+  const colors = {
+    arcade: [0xf2d38a, 0xd23c2e],
+    restaurant: [0xe9e2d4, 0x1f5a7a],
+    kiosk: [0xf4ead2, R() < 0.5 ? 0xd94a3a : 0x2f7d9a]
+  }[b.name]
+  out.push(tint(box(x0, y, z0, x1, y + h, z1), colors[0]), ...glass())
+  // a bright band of sign round the top, and a flat roof
+  out.push(
+    tint(
+      box(x0 - 0.1, y + h * 0.7, z0 - 0.1, x1 + 0.1, y + h * 0.88, z1 + 0.1),
+      colors[1]
+    )
+  )
+  out.push(
+    tint(
+      box(x0 - 0.3, y + h, z0 - 0.3, x1 + 0.3, y + h + 0.25, z1 + 0.3),
+      0xbdb6a8
+    )
+  )
+}
+__export(__exports, { "buildPier": () => buildPier })
+})
+
+// ---- js/render/cityEdges.js
+__define(89, function (__exports) {
+// Everything past the ring road's outer pavement, which makes the city Los Angeles: the Pacific and
+// Santa Monica's pier to the west, the hills with their sign to the north, and the city going on to
+// the east and south behind the freeway. One update for what moves out there (the water, the Ferris
+// wheel, the freeway's traffic) and one switch for night (its lights).
+const { renderer } = __require(40)
+const { buildSea } = __require(79)
+const { GLOW_SCALE } = __require(80)
+const { buildWalls } = __require(82)
+const { buildSprawl } = __require(83)
+const { buildFreeway } = __require(84)
+const { buildHills } = __require(86)
+const { buildPier } = __require(88)
+// (each part's objects are tagged with its name in userData.edge, to measure them by)
+const BUILD = {
+  sea: buildSea,
+  walls: buildWalls,
+  freeway: buildFreeway,
+  sprawl: buildSprawl,
+  hills: buildHills,
+  pier: buildPier
+}
+
+function buildEdges (group) {
+  const parts = Object.entries(BUILD).map(([name, build]) => {
+    const n = group.children.length,
+      part = build(group)
+    for (const o of group.children.slice(n)) o.userData.edge = name
+    return part
+  })
+  return {
+    update (t, camera) {
+      GLOW_SCALE.value =
+        renderer.domElement.height /
+        (2 * Math.tan((camera.fov * Math.PI) / 360))
+      for (const p of parts) p.update?.(t, camera)
+    },
+    // 0: golden hour, 1: night
+    night (k) {
+      for (const p of parts) p.night?.(k)
+    }
+  }
+}
+__export(__exports, { "buildEdges": () => buildEdges })
 })
 
 // ---- js/render/sunShadow.js
-__define(58, function (__exports) {
+__define(90, function (__exports) {
 // Long shadows across the whole city at golden hour. The sun light that rides along with the car
 // (scene.js) only shadows a box sixty metres across round it: crisp, and it moves with the traffic,
 // but past it every street was in full sun, and its edge could be seen sweeping along the pavement.
@@ -69503,17 +76186,484 @@ class CityShadow {
 __export(__exports, { "CityShadow": () => CityShadow })
 })
 
-// ---- js/render/carLamps.js
-__define(59, function (__exports) {
-// The traffic's lamps, part of each type's trim (carShapes.js): headlight units with a running
-// light along their tops and an amber indicator at their outer end, tail clusters with the red lamp, an amber indicator and a white
-// reversing lamp, a high-mounted stop lamp, side repeaters on the front wings, a taxi's roof sign and
-// a bus's route board. Each lens is a rounded shape in its own coloured glass (a tail light reads red
-// by day, unlit) set in a dark housing, and lights from one attribute per car (aLit: headlights,
-// tail lights, braking, and flags for the indicators and reversing), so lighting them all costs
-// nothing beyond the trim's own draw.
+// ---- js/render/carSpecs.js
+__define(91, function (__exports) {
+// What each traffic type looks like, as the lines of its body (carBody.js) and the pieces on it:
+// today's cars, the kind on Los Angeles' streets. A midsize sedan with a long raked windscreen and
+// a fastback rear window, a compact hatch, a crossover SUV with roof rails, a hybrid liftback cab,
+// a full-size pickup with an open bed, a high-roof delivery van, a city bus with its gas tanks under
+// a fairing on the roof, a police SUV and a sports coupe.
+//
+// Lines (x along the car, + forward; y up; m): top, the centre line over the top, nose to tail;
+// belt, the beltline (the side's top: the glass's foot, or the hood's or deck's edge); bot, the
+// underside; rail, the height of the glass's top at the side; roofW, the roof's half width there.
+// Along x: ws, the windscreen's foot; rf and rr, the roof's front and back; rw, the rear window's
+// foot; dTop and cp, where the side windows' back edge leaves the roof and meets the beltline;
+// glass, the side windows' span when not [cp, ws]. sill, mid, crease: the rocker's top, the widest
+// point and the character line. nose and tail: the plan's rounding (how far back, the end's width
+// as a share); haunch: [extra half width, x, spread] over the rear wheels.
+// Wheels: r, axles, track (half, to the tyre's middle), tyre (its width). Pieces: doors (shut lines
+// at x), pillars (black pillars at x between side windows), mirror (x), and the rest in carTrim.js
+// and carLamps.js.
+// prettier-ignore
+const SPECS = {
+  sedan: {
+    r: 0.345, axles: [1.42, -1.41], track: 0.79, tyre: 0.235,
+    sill: 0.25, mid: 0.58, crease: 0.79,
+    top: [[-2.35, 0.98], [-2.3, 1.035], [-2.0, 1.045], [-1.55, 1.025], [-1.05, 1.285], [-0.6, 1.425], [-0.25, 1.445], [0.08, 1.425], [0.5, 1.215], [0.95, 0.995], [1.45, 0.905], [1.95, 0.83], [2.35, 0.75]],
+    belt: [[-2.35, 0.95], [-2.0, 0.995], [-1.55, 1.005], [-1.2, 1.03], [0.95, 0.975], [1.6, 0.865], [2.35, 0.735]],
+    bot: [[-2.35, 0.38], [-2.0, 0.22], [-1.6, 0.17], [1.6, 0.17], [2.0, 0.22], [2.35, 0.32]],
+    rail: 1.385, roofW: 0.655, ws: 0.95, rf: 0.08, rr: -0.6, rw: -1.55, dTop: -0.55, cp: -1.2,
+    nose: [0.55, 0.6], tail: [0.36, 0.8],
+    doors: [0.93, -0.12, -1.02], pillars: [-0.12], mirror: 0.8
+  },
+  hatch: {
+    r: 0.33, axles: [1.2, -1.44], track: 0.765, tyre: 0.225,
+    sill: 0.25, mid: 0.58, crease: 0.8,
+    top: [[-2.05, 1.06], [-1.98, 1.1], [-1.8, 1.37], [-1.55, 1.42], [-0.7, 1.468], [-0.1, 1.462], [0.42, 1.24], [0.82, 0.995], [1.3, 0.9], [1.75, 0.82], [2.05, 0.745]],
+    belt: [[-2.05, 1.02], [-1.6, 1.075], [-1.25, 1.045], [0.82, 0.98], [1.5, 0.86], [2.05, 0.73]],
+    bot: [[-2.05, 0.4], [-1.8, 0.22], [-1.4, 0.16], [1.3, 0.16], [1.7, 0.21], [2.05, 0.31]],
+    rail: [[-1.25, 1.365], [-0.6, 1.4], [0.0, 1.41]], roofW: 0.64, ws: 0.82, rf: 0.0, rr: -1.8, rw: -1.98, dTop: -1.25, cp: -1.6,
+    nose: [0.5, 0.64], tail: [0.3, 0.84], darkPillar: true,
+    doors: [0.74, -0.3, -1.1], pillars: [-0.3], mirror: 0.68
+  },
+  suv: {
+    r: 0.37, axles: [1.5, -1.35], track: 0.83, tyre: 0.245,
+    sill: 0.37, mid: 0.72, crease: 0.93, clad: true, rails: true,
+    top: [[-2.425, 1.22], [-2.32, 1.275], [-2.02, 1.69], [-1.5, 1.73], [-0.4, 1.745], [0.2, 1.72], [0.6, 1.475], [1.05, 1.175], [1.6, 1.09], [2.1, 1.0], [2.425, 0.9]],
+    belt: [[-2.425, 1.17], [-2.0, 1.205], [-1.4, 1.205], [1.05, 1.155], [1.8, 1.04], [2.425, 0.885]],
+    bot: [[-2.425, 0.5], [-2.0, 0.3], [-1.5, 0.22], [1.5, 0.22], [2.0, 0.3], [2.425, 0.42]],
+    rail: 1.66, roofW: 0.72, ws: 1.05, rf: 0.2, rr: -2.02, rw: -2.32, dTop: -1.88, cp: -2.02,
+    nose: [0.5, 0.7], tail: [0.3, 0.86], darkPillar: true,
+    doors: [1.05, -0.08, -1.12], pillars: [-0.08, -1.2], mirror: 0.92
+  },
+  taxi: {
+    r: 0.335, axles: [1.45, -1.3], track: 0.79, tyre: 0.215,
+    sill: 0.24, mid: 0.56, crease: 0.74,
+    top: [[-2.4, 1.0], [-2.32, 1.075], [-2.12, 1.105], [-1.5, 1.3], [-0.95, 1.44], [-0.3, 1.49], [0.05, 1.47], [0.55, 1.2], [1.05, 0.965], [1.6, 0.845], [2.05, 0.755], [2.4, 0.665]],
+    belt: [[-2.4, 0.99], [-2.1, 1.035], [-1.55, 1.045], [1.05, 0.95], [1.7, 0.83], [2.4, 0.655]],
+    bot: [[-2.4, 0.4], [-2.05, 0.21], [-1.6, 0.16], [1.6, 0.16], [2.05, 0.2], [2.4, 0.29]],
+    rail: 1.42, roofW: 0.66, ws: 1.05, rf: 0.05, rr: -0.95, rw: -2.12, dTop: -1.0, cp: -1.6,
+    nose: [0.6, 0.55], tail: [0.32, 0.84],
+    doors: [0.95, -0.12, -1.02], pillars: [-0.12, -1.12], mirror: 0.88
+  },
+  pickup: {
+    r: 0.42, axles: [1.78, -1.66], track: 0.86, tyre: 0.275,
+    sill: 0.5, mid: 0.9, crease: 1.12, bed: true, bedFloor: 0.9,
+    top: [[-2.7, 1.28], [-2.66, 1.3], [-1.1, 1.31], [-1.06, 1.38], [-0.98, 1.85], [-0.6, 1.87], [0.1, 1.87], [0.42, 1.84], [1.08, 1.36], [1.6, 1.31], [2.3, 1.275], [2.7, 1.2]],
+    belt: [[-2.7, 1.27], [-1.1, 1.3], [-0.85, 1.335], [1.08, 1.335], [2.3, 1.245], [2.7, 1.17]],
+    bot: [[-2.7, 0.52], [-2.35, 0.38], [-1.9, 0.33], [1.9, 0.33], [2.35, 0.37], [2.7, 0.46]],
+    rail: 1.8, roofW: 0.8, ws: 1.08, rf: 0.42, rr: -0.98, rw: -1.06, dTop: -0.8, cp: -0.92,
+    nose: [0.32, 0.82], tail: [0.12, 0.93],
+    doors: [1.16, 0.0, -0.9], pillars: [0.0], mirror: 0.98
+  },
+  van: {
+    r: 0.37, axles: [2.25, -2.08], track: 0.87, tyre: 0.235, wIn: 0.06,
+    sill: 0.46, mid: 0.75, crease: 0.96, edgeIn: 0.06, edgeUp: 0.72,
+    top: [[-3.2, 2.66], [-3.12, 2.74], [1.3, 2.76], [1.6, 2.6], [2.45, 1.3], [2.85, 1.17], [3.2, 0.98]],
+    belt: [[-3.2, 1.22], [2.45, 1.26], [2.9, 1.12], [3.2, 0.96]],
+    bot: [[-3.2, 0.5], [-2.9, 0.38], [-2.4, 0.34], [2.0, 0.34], [2.8, 0.38], [3.2, 0.45]],
+    rail: 2.6, roofW: 0.95, ws: 2.45, rf: 1.6, rr: -3.2, rw: -3.2, dTop: -3.2, cp: -3.2, glass: [1.05, 2.45],
+    nose: [0.45, 0.78], tail: [0.12, 0.95],
+    doors: [2.2, 1.05, 0.95, -0.75], pillars: [1.05], mirror: 2.3
+  },
+  bus: {
+    r: 0.5, axles: [3.55, -2.75], track: 1.0, tyre: 0.3, wIn: 0.012,
+    sill: 0.36, mid: 0.6, crease: 1.08, edgeIn: 0.05, edgeUp: 0.88, beltIn: 0.03,
+    top: [[-5.8, 2.98], [-5.7, 3.03], [5.1, 3.04], [5.42, 2.99], [5.55, 2.94], [5.72, 0.95], [5.8, 0.9]],
+    belt: [[-5.8, 1.18], [4.4, 1.18], [4.6, 1.0], [5.72, 0.95], [5.8, 0.9]],
+    bot: [[-5.8, 0.42], [-5.4, 0.32], [5.3, 0.3], [5.8, 0.36]],
+    rail: 2.45, roofW: 1.22, ws: 5.72, rf: 5.55, rr: -5.8, rw: -5.8, dTop: -5.8, cp: -5.8, glass: [-5.45, 5.55],
+    nose: [0.12, 0.9], tail: [0.18, 0.9],
+    doors: [], pillars: [-4.4, -3.3, -2.2, -1.1, 0.0, 1.1, 2.2, 3.3, 4.4, 5.0], mirror: 5.45
+  },
+  police: {
+    r: 0.375, axles: [1.58, -1.45], track: 0.85, tyre: 0.255,
+    sill: 0.37, mid: 0.72, crease: 0.94,
+    top: [[-2.525, 1.24], [-2.43, 1.29], [-2.12, 1.7], [-1.6, 1.74], [-0.4, 1.755], [0.25, 1.73], [0.65, 1.48], [1.12, 1.18], [1.7, 1.1], [2.2, 1.0], [2.525, 0.9]],
+    belt: [[-2.525, 1.19], [-2.1, 1.215], [-1.4, 1.215], [1.12, 1.165], [1.9, 1.05], [2.525, 0.885]],
+    bot: [[-2.525, 0.5], [-2.1, 0.3], [-1.6, 0.22], [1.6, 0.22], [2.1, 0.3], [2.525, 0.42]],
+    rail: 1.67, roofW: 0.73, ws: 1.12, rf: 0.25, rr: -2.12, rw: -2.43, dTop: -1.98, cp: -2.12,
+    nose: [0.5, 0.7], tail: [0.3, 0.86], darkPillar: true,
+    doors: [1.12, -0.06, -1.18], pillars: [-0.06, -1.26], mirror: 0.99
+  },
+  sports: {
+    r: 0.35, axles: [1.3, -1.15], track: 0.79, tyre: 0.265,
+    sill: 0.19, mid: 0.47, crease: 0.66, haunch: [0.035, -1.15, 0.75],
+    top: [[-2.25, 0.9], [-2.2, 0.975], [-2.0, 0.99], [-1.75, 0.97], [-1.3, 1.08], [-0.8, 1.215], [-0.35, 1.27], [0.0, 1.255], [0.4, 1.06], [0.72, 0.89], [1.3, 0.79], [1.85, 0.7], [2.25, 0.6]],
+    belt: [[-2.25, 0.875], [-1.75, 0.935], [-1.2, 0.955], [0.72, 0.87], [1.5, 0.76], [2.25, 0.595]],
+    bot: [[-2.25, 0.32], [-1.95, 0.16], [-1.5, 0.11], [1.5, 0.11], [1.95, 0.14], [2.25, 0.22]],
+    rail: 1.205, roofW: 0.6, ws: 0.72, rf: 0.0, rr: -0.55, rw: -1.75, dTop: -0.5, cp: -1.2,
+    nose: [0.5, 0.6], tail: [0.36, 0.8],
+    doors: [0.6, -0.95], pillars: [], mirror: 0.58
+  }
+}
+__export(__exports, { "SPECS": () => SPECS })
+})
+
+// ---- js/render/carBody.js
+__define(92, function (__exports) {
+// The traffic's car bodies, lofted like the Roadster's (loft.js) but from lines drawn along the car
+// the way a designer draws one (each type's are in carSpecs.js): the centre line over the top
+// (nose, hood, windscreen, roof, rear window, deck or tailgate), the beltline, the underside, the
+// roof's side, and the plan, rounded at both ends and, on a sports car, swelling over the rear
+// wheels. Each station's half section runs from under the sill up the rocker, out to the widest
+// point of the lower body, in again at a crisp character line, over the shoulder to the beltline,
+// then up the glass (leaning in) to the roof's side and over to its crown; ahead of the windscreen
+// and behind the rear window, across the hood or the deck instead. Which piece is glass, pillar or
+// roof falls out of where it lies. The geometry is indexed, its normals smooth across each panel
+// and sharp along the character line, the beltline and the edges of the glass.
 const THREE = __require(0)
-// what each lens is (aLamp), and how it lights
+const { at } = __require(43)
+const lerp = (a, b, t) => a + (b - a) * t
+
+// A line through knots [[x, y], ...]: straight between them, level past the ends
+function line (knots) {
+  const k = knots.slice().sort((a, b) => a[0] - b[0])
+  return x => {
+    if (x <= k[0][0]) return k[0][1]
+    for (let i = 1; i < k.length; i++)
+      if (x <= k[i][0])
+        return lerp(
+          k[i - 1][1],
+          k[i][1],
+          (x - k[i - 1][0]) / (k[i][0] - k[i - 1][0])
+        )
+    return k[k.length - 1][1]
+  }
+}
+
+// which point of a section is which (from 0, under the middle, round to 10, the crown)
+const P = {
+  sill: 2,
+  wide: 4,
+  crease: 5,
+  shoulder: 6,
+  belt: 7,
+  rail: 8,
+  edge: 9,
+  crown: 10
+}
+
+const DEFAULTS = {
+  beltIn: 0.085, // how far in from the widest point the glass's foot is
+  edgeIn: 0.09, // and the roof's edge from its side
+  edgeUp: 0.8, // how far up from the side to the crown the roof's edge is
+  panel: 0.7, // across a hood or deck, where its crown begins
+  nose: [0.5, 0.62], // plan: how far back the rounding of the nose goes, and how wide its end is
+  tail: [0.34, 0.8],
+  wIn: 0.012 // (the body a little inside the sim's width)
+}
+
+// The lines of a body, from its spec S (carSpecs.js SPECS) and type T (sim/traffic.js TYPES)
+function bodyLines (S, T) {
+  const L = T.len / 2
+  const B = { ...DEFAULTS, ...S, L, name: T.name }
+  B.W = T.wid / 2 - B.wIn
+  B.top = line(S.top)
+  B.belt = line(S.belt)
+  B.bot = line(S.bot)
+  B.railY = typeof S.rail === 'number' ? () => S.rail : line(S.rail)
+  B.glass = S.glass || [S.cp, S.ws]
+  B.knots = [...S.top, ...S.belt]
+  return B
+}
+
+// the plan: the body's width at x as a share of its full width, rounding off at the ends
+function plan (B, x) {
+  let c, s, u
+  if (x > B.L - B.nose[0]) {
+    ;[c, s] = B.nose
+    u = (x - B.L + c) / c
+  } else if (x < -B.L + B.tail[0]) {
+    ;[c, s] = B.tail
+    u = (-B.L + c - x) / c
+  } else return 1
+  u = Math.min(1, u)
+  return s + (1 - s) * Math.sqrt(1 - u * u)
+}
+// how much wider than the rest the lower body is at x (a sports car's haunches)
+function bulge (B, x) {
+  if (!B.haunch) return 0
+  const [a, xc, w] = B.haunch
+  return a * Math.exp(-(((x - xc) / w) ** 2))
+}
+
+// The half section at x: 11 points [z, y]
+function sectionAt (B, x) {
+  const s = plan(B, x),
+    Wl = B.W + bulge(B, x)
+  const bot = B.bot(x),
+    belt = B.belt(x),
+    top = Math.max(B.top(x), belt)
+  // (squeezed up together where the body is low, at a nose or a tail)
+  const y6 = belt - 0.055,
+    y5 = Math.min(B.crease, y6 - 0.05),
+    y2 = Math.max(B.sill, bot + 0.03),
+    y4 = Math.max(Math.min(B.mid, y5 - 0.08), y2 + 0.06),
+    y3 = Math.min(Math.max(B.sill + 0.09, y2 + 0.03), y4 - 0.03)
+  const z7 = B.W - B.beltIn
+  const p = [
+    [0, bot],
+    [Wl - 0.17, bot],
+    [Wl - 0.065, y2],
+    [Wl - 0.022, y3],
+    [Wl, y4],
+    [Wl - 0.01, y5],
+    [lerp(Wl - 0.01, z7, 0.45), y6],
+    [z7, belt],
+    ...upper(B, x, z7, belt, top)
+  ]
+  for (const q of p) q[0] *= s
+  return p
+}
+// above the beltline: the glass's top at the side (up the A-pillar, along the roof's side, down the
+// back of the side windows), the roof's edge (or the windscreen's, or the rear window's) and the
+// crown; or across the hood or deck
+function upper (B, x, ez, ey, top) {
+  const { ws, rf, rr, rw, cp, dTop, roofW, edgeIn, edgeUp, panel } = B
+  if (x > ws + 1e-6 || x < rw - 1e-6) {
+    const h = top - ey
+    return [
+      [ez * 0.95, ey + h * 0.5],
+      [ez * panel, ey + h * 0.92],
+      [0, top]
+    ]
+  }
+  const rail = B.railY(x)
+  let p8
+  if (x >= rf) {
+    const t = (ws - x) / (ws - rf)
+    p8 = [lerp(ez, roofW, t), lerp(ey, rail, t)]
+  } else if (x >= dTop) p8 = [roofW, rail]
+  else if (x > cp) {
+    const t = (dTop - x) / (dTop - cp)
+    p8 = [lerp(roofW, ez, t), lerp(rail, ey, t)]
+  } else p8 = [ez, ey]
+  let p9
+  if (x >= rr) {
+    const t = x >= rf ? (ws - x) / (ws - rf) : 1
+    p9 = [lerp(ez * panel, roofW - edgeIn, t), lerp(p8[1], top, edgeUp)]
+  } else {
+    // the rear window's edge, from the roof's edge down to the deck's
+    const t = (rr - x) / (rr - rw)
+    const d0 = (1 - edgeUp) * (B.top(rr) - B.railY(rr)),
+      d1 = 0.08 * (B.top(rw) - B.belt(rw))
+    p9 = [lerp(roofW - edgeIn, ez * panel, t), top - lerp(d0, d1, t)]
+  }
+  return [p8, p9, [0, top]]
+}
+
+// The stations along the car: at every knot of its lines, every boundary between its pieces, and
+// round each rounded end
+function stationsOf (B) {
+  const { L } = B
+  const edges = [B.ws, B.rf, B.rr, B.rw, B.cp, B.dTop, ...B.glass]
+  const xs = [-L, L, ...edges]
+  for (const [x] of B.knots) xs.push(x)
+  for (const a of [0, 0.6, 0.92]) {
+    xs.push(L - B.nose[0] + B.nose[0] * a)
+    xs.push(-L + B.tail[0] - B.tail[0] * a)
+  }
+  const keep = []
+  const sorted = [...new Set(xs.map(x => Math.round(x * 1000) / 1000))]
+    .filter(x => x >= -L && x <= L)
+    .sort((a, b) => a - b)
+  const must = new Set([-L, L, ...edges].map(x => Math.round(x * 1000) / 1000))
+  for (const x of sorted) {
+    const near = keep.length && x - keep[keep.length - 1] < 0.035
+    if (!near) keep.push(x)
+    else if (must.has(x)) keep[keep.length - 1] = x
+  }
+  return keep.map(x => ({ x, p: sectionAt(B, x) }))
+}
+
+// Which piece segment j (between points j and j + 1) is, between stations at xa and xb: 'paint',
+// 'glass', 'dark' (black trim), or null (left out)
+function pieceOf (B) {
+  return (j, xa, xb) => {
+    const x = (xa + xb) / 2
+    if (j === 0) return null // (the underside: never seen)
+    if (j < P.belt) return 'paint'
+    if (B.bed && x < B.rw) return null // (an open pickup bed)
+    if (x > B.ws || x < B.rw) return 'paint' // hood, deck
+    if (j === P.belt) {
+      if (x > B.glass[0] && x < B.glass[1]) return 'glass'
+      return x < B.cp ? null : 'paint' // (behind the side windows it has no height)
+    }
+    if (x > B.rf) return 'glass' // the windscreen
+    if (j === P.rail + 1 && x < B.rr) return 'glass' // the rear window
+    if (x < B.dTop && B.darkPillar) return 'dark'
+    return 'paint'
+  }
+}
+
+const tri = (pos, a, b, c) => {
+  const ux = pos[b * 3] - pos[a * 3],
+    uy = pos[b * 3 + 1] - pos[a * 3 + 1],
+    uz = pos[b * 3 + 2] - pos[a * 3 + 2]
+  const vx = pos[c * 3] - pos[a * 3],
+    vy = pos[c * 3 + 1] - pos[a * 3 + 1],
+    vz = pos[c * 3 + 2] - pos[a * 3 + 2]
+  return Math.hypot(uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx)
+}
+
+// Sweep the stations into indexed geometries by piece, mirrored to both sides, with each end closed
+// by a flat cap in capKey. Normals are smooth within a piece except along the section points in
+// sharp, where they break.
+function loftIx (
+  st,
+  keyFor,
+  capKey = 'paint',
+  sharp = [P.crease, P.belt, P.rail]
+) {
+  const n = st[0].p.length
+  const grp = []
+  for (let j = 0, g = 0; j < n - 1; j++) {
+    if (j && sharp.includes(j)) g++
+    grp.push(g)
+  }
+  const buckets = new Map()
+  const get = key => {
+    let b = buckets.get(key)
+    if (!b)
+      buckets.set(key, (b = { pos: [], idx: [], ids: new Map(), nrm: null }))
+    return b
+  }
+  const vert = (b, i, j, sg, g) => {
+    const [z, y] = st[i].p[j]
+    const side = Math.abs(z) < 1e-6 ? 0 : sg
+    const id = `${i},${j},${g},${side}`
+    let v = b.ids.get(id)
+    if (v === undefined) {
+      v = b.pos.length / 3
+      b.pos.push(st[i].x, y, side * z)
+      b.ids.set(id, v)
+    }
+    return v
+  }
+  for (let i = 0; i < st.length - 1; i++)
+    for (let j = 0; j < n - 1; j++) {
+      const key = keyFor(j, st[i].x, st[i + 1].x)
+      if (key === null) continue
+      const b = get(key),
+        g = grp[j]
+      for (const sg of [1, -1]) {
+        const a = vert(b, i, j, sg, g),
+          c = vert(b, i + 1, j, sg, g),
+          bb = vert(b, i, j + 1, sg, g),
+          d = vert(b, i + 1, j + 1, sg, g)
+        const t = sg > 0 ? [a, c, bb, c, d, bb] : [a, bb, c, c, bb, d]
+        for (let k = 0; k < 6; k += 3)
+          if (tri(b.pos, t[k], t[k + 1], t[k + 2]) > 1e-7)
+            b.idx.push(t[k], t[k + 1], t[k + 2])
+      }
+    }
+  const out = new Map()
+  for (const [key, b] of buckets) {
+    const g = new THREE.BufferGeometry()
+    g.setAttribute('position', new THREE.Float32BufferAttribute(b.pos, 3))
+    g.setIndex(b.idx)
+    g.computeVertexNormals()
+    out.set(key, g)
+  }
+  if (capKey !== null) {
+    const caps = [cap(st[0], -1), cap(st[st.length - 1], 1)]
+    out.set(capKey, mergeIx([out.get(capKey), ...caps].filter(Boolean)))
+  }
+  return out
+}
+// an end of the body closed flat: a fan from the middle of its section, facing out along x
+function cap (S, f) {
+  const ring = [
+    ...S.p.map(([z, y]) => [z, y]),
+    ...S.p
+      .slice(1, -1)
+      .reverse()
+      .map(([z, y]) => [-z, y])
+  ]
+  const cy = S.p.reduce((s, p) => s + p[1], 0) / S.p.length
+  const pos = [S.x, cy, 0],
+    idx = []
+  for (const [z, y] of ring) pos.push(S.x, y, z)
+  for (let i = 0; i < ring.length; i++) {
+    const a = i + 1,
+      b = ((i + 1) % ring.length) + 1
+    if (f > 0) idx.push(0, b, a)
+    else idx.push(0, a, b)
+  }
+  const g = new THREE.BufferGeometry()
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3))
+  const nrm = new Float32Array(pos.length)
+  for (let i = 0; i < nrm.length; i += 3) nrm[i] = f
+  g.setAttribute('normal', new THREE.BufferAttribute(nrm, 3))
+  g.setIndex(idx)
+  return g
+}
+
+// Merge geometries keeping their indices (so shared corners stay shared): position, normal, and
+// colour and lamp tags where any of them has them (white and 0 where one hasn't)
+function mergeIx (geos) {
+  let n = 0
+  for (const g of geos) n += g.attributes.position.count
+  const out = new THREE.BufferGeometry()
+  const idx = []
+  const attrs = [
+    ['position', 3, 0],
+    ['normal', 3, 0],
+    ['color', 3, 1],
+    ['aLamp', 1, 0]
+  ]
+  for (const [name, size, fill] of attrs) {
+    if (!geos.some(g => g.attributes[name])) continue
+    const arr = new Float32Array(n * size)
+    let o = 0
+    for (const g of geos) {
+      const a = g.attributes[name],
+        c = g.attributes.position.count * size
+      if (a) arr.set(a.array.subarray(0, c), o)
+      else if (fill) arr.fill(fill, o, o + c)
+      o += c
+    }
+    out.setAttribute(name, new THREE.BufferAttribute(arr, size))
+  }
+  let o = 0
+  for (const g of geos) {
+    const count = g.attributes.position.count
+    if (g.index) for (const i of g.index.array) idx.push(i + o)
+    else for (let i = 0; i < count; i++) idx.push(i + o)
+    o += count
+  }
+  out.setIndex(idx)
+  out.computeBoundingSphere()
+  return out
+}
+
+// The body's side at x and height y (on the +z side): its z, straight between stations
+function sideAt (st, x, y, j0 = 1, j1 = P.belt) {
+  let prev = at(st, x, j0)
+  if (y <= prev[1]) return prev[0]
+  for (let j = j0 + 1; j <= j1; j++) {
+    const p = at(st, x, j)
+    if (y <= p[1])
+      return lerp(prev[0], p[0], (y - prev[1]) / (p[1] - prev[1] || 1))
+    prev = p
+  }
+  return prev[0]
+}
+__export(__exports, { "lerp": () => lerp, "line": () => line, "P": () => P, "bodyLines": () => bodyLines, "plan": () => plan, "sectionAt": () => sectionAt, "stationsOf": () => stationsOf, "pieceOf": () => pieceOf, "loftIx": () => loftIx, "mergeIx": () => mergeIx, "sideAt": () => sideAt })
+})
+
+// ---- js/render/carParts.js
+__define(93, function (__exports) {
+// What the traffic's trim and lamps (carTrim.js, carExtras.js, carLamps.js) are made of: pieces in
+// vertex colours, each vertex tagged with what it is (aLamp: a lamp to light, chrome or gloss black
+// to shine), as boxes, flat rounded pieces on a car's faces, bands along its sections, and strips
+// laid on its surface and wrapped round its rounded corners.
+const THREE = __require(0)
+const { at, seam } = __require(43)
+const { sideAt, lerp } = __require(92)
+// what each piece is (aLamp), and how it lights (carLamps.js lampMaterial)
 const LAMP = {
   none: 0,
   head: 1,
@@ -69524,37 +76674,60 @@ const LAMP = {
   reverse: 6,
   route: 7,
   taxi: 8,
-  drl: 9
+  drl: 9,
+  barRed: 10,
+  barBlue: 11,
+  markFront: 12,
+  markRear: 13,
+  chrome: 20,
+  gloss: 21
 }
-// per type: headlight [width, height, how far in from the side it starts]; tail light [width,
-// height]; whether the tail light runs up the corner (a tall one, for hatches, SUVs, vans); the
-// high stop lamp: on the tail ('tail') or the back of a pickup's cab ('cab'), and its height
-// prettier-ignore
-const STYLE = {
-  sedan: { head: [0.42, 0.12, 0.1], tail: [0.44, 0.13], stop: null },
-  hatch: { head: [0.36, 0.13, 0.1], tail: [0.2, 0.3], tall: true, stop: ['tail', 1.21] },
-  suv: { head: [0.4, 0.15, 0.1], tail: [0.22, 0.34], tall: true, stop: ['tail', 1.55] },
-  pickup: { head: [0.36, 0.19, 0.12], tail: [0.17, 0.42], tall: true, stop: ['cab', 1.76] },
-  van: { head: [0.32, 0.24, 0.1], tail: [0.15, 0.56], tall: true, stop: ['tail', 2.6] },
-  bus: { head: [0.36, 0.14, 0.14], tail: [0.22, 0.42], tall: true, stop: ['tail', 2.92] }
-}
-STYLE.taxi = STYLE.sedan
-
+// each lens's own coloured glass, unlit
 const LENS = {
-  [LAMP.head]: 0xa9b1ba,
-  [LAMP.drl]: 0xe6eaee,
-  [LAMP.tail]: 0x8a0d10,
-  [LAMP.stop]: 0x7a0b0d,
-  [LAMP.left]: 0xc77a18,
-  [LAMP.right]: 0xc77a18,
-  [LAMP.reverse]: 0xd2d4d6,
-  [LAMP.route]: 0x1a1408,
-  [LAMP.taxi]: 0xf3ecc8
+  [LAMP.head]: 0xc4ccd4,
+  [LAMP.drl]: 0xe8ecf0,
+  [LAMP.tail]: 0x7a0a0e,
+  [LAMP.stop]: 0x6a080b,
+  [LAMP.left]: 0xb8701a,
+  [LAMP.right]: 0xb8701a,
+  [LAMP.reverse]: 0xc9ccd0,
+  [LAMP.route]: 0x15110a,
+  [LAMP.taxi]: 0xf2ead0,
+  [LAMP.barRed]: 0x4a0709,
+  [LAMP.barBlue]: 0x0a1650,
+  [LAMP.markFront]: 0xa8641a,
+  [LAMP.markRear]: 0x6a0a0c
 }
-const HOUSING = 0x121315
+// (one export each: the bundler takes a declaration's first name only)
+const BLACK = 0x0d0e10
+const GLOSS = 0x060708
+const CHROME = 0xd4d8dc
 
-// A rounded rectangle w x h (corner radius r), centred on (u, v) in its own plane, as triangles
-function rounded (w, h, r) {
+// colour and lamp tag on every vertex of g
+function paint (g, color, lamp = LAMP.none) {
+  const n = g.attributes.position.count,
+    c = new THREE.Color(color),
+    col = new Float32Array(n * 3)
+  for (let i = 0; i < n; i++) col.set([c.r, c.g, c.b], i * 3)
+  g.setAttribute('color', new THREE.BufferAttribute(col, 3))
+  g.setAttribute(
+    'aLamp',
+    new THREE.BufferAttribute(new Float32Array(n).fill(lamp), 1)
+  )
+  g.deleteAttribute('uv')
+  return g
+}
+
+// a box from (x0, y0, z0) to (x1, y1, z1)
+const box = (x0, y0, z0, x1, y1, z1) =>
+  new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0).translate(
+    (x0 + x1) / 2,
+    (y0 + y1) / 2,
+    (z0 + z1) / 2
+  )
+
+// A rounded rectangle w x h (corner radius r), flat, facing +z
+function rounded (w, h, r, segs = 2) {
   const s = new THREE.Shape(),
     x = -w / 2,
     y = -h / 2
@@ -69568,439 +76741,35 @@ function rounded (w, h, r) {
   s.quadraticCurveTo(x, y + h, x, y + h - r)
   s.lineTo(x, y + r)
   s.quadraticCurveTo(x, y, x + r, y)
-  return new THREE.ShapeGeometry(s, 2)
+  return new THREE.ShapeGeometry(s, segs)
 }
-// a flat piece facing out along +x or -x (on a car's nose or tail) or +z / -z (on its side)
-function piece (geo, face, x, y, z, color, lamp) {
+// a flat piece facing out along +x or -x (on a car's nose or tail), +z or -z (its side) or up
+function piece (geo, face, x, y, z, color, lamp = LAMP.none) {
   if (face === 'x+') geo.rotateY(Math.PI / 2)
   else if (face === 'x-') geo.rotateY(-Math.PI / 2)
   else if (face === 'z-') geo.rotateY(Math.PI)
+  else if (face === 'y+') geo.rotateX(-Math.PI / 2)
   geo.translate(x, y, z)
-  const g = geo.toNonIndexed()
-  const n = g.attributes.position.count,
-    c = new THREE.Color(color),
-    col = new Float32Array(n * 3)
-  for (let i = 0; i < n; i++) col.set([c.r, c.g, c.b], i * 3)
-  g.setAttribute('color', new THREE.BufferAttribute(col, 3))
-  const tag = new Float32Array(n).fill(lamp)
-  g.setAttribute('aLamp', new THREE.BufferAttribute(tag, 1))
-  g.deleteAttribute('uv')
-  return g
-}
-// a lens in its housing: the housing a little bigger, a hair behind
-function unit (out, face, x, y, z, w, h, lamp, r = 0.035) {
-  const out1 = face[1] === '+' ? 1 : -1
-  const along = face[0] === 'x'
-  const back = (d, a, b) => (along ? [a + out1 * d, y, b] : [a, y, b + out1 * d])
-  const [hx, , hz] = back(0.003, x, z)
-  const housing = rounded(w + 0.04, h + 0.035, r + 0.015)
-  out.push(piece(housing, face, hx, y, hz, HOUSING, LAMP.none))
-  const [lx, , lz] = back(0.007, x, z)
-  out.push(piece(rounded(w, h, r), face, lx, y, lz, LENS[lamp], lamp))
+  return paint(geo, color, lamp)
 }
 
-// how far out from the middle the headlights start (the grille stops short of them)
-function headInner (T, hw) {
-  const [w, , inset] = STYLE[T.name].head
-  return hw - 0.15 - inset - w
-}
-
-// The lamps for type T (S: its shape spec, L: half length, hw: half width)
-function lampsFor (T, S, L, hw) {
-  const st = STYLE[T.name],
-    out = []
-  const [hwid, hh, hin] = st.head
-  const [tw, th] = st.tail
-  for (const s of [-1, 1]) {
-    const ind = s < 0 ? LAMP.left : LAMP.right
-    // headlight: the lamp, its indicator at the outer end
-    const zo = hw - 0.15 - hin // (the outer edge, clear of the rounded corner)
-    const zc = s * (zo - hwid / 2)
-    unit(out, 'x+', L, S.lights[0], zc, hwid, hh, LAMP.head)
-    // its running light: a strip along the lamp's top, lit day and night
-    const drl = rounded(hwid * 0.86, 0.022, 0.01)
-    const dy = S.lights[0] + hh / 2 - 0.022
-    out.push(piece(drl, 'x+', L + 0.0095, dy, zc, LENS[LAMP.drl], LAMP.drl))
-    const iw = Math.min(0.09, hwid * 0.22)
-    out.push(
-      piece(
-        rounded(iw, hh * 0.72, 0.02),
-        'x+',
-        L + 0.009,
-        S.lights[0],
-        s * (zo - iw / 2 - 0.012),
-        LENS[ind],
-        ind
-      )
-    )
-    // a side repeater on the front wing, behind the wheel
-    const rx = S.axles[0] - S.r - 0.3,
-      rep = rounded(0.07, 0.025, 0.012)
-    const face = s > 0 ? 'z+' : 'z-'
-    out.push(piece(rep, face, rx, S.belt - 0.2, s * (hw + 0.004), LENS[ind], ind))
-    // tail light: wide and low (a saloon's) or tall up the corner; indicator outboard, reversing
-    // lamp inboard
-    const ty = st.tall ? S.lights[1] + th / 2 - 0.06 : S.lights[1]
-    const tz = s * (hw - 0.17 - tw / 2)
-    unit(out, 'x-', -L, ty, tz, tw, th, LAMP.tail, 0.03)
-    const seg = (frac, at, lamp) => {
-      const w = st.tall ? tw * 0.8 : tw * frac,
-        h = st.tall ? th * frac : th * 0.7
-      const z = st.tall ? tz : tz + s * at * (tw / 2 - w / 2)
-      const y = st.tall ? ty + at * (th / 2 - h / 2) : ty
-      out.push(piece(rounded(w, h, 0.018), 'x-', -L - 0.0095, y, z, LENS[lamp], lamp))
-    }
-    seg(0.24, 1, ind) // (outboard, or at the top of a tall one)
-    seg(0.22, -1, LAMP.reverse) // (inboard, or at the bottom)
-  }
-  // the high-mounted stop lamp
-  if (st.stop) {
-    const [where, y] = st.stop
-    const x = where === 'cab' ? S.rw - 0.012 : -L - 0.009
-    const stop = rounded(0.34, 0.035, 0.015)
-    out.push(piece(stop, 'x-', x, y, 0, LENS[LAMP.stop], LAMP.stop))
-  }
-  if (T.name === 'taxi') {
-    // the roof sign, lit
-    const sign = new THREE.BoxGeometry(0.26, 0.13, 0.56)
-    out.push(piece(sign, 'none', -0.2, S.roof + 0.06, 0, LENS[LAMP.taxi], LAMP.taxi))
-  }
-  if (T.name === 'bus') {
-    // the route board over the windscreen, and the route number at the back
-    const front = rounded(1.7, 0.24, 0.02),
-      back = rounded(0.5, 0.2, 0.02)
-    out.push(piece(front, 'x+', L + 0.008, 2.83, 0, LENS[LAMP.route], LAMP.route))
-    out.push(piece(back, 'x-', -L - 0.008, 2.75, 0, LENS[LAMP.route], LAMP.route))
-  }
-  return out
-}
-
-// The trim's material, lit where its lamps are: aLit per car (x headlights, y tail lights, z
-// braking, w flags: 1 left indicator, 2 right, 4 reversing, 8 route board lit, 16 running lights)
-const GLOW = `
-  attribute float aLamp;
-  attribute vec4 aLit;
-  varying vec3 vGlow;
-`
-function lampMaterial (base) {
-  const m = base.clone()
-  m.onBeforeCompile = shader => {
-    shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\n' + GLOW)
-      .replace(
-        '#include <begin_vertex>',
-        `#include <begin_vertex>
-        {
-          int lamp = int(aLamp + 0.5), flags = int(aLit.w + 0.5);
-          vec3 g = vec3(0.0);
-          if (lamp == 1) g = vec3(1.0, 0.95, 0.86) * aLit.x;
-          else if (lamp == 2) g = vec3(1.0, 0.05, 0.03) * (aLit.y + 3.6 * aLit.z);
-          else if (lamp == 3) g = vec3(1.0, 0.05, 0.03) * 4.0 * aLit.z;
-          else if (lamp == 4) g = vec3(1.0, 0.4, 0.04) * ((flags & 1) != 0 ? 3.2 : 0.0);
-          else if (lamp == 5) g = vec3(1.0, 0.4, 0.04) * ((flags & 2) != 0 ? 3.2 : 0.0);
-          else if (lamp == 6) g = vec3(1.0, 1.0, 0.96) * ((flags & 4) != 0 ? 2.4 : 0.0);
-          else if (lamp == 7) g = vec3(1.0, 0.55, 0.08) * ((flags & 8) != 0 ? 2.2 : 0.0);
-          else if (lamp == 8) g = vec3(1.0, 0.86, 0.45) * (0.08 + 0.3 * aLit.x);
-          else if (lamp == 9) g = vec3(0.92, 0.96, 1.0) * ((flags & 16) != 0 ? 1.7 : 0.0);
-          vGlow = g;
-        }`
-      )
-    shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vGlow;')
-      .replace(
-        '#include <emissivemap_fragment>',
-        '#include <emissivemap_fragment>\ntotalEmissiveRadiance += vGlow;'
-      )
-  }
-  m.customProgramCacheKey = () => 'traffic lamps'
-  return m
-}
-__export(__exports, { "LAMP": () => LAMP, "headInner": () => headInner, "lampsFor": () => lampsFor, "lampMaterial": () => lampMaterial })
-})
-
-// ---- js/render/carShapes.js
-__define(60, function (__exports) {
-// The traffic's car bodies, lofted like the Roadster (loft.js): a body with sides that swell out
-// below the shoulder and rounded corners and bumpers, a cabin that narrows above the beltline under a
-// roof with rounded edges, glass for the windshield, side and rear windows (framed in black), a
-// painted roof, wheel arches cut into the body over dark wheel wells, a darker plastic valance under
-// each bumper (and cladding along an SUV's or pickup's sills), wing mirrors in the body colour, and
-// the trim (number plates, grille, the mirrors' arms, handles, the doors' shut lines, a black B-pillar
-// and the window line's rubber, a bus's window pillars and doors) baked in vertex colours, with the
-// lamps (carLamps.js) in with it. One shape per traffic type.
-const THREE = __require(0)
-const { merge, box, tint } = __require(22)
-const { loftGeos, seam, at } = __require(23)
-const { lampsFor, headInner } = __require(59)
-// Per type: floor and sill heights, the beltline, hood (at the cowl) and nose heights, the deck and
-// tail heights, the roof, and along x the windshield's foot (ws), the roof's front (rf) and back (rr)
-// and the rear window's foot (rw); the wheel radius and axles; the head and tail lights' height;
-// sideGlass: where the side windows run (x from, to), when not the whole cabin; doors: x of each
-// door's shut line, front to back; pillars: x of each black pillar between side windows.
-// prettier-ignore
-const SPECS = {
-  sedan: { floor: 0.2, sill: 0.34, belt: 0.95, hood: 0.88, nose: 0.74, deck: 0.98, tail: 0.86, roof: 1.45, ws: 0.95, rf: 0.12, rr: -0.95, rw: -1.6, r: 0.33, axles: [1.42, -1.42], lights: [0.66, 0.8], doors: [0.98, -0.3, -1.04], pillars: [-0.3], valance: 0.17 },
-  hatch: { floor: 0.2, sill: 0.34, belt: 0.96, hood: 0.88, nose: 0.74, deck: 1.0, tail: 0.92, roof: 1.48, tailRoof: 1.28, ws: 0.82, rf: 0.0, rr: -1.55, rw: -2.1, r: 0.31, axles: [1.3, -1.28], lights: [0.68, 0.9], doors: [0.9, -0.42, -1.08], pillars: [-0.42], valance: 0.17 },
-  suv: { floor: 0.3, sill: 0.46, belt: 1.1, hood: 1.04, nose: 0.92, deck: 1.12, tail: 1.06, roof: 1.73, tailRoof: 1.62, ws: 1.18, rf: 0.38, rr: -1.9, rw: -2.5, r: 0.38, axles: [1.48, -1.45], lights: [0.88, 1.02], doors: [1.02, -0.26, -1.12], pillars: [-0.26, -1.55], valance: 0.22, clad: true },
-  pickup: { floor: 0.36, sill: 0.5, belt: 1.15, hood: 1.12, nose: 1.0, deck: 1.16, tail: 1.12, roof: 1.84, ws: 1.25, rf: 0.55, rr: -0.62, rw: -0.72, r: 0.4, axles: [1.75, -1.8], lights: [0.96, 1.0], doors: [1.24, 0.0, -0.64], pillars: [0.0], bumpers: 0x8d9196, clad: true },
-  van: { floor: 0.38, sill: 0.52, belt: 1.2, hood: 1.18, nose: 1.0, deck: 2.66, tail: 2.6, roof: 2.74, tailRoof: 2.7, ws: 2.6, rf: 1.75, rr: -9, rw: -9, r: 0.4, axles: [2.15, -2.2], lights: [1.0, 1.1], sideGlass: [1.25, 2.6], doors: [1.68, 0.8, 0.55, -0.65], pillars: [], bumpers: 0x1d1e21 },
-  bus: { floor: 0.36, sill: 0.5, belt: 1.75, hood: 1.45, nose: 1.4, deck: 3.0, tail: 2.96, roof: 3.12, tailRoof: 3.08, ws: 5.75, rf: 5.62, rr: -9, rw: -9, r: 0.5, axles: [3.65, -3.45], lights: [0.75, 0.9], inset: 0.04, sideGlass: [-5.45, 5.5], doors: [], pillars: [-4.9, -3.75, -2.6, -1.45, 0.2, 1.3, 2.4, 3.45, 4.75], bumpers: 0x1d1e21 }
-}
-SPECS.taxi = SPECS.sedan
-const DARK = 0x1d1e21
-
-// a station's half section: floor centre, floor edge, sill, the lower side swelling out to the widest
-// point, the shoulder and the beltline, then the glass's foot, the roof's edge, its rounded shoulder
-// and its crown (or, with no cabin, the hood or deck surface)
-const GLASS_FOOT = 7 // index of the glass's foot in a section
-function section (w, floor, sill, belt, cab, inset, top = belt) {
-  const p = [
-    [0, floor],
-    [w - 0.12, floor],
-    [w - 0.04, sill],
-    [w - 0.008, sill + 0.4 * (belt - 0.18 - sill)],
-    [w, belt - 0.18],
-    [w - 0.022, belt - 0.04],
-    [w - 0.05, belt]
-  ]
-  if (cab) {
-    const edge = w - 0.06 - inset,
-      ey = belt + 0.02 + (cab - belt - 0.02) * 0.9
-    p.push(
-      [w - 0.06 - inset * 0.2, belt + 0.015],
-      [edge, ey],
-      [edge * 0.8, cab - 0.012],
-      [0, cab]
-    )
-  } else
-    p.push(
-      [w * 0.88, top + 0.008],
-      [w * 0.66, top + 0.018],
-      [w * 0.36, top + 0.026],
-      [0, top + 0.03]
-    )
-  return p
-}
-// Round off the corners and bumpers: between each end station and the one next to it, more
-// stations easing from the one to the other along a quarter circle, so the body curves round the
-// corner in plan and the bumper rolls under in profile.
-function roundEnds (st) {
-  const ease = (A, B, t) => {
-    const e = Math.sin((t * Math.PI) / 2)
-    return {
-      x: A.x + (B.x - A.x) * t,
-      p: A.p.map(([z, y], k) => [
-        z + (B.p[k][0] - z) * e,
-        y + (B.p[k][1] - y) * e
-      ])
-    }
-  }
-  const n = st.length,
-    out = st.slice()
-  for (const t of [0.2, 0.45, 0.7]) {
-    out.push(ease(st[0], st[1], t))
-    out.push(ease(st[n - 1], st[n - 2], t))
-  }
-  return out.sort((a, b) => a.x - b.x)
-}
-
-// the shape of type T (len, wid from the sim): geometries for the paint, glass and trim, and the
-// wheel arches to cut
-function carShape (T) {
-  const S = SPECS[T.name],
-    L = T.len / 2,
-    hw = T.wid / 2,
-    inset = S.inset ?? 0.24
-  const st = []
-  const add = (x, w, floor, sill, belt, cab, top) =>
-    st.push({ x, p: section(w, floor, sill, belt, cab, inset, top) })
-  // tail, round the cabin, nose. The cabin's ends collapse onto the deck and the cowl, so the
-  // windshield and rear window are the roof's slopes down to them; a hatchback's, van's or bus's
-  // roof runs right back to the tail.
-  const { floor, sill, belt, roof } = S
-  if (S.rw < -L + 0.25) {
-    add(-L, hw - 0.1, floor + 0.08, sill + 0.04, belt, S.tailRoof)
-    add(-L + 0.12, hw - 0.02, floor, sill, belt, S.tailRoof)
-    if (S.rr > -L + 0.2) add(S.rr, hw, floor, sill, belt, roof)
-  } else {
-    add(-L, hw - 0.14, floor + 0.12, sill + 0.06, S.tail - 0.04, 0)
-    add(-L + 0.16, hw - 0.03, floor + 0.02, sill, S.deck, 0)
-    add(S.rw, hw, floor, sill, belt, belt + 0.05)
-    add(S.rr, hw, floor, sill, belt, roof)
-  }
-  add(S.rf, hw, floor, sill, belt, roof)
-  add(S.ws, hw, floor, sill, belt, belt + 0.05)
-  if (S.ws < L - 0.25) add(L - 0.2, hw - 0.03, floor + 0.02, sill, S.nose, 0)
-  add(L, hw - 0.15, floor + 0.1, sill + 0.04, S.nose - 0.06, 0)
-  const body = roundEnds(st)
-  const side = S.sideGlass || [S.rw, S.ws]
-  const G = GLASS_FOOT
-  const keyFor = (j, xA, xB) => {
-    const x = (xA + xB) / 2,
-      inSide = x > side[0] && x < side[1]
-    if (j === 0) return 'under'
-    if (j === G - 1) return inSide ? 'rubber' : 'paint' // the window line
-    if (j === G) return inSide ? 'glass' : 'paint'
-    if (j > G)
-      return (x > S.rf && x < S.ws) || (x < S.rr && x > S.rw)
-        ? 'glass'
-        : 'paint'
-    return 'paint'
-  }
-  const g = loftGeos(body, keyFor, 'paint', 30)
-  const trim = trimFor(T, S, L, hw)
-  trim.push(tint(g.get('under'), 0x16171a))
-  if (g.get('rubber')) trim.push(tint(g.get('rubber'), 0x101113))
-  // the side windows framed in black along their tops
-  const top = frame(body, G + 1, G, Math.max(side[0], -L + 0.3), Math.min(side[1], L - 0.3))
-  trim.push(tint(top, 0x0c0d0f))
-  // the doors' shut lines, from the sill to the beltline (over an arch, only above it), and a black
-  // pillar between the side windows
-  const overArch = x => S.axles.some(a => Math.abs(x - a) < S.r + 0.1)
-  const line = (x, k0, k1, w, lift, c) =>
-    trim.push(tint(seam(body, x, k0, k1, null, w, lift).geometry, c))
-  for (const x of S.doors)
-    line(x, overArch(x) ? 4 : 1, G - 1, 0.012, 0.003, 0x0e0f11)
-  for (const x of S.pillars) line(x, G, G + 1, 0.1, 0.004, 0x0b0c0e)
-  // wing mirrors: a cap in the body colour on a black arm (trimFor)
-  const paint = [g.get('paint')]
-  for (const s of [-1, 1])
-    paint.push(
-      new THREE.SphereGeometry(1, 10, 6)
-        .scale(0.05, 0.05, 0.085)
-        .translate(S.ws - 0.15, S.belt + 0.06, s * (hw + 0.1))
-    )
-  // a bus's windscreen and back window, a van's rear door windows: glass on the end faces
-  const glass = [g.get('glass') || box(0, 0, 0, 0.01, 0.01, 0.01)]
-  if (T.name === 'bus') {
-    glass.push(box(L - 0.004, 1.05, -hw + 0.1, L + 0.006, 2.66, hw - 0.1))
-    glass.push(box(-L - 0.006, 1.85, -hw + 0.3, -L + 0.004, 2.6, hw - 0.3))
-  } else if (T.name === 'van')
-    for (const s of [-1, 1])
-      glass.push(box(-L - 0.006, 1.45, s * 0.06, -L + 0.004, 2.3, s * (hw - 0.25)))
-  return {
-    paint: merge(paint),
-    glass: merge(glass),
-    trim: withLamps(trim, lampsFor(T, S, L, hw)),
-    arch: {
-      axles: S.axles,
-      r: S.r + 0.07,
-      y: S.r,
-      wellIn: hw - 0.28,
-      // the dark plastic: under each bumper, and along the sills of the rugged ones
-      L,
-      valance: S.valance ? S.floor + S.valance : -1,
-      clad: S.clad ? S.sill + 0.07 : -1
-    },
-    S
-  }
-}
-
-// bumpers (on the utility types: the cars' are part of the body), grille, number plates, the
-// mirrors' arms, door handles, dark wheel wells, and a bus's doors, as vertex-coloured boxes
-function trimFor (T, S, L, hw) {
-  const black = 0x0d0e10
-  const parts = []
-  const put = (c, ...b) => parts.push(tint(box(...b), c))
-  const yb = S.floor + 0.04
-  if (S.bumpers) {
-    put(S.bumpers, L - 0.12, yb, -hw + 0.1, L + 0.04, yb + 0.24, hw - 0.1)
-    put(S.bumpers, -L - 0.04, yb, -hw + 0.1, -L + 0.12, yb + 0.24, hw - 0.1)
-  }
-  // the grille, between the headlights, with a brighter surround
-  const gy0 = yb + (S.bumpers ? 0.25 : 0.2),
-    gy1 = S.lights[0] + 0.03,
-    gz = Math.min(hw * 0.42, headInner(T, hw) - 0.04)
-  put(0x3a3d42, L - 0.02, gy0 - 0.015, -gz, L + 0.004, gy1 + 0.015, gz)
-  put(black, L - 0.02, gy0, -gz + 0.02, L + 0.01, gy1, gz - 0.02)
-  // number plates, front and back: white, the registration in dark letters, a blue band
-  const ex = S.bumpers ? 0.05 : 0.01
-  for (const [x, y, f] of [
-    [L + ex, yb + 0.06, 1],
-    [-L - ex, yb + (S.bumpers ? 0.1 : 0.26), -1]
-  ]) {
-    const x0 = Math.min(x, x + f * 0.012),
-      x1 = Math.max(x, x + f * 0.012)
-    put(0xe8e8e2, x0, y, -0.24, x1, y + 0.11, 0.24)
-    put(0x1c1e24, x0 + f * 0.004, y + 0.03, -0.17, x1 + f * 0.004, y + 0.08, 0.2)
-    put(0x2a4fa0, x0 + f * 0.004, y + 0.01, -0.235, x1 + f * 0.004, y + 0.1, -0.2)
-  }
-  for (const s of [-1, 1]) {
-    // the mirrors' arms, from the foot of the A-pillars (their caps are painted: carShape)
-    const mx = S.ws - 0.15,
-      my = S.belt + 0.03
-    put(black, mx - 0.03, my, s * (hw - 0.02), mx + 0.03, my + 0.04, s * (hw + 0.05))
-    // (the glass, facing back)
-    put(0x1a2a36, mx - 0.052, my - 0.008, s * (hw + 0.035), mx - 0.046, my + 0.068, s * (hw + 0.165))
-    // door handles
-    for (const x of T.name === 'bus'
-      ? []
-      : [S.rf + 0.1, (S.rf + S.rr) / 2 - 0.1])
-      put(
-        black,
-        x - 0.08,
-        S.belt - 0.12,
-        s * (hw - 0.01),
-        x + 0.08,
-        S.belt - 0.09,
-        s * (hw + 0.012)
-      )
-    // the wheel wells: an inner wall and a dark roof over each wheel
-    for (const ax of S.axles) {
-      const r = S.r + 0.07
-      parts.push(
-        tint(
-          box(
-            ax - r,
-            S.floor,
-            s * (hw - 0.3),
-            ax + r,
-            S.r + r,
-            s * (hw - 0.28)
-          ),
-          black
-        )
-      )
-      const arc = new THREE.CylinderGeometry(
-        r,
-        r,
-        0.3,
-        14,
-        1,
-        true,
-        Math.PI * 0.5,
-        Math.PI
-      )
-        .rotateX(Math.PI / 2)
-        .translate(ax, S.r, s * (hw - 0.14))
-      parts.push(tint(arc, black))
-    }
-  }
-  if (T.name === 'bus') {
-    put(0x202428, 3.6, 0.45, hw - 0.01, 4.6, 2.65, hw + 0.012) // front door
-    put(0x202428, -1.0, 0.45, hw - 0.01, 0.0, 2.65, hw + 0.012) // middle door
-    put(black, L - 0.01, 2.68, -0.9, L + 0.004, 2.98, 0.9) // (round the route board)
-  }
-  return parts
-}
-
-// A black band along section point k (towards point k2) from x0 to x1, both sides: a window frame
-function frame (stations, k, k2, x0, x1, w = 0.035) {
+// A band along section point k (towards point k2) from x0 to x1, both sides: a window surround
+function band (st, k, k2, x0, x1, w, lift = 0.004) {
   const pos = []
-  const n = Math.max(2, Math.ceil((x1 - x0) / 0.25))
+  const n = Math.max(2, Math.ceil(Math.abs(x1 - x0) / 0.25))
   for (let i = 0; i < n; i++) {
     const xa = x0 + ((x1 - x0) * i) / n,
       xb = x0 + ((x1 - x0) * (i + 1)) / n
     const edge = x => {
-      const P = at(stations, x, k),
-        Q = at(stations, x, k2)
-      const l = Math.hypot(Q[0] - P[0], Q[1] - P[1]) || 1
-      const u = [(Q[0] - P[0]) / l, (Q[1] - P[1]) / l]
-      // (a hair proud of the surface)
-      const o = [u[1] * 0.004, -u[0] * 0.004]
+      const A = at(st, x, k),
+        B = at(st, x, k2)
+      const l = Math.hypot(B[0] - A[0], B[1] - A[1]) || 1
+      const u = [(B[0] - A[0]) / l, (B[1] - A[1]) / l]
+      const o = [u[1] * lift, -u[0] * lift]
+      const ww = Math.min(w, l)
       return [
-        [P[0] + o[0], P[1] + o[1]],
-        [P[0] + u[0] * w + o[0], P[1] + u[1] * w + o[1]]
+        [A[0] + o[0], A[1] + o[1]],
+        [A[0] + u[0] * ww + o[0], A[1] + u[1] * ww + o[1]]
       ]
     }
     const [a, b] = edge(xa),
@@ -70016,105 +76785,1004 @@ function frame (stations, k, k2, x0, x1, w = 0.035) {
   g.computeVertexNormals()
   return g
 }
-// the trim merged, the lamps (carLamps.js) with it, keeping which lamp each vertex is
-function withLamps (trim, lamps) {
-  const parts = [...trim, ...lamps]
-  const g = merge(parts)
-  const tags = new Float32Array(g.attributes.position.count)
-  let o = 0
-  for (const p of parts) {
-    const n = p.index ? p.index.count : p.attributes.position.count
-    if (p.attributes.aLamp) tags.set(p.attributes.aLamp.array, o)
-    o += n
+// a band across the body at x, from section point k0 to k1, both sides: a shut line, a pillar
+const across = (st, x, k0, k1, w, lift = 0.004) =>
+  seam(st, x, k0, k1, null, w, lift).geometry
+
+// A strip on the body's surface round one end (f: 1 the nose, -1 the tail), along a path from z0 on
+// the end face out to its edge, round the corner and back along the side to d from the end; or,
+// with z1, along the face from z0 to z1 only; or, with side: [xa, xb], along the side only. Each
+// part [u0, u1, colour, lamp] covers that share of the path, between heights yb(u) and yt(u),
+// lifted off the surface. Both sides (lamp 'ind': each side's indicator), or one with mirror false.
+function wrap (st, f, o, parts, lift, out, mirror = true) {
+  const E = st[f > 0 ? st.length - 1 : 0].x
+  const yb = u => lerp(o.yb[0], o.yb[1], u),
+    yt = u => lerp(o.yt[0], o.yt[1], u)
+  const ym = (yb(0.5) + yt(0.5)) / 2
+  const nodes = []
+  if (o.side)
+    for (const x of between(st, o.side[0], o.side[1]))
+      nodes.push(sideNode(st, x))
+  else {
+    nodes.push({ x: E, z: () => o.z0 })
+    if (o.z1 !== undefined) nodes.push({ x: E, z: () => o.z1 })
+    else {
+      nodes.push(sideNode(st, E))
+      for (const x of between(st, E, E - f * o.d).slice(1))
+        nodes.push(sideNode(st, x))
+    }
   }
-  g.setAttribute('aLamp', new THREE.BufferAttribute(tags, 1))
-  return g
+  const s = [0]
+  for (let i = 1; i < nodes.length; i++)
+    s.push(
+      s[i - 1] +
+        Math.hypot(
+          nodes[i].x - nodes[i - 1].x,
+          nodes[i].z(ym) - nodes[i - 1].z(ym)
+        )
+    )
+  const total = s[s.length - 1] || 1
+  // a column of the strip at u: where it is, and which way is out (in plan)
+  const column = u => {
+    const at = u * total
+    let i = 0
+    while (i < nodes.length - 2 && s[i + 1] < at) i++
+    const a = nodes[i],
+      b = nodes[i + 1]
+    const t = Math.min(1, Math.max(0, (at - s[i]) / (s[i + 1] - s[i] || 1)))
+    const tx = b.x - a.x,
+      tz = b.z(ym) - a.z(ym),
+      l = Math.hypot(tx, tz) || 1
+    // (round the corner the path turns; on the face it points straight out)
+    let nx = (f * tz) / l,
+      nz = (-f * tx) / l
+    if (o.side) {
+      nx = 0
+      nz = 1
+    }
+    const x = lerp(a.x, b.x, t)
+    const z = y => lerp(a.z(y), b.z(y), t)
+    return { x, z, nx, nz }
+  }
+  const us = s.map(v => v / total)
+  for (const [u0, u1, color, lamp] of parts) {
+    const cols = [
+      u0,
+      ...us.filter(u => u > u0 + 1e-4 && u < u1 - 1e-4),
+      u1
+    ].map(u => ({ u, ...column(u) }))
+    for (const side of mirror ? [1, -1] : [1]) {
+      const pos = [],
+        nrm = []
+      for (const c of cols)
+        for (const y of [yb(c.u), yt(c.u)]) {
+          pos.push(c.x + c.nx * lift, y, side * (c.z(y) + c.nz * lift))
+          nrm.push(c.nx, 0, side * c.nz)
+        }
+      const idx = []
+      for (let i = 0; i < cols.length - 1; i++) {
+        const a = i * 2,
+          b = a + 1,
+          c = a + 2,
+          d = a + 3
+        idx.push(...facing(pos, nrm, a, c, b), ...facing(pos, nrm, c, d, b))
+      }
+      const g = new THREE.BufferGeometry()
+      g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3))
+      g.setAttribute('normal', new THREE.Float32BufferAttribute(nrm, 3))
+      g.setIndex(idx)
+      const tag = lamp === 'ind' ? (side > 0 ? LAMP.right : LAMP.left) : lamp
+      out.push(paint(g, color ?? LENS[tag], tag))
+    }
+  }
+}
+const sideNode = (st, x) => ({ x, z: y => sideAt(st, x, y) })
+// x from a to b, with every station in between
+function between (st, a, b) {
+  const lo = Math.min(a, b),
+    hi = Math.max(a, b)
+  const xs = st.map(p => p.x).filter(x => x > lo + 1e-4 && x < hi - 1e-4)
+  return [a, ...(a < b ? xs : xs.reverse()), b]
+}
+// a triangle wound to face along the vertices' normal
+function facing (pos, nrm, a, b, c) {
+  const v = k => [pos[k * 3], pos[k * 3 + 1], pos[k * 3 + 2]]
+  const A = v(a),
+    B = v(b),
+    C = v(c)
+  const u = [B[0] - A[0], B[1] - A[1], B[2] - A[2]],
+    w = [C[0] - A[0], C[1] - A[1], C[2] - A[2]]
+  const n = [
+    u[1] * w[2] - u[2] * w[1],
+    u[2] * w[0] - u[0] * w[2],
+    u[0] * w[1] - u[1] * w[0]
+  ]
+  const d = n[0] * nrm[a * 3] + n[1] * nrm[a * 3 + 1] + n[2] * nrm[a * 3 + 2]
+  return d >= 0 ? [a, b, c] : [a, c, b]
 }
 
-// a body material that cuts the arches: anything outboard of the wheel wells within reach of a
-// wheel is discarded, so the wheels show in open arches
-function archMaterial (base, arch) {
+// A flat piece lying on the body's top between xa and xb along its middle (z from -w to w): the
+// high stop lamp at the top of a rear window
+function onTop (B, xa, xb, w, lift, color, lamp) {
+  const ya = B.top(xa),
+    yb = B.top(xb)
+  const dx = xb - xa,
+    dy = yb - ya,
+    l = Math.hypot(dx, dy)
+  // (lifted along the surface's normal, up and out)
+  let nx = dy / l,
+    ny = -dx / l
+  if (ny < 0) {
+    nx = -nx
+    ny = -ny
+  }
+  const pos = [],
+    nrm = []
+  for (const [x, y] of [
+    [xa, ya],
+    [xb, yb]
+  ])
+    for (const z of [-w, w]) {
+      pos.push(x + nx * lift, y + ny * lift, z)
+      nrm.push(nx, ny, 0)
+    }
+  const g = new THREE.BufferGeometry()
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3))
+  g.setAttribute('normal', new THREE.Float32BufferAttribute(nrm, 3))
+  g.setIndex([...facing(pos, nrm, 0, 1, 2), ...facing(pos, nrm, 1, 3, 2)])
+  return paint(g, color, lamp)
+}
+__export(__exports, { "LAMP": () => LAMP, "LENS": () => LENS, "BLACK": () => BLACK, "GLOSS": () => GLOSS, "CHROME": () => CHROME, "paint": () => paint, "box": () => box, "rounded": () => rounded, "piece": () => piece, "band": () => band, "across": () => across, "wrap": () => wrap, "onTop": () => onTop })
+})
+
+// ---- js/render/carLamps.js
+__define(94, function (__exports) {
+// The traffic's lamps, part of each type's trim (carShapes.js), the way today's cars have them:
+// slim headlight units that wrap round the corners of the nose, a dark housing behind a clear lens
+// with a running-light strip along the top and the indicator at the outer end; tail lights that wrap
+// round the corners of the tail, with the indicator outboard and the reversing lamp inboard, joined
+// on some by a light bar across the back; a high stop lamp; the amber and red side markers American
+// cars carry at their corners; a cab's roof sign, a bus's route board and a police light bar. Each
+// lens is its own coloured glass (a tail light reads red by day, unlit), tagged with what it is
+// (aLamp, carParts.js), and lit per car from one attribute (aLit: headlights, tail lights, braking,
+// and flags for the indicators, reversing, the route board, the running lights and the light bar,
+// with the bar's phase in the flags' fraction), so lighting them all costs nothing beyond the
+// trim's draw. The tags also mark the trim's chrome and gloss black, which the same material gives
+// their shine.
+const { LAMP, LENS, wrap, piece, rounded, onTop } = __require(93)
+
+const HOUSING = 0x0c0d0f
+
+// Per type: head and tail, each { z0: where it starts on the end face, d: how far round the side
+// it reaches (m from the end; 0 for a lamp on the face only, out to z1), yb, yt: its bottom and top
+// at the inner and outer ends }; bar: a light bar across the tail [bottom, top]; mark: the side
+// markers' height; stop: the high stop lamp, on the top of the rear window ('glass') or on the
+// back at a height
+// prettier-ignore
+const STYLE = {
+  sedan: {
+    head: { z0: 0.34, d: 0.42, yb: [0.665, 0.715], yt: [0.73, 0.762] },
+    tail: { z0: 0.3, d: 0.3, yb: [0.872, 0.872], yt: [0.95, 0.94] },
+    bar: [0.9, 0.922], mark: 0.56, stop: 'glass'
+  },
+  hatch: {
+    head: { z0: 0.32, d: 0.4, yb: [0.665, 0.71], yt: [0.735, 0.762] },
+    tail: { z0: 0.38, d: 0.26, yb: [0.86, 0.88], yt: [0.985, 0.97] },
+    mark: 0.56, stop: 'glass'
+  },
+  suv: {
+    head: { z0: 0.4, d: 0.42, yb: [0.835, 0.885], yt: [0.9, 0.935] },
+    tail: { z0: 0.44, d: 0.26, yb: [1.0, 1.02], yt: [1.09, 1.1] },
+    bar: [1.045, 1.065], mark: 0.68, stop: 'glass'
+  },
+  taxi: {
+    head: { z0: 0.3, d: 0.52, yb: [0.6, 0.665], yt: [0.655, 0.715] },
+    tail: { z0: 0.42, d: 0.3, yb: [0.84, 0.9], yt: [0.975, 0.99] },
+    mark: 0.52, stop: 'glass'
+  },
+  pickup: {
+    head: { z0: 0.5, d: 0.2, yb: [0.98, 1.0], yt: [1.15, 1.15] },
+    tail: { z0: 0.83, d: 0.05, yb: [0.84, 0.84], yt: [1.22, 1.22] },
+    mark: 0.85, stop: 'glass'
+  },
+  van: {
+    head: { z0: 0.55, d: 0.32, yb: [0.8, 0.95], yt: [0.98, 1.08] },
+    tail: { z0: 0.84, d: 0.04, yb: [0.56, 0.56], yt: [1.3, 1.3] },
+    mark: 0.7, stop: 2.62
+  },
+  bus: {
+    head: { z0: 0.82, z1: 1.12, d: 0, yb: [0.48, 0.48], yt: [0.6, 0.6] },
+    tail: { z0: 0.86, z1: 1.13, d: 0, yb: [0.6, 0.6], yt: [1.0, 1.0] },
+    mark: 0.7, stop: 2.92
+  },
+  police: {
+    head: { z0: 0.42, d: 0.42, yb: [0.835, 0.885], yt: [0.9, 0.935] },
+    tail: { z0: 0.46, d: 0.26, yb: [1.0, 1.02], yt: [1.09, 1.1] },
+    mark: 0.68, stop: 'glass'
+  },
+  sports: {
+    head: { z0: 0.36, d: 0.46, yb: [0.545, 0.6], yt: [0.6, 0.64] },
+    tail: { z0: 0.5, d: 0.34, yb: [0.815, 0.835], yt: [0.86, 0.875] },
+    bar: [0.83, 0.85], mark: 0.45, stop: 'glass'
+  }
+}
+
+// (a lamp's outline let out by k all round: its housing)
+const grow = (o, k) => ({
+  ...o,
+  yb: o.yb.map(y => y - k),
+  yt: o.yt.map(y => y + k),
+  z0: o.z0 - (o.z1 !== undefined ? k : 0),
+  z1: o.z1 !== undefined ? o.z1 + k : undefined
+})
+
+// The lamps for type T on its body (stations st, lines B)
+function lampsFor (T, B, st) {
+  const S = STYLE[T.name],
+    out = []
+  const { head, tail } = S
+  const L = B.L
+  // headlights: a dark housing, the lens, the running light along its top, the indicator outboard
+  const ind = head.d ? 0.84 : 0.8
+  wrap(st, 1, grow(head, 0.014), [[0, 1, HOUSING, LAMP.none]], 0.004, out)
+  // prettier-ignore
+  wrap(st, 1, head, [[0, ind, null, LAMP.head], [ind, 1, null, 'ind']], 0.008, out)
+  const drl = {
+    ...head,
+    yb: head.yt.map(y => y - 0.016),
+    yt: head.yt.map(y => y - 0.004)
+  }
+  wrap(st, 1, drl, [[0.02, ind - 0.02, null, LAMP.drl]], 0.011, out)
+  // tail lights: the reversing lamp inboard, the red lamp, the indicator outboard
+  wrap(st, -1, grow(tail, 0.012), [[0, 1, HOUSING, LAMP.none]], 0.004, out)
+  // prettier-ignore
+  wrap(st, -1, tail, [[0, 0.2, null, LAMP.reverse], [0.2, 0.8, null, LAMP.tail], [0.8, 1, null, 'ind']], 0.008, out)
+  // a light bar across the back, between them
+  if (S.bar) {
+    const [y0, y1] = S.bar
+    const o = { z0: -tail.z0, z1: tail.z0, d: 0, yb: [y0, y0], yt: [y1, y1] }
+    // prettier-ignore
+    wrap(st, -1, grow(o, 0.008), [[0, 1, HOUSING, LAMP.none]], 0.004, out, false)
+    wrap(st, -1, o, [[0, 1, null, LAMP.tail]], 0.008, out, false)
+  }
+  // side markers: amber at the front corners, red at the back
+  const m = S.mark
+  // prettier-ignore
+  wrap(st, 1, { side: [L - 0.3, L - 0.18], yb: [m, m], yt: [m + 0.035, m + 0.035] }, [[0, 1, null, LAMP.markFront]], 0.005, out)
+  // prettier-ignore
+  wrap(st, -1, { side: [-L + 0.16, -L + 0.28], yb: [m + 0.25, m + 0.25], yt: [m + 0.285, m + 0.285] }, [[0, 1, null, LAMP.markRear]], 0.005, out)
+  // the high stop lamp: at the top of the rear window, or high on the back
+  const stop = LENS[LAMP.stop]
+  if (S.stop === 'glass') {
+    // (a strip 4.5 cm deep down the glass, however steep it is)
+    const x0 = B.rr - 0.03
+    let x1 = x0
+    while (x1 > B.rw && Math.hypot(x0 - x1, B.top(x0) - B.top(x1)) < 0.045)
+      x1 -= 0.002
+    out.push(onTop(B, x0, x1, 0.16, 0.012, stop, LAMP.stop))
+  } else {
+    const g = rounded(0.36, 0.04, 0.015)
+    out.push(piece(g, 'x-', -L - 0.01, S.stop, 0, stop, LAMP.stop))
+  }
+  if (T.name === 'bus') {
+    // the route board over the windscreen, and the route number at the back
+    const route = LENS[LAMP.route]
+    const front = rounded(1.7, 0.24, 0.02),
+      back = rounded(0.5, 0.2, 0.02)
+    out.push(piece(front, 'x+', B.rf + 0.03, 2.78, 0, route, LAMP.route))
+    out.push(piece(back, 'x-', -L - 0.012, 2.75, 0, route, LAMP.route))
+  }
+  return out
+}
+
+// The trim's material, lit where its lamps are: aLit per car (x headlights, y tail lights, z
+// braking, w flags: 1 left indicator, 2 right, 4 reversing, 8 route board lit, 16 running lights,
+// 32 the light bar flashing, and the bar's phase in the fraction). Lenses are glassy; chrome
+// shines and gloss black is glossy.
+const LAMP_T = { value: 0 } // (the traffic's clock, for the light bars)
+const GLOW = `
+  attribute float aLamp;
+  attribute vec4 aLit;
+  uniform float uLampT;
+  varying vec3 vGlow;
+  varying float vTag;
+`
+function lampMaterial (base) {
   const m = base.clone()
-  const [a0, a1] = arch.axles.map(a => a.toFixed(3))
   m.onBeforeCompile = shader => {
+    shader.uniforms.uLampT = LAMP_T
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vCarPos;')
+      .replace('#include <common>', '#include <common>\n' + GLOW)
       .replace(
         '#include <begin_vertex>',
-        '#include <begin_vertex>\nvCarPos = position;'
+        `#include <begin_vertex>
+        {
+          int lamp = int(aLamp + 0.5), flags = int(floor(aLit.w));
+          vec3 g = vec3(0.0);
+          if (lamp == 1) g = vec3(1.0, 0.96, 0.9) * aLit.x;
+          else if (lamp == 2) g = vec3(1.0, 0.04, 0.03) * (aLit.y + 3.6 * aLit.z);
+          else if (lamp == 3) g = vec3(1.0, 0.04, 0.03) * 4.0 * aLit.z;
+          else if (lamp == 4) g = vec3(1.0, 0.42, 0.04) * ((flags & 1) != 0 ? 3.2 : 0.0);
+          else if (lamp == 5) g = vec3(1.0, 0.42, 0.04) * ((flags & 2) != 0 ? 3.2 : 0.0);
+          else if (lamp == 6) g = vec3(1.0, 1.0, 0.96) * ((flags & 4) != 0 ? 2.4 : 0.0);
+          else if (lamp == 7) g = vec3(1.0, 0.55, 0.08) * ((flags & 8) != 0 ? 2.2 : 0.0);
+          else if (lamp == 8) g = vec3(1.0, 0.86, 0.45) * (0.08 + 0.3 * aLit.x);
+          else if (lamp == 9) g = vec3(0.92, 0.96, 1.0) * ((flags & 16) != 0 ? 1.8 : 0.0);
+          else if (lamp == 10 || lamp == 11) {
+            // the light bar: red and blue by turns, each a double flash
+            float q = fract(uLampT * 1.5 + fract(aLit.w));
+            float on = (flags & 32) != 0 ? 1.0 : 0.0;
+            if (lamp == 10) g = vec3(1.0, 0.03, 0.02) * 7.0 * on * (step(q, 0.1) + step(0.18, q) * step(q, 0.28));
+            else g = vec3(0.08, 0.22, 1.0) * 9.0 * on * (step(0.5, q) * step(q, 0.6) + step(0.68, q) * step(q, 0.78));
+          }
+          else if (lamp == 12) g = vec3(1.0, 0.45, 0.05) * 0.5 * aLit.x;
+          else if (lamp == 13) g = vec3(1.0, 0.04, 0.03) * aLit.y;
+          vGlow = g;
+          vTag = aLamp;
+        }`
       )
-    const f = v => v.toFixed(3)
     shader.fragmentShader = shader.fragmentShader
       .replace(
         '#include <common>',
-        '#include <common>\nvarying vec3 vCarPos;\nbool carDark;'
+        '#include <common>\nvarying vec3 vGlow;\nvarying float vTag;'
+      )
+      .replace(
+        '#include <roughnessmap_fragment>',
+        `#include <roughnessmap_fragment>
+        if (vTag > 0.5 && vTag < 13.5) roughnessFactor = 0.12;
+        else if (vTag > 19.5 && vTag < 20.5) roughnessFactor = 0.16;
+        else if (vTag > 20.5) roughnessFactor = 0.2;`
+      )
+      .replace(
+        '#include <metalnessmap_fragment>',
+        `#include <metalnessmap_fragment>
+        if (vTag > 19.5 && vTag < 20.5) metalnessFactor = 1.0;`
+      )
+      .replace(
+        '#include <emissivemap_fragment>',
+        '#include <emissivemap_fragment>\ntotalEmissiveRadiance += vGlow;'
+      )
+  }
+  m.customProgramCacheKey = () => 'traffic lamps'
+  return m
+}
+__export(__exports, { "lampsFor": () => lampsFor, "LAMP_T": () => LAMP_T, "lampMaterial": () => lampMaterial, "LAMP": () => LAMP, "LENS": () => LENS })
+})
+
+// ---- js/render/carExtras.js
+__define(95, function (__exports) {
+// What makes each traffic type itself, on top of its trim (carTrim.js): an SUV's roof rails, a shark
+// fin aerial on the cars, a pickup's open bed, chrome bumpers and step, a van's and a bus's black
+// bumpers, a van's split back doors, a bus's glass doors, the fairing over the gas tanks on its roof,
+// its engine grille and the bike rack folded up on its nose, a cab's lit roof sign, a police car's
+// light bar (red on the driver's side, blue on the other), push bar and spotlight, and a sports
+// car's quad exhausts.
+const THREE = __require(0)
+const { lerp, sideAt } = __require(92)
+const { LAMP, LENS, BLACK, GLOSS, CHROME, box, piece, rounded } = __require(93)
+const LINER = 0x18191b
+
+// put(geometry, colour, lamp tag) adds a trim piece; glass: pieces of glass
+function extras (T, B, st, put, glass) {
+  const { L, W } = B
+  const name = T.name
+  if (name === 'suv') {
+    // roof rails, on feet
+    const y = lerp(B.railY(0), B.top(0), B.edgeUp)
+    const z = B.roofW - B.edgeIn * 0.6
+    for (const s of [-1, 1]) {
+      put(
+        box(
+          B.dTop + 0.1,
+          y + 0.035,
+          s * z - 0.018,
+          B.rf - 0.1,
+          y + 0.062,
+          s * z + 0.018
+        ),
+        GLOSS,
+        LAMP.gloss
+      )
+      for (const x of [B.dTop + 0.12, B.rf - 0.14])
+        put(
+          box(
+            x - 0.04,
+            y - 0.01,
+            s * z - 0.02,
+            x + 0.04,
+            y + 0.04,
+            s * z + 0.02
+          ),
+          GLOSS,
+          LAMP.gloss
+        )
+    }
+  }
+  if (name !== 'bus' && name !== 'van' && name !== 'pickup') {
+    // the shark fin aerial
+    const x = Math.max(B.rr, B.dTop) + 0.18,
+      y = B.top(x)
+    const fin = new THREE.ConeGeometry(0.035, 0.12, 4)
+      .rotateZ(Math.PI / 2)
+      .scale(1, 0.5, 0.7)
+      .translate(x, y + 0.025, 0)
+    put(fin, GLOSS, LAMP.gloss)
+  }
+  if (name === 'pickup') pickup(B, put)
+  if (name === 'van' || name === 'bus') {
+    // black bumpers
+    const y = B.bot(L) + 0.02
+    put(box(L - 0.1, y, -W * 0.86, L + 0.07, y + 0.22, W * 0.86), 0x1b1c1f)
+    put(
+      box(-L - 0.07, y + 0.04, -W * 0.9, -L + 0.08, y + 0.26, W * 0.9),
+      0x1b1c1f
+    )
+  }
+  if (name === 'van') {
+    // the back doors, split down the middle, with their windows
+    for (const s of [-1, 1])
+      glass.push(
+        box(
+          -L - 0.006,
+          1.45,
+          s > 0 ? 0.06 : -(W - 0.22),
+          -L + 0.004,
+          2.25,
+          s > 0 ? W - 0.22 : -0.06
+        )
+      )
+    const split = rounded(0.012, 2.0, 0.004, 1),
+      foot = rounded(1.6, 0.01, 0.004, 1)
+    put(piece(split, 'x-', -L - 0.004, 1.55, 0, 0x070809))
+    put(piece(foot, 'x-', -L - 0.004, 0.56, 0, 0x070809))
+  }
+  if (name === 'bus') bus(B, put, glass)
+  if (name === 'taxi') {
+    // the roof sign: lit front and back
+    const x = -0.32,
+      y = B.top(x)
+    put(box(x - 0.11, y - 0.01, -0.29, x + 0.11, y + 0.025, 0.29), BLACK)
+    put(
+      box(x - 0.09, y + 0.025, -0.27, x + 0.09, y + 0.165, 0.27),
+      LENS[LAMP.taxi],
+      LAMP.taxi
+    )
+    put(box(x - 0.095, y + 0.15, -0.275, x + 0.095, y + 0.175, 0.275), 0xf2b705)
+  }
+  if (name === 'police') police(B, st, put)
+  if (name === 'sports')
+    // twin exhausts each side, under the tail
+    for (const s of [-1, 1])
+      for (const z of [0.42, 0.52]) {
+        const pipe = new THREE.CylinderGeometry(0.038, 0.038, 0.12, 10, 1, true)
+          .rotateZ(Math.PI / 2)
+          .translate(-L + 0.03, 0.3, s * z)
+        put(pipe, CHROME, LAMP.chrome)
+      }
+}
+
+// a pickup's open bed (black liner, rail caps), a step bumper and a chrome front bumper
+function pickup (B, put) {
+  const { L, W } = B
+  const f = B.bedFloor,
+    x0 = -L + 0.05,
+    x1 = B.rw - 0.02,
+    zi = W - 0.14
+  const rail = B.belt(-1.8)
+  put(box(x0, f - 0.04, -zi, x1, f, zi), LINER)
+  for (const s of [-1, 1]) {
+    put(
+      box(
+        x0,
+        f,
+        s > 0 ? zi - 0.02 : -zi,
+        x1,
+        rail - 0.005,
+        s > 0 ? zi : -zi + 0.02
+      ),
+      LINER
+    )
+    put(
+      box(
+        x0 - 0.02,
+        rail - 0.01,
+        s > 0 ? zi - 0.025 : -(W - 0.075),
+        x1,
+        rail + 0.022,
+        s > 0 ? W - 0.075 : -zi + 0.025
+      ),
+      0x101113
+    )
+  }
+  put(box(x1 - 0.03, f, -zi, x1, B.top(B.rw) - 0.01, zi), LINER)
+  put(box(x0, f, -zi, x0 + 0.03, rail - 0.005, zi), LINER)
+  put(
+    box(L - 0.12, 0.4, -W * 0.8, L + 0.07, 0.64, W * 0.8),
+    CHROME,
+    LAMP.chrome
+  )
+  put(
+    box(-L - 0.08, 0.46, -W * 0.86, -L + 0.06, 0.66, W * 0.86),
+    CHROME,
+    LAMP.chrome
+  )
+  put(box(-L - 0.1, 0.62, -0.25, -L + 0.02, 0.665, 0.25), 0x1b1c1f)
+}
+
+// a city bus: its doors (glass panels framed in black, on the kerb side), the fairing over the gas
+// tanks on its roof, the engine's grille low on its back, and the bike rack folded up on its nose
+function bus (B, put, glass) {
+  const { L, W } = B
+  for (const [x0, x1] of [
+    [4.45, 5.4],
+    [-0.15, 1.05]
+  ]) {
+    const xm = (x0 + x1) / 2
+    glass.push(box(x0, 0.36, W - 0.01, x1, 2.42, W + 0.01))
+    put(box(x0 - 0.04, 0.34, W - 0.012, x0, 2.44, W + 0.014), BLACK)
+    put(box(x1, 0.34, W - 0.012, x1 + 0.04, 2.44, W + 0.014), BLACK)
+    put(box(xm - 0.02, 0.34, W - 0.012, xm + 0.02, 2.44, W + 0.014), BLACK)
+    put(box(x0, 2.42, W - 0.012, x1, 2.46, W + 0.014), BLACK)
+  }
+  put(box(-1.3, 3.0, -0.98, 4.6, 3.3, 0.98), 0xe6e8e8)
+  put(box(4.6, 3.0, -0.92, 4.9, 3.2, 0.92), 0xe6e8e8)
+  put(piece(rounded(1.5, 0.5, 0.04), 'x-', -L - 0.006, 0.95, 0, 0x101113))
+  for (const y of [0.8, 0.9, 1.0, 1.1]) {
+    const slat = rounded(1.42, 0.025, 0.01, 1)
+    put(piece(slat, 'x-', -L - 0.01, y, 0, 0x2a2c30))
+  }
+  for (const z of [-0.42, 0.42])
+    put(box(L + 0.02, 0.45, z - 0.02, L + 0.06, 1.0, z + 0.02), 0x1a1b1d)
+  put(box(L + 0.02, 0.96, -0.44, L + 0.06, 1.0, 0.44), 0x1a1b1d)
+  put(box(L + 0.02, 0.45, -0.5, L + 0.12, 0.5, 0.5), 0x1a1b1d)
+}
+
+// a police car's light bar (red on the driver's side, blue on the other), push bar and spotlight
+function police (B, st, put) {
+  const x = 0.0,
+    y = B.top(x) + 0.03
+  put(box(x - 0.13, y - 0.035, -0.5, x + 0.13, y, 0.5), BLACK)
+  const red = box(x - 0.11, y, -0.62, x + 0.11, y + 0.075, -0.06),
+    blue = box(x - 0.11, y, 0.06, x + 0.11, y + 0.075, 0.62)
+  put(red, LENS[LAMP.barRed], LAMP.barRed)
+  put(blue, LENS[LAMP.barBlue], LAMP.barBlue)
+  put(box(x - 0.1, y, -0.06, x + 0.1, y + 0.07, 0.06), 0xd8dadc)
+  const { L } = B
+  for (const z of [-0.3, 0.3])
+    put(box(L + 0.04, 0.42, z - 0.025, L + 0.1, 0.92, z + 0.025), 0x0b0b0c)
+  for (const y0 of [0.5, 0.86])
+    put(box(L + 0.06, y0, -0.36, L + 0.11, y0 + 0.05, 0.36), 0x0b0b0c)
+  const sx = B.ws - 0.08,
+    sy = B.belt(sx)
+  const lamp = new THREE.CylinderGeometry(0.05, 0.05, 0.1, 8)
+    .rotateZ(Math.PI / 2)
+    .translate(sx, sy + 0.09, -(sideAt(st, sx, sy - 0.02) + 0.02))
+  put(lamp, CHROME, LAMP.chrome)
+}
+__export(__exports, { "extras": () => extras })
+})
+
+// ---- js/render/carTrim.js
+__define(96, function (__exports) {
+// The trim on the traffic's bodies (carShapes.js), in vertex colours (carParts.js): the black round
+// the glass (the window surrounds, the pillars, the frit at the edges of the windscreen and rear
+// window, the cowl and its wipers), the doors' shut lines and flush handles, wing mirrors on the
+// doors with their indicators, dark wheel wells, grilles and intakes, the bumpers' shut lines,
+// California plates front and back, and each type's own pieces (carExtras.js). Chrome and gloss
+// black are tagged for the trim's material (carLamps.js) to give them their shine.
+const THREE = __require(0)
+const { at } = __require(43)
+const { P, sideAt, lerp } = __require(92)
+const { LAMP, LENS, BLACK, GLOSS, CHROME, paint, box, piece, rounded, wrap, band, across } = __require(93)
+const { extras } = __require(95)
+// The trim of type T on its body (lines B, stations st); paint_ and glass: body-coloured pieces and
+// glass go in them
+function trimFor (T, B, st, paint_, glass) {
+  const out = []
+  // (a piece already coloured goes in as it is)
+  const put = (g, c, lamp = LAMP.none) =>
+    out.push(c === undefined ? g : paint(g, c, lamp))
+  const name = T.name
+  const g0 = Math.max(B.glass[0], B.cp),
+    g1 = B.glass[1]
+  // round the side windows: gloss black along their tops and the backs of them, a slim strip along
+  // their feet, and the black pillars between them
+  if (g1 > g0) {
+    put(band(st, P.rail, P.belt, g0, g1, 0.035), GLOSS, LAMP.gloss)
+    put(band(st, P.belt, P.rail, g0 + 0.02, g1, 0.02, 0.003), GLOSS, LAMP.gloss)
+  }
+  for (const x of B.pillars || [])
+    put(across(st, x, P.belt, P.rail, 0.09), GLOSS, LAMP.gloss)
+  // the windscreen's black frit up its sides and along its top, the cowl at its foot
+  if (B.ws - B.rf > 0.05 && name !== 'bus') {
+    put(band(st, P.rail, P.edge, B.rf, B.ws, 0.05, 0.003), BLACK)
+    put(across(st, B.rf + 0.02, P.rail, P.crown, 0.05, 0.003), BLACK)
+    put(across(st, B.ws - 0.02, P.belt, P.crown, 0.05, 0.004), BLACK)
+    wipers(B, st, put)
+  }
+  // and round the rear window
+  if (B.rr - B.rw > 0.05) {
+    put(band(st, P.edge, P.crown, B.rw, B.rr, 0.045, 0.003), BLACK)
+    put(across(st, B.rr - 0.02, P.edge, P.crown, 0.04, 0.003), BLACK)
+    put(across(st, B.rw + 0.02, P.edge, P.crown, 0.04, 0.003), BLACK)
+  }
+  // the doors' shut lines, from the sill (over an arch, from above it) to the beltline
+  const overArch = x => B.axles.some(a => Math.abs(x - a) < B.r + 0.12)
+  for (const x of B.doors) {
+    const k0 = overArch(x) ? P.crease : P.sill
+    put(across(st, x, k0, P.belt, 0.009, 0.002), 0x08090b)
+  }
+  // flush door handles, just under the shoulder (a police car's black, the rest chrome)
+  const handle = name === 'police' ? [GLOSS, LAMP.gloss] : [CHROME, LAMP.chrome]
+  if (name !== 'bus')
+    for (let i = 0; i + 1 < B.doors.length && i < 2; i++) {
+      const x = B.doors[i] - 0.14,
+        y = B.belt(x) - 0.12
+      const o = { side: [x - 0.16, x], yb: [y, y], yt: [y + 0.022, y + 0.022] }
+      wrap(st, 1, o, [[0, 1, ...handle]], 0.004, out)
+    }
+  mirrors(B, st, put, paint_)
+  wells(B, put)
+  faces(T, B, st, put, out)
+  extras(T, B, st, put, glass)
+  return out
+}
+
+// wing mirrors on the doors: a housing in the body colour (into paint), rounded in front and flat
+// behind, on a black arm, the glass facing back, an indicator along its outer edge; a bus's and a
+// van's are big rectangles out on their arms
+function mirrors (B, st, put, paint_) {
+  const mx = B.mirror
+  const big = B.name === 'van' ? 1.35 : 1
+  for (const s of [-1, 1]) {
+    const zw = sideAt(st, mx, B.belt(mx) - 0.02)
+    if (B.name === 'bus') {
+      const z = s * (B.W + 0.32)
+      const z0 = s > 0 ? B.W - 0.05 : -B.W - 0.3,
+        z1 = s > 0 ? B.W + 0.3 : -B.W + 0.05
+      put(box(mx - 0.03, 2.55, z0, mx + 0.03, 2.6, z1), BLACK)
+      put(box(mx - 0.05, 1.95, z - 0.12, mx + 0.04, 2.55, z + 0.12), BLACK)
+      put(box(mx - 0.058, 1.98, z - 0.1, mx - 0.05, 2.52, z + 0.1), 0x1a2632)
+      continue
+    }
+    const my = B.belt(mx) + 0.07 * big,
+      zc = zw + 0.13 * big
+    const cap = new THREE.SphereGeometry(1, 6, 4, Math.PI / 2, Math.PI)
+      .scale(0.075 * big, 0.072 * big, 0.125 * big)
+      .translate(mx - 0.035 * big, my, s * zc)
+    paint_.push(cap)
+    const a0 = s > 0 ? zw - 0.02 : -zc,
+      a1 = s > 0 ? zc : -zw + 0.02
+    const arm = box(
+      mx - 0.035,
+      my - 0.055 * big,
+      a0,
+      mx + 0.025,
+      my - 0.025 * big,
+      a1
+    )
+    put(arm, GLOSS, LAMP.gloss)
+    const frame = rounded(0.23 * big, 0.12 * big, 0.04),
+      mirror = rounded(0.2 * big, 0.1 * big, 0.035)
+    put(piece(frame, 'x-', mx - 0.037 * big, my, s * zc, 0x0a0c0e))
+    put(piece(mirror, 'x-', mx - 0.04 * big, my, s * zc, 0x2a3a48))
+    const zi = s * (zc + 0.105 * big),
+      ind = s > 0 ? LAMP.right : LAMP.left
+    const strip = box(
+      mx - 0.03,
+      my - 0.03,
+      zi - 0.012,
+      mx + 0.025,
+      my - 0.012,
+      zi + 0.012
+    )
+    put(strip, LENS[ind], ind)
+  }
+}
+
+// the wheel wells: an inner wall and a dark roof over each wheel
+function wells (B, put) {
+  const r = B.r + 0.045,
+    inner = B.track - B.tyre / 2 - 0.05
+  for (const s of [-1, 1])
+    for (const ax of B.axles) {
+      const wall = new THREE.CircleGeometry(r, 10, 0, Math.PI)
+      put(wall.translate(ax, B.r, s * inner), BLACK)
+      const arc = new THREE.CylinderGeometry(
+        r,
+        r,
+        B.W - inner + 0.02,
+        10,
+        1,
+        true,
+        Math.PI * 0.5,
+        Math.PI
+      )
+        .rotateX(Math.PI / 2)
+        .translate(ax, B.r, (s * (inner + B.W)) / 2)
+      put(arc, BLACK)
+    }
+}
+
+// the windscreen wipers, parked along the foot of the glass: each a blade lying on it
+function wipers (B, st, put) {
+  const x = B.ws - 0.06
+  const y = z => {
+    // (the glass's height across at x)
+    let prev = at(st, x, P.crown)
+    for (let k = P.crown - 1; k >= P.belt; k--) {
+      const p = at(st, x, k)
+      if (z <= p[0])
+        return lerp(prev[1], p[1], (z - prev[0]) / (p[0] - prev[0] || 1))
+      prev = p
+    }
+    return prev[1]
+  }
+  for (const [z0, z1] of [
+    [-0.5, -0.04],
+    [0.06, 0.48]
+  ]) {
+    const zm = (z0 + z1) / 2
+    const blade = new THREE.BoxGeometry(0.024, 0.014, z1 - z0)
+      .rotateX(-Math.atan2(y(z1) - y(z0), z1 - z0))
+      .translate(x, y(zm) + 0.012, zm)
+    put(blade, BLACK)
+  }
+}
+
+// What sits on the nose and the tail's faces: grilles ([bottom, top, half width]), intakes, plates
+// (their heights, front and back), the bumpers' shut lines (their heights, front and back)
+// prettier-ignore
+const FACE = {
+  sedan: { grille: [0.62, 0.66, 0.3], intake: [0.36, 0.56, 0.5], plate: [0.46, 0.62], lines: [0.6, 0.835] },
+  hatch: { grille: [0.6, 0.66, 0.28], intake: [0.36, 0.56, 0.48], plate: [0.46, 0.64], lines: [0.6, 0.82] },
+  suv: { grille: [0.62, 0.82, 0.38], intake: [0.48, 0.6, 0.5], plate: [0.66, 0.78], lines: [0.8, 0.96] },
+  taxi: { intake: [0.32, 0.5, 0.5], plate: [0.42, 0.66], lines: [0.55, 0.8] },
+  pickup: { grille: [0.68, 1.13, 0.48], chrome: true, plate: [0.52, 0.94] },
+  van: { grille: [0.66, 0.94, 0.42], plate: [0.5, 0.86] },
+  bus: { plate: [0.6, 1.32] },
+  police: { grille: [0.62, 0.82, 0.38], intake: [0.48, 0.6, 0.5], plate: [0.66, 0.78], lines: [0.8, 0.96] },
+  sports: { intake: [0.26, 0.44, 0.62], plate: [0.4, 0.6], lines: [0.5, 0.78] }
+}
+function faces (T, B, st, put, out) {
+  const F = FACE[T.name],
+    { L } = B
+  if (F.lines) {
+    // the bumpers' shut lines across the nose and the tail, round the corners to the arches
+    const [f, r] = F.lines
+    const reach = [L - B.axles[0] - B.r - 0.09, L + B.axles[1] - B.r - 0.09]
+    for (const [e, y, d] of [
+      [1, f, reach[0]],
+      [-1, r, reach[1]]
+    ]) {
+      const o = { z0: 0, d, yb: [y, y], yt: [y + 0.008, y + 0.008] }
+      wrap(st, e, o, [[0, 1, 0x070809, LAMP.none]], 0.0025, out)
+    }
+  }
+  if (F.grille) {
+    const [y0, y1, w] = F.grille,
+      ym = (y0 + y1) / 2
+    const surround = F.chrome ? [CHROME, LAMP.chrome] : [GLOSS, LAMP.gloss]
+    const outer = rounded(w * 2 + 0.04, y1 - y0 + 0.04, 0.05)
+    put(piece(outer, 'x+', L + 0.003, ym, 0, ...surround))
+    put(piece(rounded(w * 2, y1 - y0, 0.04), 'x+', L + 0.006, ym, 0, 0x060707))
+    if (F.chrome)
+      for (const y of [0.85, 0.98]) {
+        const bar = rounded(w * 2 - 0.04, 0.035, 0.01, 1)
+        put(piece(bar, 'x+', L + 0.009, y, 0, CHROME, LAMP.chrome))
+      }
+  }
+  if (F.intake) {
+    const [y0, y1, w] = F.intake
+    const half = Math.min(w, sideAt(st, L, y1) - 0.08)
+    const g = rounded(half * 2, y1 - y0, 0.045)
+    put(piece(g, 'x+', L + 0.004, (y0 + y1) / 2, 0, 0x070808))
+  }
+  // California plates: white, the state's name in red across the top, the number in dark blue
+  const [pf, pr] = F.plate
+  for (const [x, y, face] of [
+    [L + 0.008, pf, 'x+'],
+    [-L - 0.008, pr, 'x-']
+  ]) {
+    const f = face === 'x+' ? 1 : -1
+    const frame = rounded(0.33, 0.175, 0.012),
+      plate = rounded(0.305, 0.152, 0.008)
+    const state = rounded(0.16, 0.022, 0.004, 1),
+      number = rounded(0.24, 0.055, 0.004, 1)
+    put(piece(frame, face, x, y, 0, BLACK))
+    put(piece(plate, face, x + f * 0.003, y, 0, 0xc4c5c0))
+    put(piece(state, face, x + f * 0.005, y + 0.048, 0, 0xb3242c))
+    put(piece(number, face, x + f * 0.005, y - 0.012, 0, 0x1c2a5c))
+  }
+}
+__export(__exports, { "trimFor": () => trimFor })
+})
+
+// ---- js/render/carShapes.js
+__define(97, function (__exports) {
+// The traffic's car shapes, one per type: the body lofted from its lines (carBody.js, the lines in
+// carSpecs.js), its glass, and its trim and lamps (carTrim.js, carLamps.js), as three geometries
+// (paint, glass, trim) drawn instanced per type (traffic.js). And the paint's material, which cuts
+// the wheel arches out of the body, darkens the plastic under the bumpers (and an SUV's sills and
+// arch flares), gives each car its own finish (a solid gloss or a metallic, under the clear coat,
+// and on some a black roof), and paints the liveries: a police car's white doors and roof, a cab's
+// checker band, a bus's white roof and dark skirt.
+const { SPECS } = __require(91)
+const { bodyLines, stationsOf, pieceOf, loftIx, mergeIx } = __require(92)
+const { lampsFor } = __require(94)
+const { LAMP, paint: tinted } = __require(93)
+const { trimFor } = __require(96)
+
+// the shape of type T (len, wid from the sim): geometries for the paint, glass and trim, what the
+// paint's material needs (arch), and the body's lines (S)
+function carShape (T) {
+  const B = bodyLines(SPECS[T.name], T)
+  const st = stationsOf(B)
+  const g = loftIx(st, pieceOf(B))
+  const paint = [g.get('paint')]
+  const glass = g.get('glass') ? [g.get('glass')] : []
+  const trim = trimFor(T, B, st, paint, glass)
+  if (g.get('dark')) trim.push(tinted(g.get('dark'), 0x060708, LAMP.gloss))
+  trim.push(...lampsFor(T, B, st))
+  const door = B.doors.length
+    ? [B.doors[B.doors.length - 1], B.doors[0]]
+    : [0, 0]
+  return {
+    paint: mergeIx(paint),
+    glass: mergeIx(glass),
+    trim: mergeIx(trim),
+    arch: {
+      name: T.name,
+      axles: B.axles,
+      r: B.r + 0.045,
+      y: B.r,
+      wellIn: B.track - B.tyre / 2 - 0.03,
+      L: B.L,
+      W: B.W,
+      // the dark plastic: a lip under the front bumper, a diffuser under the back one, and along the
+      // sills and round the arches of the rugged ones
+      valance: [B.bot(B.L) + 0.05, B.bot(-B.L) + 0.11],
+      sill: B.sill,
+      clad: B.clad ? B.sill + 0.08 : -1,
+      flare: !!B.clad,
+      rail: Math.min(B.railY(B.dTop), B.railY(0), B.railY(B.rf)),
+      roof: [B.dTop - 0.05, B.rf + 0.04],
+      crease: B.crease,
+      door
+    },
+    S: B
+  }
+}
+
+// The paint's material for a type (its shape's arch): see above. Each car's finish comes in aPaint:
+// its metallic share (the fraction), and 2 more for a black roof.
+function bodyMaterial (base, A) {
+  const m = base.clone()
+  const f = v => v.toFixed(3)
+  const [a0, a1] = A.axles.map(f)
+  const d0 = f(A.door[0] - 0.02),
+    d1 = f(A.door[1] + 0.02),
+    sill = f(A.sill + 0.06),
+    side = f(A.W + 0.01),
+    rail = f(A.rail - 0.02),
+    c0 = f(A.crease + 0.015),
+    c1 = f(A.crease + 0.085),
+    ck = f(A.W * 0.75),
+    x0 = f(A.door[0] + 0.06),
+    x1 = f(A.door[1] - 0.08),
+    roof = f(A.rail + 0.02)
+  const LIVERY = {
+    // white doors (the mirrors on them black) and a white roof
+    police: `if (carPart == 0 && ((q.x > ${d0} && q.x < ${d1} && q.y > ${sill} && abs(q.z) < ${side})
+      || q.y > ${rail})) carPart = 2;`,
+    // a checker band along each side
+    taxi: `if (carPart == 0 && abs(q.z) > ${ck} && q.y > ${c0} && q.y < ${c1} && q.x > ${x0} && q.x < ${x1})
+      carPart = mod(floor(q.x / 0.035) + floor((q.y - ${c0}) / 0.035), 2.0) < 0.5 ? 3 : 2;`,
+    // a white roof over the windows, a dark skirt
+    bus: `if (carPart == 0) { if (q.y > ${roof}) carPart = 2; else if (q.y < 0.62) carPart = 5; }`
+  }
+  const livery = LIVERY[A.name] || ''
+  m.onBeforeCompile = shader => {
+    shader.vertexShader = shader.vertexShader
+      .replace(
+        '#include <common>',
+        '#include <common>\nvarying vec3 vCarPos;\nattribute float aPaint;\nvarying float vPaint;'
+      )
+      .replace(
+        '#include <begin_vertex>',
+        '#include <begin_vertex>\nvCarPos = position;\nvPaint = aPaint;'
+      )
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        '#include <common>',
+        '#include <common>\nvarying vec3 vCarPos;\nvarying float vPaint;\nint carPart;'
       )
       .replace(
         'void main() {',
         `void main() {
-  if (abs(vCarPos.z) > ${f(arch.wellIn)}) {
-    float dy = vCarPos.y - ${f(arch.y)};
-    vec2 a = vec2(vCarPos.x - ${a0}, dy), b = vec2(vCarPos.x - ${a1}, dy);
-    if (min(dot(a, a), dot(b, b)) < ${(arch.r * arch.r).toFixed(4)}) discard;
+  // 0 the paint, 1 dark plastic, 2 a livery's white, 3 black (a black roof, a checker), 5 charcoal
+  vec3 q = vCarPos;
+  carPart = 0;
+  {
+    vec2 a = vec2(q.x - ${a0}, q.y - ${f(
+          A.y
+        )}), b = vec2(q.x - ${a1}, q.y - ${f(A.y)});
+    float d = sqrt(min(dot(a, a), dot(b, b)));
+    bool outer = abs(q.z) > ${f(A.wellIn)};
+    if (outer && d < ${f(A.r)}) discard;
+    if (q.y < ${f(A.clad)} || (q.x > ${f(A.L - 0.32)} && q.y < ${f(
+          A.valance[0]
+        )}) || (q.x < ${f(0.32 - A.L)} && q.y < ${f(A.valance[1])})
+      || (${A.flare} && outer && d < ${f(A.r + 0.065)} && q.y > ${f(
+          A.y - 0.1
+        )})) carPart = 1;
+    else if (vPaint >= 2.0 && q.y > ${f(A.rail - 0.012)} && q.x > ${f(
+          A.roof[0]
+        )} && q.x < ${f(A.roof[1])}) carPart = 3;
   }
-  // dark plastic: the valance under each bumper, and cladding along the sills
-  carDark = (abs(vCarPos.x) > ${f(arch.L - 0.34)} && vCarPos.y < ${f(arch.valance)})
-    || vCarPos.y < ${f(arch.clad)};`
+  ${livery}`
       )
       .replace(
         '#include <color_fragment>',
-        '#include <color_fragment>\nif (carDark) diffuseColor.rgb = vec3(0.03, 0.031, 0.034);'
+        `#include <color_fragment>
+  if (carPart == 1) diffuseColor.rgb = vec3(0.022, 0.023, 0.025);
+  else if (carPart == 2) diffuseColor.rgb = vec3(0.84, 0.85, 0.86);
+  else if (carPart == 3) diffuseColor.rgb = vec3(0.008, 0.009, 0.01);
+  else if (carPart == 5) diffuseColor.rgb = vec3(0.045, 0.047, 0.05);`
       )
       .replace(
         '#include <roughnessmap_fragment>',
-        '#include <roughnessmap_fragment>\nif (carDark) roughnessFactor = 0.62;'
+        `#include <roughnessmap_fragment>
+  float carMetal = carPart == 0 ? fract(vPaint) : 0.0;
+  roughnessFactor = carPart == 1 ? 0.62 : mix(0.4, 0.3, carMetal);`
       )
       .replace(
         '#include <metalnessmap_fragment>',
-        '#include <metalnessmap_fragment>\nif (carDark) metalnessFactor = 0.0;'
+        '#include <metalnessmap_fragment>\n  metalnessFactor = carMetal;'
       )
       .replace(
         '#include <lights_physical_fragment>',
-        '#include <lights_physical_fragment>\nif (carDark) material.clearcoat = 0.0;'
+        '#include <lights_physical_fragment>\n  if (carPart == 1) material.clearcoat = 0.0;'
       )
   }
-  m.customProgramCacheKey = () =>
-    `arches ${a0} ${a1} ${arch.r} ${arch.wellIn} ${arch.valance} ${arch.clad}`
+  m.customProgramCacheKey = () => `car body ${A.name}`
   return m
 }
-__export(__exports, { "SPECS": () => SPECS, "carShape": () => carShape, "archMaterial": () => archMaterial })
+__export(__exports, { "carShape": () => carShape, "bodyMaterial": () => bodyMaterial, "SPECS": () => SPECS })
 })
 
 // ---- js/render/carWheels.js
-__define(61, function (__exports) {
-// The traffic's wheels: a tyre with rounded shoulders and bulging sidewalls round a rim set back
-// inside it. The rim's face is drawn once per kind: a five-spoke alloy over the dark brake disc, or a
-// pressed steel wheel with round vents (cabs, vans and buses). Radius 1 and width 1 along z, scaled
-// per type; instanced, with each car's rims in their own finish (silver, graphite or black alloys).
+__define(98, function (__exports) {
+// The traffic's wheels: a low-profile tyre with rounded shoulders, and a rim whose face is set in a
+// shallow dish, standing just proud of the tyre's bead. All the rims are one instanced mesh: their
+// faces come from one atlas of eight designs (a ten-spoke alloy, ten slim spokes with machined
+// faces, an aero wheel, a five-spoke, a police car's black steel wheel with a chrome cap, a van's
+// steel wheel, a bus's polished aluminium, a pickup's six-spoke), each car's chosen per instance
+// (aRim) and sized to its tyre (carPaint.js RIMS), in its own finish (silver, graphite or black).
+// Radius 1 and width 1 along z, scaled per type.
 const THREE = __require(0)
-const { merge } = __require(22)
+const { merge } = __require(42)
 // tyre cross-section (radius, axial), revolved: bead, sidewall, shoulder, tread
 // prettier-ignore
 const PROFILE = [
-  [0.64, -0.44], [0.78, -0.5], [0.9, -0.49], [0.97, -0.43], [1.0, -0.3],
-  [1.0, 0.3], [0.97, 0.43], [0.9, 0.49], [0.78, 0.5], [0.64, 0.44]
+  [0.56, -0.4], [0.7, -0.45], [0.84, -0.49], [0.94, -0.47], [1.0, -0.33],
+  [1.0, 0.33], [0.94, 0.47], [0.84, 0.49], [0.7, 0.45], [0.56, 0.4]
 ].map(([r, z]) => new THREE.Vector2(r, z))
-const FACE_R = 0.67
-const FACE_Z = 0.41
+const FACE_Z = 0.47 // the rim's face, a hair proud of the sidewall where it meets it
+const DISH = 0.14 // how far in its middle is set
 
-const RIM_FINISH = {
-  alloy: [
-    new THREE.Color(1, 1, 1),
-    new THREE.Color(0.42, 0.44, 0.47),
-    new THREE.Color(0.14, 0.14, 0.15),
-    new THREE.Color(0.75, 0.76, 0.78)
-  ],
-  steel: [new THREE.Color(0.95, 0.95, 0.95), new THREE.Color(0.7, 0.71, 0.72)]
-}
+const RIM_FINISH = [
+  new THREE.Color(1, 1, 1),
+  new THREE.Color(0.95, 0.96, 0.98),
+  new THREE.Color(0.4, 0.42, 0.45),
+  new THREE.Color(0.13, 0.13, 0.14)
+]
+// the designs that take a finish (the others keep their own colours)
+const ALLOY = new Set([0, 1, 2, 3, 7])
 
 // the tyre, its sidewalls and the dark well inside the bead (the rim faces go over it)
 function tyreGeometry () {
-  const g = new THREE.LatheGeometry(PROFILE, 16).rotateX(Math.PI / 2)
+  const g = new THREE.LatheGeometry(PROFILE, 18).rotateX(Math.PI / 2)
   g.computeVertexNormals()
   return g
 }
@@ -70124,22 +77792,22 @@ function tyreGeometry () {
 function farWheelGeometry () {
   const tyre = new THREE.LatheGeometry(
     [
-      [0.64, -0.44],
-      [0.95, -0.48],
+      [0.56, -0.4],
+      [0.92, -0.48],
       [1.0, -0.3],
       [1.0, 0.3],
-      [0.95, 0.48],
-      [0.64, 0.44]
+      [0.92, 0.48],
+      [0.56, 0.4]
     ].map(([r, z]) => new THREE.Vector2(r, z)),
     8
   ).rotateX(Math.PI / 2)
   tyre.computeVertexNormals()
   const face = z =>
-    new THREE.CircleGeometry(FACE_R, 8)
+    new THREE.CircleGeometry(0.7, 8)
       .rotateY(z > 0 ? 0 : Math.PI)
       .translate(0, 0, z)
   const colour = (g, c) => {
-    const n = (g.index ? g.index.count : g.attributes.position.count)
+    const n = g.index ? g.index.count : g.attributes.position.count
     const col = new THREE.Color(c),
       arr = new Float32Array(n * 3)
     for (let i = 0; i < n; i++) arr.set([col.r, col.g, col.b], i * 3)
@@ -70149,177 +77817,309 @@ function farWheelGeometry () {
   }
   return merge([
     colour(tyre, 0x17181a),
-    colour(face(FACE_Z), 0x9a9da2),
-    colour(face(-FACE_Z), 0x9a9da2)
+    colour(face(FACE_Z), 0x8f9297),
+    colour(face(-FACE_Z), 0x8f9297)
   ])
 }
 
-// both faces of the rim, each looking out of its own side of the wheel
+// both faces of the rim (radius 1), each looking out of its own side of the wheel, dished
 function rimGeometry () {
+  const face = () => {
+    const g = new THREE.CircleGeometry(1, 20)
+    const p = g.attributes.position
+    for (let i = 0; i < p.count; i++) {
+      const r = Math.hypot(p.getX(i), p.getY(i))
+      p.setZ(i, -DISH * Math.max(0, 1 - r * 1.15))
+    }
+    g.computeVertexNormals()
+    return g
+  }
   return merge([
-    new THREE.CircleGeometry(FACE_R, 16).translate(0, 0, FACE_Z),
-    new THREE.CircleGeometry(FACE_R, 16)
+    face().translate(0, 0, FACE_Z),
+    face()
       .rotateY(Math.PI)
       .translate(0, 0, -FACE_Z)
   ])
 }
 
-// a rim's face, as a colour map (finish applied per car on top) and a roughness/metalness map
-function faceMaps (kind) {
-  const S = 256,
-    c = S / 2
-  const draw = rm => {
-    const cv = document.createElement('canvas')
-    cv.width = cv.height = S
-    const g = cv.getContext('2d')
-    // rm: green is roughness, blue metalness
-    const col = (paint, rough, metal) =>
-      rm ? `rgb(0,${(rough * 255) | 0},${(metal * 255) | 0})` : paint
-    const disc = (r, fill) => {
+// The rims' faces: eight designs in a 4 x 2 atlas, as a colour map (a finish multiplies it) and a
+// roughness (green) and metalness (blue) map
+const CELL = 256
+function atlas (rm) {
+  const cv = document.createElement('canvas')
+  cv.width = CELL * 4
+  cv.height = CELL * 2
+  const g = cv.getContext('2d')
+  g.fillStyle = rm ? 'rgb(0,128,128)' : '#202124'
+  g.fillRect(0, 0, cv.width, cv.height)
+  for (let k = 0; k < 8; k++) {
+    g.save()
+    // (a texture's rows run bottom up: design k's row from the bottom)
+    g.translate(
+      (k % 4) * CELL + CELL / 2,
+      (1 - Math.floor(k / 4)) * CELL + CELL / 2
+    )
+    design(g, k, rm, CELL * 0.47)
+    g.restore()
+  }
+  const t = new THREE.CanvasTexture(cv)
+  if (!rm) t.colorSpace = THREE.SRGBColorSpace
+  t.anisotropy = 4
+  return t
+}
+// design k, centred, radius R
+function design (g, k, rm, R) {
+  const col = (paint, rough, metal) =>
+    rm ? `rgb(0,${(rough * 255) | 0},${(metal * 255) | 0})` : paint
+  const disc = (r, fill) => {
+    g.fillStyle = fill
+    g.beginPath()
+    g.arc(0, 0, r * R, 0, Math.PI * 2)
+    g.fill()
+  }
+  const ring = (r, w, stroke) => {
+    g.lineWidth = w * R
+    g.strokeStyle = stroke
+    g.beginPath()
+    g.arc(0, 0, r * R, 0, Math.PI * 2)
+    g.stroke()
+  }
+  const at = (a, r) => [Math.cos(a) * r * R, Math.sin(a) * r * R]
+  const poly = (pts, fill) => {
+    g.fillStyle = fill
+    g.beginPath()
+    g.moveTo(...pts[0])
+    for (const p of pts.slice(1)) g.lineTo(...p)
+    g.closePath()
+    g.fill()
+  }
+  // spokes: n of them, each from the hub (r0, half angle w0) out to the rim (r1, w1)
+  const spokes = (n, r0, w0, r1, w1, fill, lit, a0 = 0) => {
+    for (let i = 0; i < n; i++) {
+      const a = a0 + (i / n) * Math.PI * 2
+      poly(
+        [at(a - w0, r0), at(a - w1, r1), at(a + w1, r1), at(a + w0, r0)],
+        fill
+      )
+      if (lit)
+        poly(
+          [
+            at(a + w0 * 0.3, r0),
+            at(a + w1 * 0.4, r1),
+            at(a + w1, r1),
+            at(a + w0, r0)
+          ],
+          lit
+        )
+    }
+  }
+  const nuts = (n, r, size, fill) => {
+    for (let i = 0; i < n; i++) {
+      const [x, y] = at((i / n) * Math.PI * 2 + 0.3, r)
       g.fillStyle = fill
       g.beginPath()
-      g.arc(c, c, r * c, 0, Math.PI * 2)
+      g.arc(x, y, size * R, 0, Math.PI * 2)
       g.fill()
     }
-    const at = (a, r) => [c + Math.cos(a) * r * c, c + Math.sin(a) * r * c]
-    g.fillStyle = col('#ffffff', 0.5, 0.5)
-    g.fillRect(0, 0, S, S)
-    if (kind === 'alloy') {
-      disc(1, col('#151619', 0.7, 0.3)) // the barrel and the dark behind the spokes
-      // the brake disc and its hub, seen between the spokes
-      disc(0.78, col('#5d6064', 0.45, 0.8))
-      disc(0.42, col('#2a2c30', 0.6, 0.5))
-      for (let i = 0; i < 5; i++) {
-        const a = (i / 5) * Math.PI * 2
-        // a spoke, narrow at the hub and fanning out to the rim, with a lit edge on one side
-        g.fillStyle = col('#cfd2d6', 0.32, 0.85)
-        g.beginPath()
-        g.moveTo(...at(a - 0.2, 0.22))
-        g.lineTo(...at(a - 0.17, 0.92))
-        g.lineTo(...at(a + 0.17, 0.92))
-        g.lineTo(...at(a + 0.2, 0.22))
-        g.closePath()
-        g.fill()
-        g.fillStyle = col('#eef0f2', 0.25, 0.9)
-        g.beginPath()
-        g.moveTo(...at(a + 0.14, 0.24))
-        g.lineTo(...at(a + 0.13, 0.9))
-        g.lineTo(...at(a + 0.17, 0.92))
-        g.lineTo(...at(a + 0.2, 0.22))
-        g.closePath()
-        g.fill()
-      }
-      // the rim's lip, the hub and its centre cap, the wheel nuts
-      g.lineWidth = 0.09 * c
-      g.strokeStyle = col('#dcdfe3', 0.28, 0.9)
-      g.beginPath()
-      g.arc(c, c, 0.94 * c, 0, Math.PI * 2)
-      g.stroke()
-      disc(0.27, col('#c5c8cc', 0.32, 0.85))
-      disc(0.12, col('#3a3c40', 0.4, 0.6))
-      for (let i = 0; i < 5; i++) {
-        const [x, y] = at((i / 5) * Math.PI * 2 + 0.63, 0.19)
-        g.fillStyle = col('#7a7d82', 0.35, 0.9)
-        g.beginPath()
-        g.arc(x, y, 0.035 * c, 0, Math.PI * 2)
-        g.fill()
-      }
-    } else {
-      // pressed steel: a dished disc with round vents and a raised ring round the hub
-      disc(1, col('#9ea2a7', 0.45, 0.7))
-      g.lineWidth = 0.08 * c
-      g.strokeStyle = col('#c4c7cb', 0.4, 0.75)
-      g.beginPath()
-      g.arc(c, c, 0.93 * c, 0, Math.PI * 2)
-      g.stroke()
-      for (let i = 0; i < 8; i++) {
-        const [x, y] = at((i / 8) * Math.PI * 2, 0.62)
-        g.fillStyle = col('#141518', 0.8, 0.2)
-        g.beginPath()
-        g.arc(x, y, 0.1 * c, 0, Math.PI * 2)
-        g.fill()
-      }
-      g.lineWidth = 0.05 * c
-      g.strokeStyle = col('#b7bbc0', 0.4, 0.75)
-      g.beginPath()
-      g.arc(c, c, 0.4 * c, 0, Math.PI * 2)
-      g.stroke()
-      disc(0.22, col('#6c7075', 0.4, 0.7))
-      disc(0.1, col('#2c2e32', 0.5, 0.5))
-    }
-    const t = new THREE.CanvasTexture(cv)
-    if (!rm) t.colorSpace = THREE.SRGBColorSpace
-    t.anisotropy = 4
-    return t
   }
-  return { map: draw(false), rm: draw(true) }
+  const SILVER = col('#cdd0d4', 0.3, 0.85),
+    LIT = col('#eef0f2', 0.22, 0.9),
+    DARK = col('#141518', 0.7, 0.3),
+    BRAKE = col('#5a5d61', 0.45, 0.8)
+  if (k <= 3 || k === 7) {
+    // alloys: the dark barrel, the brake disc and its caliper between the spokes
+    disc(1, DARK)
+    disc(0.8, BRAKE)
+    disc(0.45, col('#2a2c30', 0.6, 0.5))
+    poly(
+      [at(-0.5, 0.82), at(-0.15, 0.82), at(-0.15, 0.55), at(-0.5, 0.55)],
+      col('#33363b', 0.5, 0.4)
+    )
+  }
+  if (k === 0) spokes(10, 0.24, 0.07, 0.93, 0.06, SILVER, LIT)
+  else if (k === 1) {
+    // ten slim spokes, painted dark grey with bright machined faces
+    spokes(10, 0.24, 0.09, 0.93, 0.07, col('#45484d', 0.4, 0.6))
+    spokes(10, 0.26, 0.045, 0.9, 0.035, col('#e4e6e8', 0.18, 0.95))
+  } else if (k === 2) {
+    // an aero wheel: a closed face with five curved slots
+    disc(0.95, col('#b9bcc0', 0.35, 0.75))
+    for (let i = 0; i < 5; i++) {
+      const a = (i / 5) * Math.PI * 2
+      poly(
+        [
+          at(a, 0.42),
+          at(a + 0.28, 0.62),
+          at(a + 0.42, 0.86),
+          at(a + 0.3, 0.88),
+          at(a + 0.12, 0.64),
+          at(a - 0.08, 0.44)
+        ],
+        DARK
+      )
+    }
+    ring(0.86, 0.04, col('#d8dadd', 0.25, 0.85))
+  } else if (k === 3) spokes(5, 0.22, 0.2, 0.93, 0.17, SILVER, LIT)
+  else if (k === 7)
+    spokes(6, 0.24, 0.17, 0.93, 0.15, col('#b4b8bd', 0.3, 0.85), LIT)
+  else if (k === 4) {
+    // black steel, round holes, a small chrome cap
+    disc(1, col('#101113', 0.55, 0.4))
+    ring(0.9, 0.08, col('#1c1d20', 0.5, 0.4))
+    nuts(8, 0.66, 0.08, col('#050506', 0.8, 0.1))
+    disc(0.3, col('#1a1b1e', 0.5, 0.4))
+    disc(0.2, col('#d6d9dc', 0.15, 1))
+  } else if (k === 5) {
+    // a van's steel wheel: slots, a raised ring round the hub, the nuts
+    disc(1, col('#8e9297', 0.45, 0.7))
+    ring(0.92, 0.08, col('#b4b8bd', 0.4, 0.75))
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2
+      poly(
+        [
+          at(a - 0.12, 0.55),
+          at(a - 0.1, 0.78),
+          at(a + 0.1, 0.78),
+          at(a + 0.12, 0.55)
+        ],
+        col('#121315', 0.8, 0.2)
+      )
+    }
+    ring(0.42, 0.05, col('#a7abb0', 0.4, 0.75))
+    disc(0.3, col('#6a6e73', 0.4, 0.7))
+    nuts(6, 0.2, 0.035, col('#3a3c40', 0.4, 0.8))
+  } else if (k === 6) {
+    // a bus's polished aluminium: hand holes, a big hub, ten nuts
+    disc(1, col('#dfe2e5', 0.12, 1))
+    ring(0.93, 0.06, col('#f2f3f4', 0.08, 1))
+    for (let i = 0; i < 8; i++) {
+      const [x, y] = at((i / 8) * Math.PI * 2, 0.7)
+      g.fillStyle = col('#0e0f11', 0.8, 0.2)
+      g.beginPath()
+      g.ellipse(x, y, 0.1 * R, 0.16 * R, (i / 8) * Math.PI * 2, 0, Math.PI * 2)
+      g.fill()
+    }
+    disc(0.42, col('#9aa0a6', 0.3, 0.9))
+    nuts(10, 0.33, 0.04, col('#c9ccd0', 0.2, 1))
+    disc(0.2, col('#4a4d52', 0.4, 0.7))
+  }
+  if (k <= 3 || k === 7) {
+    // the rim's lip and the centre cap
+    ring(0.95, 0.07, col('#dcdfe2', 0.25, 0.9))
+    disc(0.24, k === 1 ? col('#3c3f44', 0.4, 0.6) : SILVER)
+    disc(0.12, col('#2a2c30', 0.35, 0.6))
+  }
 }
 
-function rimMaterial (kind) {
-  const { map, rm } = faceMaps(kind)
-  return new THREE.MeshStandardMaterial({
+// The rims' material: the atlas, each instance's design (aRim) picking its cell
+function rimMaterial () {
+  const map = atlas(false),
+    rm = atlas(true)
+  const m = new THREE.MeshStandardMaterial({
     map,
     roughnessMap: rm,
     metalnessMap: rm,
     roughness: 1,
     metalness: 1
   })
+  m.onBeforeCompile = shader => {
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nattribute float aRim;')
+      .replace(
+        '#include <uv_vertex>',
+        `#include <uv_vertex>
+        {
+          vec2 ruv = (vec2(mod(aRim, 4.0), floor(aRim / 4.0)) + 0.03 + uv * 0.94) / vec2(4.0, 2.0);
+          vMapUv = ruv;
+          vRoughnessMapUv = ruv;
+          vMetalnessMapUv = ruv;
+        }`
+      )
+  }
+  m.customProgramCacheKey = () => 'traffic rims'
+  return m
 }
-__export(__exports, { "RIM_FINISH": () => RIM_FINISH, "tyreGeometry": () => tyreGeometry, "farWheelGeometry": () => farWheelGeometry, "rimGeometry": () => rimGeometry, "rimMaterial": () => rimMaterial })
+__export(__exports, { "RIM_FINISH": () => RIM_FINISH, "ALLOY": () => ALLOY, "tyreGeometry": () => tyreGeometry, "farWheelGeometry": () => farWheelGeometry, "rimGeometry": () => rimGeometry, "rimMaterial": () => rimMaterial })
 })
 
-// ---- js/render/traffic.js
-__define(62, function (__exports) {
-// Traffic cars: seven body types lofted with rounded bodies, glass cabins and open wheel arches
-// (carShapes.js), instanced per type, painted in a real city's mix of colours, wheels with tyres and
-// alloy or steel rims (carWheels.js) that roll with the distance driven and steer through the turns,
-// bodies that ride on their springs (nose down under braking, squatting as they pull away, leaning
-// out of a corner, a bus slower and softer), headlights, tail lights that brighten under braking,
-// white reversing lights, amber indicators that blink for lane changes and turns, each car's in its
-// own time (and both at once, hazards, for a car knocked out of its lane), and a soft shadow on the
-// road under each car, where its body shuts out the sky. Parked in a lot, a car's lights are off; at
-// night (this.night) the headlights throw their beams on the road ahead. Only the cars the camera
-// can see are drawn (or whose shadows it can: the frustum is let out a little for those), in the
-// view and in the sun's shadow map alike; out of sight a car costs nothing but its springs.
+// ---- js/render/carPaint.js
+__define(99, function (__exports) {
+// How the traffic is painted, and shod: the colours Los Angeles' cars come in (about a quarter
+// white, a fifth black, a third greys and silvers, then dark blues and reds and the odd bright
+// one), each a solid gloss or a metallic under the clear coat, some with a black roof; sports cars
+// in brighter colours more often, cabs yellow, police cars black (their white goes on in the body's
+// shader), buses in their operators' orange, blue or red, vans mostly white. And the rims each car
+// rolls on (carWheels.js draws them), and the textures for the shade under a car and its beams.
 const THREE = __require(0)
-const { CURB_H } = __require(4)
-const { clamp } = __require(1)
-const { TYPES } = __require(34)
-const { carShape, archMaterial } = __require(60)
-const { lampMaterial } = __require(59)
-const { RIM_FINISH, rimMaterial, rimGeometry, tyreGeometry, farWheelGeometry } = __require(61)
-// Paint the way a city's cars are painted: a quarter white, a fifth black, then greys and
-// silvers, blues and reds, and only now and then a beige, a green or an orange (each with a weight);
-// yellow cabs, white buses and vans
+// [colour, weight, metallic share]
 // prettier-ignore
-const PAINTS = [
-  [0xe9e9e6, 14], [0xf3f2ed, 9], [0x121316, 13], [0x1b1e23, 7], [0x4b5057, 9], [0x6e737a, 8],
-  [0xa9adb2, 7], [0xc4c7ca, 5], [0x1f2f55, 5], [0x3d5a84, 3], [0x7d9fc2, 1.5], [0x8f1219, 5],
-  [0xb01b1e, 3], [0xbcae90, 1.5], [0x5a4433, 1], [0x23392e, 1.2], [0xb9561e, 0.8], [0xd8b02a, 0.4]
+const CARS = [
+  [0xdedfdb, 11, 0], [0xd9d8d1, 10, 0.25], [0xdcdad2, 3, 0],
+  [0x0b0c0e, 9, 0], [0x15171b, 10, 0.55],
+  [0x2d3035, 7, 0.6], [0x4b4f55, 7, 0.6], [0x6b6f74, 4, 0.55], [0x878b8e, 2.5, 0.05],
+  [0xa7abaf, 8, 0.7], [0xc4c7ca, 5, 0.7],
+  [0x16233f, 4, 0.6], [0x264a80, 2.5, 0.6], [0x4f7ab0, 1.2, 0.5],
+  [0x7a0c12, 3, 0.55], [0xa8141b, 3.5, 0.3], [0x4c0d12, 1, 0.5],
+  [0x1f3a2c, 1, 0.5], [0x5d6b52, 0.6, 0.1], [0xb3a07c, 1.2, 0.5], [0x4c3a2c, 0.6, 0.5],
+  [0xc9581b, 0.6, 0.35], [0xe3b52a, 0.35, 0.2], [0x2f8f96, 0.3, 0.4]
 ]
-// (a lookup from a car's paint draw, 0 to 1, to its colour)
-const PALETTE = []
-{
-  const total = PAINTS.reduce((a, p) => a + p[1], 0)
-  let k = 0,
-    acc = PAINTS[0][1]
-  for (let i = 0; i < 256; i++) {
-    while ((i + 0.5) / 256 > acc / total && k < PAINTS.length - 1)
-      acc += PAINTS[++k][1]
-    PALETTE.push(new THREE.Color(PAINTS[k][0]))
-  }
-}
+// prettier-ignore
+const SPORTS = [
+  [0xb3141b, 6, 0.35], [0xdedfdb, 5, 0], [0x0b0c0e, 5, 0], [0x1a1c20, 3, 0.55], [0x9da1a5, 4, 0.7],
+  [0x868a8d, 3, 0.05], [0xe0a91a, 2, 0.2], [0xd2561a, 2, 0.3], [0x1d4fa3, 3, 0.5], [0x2b6b3e, 1.5, 0.5],
+  [0x5a2f8a, 0.6, 0.5], [0x7fc8d6, 0.5, 0.3]
+]
+// prettier-ignore
 const FIXED = {
-  taxi: [new THREE.Color(0xf0b400)],
-  bus: [new THREE.Color(0xe4e8ea), new THREE.Color(0x2a6a9c)],
-  van: [
-    new THREE.Color(0xeeeeec),
-    new THREE.Color(0xd9d9d6),
-    new THREE.Color(0x2b3a52)
-  ]
+  taxi: [[0xf0b404, 10, 0.15], [0xf4c41f, 3, 0.2]],
+  police: [[0x0a0b0d, 1, 0.1]],
+  bus: [[0xe0661e, 6, 0], [0x1f4f9c, 3, 0], [0xb8232a, 1, 0]],
+  van: [[0xe0e0dc, 12, 0], [0xa7abaf, 2, 0.7], [0x0b0c0e, 1.5, 0], [0x2d3035, 1, 0.5], [0x264a80, 0.5, 0.5]]
 }
-// cabs, vans and buses run on steel wheels, everyone else on alloys
-const STEEL = new Set(['taxi', 'van', 'bus'])
+// how often a type's cars have a black roof
+const BLACK_ROOF = { sedan: 0.1, hatch: 0.16, suv: 0.14, sports: 0.22 }
+
+// (a lookup from a car's paint draw, 0 to 1, to its colour and finish)
+function palette (list) {
+  const total = list.reduce((a, p) => a + p[1], 0)
+  const out = []
+  let k = 0,
+    acc = list[0][1]
+  for (let i = 0; i < 256; i++) {
+    while ((i + 0.5) / 256 > acc / total && k < list.length - 1)
+      acc += list[++k][1]
+    const c = new THREE.Color(list[k][0])
+    // (a black roof only shows on a lighter car)
+    out.push({ c, metal: list[k][2], light: c.r + c.g + c.b > 0.08 })
+  }
+  return out
+}
+const CAR = palette(CARS)
+function paletteFor (name) {
+  return name === 'sports'
+    ? palette(SPORTS)
+    : FIXED[name]
+    ? palette(FIXED[name])
+    : CAR
+}
+function blackRoofOf (name) {
+  return BLACK_ROOF[name] || 0
+}
+
+// the rims each type rolls on (the designs in carWheels.js), and how big they are (their share of
+// the tyre's radius)
+// prettier-ignore
+const RIMS = {
+  sedan: { kinds: [0, 1, 2, 3], size: 0.72 },
+  hatch: { kinds: [0, 1, 3], size: 0.7 },
+  suv: { kinds: [0, 1, 7], size: 0.72 },
+  taxi: { kinds: [2], size: 0.68 },
+  pickup: { kinds: [7, 1], size: 0.66 },
+  van: { kinds: [5], size: 0.6 },
+  bus: { kinds: [6], size: 0.58 },
+  police: { kinds: [4], size: 0.64 },
+  sports: { kinds: [1, 3, 0], size: 0.75 }
+}
 
 // the dark under a car: a rounded rectangle, blurred, darkest in the middle
 function underTexture () {
@@ -70364,7 +78164,31 @@ function beamTexture () {
   t.colorSpace = THREE.SRGBColorSpace
   return t
 }
+__export(__exports, { "paletteFor": () => paletteFor, "blackRoofOf": () => blackRoofOf, "RIMS": () => RIMS, "underTexture": () => underTexture, "beamTexture": () => beamTexture })
+})
 
+// ---- js/render/traffic.js
+__define(100, function (__exports) {
+// Traffic cars: nine body types of today's cars (carShapes.js), instanced per type, painted the way
+// Los Angeles' cars are (carPaint.js), each a solid or a metallic under the clear coat and some with
+// a black roof, on low-profile tyres and rims of their own design (carWheels.js) that roll with the
+// distance driven and steer through the turns; bodies that ride on their springs (nose down under
+// braking, squatting as they pull away, leaning out of a corner, a bus slower and softer),
+// headlights, tail lights that brighten under braking, white reversing lights, amber indicators
+// that blink for lane changes and turns, each car's in its own time (and both at once, hazards, for
+// a car knocked out of its lane), a police car's light bar flashing on some, and a soft shadow on
+// the road under each car, where its body shuts out the sky. Parked in a lot, a car's lights are
+// off; at night (this.night) the headlights throw their beams on the road ahead. Only the cars the
+// camera can see are drawn (or whose shadows it can: the frustum is let out a little for those), in
+// the view and in the sun's shadow map alike; out of sight a car costs nothing but its springs.
+const THREE = __require(0)
+const { CURB_H } = __require(24)
+const { clamp } = __require(4)
+const { TYPES } = __require(54)
+const { carShape, bodyMaterial } = __require(97)
+const { lampMaterial, LAMP_T } = __require(94)
+const { RIM_FINISH, ALLOY, rimMaterial, rimGeometry, tyreGeometry, farWheelGeometry } = __require(98)
+const { paletteFor, blackRoofOf, RIMS, underTexture, beamTexture } = __require(99)
 const _m = new THREE.Matrix4(),
   _b = new THREE.Matrix4(),
   _w = new THREE.Matrix4(),
@@ -70400,7 +78224,9 @@ const RIDE = {
   suv: [1.35, 0.4, 1.15, 1.3],
   pickup: [1.25, 0.38, 1.1, 1.3],
   van: [1.15, 0.38, 0.9, 1.5],
-  bus: [0.9, 0.32, 0.55, 1.7]
+  bus: [0.9, 0.32, 0.55, 1.7],
+  police: [1.4, 0.42, 1.05, 1.2],
+  sports: [1.9, 0.48, 0.7, 0.65]
 } // per type: frequency (Hz), damping ratio, pitch and roll per m/s^2 (relative)
 // (the frame's dt comes in RIDE.dt rather than as an argument: a number passed costs an allocation)
 const RIDE_DT = { dt: 0.5 }
@@ -70444,15 +78270,23 @@ function dirty (a, count) {
   a.addUpdateRange(0, count * a.itemSize)
   a.needsUpdate = true
 }
+// a per-instance attribute on g, sized for n
+function perCar (g, name, n, size) {
+  const a = new THREE.InstancedBufferAttribute(new Float32Array(n * size), size)
+  a.setUsage(THREE.DynamicDrawUsage)
+  g.setAttribute(name, a)
+  return a
+}
 
 class TrafficView {
   constructor (group, max = 420) {
-    // paint under a hard clear coat: the sky sharp in it, the colour beneath a little metallic
+    // paint under a hard clear coat: the sky sharp in it, the colour beneath solid or metallic per
+    // car (bodyMaterial)
     const paint = new THREE.MeshPhysicalMaterial({
       roughness: 0.36,
       metalness: 0.5,
       clearcoat: 1,
-      clearcoatRoughness: 0.045
+      clearcoatRoughness: 0.04
     })
     // clear glass over a dark cabin: nearly black head on, the sky in it at a glancing angle
     const glass = new THREE.MeshPhysicalMaterial({
@@ -70485,29 +78319,36 @@ class TrafficView {
     this.types = TYPES.map(T => {
       const sh = carShape(T)
       const parts = {
-        body: mesh(sh.paint, archMaterial(paint, sh.arch)),
+        body: mesh(sh.paint, bodyMaterial(paint, sh.arch)),
         glass: mesh(sh.glass, glass),
         trim: mesh(sh.trim, trim)
       }
-      parts.body.setColorAt(0, PALETTE[0]) // allocates the per-car paint
-      // which of its lamps are lit, per car: headlights, tail lights, braking, flags
-      const lit = new THREE.InstancedBufferAttribute(new Float32Array(max * 4), 4)
-      lit.setUsage(THREE.DynamicDrawUsage)
-      sh.trim.setAttribute('aLit', lit)
-      return { T, S: sh.S, steel: STEEL.has(T.name), lit, ...parts }
+      parts.body.setColorAt(0, new THREE.Color()) // allocates the per-car paint
+      // each car's finish (bodyMaterial), and which of its lamps are lit: headlights, tail lights,
+      // braking, flags
+      const finish = perCar(sh.paint, 'aPaint', max, 1)
+      const lit = perCar(sh.trim, 'aLit', max, 4)
+      return {
+        T,
+        S: sh.S,
+        lit,
+        finish,
+        pal: paletteFor(T.name),
+        roofs: blackRoofOf(T.name),
+        rims: RIMS[T.name],
+        ...parts
+      }
     })
     this.tyres = mesh(
       tyreGeometry(),
-      new THREE.MeshStandardMaterial({ color: 0x17181a, roughness: 0.88 }),
+      new THREE.MeshStandardMaterial({ color: 0x161719, roughness: 0.86 }),
       max * 4,
       false
     )
-    this.rims = {}
-    for (const kind of ['alloy', 'steel']) {
-      const m = mesh(rimGeometry(), rimMaterial(kind), max * 4, false)
-      m.setColorAt(0, RIM_FINISH[kind][0])
-      this.rims[kind] = m
-    }
+    const rg = rimGeometry()
+    this.rimKind = perCar(rg, 'aRim', max * 4, 1)
+    this.rims = mesh(rg, rimMaterial(), max * 4, false)
+    this.rims.setColorAt(0, RIM_FINISH[0])
     this.under = mesh(
       new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2),
       new THREE.MeshBasicMaterial({
@@ -70557,11 +78398,10 @@ class TrafficView {
     this.t = 0
     this.counts = new Int32Array(TYPES.length)
     this.near = new Int32Array(TYPES.length) // (how many of each type cast shadows)
-    this.n = { tyre: 0, alloy: 0, steel: 0, far: 0, under: 0, beam: 0 }
+    this.n = { tyre: 0, rim: 0, far: 0, under: 0, beam: 0 }
     this.dynamic = [
       this.tyres,
-      this.rims.alloy,
-      this.rims.steel,
+      this.rims,
       this.farWheels,
       this.under,
       this.beams
@@ -70580,7 +78420,6 @@ class TrafficView {
     })
   }
 
-  // view: a THREE.Frustum of what the camera sees (none: draw every car)
   // view: a THREE.Frustum of what the camera sees (none: draw every car). Cars within NEAR of the
   // Roadster go first in each type's instances, and only they are drawn into its shadow map (the
   // shadow pass draws this.near[type] of them); further off, their wheels are the cheap ones.
@@ -70589,9 +78428,10 @@ class TrafficView {
       near = this.near
     counts.fill(0)
     this.t = traffic.t
+    LAMP_T.value = traffic.t
     RIDE_DT.dt = dt
     const n = this.n
-    n.tyre = n.alloy = n.steel = n.far = n.under = n.beam = 0
+    n.tyre = n.rim = n.far = n.under = n.beam = 0
     const s = traffic.sim,
       p = s ? (s.mode === 'ground' ? s.pos : s.com) : null
     for (let pass = 0; pass < 2; pass++) {
@@ -70601,7 +78441,8 @@ class TrafficView {
         if (dx * dx + dz * dz < NEAR * NEAR !== (pass === 0)) continue
         this.put(car, dt, view, pass === 0)
       }
-      if (pass === 0) for (let k = 0; k < counts.length; k++) near[k] = counts[k]
+      if (pass === 0)
+        for (let k = 0; k < counts.length; k++) near[k] = counts[k]
     }
     for (let k = 0; k < this.types.length; k++) {
       const ty = this.types[k],
@@ -70611,17 +78452,17 @@ class TrafficView {
       dirty(ty.trim.instanceMatrix, c)
       dirty(ty.glass.instanceMatrix, c)
       dirty(ty.body.instanceColor, c)
+      dirty(ty.finish, c)
       dirty(ty.lit, c)
     }
     this.tyres.count = n.tyre
-    this.rims.alloy.count = n.alloy
-    this.rims.steel.count = n.steel
+    this.rims.count = n.rim
     this.farWheels.count = n.far
     this.under.count = n.under
     this.beams.count = n.beam
     for (const m of this.dynamic) dirty(m.instanceMatrix, m.count)
-    dirty(this.rims.alloy.instanceColor, n.alloy)
-    dirty(this.rims.steel.instanceColor, n.steel)
+    dirty(this.rims.instanceColor, n.rim)
+    dirty(this.rimKind, n.rim)
   }
   // one car into the instances (near: close to the Roadster, with full wheels)
   put (car, dt, view, near) {
@@ -70684,18 +78525,18 @@ class TrafficView {
     ty.body.setMatrixAt(i, _b)
     ty.trim.setMatrixAt(i, _b)
     ty.glass.setMatrixAt(i, _b)
-    const fixed = FIXED[T.name]
-    const col = fixed
-      ? fixed[Math.floor(car.paint * fixed.length)]
-      : PALETTE[Math.floor(car.paint * 256)]
-    ty.body.setColorAt(i, col)
+    // its paint: colour, solid or metallic, and a black roof on some
+    const pe = ty.pal[Math.floor(car.paint * 256) & 255]
+    ty.body.setColorAt(i, pe.c)
+    ty.finish.array[i] =
+      pe.metal + (pe.light && (car.paint * 37.3) % 1 < ty.roofs ? 2 : 0)
     // wheels, turning with the distance driven, the fronts steering (far off, the plain ones)
-    const rims = ty.steel ? this.rims.steel : this.rims.alloy,
-      finish = ty.steel ? RIM_FINISH.steel : RIM_FINISH.alloy
-    const rimCol = finish[Math.floor(((car.paint * 7.7) % 1) * finish.length)]
     const spin = -car.odo / S.r
-    _sc.x = _sc.y = S.r
-    _sc.z = 0.24
+    const kinds = ty.rims.kinds,
+      kind = kinds[Math.floor(((car.paint * 5.3) % 1) * kinds.length)]
+    const rimCol = ALLOY.has(kind)
+      ? RIM_FINISH[Math.floor(((car.paint * 7.7) % 1) * RIM_FINISH.length)]
+      : RIM_FINISH[0]
     for (let a = 0; a < 2; a++) {
       const ax = S.axles[a]
       for (let side = -1; side <= 1; side += 2) {
@@ -70709,15 +78550,21 @@ class TrafficView {
         }
         _p.x = ax
         _p.y = S.r
-        _p.z = side * (T.wid / 2 - 0.17)
+        _p.z = side * S.track
+        _sc.x = _sc.y = S.r
+        _sc.z = S.tyre
         _w.compose(_p, _q, _sc)
         _w.premultiply(_m)
         if (!near) this.farWheels.setMatrixAt(n.far++, _w)
         else {
           this.tyres.setMatrixAt(n.tyre++, _w)
-          const k = ty.steel ? n.steel++ : n.alloy++
-          rims.setMatrixAt(k, _w)
-          rims.setColorAt(k, rimCol)
+          _sc.x = _sc.y = S.r * ty.rims.size
+          _w.compose(_p, _q, _sc)
+          _w.premultiply(_m)
+          const k = n.rim++
+          this.rims.setMatrixAt(k, _w)
+          this.rims.setColorAt(k, rimCol)
+          this.rimKind.array[k] = kind
         }
       }
     }
@@ -70736,7 +78583,8 @@ class TrafficView {
       this.beams.setMatrixAt(n.beam++, _w.compose(_p, _q, _sc))
     }
     // its lamps: on in traffic (running lights by day, headlights at night), off parked in a lot;
-    // each car's flasher keeps its own time, about one and a half flashes a second
+    // each car's flasher keeps its own time, about one and a half flashes a second. A police car's
+    // light bar flashes on about one in three, parked or not, in its own time (the flags' fraction)
     let flags = 0
     if (lit) {
       const on =
@@ -70747,6 +78595,8 @@ class TrafficView {
       if (car.big) flags += 8
       flags += 16 // (running lights)
     }
+    if (T.name === 'police' && (car.paint * 11.3) % 1 < 0.36)
+      flags += 32 + ((car.paint * 17.9) % 1) * 0.98
     const L = ty.lit.array,
       j = i * 4
     L[j] = lit ? (night ? 3.2 : 0.12) : 0
@@ -70758,111 +78608,493 @@ class TrafficView {
 __export(__exports, { "NEAR": () => NEAR, "TrafficView": () => TrafficView })
 })
 
-// ---- js/render/peds.js
-__define(63, function (__exports) {
-// People on foot (the sim is peds.js and crowd.js), all in one instanced mesh: a jointed figure (a
-// head longer than it is wide, with its hair, on a neck; a torso narrowing from rounded shoulders
-// to the waist; hips, legs with shoes, arms with hands, a phone), posed in the vertex shader from
-// each one's stride (its phase and length), so a whole crowd walks in one draw call. Each foot is
-// planted through its stance and travels back at the pace the body moves on (the sim times the
-// stride to the speed and the legs' length, so feet don't slide), the knee folds as the leg swings
-// through, arms swing against the legs, the body rises over each step, and running they lean in
-// with their elbows bent. Heads turn to follow the Roadster; standing about they look down at a
-// phone held up in front of them, or talk with their hands; diving out of the Roadster's way, or
-// running from it, arms fly up. Each dresses their own way (a shirt or a jacket with long sleeves,
-// trousers, shorts or a dress, long hair or short, a shoulder bag or a backpack, dark shoes or white
-// trainers), with skin from pale to deep brown and hair from black to fair or grey, and stands their
-// own height and build. Only those the camera can see (or whose shadows it can) are drawn.
+// ---- js/render/pedFigure.js
+__define(101, function (__exports) {
+// The figure every person on foot is drawn from (peds.js), standing facing +x with their right side
+// to +z, about 1.75 m tall: a trunk lofted through rings from the hips in at the waist and out to
+// the chest and shoulders, a neck, a head a little longer than it is wide with a jaw and a nose,
+// limbs that taper (thighs to the knee, a calf, an ankle; a deltoid, the elbow, a forearm, the
+// wrist) with hands and trainers, and the pieces only some have: hair cut short, worn long, in a
+// ponytail, a bun or curls, a cap, a hoodie's hood, a skirt, a shoulder bag, a backpack and a phone.
+// Each piece is tagged with what it is (aPart), which decides how it moves and what colour it is
+// (pedShader.js); the pieces only some have fold away to nothing on everyone else. Indexed, so the
+// vertex shader poses each corner once.
 const THREE = __require(0)
-const { merge } = __require(22)
-const { CURB_H } = __require(4)
-const { kerbDist } = __require(10)
-const { NEAR } = __require(62)
-// the body's parts, each tagged with what it is (it decides how it moves and what colour it is)
-const TORSO = 0,
-  HEAD = 1,
-  HIPS = 2,
-  HAIR = 11,
-  PHONE = 12,
-  LONG_HAIR = 13, // (these four fold away to nothing on anyone without them)
-  SKIRT = 14,
-  BAG = 15,
-  PACK = 16
+const PART = {
+  TORSO: 0,
+  HEAD: 1,
+  HIPS: 2,
+  L_THIGH: 3,
+  L_SHIN: 4,
+  R_THIGH: 5,
+  R_SHIN: 6,
+  L_UPPER: 7,
+  L_FORE: 8,
+  R_UPPER: 9,
+  R_FORE: 10,
+  HAIR: 11,
+  PHONE: 12,
+  LONG_HAIR: 13,
+  SKIRT: 14,
+  BAG: 15,
+  PACK: 16,
+  NECK: 17,
+  PONY: 18,
+  CURLS: 19,
+  BUN: 20,
+  CAP: 21,
+  HOOD: 22
+}
+// the head's middle (the face's features are placed from it: pedShader.js)
+const HEAD_AT = [0.012, 1.645, 0]
+
+// A tube through rings { y, rx, rz, cx, cz } (half depth along x, half width along z, its centre),
+// n round, each ring a rounded rectangle-ish ellipse; closed at the bottom with cap0, the top with cap1
+function rings (list, n, cap0 = false, cap1 = false, square = 0.82) {
+  const pos = [],
+    idx = []
+  for (const r of list)
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2,
+        c = Math.cos(a),
+        s = Math.sin(a)
+      // (a superellipse: flatter at the front, back and sides than an ellipse)
+      const k = v => Math.sign(v) * Math.pow(Math.abs(v), square)
+      pos.push(r.cx + r.rx * k(c), r.y, (r.cz || 0) + r.rz * k(s))
+    }
+  for (let j = 0; j < list.length - 1; j++)
+    for (let i = 0; i < n; i++) {
+      const a = j * n + i,
+        b = j * n + ((i + 1) % n),
+        c = a + n,
+        d = b + n
+      idx.push(a, b, c, b, d, c)
+    }
+  const fan = (j, up) => {
+    const r = list[j],
+      o = pos.length / 3
+    pos.push(r.cx, r.y + (up ? 0.004 : -0.004), r.cz || 0)
+    for (let i = 0; i < n; i++) {
+      const a = j * n + i,
+        b = j * n + ((i + 1) % n)
+      if (up) idx.push(a, b, o)
+      else idx.push(b, a, o)
+    }
+  }
+  if (cap0) fan(0, false)
+  if (cap1) fan(list.length - 1, true)
+  const g = new THREE.BufferGeometry()
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3))
+  g.setIndex(idx)
+  g.computeVertexNormals()
+  return g
+}
+// a limb: a tube through [radius, y] from bottom to top, n round, at (x, z); its ends left open
+// where they are hidden inside the next piece (caps: [bottom, top])
+const limb = (prof, n, x, z, back = 0, caps = [false, false]) =>
+  rings(
+    prof.map(([r, y, k = 1]) => ({
+      y,
+      rx: r * k,
+      rz: r,
+      cx: x - back * r * (k - 1),
+      cz: z
+    })),
+    n,
+    caps[0],
+    caps[1],
+    1
+  )
+
+// a trainer: rounded at the toe, its sole a little wider, the heel at x = -0.06
+function shoe (z) {
+  const g = new THREE.BoxGeometry(0.27, 0.085, 0.1, 3, 1, 1)
+  const p = g.attributes.position
+  for (let i = 0; i < p.count; i++) {
+    let x = p.getX(i),
+      y = p.getY(i),
+      zz = p.getZ(i)
+    const t = (x + 0.135) / 0.27 // heel 0 to toe 1
+    // the toe narrower and lower, rounded off in plan
+    zz *= 1 - (0.25 * Math.max(0, t - 0.6)) / 0.4
+    if (y > 0) y -= (0.035 * Math.max(0, t - 0.45)) / 0.55
+    x -= (((0.03 * Math.abs(zz)) / 0.05) * Math.max(0, t - 0.7)) / 0.3
+    p.setXYZ(i, x + 0.075, y + 0.0425, zz + z)
+  }
+  g.computeVertexNormals()
+  return g
+}
+
+// the head: a squashed sphere, deeper than it is wide, the jaw narrower and the chin forward
+function head () {
+  const g = new THREE.SphereGeometry(1, 10, 8)
+  const p = g.attributes.position
+  for (let i = 0; i < p.count; i++) {
+    let x = p.getX(i),
+      y = p.getY(i),
+      z = p.getZ(i)
+    const low = Math.max(0, -y)
+    z *= 1 - 0.22 * low // the jaw
+    x *= x > 0 ? 0.93 + 0.08 * low : 1.04 - 0.15 * low // a flatter face, the skull's back
+    if (x > 0 && y < -0.55) x += 0.06 * (1 - (y + 1) / 0.45) // the chin
+    p.setXYZ(i, HEAD_AT[0] + x * 0.098, HEAD_AT[1] + y * 0.118, z * 0.079)
+  }
+  g.computeVertexNormals()
+  // the nose: a little wedge down the middle of the face
+  const n = new THREE.BufferGeometry()
+  const [cx, cy] = HEAD_AT
+  n.setAttribute(
+    'position',
+    new THREE.Float32BufferAttribute(
+      [
+        cx + 0.088,
+        cy + 0.008,
+        0,
+        cx + 0.112,
+        cy - 0.032,
+        0,
+        cx + 0.093,
+        cy - 0.04,
+        -0.017,
+        cx + 0.093,
+        cy - 0.04,
+        0.017
+      ],
+      3
+    )
+  )
+  n.setIndex([0, 2, 1, 0, 1, 3, 1, 2, 3])
+  n.computeVertexNormals()
+  return [g, n]
+}
+
+// hair cut short: a cap over the skull, down to the nape behind and the hairline in front
+function hairCap (scale = 1) {
+  const g = new THREE.SphereGeometry(
+    1,
+    10,
+    4,
+    0,
+    Math.PI * 2,
+    0,
+    Math.PI * 0.62
+  )
+  const p = g.attributes.position
+  for (let i = 0; i < p.count; i++) {
+    let x = p.getX(i),
+      y = p.getY(i),
+      z = p.getZ(i)
+    // (the front's edge lifted to the hairline, the sides' to above the ears)
+    if (x > 0.2) y = Math.max(y, 0.25 + 0.35 * (x - 0.2))
+    else if (y < -0.1) y = Math.max(y, -0.1 - 0.5 * Math.max(0, -x))
+    p.setXYZ(
+      i,
+      HEAD_AT[0] - 0.006 + x * 0.106 * scale,
+      HEAD_AT[1] + 0.012 + y * 0.124 * scale,
+      z * 0.088 * scale
+    )
+  }
+  g.computeVertexNormals()
+  return g
+}
+
 function figure () {
   const parts = []
-  const put = (geo, part, x, y, z) => {
-    const g = geo.translate(x, y, z).toNonIndexed()
-    const n = g.attributes.position.count
+  const put = (g, part) => {
+    if (!g.index) g.setIndex([...Array(g.attributes.position.count).keys()])
+    g.deleteAttribute('uv')
     g.setAttribute(
       'aPart',
-      new THREE.BufferAttribute(new Float32Array(n).fill(part), 1)
+      new THREE.BufferAttribute(
+        new Float32Array(g.attributes.position.count).fill(part),
+        1
+      )
     )
     parts.push(g)
   }
-  const limb = (r, len) => new THREE.CapsuleGeometry(r, len, 1, 6)
-  // a torso narrowing from the shoulders to the waist, rounded at the shoulders, on a neck
-  put(new THREE.CylinderGeometry(0.185, 0.155, 0.46, 12).scale(0.62, 1, 1), TORSO, 0, 1.2, 0)
-  for (const z of [-0.17, 0.17])
-    put(new THREE.SphereGeometry(0.075, 8, 6).scale(0.95, 0.8, 1), TORSO, 0, 1.41, z)
-  put(new THREE.CylinderGeometry(0.048, 0.055, 0.12, 8), HEAD, 0.005, 1.5, 0)
-  // the head, a little longer than it is wide, and its hair
-  put(new THREE.SphereGeometry(0.1, 12, 9).scale(1.05, 1.12, 0.92), HEAD, 0.008, 1.64, 0)
+  // the trunk: the hips up to the waist, the chest and shoulders above it, the neck on top
+  // prettier-ignore
+  put(rings([
+    { y: 0.8, rx: 0.072, rz: 0.104, cx: 0 }, { y: 0.86, rx: 0.102, rz: 0.158, cx: -0.006 },
+    { y: 0.93, rx: 0.108, rz: 0.172, cx: -0.012 }, { y: 1.0, rx: 0.1, rz: 0.162, cx: -0.004 },
+    { y: 1.075, rx: 0.094, rz: 0.148, cx: 0.004 }
+  ], 10, true, false), PART.HIPS)
+  // prettier-ignore
+  put(rings([
+    { y: 1.07, rx: 0.094, rz: 0.148, cx: 0.004 }, { y: 1.16, rx: 0.099, rz: 0.155, cx: 0.01 },
+    { y: 1.26, rx: 0.11, rz: 0.17, cx: 0.015 }, { y: 1.35, rx: 0.108, rz: 0.18, cx: 0.01 },
+    { y: 1.425, rx: 0.088, rz: 0.19, cx: 0.0 }, { y: 1.465, rx: 0.072, rz: 0.15, cx: -0.006 },
+    { y: 1.495, rx: 0.05, rz: 0.065, cx: 0.0 }
+  ], 10, false, true), PART.TORSO)
   put(
-    new THREE.SphereGeometry(0.108, 12, 5, 0, Math.PI * 2, 0, Math.PI * 0.55)
-      .scale(1.08, 1.12, 0.96)
-      .rotateZ(0.18),
-    HAIR,
-    -0.006,
-    1.652,
-    0
+    limb(
+      [
+        [0.05, 1.42],
+        [0.046, 1.5],
+        [0.045, 1.57]
+      ],
+      6,
+      0.002,
+      0
+    ),
+    PART.NECK
   )
-  put(new THREE.BoxGeometry(0.07, 0.26, 0.19), LONG_HAIR, -0.075, 1.5, 0) // (down the back)
-  put(new THREE.CylinderGeometry(0.16, 0.13, 0.17, 12).scale(0.7, 1, 1), HIPS, 0, 0.95, 0)
-  put(new THREE.CylinderGeometry(0.15, 0.26, 0.5, 12, 1, true).scale(0.8, 1, 1), SKIRT, 0, 0.73, 0)
-  put(new THREE.BoxGeometry(0.2, 0.22, 0.07), BAG, 0.02, 0.98, -0.27) // (at the left hip)
-  put(new THREE.BoxGeometry(0.13, 0.36, 0.28), PACK, -0.17, 1.2, 0) // (on the back)
-  for (const [k, z] of [
-    [0, -0.09],
-    [2, 0.09]
-  ]) {
-    put(limb(0.075, 0.3), 3 + k, 0, 0.71, z) // thigh
-    put(limb(0.062, 0.34), 4 + k, 0, 0.29, z) // shin
-    put(new THREE.BoxGeometry(0.25, 0.07, 0.1), 4 + k, 0.045, 0.035, z) // shoe
+  const [h, nose] = head()
+  put(h, PART.HEAD)
+  put(nose, PART.HEAD)
+  // hair, cut short, worn long down the back, in a ponytail, a bun or curls; a cap
+  put(hairCap(), PART.HAIR)
+  put(
+    new THREE.LatheGeometry(
+      [
+        [0.07, 1.36],
+        [0.1, 1.45],
+        [0.11, 1.58],
+        [0.104, 1.7]
+      ].map(([r, y]) => new THREE.Vector2(r, y)),
+      7,
+      Math.PI * 0.75,
+      Math.PI * 1.5
+    ).translate(HEAD_AT[0] - 0.012, 0, 0),
+    PART.LONG_HAIR
+  )
+  put(
+    limb(
+      [
+        [0.006, 0],
+        [0.024, 0.06],
+        [0.03, 0.14],
+        [0.022, 0.2]
+      ],
+      5,
+      0,
+      0,
+      0,
+      [true, false]
+    )
+      .rotateZ(-0.35)
+      .translate(HEAD_AT[0] - 0.13, 1.47, 0),
+    PART.PONY
+  )
+  {
+    const g = new THREE.SphereGeometry(1, 8, 5)
+    const p = g.attributes.position
+    for (let i = 0; i < p.count; i++) {
+      const x = p.getX(i),
+        y = p.getY(i),
+        z = p.getZ(i)
+      const b = 1 + 0.07 * Math.sin(x * 17 + y * 11) * Math.cos(z * 13 - y * 7)
+      // (pulled back off the face below the hairline)
+      const f = x > 0 && y < 0.35 ? 0.2 : 1
+      p.setXYZ(
+        i,
+        HEAD_AT[0] - 0.03 + x * 0.125 * b * f,
+        HEAD_AT[1] + 0.035 + y * 0.12 * b,
+        z * 0.118 * b
+      )
+    }
+    g.computeVertexNormals()
+    put(g, PART.CURLS)
   }
-  for (const [k, z] of [
-    [0, -0.235],
-    [2, 0.235]
-  ]) {
-    put(limb(0.052, 0.2), 7 + k, 0, 1.31, z) // upper arm
-    put(limb(0.045, 0.2), 8 + k, 0, 1.03, z) // forearm
-    put(new THREE.SphereGeometry(0.05, 6, 4), 8 + k, 0.01, 0.88, z) // hand
+  put(
+    new THREE.SphereGeometry(0.042, 5, 3).translate(
+      HEAD_AT[0] - 0.085,
+      HEAD_AT[1] + 0.105,
+      0
+    ),
+    PART.BUN
+  )
+  {
+    const crown = new THREE.SphereGeometry(
+      1,
+      8,
+      3,
+      0,
+      Math.PI * 2,
+      0,
+      Math.PI * 0.5
+    )
+      .scale(0.104, 0.085, 0.091)
+      .translate(HEAD_AT[0] - 0.004, HEAD_AT[1] + 0.045, 0)
+    put(crown, PART.CAP)
+    const brim = new THREE.CircleGeometry(0.08, 6, -Math.PI / 2, Math.PI)
+      .scale(1.05, 1, 1)
+      .rotateX(-Math.PI / 2)
+      .rotateZ(-0.12)
+      .translate(HEAD_AT[0] + 0.07, HEAD_AT[1] + 0.05, 0)
+    put(brim, PART.CAP)
   }
+  // a hoodie's hood, bunched behind the neck
+  put(
+    new THREE.TorusGeometry(0.085, 0.035, 3, 6, Math.PI)
+      .rotateX(Math.PI / 2)
+      .rotateY(Math.PI / 2)
+      .scale(1, 1, 1.15)
+      .translate(-0.02, 1.47, 0),
+    PART.HOOD
+  )
+  // legs: thigh, shin and trainer each side
+  for (const [k, z] of [
+    [0, -0.092],
+    [2, 0.092]
+  ]) {
+    // prettier-ignore
+    put(limb([[0.052, 0.46], [0.06, 0.55], [0.071, 0.7], [0.081, 0.84], [0.083, 0.94]], 7, 0.004, z), PART.L_THIGH + k)
+    // prettier-ignore
+    put(limb([[0.033, 0.07], [0.037, 0.15], [0.05, 0.3, 1.12], [0.054, 0.38, 1.12], [0.048, 0.47], [0.048, 0.53]], 7, 0, z, 1), PART.L_SHIN + k)
+    put(shoe(z), PART.L_SHIN + k)
+  }
+  // arms: upper arm, forearm and hand each side, hanging a little out from the hips
+  for (const [k, z] of [
+    [0, -0.192],
+    [2, 0.192]
+  ]) {
+    const s = Math.sign(z)
+    // (the shoulder rounded over the top of the upper arm)
+    // prettier-ignore
+    put(limb([[0.042, 1.13], [0.045, 1.2], [0.05, 1.32], [0.055, 1.4], [0.05, 1.435], [0.034, 1.458], [0.012, 1.468]], 6, 0, z, 0, [false, true]), PART.L_UPPER + k)
+    put(
+      limb(
+        [
+          [0.028, 0.865],
+          [0.031, 0.92],
+          [0.041, 1.06],
+          [0.042, 1.12],
+          [0.04, 1.17]
+        ],
+        6,
+        0,
+        z + s * 0.008
+      ),
+      PART.L_FORE + k
+    )
+    put(
+      new THREE.SphereGeometry(1, 6, 4)
+        .scale(0.042, 0.082, 0.021)
+        .translate(0.006, 0.79, z + s * 0.01),
+      PART.L_FORE + k
+    )
+  }
+  // a skirt or a dress's, flaring from the waist
+  put(
+    new THREE.CylinderGeometry(0.15, 0.27, 0.52, 10, 1, true)
+      .scale(0.82, 1, 1)
+      .translate(0, 0.79, 0),
+    PART.SKIRT
+  )
+  put(
+    new THREE.BoxGeometry(0.2, 0.22, 0.06).translate(0.02, 0.98, -0.25),
+    PART.BAG
+  ) // (at the left hip)
+  put(
+    new THREE.BoxGeometry(0.13, 0.36, 0.27).translate(-0.17, 1.22, 0),
+    PART.PACK
+  ) // (on the back)
   // a phone in the right hand (folded away to nothing when it isn't out)
-  put(new THREE.BoxGeometry(0.08, 0.15, 0.014), PHONE, 0.05, 0.88, 0.235)
-  const g = merge(parts)
-  // (merge leaves out attributes it doesn't know: the part tags go in by hand, in the same order)
-  const tags = new Float32Array(g.attributes.position.count)
-  let o = 0
-  for (const p of parts) {
-    tags.set(p.attributes.aPart.array, o)
-    o += p.attributes.aPart.count
-  }
-  g.setAttribute('aPart', new THREE.BufferAttribute(tags, 1))
-  return g
+  put(
+    new THREE.BoxGeometry(0.075, 0.15, 0.012).translate(0.03, 0.8, 0.215),
+    PART.PHONE
+  )
+  return mergeParts(parts)
 }
+
+// merge the pieces, keeping their indices: position, normal, aPart
+function mergeParts (parts) {
+  let n = 0
+  for (const g of parts) n += g.attributes.position.count
+  const out = new THREE.BufferGeometry()
+  for (const [name, size] of [
+    ['position', 3],
+    ['normal', 3],
+    ['aPart', 1]
+  ]) {
+    const arr = new Float32Array(n * size)
+    let o = 0
+    for (const g of parts) {
+      if (!g.attributes.normal) g.computeVertexNormals()
+      arr.set(g.attributes[name].array, o)
+      o += g.attributes.position.count * size
+    }
+    out.setAttribute(name, new THREE.BufferAttribute(arr, size))
+  }
+  const idx = []
+  let o = 0
+  for (const g of parts) {
+    for (const i of g.index.array) idx.push(i + o)
+    o += g.attributes.position.count
+  }
+  out.setIndex(idx)
+  return out
+}
+__export(__exports, { "PART": () => PART, "HEAD_AT": () => HEAD_AT, "figure": () => figure })
+})
+
+// ---- js/render/pedShader.js
+__define(102, function (__exports) {
+// How the people on foot (peds.js, the figure in pedFigure.js) are posed and dressed, in the shaders,
+// from a few numbers each: their stride, what they are doing, and their look, a number from 0 to 1
+// that everything about them follows from. Posed, in the vertex shader: each foot is planted through
+// its stance and travels back at the pace the body moves on, the knee folds as the leg swings
+// through, arms swing against the legs, the body rises over each step, running they lean in with
+// their elbows bent; heads turn and bow, a phone comes up in front of them, hands talk, and in a
+// fright the arms fly up. Dressed, in the fragment shader (so a neckline, a sleeve's hem or a sole
+// is crisp), the way Los Angeles dresses: T-shirts and tank tops, hoodies and long sleeves, jeans,
+// chinos, leggings, shorts, summer dresses and skirts, caps and sunglasses, trainers (and sandals),
+// a shoulder bag or a backpack; hair short, long, in a ponytail, a bun or curls, buzzed or bald;
+// skin from pale to deep brown; a woman's build or a man's. And a face: eyes under brows, a nose, a
+// mouth, a beard on some, enough to read across the street.
+const { PART, HEAD_AT } = __require(101)
+const P = PART
+// What someone wears, from their look, as bits: 1 a woman; top (2 bits from 2): 0 a tank top, 1 a
+// T-shirt, 2 long sleeves, 3 a hoodie; bottom (from 8): 0 trousers, jeans or leggings, 1 shorts, 2 a
+// dress, 3 a skirt; hair (from 32): 0 short, 1 long, 2 a ponytail, 3 curls, 4 a bun, 5 buzzed, 6
+// bald; 256 a cap, 512 sunglasses, 1024 a shoulder bag, 2048 a backpack; shoes (from 4096): 0 white
+// trainers, 1 black, 2 grey, 3 sandals; 16384 a beard
+const HASH = `
+  float pedHash (float k, float m) { return fract(sin(k * 78.233 + m * 12.9898) * 43758.5453); }
+  int pedStyle (float k) {
+    bool woman = pedHash(k, 1.0) < 0.5;
+    float t = pedHash(k, 2.0), b = pedHash(k, 3.0), h = pedHash(k, 4.0);
+    int top, bottom, hair;
+    if (woman) {
+      bottom = b < 0.2 ? 2 : b < 0.5 ? 0 : b < 0.82 ? 1 : 3;
+      top = bottom == 2 ? 0 : t < 0.3 ? 0 : t < 0.7 ? 1 : t < 0.86 ? 2 : 3;
+      hair = h < 0.36 ? 1 : h < 0.6 ? 2 : h < 0.72 ? 3 : h < 0.82 ? 4 : 0;
+    } else {
+      bottom = b < 0.58 ? 0 : 1;
+      top = t < 0.12 ? 0 : t < 0.66 ? 1 : t < 0.8 ? 2 : 3;
+      hair = h < 0.5 ? 0 : h < 0.68 ? 5 : h < 0.8 ? 3 : h < 0.86 ? 1 : h < 0.92 ? 4 : 6;
+    }
+    int s = (woman ? 1 : 0) | (top << 1) | (bottom << 3) | (hair << 5);
+    if (pedHash(k, 5.0) < (woman ? 0.12 : 0.3) && hair != 3 && hair != 4) s |= 256;
+    if (pedHash(k, 6.0) < 0.3) s |= 512;
+    float bg = pedHash(k, 7.0);
+    if (bg < (woman ? 0.3 : 0.05)) s |= 1024;
+    else if (bg < (woman ? 0.42 : 0.2)) s |= 2048;
+    float sh = pedHash(k, 8.0);
+    s |= (bottom != 0 && sh < 0.18 ? 3 : sh < 0.5 ? 0 : sh < 0.78 ? 1 : 2) << 12;
+    if (!woman && pedHash(k, 9.0) < 0.28) s |= 16384;
+    return s;
+  }
+`
+const ATTRS = `
+  attribute float aPart;
+  attribute vec4 aPose; // stride phase, stride (0 standing, 1 walking, 1.6 running), fright, hop
+  attribute vec4 aAct; // head turned (rad), on the phone, talking with their hands, gesture clock
+  attribute float aLook; // who they are
+`
+const VARY = `
+  varying vec3 vRest;
+  flat varying float vPedPart;
+  flat varying float vPedLook;
+  flat varying float vPedStyle;
+`
 
 // The pose, applied to a point (or, with w = 0, a normal) of a part, each figure facing +x and its
 // right side +z: legs and arms about their joints (swinging in the x-y plane), the head turned and
 // bowed about the neck, the upper body leaning in to a run and twisting against the stride, and the
-// whole body rising over each step.
+// whole body rising over each step. The parts someone hasn't got fold away to a point.
 const POSE = `
-  attribute float aPart;
-  attribute vec4 aPose; // stride phase, stride (0 standing, 1 walking, 1.6 running), fright, hop
-  attribute vec4 aAct; // head turned (rad), on the phone, talking with their hands, gesture clock
-  attribute vec3 aShirt;
-  attribute vec3 aPants;
-  attribute vec2 aSkin; // skin tone, hair colour
-  attribute float aStyle; // what they wear: flags (see PedView)
   mat2 pedRot (float a) { float c = cos(a), s = sin(a); return mat2(c, s, -s, c); }
   // a leg's swing at phase q: from forward to back at an even pace through the stance (the foot on
   // the ground), then smoothly forward again through the swing
@@ -70870,19 +79102,40 @@ const POSE = `
     q = mod(q, 6.28318);
     return q < 3.14159 ? A * (1.0 - 2.0 * q / 3.14159) : -A * cos(q - 3.14159);
   }
-  vec3 pedPose (vec3 p, float w) {
-    int part = int(aPart + 0.5);
+  bool pedHas (int part, int s) {
+    int hair = (s >> 5) & 7, bottom = (s >> 3) & 3;
+    bool cap = (s & 256) != 0;
+    if (part == ${P.HAIR}) return hair != 3 && hair != 6 && !cap;
+    if (part == ${P.LONG_HAIR}) return hair == 1;
+    if (part == ${P.PONY}) return hair == 2;
+    if (part == ${P.CURLS}) return hair == 3;
+    if (part == ${P.BUN}) return hair == 4;
+    if (part == ${P.CAP}) return cap;
+    if (part == ${P.HOOD}) return ((s >> 1) & 3) == 3;
+    if (part == ${P.SKIRT}) return bottom >= 2;
+    if (part == ${P.BAG}) return (s & 1024) != 0;
+    if (part == ${P.PACK}) return (s & 2048) != 0;
+    return true;
+  }
+  // a woman's build: the shoulders narrower, the hips wider, a bust; her arms in to suit
+  vec3 pedShape (vec3 p, int part, int style) {
+    if ((style & 1) == 0) return p;
+    if (part == ${P.TORSO} || part == ${P.HIPS}) {
+      p.z *= 1.0 - 0.1 * smoothstep(1.18, 1.42, p.y) + 0.06 * (1.0 - smoothstep(0.86, 1.06, p.y));
+      if (p.x > 0.0) p.x += 0.032 * smoothstep(1.16, 1.27, p.y) * (1.0 - smoothstep(1.3, 1.38, p.y)) * smoothstep(0.02, 0.1, abs(p.z));
+    } else if (part >= 7 && part <= 10) p.z *= 0.9;
+    else if (part == ${P.PHONE}) p.z -= 0.016;
+    return p;
+  }
+  vec3 pedPose (vec3 p, float w, int part, int style) {
+    if (w > 0.5) p = pedShape(p, part, style);
     float ph = aPose.x, gait = aPose.y, fright = aPose.z;
     float A = 0.42 * gait, run = clamp((gait - 1.2) * 2.5, 0.0, 1.0);
     float phone = aAct.y * (1.0 - fright), talk = aAct.z * (1.0 - fright);
-    if (part == ${PHONE}) p = mix(vec3(0.01, 0.88, 0.235) * w, p, phone);
-    {
-      // the parts only some have, folded away on the others
-      int style = int(aStyle + 0.5);
-      if ((part == ${LONG_HAIR} && (style & 8) == 0) || (part == ${SKIRT} && (style & 4) == 0)
-        || (part == ${BAG} && (style & 16) == 0) || (part == ${PACK} && (style & 32) == 0))
-        p = vec3(0.0, 1.2, 0.0) * w;
-    }
+    if (part == ${P.PHONE}) p = mix(vec3(0.01, 0.8, 0.2) * w, p, phone);
+    if (!pedHas(part, style)) p = vec3(0.0, 1.2, 0.0) * w;
+    bool headish = part == ${P.HEAD} || part == ${P.HAIR} || part == ${P.LONG_HAIR} || part == ${P.PONY}
+      || part == ${P.CURLS} || part == ${P.BUN} || part == ${P.CAP};
     if (part >= 3 && part <= 6) {
       bool left = part <= 4;
       float q = ph + (left ? 0.0 : 3.14159);
@@ -70900,7 +79153,7 @@ const POSE = `
       vec2 h = vec2(0.0, 0.92) * w;
       p.xy = h + pedRot(swing) * (p.xy - h);
     }
-    if ((part >= 7 && part <= 10) || part == ${PHONE}) {
+    if ((part >= 7 && part <= 10) || part == ${P.PHONE}) {
       bool left = part <= 8;
       // each arm swings with the other side's leg
       float swing = (0.85 * A + 0.25 * run) * cos(ph + (left ? 3.14159 : 0.0)) + fright * 2.5;
@@ -70914,7 +79167,7 @@ const POSE = `
         swing = mix(swing, 0.3 + 0.12 * sin(aAct.w * 2.1), talk);
         elbow = mix(elbow, 1.0 + 0.35 * sin(aAct.w * 3.3), talk);
       }
-      if (part == 8 || part == 10 || part == ${PHONE}) {
+      if (part == 8 || part == 10 || part == ${P.PHONE}) {
         vec2 e = vec2(0.0, 1.16) * w;
         p.xy = e + pedRot(elbow) * (p.xy - e);
       }
@@ -70922,15 +79175,14 @@ const POSE = `
       p.xy = s + pedRot(swing) * (p.xy - s);
     }
     // the head turned (to the Roadster) and bowed (over the phone)
-    if (part == ${HEAD} || part == ${HAIR} || part == ${LONG_HAIR}) {
+    if (headish) {
       vec2 n = vec2(0.0, 1.53) * w;
       p.xy = n + pedRot(-0.4 * phone) * (p.xy - n);
       p.xz = pedRot(-aAct.x) * p.xz;
     }
     // the upper body: twisting against the stride, leaning in to a run
-    if (part != ${HIPS} && (part < 3 || part > 6) && part != ${SKIRT} && part != ${BAG}) {
-      if (part != ${HEAD} && part != ${HAIR} && part != ${LONG_HAIR})
-        p.xz = pedRot(0.25 * A * cos(ph)) * p.xz;
+    if (part != ${P.HIPS} && (part < 3 || part > 6) && part != ${P.SKIRT} && part != ${P.BAG}) {
+      if (!headish) p.xz = pedRot(0.25 * A * cos(ph)) * p.xz;
       vec2 hip = vec2(0.0, 0.95) * w;
       p.xy = hip + pedRot(-0.2 * run - 0.05 * gait) * (p.xy - hip);
     }
@@ -70939,81 +79191,173 @@ const POSE = `
     return p;
   }
 `
+
+// Their colours, per fragment of each part at its rest position q: skin from pale through olive and
+// brown to deep brown (the middle tones the most of them), hair to suit, the clothes; and on the
+// head, the face. Colours are written as they look (sRGB) and made linear at the end.
+const DRESS = `
+  const vec3 TOPS[16] = vec3[16](
+    vec3(0.86, 0.86, 0.84), vec3(0.07, 0.07, 0.08), vec3(0.47, 0.48, 0.5), vec3(0.2, 0.21, 0.23),
+    vec3(0.09, 0.12, 0.24), vec3(0.47, 0.64, 0.82), vec3(0.9, 0.62, 0.68), vec3(0.92, 0.44, 0.36),
+    vec3(0.8, 0.62, 0.2), vec3(0.37, 0.4, 0.22), vec3(0.58, 0.65, 0.52), vec3(0.64, 0.58, 0.8),
+    vec3(0.72, 0.13, 0.13), vec3(0.92, 0.87, 0.74), vec3(0.13, 0.47, 0.5), vec3(0.42, 0.09, 0.13));
+  const vec3 BOTTOMS[10] = vec3[10](
+    vec3(0.52, 0.62, 0.74), vec3(0.28, 0.37, 0.52), vec3(0.13, 0.17, 0.28), vec3(0.08, 0.08, 0.09),
+    vec3(0.74, 0.66, 0.5), vec3(0.42, 0.43, 0.45), vec3(0.11, 0.13, 0.22), vec3(0.34, 0.36, 0.23),
+    vec3(0.86, 0.85, 0.82), vec3(0.2, 0.2, 0.22));
+  const vec3 CAPS[6] = vec3[6](
+    vec3(0.06, 0.06, 0.07), vec3(0.09, 0.11, 0.22), vec3(0.86, 0.86, 0.84), vec3(0.66, 0.1, 0.1),
+    vec3(0.7, 0.62, 0.46), vec3(0.32, 0.35, 0.22));
+  float pedRough = 0.88;
+  vec3 pedDress (int part, vec3 q, float k, int s) {
+    int top = (s >> 1) & 3, bottom = (s >> 3) & 3, hairCut = (s >> 5) & 7, shoes = (s >> 12) & 3;
+    bool woman = (s & 1) != 0;
+    float hs = pedHash(k, 10.0);
+    float u = hs < 0.3 ? hs / 0.3 * 0.33 : hs < 0.86 ? 0.33 + (hs - 0.3) / 0.56 * 0.37 : 0.7 + (hs - 0.86) / 0.14 * 0.3;
+    vec3 skin = u < 0.25 ? mix(vec3(0.96, 0.8, 0.7), vec3(0.89, 0.69, 0.56), u / 0.25)
+      : u < 0.5 ? mix(vec3(0.89, 0.69, 0.56), vec3(0.74, 0.53, 0.38), (u - 0.25) / 0.25)
+      : u < 0.75 ? mix(vec3(0.74, 0.53, 0.38), vec3(0.5, 0.33, 0.22), (u - 0.5) / 0.25)
+      : mix(vec3(0.5, 0.33, 0.22), vec3(0.27, 0.17, 0.11), (u - 0.75) / 0.25);
+    float hh = pedHash(k, 11.0);
+    vec3 hair = hh > 0.93 ? vec3(0.62, 0.6, 0.58)
+      : u > 0.45 || hh < 0.38 ? vec3(0.035, 0.03, 0.028)
+      : hh < 0.62 ? vec3(0.16, 0.1, 0.06)
+      : hh < 0.76 ? vec3(0.32, 0.21, 0.12)
+      : hh < 0.88 ? vec3(0.72, 0.56, 0.32) : vec3(0.48, 0.2, 0.08);
+    vec3 shirt = TOPS[int(pedHash(k, 12.0) * 16.0)];
+    vec3 pants = bottom == 3 ? TOPS[int(pedHash(k, 13.0) * 16.0)]
+      : BOTTOMS[int(pedHash(k, 13.0) * (bottom == 1 ? 8.0 : pedHash(k, 14.0) < 0.6 ? 4.0 : 10.0))];
+    if (woman && bottom == 0 && pedHash(k, 15.0) < 0.3) pants = BOTTOMS[3]; // leggings
+    bool dress = bottom == 2, bareLegs = bottom >= 1;
+    vec3 shoe = shoes == 0 ? vec3(0.9, 0.9, 0.88) : shoes == 1 ? vec3(0.07) : shoes == 2 ? vec3(0.45, 0.46, 0.48) : skin;
+    vec3 c = shirt;
+    if (part == ${P.HEAD} || part == ${P.NECK}) {
+      c = skin;
+      pedRough = 0.55;
+    } else if (part == ${P.HAIR} || part == ${P.LONG_HAIR} || part == ${
+  P.PONY
+} || part == ${P.CURLS} || part == ${P.BUN}) {
+      c = hairCut == 5 ? mix(skin, hair, 0.7) : hair;
+      pedRough = 0.6;
+    } else if (part == ${P.CAP}) c = CAPS[int(pedHash(k, 16.0) * 6.0)];
+    else if (part == ${P.HOOD}) c = shirt * 0.85;
+    else if (part == ${P.TORSO}) {
+      // a tank top's straps leave the shoulders bare; a scoop or crew neck
+      if (top == 0 && q.y > 1.32 && (abs(q.z) > 0.125 || (abs(q.z) < 0.075 && q.x > 0.0 && q.y > 1.4))) c = skin;
+      if (top == 1 && q.y > 1.445 && q.x > 0.01 && abs(q.z) < 0.07) c = skin;
+      if (top == 3 && q.y > 1.2 && q.y < 1.24 && q.x > 0.06) c = shirt * 0.8; // (the hoodie's pocket)
+    } else if (part == ${P.HIPS}) c = dress ? shirt : pants;
+    else if (part >= 3 && part <= 6) {
+      c = pants;
+      // shorts end above the knee; a dress or skirt leaves the legs bare
+      if (bottom >= 2 || (bottom == 1 && (q.y < 0.62 || part == 4 || part == 6))) c = skin;
+      if (q.y < 0.082 && q.x > -0.075 || (q.y < 0.1 && q.x > 0.06)) {
+        // the trainers: a white sole under them (sandals: a dark sole under bare feet)
+        c = q.y < 0.026 ? (shoes == 3 ? vec3(0.12, 0.08, 0.05) : vec3(0.93, 0.93, 0.91)) : shoe;
+        if (shoes == 1 && q.y > 0.026 && q.y < 0.034) c = vec3(0.9); // (a white stripe round a black one)
+        pedRough = 0.6;
+      } else if (bareLegs && shoes != 3 && q.y < 0.13 && pedHash(k, 17.0) < 0.5) c = vec3(0.9, 0.9, 0.88); // socks
+    } else if (part == 7 || part == 9) {
+      c = top == 0 || (top == 1 && q.y < 1.3) ? skin : shirt;
+      if (top == 1 && q.y >= 1.3 && q.y < 1.315) c = shirt * 0.9; // (the sleeve's hem)
+    } else if (part == 8 || part == 10) c = top >= 2 && q.y > 0.885 ? shirt : skin;
+    else if (part == ${P.SKIRT}) c = dress ? shirt : pants;
+    else if (part == ${
+      P.BAG
+    }) c = pedHash(k, 18.0) < 0.5 ? vec3(0.45, 0.29, 0.17) : vec3(0.08);
+    else if (part == ${
+      P.PACK
+    }) c = BOTTOMS[int(pedHash(k, 19.0) * 4.0) + 3] * 0.8;
+    if (part == ${P.PHONE}) {
+      c = vec3(0.04, 0.045, 0.05);
+      pedRough = 0.3;
+    }
+    if (part == ${P.HEAD}) {
+      // the face: eyes under brows (or sunglasses), a mouth, a beard on some
+      vec3 h = q - vec3(${HEAD_AT.join(', ')});
+      bool front = h.x > 0.03;
+      float ez = abs(h.z) - 0.031, ey = h.y - 0.006;
+      bool mouth = front && abs(h.z) < 0.022 && abs(h.y + 0.05) < 0.005;
+      if ((s & 16384) != 0 && h.y < -0.025 && h.x > -0.03 && !mouth) c = mix(c, hair, 0.8);
+      if (mouth) c = skin * vec3(0.62, 0.42, 0.4) * (woman ? 1.1 : 1.0);
+      float lz = (abs(h.z) - 0.033) / 0.027, ly = (ey + 0.002) / 0.016;
+      if (front && (s & 512) != 0 && (lz * lz + ly * ly < 1.0 || (abs(h.z) < 0.012 && abs(ey - 0.004) < 0.0035))) {
+        c = vec3(0.03);
+        pedRough = 0.12;
+      } else if (front) {
+        if ((ez * ez) / 0.00021 + (ey * ey) / 0.000064 < 1.0) c = vec3(0.12, 0.09, 0.07);
+        float by = ey - 0.019 + 0.006 * abs(h.z) / 0.06;
+        if (abs(h.z) > 0.011 && abs(h.z) < 0.057 && abs(by) < 0.0045) c = hair * 0.85;
+      }
+    }
+    return pow(c, vec3(2.2));
+  }
+`
+
+// Put the pose (and with colour, the clothes and the face) into a material's shaders
 function posed (shader, colour) {
   shader.vertexShader = shader.vertexShader
-    .replace('#include <common>', '#include <common>\n' + POSE)
+    .replace(
+      '#include <common>',
+      '#include <common>\n' + ATTRS + HASH + POSE + (colour ? VARY : '')
+    )
+    // (who they are and what each vertex is part of, worked out once)
+    .replace(
+      'void main() {',
+      'void main() {\n  int pedPart = int(aPart + 0.5), pedS = pedStyle(aLook);'
+    )
     .replace(
       '#include <begin_vertex>',
-      '#include <begin_vertex>\ntransformed = pedPose(transformed, 1.0);'
+      `#include <begin_vertex>
+      ${
+        colour
+          ? 'vRest = position; vPedPart = aPart; vPedLook = aLook; vPedStyle = float(pedS);'
+          : ''
+      }
+      transformed = pedPose(transformed, 1.0, pedPart, pedS);`
     )
   if (shader.vertexShader.includes('#include <beginnormal_vertex>'))
     shader.vertexShader = shader.vertexShader.replace(
       '#include <beginnormal_vertex>',
-      '#include <beginnormal_vertex>\nobjectNormal = normalize(pedPose(objectNormal, 0.0));'
+      `#include <beginnormal_vertex>
+      objectNormal = normalize(pedPose(objectNormal, 0.0, pedPart, pedS) + vec3(0.0, 1e-5, 0.0));`
     )
-  if (colour)
-    // each part's colour: skin, hair, shirt, trousers, shoes
-    shader.vertexShader = shader.vertexShader.replace(
-      '#include <color_vertex>',
-      `#include <color_vertex>
-      {
-        int part = int(aPart + 0.5), style = int(aStyle + 0.5);
-        // skin from pale to deep brown, hair from black through brown to fair (and grey)
-        float t = aSkin.x * 3.0;
-        vec3 skin = t < 1.0
-          ? mix(vec3(0.95, 0.8, 0.68), vec3(0.86, 0.64, 0.5), t)
-          : t < 2.0
-          ? mix(vec3(0.86, 0.64, 0.5), vec3(0.56, 0.38, 0.26), t - 1.0)
-          : mix(vec3(0.56, 0.38, 0.26), vec3(0.26, 0.16, 0.1), t - 2.0);
-        float hy = aSkin.y;
-        vec3 hair = hy < 0.45
-          ? mix(vec3(0.04, 0.035, 0.03), vec3(0.2, 0.13, 0.08), hy / 0.45)
-          : hy < 0.85
-          ? mix(vec3(0.2, 0.13, 0.08), vec3(0.62, 0.46, 0.25), (hy - 0.45) / 0.4)
-          : vec3(0.62, 0.6, 0.58);
-        bool sleeves = (style & 1) != 0, shorts = (style & 2) != 0, dress = (style & 4) != 0;
-        vec3 c = aShirt;
-        if (part == ${HEAD}) c = skin;
-        else if (part == ${HAIR} || part == ${LONG_HAIR}) c = hair;
-        else if (part == ${HIPS}) c = dress ? aShirt : aPants;
-        else if (part >= 3 && part <= 6) {
-          // trousers; bare legs below shorts, or under a dress
-          c = aPants;
-          if (dress || (shorts && (part == 4 || part == 6))) c = skin;
-          if (position.y < 0.075) c = (style & 64) != 0 ? vec3(0.86, 0.86, 0.84) : vec3(0.08, 0.08, 0.09);
-        }
-        else if (part == 8 || part == 10) c = sleeves && position.y > 0.93 ? aShirt * 0.85 : skin;
-        else if (part == ${SKIRT}) c = aShirt;
-        else if (part == ${BAG}) c = vec3(0.14, 0.09, 0.06);
-        else if (part == ${PACK}) c = aPants * 0.5 + vec3(0.03);
-        if (part == ${PHONE}) c = vec3(0.04, 0.045, 0.05);
-        vColor = c;
-      }`
+  if (!colour) return
+  shader.fragmentShader = shader.fragmentShader
+    .replace('#include <common>', '#include <common>\n' + VARY + HASH + DRESS)
+    .replace(
+      '#include <color_fragment>',
+      `#include <color_fragment>
+      diffuseColor.rgb = pedDress(int(vPedPart + 0.5), vRest, vPedLook, int(vPedStyle + 0.5));`
+    )
+    .replace(
+      '#include <roughnessmap_fragment>',
+      '#include <roughnessmap_fragment>\n  roughnessFactor = pedRough;'
     )
 }
+__export(__exports, { "posed": () => posed })
+})
 
-const SHIRTS = [
-  0xf2f0eb, 0x1f2a44, 0x161618, 0xa8322d, 0xd9a43a, 0x2f7a74, 0x8a8f96,
-  0xd98aa3, 0x5d6b3a, 0x8fb4d9, 0xe8d7b0, 0x6b3f7a
-].map(c => new THREE.Color(c))
-const PANTS = [
-  0x2f4a6e, 0x16171a, 0xa8957a, 0x55595f, 0x3b3f46, 0xe6e2da, 0x6e4f3a
-].map(c => new THREE.Color(c))
-
-// What someone wears, from their look (0 to 1), as flags: 1 long sleeves, 2 shorts, 4 a dress,
-// 8 long hair, 16 a shoulder bag, 32 a backpack, 64 white trainers
-function styleOf (k) {
-  const dress = (k * 23.7) % 1 < 0.16
-  let f = (k * 31.1) % 1 < 0.45 ? 1 : 0
-  if (dress) f |= 4
-  else if ((k * 41.3) % 1 < 0.18) f |= 2
-  if ((k * 53.9) % 1 < (dress ? 0.75 : 0.22)) f |= 8
-  const bag = (k * 61.7) % 1
-  if (bag < 0.15) f |= 16
-  else if (bag < 0.27) f |= 32
-  if ((k * 71.3) % 1 < 0.3) f |= 64
-  return f
-}
+// ---- js/render/peds.js
+__define(103, function (__exports) {
+// People on foot (the sim is peds.js and crowd.js), all in one instanced mesh: a figure with a
+// shaped trunk, tapered limbs, hands and trainers, a head with a face, and the pieces only some
+// have (hair in its several cuts, a cap, a hood, a skirt, a bag, a backpack, a phone; pedFigure.js),
+// posed and dressed in the vertex shader from each one's stride, what they are doing and their look
+// (pedShader.js), so a whole crowd walks in one draw call. Each foot is planted through its stance
+// and travels back at the pace the body moves on (the sim times the stride to the speed and the
+// legs' length, so feet don't slide), the knee folds as the leg swings through, arms swing against
+// the legs, the body rises over each step, and running they lean in with their elbows bent. Heads
+// turn to follow the Roadster; standing about they look down at a phone held up in front of them,
+// or talk with their hands; diving out of the Roadster's way, or running from it, arms fly up. Each
+// stands their own height and build. Only those the camera can see (or whose shadows it can) are
+// drawn.
+const THREE = __require(0)
+const { CURB_H } = __require(24)
+const { kerbDist } = __require(30)
+const { NEAR } = __require(100)
+const { figure } = __require(101)
+const { posed } = __require(102)
 const _sp = new THREE.Sphere()
 const _m = new THREE.Matrix4(),
   _q = new THREE.Quaternion(),
@@ -71023,11 +79367,6 @@ const _m = new THREE.Matrix4(),
 class PedView {
   constructor (group, max = 300) {
     const g = figure()
-    const n = g.attributes.position.count
-    g.setAttribute(
-      'color',
-      new THREE.BufferAttribute(new Float32Array(n * 3).fill(1), 3)
-    )
     const at = (name, size) => {
       const a = new THREE.InstancedBufferAttribute(
         new Float32Array(max * size),
@@ -71039,18 +79378,14 @@ class PedView {
     }
     this.pose = at('aPose', 4)
     this.act = at('aAct', 4)
-    this.shirt = at('aShirt', 3)
-    this.pants = at('aPants', 3)
-    this.skin = at('aSkin', 2)
-    this.style = at('aStyle', 1)
-    const mat = new THREE.MeshStandardMaterial({
-      vertexColors: true,
-      roughness: 0.85
-    })
+    this.look = at('aLook', 1)
+    // (the colours and roughness are worked out in the shader, pedShader.js)
+    const mat = new THREE.MeshStandardMaterial({ side: THREE.DoubleSide })
     mat.onBeforeCompile = shader => posed(shader, true)
     mat.customProgramCacheKey = () => 'pedestrian'
     const depth = new THREE.MeshDepthMaterial({
-      depthPacking: THREE.RGBADepthPacking
+      depthPacking: THREE.RGBADepthPacking,
+      side: THREE.DoubleSide
     })
     depth.onBeforeCompile = shader => posed(shader, false)
     depth.customProgramCacheKey = () => 'pedestrian depth'
@@ -71061,14 +79396,7 @@ class PedView {
     this.mesh.frustumCulled = false
     this.mesh.count = 0
     group.add(this.mesh)
-    this.attrs = [
-      this.pose,
-      this.act,
-      this.shirt,
-      this.pants,
-      this.skin,
-      this.style
-    ]
+    this.attrs = [this.pose, this.act, this.look]
     // into the shadow map, only the people near the Roadster (the first `near`)
     this.near = 0
     const mesh = this.mesh
@@ -71094,7 +79422,9 @@ class PedView {
           dz = me ? d.z - me.z : 0
         if (dx * dx + dz * dz < NEAR * NEAR !== (pass === 0)) continue
         if (view) {
-          _sp.center.set(d.x, 0.9, d.z)
+          _sp.center.x = d.x
+          _sp.center.y = 0.9
+          _sp.center.z = d.z
           _sp.radius = 4.5 // (and their shadow, a few metres long)
           if (!view.intersectsSphere(_sp)) continue
         }
@@ -71116,7 +79446,6 @@ class PedView {
     }
   }
   put (d, i) {
-    const k = d.look
     // up on the pavement, down in the road
     const h = kerbDist(d.x, d.z) > 0 ? 0 : CURB_H
     // (fields and arrays written directly: no numbers passed to calls)
@@ -71141,28 +79470,14 @@ class PedView {
     A[j + 1] = d.act === 1 ? 1 : 0
     A[j + 2] = d.act === 2 ? 1 : 0
     A[j + 3] = d.phase
-    const sh = SHIRTS[Math.floor(k * SHIRTS.length) % SHIRTS.length],
-      pa = PANTS[Math.floor(((k * 13.7) % 1) * PANTS.length)]
-    const S = this.shirt.array,
-      T = this.pants.array,
-      K = this.skin.array,
-      c = i * 3
-    S[c] = sh.r
-    S[c + 1] = sh.g
-    S[c + 2] = sh.b
-    T[c] = pa.r
-    T[c + 1] = pa.g
-    T[c + 2] = pa.b
-    K[i * 2] = (k * 5.31) % 1
-    K[i * 2 + 1] = (k * 9.17) % 1
-    this.style.array[i] = styleOf(k)
+    this.look.array[i] = d.look
   }
 }
 __export(__exports, { "PedView": () => PedView })
 })
 
 // ---- js/render/facade.js
-__define(64, function (__exports) {
+__define(104, function (__exports) {
 // Facades where every window is its own, and has depth. The facade textures repeat every 8 bays and 8
 // storeys, so whatever varies window to window is picked in the shader from the window's place on the
 // building (its cell in the texture's UVs, which run on unbroken round a building and up it): whether
@@ -71188,15 +79503,34 @@ const NIGHT = { value: 0 }
 // of windows with a light on (and litNight, at night); blinds: share with blinds down; tilt: how far
 // panes go off true;
 // inset: m the glass sits back from the wall face; glassMetal: how mirrored the glass is (0 for
-// clear glass, more for a curtain wall's coated panes)
+// clear glass, more for a curtain wall's coated panes); fill: the share of bays with a window at all
+// (a house's wall has few; where there is none the wall carries on over it, its surround too)
 function facadeMaterial (
   opts,
-  { cells, win, lit, litNight = lit, blinds, tilt, inset, glassMetal = 0 }
+  {
+    cells,
+    win,
+    lit,
+    litNight = lit,
+    blinds,
+    tilt,
+    inset,
+    glassMetal = 0,
+    fill = 1
+  }
 ) {
   const m = new THREE.MeshStandardMaterial(opts)
   const f = v => v.toFixed(4)
   const [wx, wy, ww, wh] = win.map(f)
   const C = cells.toFixed(1)
+  const blank =
+    fill < 1
+      ? `if (cellHash(gCell + 13.7) > ${f(fill)}) {
+            if (f.x > x0 - 0.07 && f.x < x1 + 0.07 && f.y > bot - 0.07 && f.y < top + 0.07)
+              diffuseColor.rgb = diffuse * textureLod(map, (gCell + vec2(0.06, 0.06)) / ${C}, 2.0).rgb;
+            gWin = 0.0;
+          }`
+      : ''
   m.onBeforeCompile = shader => {
     shader.uniforms.uNight = NIGHT
     shader.fragmentShader = shader.fragmentShader
@@ -71220,6 +79554,7 @@ function facadeMaterial (
           vec2 f = fract(cu);
           float x0 = ${wx}, x1 = ${wx} + ${ww}, top = 1.0 - ${wy}, bot = top - ${wh};
           gWin = step(x0, f.x) * step(f.x, x1) * step(bot, f.y) * step(f.y, top);
+          ${blank}
           float pane = 0.0;
           // (the wall between the windows has nothing more to work out)
           if (gWin > 0.5) {
@@ -71314,14 +79649,14 @@ function facadeMaterial (
       )
   }
   m.customProgramCacheKey = () =>
-    `facade ${win} ${lit} ${litNight} ${blinds} ${tilt} ${inset} ${glassMetal}`
+    `facade ${win} ${lit} ${litNight} ${blinds} ${tilt} ${inset} ${glassMetal} ${fill}`
   return m
 }
 __export(__exports, { "NIGHT": () => NIGHT, "facadeMaterial": () => facadeMaterial })
 })
 
 // ---- js/render/chunks.js
-__define(65, function (__exports) {
+__define(105, function (__exports) {
 // The city's static meshes split by district. three.js skips any mesh whose bounds lie outside a
 // camera's view, and that includes the sun's shadow camera round the car, but a mesh that spans the
 // whole city is never outside anything: the street lights and palms of every district were drawn
@@ -71329,7 +79664,7 @@ __define(65, function (__exports) {
 // three ways across the city each way, the shadow map round the car takes in one district, or two
 // or four where they meet, and the view leaves out whatever districts are behind it.
 const THREE = __require(0)
-const { HALF } = __require(4)
+const { HALF } = __require(24)
 const CUT = HALF / 3 // m from the middle to where the districts meet
 const MARGIN = 12 // m added round each district's bounds (and they are fitted again as things fall)
 const DISTRICTS = 9
@@ -71408,45 +79743,61 @@ class Instances {
 __export(__exports, { "DISTRICTS": () => DISTRICTS, "district": () => district, "Instances": () => Instances })
 })
 
-// ---- js/render/cityProps.js
-__define(66, function (__exports) {
-// Street furniture: street lights, palms on the boulevards, park trees and a signal mast on every
-// corner whose red, yellow and green lamps follow the intersection's signal plan. All instanced (one
-// mesh a district: chunks.js), and all of it goes over when the Roadster hits it hard enough (the sim
-// decides: breakables.js).
+// ---- js/render/fallers.js
+__define(106, function (__exports) {
+// What goes over when the Roadster hits it (the sim decides: breakables.js): the instanced parts of
+// each street light, signal mast, tree and palm, moved as one as it falls. Shared by the street
+// furniture's builders (cityProps.js, cityTrees.js).
 const THREE = __require(0)
-const { hdr, softTex } = __require(20)
-const { Instances } = __require(65)
-const { merge, box, tint } = __require(22)
-const { G, clamp } = __require(1)
-const { rng, NODES, CURB_H, LAMPS, PALMS, TREES, POLES, DIRS, RED, YELLOW, GREEN, ROAD_HW, LANE_OFF, signal } = __require(4)
-const R = rng(99)
+const { Instances } = __require(105)
+const { G, clamp } = __require(4)
 const _m = new THREE.Matrix4(),
-  _l = new THREE.Matrix4(),
   _q = new THREE.Quaternion(),
   _p = new THREE.Vector3(),
   _s = new THREE.Vector3(),
   _e = new THREE.Euler()
-const pose = (x, y, z, yaw, sx = 1, sy = 1, sz = 1, tilt = 0, tiltDir = 0) => {
+// a matrix standing something at (x, y, z), turned yaw, scaled and tipped tilt towards tiltDir
+const pose = (
+  x,
+  y,
+  z,
+  yaw,
+  sx = 1,
+  sy = 1,
+  sz = 1,
+  tilt = 0,
+  tiltDir = 0
+) => {
   _e.set(Math.cos(tiltDir) * tilt, yaw, Math.sin(tiltDir) * tilt, 'YXZ')
   return _m.compose(_p.set(x, y, z), _q.setFromEuler(_e), _s.set(sx, sy, sz))
 }
-// (those that cast no shadow are small: one mesh for the city)
-function instanced (geo, mat, list, place, shadow = true) {
+// One instanced set a district for the items of list, each placed by place(item, i). (Those that
+// cast no shadow are small: one mesh for the city.) name: what its meshes are called (to tell
+// them apart when counting what a frame draws)
+function instanced (geo, mat, list, place, shadow = true, name = '') {
   const m = new Instances(geo, mat, list.length, i => list[i], {
     cast: shadow,
     split: shadow
   })
   list.forEach((it, i) => m.setMatrixAt(i, place(it, i)))
+  for (const mesh of m.meshes) mesh.name = name
   return m.bounds()
 }
-const metal = new THREE.MeshStandardMaterial({
-  color: 0x34373c,
-  roughness: 0.5,
-  metalness: 0.6
-})
+const one = i => [i]
+// For a set of instances that holds only some of a list's items: the items, where each came from in
+// the list (src), which instance each item of the list is (idx, or -1), and its of() for Fallers
+function subset (list, keep) {
+  const idx = new Int32Array(list.length).fill(-1),
+    items = [],
+    src = []
+  list.forEach((it, i) => {
+    if (!keep(it)) return
+    idx[i] = items.push(it) - 1
+    src.push(i)
+  })
+  return { items, src, idx, of: i => (idx[i] < 0 ? [] : [idx[i]]) }
+}
 
-// ---------- what goes over when it is hit: the instanced parts of each one, moved as one ----------
 // A post snapped off at its foot falls like a rigid body hinged at the ground: it tips with angular
 // acceleration g sin(tilt) / L, where L is the length of the pendulum it makes (about two thirds of its
 // height for a pole, nearly all of it for a top-heavy tree), starting from the shove the hit gave it.
@@ -71465,6 +79816,8 @@ class Fallers {
     this.standing = new Map() // i -> each part's instance matrices as it stood
     this.moving = []
     this.onLand = null // (x, z, faller, item): it has hit the ground
+    this.onKnock = null // (i): it has been knocked (the wires it carried come down)
+    this.onStandUp = null
   }
   // e: the sim's 'knock' event: which one, the way it goes (dx, dz) and how fast it was shoved
   knock (e) {
@@ -71495,6 +79848,7 @@ class Fallers {
       rest: this.rest(it),
       down: false
     })
+    this.onKnock?.(e.i)
   }
   update (dt) {
     if (!this.moving.length) return
@@ -71522,6 +79876,7 @@ class Fallers {
       this.parts.forEach(({ inst, of, dark }, p) => {
         if (dark) return
         const ks = of(f.i)
+        if (!ks.length) return
         ks.forEach((k, j) =>
           inst.setMatrixAt(k, _m.multiplyMatrices(_k, saved[p][j]))
         )
@@ -71539,75 +79894,41 @@ class Fallers {
     if (this.standing.size) for (const p of this.parts) p.inst.bounds()
     this.standing.clear()
     this.moving.length = 0
+    this.onStandUp?.()
   }
 }
-const one = i => [i]
-
-// ---------- street lights ----------
-const lampYaw = l => Math.atan2(-l.az, l.ax)
-function lamps (group) {
-  const post = merge([
-    new THREE.CylinderGeometry(0.075, 0.12, 8, 8).translate(0, 4, 0),
-    box(0, 7.8, -0.06, 2.3, 7.92, 0.06),
-    box(1.9, 7.68, -0.17, 2.7, 7.92, 0.17)
-  ])
-  const lens = new THREE.PlaneGeometry(0.66, 0.26)
-    .rotateX(Math.PI / 2)
-    .translate(2.3, 7.66, 0)
-  const stand = l => pose(l.x, 0, l.z, lampYaw(l))
-  const posts = instanced(post, metal, LAMPS, stand)
-  LENS.color = hdr(3.2, 2.5, 1.6)
-  const lenses = instanced(lens, LENS, LAMPS, stand, false)
-  // at night, the light each throws on the ground under its head (on the pavement's height, so it
-  // shows on the pavement as well as the road)
-  const pools = instanced(
-    new THREE.PlaneGeometry(12, 12).rotateX(-Math.PI / 2),
-    POOL,
-    LAMPS,
-    l => pose(l.x + l.ax * 2.3, CURB_H + 0.02, l.z + l.az * 2.3, 0),
-    false
-  )
-  pools.receiveShadow = false
-  pools.visible = false
-  group.add(...posts.meshes, ...lenses.meshes, ...pools.meshes)
-  return new Fallers(
-    'lamp',
-    LAMPS,
-    [
-      { inst: posts, of: one },
-      { inst: lenses, of: one, dark: true },
-      { inst: pools, of: one, dark: true }
-    ],
-    { L: () => 5.6, rest: () => 1.53, h: () => 8, skid: 0.5 }
-  )
-}
-const LENS = new THREE.MeshBasicMaterial({ toneMapped: false })
-const POOL = new THREE.MeshBasicMaterial({
-  map: softTex,
-  color: new THREE.Color(1, 0.74, 0.45),
-  transparent: true,
-  blending: THREE.AdditiveBlending,
-  depthWrite: false,
-  polygonOffset: true,
-  polygonOffsetFactor: -4,
-  polygonOffsetUnits: -4
+__export(__exports, { "pose": () => pose, "instanced": () => instanced, "one": () => one, "subset": () => subset, "Fallers": () => Fallers })
 })
 
-// ---------- palms: a leaning trunk and a crown of drooping fronds ----------
+// ---- js/render/cityTrees.js
+__define(107, function (__exports) {
+// Palms and trees (the sim places them: PALMS, TREES; breakables.js says what snaps them). The
+// palms are Los Angeles' two: the Mexican fan palm, twenty to thirty metres of thin grey trunk with
+// a small round head of fan leaves over a skirt of dead fronds hanging down it, in lines down the
+// boulevards and Beverly Hills' streets; and the stout Canary Island date palm, a thick trunk under
+// a big crown of long arching feather fronds. Trees are round-headed, in the parks and down the
+// side streets. Each kind is one instanced set (a mesh a district), each palm or tree one piece,
+// trunk and head, and all of them go over when hit hard enough.
+const THREE = __require(0)
+const { merge, tint } = __require(42)
+const { PALMS, TREES, rng } = __require(24)
+const { Fallers, pose, instanced, one, subset } = __require(106)
+const R = rng(99)
+
+// a feather frond for the date palm: a shallow V folded along its rib, arching out and down
 function frond (a, len) {
   const P = [],
-    n = 6,
+    n = 4,
     ca = Math.cos(a),
     sa = Math.sin(a)
   const pt = t => {
     const r = t * len,
-      w = 0.42 * Math.sin(Math.PI * Math.min(1, t * 1.15)) + 0.04
-    return [r, 0.7 * t - 2.1 * t * t, w]
+      w = 0.46 * Math.sin(Math.PI * Math.min(1, t * 1.15)) + 0.04
+    return [r, 0.9 * t - 2.3 * t * t, w]
   }
   for (let i = 0; i < n; i++) {
     const [r0, y0, w0] = pt(i / n),
       [r1, y1, w1] = pt((i + 1) / n)
-    // a shallow V across the leaf, folded along its rib
     const L = (r, y, w) => [r * ca + sa * w, y - 0.12 * w, r * sa - ca * w]
     const M = (r, y) => [r * ca, y, r * sa]
     const Rr = (r, y, w) => [r * ca - sa * w, y - 0.12 * w, r * sa + ca * w]
@@ -71631,110 +79952,978 @@ function frond (a, len) {
   g.computeVertexNormals()
   return g
 }
-function palms (group) {
-  const trunk = new THREE.CylinderGeometry(0.15, 0.24, 1, 7).translate(
-    0,
-    0.5,
-    0
-  )
-  const parts = []
+// a fan leaf for the fan palm: a stiff pleated fan on its stalk, pointing out at angle a, tipped
+// up (or drooping) by pitch
+function fanLeaf (a, pitch, len) {
+  const P = []
+  const stalk = 0.45,
+    n = 2,
+    spread = 1.1
+  const ca = Math.cos(a),
+    sa = Math.sin(a),
+    cp = Math.cos(pitch),
+    sp = Math.sin(pitch)
+  // in the leaf's own plane: x out along the stalk, z across; then pitched and turned
+  const put = (x, z, y = 0) => {
+    const xr = x * cp - y * sp,
+      yr = x * sp + y * cp
+    return [xr * ca - z * sa, yr, xr * sa + z * ca]
+  }
+  const o = put(stalk, 0)
+  for (let i = 0; i < n; i++) {
+    const t0 = -spread / 2 + (spread * i) / n,
+      t1 = -spread / 2 + (spread * (i + 1)) / n
+    // (pleats: every other spoke a little raised)
+    const p0 = put(
+        stalk + len * Math.cos(t0),
+        len * Math.sin(t0),
+        i % 2 ? 0.08 : -0.04
+      ),
+      p1 = put(
+        stalk + len * Math.cos(t1),
+        len * Math.sin(t1),
+        i % 2 ? -0.04 : 0.08
+      )
+    P.push(...o, ...p1, ...p0)
+  }
+  const g = new THREE.BufferGeometry()
+  g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3))
+  g.computeVertexNormals()
+  return g
+}
+
+// Each palm and each tree is one piece, trunk and head, scaled whole to its height (so one set of
+// instances draws all of a kind): a fan palm 24 m tall, a date palm 10 m, a tree as a park's.
+const FAN_H = 24,
+  DATE_H = 10
+// a fan palm: its thin grey trunk, the skirt of dead fronds under its head, and sixteen small fans
+// in three rings, up, out and drooping, so the head reads round from below as well as from the side
+function fanPalm () {
+  const parts = [
+    tint(
+      new THREE.CylinderGeometry(0.12, 0.19, FAN_H, 6, 1, true).translate(
+        0,
+        FAN_H / 2,
+        0
+      ),
+      0x9d9081
+    ),
+    tint(
+      new THREE.CylinderGeometry(0.6, 0.28, 2.2, 5, 1, true).translate(
+        0,
+        FAN_H - 1.1,
+        0
+      ),
+      0x6e5a40
+    )
+  ]
+  for (let i = 0; i < 16; i++) {
+    const ring = i % 3,
+      a = (i / 16) * Math.PI * 2 + R() * 0.3,
+      pitch = ring === 0 ? -0.75 : ring === 1 ? 0.05 : 0.85
+    parts.push(
+      tint(
+        fanLeaf(a, pitch, 0.95 + R() * 0.3).translate(0, FAN_H, 0),
+        new THREE.Color().setHSL(0.22 + R() * 0.05, 0.42, 0.22 + R() * 0.11)
+      )
+    )
+  }
+  return merge(parts)
+}
+// a date palm: its stout trunk, long arching fronds round a knob
+function datePalm () {
+  const parts = [
+    tint(
+      new THREE.CylinderGeometry(0.28, 0.44, DATE_H, 6, 1, true).translate(
+        0,
+        DATE_H / 2,
+        0
+      ),
+      0x7d6c5a
+    ),
+    tint(
+      new THREE.ConeGeometry(0.62, 1.2, 7).translate(0, DATE_H - 0.35, 0),
+      0x6b5434
+    )
+  ]
   for (let i = 0; i < 9; i++) {
     const a = (i / 9) * Math.PI * 2 + R() * 0.3
     parts.push(
       tint(
-        frond(a, 3.2 + R() * 0.9),
+        frond(a, 3.8 + R() * 1.1).translate(0, DATE_H, 0),
         new THREE.Color().setHSL(0.24 + R() * 0.05, 0.45, 0.22 + R() * 0.1)
       )
     )
   }
-  parts.push(
-    tint(new THREE.ConeGeometry(0.42, 1.1, 7).translate(0, -0.35, 0), 0x6b5434)
-  )
-  const crown = merge(parts)
-  // each trunk leans a little; its crown sits where the trunk ends
-  const tops = []
-  const tilted = (p, i) => {
-    const m = pose(p.x, 0, p.z, 0, 1, p.h, 1, R() * 0.08, R() * Math.PI * 2)
-    tops[i] = new THREE.Vector3(0, 1, 0).applyMatrix4(m)
-    return m
-  }
-  const trunks = instanced(
-    trunk,
-    new THREE.MeshStandardMaterial({ color: 0x8a7458, roughness: 0.95 }),
-    PALMS,
-    tilted
-  )
-  const crowns = instanced(
-    crown,
-    new THREE.MeshStandardMaterial({
-      vertexColors: true,
-      roughness: 0.8,
-      side: THREE.DoubleSide
-    }),
-    PALMS,
-    (p, i) => pose(tops[i].x, tops[i].y, tops[i].z, R() * Math.PI * 2)
-  )
-  group.add(...trunks.meshes, ...crowns.meshes)
-  // the crown is most of the weight; it comes to rest on its drooping fronds
-  return new Fallers(
-    'palm',
-    PALMS,
-    [
-      { inst: trunks, of: one },
-      { inst: crowns, of: one }
-    ],
-    {
-      L: p => 0.85 * p.h,
-      rest: p => Math.acos(1.3 / p.h),
-      h: p => p.h,
-      skid: 0.2
-    }
-  )
+  return merge(parts)
 }
-
-// ---------- park trees ----------
-function trees (group) {
-  const trunk = new THREE.CylinderGeometry(0.16, 0.26, 3.2, 7).translate(
-    0,
-    1.6,
-    0
-  )
+// a round-headed tree: its trunk, and its crown faceted (each face its own normal)
+function tree () {
+  // (an icosahedron's triangles are its own already: their normals made each face's)
   const crown = new THREE.IcosahedronGeometry(2.4, 1)
     .scale(1, 0.85, 1)
     .translate(0, 4.4, 0)
-  const trunks = instanced(
-    trunk,
-    new THREE.MeshStandardMaterial({ color: 0x5a4632, roughness: 0.95 }),
-    TREES,
-    t => pose(t.x, 0, t.z, 0, t.s, t.s, t.s)
+  crown.computeVertexNormals()
+  return merge([
+    tint(
+      new THREE.CylinderGeometry(0.16, 0.26, 3.2, 6, 1, true).translate(
+        0,
+        1.6,
+        0
+      ),
+      0x5a4632
+    ),
+    tint(crown, 0x4f7a3a)
+  ])
+}
+
+// The palms and the trees, and what goes over when one is hit: { palm, tree } (Fallers)
+function greenery (group) {
+  const mat = new THREE.MeshStandardMaterial({
+    vertexColors: true,
+    roughness: 0.82,
+    side: THREE.DoubleSide
+  })
+  // (each palm leans a little, and each is turned its own way)
+  const lean = p => R() * (p.fan ? 0.05 : 0.09)
+  const fan = subset(PALMS, p => p.fan),
+    date = subset(PALMS, p => !p.fan)
+  const stand = H => p => {
+    const s = p.h / H
+    return pose(
+      p.x,
+      0,
+      p.z,
+      R() * Math.PI * 2,
+      s,
+      s,
+      s,
+      lean(p),
+      R() * Math.PI * 2
+    )
+  }
+  const fans = instanced(
+    fanPalm(),
+    mat,
+    fan.items,
+    stand(FAN_H),
+    true,
+    'fan palms'
   )
-  const leaves = instanced(
-    crown,
-    new THREE.MeshStandardMaterial({ roughness: 0.9, flatShading: true }),
-    TREES,
-    t => pose(t.x, 0, t.z, R() * 6, t.s, t.s, t.s)
+  const dates = instanced(
+    datePalm(),
+    mat,
+    date.items,
+    stand(DATE_H),
+    true,
+    'date palms'
   )
+  const trees = instanced(
+    tree(),
+    mat,
+    TREES,
+    t => pose(t.x, 0, t.z, R() * 6, t.s, t.s, t.s),
+    true,
+    'trees'
+  )
+  // (each tree a shade of its own)
   const c = new THREE.Color()
   TREES.forEach((t, i) =>
-    leaves.setColorAt(i, c.setHSL(0.25 + R() * 0.08, 0.45, 0.2 + R() * 0.1))
+    trees.setColorAt(
+      i,
+      c.setRGB(0.85 + R() * 0.3, 0.85 + R() * 0.3, 0.8 + R() * 0.25)
+    )
   )
-  group.add(...trunks.meshes, ...leaves.meshes)
-  // top-heavy: it goes over almost like a weight on a stick, and comes to rest propped on its crown
-  return new Fallers(
-    'tree',
-    TREES,
-    [
-      { inst: trunks, of: one },
-      { inst: leaves, of: one }
-    ],
-    {
+  group.add(...fans.meshes, ...dates.meshes, ...trees.meshes)
+  return {
+    // a palm's crown is most of its weight; it comes to rest on its fronds
+    palm: new Fallers(
+      'palm',
+      PALMS,
+      [
+        { inst: fans, of: fan.of },
+        { inst: dates, of: date.of }
+      ],
+      {
+        L: p => 0.85 * p.h,
+        rest: p => Math.acos((p.fan ? 1.1 : 1.3) / p.h),
+        h: p => p.h,
+        skid: 0.2
+      }
+    ),
+    // a tree is top-heavy: it goes over almost like a weight on a stick, and comes to rest propped
+    // on its crown
+    tree: new Fallers('tree', TREES, [{ inst: trees, of: one }], {
       L: t => 4 * t.s,
       rest: () => Math.acos(2.2 / 4.4),
       h: t => 4.4 * t.s,
       skid: 0.12
+    })
+  }
+}
+__export(__exports, { "greenery": () => greenery })
+})
+
+// ---- js/render/builder.js
+__define(108, function (__exports) {
+// Merged geometry for the city's buildings: quads pushed into flat arrays (position, normal, uv,
+// colour) and made into one buffer per material, so hundreds of buildings draw in a few calls.
+// Boxes, bands standing out round them (cornices, parapets, canopies), prisms on any convex plan
+// (round towers, three-sided ones), their flat tops and their cornices, hip roofs over their
+// eaves, and any three.js geometry put in place and tinted.
+const THREE = __require(0)
+const _v = new THREE.Vector3(),
+  _n = new THREE.Vector3(),
+  _m3 = new THREE.Matrix3()
+
+class Builder {
+  constructor () {
+    this.p = []
+    this.n = []
+    this.uv = []
+    this.c = []
+  }
+  // quad a-b-c-d counter-clockwise seen from outside; uv = [u0, v0, u1, v1] across a-b and up b-c
+  quad (a, b, c, d, nrm, uv, col) {
+    const [u0, v0, u1, v1] = uv
+    // (two triangles, a-b-c and a-c-d)
+    this.p.push(...a, ...b, ...c, ...a, ...c, ...d)
+    this.uv.push(u0, v0, u1, v0, u1, v1, u0, v0, u1, v1, u0, v1)
+    for (let i = 0; i < 6; i++) {
+      this.n.push(nrm[0], nrm[1], nrm[2])
+      this.c.push(col.r, col.g, col.b)
+    }
+  }
+  // a triangle a-b-c counter-clockwise from outside, its own uv at each corner
+  tri (a, b, c, nrm, uvs, col) {
+    this.p.push(...a, ...b, ...c)
+    this.uv.push(...uvs)
+    for (let i = 0; i < 3; i++) {
+      this.n.push(nrm[0], nrm[1], nrm[2])
+      this.c.push(col.r, col.g, col.b)
+    }
+  }
+  // the four walls of a box from y0 to y1; uvFn(width, side) gives each wall's uv
+  walls (x0, x1, z0, z1, y0, y1, col, uvFn) {
+    const P = (x, y, z) => [x, y, z]
+    this.quad(
+      P(x0, y0, z1),
+      P(x1, y0, z1),
+      P(x1, y1, z1),
+      P(x0, y1, z1),
+      [0, 0, 1],
+      uvFn(x1 - x0, 0),
+      col
+    )
+    this.quad(
+      P(x1, y0, z0),
+      P(x0, y0, z0),
+      P(x0, y1, z0),
+      P(x1, y1, z0),
+      [0, 0, -1],
+      uvFn(x1 - x0, 1),
+      col
+    )
+    this.quad(
+      P(x1, y0, z1),
+      P(x1, y0, z0),
+      P(x1, y1, z0),
+      P(x1, y1, z1),
+      [1, 0, 0],
+      uvFn(z1 - z0, 2),
+      col
+    )
+    this.quad(
+      P(x0, y0, z0),
+      P(x0, y0, z1),
+      P(x0, y1, z1),
+      P(x0, y1, z0),
+      [-1, 0, 0],
+      uvFn(z1 - z0, 3),
+      col
+    )
+  }
+  bottom (x0, x1, z0, z1, y, col) {
+    this.quad(
+      [x0, y, z0],
+      [x1, y, z0],
+      [x1, y, z1],
+      [x0, y, z1],
+      [0, -1, 0],
+      [0, 0, 0, 0],
+      col
+    )
+  }
+  // a band standing out o m round the walls of [x0, x1] x [z0, z1], from y0 to y1, with its
+  // underside: a cornice, a parapet or a shop canopy
+  band (x0, x1, z0, z1, o, y0, y1, col) {
+    for (const [a, b, c, d] of [
+      [x0 - o, x1 + o, z0 - o, z0],
+      [x0 - o, x1 + o, z1, z1 + o],
+      [x0 - o, x0, z0, z1],
+      [x1, x1 + o, z0, z1]
+    ]) {
+      this.cuboid(a, b, c, d, y0, y1, col)
+      this.bottom(a, b, c, d, y0, col)
+    }
+  }
+  top (x0, x1, z0, z1, y, col) {
+    this.quad(
+      [x0, y, z1],
+      [x1, y, z1],
+      [x1, y, z0],
+      [x0, y, z0],
+      [0, 1, 0],
+      [x0 / 4, z1 / 4, x1 / 4, z0 / 4],
+      col
+    )
+  }
+  cuboid (x0, x1, z0, z1, y0, y1, col) {
+    this.walls(x0, x1, z0, z1, y0, y1, col, w => [0, y0 / 4, w / 4, y1 / 4])
+    this.top(x0, x1, z0, z1, y1, col)
+  }
+
+  // ---------- prisms on a plan ----------
+  // The walls round a convex plan (pts: [x, z] anticlockwise seen from above) from y0 to y1; top:
+  // optionally the height of the top at each point (a sloping top). smooth: shaded round, the
+  // normals at each corner the mean of its walls'. uvFn(k, len, from) gives wall k's uv: len its
+  // length, from how far round the plan it starts.
+  prism (pts, y0, y1, col, uvFn, smooth = false, top = null) {
+    const n = pts.length
+    const out = (i, j) => {
+      const dx = pts[j][0] - pts[i][0],
+        dz = pts[j][1] - pts[i][1],
+        l = Math.hypot(dx, dz) || 1
+      return [-dz / l, 0, dx / l]
+    }
+    const norms = pts.map((_, i) => out(i, (i + 1) % n))
+    let from = 0
+    for (let i = 0; i < n; i++) {
+      const j = (i + 1) % n,
+        [ax, az] = pts[i],
+        [bx, bz] = pts[j]
+      const len = Math.hypot(bx - ax, bz - az)
+      const ya = top ? top[i] : y1,
+        yb = top ? top[j] : y1
+      const [u0, v0, u1, v1] = uvFn(i, len, from)
+      from += len
+      const vb = v0 + ((v1 - v0) * (yb - y0)) / (y1 - y0),
+        va = v0 + ((v1 - v0) * (ya - y0)) / (y1 - y0)
+      const P = [
+        [ax, y0, az],
+        [bx, y0, bz],
+        [bx, yb, bz],
+        [ax, ya, az]
+      ]
+      const UV = [u0, v0, u1, v0, u1, vb, u0, va]
+      let na = norms[i],
+        nb = norms[i]
+      if (smooth) {
+        const p = norms[(i + n - 1) % n],
+          q = norms[j]
+        na = avg(p, norms[i])
+        nb = avg(norms[i], q)
+      }
+      const N = [na, nb, nb, na]
+      for (const k of [0, 1, 2, 0, 2, 3]) {
+        this.p.push(...P[k])
+        this.uv.push(UV[2 * k], UV[2 * k + 1])
+        this.n.push(...N[k])
+        this.c.push(col.r, col.g, col.b)
+      }
+    }
+  }
+  // the flat top of a convex plan at y (or sloping: tops, its height at each point), in a fan from
+  // its middle; uv in metres over 4, as top()
+  cap (pts, y, col, tops = null) {
+    const n = pts.length
+    let cx = 0,
+      cz = 0,
+      cy = 0
+    pts.forEach((p, i) => {
+      cx += p[0] / n
+      cz += p[1] / n
+      cy += (tops ? tops[i] : y) / n
+    })
+    for (let i = 0; i < n; i++) {
+      const j = (i + 1) % n
+      const a = [cx, cy, cz],
+        b = [pts[i][0], tops ? tops[i] : y, pts[i][1]],
+        c = [pts[j][0], tops ? tops[j] : y, pts[j][1]]
+      const nrm = tops ? normalOf(a, b, c) : [0, 1, 0]
+      this.tri(
+        a,
+        b,
+        c,
+        nrm,
+        [a[0] / 4, a[2] / 4, b[0] / 4, b[2] / 4, c[0] / 4, c[2] / 4],
+        col
+      )
+    }
+  }
+  // a band standing out o round a plan, from y0 to y1, its top and underside: a cornice
+  ring (pts, o, y0, y1, col) {
+    const big = grow(pts, o)
+    this.prism(big, y0, y1, col, () => [0, 0, 0, 0])
+    const n = pts.length
+    for (let i = 0; i < n; i++) {
+      const j = (i + 1) % n
+      const a = pts[i],
+        b = pts[j],
+        A = big[i],
+        B = big[j]
+      // top: inner edge to outer edge; underside the other way round
+      this.quad(
+        [b[0], y1, b[1]],
+        [a[0], y1, a[1]],
+        [A[0], y1, A[1]],
+        [B[0], y1, B[1]],
+        [0, 1, 0],
+        [0, 0, 0, 0],
+        col
+      )
+      this.quad(
+        [a[0], y0, a[1]],
+        [b[0], y0, b[1]],
+        [B[0], y0, B[1]],
+        [A[0], y0, A[1]],
+        [0, -1, 0],
+        [0, 0, 0, 0],
+        col
+      )
+    }
+  }
+
+  // ---------- roofs ----------
+  // A hip roof over [x0, x1] x [z0, z1] (the walls' top at y), its eaves out e past the walls, its
+  // ridge rise above them along the longer side; the eaves' soffit underneath. uv in metres (u along
+  // each eave, v up the slope), for tiles.
+  hip (x0, x1, z0, z1, y, rise, e, col) {
+    x0 -= e
+    x1 += e
+    z0 -= e
+    z1 += e
+    const alongX = x1 - x0 >= z1 - z0
+    const half = (alongX ? z1 - z0 : x1 - x0) / 2,
+      cx = (x0 + x1) / 2,
+      cz = (z0 + z1) / 2
+    const rl = (alongX ? x1 - x0 : z1 - z0) / 2 - half // half the ridge's length
+    // (the eaves rise with the overhang: the slope runs from the walls' top)
+    const slope = rise / Math.max(0.1, half - e),
+      ye = y - e * slope
+    const top = y + rise
+    const R0 = alongX ? [cx - rl, top, cz] : [cx, top, cz - rl],
+      R1 = alongX ? [cx + rl, top, cz] : [cx, top, cz + rl]
+    const c00 = [x0, ye, z0],
+      c10 = [x1, ye, z0],
+      c11 = [x1, ye, z1],
+      c01 = [x0, ye, z1]
+    const run = Math.hypot(half, rise + e * slope) // m up each slope
+    // the four faces, each from its eave up to the ridge: [eave from, eave to, ridge from, ridge to]
+    const faces = alongX
+      ? [
+          [c01, c11, R1, R0],
+          [c10, c00, R0, R1],
+          [c11, c10, R1, R1],
+          [c00, c01, R0, R0]
+        ]
+      : [
+          [c11, c10, R0, R1],
+          [c00, c01, R1, R0],
+          [c01, c11, R1, R1],
+          [c10, c00, R0, R0]
+        ]
+    for (const [a, b, r1, r0] of faces) {
+      const nrm = normalOf(a, b, r1)
+      const L = Math.hypot(b[0] - a[0], b[2] - a[2])
+      // (u along the eave, from a; the ridge's ends where they stand over it)
+      const ua = 0,
+        ub = L
+      const uOf = r => {
+        const dx = b[0] - a[0],
+          dz = b[2] - a[2]
+        return ((r[0] - a[0]) * dx + (r[2] - a[2]) * dz) / (L || 1)
+      }
+      if (r0 === r1) this.tri(a, b, r0, nrm, [ua, 0, ub, 0, uOf(r0), run], col)
+      else {
+        this.tri(a, b, r1, nrm, [ua, 0, ub, 0, uOf(r1), run], col)
+        this.tri(a, r1, r0, nrm, [ua, 0, uOf(r1), run, uOf(r0), run], col)
+      }
+    }
+    this.bottom(x0, x1, z0, z1, ye, col)
+  }
+
+  // any three.js geometry, moved by matrix m and tinted col
+  add (geo, m, col) {
+    const g = geo.index ? geo.toNonIndexed() : geo
+    const P = g.attributes.position,
+      N = g.attributes.normal,
+      U = g.attributes.uv
+    _m3.getNormalMatrix(m)
+    for (let i = 0; i < P.count; i++) {
+      _v.fromBufferAttribute(P, i).applyMatrix4(m)
+      this.p.push(_v.x, _v.y, _v.z)
+      _n.fromBufferAttribute(N, i)
+        .applyMatrix3(_m3)
+        .normalize()
+      this.n.push(_n.x, _n.y, _n.z)
+      this.uv.push(U ? U.getX(i) : 0, U ? U.getY(i) : 0)
+      this.c.push(col.r, col.g, col.b)
+    }
+  }
+  get empty () {
+    return this.p.length === 0
+  }
+  geometry () {
+    const g = new THREE.BufferGeometry()
+    g.setAttribute('position', new THREE.Float32BufferAttribute(this.p, 3))
+    g.setAttribute('normal', new THREE.Float32BufferAttribute(this.n, 3))
+    g.setAttribute('uv', new THREE.Float32BufferAttribute(this.uv, 2))
+    g.setAttribute('color', new THREE.Float32BufferAttribute(this.c, 3))
+    g.computeBoundingSphere()
+    return g
+  }
+}
+
+function avg (a, b) {
+  const x = a[0] + b[0],
+    z = a[2] + b[2],
+    l = Math.hypot(x, z) || 1
+  return [x / l, 0, z / l]
+}
+// the unit normal of triangle a-b-c (counter-clockwise from its front)
+function normalOf (a, b, c) {
+  const ux = b[0] - a[0],
+    uy = b[1] - a[1],
+    uz = b[2] - a[2]
+  const vx = c[0] - a[0],
+    vy = c[1] - a[1],
+    vz = c[2] - a[2]
+  const x = uy * vz - uz * vy,
+    y = uz * vx - ux * vz,
+    z = ux * vy - uy * vx
+  const l = Math.hypot(x, y, z) || 1
+  return [x / l, y / l, z / l]
+}
+// a convex plan grown outwards by o (each corner moved out along its walls' normals)
+function grow (pts, o) {
+  const n = pts.length
+  const nrm = (i, j) => {
+    const dx = pts[j][0] - pts[i][0],
+      dz = pts[j][1] - pts[i][1],
+      l = Math.hypot(dx, dz) || 1
+    return [-dz / l, dx / l]
+  }
+  return pts.map((p, i) => {
+    const a = nrm((i + n - 1) % n, i),
+      b = nrm(i, (i + 1) % n)
+    const mx = a[0] + b[0],
+      mz = a[1] + b[1]
+    const k = o / Math.max(0.2, mx * b[0] + mz * b[1] || 1)
+    return [p[0] + mx * k, p[1] + mz * k]
+  })
+}
+__export(__exports, { "Builder": () => Builder, "grow": () => grow })
+})
+
+// ---- js/render/cityKerb.js
+__define(109, function (__exports) {
+// Along the kerb (the sim lays it out: kerbside.js): the power lines strung from one wooden pole to
+// the next along Mid-City's and Venice's streets and over their junctions, three on the crossarm and
+// a cable lower down, each sagging between its poles (lines a pixel wide, as thin wires look from
+// the street); and the bus benches, hydrants and litter bins on the pavements, merged into one mesh.
+// A pole knocked down takes its wires with it; the city standing back up restrings them.
+const THREE = __require(0)
+const { LAMPS, WIRES, DECOR } = __require(24)
+const { Builder } = __require(108)
+const { pose } = __require(106)
+// where the wires hang from, in a pole's frame (x out over the road, y up): the crossarm's ends and
+// middle, and the cable below
+const WIRE_AT = [
+  [-0.85, 10.5],
+  [0.15, 10.5],
+  [1.15, 10.5],
+  [0.15, 8.95]
+]
+const SEGS = 8
+
+class Wires {
+  constructor (group) {
+    const P = []
+    this.of = new Map() // lamp -> [from, to) vertex ranges of the spans hung from it
+    for (const [i, j] of WIRES) {
+      const a = LAMPS[i],
+        b = LAMPS[j]
+      const span = Math.hypot(b.x - a.x, b.z - a.z),
+        sag = 0.25 + 0.0006 * span * span
+      const from = P.length / 3
+      for (const [x, y] of WIRE_AT) {
+        const ax = a.x + a.ax * x,
+          az = a.z + a.az * x,
+          bx = b.x + b.ax * x,
+          bz = b.z + b.az * x
+        for (let s = 0; s < SEGS; s++)
+          for (const t of [s / SEGS, (s + 1) / SEGS])
+            P.push(
+              ax + (bx - ax) * t,
+              y - sag * 4 * t * (1 - t),
+              az + (bz - az) * t
+            )
+      }
+      const to = P.length / 3
+      for (const k of [i, j]) {
+        if (!this.of.has(k)) this.of.set(k, [])
+        this.of.get(k).push([from, to])
+      }
+    }
+    const g = new THREE.BufferGeometry()
+    this.pos = new THREE.Float32BufferAttribute(P, 3)
+    this.saved = Float32Array.from(P)
+    g.setAttribute('position', this.pos)
+    g.computeBoundingSphere()
+    this.lines = new THREE.LineSegments(
+      g,
+      new THREE.LineBasicMaterial({ color: 0x17181a })
+    )
+    this.lines.name = 'wires'
+    group.add(this.lines)
+  }
+  // a pole knocked down: its wires come down with it (out of sight)
+  cut (i) {
+    for (const [from, to] of this.of.get(i) || [])
+      for (let v = from; v < to; v++) this.pos.setXYZ(v, 0, -100, 0)
+    this.pos.needsUpdate = true
+  }
+  restore () {
+    this.pos.array.set(this.saved)
+    this.pos.needsUpdate = true
+  }
+}
+
+// ---------- benches, hydrants, bins ----------
+// (each kept to a few dozen triangles: there are six hundred of them, all in one mesh)
+const box = (x0, y0, z0, x1, y1, z1) =>
+  new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0).translate(
+    (x0 + x1) / 2,
+    (y0 + y1) / 2,
+    (z0 + z1) / 2
+  )
+const C = hex => new THREE.Color().setHex(hex)
+// a can or a post: open at the bottom, its top a cone
+const can = (r0, r1, h, top, n) => [
+  new THREE.CylinderGeometry(r1, r0, h, n, 1, true).translate(0, h / 2, 0),
+  new THREE.ConeGeometry(r1, top, n, 1, true).translate(0, h + top / 2, 0)
+]
+// each piece: [geometry, colour], in the item's frame (x towards the road, y up)
+const PIECES = {
+  // an LA bus bench: concrete legs, a slatted seat, its back a board for an advert
+  bench: [
+    [box(-0.25, 0, -0.86, 0.25, 0.42, -0.74), C(0x9a958c)],
+    [box(-0.25, 0, 0.74, 0.25, 0.42, 0.86), C(0x9a958c)],
+    [box(-0.3, 0.42, -0.95, 0.32, 0.48, 0.95), C(0x6b4f36)],
+    [box(-0.34, 0.48, -0.95, -0.27, 1.02, 0.95), C(0x2e6b4f)]
+  ],
+  // a hydrant, yellow, a silver cap and its outlets
+  hydrant: [
+    ...can(0.15, 0.12, 0.6, 0.12, 6).map(g => [g, C(0xd2a92a)]),
+    [box(-0.05, 0.36, -0.2, 0.05, 0.46, 0.2), C(0xbfc3c7)]
+  ],
+  // a litter bin, its lid domed
+  bin: can(0.25, 0.28, 0.92, 0.16, 7).map((g, i) => [
+    g,
+    C(i ? 0x26302b : 0x2f4a3a)
+  ])
+}
+// (small enough to cast no shadow worth drawing: one mesh for the city)
+function buildDecor (group) {
+  const out = new Builder()
+  for (const d of DECOR) {
+    const M = pose(d.x, 0.08, d.z, d.yaw)
+    for (const [g, c] of PIECES[d.kind]) out.add(g, M, c)
+  }
+  const m = new THREE.Mesh(
+    out.geometry(),
+    new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.65 })
+  )
+  m.receiveShadow = true
+  m.name = 'benches, hydrants, bins'
+  group.add(m)
+}
+__export(__exports, { "WIRE_AT": () => WIRE_AT, "Wires": () => Wires, "buildDecor": () => buildDecor })
+})
+
+// ---- js/render/cityNames.js
+__define(110, function (__exports) {
+// The lit street-name signs on the signal masts' arms, as at Los Angeles' junctions: the name of
+// the street being crossed (areas.js), white on green, lit from inside at night. All the names are
+// drawn into one small texture; each sign is an instance of one plate, its own name picked out of
+// the texture by an attribute of its own (its rect in the texture), so the lot draws in one call.
+const THREE = __require(0)
+const { Instances } = __require(105)
+const { STREETS_EW, STREETS_NS } = __require(2)
+const { NODES } = __require(24)
+// how a sign spells a street: Blvd as Bl, Ave as Av, as the signs do
+const spell = s => s.replace(/ Blvd$/, ' Bl').replace(/ Ave$/, ' Av')
+const NAMES = [...STREETS_EW, ...STREETS_NS]
+// (two columns of names, a name 256 by 46 px; the texture 512 px square)
+const CW = 256,
+  CH = 46,
+  TH = 512
+
+function namesTex () {
+  const cv = document.createElement('canvas')
+  cv.width = 2 * CW
+  cv.height = TH
+  const g = cv.getContext('2d')
+  NAMES.forEach((name, i) => {
+    const x = (i % 2) * CW,
+      y = Math.floor(i / 2) * CH
+    g.fillStyle = '#0f5a3a'
+    g.fillRect(x, y, CW, CH)
+    g.strokeStyle = '#e9efe9'
+    g.lineWidth = 2
+    g.strokeRect(x + 3, y + 3, CW - 6, CH - 6)
+    g.fillStyle = '#ffffff'
+    g.font = 'bold 30px "Helvetica Neue", Helvetica, Arial, sans-serif'
+    g.textAlign = 'center'
+    g.textBaseline = 'middle'
+    const s = spell(name),
+      w = g.measureText(s).width,
+      k = Math.min(1, (CW - 20) / w)
+    g.save()
+    g.translate(x + CW / 2, y + CH / 2 + 1)
+    g.scale(k, 1)
+    g.fillText(s, 0, 0)
+    g.restore()
+  })
+  const t = new THREE.CanvasTexture(cv)
+  t.colorSpace = THREE.SRGBColorSpace
+  t.anisotropy = 4
+  return t
+}
+// a name's rect in the texture: [u0, v0, u1, v1]
+const rectOf = i => {
+  const x = (i % 2) * CW,
+    y = Math.floor(i / 2) * CH
+  return [
+    (x + 1) / (2 * CW),
+    1 - (y + CH - 1) / TH,
+    (x + CW - 1) / (2 * CW),
+    1 - (y + 1) / TH
+  ]
+}
+
+// A sign under each mast's arm (poles: the sim's POLES; place(p): the mast's matrix; at: where the
+// plate hangs in the mast's frame, [x, y, z], facing -x), its name the street the mast's traffic
+// crosses (traffic along x crosses a north-south street). Returns its instances (they go over with
+// the mast) and night(k).
+function nameSigns (poles, place, at) {
+  const plate = new THREE.PlaneGeometry(2.5, 0.48)
+    .rotateY(-Math.PI / 2)
+    .translate(...at)
+  const rects = new Float32Array(poles.length * 4)
+  poles.forEach((p, i) => {
+    const n = NODES[p.node],
+      k = p.dir % 2 === 0 ? STREETS_EW.length + n.ix : n.iz
+    rects.set(rectOf(k), i * 4)
+  })
+  plate.setAttribute('rect', new THREE.InstancedBufferAttribute(rects, 4))
+  const tex = namesTex()
+  const mat = new THREE.MeshStandardMaterial({
+    map: tex,
+    emissiveMap: tex,
+    emissive: 0xffffff,
+    emissiveIntensity: 0.2,
+    roughness: 0.45
+  })
+  mat.onBeforeCompile = shader => {
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nattribute vec4 rect;')
+      .replace(
+        '#include <uv_vertex>',
+        `#include <uv_vertex>
+        vMapUv = mix(rect.xy, rect.zw, uv);
+        vEmissiveMapUv = vMapUv;`
+      )
+  }
+  mat.customProgramCacheKey = () => 'street names'
+  const signs = new Instances(plate, mat, poles.length, i => poles[i], {
+    cast: false,
+    split: false
+  })
+  poles.forEach((p, i) => signs.setMatrixAt(i, place(p)))
+  for (const m of signs.meshes) m.name = 'street names'
+  signs.bounds()
+  return {
+    signs,
+    night (k) {
+      mat.emissiveIntensity = 0.2 + 0.9 * k
+    }
+  }
+}
+__export(__exports, { "nameSigns": () => nameSigns })
+})
+
+// ---- js/render/cityProps.js
+__define(111, function (__exports) {
+// Street furniture: street lights and a signal mast on every corner whose red, yellow and green
+// lamps follow the intersection's signal plan; with the palms and trees (cityTrees.js), the power
+// lines, benches, hydrants and bins (cityKerb.js). The street lights are Los Angeles' cobra heads:
+// a tapered steel pole, its arm curving up and out over the road to a flattened head, its lens
+// underneath; on Mid-City's and Venice's side streets the light hangs from a wooden power pole, a
+// crossarm at its top carrying the wires. All instanced (one mesh a district: chunks.js), and all of
+// it goes over when the Roadster hits it hard enough (the sim decides: breakables.js; the fall:
+// fallers.js).
+const THREE = __require(0)
+const { hdr, softTex } = __require(40)
+const { Instances } = __require(105)
+const { merge, box, tint } = __require(42)
+const { Fallers, pose, instanced, one, subset } = __require(106)
+const { greenery } = __require(107)
+const { Wires, buildDecor } = __require(109)
+const { nameSigns } = __require(110)
+const { NODES, CURB_H, LAMPS, POLES, DIRS, RED, YELLOW, GREEN, ROAD_HW, LANE_OFF, signal } = __require(24)
+const _m = new THREE.Matrix4(),
+  _l = new THREE.Matrix4()
+const metal = new THREE.MeshStandardMaterial({
+  color: 0x34373c,
+  roughness: 0.5,
+  metalness: 0.6
+})
+
+// ---------- street lights ----------
+const lampYaw = l => Math.atan2(-l.az, l.ax)
+// an arm curving up from the pole at y0 and out over the road to its head at (x1, y1)
+const arm = (y0, x1, y1) =>
+  new THREE.TubeGeometry(
+    new THREE.QuadraticBezierCurve3(
+      new THREE.Vector3(0.02, y0, 0),
+      new THREE.Vector3(0.06, y1 + 0.05, 0),
+      new THREE.Vector3(x1, y1, 0)
+    ),
+    4,
+    0.045,
+    3
+  )
+// the cobra's head: wider at its far end, flattened, its lens underneath
+const head = (x, y) =>
+  new THREE.CylinderGeometry(0.09, 0.2, 0.8, 6)
+    .rotateZ(Math.PI / 2)
+    .scale(1, 0.55, 1)
+    .translate(x + 0.38, y, 0)
+// where the head is on a steel pole, and on a wooden one
+const HEAD = { steel: [1.97, 9.02], wood: [1.65, 8.25] }
+function lamps (group) {
+  const steel = subset(LAMPS, l => !l.wood),
+    wood = subset(LAMPS, l => l.wood)
+  const stand = l => pose(l.x, 0, l.z, lampYaw(l))
+  // the steel pole, its arm and head
+  const [sx, sy] = HEAD.steel,
+    [wx, wy] = HEAD.wood
+  const post = merge([
+    new THREE.CylinderGeometry(0.07, 0.13, 8.5, 6, 1, true).translate(
+      0,
+      4.25,
+      0
+    ),
+    arm(8.2, sx, sy),
+    head(sx, sy)
+  ])
+  const posts = instanced(
+    post,
+    metal,
+    steel.items,
+    stand,
+    true,
+    'street lights'
+  )
+  // the wooden pole, its crossarm, a transformer, and the light's arm lower down
+  const brown = 0x5f4c3a,
+    grey = 0x3a3d42
+  const pole = merge([
+    tint(
+      new THREE.CylinderGeometry(0.11, 0.16, 11, 6, 1, true).translate(
+        0,
+        5.5,
+        0
+      ),
+      brown
+    ),
+    tint(box(-1.05, 10.28, -0.06, 1.35, 10.4, 0.06), brown),
+    tint(
+      new THREE.CylinderGeometry(0.28, 0.28, 0.9, 6, 1, true).translate(
+        -0.42,
+        9.2,
+        0
+      ),
+      0x8d9296
+    ),
+    tint(arm(7.7, wx, wy), grey),
+    tint(head(wx, wy), grey)
+  ])
+  const woods = instanced(
+    pole,
+    new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85 }),
+    wood.items,
+    stand,
+    true,
+    'power poles'
+  )
+  // each lens under its head, whichever pole it is on
+  LENS.color = hdr(3.2, 2.5, 1.6)
+  const lens = new THREE.PlaneGeometry(0.6, 0.24).rotateX(Math.PI / 2)
+  const lenses = instanced(
+    lens,
+    LENS,
+    LAMPS,
+    l => {
+      const [x, y] = l.wood ? HEAD.wood : HEAD.steel
+      return stand(l).multiply(_l.makeTranslation(x + 0.42, y - 0.1, 0))
+    },
+    false,
+    'lenses'
+  )
+  // at night, the light each throws on the ground under its head (on the pavement's height, so it
+  // shows on the pavement as well as the road)
+  const pools = instanced(
+    new THREE.PlaneGeometry(12, 12).rotateX(-Math.PI / 2),
+    POOL,
+    LAMPS,
+    l => pose(l.x + l.ax * 2.3, CURB_H + 0.02, l.z + l.az * 2.3, 0),
+    false,
+    'light pools'
+  )
+  pools.receiveShadow = false
+  pools.visible = false
+  group.add(...posts.meshes, ...woods.meshes, ...lenses.meshes, ...pools.meshes)
+  return new Fallers(
+    'lamp',
+    LAMPS,
+    [
+      { inst: posts, of: steel.of },
+      { inst: woods, of: wood.of },
+      { inst: lenses, of: one, dark: true },
+      { inst: pools, of: one, dark: true }
+    ],
+    {
+      L: l => (l.wood ? 7.2 : 6),
+      rest: () => 1.53,
+      h: l => (l.wood ? 11 : 9),
+      skid: 0.5
     }
   )
 }
+const LENS = new THREE.MeshBasicMaterial({ toneMapped: false })
+const POOL = new THREE.MeshBasicMaterial({
+  map: softTex,
+  color: new THREE.Color(1, 0.74, 0.45),
+  transparent: true,
+  blending: THREE.AdditiveBlending,
+  depthWrite: false,
+  polygonOffset: true,
+  polygonOffsetFactor: -4,
+  polygonOffsetUnits: -4
+})
 
 // ---------- signal masts ----------
 // In each mast's frame +x is the direction of the traffic it faces and +z that traffic's right.
@@ -71758,12 +80947,24 @@ class Signals {
       parts.push(box(-0.2, ARM_Y - 1.32, z - 0.2, 0.2, ARM_Y - 0.08, z + 0.2))
       parts.push(box(0.2, ARM_Y - 1.42, z - 0.36, 0.23, ARM_Y + 0.02, z + 0.36)) // back plate
     }
+    // the box the street's name hangs in, under the arm by the pole
+    parts.push(box(-0.11, ARM_Y - 0.7, -3.25, -0.06, ARM_Y - 0.08, -0.65))
     const yaw = p => Math.atan2(-DIRS[p.dir][1], DIRS[p.dir][0])
-    const masts = instanced(merge(parts), metal, POLES, p =>
-      pose(p.x, 0, p.z, yaw(p))
+    const place = p => pose(p.x, 0, p.z, yaw(p))
+    const masts = instanced(
+      merge(parts),
+      metal,
+      POLES,
+      place,
+      true,
+      'signal masts'
     )
     group.add(...masts.meshes)
-    const disc = new THREE.CircleGeometry(0.14, 14).rotateY(-Math.PI / 2)
+    // the name of the street it crosses, lit (cityNames.js)
+    this.names = nameSigns(POLES, place, [-0.12, ARM_Y - 0.44, -1.95])
+    group.add(...this.names.signs.meshes)
+    // (a lamp's disc in eight sides: at its size, as round as fourteen)
+    const disc = new THREE.CircleGeometry(0.14, 8).rotateY(-Math.PI / 2)
     const per = HEAD_Z.length * 3,
       n = POLES.length * per
     this.lamps = new Instances(
@@ -71793,6 +80994,7 @@ class Signals {
       POLES,
       [
         { inst: masts, of: one },
+        { inst: this.names.signs, of: one },
         {
           inst: this.lamps,
           of: i => Array.from({ length: per }, (_, j) => i * per + j),
@@ -71822,17 +81024,24 @@ class Signals {
 // the street lights up
 function buildProps (group) {
   const signals = new Signals(group)
+  const green = greenery(group)
   const fallers = {
     lamp: lamps(group),
-    palm: palms(group),
-    tree: trees(group),
+    palm: green.palm,
+    tree: green.tree,
     signal: signals.fallers
   }
-  const pools = fallers.lamp.parts[2].inst
+  // the wires come down with a wooden pole, and go back up with it
+  const wires = new Wires(group)
+  fallers.lamp.onKnock = i => wires.cut(i)
+  fallers.lamp.onStandUp = () => wires.restore()
+  buildDecor(group)
+  const pools = fallers.lamp.parts[3].inst
   const night = k => {
     LENS.color.copy(hdr(3.2, 2.5, 1.6)).multiplyScalar(1 + 2 * k)
     POOL.opacity = 0.42 * k
     pools.visible = k > 0.01
+    signals.names.night(k)
   }
   return { signals, fallers, night }
 }
@@ -71840,14 +81049,14 @@ __export(__exports, { "Signals": () => Signals, "buildProps": () => buildProps }
 })
 
 // ---- js/render/roadSurface.js
-__define(67, function (__exports) {
+__define(112, function (__exports) {
 // The street's asphalt, worn the way a city's is: two darker, smoother wheel tracks down every lane
 // (polished enough to catch the low sun), a line of oil drips between them, more wear on the
 // approach to each stop line, broad patches of newer and older surface, tar-sealed cracks wandering
 // across it, and a concrete gutter along every kerb that follows the kerb round the corners. All of
 // it worked out in the shader from where on the grid a point is, so it lines up with the lanes.
 const THREE = __require(0)
-const { N, HALF, STOP, PITCH, CURB_R, LANE_OFF, ROAD_HW } = __require(4)
+const { N, HALF, STOP, PITCH, CURB_R, LANE_OFF, ROAD_HW } = __require(24)
 const GUTTER = 0.42 // m of concrete along the kerb
 const f = v => v.toFixed(3)
 
@@ -71948,14 +81157,16 @@ __export(__exports, { "roadMaterial": () => roadMaterial })
 })
 
 // ---- js/render/cityGround.js
-__define(68, function (__exports) {
+__define(113, function (__exports) {
 // The city's ground: asphalt, kerbed blocks with sidewalks and rounded corners, lane
-// paint, stop lines and zebra crossings, parks, parking lots and the promenade round the ring road.
+// paint, stop lines and zebra crossings, parks, parking lots and the promenade round the ring road;
+// and on each block's lot what the sim laid out (lots.js): its base (paving, a lawn or asphalt) and
+// over it lawns and planters, drives and forecourts, car parks with their spaces marked out.
 const THREE = __require(0)
-const { merge, marks, LAYER } = __require(22)
-const { canvasTex, speckle } = __require(20)
-const { roadMaterial } = __require(67)
-const { N, DIRS, WALK, STOP, HALF, ROADS, NODES, STALLS, CURB_H, CURB_R, BLOCKS, LANE_W, ROAD_HW, PROMENADE } = __require(4)
+const { merge, marks, LAYER } = __require(42)
+const { canvasTex, speckle } = __require(40)
+const { roadMaterial } = __require(112)
+const { N, DIRS, WALK, STOP, HALF, ROADS, NODES, STALLS, CURB_H, CURB_R, BLOCKS, LANE_W, ROAD_HW, PROMENADE } = __require(24)
 // ---------- textures (UVs are in metres, so each texture's repeat is 1 / its tile size) ----------
 function blotches (g, S, n, dark, light, rMin, rMax) {
   for (let i = 0; i < n; i++) {
@@ -72021,9 +81232,9 @@ function textures () {
     g.fillRect(0, 0, S, S)
     blotches(g, S, 30, 'rgba(40,60,20,0.35)', 'rgba(150,170,80,0.18)', 10, 50)
     for (let i = 0; i < 9000; i++) {
-      g.fillStyle = `rgba(${Math.random() < 0.5 ? '30,50,15' : '140,170,80'},${
-        Math.random() * 0.4
-      })`
+      g.fillStyle = `rgba(${
+        Math.random() < 0.5 ? '30,50,15' : '140,170,80'
+      },${Math.random() * 0.4})`
       g.fillRect(Math.random() * S, Math.random() * S, 1, 2 + Math.random() * 2)
     }
   })
@@ -72073,6 +81284,19 @@ function buildGround (group) {
     plaza: mat(T.plaza),
     grass: mat(T.grass, 0xffffff, 0.98)
   }
+  // the same, laid over a lot's base: drawn in front of it (a polygon offset), so they never fight
+  const over = m => {
+    m.polygonOffset = true
+    m.polygonOffsetFactor = -1
+    m.polygonOffsetUnits = -2
+    return m
+  }
+  const O = {
+    asphalt: over(roadMaterial({ map: T.asphalt, roughness: 0.88 })),
+    concrete: over(mat(T.walk, 0xf2efe8)),
+    plaza: over(mat(T.plaza)),
+    grass: over(mat(T.grass, 0xffffff, 0.98))
+  }
   const add = (geo, m, order = LAYER.ground) => {
     const mesh = new THREE.Mesh(geo, m)
     mesh.receiveShadow = true
@@ -72084,9 +81308,11 @@ function buildGround (group) {
   const ra = HALF + ROAD_HW + 0.5
   add(flat(-ra, -ra, ra, ra, 0), M.asphalt, LAYER.road)
 
-  // blocks: a kerbed slab with rounded corners, the sidewalk round the edge, the lot inside
+  // blocks: a kerbed slab with rounded corners, the sidewalk round the edge, the lot inside: its
+  // base, and what is laid over it
   const slabs = [],
-    lots = { plaza: [], grass: [], asphalt: [] }
+    lots = { plaza: [], grass: [], asphalt: [] },
+    tops = { plaza: [], grass: [], asphalt: [], concrete: [] }
   for (const b of BLOCKS) {
     slabs.push(slab(roundRect(b.x0, b.z0, b.x1, b.z1, CURB_R), CURB_H))
     const x0 = b.x0 + WALK,
@@ -72094,16 +81320,15 @@ function buildGround (group) {
       z0 = b.z0 + WALK,
       z1 = b.z1 - WALK,
       y = CURB_H + 0.004
+    lots[b.base].push(flat(x0, z0, x1, z1, y))
     if (b.kind === 'park') {
-      lots.grass.push(flat(x0, z0, x1, z1, y))
       const cx = (x0 + x1) / 2,
         cz = (z0 + z1) / 2 // footpaths across the middle
-      lots.plaza.push(flat(cx - 1.6, z0, cx + 1.6, z1, y + 0.004))
-      lots.plaza.push(flat(x0, cz - 1.6, x1, cz + 1.6, y + 0.004))
-    } else
-      lots[b.kind === 'parking' ? 'asphalt' : 'plaza'].push(
-        flat(x0, z0, x1, z1, y)
-      )
+      tops.plaza.push(flat(cx - 1.6, z0, cx + 1.6, z1, y + 0.004))
+      tops.plaza.push(flat(x0, cz - 1.6, x1, cz + 1.6, y + 0.004))
+    }
+    for (const g of b.ground)
+      if (tops[g.k]) tops[g.k].push(flat(g.x0, g.z0, g.x1, g.z1, y + 0.004))
   }
   // the promenade: the sidewalk on the outside of the ring road, out to the beach
   const outer = new THREE.Shape(),
@@ -72123,13 +81348,21 @@ function buildGround (group) {
   outer.holes.push(hole)
   slabs.push(slab(outer, CURB_H))
   add(merge(slabs), M.walk)
-  add(merge(lots.plaza), M.plaza)
-  add(merge(lots.grass), M.grass)
-  add(merge(lots.asphalt), M.asphalt, LAYER.road)
+  for (const k of ['plaza', 'grass', 'asphalt'])
+    if (lots[k].length)
+      add(merge(lots[k]), M[k], k === 'asphalt' ? LAYER.road : LAYER.ground)
+  for (const k of ['plaza', 'grass', 'asphalt', 'concrete'])
+    if (tops[k].length) add(merge(tops[k]), O[k], LAYER.ground)
 
   // ---------- paint ----------
+  // (the lane lines in painted dashes, or, along the low-rise neighbourhoods' streets, in raised
+  // markers as on California's roads: four round dots and a square reflector every 7.3 m)
   const white = [],
-    yellow = []
+    yellow = [],
+    dots = []
+  const block = (bx, bz) =>
+    bx >= 0 && bz >= 0 && bx < N && bz < N ? BLOCKS[bz * N + bx].area : ''
+  const DOTS = new Set(['strip', 'venice', 'beach', 'estates'])
   for (let r = 0; r <= N; r++)
     for (let j = 0; j < N; j++) {
       const c = ROADS[r],
@@ -72144,8 +81377,20 @@ function buildGround (group) {
           )
         for (const off of [-0.17, 0.17])
           put(yellow, (a + b) / 2, c + off, b - a, 0.12)
+        const side = alongZ
+          ? [block(r - 1, j), block(r, j)]
+          : [block(j, r - 1), block(j, r)]
+        const botts = DOTS.has(side[0]) || DOTS.has(side[1])
         for (const off of [-LANE_W, LANE_W])
-          for (let u = a + 3; u < b - 2; u += 9) put(white, u, c + off, 3, 0.13)
+          if (botts)
+            for (let u = a + 3; u < b - 4; u += 7.3) {
+              for (let k = 0; k < 4; k++)
+                put(dots, u + k * 0.9, c + off, 0.12, 0.12)
+              put(white, u + 3.65, c + off, 0.1, 0.1)
+            }
+          else
+            for (let u = a + 3; u < b - 2; u += 9)
+              put(white, u, c + off, 3, 0.13)
       }
     }
   for (const n of NODES)
@@ -72174,19 +81419,29 @@ function buildGround (group) {
             yaw
           })
     }
+  // the lines either side of each parking space, along it (the way its car's nose points)
   const stalls = []
-  for (const st of STALLS)
+  for (const st of STALLS) {
+    const hx = Math.cos(st.yaw),
+      hz = -Math.sin(st.yaw)
     for (const s of [-1.35, 1.35])
-      stalls.push({ x: st.x + s, z: st.z, len: 5, wid: 0.12, yaw: Math.PI / 2 })
-  const paint = (color, list, y) => {
+      stalls.push({
+        x: st.x - hz * s,
+        z: st.z + hx * s,
+        len: 5,
+        wid: 0.12,
+        yaw: st.yaw
+      })
+  }
+  const paint = (color, list, y, off = 1) => {
     const m = marks(
       list,
       new THREE.MeshStandardMaterial({
         color,
         roughness: 0.7,
         polygonOffset: true,
-        polygonOffsetFactor: -1,
-        polygonOffsetUnits: -1
+        polygonOffsetFactor: -off,
+        polygonOffsetUnits: -off
       }),
       y
     )
@@ -72194,23 +81449,51 @@ function buildGround (group) {
   }
   paint(0xdedbd2, white, 0.012)
   paint(0xd9a520, yellow, 0.012)
-  paint(0xdedbd2, stalls, CURB_H + 0.014) // on the raised lot, not the road
+  // the dots: white domes (a round cut-out, shaded as a dome), a little proud of the road
+  const dot = canvasTex(32, (g, S) => {
+    g.clearRect(0, 0, S, S)
+    const gr = g.createRadialGradient(S * 0.4, S * 0.38, 1, S / 2, S / 2, S / 2)
+    gr.addColorStop(0, '#ffffff')
+    gr.addColorStop(0.7, '#d9d6cf')
+    gr.addColorStop(1, '#8e8b85')
+    g.fillStyle = gr
+    g.beginPath()
+    g.arc(S / 2, S / 2, S / 2 - 1, 0, Math.PI * 2)
+    g.fill()
+  })
+  group.add(
+    marks(
+      dots,
+      new THREE.MeshStandardMaterial({
+        map: dot,
+        alphaTest: 0.5,
+        roughness: 0.35,
+        polygonOffset: true,
+        polygonOffsetFactor: -1,
+        polygonOffsetUnits: -1
+      }),
+      0.016
+    )
+  )
+  // (on the raised lot, not the road, and over a car park laid on it)
+  paint(0xdedbd2, stalls, CURB_H + 0.014, 4)
   return M
 }
 __export(__exports, { "buildGround": () => buildGround })
 })
 
 // ---- js/render/cityStreet.js
-__define(69, function (__exports) {
+__define(114, function (__exports) {
 // The street's details: cast-iron manhole lids out in the lanes, drain grates in the gutters by the
 // corners (both laid out by the sim, street.js, which feels the lids under the wheels), and the
 // arrows painted in each lane before the stop line, showing the moves the lane graph allows from it
 // (straight on and left from the inner lane, straight on and right from the kerb lane, and whatever
-// is left at the city's corners). Paint and iron are flat instanced quads with alpha-cut textures.
+// is left at the city's corners); and the stars set in Hollywood Boulevard's pavements. Paint, iron
+// and terrazzo are flat instanced quads with alpha-cut textures.
 const THREE = __require(0)
-const { marks } = __require(22)
-const { LANES, rng } = __require(4)
-const { MANHOLES, DRAINS, MANHOLE_R } = __require(10)
+const { marks } = __require(42)
+const { LANES, ROADS, ROAD_HW, CURB_H, BLOCKS, N, rng } = __require(24)
+const { MANHOLES, DRAINS, MANHOLE_R } = __require(30)
 const R = rng(808)
 const tex = (w, h, draw) => {
   const cv = document.createElement('canvas')
@@ -72310,6 +81593,52 @@ function arrowTexture (moves) {
   })
 }
 
+// a star on the Walk of Fame: a coral terrazzo star edged in brass on a charcoal square, the
+// emblem in its middle
+function starTexture () {
+  return tex(64, 64, (g, S) => {
+    g.fillStyle = '#3b3436'
+    g.fillRect(0, 0, S, S)
+    g.strokeStyle = '#b08d4a'
+    g.lineWidth = 2
+    g.strokeRect(1, 1, S - 2, S - 2)
+    g.beginPath()
+    for (let i = 0; i < 10; i++) {
+      const a = -Math.PI / 2 + (i * Math.PI) / 5,
+        r = i % 2 ? S * 0.2 : S * 0.44
+      g.lineTo(S / 2 + Math.cos(a) * r, S / 2 + Math.sin(a) * r)
+    }
+    g.closePath()
+    g.fillStyle = '#d98a8a'
+    g.fill()
+    g.stroke()
+    g.fillStyle = '#b08d4a'
+    g.beginPath()
+    g.arc(S / 2, S / 2 + 4, 5, 0, Math.PI * 2)
+    g.fill()
+  })
+}
+// The stars along both pavements of Hollywood Boulevard through Hollywood, down the middle of the
+// pavement (inside the palms' line), every 2 m (the corners left plain)
+function walkOfFame () {
+  const list = []
+  const c = ROADS[1] // (Hollywood Boulevard: areas.js)
+  for (let j = 0; j < N; j++) {
+    const blk = BLOCKS[j]
+    if (blk.area !== 'boulevard') continue
+    for (let x = ROADS[j] + 13; x < ROADS[j + 1] - 13; x += 2)
+      for (const side of [-1, 1])
+        list.push({
+          x,
+          z: c + side * (ROAD_HW + 2.6),
+          len: 1,
+          wid: 1,
+          yaw: side > 0 ? 0 : Math.PI
+        })
+  }
+  return list
+}
+
 function buildStreet (group) {
   const iron = (map, rough) =>
     new THREE.MeshStandardMaterial({
@@ -72322,6 +81651,19 @@ function buildStreet (group) {
       polygonOffsetUnits: -2
     })
   const d = MANHOLE_R * 2
+  group.add(
+    marks(
+      walkOfFame(),
+      new THREE.MeshStandardMaterial({
+        map: starTexture(),
+        roughness: 0.3,
+        polygonOffset: true,
+        polygonOffsetFactor: -2,
+        polygonOffsetUnits: -2
+      }),
+      CURB_H + 0.006
+    )
+  )
   group.add(
     marks(
       MANHOLES.map(m => ({ ...m, len: d, wid: d, yaw: R() * Math.PI })),
@@ -72370,26 +81712,1281 @@ function buildStreet (group) {
 __export(__exports, { "buildStreet": () => buildStreet })
 })
 
-// ---- js/render/cityBuildings.js
-__define(70, function (__exports) {
-// City buildings: procedural facades (glass curtain wall, office, brick, stucco) with windows lit for
-// the evening, storefronts under canopies along the street, setbacks, cornices, roof lips, rooftop
-// plant and antenna beacons. Each style is one merged mesh, so seven hundred buildings draw in a few
-// calls (the cornices and roofs, heavy with corners, one a district: chunks.js). Every window is its own (facade.js): set back in its opening with a room behind it, lit or
-// dark, warm or cool, blinds up or down, and a glass pane catches the sky at its own slight angle.
+// ---- js/render/signArt.js
+__define(115, function (__exports) {
+// The artwork for the signs' atlas (signTex.js): drawing helpers (lettering that fits its space,
+// gradients, a border of bulbs, a palm's silhouette), the billboards' eight designs, the made-up
+// names (hotels, films, blade signs, fast food, gas brands) and the murals. Every name and brand is
+// made up.
+const { rng } = __require(24)
+const R = rng(31)
+const SANS = '"Helvetica Neue", Helvetica, Arial, sans-serif'
+const SERIF = 'Georgia, "Times New Roman", serif'
+
+// ---------- drawing helpers ----------
+function text (g, s, x, y, px, o = {}) {
+  g.save()
+  g.font = `${o.weight || 'bold'} ${px}px ${o.font || SANS}`
+  g.textAlign = o.align || 'center'
+  g.textBaseline = 'middle'
+  if (o.glow) {
+    g.shadowColor = o.glow
+    g.shadowBlur = o.blur ?? px * 0.35
+  }
+  const w = g.measureText(s).width
+  const sx = o.maxW && w > o.maxW ? o.maxW / w : 1
+  g.translate(x, y)
+  g.scale(sx * (o.sx || 1), 1)
+  if (o.stroke) {
+    g.lineWidth = o.lw || px * 0.12
+    g.strokeStyle = o.stroke
+    g.strokeText(s, 0, 0)
+  }
+  g.fillStyle = o.color || '#fff'
+  g.fillText(s, 0, 0)
+  g.restore()
+}
+const grad = (g, x, y, w, h, stops, horiz = false) => {
+  const gr = horiz
+    ? g.createLinearGradient(x, 0, x + w, 0)
+    : g.createLinearGradient(0, y, 0, y + h)
+  stops.forEach((c, i) => gr.addColorStop(i / (stops.length - 1), c))
+  g.fillStyle = gr
+  g.fillRect(x, y, w, h)
+}
+function bulbs (g, x, y, w, h, gap, color = '#fff6c8') {
+  g.save()
+  g.fillStyle = color
+  g.shadowColor = '#ffd27a'
+  g.shadowBlur = gap * 0.6
+  for (let t = x + gap / 2; t < x + w; t += gap) {
+    g.fillRect(t - 1.5, y + 1, 3, 3)
+    g.fillRect(t - 1.5, y + h - 4, 3, 3)
+  }
+  for (let t = y + gap / 2; t < y + h; t += gap) {
+    g.fillRect(x + 1, t - 1.5, 3, 3)
+    g.fillRect(x + w - 4, t - 1.5, 3, 3)
+  }
+  g.restore()
+}
+function palmSil (g, x, y, h, color) {
+  g.save()
+  g.strokeStyle = g.fillStyle = color
+  g.lineWidth = Math.max(2, h * 0.03)
+  g.beginPath()
+  g.moveTo(x, y)
+  g.quadraticCurveTo(x + h * 0.08, y - h * 0.5, x + h * 0.04, y - h)
+  g.stroke()
+  for (let i = 0; i < 7; i++) {
+    const a = -Math.PI / 2 + (i - 3) * 0.45
+    g.beginPath()
+    g.moveTo(x + h * 0.04, y - h)
+    g.quadraticCurveTo(
+      x + h * 0.04 + Math.cos(a) * h * 0.22,
+      y - h + Math.sin(a) * h * 0.12 - h * 0.05,
+      x + h * 0.04 + Math.cos(a) * h * 0.3,
+      y - h + h * 0.12
+    )
+    g.stroke()
+  }
+  g.restore()
+}
+
+// ---------- the cells ----------
+const BILLBOARDS = [
+  // a film: night sky, a moon, the title and when
+  (g, x, y, w, h) => {
+    grad(g, x, y, w, h, ['#0b1030', '#2b1a4a', '#a3402f'])
+    g.fillStyle = '#f6e7c1'
+    g.beginPath()
+    g.arc(x + w * 0.78, y + h * 0.36, h * 0.22, 0, Math.PI * 2)
+    g.fill()
+    text(g, 'STARFALL', x + w * 0.38, y + h * 0.42, h * 0.32, {
+      color: '#f4d58d',
+      maxW: w * 0.62,
+      font: SERIF
+    })
+    text(g, 'IN THEATERS FRIDAY', x + w * 0.38, y + h * 0.78, h * 0.11, {
+      color: '#fff'
+    })
+  },
+  // a fizzy drink: red, a white wave
+  (g, x, y, w, h) => {
+    g.fillStyle = '#c8102e'
+    g.fillRect(x, y, w, h)
+    g.fillStyle = '#fff'
+    g.beginPath()
+    g.moveTo(x, y + h * 0.7)
+    g.bezierCurveTo(
+      x + w * 0.3,
+      y + h * 0.4,
+      x + w * 0.6,
+      y + h * 1.0,
+      x + w,
+      y + h * 0.6
+    )
+    g.lineTo(x + w, y + h * 0.75)
+    g.bezierCurveTo(
+      x + w * 0.6,
+      y + h * 1.1,
+      x + w * 0.3,
+      y + h * 0.55,
+      x,
+      y + h * 0.85
+    )
+    g.fill()
+    text(g, 'STAY COOL', x + w * 0.42, y + h * 0.36, h * 0.34, {
+      color: '#fff',
+      font: SERIF,
+      weight: 'bold italic'
+    })
+  },
+  // a phone
+  (g, x, y, w, h) => {
+    grad(g, x, y, w, h, ['#f4f4f2', '#d9dde2'])
+    g.fillStyle = '#16181c'
+    g.fillRect(x + w * 0.72, y + h * 0.1, h * 0.42, h * 0.8)
+    g.fillStyle = '#4c7bd9'
+    g.fillRect(x + w * 0.72 + 5, y + h * 0.1 + 7, h * 0.42 - 10, h * 0.8 - 14)
+    text(g, 'Thinner. Faster.', x + w * 0.36, y + h * 0.42, h * 0.2, {
+      color: '#16181c',
+      weight: '600'
+    })
+    text(g, 'PHONE 9', x + w * 0.36, y + h * 0.7, h * 0.13, { color: '#555' })
+  },
+  // an injury lawyer, as on every LA bus bench
+  (g, x, y, w, h) => {
+    g.fillStyle = '#f7d117'
+    g.fillRect(x, y, w, h)
+    g.fillStyle = '#1b1b1b'
+    g.fillRect(x, y + h * 0.72, w, h * 0.28)
+    text(g, 'HURT IN A CRASH?', x + w * 0.5, y + h * 0.3, h * 0.26, {
+      color: '#1b1b1b',
+      maxW: w * 0.92
+    })
+    text(g, 'CALL 1-800-555-0199', x + w * 0.5, y + h * 0.86, h * 0.16, {
+      color: '#f7d117',
+      maxW: w * 0.9
+    })
+  },
+  // tequila: dark blue and gold
+  (g, x, y, w, h) => {
+    grad(g, x, y, w, h, ['#0c2340', '#14365e'], true)
+    g.fillStyle = '#c99b3b'
+    g.fillRect(x + w * 0.75, y + h * 0.15, h * 0.2, h * 0.75)
+    g.fillRect(x + w * 0.75 - 4, y + h * 0.35, h * 0.2 + 8, h * 0.55)
+    text(g, 'AÑEJO DE ORO', x + w * 0.38, y + h * 0.45, h * 0.24, {
+      color: '#e2b65a',
+      font: SERIF,
+      maxW: w * 0.66
+    })
+    text(g, 'SIP RESPONSIBLY', x + w * 0.38, y + h * 0.78, h * 0.09, {
+      color: '#9fb2c8'
+    })
+  },
+  // an electric car
+  (g, x, y, w, h) => {
+    grad(g, x, y, w, h, ['#e9f1f6', '#9fc3d9'])
+    g.fillStyle = '#20252b'
+    g.beginPath()
+    g.moveTo(x + w * 0.5, y + h * 0.78)
+    g.lineTo(x + w * 0.56, y + h * 0.56)
+    g.quadraticCurveTo(x + w * 0.7, y + h * 0.42, x + w * 0.86, y + h * 0.56)
+    g.lineTo(x + w * 0.95, y + h * 0.62)
+    g.lineTo(x + w * 0.95, y + h * 0.78)
+    g.fill()
+    text(g, 'GO ELECTRIC', x + w * 0.27, y + h * 0.42, h * 0.22, {
+      color: '#16303f',
+      maxW: w * 0.48
+    })
+    text(g, 'zero tailpipe', x + w * 0.27, y + h * 0.72, h * 0.12, {
+      color: '#2f5970',
+      weight: 'normal'
+    })
+  },
+  // a radio station
+  (g, x, y, w, h) => {
+    grad(g, x, y, w, h, ['#ff5f6d', '#ffc371'], true)
+    text(g, 'KLAX', x + w * 0.3, y + h * 0.5, h * 0.52, {
+      color: '#fff',
+      weight: '900'
+    })
+    text(g, '97.1 FM', x + w * 0.72, y + h * 0.4, h * 0.22, {
+      color: '#2a1033'
+    })
+    text(g, 'THE BEACH', x + w * 0.72, y + h * 0.7, h * 0.14, {
+      color: '#2a1033'
+    })
+  },
+  // a television series
+  (g, x, y, w, h) => {
+    grad(g, x, y, w, h, ['#3a0d5c', '#c2185b'], true)
+    g.fillStyle = 'rgba(255,255,255,0.18)'
+    for (let i = 0; i < 6; i++) g.fillRect(x + w * (0.55 + i * 0.07), y, 6, h)
+    text(g, 'SILVER LAKE', x + w * 0.36, y + h * 0.42, h * 0.26, {
+      color: '#fff',
+      maxW: w * 0.62
+    })
+    text(g, 'SEASON 4 · NOW STREAMING', x + w * 0.36, y + h * 0.75, h * 0.1, {
+      color: '#ffd6e8',
+      maxW: w * 0.64
+    })
+  }
+]
+const HOTELS = [
+  'HOTEL ALEXANDER',
+  'THE PALISADE',
+  'HOTEL BELMONT',
+  'OCEAN VIEW',
+  'HOTEL SAN MARCO',
+  'MIRADOR'
+]
+const FILMS = ['STARFALL', 'MIDNIGHT RUN', 'SILVER CITY', 'DESERT ROSE']
+const BLADES = [
+  'PALACE',
+  'REGENT',
+  'VOGUE',
+  'RIALTO',
+  'BAR',
+  'HOTEL',
+  'CAFE',
+  'LIQUOR',
+  'DINER',
+  'PAWN'
+]
+const NEON = [
+  '#ff3b6b',
+  '#36e2ff',
+  '#ffd23b',
+  '#7dff6a',
+  '#ff7a2f',
+  '#c86bff'
+]
+const FOODS = [
+  ['BURGERS', '#d62828', '#fcbf49'],
+  ['TACOS', '#2a9d8f', '#f4a261'],
+  ['CHICKEN', '#f77f00', '#fff3b0'],
+  ['DONUTS', '#e56b9f', '#fff']
+]
+const BRANDS = [
+  ['PACIFIC', '#0b4ea2', '#ffffff'],
+  ['GLOBE', '#d1202f', '#ffffff'],
+  ['SUN OIL', '#f2b705', '#c8102e'],
+  ['XPRESS', '#138a52', '#ffffff']
+]
+function mural (g, x, y, w, h, k) {
+  if (k === 0) {
+    // a sunset over the sea, palms against it
+    grad(g, x, y, w, h * 0.7, ['#ff7e5f', '#feb47b', '#ffd38a'])
+    g.fillStyle = '#ffe9a8'
+    g.beginPath()
+    g.arc(x + w * 0.5, y + h * 0.66, h * 0.2, Math.PI, 0)
+    g.fill()
+    grad(g, x, y + h * 0.66, w, h * 0.34, ['#1d6fa3', '#0b3a5c'])
+    palmSil(g, x + w * 0.18, y + h * 0.95, h * 0.8, '#2b1b2e')
+    palmSil(g, x + w * 0.82, y + h * 0.95, h * 0.65, '#2b1b2e')
+  } else if (k === 1) {
+    // shapes, bright on white
+    g.fillStyle = '#fbf6ec'
+    g.fillRect(x, y, w, h)
+    for (let i = 0; i < 14; i++) {
+      g.fillStyle = NEON[i % NEON.length]
+      g.beginPath()
+      g.arc(x + R() * w, y + R() * h, 8 + R() * h * 0.25, 0, Math.PI * 2)
+      g.fill()
+    }
+  } else if (k === 2) {
+    // waves
+    for (let i = 0; i < 8; i++) {
+      g.fillStyle = ['#0b3954', '#087e8b', '#bfd7ea', '#ff5a5f'][i % 4]
+      g.fillRect(x, y + (h * i) / 8, w, h / 8 + 1)
+    }
+    text(g, 'VENICE', x + w / 2, y + h * 0.5, h * 0.42, {
+      color: '#fff',
+      stroke: '#0b3954',
+      weight: '900',
+      maxW: w * 0.9
+    })
+  } else if (k === 3) {
+    // a face in profile, in blocks of colour
+    grad(g, x, y, w, h, ['#ffcf56', '#ff6f59'], true)
+    g.fillStyle = '#2d1e2f'
+    g.beginPath()
+    g.ellipse(x + w * 0.45, y + h * 0.55, h * 0.32, h * 0.42, 0, 0, Math.PI * 2)
+    g.fill()
+    g.fillStyle = '#43aa8b'
+    g.fillRect(x + w * 0.62, y, w * 0.2, h)
+  } else if (k === 4) {
+    // a rainbow in stripes
+    const c = ['#e63946', '#f4a261', '#e9c46a', '#2a9d8f', '#457b9d', '#6a4c93']
+    c.forEach((s, i) => {
+      g.fillStyle = s
+      g.fillRect(x + (w * i) / c.length, y, w / c.length + 1, h)
+    })
+  } else {
+    // the city's name in big letters, a postcard
+    grad(g, x, y, w, h, ['#4cc9f0', '#f72585'], true)
+    text(g, 'LOS ANGELES', x + w / 2, y + h * 0.52, h * 0.34, {
+      color: '#ffe066',
+      stroke: '#2b2d42',
+      weight: '900',
+      maxW: w * 0.92
+    })
+  }
+}
+__export(__exports, { "SANS": () => SANS, "SERIF": () => SERIF, "text": () => text, "grad": () => grad, "bulbs": () => bulbs, "BILLBOARDS": () => BILLBOARDS, "HOTELS": () => HOTELS, "FILMS": () => FILMS, "BLADES": () => BLADES, "NEON": () => NEON, "FOODS": () => FOODS, "BRANDS": () => BRANDS, "mural": () => mural })
+})
+
+// ---- js/render/signTex.js
+__define(116, function (__exports) {
+// The city's signs and pictures, drawn into one atlas at startup: billboards, old hotels' names for
+// their roofs, theatre marquees and blade signs, a motel's neon, fast-food and strip-mall signs on
+// poles, gas prices and a gas station's canopy fascia, murals for the walls, a helipad's H and a
+// pool's water. Every name and brand is made up. Lit signs use the atlas as their own glow too
+// (citySigns.js), so what is bright here glows at night: the letters on a dark sign, the whole face
+// of a billboard under its lamps.
 const THREE = __require(0)
-const { LIP, LIP_H } = __require(5)
-const { facadeMaterial } = __require(64)
-const { district, DISTRICTS } = __require(65)
-const { BUILDINGS, rng } = __require(4)
-const { canvasTex, speckle, hdr } = __require(20)
+const { rng } = __require(24)
+const { renderer } = __require(40)
+const { SERIF, text, grad, bulbs, BILLBOARDS, HOTELS, FILMS, BLADES, NEON, FOODS, BRANDS, mural } = __require(115)
+const R = rng(31)
+const W = 2048,
+  H = 2048
+
+// the cells, in the order they are packed: kind -> [[w, h], ...] (px)
+const SIZES = {
+  billboard: Array(8).fill([512, 168]),
+  hotel: Array(6).fill([660, 146]),
+  marquee: Array(4).fill([512, 70]),
+  blade: Array(10).fill([80, 320]),
+  mural: Array(6).fill([360, 160]),
+  motel: [[240, 216]],
+  food: Array(4).fill([240, 164]),
+  mall: Array(2).fill([150, 234]),
+  price: Array(4).fill([150, 208]),
+  fascia: Array(4).fill([1000, 36]),
+  helipad: [[256, 256]],
+  pool: [[128, 128]],
+  door: Array(4).fill([48, 96]),
+  panel: [[128, 128]], // a canopy's lit ceiling
+  bulbs: [[128, 64]], // a marquee's underside
+  light: [[16, 16]], // a lamp: white
+  green: [[16, 16]] // a helipad's edge lights
+}
+
+// Shelf-pack every cell into the atlas: tallest rows first. Returns kind -> [uv rect, ...] with
+// each rect [u0, v0, u1, v1] (v up), and the px box to draw it in.
+function pack () {
+  const all = []
+  for (const [kind, list] of Object.entries(SIZES))
+    list.forEach(([w, h], i) => all.push({ kind, i, w, h }))
+  all.sort((a, b) => b.h - a.h)
+  let x = 0,
+    y = 0,
+    row = 0
+  for (const c of all) {
+    if (x + c.w > W) {
+      x = 0
+      y += row + 2
+      row = 0
+    }
+    c.x = x
+    c.y = y
+    x += c.w + 2
+    row = Math.max(row, c.h)
+  }
+  if (y + row > H) throw new Error('signTex.js: the atlas is full')
+  const out = {}
+  for (const c of all) {
+    ;(out[c.kind] = out[c.kind] || [])[c.i] = c
+    // (half a pixel in, so a cell's edge never picks up its neighbour)
+    c.uv = [
+      (c.x + 0.5) / W,
+      1 - (c.y + c.h - 0.5) / H,
+      (c.x + c.w - 0.5) / W,
+      1 - (c.y + 0.5) / H
+    ]
+  }
+  return out
+}
+
+function draw (g, c) {
+  const { kind, i, x, y, w, h } = c
+  g.save()
+  g.beginPath()
+  g.rect(x, y, w, h)
+  g.clip()
+  if (kind === 'billboard') BILLBOARDS[i](g, x, y, w, h)
+  else if (kind === 'hotel') {
+    // letters only (the rest stays clear: cut away by the material)
+    text(g, HOTELS[i], x + w / 2, y + h * 0.52, h * 0.72, {
+      color: ['#ff4d4d', '#fff4d6', '#36e2ff'][i % 3],
+      maxW: w * 0.96
+    })
+  } else if (kind === 'marquee') {
+    g.fillStyle = '#f5ecd2'
+    g.fillRect(x, y, w, h)
+    bulbs(g, x, y, w, h, 10)
+    text(g, 'NOW SHOWING', x + w / 2, y + h * 0.3, h * 0.2, {
+      color: '#a51c1c'
+    })
+    text(g, FILMS[i], x + w / 2, y + h * 0.66, h * 0.36, {
+      color: '#1b1b1b',
+      maxW: w * 0.8
+    })
+  } else if (kind === 'blade') {
+    // vertical letters in neon on a dark face, a border of bulbs (the theatres' first)
+    g.fillStyle = i < 4 ? '#7a1712' : '#16161c'
+    g.fillRect(x, y, w, h)
+    if (i < 4) bulbs(g, x, y, w, h, 12)
+    const s = BLADES[i],
+      n = s.length,
+      col = NEON[i % NEON.length]
+    for (let k = 0; k < n; k++)
+      text(
+        g,
+        s[k],
+        x + w / 2,
+        y + h * ((k + 0.6) / (n + 0.2)),
+        Math.min(w * 0.72, (h / n) * 0.8),
+        { color: i < 4 ? '#fff4c2' : col, glow: col }
+      )
+  } else if (kind === 'mural') mural(g, x, y, w, h, i)
+  else if (kind === 'motel') {
+    g.fillStyle = '#103a4a'
+    g.fillRect(x, y, w, h)
+    text(g, 'SUNSET LODGE', x + w / 2, y + h * 0.15, h * 0.1, {
+      color: '#ffd23b',
+      glow: '#ffd23b'
+    })
+    text(g, 'MOTEL', x + w / 2, y + h * 0.45, h * 0.3, {
+      color: '#ff3b6b',
+      glow: '#ff3b6b',
+      font: SERIF
+    })
+    text(g, 'VACANCY', x + w / 2, y + h * 0.78, h * 0.13, {
+      color: '#36e2ff',
+      glow: '#36e2ff'
+    })
+    g.strokeStyle = '#ffd23b'
+    g.lineWidth = 3
+    g.strokeRect(x + 6, y + 6, w - 12, h - 12)
+  } else if (kind === 'food') {
+    const [s, bg, fg] = FOODS[i]
+    g.fillStyle = bg
+    g.fillRect(x, y, w, h)
+    g.fillStyle = fg
+    g.beginPath()
+    g.ellipse(x + w / 2, y + h / 2, w * 0.46, h * 0.4, 0, 0, Math.PI * 2)
+    g.fill()
+    text(g, s, x + w / 2, y + h / 2, h * 0.26, {
+      color: bg,
+      maxW: w * 0.8,
+      weight: '900'
+    })
+  } else if (kind === 'mall') {
+    g.fillStyle = '#efe9dc'
+    g.fillRect(x, y, w, h)
+    text(
+      g,
+      i ? 'PICO PLAZA' : 'LA BREA CENTER',
+      x + w / 2,
+      y + h * 0.1,
+      h * 0.07,
+      { color: '#7a1712', maxW: w * 0.9 }
+    )
+    const shops = [
+      'DONUTS',
+      'NAILS',
+      'THAI FOOD',
+      'CLEANERS',
+      'LIQUOR',
+      'TACOS',
+      'PHONES',
+      'PHO'
+    ]
+    for (let k = 0; k < 5; k++) {
+      const yy = y + h * (0.2 + k * 0.16)
+      g.fillStyle = NEON[(k + i * 2) % NEON.length]
+      g.fillRect(x + 6, yy, w - 12, h * 0.13)
+      text(
+        g,
+        shops[(k + i * 3) % shops.length],
+        x + w / 2,
+        yy + h * 0.065,
+        h * 0.075,
+        { color: '#fff', maxW: w * 0.8 }
+      )
+    }
+  } else if (kind === 'price') {
+    const [s, bg, fg] = BRANDS[i]
+    g.fillStyle = '#1a1a1a'
+    g.fillRect(x, y, w, h)
+    g.fillStyle = bg
+    g.fillRect(x, y, w, h * 0.26)
+    text(g, s, x + w / 2, y + h * 0.13, h * 0.12, { color: fg, maxW: w * 0.86 })
+    const p = [4.89, 5.09, 5.29].map(v => v + i * 0.06)
+    ;['REG', 'PLUS', 'PREM'].forEach((l, k) => {
+      const yy = y + h * (0.4 + k * 0.2)
+      text(g, l, x + w * 0.2, yy, h * 0.06, { color: '#ddd' })
+      text(g, p[k].toFixed(2), x + w * 0.64, yy, h * 0.14, {
+        color: '#ff4d2e',
+        glow: '#ff4d2e',
+        blur: 6
+      })
+    })
+  } else if (kind === 'fascia') {
+    const [s, bg, fg] = BRANDS[i]
+    g.fillStyle = bg
+    g.fillRect(x, y, w, h)
+    g.fillStyle = fg
+    g.fillRect(x, y + h - 6, w, 3)
+    for (let k = 0; k < 3; k++)
+      text(g, s, x + w * (0.17 + k * 0.33), y + h * 0.45, h * 0.62, {
+        color: fg
+      })
+  } else if (kind === 'helipad') {
+    // a pad's markings: a circle, its H, clear between (cut away)
+    const cx = x + w / 2,
+      cy = y + h / 2
+    g.strokeStyle = '#f2c230'
+    g.lineWidth = w * 0.05
+    g.beginPath()
+    g.arc(cx, cy, w * 0.42, 0, Math.PI * 2)
+    g.stroke()
+    g.fillStyle = '#f4f4f0'
+    const s = w * 0.3
+    g.fillRect(cx - s * 0.5, cy - s * 0.6, s * 0.2, s * 1.2)
+    g.fillRect(cx + s * 0.3, cy - s * 0.6, s * 0.2, s * 1.2)
+    g.fillRect(cx - s * 0.3, cy - s * 0.1, s * 0.6, s * 0.2)
+  } else if (kind === 'pool') {
+    g.fillStyle = '#e9e4da' // the coping
+    g.fillRect(x, y, w, h)
+    grad(g, x + 8, y + 8, w - 16, h - 16, ['#64d6e6', '#2aa6c4'])
+    g.strokeStyle = 'rgba(255,255,255,0.35)'
+    g.lineWidth = 1.5
+    for (let k = 0; k < 10; k++) {
+      g.beginPath()
+      g.moveTo(x + 8 + R() * (w - 16), y + 8 + R() * (h - 16))
+      g.quadraticCurveTo(
+        x + R() * w,
+        y + R() * h,
+        x + 8 + R() * (w - 16),
+        y + 8 + R() * (h - 16)
+      )
+      g.stroke()
+    }
+  } else if (kind === 'door') {
+    // a front door in its surround: dark oak, painted red, blue or white, panels and a small light
+    const col = ['#4a2f1f', '#9e2a2b', '#2c4a6e', '#e9e4da'][i]
+    g.fillStyle = '#f2ede4'
+    g.fillRect(x, y, w, h)
+    g.fillStyle = col
+    g.fillRect(x + 6, y + 10, w - 12, h - 10)
+    g.strokeStyle = 'rgba(0,0,0,0.3)'
+    g.lineWidth = 2
+    for (const [px, py] of [
+      [0.22, 0.2],
+      [0.56, 0.2],
+      [0.22, 0.58],
+      [0.56, 0.58]
+    ])
+      g.strokeRect(x + w * px, y + h * py, w * 0.22, h * 0.3)
+    g.fillStyle = '#c9a54a'
+    g.fillRect(x + w * 0.72, y + h * 0.55, 3, 3)
+    grad(g, x + 10, y + 2, w - 20, 6, ['#fff3d0', '#e0c27a'])
+  } else if (kind === 'panel') {
+    g.fillStyle = '#d8dadc'
+    g.fillRect(x, y, w, h)
+    g.fillStyle = '#fffdf6'
+    for (let r = 0; r < 4; r++)
+      for (let q = 0; q < 2; q++)
+        g.fillRect(x + 10 + q * 60, y + 8 + r * 30, 48, 14)
+  } else if (kind === 'bulbs') {
+    g.fillStyle = '#3a2a20'
+    g.fillRect(x, y, w, h)
+    g.fillStyle = '#fff6c8'
+    for (let r = 4; r < h; r += 8)
+      for (let q = 4; q < w; q += 8) g.fillRect(x + q, y + r, 3, 3)
+  } else if (kind === 'light') {
+    g.fillStyle = '#fffaf0'
+    g.fillRect(x, y, w, h)
+  } else if (kind === 'green') {
+    g.fillStyle = '#7dff8a'
+    g.fillRect(x, y, w, h)
+  }
+  g.restore()
+}
+
+// The atlas texture, and where each cell is in it: CELLS.kind[i].uv
+const CELLS = pack()
+function signAtlas () {
+  const cv = document.createElement('canvas')
+  cv.width = W
+  cv.height = H
+  const g = cv.getContext('2d')
+  g.clearRect(0, 0, W, H)
+  for (const list of Object.values(CELLS)) for (const c of list) draw(g, c)
+  const t = new THREE.CanvasTexture(cv)
+  t.colorSpace = THREE.SRGBColorSpace
+  t.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy())
+  return t
+}
+const SIGN_COUNTS = Object.fromEntries(
+  Object.entries(SIZES).map(([k, l]) => [k, l.length])
+)
+__export(__exports, { "CELLS": () => CELLS, "signAtlas": () => signAtlas, "SIGN_COUNTS": () => SIGN_COUNTS })
+})
+
+// ---- js/render/citySigns.js
+__define(117, function (__exports) {
+// The signs (the sim lays them out: SIGNS, and the solid things on the lots: SOLIDS). Billboards on
+// poles and on roofs, two-faced, with a catwalk under each and lamps over it; signs up on poles for
+// the motel, the fast-food stands, the strip malls and the gas prices; a theatre's marquee over the
+// pavement, its bulbs underneath, and its name up a blade sign; old hotels' names in letters on
+// frames along their roofs; murals on the walls; a helipad's markings and edge lights on a roof; a
+// gas station's canopy (its fascia in the brand's colours, its ceiling lit), pumps and columns; a
+// giant donut. Three meshes for all of it: what is lit (the atlas is its own glow: signTex.js), what
+// is painted on, and the steel and concrete that holds it up.
+const THREE = __require(0)
+const { SIGNS, SOLIDS, BUILDINGS, BLOCKS, CURB_H } = __require(24)
+const { Builder } = __require(108)
+const { CELLS, signAtlas } = __require(116)
+const { softTex } = __require(40)
+const FACE = [
+  [0, -1],
+  [1, 0],
+  [0, 1],
+  [-1, 0]
+]
+const _v = new THREE.Vector3(),
+  _a = new THREE.Vector3(),
+  _b = new THREE.Vector3()
+const white = new THREE.Color(1, 1, 1)
+const steel = new THREE.Color(0.24, 0.25, 0.27),
+  paint = new THREE.Color(0.85, 0.86, 0.85)
+
+// A frame at (x, 0, z) facing side s: local x across the face (left to right seen from the front),
+// y up, z out of it
+const frameAt = (x, z, s) =>
+  new THREE.Matrix4()
+    .makeRotationY(Math.atan2(FACE[s][0], FACE[s][1]))
+    .setPosition(x, 0, z)
+// a quad in frame M, corners a-b-c-d anticlockwise from its front, the atlas rect uv across it
+function quad (out, M, a, b, c, d, uv, col) {
+  const P = [a, b, c, d].map(p =>
+    _v
+      .set(...p)
+      .applyMatrix4(M)
+      .toArray()
+  )
+  _a.set(P[1][0] - P[0][0], P[1][1] - P[0][1], P[1][2] - P[0][2])
+  _b.set(P[3][0] - P[0][0], P[3][1] - P[0][1], P[3][2] - P[0][2])
+  const n = _a
+    .cross(_b)
+    .normalize()
+    .toArray()
+  out.quad(P[0], P[1], P[2], P[3], n, uv || [0, 0, 0, 0], col)
+}
+// A box in frame M; uvs: { front, back, left, right, top, bottom } atlas rects for faces drawn lit
+// (into lit), the rest into rest (unless skip lists it)
+function box (
+  lit,
+  rest,
+  M,
+  x0,
+  x1,
+  y0,
+  y1,
+  z0,
+  z1,
+  uvs = {},
+  col = steel,
+  skip = ''
+) {
+  const F = {
+    front: [
+      [x0, y0, z1],
+      [x1, y0, z1],
+      [x1, y1, z1],
+      [x0, y1, z1]
+    ],
+    back: [
+      [x1, y0, z0],
+      [x0, y0, z0],
+      [x0, y1, z0],
+      [x1, y1, z0]
+    ],
+    right: [
+      [x1, y0, z1],
+      [x1, y0, z0],
+      [x1, y1, z0],
+      [x1, y1, z1]
+    ],
+    left: [
+      [x0, y0, z0],
+      [x0, y0, z1],
+      [x0, y1, z1],
+      [x0, y1, z0]
+    ],
+    top: [
+      [x0, y1, z1],
+      [x1, y1, z1],
+      [x1, y1, z0],
+      [x0, y1, z0]
+    ],
+    bottom: [
+      [x0, y0, z0],
+      [x1, y0, z0],
+      [x1, y0, z1],
+      [x0, y0, z1]
+    ]
+  }
+  for (const [k, c] of Object.entries(F)) {
+    if (skip.includes(k)) continue
+    if (uvs[k]) quad(lit, M, ...c, uvs[k], white)
+    else quad(rest, M, ...c, null, col)
+  }
+}
+const cell = (kind, i) => {
+  const list = CELLS[kind]
+  return list[((i % list.length) + list.length) % list.length].uv
+}
+const pickOf = (kind, k) => Math.floor(k * CELLS[kind].length)
+
+// ---------- each kind of sign ----------
+function billboard (L, S, s) {
+  const M = frameAt(s.x, s.z, s.face),
+    w = s.w / 2,
+    d = s.d / 2,
+    k = pickOf('billboard', s.k)
+  box(L, S, M, -w, w, s.y, s.y + s.h, -d, d, {
+    front: cell('billboard', k),
+    back: cell('billboard', k + 3)
+  })
+  // a catwalk along its foot, three lamps on arms over its top
+  box(L, S, M, -w, w, s.y - 0.25, s.y - 0.15, d, d + 0.8)
+  for (const x of [-w * 0.66, 0, w * 0.66]) {
+    box(L, S, M, x - 0.05, x + 0.05, s.y + s.h, s.y + s.h + 0.08, d, d + 1.3)
+    box(
+      L,
+      S,
+      M,
+      x - 0.25,
+      x + 0.25,
+      s.y + s.h - 0.12,
+      s.y + s.h,
+      d + 1.1,
+      d + 1.45,
+      { bottom: cell('light', 0) }
+    )
+  }
+  if (!s.pole)
+    // (on a roof: legs down to it)
+    for (const x of [-w * 0.6, w * 0.6])
+      box(L, S, M, x - 0.12, x + 0.12, s.y - 1.6, s.y, -0.12, 0.12)
+}
+// a sign up on its pole, both faces lit
+function pylon (L, S, s, kind) {
+  const M = frameAt(s.x, s.z, s.face),
+    w = s.w / 2,
+    d = s.d / 2,
+    k = pickOf(kind, s.k)
+  box(L, S, M, -w, w, s.y, s.y + s.h, -d, d, {
+    front: cell(kind, k),
+    back: cell(kind, k)
+  })
+}
+function marquee (L, S, s) {
+  const M = frameAt(s.x, s.z, s.face),
+    w = s.w / 2,
+    k = pickOf('marquee', s.k)
+  const m = cell('marquee', k)
+  box(
+    L,
+    S,
+    M,
+    -w,
+    w,
+    s.y,
+    s.y + s.h,
+    0,
+    s.d,
+    { front: m, left: m, right: m, bottom: cell('bulbs', 0) },
+    steel,
+    'back'
+  )
+}
+function blade (L, S, s) {
+  const M = frameAt(s.x, s.z, s.face),
+    d = s.d / 2
+  // the theatres' signs are the atlas's first four, the shops' the rest
+  const k = s.w > 2 ? pickOf('blade', s.k * 0.4) : 4 + Math.floor(s.k * 6)
+  const c = cell('blade', k)
+  box(
+    L,
+    S,
+    M,
+    -d,
+    d,
+    s.y,
+    s.y + s.h,
+    0.3,
+    0.3 + s.w,
+    { left: c, right: c },
+    steel,
+    'back'
+  )
+  box(L, S, M, -0.06, 0.06, s.y + s.h * 0.4, s.y + s.h * 0.4 + 0.12, 0, 0.3)
+}
+// an old hotel's name in letters along its roof, on a frame of steel
+function hotelSign (L, S, s) {
+  const M = frameAt(s.x, s.z, s.face),
+    w = s.w / 2
+  quad(
+    L,
+    M,
+    [-w, s.y, 0.1],
+    [w, s.y, 0.1],
+    [w, s.y + s.h, 0.1],
+    [-w, s.y + s.h, 0.1],
+    cell('hotel', pickOf('hotel', s.k)),
+    white
+  )
+  for (const y of [s.y + 0.3, s.y + s.h - 0.3])
+    box(L, S, M, -w, w, y - 0.07, y + 0.07, -0.25, -0.1)
+  for (let x = -w; x <= w + 0.01; x += Math.max(2, s.w / 6))
+    box(L, S, M, x - 0.07, x + 0.07, s.y - 1, s.y + s.h, -0.25, -0.1)
+}
+function mural (P, s) {
+  const M = frameAt(s.x, s.z, s.face),
+    w = s.w / 2
+  quad(
+    P,
+    M,
+    [-w, s.y, 0.05],
+    [w, s.y, 0.05],
+    [w, s.y + s.h, 0.05],
+    [-w, s.y + s.h, 0.05],
+    cell('mural', pickOf('mural', s.k)),
+    white
+  )
+}
+// a helipad's markings on the roof, lights round its edge
+function helipad (L, P, S, h) {
+  const { x, z, r } = h,
+    y = h.y + 0.04
+  P.quad(
+    [x - r, y, z + r],
+    [x + r, y, z + r],
+    [x + r, y, z - r],
+    [x - r, y, z - r],
+    [0, 1, 0],
+    cell('helipad', 0),
+    white
+  )
+  const I = new THREE.Matrix4()
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2,
+      lx = x + Math.cos(a) * (r + 0.4),
+      lz = z + Math.sin(a) * (r + 0.4)
+    box(L, S, I, lx - 0.1, lx + 0.1, h.y, h.y + 0.18, lz - 0.1, lz + 0.1, {
+      top: cell('green', 0)
+    })
+  }
+}
+// a gas station's canopy: its fascia in the brand's colours, its ceiling lit
+function canopy (L, S, c) {
+  const I = new THREE.Matrix4(),
+    f = cell('fascia', c.brand)
+  box(
+    L,
+    S,
+    I,
+    c.x0,
+    c.x1,
+    c.y0,
+    c.y1,
+    c.z0,
+    c.z1,
+    { front: f, back: f, left: f, right: f },
+    paint,
+    'bottom'
+  )
+  // (the ceiling in panels, each a cell of lights)
+  const nx = 4,
+    nz = 2,
+    p = cell('panel', 0)
+  for (let i = 0; i < nx; i++)
+    for (let j = 0; j < nz; j++) {
+      const x0 = c.x0 + ((c.x1 - c.x0) * i) / nx,
+        x1 = c.x0 + ((c.x1 - c.x0) * (i + 1)) / nx
+      const z0 = c.z0 + ((c.z1 - c.z0) * j) / nz,
+        z1 = c.z0 + ((c.z1 - c.z0) * (j + 1)) / nz
+      L.quad(
+        [x0, c.y0, z0],
+        [x1, c.y0, z0],
+        [x1, c.y0, z1],
+        [x0, c.y0, z1],
+        [0, -1, 0],
+        p,
+        white
+      )
+    }
+}
+const BRAND = [0x0b4ea2, 0xd1202f, 0xf2b705, 0x138a52]
+const cyl = (r, h, n) =>
+  new THREE.CylinderGeometry(r, r, h, n, 1, true).translate(0, h / 2, 0)
+
+function buildSigns (group) {
+  const L = new Builder(), // lit
+    P = new Builder(), // painted on
+    S = new Builder() // steel and concrete
+  for (const s of SIGNS) {
+    if (s.kind === 'billboard') billboard(L, S, s)
+    else if (s.kind === 'marquee') marquee(L, S, s)
+    else if (s.kind === 'blade') blade(L, S, s)
+    else if (s.kind === 'hotel') hotelSign(L, S, s)
+    else if (s.kind === 'mural') mural(P, s)
+    else pylon(L, S, s, s.kind) // motel, food, mall, price
+  }
+  const I = new THREE.Matrix4(),
+    T = new THREE.Matrix4()
+  for (const c of SOLIDS) {
+    if (c.look === 'canopy') canopy(L, S, c)
+    else if (c.look === 'pump') {
+      box(
+        L,
+        S,
+        I,
+        c.x0,
+        c.x1,
+        c.y0,
+        c.y1,
+        c.z0,
+        c.z1,
+        {},
+        new THREE.Color().setHex(BRAND[c.brand])
+      )
+      // (its lit screens, either side)
+      const x = (c.x0 + c.x1) / 2,
+        s = cell('light', 0)
+      box(L, S, I, x - 0.2, x + 0.2, 1.1, 1.4, c.z0 - 0.02, c.z1 + 0.02, {
+        front: s,
+        back: s
+      })
+    } else if (c.look === 'island')
+      box(L, S, I, c.x0, c.x1, c.y0, c.y1, c.z0, c.z1, {}, paint)
+    else if (c.look === 'column')
+      S.add(cyl(c.r, c.y1, 10), T.makeTranslation(c.x, 0, c.z), paint)
+    else if (c.look === 'pole')
+      S.add(cyl(c.r, c.y1, 8), T.makeTranslation(c.x, 0, c.z), steel)
+  }
+  // the pools and fountains: water in its coping, on the lot
+  const y = CURB_H + 0.012
+  for (const blk of BLOCKS)
+    for (const g of blk.ground)
+      if (g.k === 'pool')
+        P.quad(
+          [g.x0, y, g.z1],
+          [g.x1, y, g.z1],
+          [g.x1, y, g.z0],
+          [g.x0, y, g.z0],
+          [0, 1, 0],
+          cell('pool', 0),
+          white
+        )
+  for (const b of BUILDINGS) {
+    if (b.door) {
+      // a front door, on the wall facing the street
+      const M = frameAt(b.door.x, b.door.z, b.door.face)
+      quad(
+        P,
+        M,
+        [-0.55, CURB_H, 0.04],
+        [0.55, CURB_H, 0.04],
+        [0.55, 2.35, 0.04],
+        [-0.55, 2.35, 0.04],
+        cell('door', pickOf('door', b.door.k)),
+        white
+      )
+    }
+    if (b.helipad) helipad(L, P, S, b.helipad)
+    if (b.donut) {
+      const d = b.donut
+      const M = frameAt(d.x, d.z, d.face).multiply(
+        T.makeTranslation(0, d.y + d.r + 1.6, 0)
+      )
+      S.add(
+        new THREE.TorusGeometry(d.r, 1.6, 10, 28),
+        M,
+        new THREE.Color(0.62, 0.36, 0.16)
+      )
+      S.add(
+        new THREE.TorusGeometry(d.r, 1.62, 10, 28, Math.PI),
+        M,
+        new THREE.Color(0.86, 0.45, 0.62)
+      )
+      for (const x of [-2, 2])
+        box(
+          L,
+          S,
+          frameAt(d.x, d.z, d.face),
+          x - 0.2,
+          x + 0.2,
+          d.y,
+          d.y + 1.7,
+          -0.2,
+          0.2
+        )
+    }
+  }
+  const atlas = signAtlas()
+  const lit = new THREE.MeshStandardMaterial({
+    map: atlas,
+    emissiveMap: atlas,
+    emissive: 0xffffff,
+    emissiveIntensity: 0.14,
+    roughness: 0.5,
+    alphaTest: 0.5
+  })
+  const painted = new THREE.MeshStandardMaterial({
+    map: atlas,
+    roughness: 0.88,
+    alphaTest: 0.5,
+    polygonOffset: true,
+    polygonOffsetFactor: -2,
+    polygonOffsetUnits: -2
+  })
+  const struct = new THREE.MeshStandardMaterial({
+    vertexColors: true,
+    roughness: 0.55,
+    metalness: 0.3
+  })
+  for (const [b, m, cast, name] of [
+    [L, lit, true, 'signs'],
+    [P, painted, false, 'murals and markings'],
+    [S, struct, true, 'sign frames']
+  ]) {
+    if (b.empty) continue
+    const mesh = new THREE.Mesh(b.geometry(), m)
+    mesh.castShadow = cast
+    mesh.receiveShadow = true
+    mesh.name = name
+    group.add(mesh)
+  }
+  const pools = glow()
+  group.add(pools)
+  // night (0 to 1): every sign lit up, the billboards under their lamps, the light under a gas
+  // station's canopy and a theatre's marquee spilling on the ground
+  return {
+    night (k) {
+      lit.emissiveIntensity = 0.14 + 0.72 * k
+      pools.material.opacity = 0.55 * k
+      pools.visible = k > 0.01
+    }
+  }
+}
+
+// the light thrown on the ground at night under each gas station's canopy and in front of each
+// marquee: soft pools, added onto whatever is there
+function glow () {
+  const G = new Builder(),
+    y = CURB_H + 0.03,
+    I = new THREE.Matrix4()
+  const pool = (M, x0, x1, z0, z1) =>
+    quad(
+      G,
+      M,
+      [x0, y, z1],
+      [x1, y, z1],
+      [x1, y, z0],
+      [x0, y, z0],
+      [0, 0, 1, 1],
+      white
+    )
+  for (const c of SOLIDS)
+    if (c.look === 'canopy') pool(I, c.x0 - 4, c.x1 + 4, c.z0 - 4, c.z1 + 4)
+  for (const s of SIGNS)
+    if (s.kind === 'marquee')
+      pool(frameAt(s.x, s.z, s.face), -s.w / 2 - 3, s.w / 2 + 3, -1, s.d + 7)
+  const m = new THREE.Mesh(
+    G.geometry(),
+    new THREE.MeshBasicMaterial({
+      map: softTex,
+      color: new THREE.Color(1, 0.9, 0.75),
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      polygonOffset: true,
+      polygonOffsetFactor: -4,
+      polygonOffsetUnits: -4
+    })
+  )
+  m.name = 'canopy light'
+  m.visible = false
+  return m
+}
+__export(__exports, { "buildSigns": () => buildSigns })
+})
+
+// ---- js/render/cityYards.js
+__define(118, function (__exports) {
+// What the houses' yards are closed off with (the sim lays them out, solid: SOLIDS): clipped hedges
+// along Beverly Hills' pavements, some as tall as the garage, in a leafy texture, each a shade of
+// its own; low stucco garden walls; white picket fences round Venice's bungalows (cut out of a
+// texture, so a fence is two quads). The hedges are one mesh a district (chunks.js).
+const THREE = __require(0)
+const { SOLIDS } = __require(24)
+const { canvasTex } = __require(40)
+const { Builder } = __require(108)
+const { district, DISTRICTS } = __require(105)
+// leaves, 2 m a tile: a dark green, clumps lit on top and shaded under
+function leafTex () {
+  const t = canvasTex(256, (g, S) => {
+    g.fillStyle = '#2e4a24'
+    g.fillRect(0, 0, S, S)
+    for (let i = 0; i < 2600; i++) {
+      const x = Math.random() * S,
+        y = Math.random() * S,
+        r = 2 + Math.random() * 5
+      const v = Math.random()
+      g.fillStyle = `rgba(${(40 + v * 70) | 0},${(70 + v * 80) | 0},${(28 +
+        v * 40) |
+        0},0.8)`
+      g.beginPath()
+      g.ellipse(x, y, r, r * 0.6, Math.random() * 3, 0, Math.PI * 2)
+      g.fill()
+    }
+  })
+  t.repeat.set(0.5, 0.5)
+  return t
+}
+// white pickets with gaps between, a rail across them (the gaps cut away)
+function picketTex () {
+  return canvasTex(128, (g, S) => {
+    g.clearRect(0, 0, S, S)
+    g.fillStyle = '#f4f2ec'
+    for (let x = 0; x < S; x += S / 8) {
+      g.fillRect(x + 2, S * 0.1, S / 8 - 6, S * 0.9)
+      g.beginPath()
+      g.moveTo(x + 2, S * 0.1)
+      g.lineTo(x + S / 16 - 1, 0)
+      g.lineTo(x + S / 8 - 4, S * 0.1)
+      g.fill()
+    }
+    g.fillRect(0, S * 0.3, S, S * 0.07)
+    g.fillRect(0, S * 0.72, S, S * 0.07)
+  })
+}
+
+function buildYards (group) {
+  const hedges = Array.from({ length: DISTRICTS }, () => new Builder())
+  const walls = new Builder(),
+    fences = new Builder()
+  const c = new THREE.Color()
+  const uvs = (w, h) => [0, 0, w, h]
+  for (const s of SOLIDS) {
+    if (s.look === 'hedge') {
+      const b = hedges[district((s.x0 + s.x1) / 2, (s.z0 + s.z1) / 2)]
+      c.setHSL(0.27 + s.tint * 0.06, 0.35, 0.42 + s.tint * 0.12)
+      // (walls and top in metres, so the leaves keep their size; rounded a touch at the top)
+      b.walls(s.x0, s.x1, s.z0, s.z1, s.y0, s.y1, c, w => uvs(w, s.y1 - s.y0))
+      b.top(s.x0 + 0.05, s.x1 - 0.05, s.z0 + 0.05, s.z1 - 0.05, s.y1 + 0.06, c)
+    } else if (s.look === 'wall') {
+      c.setHex(0xefe6d6)
+      walls.cuboid(s.x0, s.x1, s.z0, s.z1, s.y0, s.y1, c)
+      c.setHex(0xb5543a) // a tiled coping
+      walls.cuboid(
+        s.x0 - 0.06,
+        s.x1 + 0.06,
+        s.z0 - 0.06,
+        s.z1 + 0.06,
+        s.y1,
+        s.y1 + 0.08,
+        c
+      )
+    } else if (s.look === 'fence') {
+      // one plane down the middle, seen from both sides
+      const along = s.x1 - s.x0 > s.z1 - s.z0,
+        m = along ? (s.z0 + s.z1) / 2 : (s.x0 + s.x1) / 2
+      c.setRGB(1, 1, 1)
+      const len = along ? s.x1 - s.x0 : s.z1 - s.z0
+      if (along)
+        fences.quad(
+          [s.x0, 0, m],
+          [s.x1, 0, m],
+          [s.x1, s.y1, m],
+          [s.x0, s.y1, m],
+          [0, 0, 1],
+          [0, 0, len, 1],
+          c
+        )
+      else
+        fences.quad(
+          [m, 0, s.z1],
+          [m, 0, s.z0],
+          [m, s.y1, s.z0],
+          [m, s.y1, s.z1],
+          [1, 0, 0],
+          [0, 0, len, 1],
+          c
+        )
+    }
+  }
+  const leaves = new THREE.MeshStandardMaterial({
+    map: leafTex(),
+    vertexColors: true,
+    roughness: 0.95
+  })
+  for (const b of hedges) add(group, b, leaves, true, 'hedges')
+  add(
+    group,
+    walls,
+    new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9 }),
+    true,
+    'garden walls'
+  )
+  const pt = picketTex()
+  pt.repeat.set(1, 1)
+  add(
+    group,
+    fences,
+    new THREE.MeshStandardMaterial({
+      map: pt,
+      alphaTest: 0.5,
+      side: THREE.DoubleSide,
+      roughness: 0.8
+    }),
+    false,
+    'fences'
+  )
+}
+function add (group, b, mat, cast, name) {
+  if (b.empty) return
+  const m = new THREE.Mesh(b.geometry(), mat)
+  m.castShadow = cast
+  m.receiveShadow = true
+  m.name = name
+  group.add(m)
+}
+__export(__exports, { "buildYards": () => buildYards })
+})
+
+// ---- js/render/buildingTex.js
+__define(119, function (__exports) {
+// The buildings' textures, drawn at startup: a facade per style (glass curtain wall, office ribbon
+// windows, brick at its real size, stucco with balconies, pale stone or terracotta with tall windows
+// between piers, a house's wall with its few windows), the storefronts' band, a flat roof's
+// membrane, red clay tiles for hip roofs, and the glass of a tower's lit crown.
+const { canvasTex, speckle } = __require(40)
+const { rng } = __require(24)
 const COL = 3 // m per window bay
 const FLOOR = 3.5 // m per storey
 const CELLS = 8 // bays and storeys in one texture tile
 const SHOP = 4.6 // height of the storefront band
 const R = rng(77)
 
-// ---------- facade textures: a colour map per style ----------
 function lighten (g, x, y, w, h, top, bottom) {
   const gr = g.createLinearGradient(0, y, 0, y + h)
   gr.addColorStop(0, top)
@@ -72399,14 +82996,25 @@ function lighten (g, x, y, w, h, top, bottom) {
 }
 // how far the glass sits back from the wall face (m): a curtain wall's panes are nearly flush, a
 // brick wall's windows deep in their openings
-const INSET = { glass: 0.05, office: 0.14, brick: 0.24, stucco: 0.17 }
+const INSET = {
+  glass: 0.05,
+  office: 0.14,
+  brick: 0.24,
+  stucco: 0.17,
+  stone: 0.3,
+  house: 0.16
+}
 // window rectangle inside a 64 px cell, per style
 const WIN = {
   glass: [2, 2, 60, 52],
   office: [6, 14, 52, 36],
   brick: [18, 12, 28, 38],
-  stucco: [16, 14, 32, 34]
+  stucco: [16, 14, 32, 34],
+  stone: [21, 8, 22, 44],
+  house: [19, 15, 26, 30]
 }
+const STYLES = Object.keys(WIN)
+
 function drawWall (g, style, S) {
   const c = S / CELLS,
     k = c / 64 // WIN is in a 64 px cell
@@ -72437,6 +83045,20 @@ function drawWall (g, style, S) {
       g.fillStyle = gr
       g.fillRect(x - rad, y - rad, rad * 2, rad * 2)
     }
+  } else if (style === 'stone') {
+    // dressed stone or terracotta: fine grain, the courses' joints, piers between the windows
+    g.fillStyle = '#e9e1d2'
+    g.fillRect(0, 0, S, S)
+    speckle(g, 20000, S, 0.1, false)
+    speckle(g, 9000, S, 0.12, true)
+    g.fillStyle = 'rgba(90,80,64,0.18)'
+    for (let y = 0; y < S; y += c / 6) g.fillRect(0, y, S, Math.max(1, k))
+  } else if (style === 'house') {
+    // rough plaster, hand-trowelled
+    g.fillStyle = '#f1ece2'
+    g.fillRect(0, 0, S, S)
+    speckle(g, 34000, S, 0.14, false)
+    speckle(g, 16000, S, 0.12, true)
   } else {
     g.fillStyle = style === 'office' ? '#d8d3ca' : '#efebe4'
     g.fillRect(0, 0, S, S)
@@ -72480,9 +83102,33 @@ function drawWall (g, style, S) {
         g.fillStyle = gr
         g.fillRect(x + wx, y + wy + wh + 4 * k, ww, c - wy - wh - 4 * k)
       }
+      if (style === 'stone') {
+        // a pier either side, standing proud and lit, and a sunk spandrel panel under the window
+        g.fillStyle = 'rgba(255,255,255,0.28)'
+        g.fillRect(x, y, 7 * k, c)
+        g.fillStyle = 'rgba(70,60,48,0.16)'
+        g.fillRect(x + 7 * k, y, 2 * k, c)
+        g.fillStyle = 'rgba(96,82,64,0.3)'
+        g.fillRect(x + wx, y + wy + wh + 2 * k, ww, c - wy - wh - 2 * k)
+        g.fillStyle = 'rgba(255,248,236,0.5)'
+        for (let t = 0; t < 3; t++)
+          g.fillRect(
+            x + wx + 3 * k,
+            y + wy + wh + (4 + t * 3) * k,
+            ww - 6 * k,
+            k
+          )
+      }
+      if (style === 'house') {
+        // a painted surround and sill
+        g.fillStyle = 'rgba(255,255,255,0.75)'
+        g.fillRect(x + wx - 3 * k, y + wy - 3 * k, ww + 6 * k, wh + 7 * k)
+      }
       lighten(g, x + wx, y + wy, ww, wh, '#5d6f80', '#2c3742')
       g.fillStyle = 'rgba(25,28,32,0.9)' // frame and mullion
       g.fillRect(x + wx + ww / 2 - k, y + wy, 2 * k, wh)
+      if (style === 'house' || style === 'stone')
+        g.fillRect(x + wx, y + wy + wh * 0.32, ww, 1.5 * k) // (and a transom)
       g.strokeStyle = 'rgba(25,28,32,0.8)'
       g.lineWidth = 2 * k
       g.strokeRect(x + wx, y + wy, ww, wh)
@@ -72494,6 +83140,9 @@ function drawWall (g, style, S) {
       }
     }
 }
+const facadeMap = style =>
+  canvasTex(1024, (g, S) => drawWall(g, style, S))
+
 // storefronts: sign band, lit window, door and sometimes a striped awning (4 m per shop)
 const AWNINGS = [
   '#b8332e',
@@ -72537,7 +83186,6 @@ function drawShops (g, lit, W, H) {
     g.fillRect(x, 0, 5, H)
   }
 }
-const facadeMap = style => canvasTex(1024, (g, S) => drawWall(g, style, S))
 function shopMaps () {
   let litCtx = null
   const lit = canvasTex(
@@ -72579,178 +83227,205 @@ function roofTex () {
     }
   })
 }
-
-// ---------- geometry ----------
-class Builder {
-  constructor () {
-    this.p = []
-    this.n = []
-    this.uv = []
-    this.c = []
-  }
-  // quad a-b-c-d counter-clockwise seen from outside; uv = [u0, v0, u1, v1] across a-b and up b-c
-  quad (a, b, c, d, nrm, uv, col) {
-    const [u0, v0, u1, v1] = uv
-    // (two triangles, a-b-c and a-c-d)
-    this.p.push(...a, ...b, ...c, ...a, ...c, ...d)
-    this.uv.push(u0, v0, u1, v0, u1, v1, u0, v0, u1, v1, u0, v1)
-    for (let i = 0; i < 6; i++) {
-      this.n.push(nrm[0], nrm[1], nrm[2])
-      this.c.push(col.r, col.g, col.b)
-    }
-  }
-  // the four walls of a box from y0 to y1; uvFn(width, y0, y1) gives each wall's uv
-  walls (x0, x1, z0, z1, y0, y1, col, uvFn) {
-    const P = (x, y, z) => [x, y, z]
-    this.quad(
-      P(x0, y0, z1),
-      P(x1, y0, z1),
-      P(x1, y1, z1),
-      P(x0, y1, z1),
-      [0, 0, 1],
-      uvFn(x1 - x0, 0),
-      col
-    )
-    this.quad(
-      P(x1, y0, z0),
-      P(x0, y0, z0),
-      P(x0, y1, z0),
-      P(x1, y1, z0),
-      [0, 0, -1],
-      uvFn(x1 - x0, 1),
-      col
-    )
-    this.quad(
-      P(x1, y0, z1),
-      P(x1, y0, z0),
-      P(x1, y1, z0),
-      P(x1, y1, z1),
-      [1, 0, 0],
-      uvFn(z1 - z0, 2),
-      col
-    )
-    this.quad(
-      P(x0, y0, z0),
-      P(x0, y0, z1),
-      P(x0, y1, z1),
-      P(x0, y1, z0),
-      [-1, 0, 0],
-      uvFn(z1 - z0, 3),
-      col
-    )
-  }
-  bottom (x0, x1, z0, z1, y, col) {
-    this.quad(
-      [x0, y, z0],
-      [x1, y, z0],
-      [x1, y, z1],
-      [x0, y, z1],
-      [0, -1, 0],
-      [0, 0, 0, 0],
-      col
-    )
-  }
-  // a band standing out o m round the walls of [x0, x1] x [z0, z1], from y0 to y1, with its
-  // underside: a cornice, a parapet or a shop canopy
-  band (x0, x1, z0, z1, o, y0, y1, col) {
-    for (const [a, b, c, d] of [
-      [x0 - o, x1 + o, z0 - o, z0],
-      [x0 - o, x1 + o, z1, z1 + o],
-      [x0 - o, x0, z0, z1],
-      [x1, x1 + o, z0, z1]
-    ]) {
-      this.cuboid(a, b, c, d, y0, y1, col)
-      this.bottom(a, b, c, d, y0, col)
-    }
-  }
-  top (x0, x1, z0, z1, y, col) {
-    this.quad(
-      [x0, y, z1],
-      [x1, y, z1],
-      [x1, y, z0],
-      [x0, y, z0],
-      [0, 1, 0],
-      [x0 / 4, z1 / 4, x1 / 4, z0 / 4],
-      col
-    )
-  }
-  cuboid (x0, x1, z0, z1, y0, y1, col) {
-    this.walls(x0, x1, z0, z1, y0, y1, col, w => [0, y0 / 4, w / 4, y1 / 4])
-    this.top(x0, x1, z0, z1, y1, col)
-  }
-  geometry () {
-    const g = new THREE.BufferGeometry()
-    g.setAttribute('position', new THREE.Float32BufferAttribute(this.p, 3))
-    g.setAttribute('normal', new THREE.Float32BufferAttribute(this.n, 3))
-    g.setAttribute('uv', new THREE.Float32BufferAttribute(this.uv, 2))
-    g.setAttribute('color', new THREE.Float32BufferAttribute(this.c, 3))
-    g.computeBoundingSphere()
-    return g
-  }
+// Clay tiles, 2 m a tile (u along the eaves, v up the slope): courses of half-round tiles, each lit
+// on its crown and shaded in its trough, a few darker or paler than the rest. Drawn near white, so
+// the roof's own colour (vertex colour) makes them terracotta, or a bungalow's grey shingle.
+function tileTex () {
+  const t = canvasTex(256, (g, S) => {
+    g.fillStyle = '#d8d2cc'
+    g.fillRect(0, 0, S, S)
+    const across = 8, // tiles across a 2 m tile: 25 cm each
+      up = 6 // courses up it
+    const w = S / across,
+      h = S / up
+    for (let r = 0; r < up; r++)
+      for (let i = 0; i < across; i++) {
+        const x = i * w + (r % 2) * (w / 2),
+          y = r * h,
+          v = 0.86 + R() * 0.22
+        const gr = g.createLinearGradient(x, 0, x + w, 0)
+        gr.addColorStop(
+          0,
+          `rgba(${(120 * v) | 0},${(110 * v) | 0},${(104 * v) | 0},1)`
+        )
+        gr.addColorStop(
+          0.45,
+          `rgba(${(255 * v) | 0},${(250 * v) | 0},${(244 * v) | 0},1)`
+        )
+        gr.addColorStop(
+          1,
+          `rgba(${(110 * v) | 0},${(100 * v) | 0},${(94 * v) | 0},1)`
+        )
+        g.fillStyle = gr
+        g.fillRect(x, y, w - 1, h)
+        g.fillRect(x - S, y, w - 1, h) // (wrapping round)
+        g.fillStyle = 'rgba(40,30,26,0.35)' // the course's shadow on the one below
+        g.fillRect(x, y + h - 3, w - 1, 3)
+      }
+    speckle(g, 5000, S, 0.18, false)
+  })
+  t.repeat.set(0.5, 0.5)
+  return t
 }
+// a lit crown's glass: tall panes between slim mullions, brighter towards their tops
+function crownTex () {
+  return canvasTex(256, (g, S) => {
+    const gr = g.createLinearGradient(0, 0, 0, S)
+    gr.addColorStop(0, '#fffaf0')
+    gr.addColorStop(1, '#9fb1c0')
+    g.fillStyle = gr
+    g.fillRect(0, 0, S, S)
+    g.fillStyle = 'rgba(30,36,44,0.85)'
+    for (let x = 0; x < S; x += S / 8) g.fillRect(x, 0, 3, S)
+    g.fillRect(0, S / 2, S, 3)
+  })
+}
+__export(__exports, { "COL": () => COL, "FLOOR": () => FLOOR, "CELLS": () => CELLS, "SHOP": () => SHOP, "INSET": () => INSET, "WIN": () => WIN, "STYLES": () => STYLES, "facadeMap": () => facadeMap, "shopMaps": () => shopMaps, "roofTex": () => roofTex, "tileTex": () => tileTex, "crownTex": () => crownTex })
+})
 
-// antenna beacons, blinked from update()
+// ---- js/render/cityBuildings.js
+__define(120, function (__exports) {
+// City buildings: procedural facades (glass curtain wall, office, brick, stucco, stone and
+// terracotta, a house's wall) with windows lit for the evening, storefronts under canopies along
+// the street, setbacks, cornices, roof lips, rooftop plant and antenna beacons; houses under clay tile
+// hip roofs; towers shaped round or three-sided, a stepped cylinder's glass crown and a sail of glass
+// lit at night, spires, and the red lights that blink on the tallest. Each style is one merged mesh,
+// so six hundred buildings draw in a few calls (the cornices and roofs, heavy with corners, one a
+// district: chunks.js). Every window is its own (facade.js): set back in its opening with a room
+// behind it, lit or dark, warm or cool, blinds up or down, and a glass pane catches the sky at its
+// own slight angle. (Signs, billboards and helipads: citySigns.js; hedges and walls: cityYards.js.)
+const THREE = __require(0)
+const { LIP, LIP_H } = __require(25)
+const { facadeMaterial } = __require(104)
+const { district, DISTRICTS } = __require(105)
+const { BUILDINGS, rng } = __require(24)
+const { hdr } = __require(40)
+const { Builder } = __require(108)
+const { buildSigns } = __require(117)
+const { buildYards } = __require(118)
+const { COL, FLOOR, CELLS, SHOP, INSET, WIN, STYLES, facadeMap, shopMaps, roofTex, tileTex, crownTex } = __require(119)
+const R = rng(77)
+
+// how each style's windows are lit and dressed (facade.js)
+const LOOK = {
+  glass: { lit: 0.2, litNight: 0.5, blinds: 0.2, tilt: 0.14 },
+  office: { lit: 0.28, litNight: 0.62, blinds: 0.45, tilt: 0.05 },
+  brick: { lit: 0.28, litNight: 0.62, blinds: 0.45, tilt: 0.05 },
+  stucco: { lit: 0.28, litNight: 0.62, blinds: 0.45, tilt: 0.05 },
+  stone: { lit: 0.26, litNight: 0.6, blinds: 0.5, tilt: 0.04 },
+  house: { lit: 0.22, litNight: 0.55, blinds: 0.55, tilt: 0.03, fill: 0.5 }
+}
+// clay tiles in Beverly Hills, a bungalow's shingles in Venice
+const TILE = [0xb5543a, 0xa94b33, 0xc0603f, 0x9e4a35]
+const SHINGLE = [0x6f6a64, 0x5d6a5e, 0x7a6555, 0x58606a, 0x8a7a68]
+
+// antenna beacons and the red lights on the tallest roofs, blinked from update()
 const BEACON = new THREE.MeshBasicMaterial({
   color: hdr(5, 0.2, 0.12),
   toneMapped: false
 })
 
+const col = new THREE.Color(),
+  white = new THREE.Color(1, 1, 1),
+  metal = new THREE.Color(0.32, 0.34, 0.37)
+const tone = hex => new THREE.Color().setHex(hex)
+
 function buildBuildings (group) {
-  const styles = ['glass', 'office', 'brick', 'stucco']
-  const B = Object.fromEntries(styles.map(s => [s, new Builder()]))
+  const F = Object.fromEntries(STYLES.map(s => [s, new Builder()]))
   const shops = new Builder(),
-    beacons = new Builder()
-  const byDistrict = () => Array.from({ length: DISTRICTS }, () => new Builder())
+    beacons = new Builder(),
+    tiles = new Builder(),
+    crowns = new Builder()
+  const byDistrict = () =>
+    Array.from({ length: DISTRICTS }, () => new Builder())
   const roofsBy = byDistrict(),
     ledgesBy = byDistrict()
-  const col = new THREE.Color(),
-    white = new THREE.Color(1, 1, 1),
-    metal = new THREE.Color(0.32, 0.34, 0.37)
   for (const b of BUILDINGS) {
-    const out = B[b.style],
-      t0 = b.tiers[0],
+    const t0 = b.tiers[0],
       d = district((t0.x0 + t0.x1) / 2, (t0.z0 + t0.z1) / 2),
       roofs = roofsBy[d],
       ledges = ledgesBy[d]
     col.setHex(b.tint).multiplyScalar(0.94 + R() * 0.12)
+    const c = col.clone()
     // a pale membrane on some roofs, grey on the rest
     const roofCol = new THREE.Color().setScalar(
       R() < 0.35 ? 1.05 + R() * 0.15 : 0.55 + R() * 0.3
     )
     const awning = new THREE.Color().setScalar(0.16 + R() * 0.08)
+    const tileCol = tone(
+      b.roofs === 'shingle'
+        ? SHINGLE[Math.floor(R() * 5)]
+        : TILE[Math.floor(R() * 4)]
+    )
+    if (b.form === 'shaft') shafts(b, F, roofs, ledges, crowns, c, roofCol)
     b.tiers.forEach((t, k) => {
+      if (t.strip) return // (a shaped tower's boxes: drawn as its shafts)
+      const style = t.style || b.style,
+        tc = t.tint ? tone(t.tint) : c
       const base = k === 0 && b.shop ? SHOP : t.y0
       if (base > t.y0)
         shops.walls(t.x0, t.x1, t.z0, t.z1, t.y0, base, white, (w, side) => {
           const u = b.u * 4 + side * 0.37
           return [u, 0, u + w / 24, 1]
         })
-      // whole bays across each wall and whole storeys up it
-      const floors = Math.max(1, Math.round((t.y1 - base) / FLOOR))
-      out.walls(t.x0, t.x1, t.z0, t.z1, base, t.y1, col, (w, side) => {
-        const u = b.u * CELLS + side * 3,
-          v = (base - (b.shop ? SHOP : 0)) / FLOOR / CELLS
-        return [
-          u / CELLS,
-          v,
-          (u + Math.max(1, Math.round(w / COL))) / CELLS,
-          v + floors / CELLS
-        ]
-      })
+      // (the top storeys of the top tier in a band of lit glass, on some towers)
+      const top =
+        b.crownBand && k === b.tiers.length - 1 ? t.y1 - b.crownBand : t.y1
+      if (top < t.y1)
+        crowns.walls(t.x0, t.x1, t.z0, t.z1, top, t.y1, white, (w, side) => [
+          side * 0.25,
+          0,
+          side * 0.25 + w / 6,
+          b.crownBand / 7
+        ])
+      if (t.blank || (top - base < 2.6 && base > t.y0)) {
+        // one storey of shops: a plain parapet over the storefronts (or a wall with no windows)
+        ledges.walls(t.x0, t.x1, t.z0, t.z1, base, top, tc, w => [
+          0,
+          0,
+          w / 4,
+          1
+        ])
+      } else {
+        // whole bays across each wall and whole storeys up it
+        const floors = Math.max(1, Math.round((top - base) / FLOOR))
+        F[style].walls(t.x0, t.x1, t.z0, t.z1, base, top, tc, (w, side) => {
+          const u = b.u * CELLS + side * 3,
+            v = (base - (b.shop ? SHOP : 0)) / FLOOR / CELLS
+          return [
+            u / CELLS,
+            v,
+            (u + Math.max(1, Math.round(w / COL))) / CELLS,
+            v + floors / CELLS
+          ]
+        })
+      }
+      if (t.hip) {
+        tiles.hip(t.x0, t.x1, t.z0, t.z1, t.y1, t.hip, t.eave || 0, tileCol)
+        return
+      }
       roofs.top(t.x0, t.x1, t.z0, t.z1, t.y1, roofCol)
       // a cornice round the top of each tier (a slim metal parapet on glass), and a canopy over
       // the shops
-      const glass = b.style === 'glass',
-        o = glass ? 0.1 : b.style === 'office' ? 0.22 : 0.34
+      const glass = style === 'glass',
+        o = glass
+          ? 0.1
+          : style === 'house'
+          ? 0.12
+          : style === 'office'
+          ? 0.22
+          : style === 'stone'
+          ? 0.45
+          : 0.34
       ledges.band(
         t.x0,
         t.x1,
         t.z0,
         t.z1,
         o,
-        t.y1 - (glass ? 0.5 : 0.42),
+        t.y1 - (glass ? 0.5 : style === 'stone' ? 0.9 : 0.42),
         t.y1 + LIP_H + 0.02,
-        glass ? metal : col
+        glass ? metal : tc
       )
       if (base > t.y0)
         ledges.band(
@@ -72766,45 +83441,51 @@ function buildBuildings (group) {
       // a low lip round the roof edge (the wheels roll over it)
       const p = LIP,
         h = t.y1 + LIP_H
-      roofs.cuboid(t.x0, t.x1, t.z0, t.z0 + p, t.y1, h, col)
-      roofs.cuboid(t.x0, t.x1, t.z1 - p, t.z1, t.y1, h, col)
-      roofs.cuboid(t.x0, t.x0 + p, t.z0, t.z1, t.y1, h, col)
-      roofs.cuboid(t.x1 - p, t.x1, t.z0, t.z1, t.y1, h, col)
+      roofs.cuboid(t.x0, t.x1, t.z0, t.z0 + p, t.y1, h, tc)
+      roofs.cuboid(t.x0, t.x1, t.z1 - p, t.z1, t.y1, h, tc)
+      roofs.cuboid(t.x0, t.x0 + p, t.z0, t.z1, t.y1, h, tc)
+      roofs.cuboid(t.x1 - p, t.x1, t.z0, t.z1, t.y1, h, tc)
     })
+    if (b.fins) fins(b, ledges, c)
     // rooftop plant on the top tier (solid, so laid out by the sim: roofs.js)
     const t = b.tiers[b.tiers.length - 1],
       y = t.y1
     const grey = new THREE.Color().setScalar(0.55 + R() * 0.25)
     for (const p of b.plant)
-      roofs.cuboid(p.x0, p.x1, p.z0, p.z1, p.y0, p.y1, grey)
+      if (!p.look) roofs.cuboid(p.x0, p.x1, p.z0, p.z1, p.y0, p.y1, grey)
     if (b.antenna) {
       const cx = (t.x0 + t.x1) / 2,
         cz = (t.z0 + t.z1) / 2,
         top = y + 14 + R() * 12
       roofs.cuboid(cx - 0.25, cx + 0.25, cz - 0.25, cz + 0.25, y, top, grey)
-      beacons.cuboid(
-        cx - 0.45,
-        cx + 0.45,
-        cz - 0.45,
-        cz + 0.45,
-        top,
-        top + 0.9,
-        white
-      )
+      beacon(beacons, cx, top, cz, 0.45)
     }
+    if (b.spire) spire(b.spire, ledges, beacons)
+    // the red lights at the corners of the tallest roofs
+    if (b.h > 120 && b.form !== 'shaft')
+      for (const [x, z] of [
+        [t.x0 + 0.6, t.z0 + 0.6],
+        [t.x1 - 0.6, t.z1 - 0.6],
+        [t.x0 + 0.6, t.z1 - 0.6],
+        [t.x1 - 0.6, t.z0 + 0.6]
+      ])
+        beacon(beacons, x, y + 0.6, z, 0.25)
   }
 
-  const add = (builder, mat) => {
+  const add = (builder, mat, name, shadow = true) => {
+    if (builder.empty) return null
     const m = new THREE.Mesh(builder.geometry(), mat)
-    m.castShadow = true
+    m.castShadow = shadow
     m.receiveShadow = true
+    m.name = name
     group.add(m)
     return m
   }
-  for (const s of styles) {
-    const glass = s === 'glass'
+  for (const s of STYLES) {
+    const glass = s === 'glass',
+      L = LOOK[s]
     add(
-      B[s],
+      F[s],
       facadeMaterial(
         {
           map: facadeMap(s),
@@ -72818,21 +83499,23 @@ function buildBuildings (group) {
         {
           cells: CELLS,
           win: WIN[s].map(v => v / 64),
-          lit: glass ? 0.2 : 0.28,
-          litNight: glass ? 0.5 : 0.62,
-          blinds: glass ? 0.2 : 0.45,
-          tilt: glass ? 0.14 : 0.05,
+          lit: L.lit,
+          litNight: L.litNight,
+          blinds: L.blinds,
+          tilt: L.tilt,
           inset: INSET[s],
-          glassMetal: glass ? 0.6 : 0
+          glassMetal: glass ? 0.6 : 0,
+          fill: L.fill ?? 1
         }
-      )
+      ),
+      `facades ${s}`
     )
   }
   const ledgeMat = new THREE.MeshStandardMaterial({
     vertexColors: true,
     roughness: 0.75
   })
-  for (const l of ledgesBy) if (l.p.length) add(l, ledgeMat)
+  for (const l of ledgesBy) add(l, ledgeMat, 'cornices')
   const sm = shopMaps()
   const shopMat = new THREE.MeshStandardMaterial({
     map: sm.map,
@@ -72841,44 +83524,187 @@ function buildBuildings (group) {
     emissiveIntensity: 1.4,
     roughness: 0.55
   })
-  add(shops, shopMat)
-  const rt = roofTex()
-  rt.repeat.set(1, 1)
+  add(shops, shopMat, 'storefronts')
   const roofMat = new THREE.MeshStandardMaterial({
-    map: rt,
+    map: roofTex(),
     vertexColors: true,
     roughness: 0.95
   })
-  for (const r of roofsBy) if (r.p.length) add(r, roofMat)
-  group.add(new THREE.Mesh(beacons.geometry(), BEACON))
-  // night (0 to 1): the shopfronts' signs and windows brighter (the windows: facade.js)
+  for (const r of roofsBy) add(r, roofMat, 'roofs')
+  add(
+    tiles,
+    new THREE.MeshStandardMaterial({
+      map: tileTex(),
+      vertexColors: true,
+      roughness: 0.8
+    }),
+    'tile roofs'
+  )
+  const ct = crownTex()
+  const crownMat = new THREE.MeshStandardMaterial({
+    map: ct,
+    emissiveMap: ct,
+    emissive: 0xfff2dc,
+    emissiveIntensity: 0.35,
+    vertexColors: true,
+    roughness: 0.2,
+    metalness: 0.3
+  })
+  add(crowns, crownMat, 'crowns')
+  add(beacons, BEACON, 'beacons', false)
+  const signs = buildSigns(group)
+  buildYards(group)
+  // night (0 to 1): the shopfronts' signs and windows brighter, the crowns and every sign lit (the
+  // windows: facade.js)
   return {
     night (k) {
       shopMat.emissiveIntensity = 1.4 + 1.2 * k
+      crownMat.emissiveIntensity = 0.35 + 2.4 * k
+      signs.night(k)
     }
   }
 }
+
+// A shaped tower: each shaft's walls round its plan with whole storeys up them (and whole bays
+// across each flat wall; round, the bays run on round it), its top and its cornice; a lit glass
+// crown, a sail of glass sloping up to its spire, or a round tower's floors stacked like records
+function shafts (b, F, roofs, ledges, crowns, c, roofCol) {
+  const glass = b.style === 'glass'
+  for (const s of b.shafts) {
+    const out = s.crown ? crowns : F[b.style]
+    const floors = Math.max(1, Math.round((s.y1 - s.y0) / FLOOR)),
+      v0 = s.y0 / FLOOR / CELLS,
+      v1 = v0 + floors / CELLS
+    const per = s.pts.reduce((a, p, i) => {
+      const q = s.pts[(i + 1) % s.pts.length]
+      return a + Math.hypot(q[0] - p[0], q[1] - p[1])
+    }, 0)
+    const k = Math.max(1, Math.round(per / COL)) / per // bays a metre round a round one
+    const u0 = b.u * CELLS
+    out.prism(
+      s.pts,
+      s.y0,
+      s.y1,
+      s.crown ? white : c,
+      (i, len, from) =>
+        s.smooth
+          ? [(u0 + from * k) / CELLS, v0, (u0 + (from + len) * k) / CELLS, v1]
+          : [
+              (u0 + i * 3) / CELLS,
+              v0,
+              (u0 + i * 3 + Math.max(1, Math.round(len / COL))) / CELLS,
+              v1
+            ],
+      s.smooth
+    )
+    roofs.cap(s.pts, s.y1, roofCol)
+    ledges.ring(
+      s.pts,
+      glass ? 0.12 : 0.3,
+      s.y1 - 0.5,
+      s.y1 + 0.12,
+      glass ? metal : c
+    )
+    if (b.records)
+      for (let y = FLOOR; y < s.y1 - 1; y += FLOOR)
+        ledges.ring(s.pts, 1.2, y - 0.14, y + 0.04, white)
+  }
+  if (b.sail) {
+    // the sail: walls and a top sloping up from the west end to the east
+    const { pts, y0, y1 } = b.sail
+    const xs = pts.map(p => p[0]),
+      lo = Math.min(...xs),
+      hi = Math.max(...xs)
+    const tops = pts.map(p => y0 + ((y1 - y0) * (p[0] - lo)) / (hi - lo))
+    crowns.prism(
+      pts,
+      y0,
+      y1,
+      white,
+      (i, len) => [i * 2, 0, i * 2 + len / 6, (y1 - y0) / 12],
+      false,
+      tops
+    )
+    crowns.cap(pts, y0, white, tops)
+  }
+}
+
+// Art Deco: slim fins standing up the walls between every other bay, past the parapet
+function fins (b, ledges, c) {
+  const t = b.tiers[0],
+    y0 = b.shop ? SHOP + 0.3 : 0.4,
+    y1 = t.y1 + 1.2
+  const pale = c.clone().lerp(white, 0.35)
+  for (const side of [0, 1, 2, 3]) {
+    const along = side % 2 === 0,
+      L = along ? t.x1 - t.x0 : t.z1 - t.z0,
+      n = Math.floor(L / 6)
+    for (let i = 1; i < n; i++) {
+      const u = (along ? t.x0 : t.z0) + (L * i) / n
+      const o =
+          side === 0 ? t.z0 : side === 2 ? t.z1 : side === 1 ? t.x1 : t.x0,
+        s = side === 0 || side === 3 ? -1 : 1
+      if (along)
+        ledges.cuboid(
+          u - 0.18,
+          u + 0.18,
+          Math.min(o, o + s * 0.5),
+          Math.max(o, o + s * 0.5),
+          y0,
+          y1,
+          pale
+        )
+      else
+        ledges.cuboid(
+          Math.min(o, o + s * 0.5),
+          Math.max(o, o + s * 0.5),
+          u - 0.18,
+          u + 0.18,
+          y0,
+          y1,
+          pale
+        )
+    }
+  }
+}
+
+// a spire tapering to its tip, a red light on it
+function spire (s, ledges, beacons) {
+  const g = new THREE.CylinderGeometry(0.08, 0.9, s.h, 4, 1).translate(
+    0,
+    s.h / 2,
+    0
+  )
+  ledges.add(
+    g,
+    new THREE.Matrix4().makeTranslation(s.x, s.y, s.z),
+    new THREE.Color(0.7, 0.72, 0.75)
+  )
+  beacon(beacons, s.x, s.y + s.h, s.z, 0.35)
+}
+const beacon = (beacons, x, y, z, r) =>
+  beacons.cuboid(x - r, x + r, z - r, z + r, y, y + 2 * r, white)
 __export(__exports, { "BEACON": () => BEACON, "buildBuildings": () => buildBuildings })
 })
 
 // ---- js/render/city.js
-__define(71, function (__exports) {
+__define(121, function (__exports) {
 // The city view: builds the city's meshes the first time it is visited (so the test site loads as
 // fast as ever), shows it in place of the test site, and keeps the traffic, signals, sky, sea and
 // antenna beacons moving, and the city's long shadows up to date (sunShadow.js).
 const THREE = __require(0)
-const { buildSea } = __require(56)
-const { Sky, SUN } = __require(57)
-const { scene, site, renderer } = __require(20)
-const { CityShadow } = __require(58)
-const { raycast, BUILDINGS, OUTER } = __require(4)
-const { PedView } = __require(63)
-const { TrafficView } = __require(62)
-const { NIGHT } = __require(64)
-const { buildProps } = __require(66)
-const { buildGround } = __require(68)
-const { buildStreet } = __require(69)
-const { buildBuildings, BEACON } = __require(70)
+const { buildEdges } = __require(89)
+const { Sky, SUN } = __require(78)
+const { scene, site, renderer } = __require(40)
+const { CityShadow } = __require(90)
+const { raycast, BUILDINGS, OUTER } = __require(24)
+const { PedView } = __require(103)
+const { TrafficView } = __require(100)
+const { NIGHT } = __require(104)
+const { buildProps } = __require(111)
+const { buildGround } = __require(113)
+const { buildStreet } = __require(114)
+const { buildBuildings, BEACON } = __require(120)
 const _pv = new THREE.Matrix4(),
   _view = new THREE.Frustum()
 
@@ -72909,7 +83735,7 @@ class CityView {
     this.sky = new Sky(g)
     buildGround(g)
     buildStreet(g)
-    this.sea = buildSea(g)
+    this.edges = buildEdges(g) // (past the ring road: the sea, the hills, the freeway)
     this.buildings = buildBuildings(g)
     const props = (this.props = buildProps(g))
     const top = Math.max(...BUILDINGS.map(b => b.h)) + 30 // (and the masts on top)
@@ -72938,7 +83764,7 @@ class CityView {
     const k = on ? 1 : 0
     NIGHT.value = k
     this.sky.setNight(on)
-    this.sea.night(k)
+    this.edges.night(k)
     this.buildings.night(k)
     this.props.night(k)
     this.cars.night = on
@@ -72979,7 +83805,7 @@ class CityView {
   update (dt, clock, traffic, camera, peds) {
     if (!this.on) return
     this.sky.follow(camera)
-    this.sea(clock, camera)
+    this.edges.update(clock, camera)
     let falling = false
     for (const f of Object.values(this.fallers)) {
       f.update(dt)
@@ -73009,10 +83835,10 @@ __export(__exports, { "CityView": () => CityView, "clipCamera": () => clipCamera
 })
 
 // ---- js/render/follow.js
-__define(72, function (__exports) {
+__define(122, function (__exports) {
 // The follow camera, GTA-style: a spring arm close behind the car's heading (camera.js runs it).
 const THREE = __require(0)
-const { clamp, wrapPi } = __require(1)
+const { clamp, wrapPi } = __require(4)
 const lerpK = (k, dt) => 1 - Math.exp(-k * dt)
 const SWING = 3.4 // rad/s: the fastest the follow camera swings round behind the car
 // The follow camera's arm, GTA-style: close behind and a little above the car, so the car fills the
@@ -73134,7 +83960,7 @@ __export(__exports, { "ARM": () => ARM, "follow": () => follow })
 })
 
 // ---- vendor/three/addons/controls/OrbitControls.js
-__define(73, function (__exports) {
+__define(123, function (__exports) {
 const { Controls, MOUSE, Quaternion, Spherical, TOUCH, Vector2, Vector3, Plane, Ray, MathUtils } = __require(0)
 
 // OrbitControls performs orbiting, dollying (zooming), and panning.
@@ -74649,14 +85475,14 @@ __export(__exports, { "OrbitControls": () => OrbitControls })
 })
 
 // ---- js/render/camera.js
-__define(74, function (__exports) {
+__define(124, function (__exports) {
 // Cameras: the autopilot's director shots, a GTA-style follow camera, chase, the driver's seat, side
 // and free orbit.
 const THREE = __require(0)
-const { clamp } = __require(1)
+const { clamp } = __require(4)
 const { TRACK, LINEUP_FIRST, LINEUP_LAST } = __require(8)
-const { follow, ARM } = __require(72)
-const { OrbitControls } = __require(73)
+const { follow, ARM } = __require(122)
+const { OrbitControls } = __require(123)
 const CAM_MODES = [
   'director',
   'follow',
@@ -75058,9 +85884,15 @@ class CameraRig {
       cam.position.y += 0.5 * this.shakeAmt * Math.sin(t * 37 + 1.3)
       this.shakeAmt *= Math.exp(-dt * 6)
     }
-    // the road coming up through the car at speed: a fine tremble, coarser on sand or grass
+    // the road coming up through the car at speed: a fine tremble, coarser on the pier's planks and
+    // coarser still on sand or grass
     if (RIDING.has(shot) && sim.mode === 'ground') {
-      const rough = sim.surface === 'sand' || sim.surface === 'grass' ? 3 : 1
+      const rough =
+        sim.surface === 'sand' || sim.surface === 'grass'
+          ? 3
+          : sim.surface === 'wood'
+          ? 1.8
+          : 1
       const a =
         clamp((sim.groundSpeed() - 18) / 70, 0, 1) * 0.011 * rough +
         (rough > 1 ? clamp(sim.groundSpeed() / 30, 0, 1) * 0.01 : 0)
@@ -75073,12 +85905,12 @@ __export(__exports, { "CAM_MODES": () => CAM_MODES, "CAM_NAMES": () => CAM_NAMES
 })
 
 // ---- js/render/skids.js
-__define(75, function (__exports) {
+__define(125, function (__exports) {
 // Skid marks: one continuous rubber ribbon per sliding tyre. The ribbon is as wide as the tyre's
 // footprint across its path (full tread width in a straight lock-up, the short contact patch when it
 // slides sideways), darkens with how hard the tyre slides and fades in and out at each end.
 const THREE = __require(0)
-const { scene } = __require(20)
+const { scene } = __require(40)
 const MAX_SEG = 3000 // ring buffer of ribbon segments (oldest marks are overwritten)
 const STEP = 0.14 // m between ribbon samples
 const TREAD = 0.3 // tyre width
@@ -75226,12 +86058,12 @@ __export(__exports, { "clearSkids": () => clearSkids, "updateSkids": () => updat
 })
 
 // ---- js/render/wall.js
-__define(76, function (__exports) {
+__define(126, function (__exports) {
 // The curved wall (slab, LED edges that turn white behind the car, centre line) and its steel truss.
 const THREE = __require(0)
-const { site, MAT } = __require(20)
+const { site, MAT } = __require(40)
 const { TRACK } = __require(8)
-const { AX_Y } = __require(1)
+const { AX_Y } = __require(4)
 // ---------- the wall ----------
 const LED_MAT = new THREE.ShaderMaterial({
   uniforms: { uLit: { value: -10 }, uTime: { value: 0 } },
@@ -75481,7 +86313,7 @@ __export(__exports, { "LED_MAT": () => LED_MAT, "buildWall": () => buildWall, "b
 })
 
 // ---- js/render/freeze.js
-__define(77, function (__exports) {
+__define(127, function (__exports) {
 // Fewer draw calls for a model built from many small pieces: every mesh that never moves on its own
 // is baked into one buffer per material (and per shadow setting), in the root's frame, so the
 // Roadster, about 230 meshes as built, is drawn (and drawn again into the shadow map) in a few dozen
@@ -75489,7 +86321,7 @@ __define(77, function (__exports) {
 // panels that dent) is left as it is, and so are the groups the pieces hung off, so anything that
 // reads their positions (the thruster nozzles) still finds them.
 const THREE = __require(0)
-const { merge } = __require(22)
+const { merge } = __require(42)
 const _m = new THREE.Matrix4()
 const ATTRS = ['position', 'normal', 'uv', 'color']
 
@@ -75574,13 +86406,13 @@ __export(__exports, { "freeze": () => freeze })
 })
 
 // ---- js/render/wheels.js
-__define(78, function (__exports) {
+__define(128, function (__exports) {
 // Wheels and wheel wells: arch openings cut into the body shell with dark well liners, tyres with
 // rounded sidewalls round the reveal car's wheels (six black twin spokes over white aero inserts),
 // Ackermann steering and free-spinning wheels in the air.
 const THREE = __require(0)
-const { MAT } = __require(20)
-const { CAR } = __require(1)
+const { MAT } = __require(40)
+const { CAR } = __require(4)
 const ARCH_R = 0.4 // arch opening radius around each axle (tyre radius 0.36)
 const WELL_IN = 0.5 // inner wall of the wheel well, from the centre line
 const HALF_TRACK = 0.87 // wheel centre from the centre line
@@ -75809,15 +86641,15 @@ __export(__exports, { "ARCH_R": () => ARCH_R, "withWheelArches": () => withWheel
 })
 
 // ---- js/render/roadsterRear.js
-__define(79, function (__exports) {
+__define(129, function (__exports) {
 // The Roadster's tail, as in the rear shot from the reveal: a full-width red light bar in a smoked
 // black band under the ducktail lip, a satin panel with the plate and a camera, and the black lower
 // fascia: a louvred housing for the 4 main nozzles over a diffuser of 4 fan bays split by strakes,
 // with red reflectors at its corners. Plus the active rear wing: it rises out of the deck on swan-neck
 // pylons at speed, folds its endplates down, and tips up as an air brake under hard braking.
 const THREE = __require(0)
-const { MAT, hdr } = __require(20)
-const { TAU, clamp } = __require(1)
+const { MAT, hdr } = __require(40)
+const { TAU, clamp } = __require(4)
 const X = -2.22 // the tail's rear face
 
 const box = (w, h, d, mat, x, y, z) => {
@@ -76057,7 +86889,7 @@ __export(__exports, { "fanUnit": () => fanUnit, "buildTail": () => buildTail, "b
 })
 
 // ---- js/render/roadster.js
-__define(80, function (__exports) {
+__define(130, function (__exports) {
 // The Roadster model, measured off the Oct 15, 2026 reveal photos (a side-on shot at the event sets the
 // proportions, a top-down one the canopy, a rear one the tail): a wedge in satin Ano White, smooth
 // panels with crisp creases, a tall blunt nose, sloped fender facets either side of a short hood,
@@ -76067,15 +86899,15 @@ __define(80, function (__exports) {
 // (roadsterRear.js), an active rear wing, underfloor suction fan, skirts and twin-spoke aero wheels,
 // the cabin with its yoke and touchscreen (roadsterCabin.js); plus per-frame pose and animation.
 const THREE = __require(0)
-const { freeze } = __require(77)
-const { scene, MAT } = __require(20)
-const { CURB_H } = __require(4)
-const { CAR, clamp, AX_Z } = __require(1)
-const { buildOptimus, poseOptimus } = __require(24)
-const { DRIVER, buildCabin, updateCabin } = __require(25)
-const { loft, loftGeos, at, seam, withStations } = __require(23)
-const { buildWheels, updateWheels, withWheelArches } = __require(78)
-const { buildTail, buildWing, updateWing, fanUnit } = __require(79)
+const { freeze } = __require(127)
+const { scene, MAT } = __require(40)
+const { CURB_H } = __require(24)
+const { CAR, clamp, AX_Z } = __require(4)
+const { buildOptimus, poseOptimus } = __require(44)
+const { DRIVER, buildCabin, updateCabin } = __require(45)
+const { loft, loftGeos, at, seam, withStations } = __require(43)
+const { buildWheels, updateWheels, withWheelArches } = __require(128)
+const { buildTail, buildWing, updateWing, fanUnit } = __require(129)
 const _a = new THREE.Vector3()
 const SEAM = new THREE.MeshStandardMaterial({
   color: 0x0b0c0e,
@@ -76532,15 +87364,15 @@ __export(__exports, { "buildRoadster": () => buildRoadster, "updateRoadster": ()
 })
 
 // ---- js/render/speedBlur.js
-__define(81, function (__exports) {
+__define(131, function (__exports) {
 // Speed blur: past about 150 km/h, and whenever the main thrusters fire, the edges of the picture
 // streak in towards the middle, more the faster the car goes, while the middle, where the car is,
 // stays sharp. Only from the cameras that ride along with the car (Follow, Chase, Cockpit); a fixed
 // camera watching it go by has no reason to blur. It is drawn in the frame's last pass (post.js),
 // in a shader of its own for while it is on: SPEED_BLUR is its GLSL, sampling the frame through
 // frame(uv).
-const { RIDING } = __require(74)
-const { clamp } = __require(1)
+const { RIDING } = __require(124)
+const { clamp } = __require(4)
 const SPEED_BLUR = `
   uniform float uAmount;
   vec4 speedBlur (vec2 uv) {
@@ -76568,7 +87400,7 @@ __export(__exports, { "SPEED_BLUR": () => SPEED_BLUR, "updateSpeedBlur": () => u
 })
 
 // ---- vendor/three/addons/postprocessing/Pass.js
-__define(82, function (__exports) {
+__define(132, function (__exports) {
 const { BufferGeometry, Float32BufferAttribute, OrthographicCamera, Mesh } = __require(0)
 
 class Pass {
@@ -76661,7 +87493,7 @@ __export(__exports, { "Pass": () => Pass, "FullScreenQuad": () => FullScreenQuad
 })
 
 // ---- vendor/three/addons/shaders/OutputShader.js
-__define(83, function (__exports) {
+__define(133, function (__exports) {
 const OutputShader = {
 
 	name: 'OutputShader',
@@ -76749,10 +87581,10 @@ __export(__exports, { "OutputShader": () => OutputShader })
 })
 
 // ---- vendor/three/addons/postprocessing/OutputPass.js
-__define(84, function (__exports) {
+__define(134, function (__exports) {
 const { ColorManagement, RawShaderMaterial, UniformsUtils, LinearToneMapping, ReinhardToneMapping, CineonToneMapping, AgXToneMapping, ACESFilmicToneMapping, NeutralToneMapping, SRGBTransfer } = __require(0)
-const { Pass, FullScreenQuad } = __require(82)
-const { OutputShader } = __require(83)
+const { Pass, FullScreenQuad } = __require(132)
+const { OutputShader } = __require(133)
 
 class OutputPass extends Pass {
 
@@ -76838,9 +87670,9 @@ __export(__exports, { "OutputPass": () => OutputPass })
 })
 
 // ---- vendor/three/addons/postprocessing/RenderPass.js
-__define(85, function (__exports) {
+__define(135, function (__exports) {
 const { Color } = __require(0)
-const { Pass } = __require(82)
+const { Pass } = __require(132)
 
 class RenderPass extends Pass {
 
@@ -76938,7 +87770,7 @@ __export(__exports, { "RenderPass": () => RenderPass })
 })
 
 // ---- vendor/three/addons/shaders/CopyShader.js
-__define(86, function (__exports) {
+__define(136, function (__exports) {
 /**
  * Full-screen textured quad shader
  */
@@ -76986,9 +87818,9 @@ __export(__exports, { "CopyShader": () => CopyShader })
 })
 
 // ---- vendor/three/addons/postprocessing/ShaderPass.js
-__define(87, function (__exports) {
+__define(137, function (__exports) {
 const { ShaderMaterial, UniformsUtils } = __require(0)
-const { Pass, FullScreenQuad } = __require(82)
+const { Pass, FullScreenQuad } = __require(132)
 
 class ShaderPass extends Pass {
 
@@ -77063,8 +87895,8 @@ __export(__exports, { "ShaderPass": () => ShaderPass })
 })
 
 // ---- vendor/three/addons/postprocessing/MaskPass.js
-__define(88, function (__exports) {
-const { Pass } = __require(82)
+__define(138, function (__exports) {
+const { Pass } = __require(132)
 
 class MaskPass extends Pass {
 
@@ -77170,12 +88002,12 @@ __export(__exports, { "MaskPass": () => MaskPass, "ClearMaskPass": () => ClearMa
 })
 
 // ---- vendor/three/addons/postprocessing/EffectComposer.js
-__define(89, function (__exports) {
+__define(139, function (__exports) {
 const { Clock, HalfFloatType, NoBlending, Vector2, WebGLRenderTarget } = __require(0)
-const { CopyShader } = __require(86)
-const { ShaderPass } = __require(87)
-const { MaskPass } = __require(88)
-const { ClearMaskPass } = __require(88)
+const { CopyShader } = __require(136)
+const { ShaderPass } = __require(137)
+const { MaskPass } = __require(138)
+const { ClearMaskPass } = __require(138)
 
 class EffectComposer {
 
@@ -77398,7 +88230,7 @@ __export(__exports, { "EffectComposer": () => EffectComposer })
 })
 
 // ---- vendor/three/addons/shaders/LuminosityHighPassShader.js
-__define(90, function (__exports) {
+__define(140, function (__exports) {
 const { Color } = __require(0)
 
 /**
@@ -77463,11 +88295,11 @@ __export(__exports, { "LuminosityHighPassShader": () => LuminosityHighPassShader
 })
 
 // ---- vendor/three/addons/postprocessing/UnrealBloomPass.js
-__define(91, function (__exports) {
+__define(141, function (__exports) {
 const { AdditiveBlending, Color, HalfFloatType, MeshBasicMaterial, ShaderMaterial, UniformsUtils, Vector2, Vector3, WebGLRenderTarget } = __require(0)
-const { Pass, FullScreenQuad } = __require(82)
-const { CopyShader } = __require(86)
-const { LuminosityHighPassShader } = __require(90)
+const { Pass, FullScreenQuad } = __require(132)
+const { CopyShader } = __require(136)
+const { LuminosityHighPassShader } = __require(140)
 
 /**
  * UnrealBloomPass is inspired by the bloom pass of Unreal Engine. It creates a
@@ -77871,7 +88703,7 @@ __export(__exports, { "UnrealBloomPass": () => UnrealBloomPass })
 })
 
 // ---- js/render/post.js
-__define(92, function (__exports) {
+__define(142, function (__exports) {
 // What happens to each frame after it is drawn: bloom on everything bright (lamps, thrusters, the
 // low sun's glints), the speed blur (speedBlur.js), then tone mapping and colour out; and keeping it
 // all the size of the window. The bloom is worked out at the window's own size, not the screen's
@@ -77881,12 +88713,12 @@ __define(92, function (__exports) {
 // added onto the frame in a pass of its own, the blur in another and the colour in a third, each
 // reading and writing every pixel of a full-size frame).
 const THREE = __require(0)
-const { SPEED_BLUR, updateSpeedBlur } = __require(81)
-const { OutputPass } = __require(84)
-const { RenderPass } = __require(85)
-const { OutputShader } = __require(83)
-const { EffectComposer } = __require(89)
-const { UnrealBloomPass } = __require(91)
+const { SPEED_BLUR, updateSpeedBlur } = __require(131)
+const { OutputPass } = __require(134)
+const { RenderPass } = __require(135)
+const { OutputShader } = __require(133)
+const { EffectComposer } = __require(139)
+const { UnrealBloomPass } = __require(141)
 const FRAME = 'gl_FragColor = texture2D( tDiffuse, vUv );'
 if (!OutputShader.fragmentShader.includes(FRAME))
   throw new Error('post.js: three.js OutputShader has changed')
@@ -77978,7 +88810,7 @@ __export(__exports, { "Post": () => Post })
 })
 
 // ---- js/render/resolution.js
-__define(93, function (__exports) {
+__define(143, function (__exports) {
 // Adaptive resolution: the frame is drawn at the screen's full pixel density (up to 2, on a Retina
 // screen) while the GPU keeps up, and at less when it doesn't, a step at a time until it does, and
 // back up once it has room again; so a slower GPU (a laptop's built-in graphics driving a sharp
@@ -78159,7 +88991,7 @@ __export(__exports, { "Resolution": () => Resolution })
 })
 
 // ---- js/render/warm.js
-__define(94, function (__exports) {
+__define(144, function (__exports) {
 // Shader warm-up. three.js compiles a material's program the first time it draws it, and again for
 // each set of lights it is drawn under, and a program takes from a few milliseconds to a tenth of a
 // second to compile (longest on Windows), so the game used to stall at each first: the first
@@ -78175,7 +89007,7 @@ __define(94, function (__exports) {
 // game that starts at the test site, #site, hasn't built the city yet: its looks compile when it is
 // first visited, behind the fade.)
 const THREE = __require(0)
-const { renderer, scene, camera, site, key } = __require(20)
+const { renderer, scene, camera, site, key } = __require(40)
 const GAP = 400 // ms between one look and the next, so the work is spread out
 const tiny = new THREE.WebGLRenderTarget(1, 1)
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms))
@@ -78283,7 +89115,7 @@ __export(__exports, { "warmUp": () => warmUp })
 })
 
 // ---- js/render/damage.js
-__define(95, function (__exports) {
+__define(145, function (__exports) {
 // Body damage, GTA-style: a knock dents the Roadster's panels where it landed, deeper and wider the
 // harder the hit, the metal crumpling (each dent a little uneven, its facets catching the light)
 // rather than sinking in smooth; dents add up, to a limit, and a reset puts the car back as new.
@@ -78291,8 +89123,8 @@ __define(95, function (__exports) {
 // in place, each by a function of where it started, so the triangles that share a corner stay
 // joined.
 const THREE = __require(0)
-const { clamp } = __require(1)
-const { carFrame } = __require(7)
+const { clamp } = __require(4)
+const { carFrame } = __require(28)
 const MIN_HIT = 2.5 // m/s closing speed below which a knock leaves no mark
 const DEPTH = 0.011 // m of dent per m/s past MIN_HIT
 const MAX_DEPTH = 0.1 // m, the deepest one knock goes
@@ -78492,40 +89324,40 @@ __export(__exports, { "Damage": () => Damage })
 })
 
 // ---- js/main.js
-__define(96, function (__exports) {
+__define(146, function (__exports) {
 // Tesla Roadster Sim: boot, game state, sim events and the main loop.
 const THREE = __require(0)
-const { Hud } = __require(2)
-const { Sim } = __require(14)
-const { Input } = __require(16)
-const { Minimap } = __require(18)
-const { smoke } = __require(21)
-const { Intro } = __require(26)
-const { Tween } = __require(27)
-const { Peds } = __require(36)
-const { Traffic } = __require(34)
-const { SoundEngine } = __require(46)
-const { Autopilot } = __require(47)
-const { CityPilot } = __require(49)
-const { buildLineup } = __require(50)
-const { nearestLane, standUp } = __require(4)
-const { handleEvents: simEvents } = __require(55)
-const { CityView, clipCamera } = __require(71)
-const { hearing, panOf, mixSound } = __require(54)
-const { CameraRig, CAM_NAMES } = __require(74)
-const { updateSkids, clearSkids } = __require(75)
-const { DEG, TAU, makeControls } = __require(1)
-const { LED_MAT, buildWall, buildTruss } = __require(76)
-const { buildRoadster, updateRoadster } = __require(80)
-const { Post } = __require(92)
-const { Resolution } = __require(93)
-const { warmUp } = __require(94)
-const { Damage } = __require(95)
-const { MAT, scene, camera, canvas } = __require(20)
-const { renderer, followKeyLight } = __require(20)
-const { fallFx, ALL_PARTICLES, updateNozzles } = __require(51)
-const { emitThrusters, emitTireSmoke } = __require(51)
-const { attachDiamonds } = __require(51)
+const { Hud } = __require(14)
+const { Sim } = __require(35)
+const { Input } = __require(11)
+const { Minimap } = __require(38)
+const { smoke } = __require(41)
+const { Intro } = __require(46)
+const { Tween } = __require(47)
+const { Peds } = __require(56)
+const { Traffic } = __require(54)
+const { SoundEngine } = __require(68)
+const { Autopilot } = __require(69)
+const { CityPilot } = __require(71)
+const { buildLineup } = __require(72)
+const { nearestLane, standUp } = __require(24)
+const { handleEvents: simEvents } = __require(77)
+const { CityView, clipCamera } = __require(121)
+const { hearing, panOf, mixSound } = __require(76)
+const { CameraRig, CAM_NAMES } = __require(124)
+const { updateSkids, clearSkids } = __require(125)
+const { DEG, TAU, makeControls } = __require(4)
+const { LED_MAT, buildWall, buildTruss } = __require(126)
+const { buildRoadster, updateRoadster } = __require(130)
+const { Post } = __require(142)
+const { Resolution } = __require(143)
+const { warmUp } = __require(144)
+const { Damage } = __require(145)
+const { MAT, scene, camera, canvas } = __require(40)
+const { renderer, followKeyLight } = __require(40)
+const { fallFx, ALL_PARTICLES, updateNozzles } = __require(73)
+const { emitThrusters, emitTireSmoke } = __require(73)
+const { attachDiamonds } = __require(73)
 // ---------- world ----------
 buildWall()
 buildTruss()
@@ -78543,7 +89375,7 @@ const ap = new Autopilot(sim)
 const rig = new CameraRig(camera, canvas)
 rig.cockpit = { head: RS.optimus.head, body: RS.body }
 const sound = new SoundEngine()
-const hud = new Hud(RS)
+const hud = new Hud(RS, damage) // (the dents fill its condition bar)
 const traffic = new Traffic()
 const peds = new Peds() // people on foot
 const cityPilot = new CityPilot(sim, traffic)
@@ -78751,6 +89583,7 @@ const COMMANDS = {
   KeyT: toggleSlow,
   KeyL: toggleNight,
   KeyI: () => hud.toggleHelp(),
+  KeyU: () => hud.toggleUnits(), // the speedometer in km/h or mph (remembered: hud.js)
   KeyH: () => setHorn(true),
   KeyN: toggleSound,
   KeyG: () => {
@@ -78759,6 +89592,7 @@ const COMMANDS = {
       app.fanMode === 'auto' ? 'on' : app.fanMode === 'on' ? 'off' : 'auto'
     hud.fanPopup(app.fanMode)
   },
+  KeyB: () => hud.radio(sound.tuneRadio()), // the radio's next station (radio.js)
   KeyX: () => tryFlip('z'),
   KeyK: () => tryFlip('x')
 }
@@ -78991,5 +89825,5 @@ window.__roadster = {
 }
 __export(__exports, {  })
 })
-__require(96)
+__require(146)
 })()
