@@ -1,5 +1,6 @@
 // What the sim reports (scores, landings, drifts, near misses, knocks, kerbs, honks, crashes),
-// turned into popups, sounds, camera shake, a gamepad's rumble and particles.
+// turned into GTA-style stunt titles and hints (hud.js), sounds, camera shake, a gamepad's rumble
+// and particles.
 import { HORNS, AIR_HORN } from './audio/shots.js'
 import { burst, knockFx, sparkBurst } from './render/effects.js'
 import { hearing, panOf, dullness, placeOf } from './audio/mix.js'
@@ -12,15 +13,42 @@ function contactAt (x, y, z) {
   return CONTACT
 }
 
+// a trick from the sim: a donut (the sim counts them: '3× Donut'), or a stunt bonus (the wall, a
+// wall catch)
+function trick (e) {
+  const d = /^(?:(\d+)× )?Donut$/.exec(e.text)
+  if (d)
+    return { key: 'donut', title: 'Donut', n: Number(d[1] || 1), pts: e.pts }
+  return { key: 'trick', title: 'Stunt bonus', sub: e.text, pts: e.pts }
+}
+// a landing: the more tricks on the way down, the bigger the title
+const LANDING = ['Clean landing', 'Stunt bonus', 'Double stunt bonus']
+function landing (e) {
+  const n = e.tricks.length
+  return {
+    title: LANDING[n] || 'Insane stunt bonus',
+    sub: [
+      ...e.tricks,
+      `${e.airtime.toFixed(1)} s air`,
+      `${e.g.toFixed(1)} G`
+    ].join(' · '),
+    pts: e.pts
+  }
+}
+
 export function handleEvents (g) {
   const { sim, app, hud, sound, rig, cityView, ap, clock, pad } = g
   for (const e of sim.events) {
     if (e.type === 'z60') {
-      hud.popup(`0–60 mph · <b>${e.t.toFixed(2)} s</b>`)
+      hud.notify({
+        title: '0–60 mph',
+        big: `${e.t.toFixed(2)} s`,
+        tone: 'blue'
+      })
       sound.chime()
     } else if (e.type === 'trick') {
       app.score += e.pts
-      hud.popup(`${e.text} <b>+${e.pts}</b>`)
+      hud.notify(trick(e))
       sound.chime()
     } else if (e.type === 'track') {
       // the handbrake at speed: Track Mode, the first time it comes on, says what it does
@@ -34,26 +62,31 @@ export function handleEvents (g) {
         )
       }
     } else if (e.type === 'drift') {
+      // (linked drifts, one into the next the other way, score as one: DRIFT ×3)
       app.score += e.pts
       const deg = Math.round(e.angle * 57.3)
-      const what = e.links ? `Linked drift ×${e.links + 1}` : 'Drift'
-      hud.popup(`${what} ${e.t.toFixed(1)} s · ${deg}° <b>+${e.pts}</b>`)
+      hud.notify({
+        key: 'drift',
+        title: 'Drift',
+        n: (e.links || 0) + 1,
+        sub: `${e.links ? 'Linked · ' : ''}${e.t.toFixed(1)} s · ${deg}°`,
+        pts: e.pts
+      })
       sound.chime()
     } else if (e.type === 'nearMiss') {
+      // (one after another, they count on: NEAR MISS ×3, their points added up)
       app.score += e.pts
-      hud.popup(
-        `${e.oncoming ? 'Oncoming near miss' : 'Near miss'} <b>+${e.pts}</b>`,
-        1300
-      )
+      hud.notify({
+        key: 'nearMiss',
+        chain: true,
+        title: 'Near miss',
+        sub: e.oncoming ? 'Oncoming · double points' : '',
+        pts: e.pts
+      })
       sound.chime()
     } else if (e.type === 'landing') {
       app.score += e.pts
-      hud.popup(
-        `${e.tricks.length ? e.tricks.join(' + ') : 'Clean landing'} <b>+${
-          e.pts
-        }</b>`
-      )
-      hud.popup(`Airtime ${e.airtime.toFixed(1)} s · ${e.g.toFixed(1)} G`, 2000)
+      hud.notify(landing(e))
       sound.chime()
     } else if (e.type === 'touchdown') {
       burst(
@@ -139,7 +172,7 @@ export function handleEvents (g) {
       app.restHint = false
       sound.crash()
       pad?.rumble(1, 1, 500)
-      hud.popup(`Crash · ${e.reason}`, 2600)
+      hud.notify({ title: 'Wrecked', sub: e.reason, tone: 'red', ms: 2600 })
     }
   }
   sim.events.length = 0
