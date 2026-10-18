@@ -54901,10 +54901,8 @@ const CAR = {
   recharge: 6, // kg/s while driving without thrust (game assist)
   Iz: 4300, // yaw inertia, kg m^2
   rearGrip: 1.14, // staggered tyres: wider rears keep the car stable (understeer at the limit)
-  // tyre cornering stiffness per axle (N/rad): a performance tyre's, about 90 to 100 kN/rad a
-  // tyre, so each axle reaches its peak grip at about 7 degrees of slip
-  corneringF: 175000,
-  corneringR: 200000,
+  corneringF: 105000,
+  corneringR: 120000, // tyre cornering stiffness per axle, N/rad
   rollRes: 0.015, // rolling resistance coefficient
   regenAccel: 1.3, // lift-off regen (one-pedal driving), m/s^2
   regenPowerW: 250000,
@@ -55391,7 +55389,7 @@ const smooth = x => (x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x))
 
 // A tyre's grip against its slip, x: the slip angle in units of its grip over its cornering
 // stiffness, so that the force starts out at the stiffness times the slip. It builds like a sine to
-// its peak at x = pi / 2 (about 7 degrees, CAR.corneringF and R), then falls away to what a sliding
+// its peak at x = pi / 2 (about 12 degrees, CAR.corneringF and R), then falls away to what a sliding
 // tyre keeps (CAR.slideMu), so a tyre pushed past its limit gives less, not more.
 const PEAK = Math.PI / 2
 function tyreCurve (x) {
@@ -55423,15 +55421,14 @@ const UNWIND = 0.3 // s: how far ahead a driver unwinds the opposite lock out of
 // follow the slide (the caster: let go of the wheel and they swing round to point the way the car is
 // going, as a real car's do), and the driver steers from there: no input lets the slide run out
 // (hands off, a touch of counter-steer catching the car as it swings further round, as a driver's
-// would), the way into the turn holds it (less, the further round the car is, so it doesn't spin;
-// with the electronics on, hardly at all) and the other way catches it, the opposite lock unwound
-// as the car swings back towards straight.
+// would), the way into the turn holds it (less, the further round the car is, so it doesn't spin)
+// and the other way catches it, the opposite lock unwound as the car swings back towards straight.
 // u, w: the car's speed along and across itself (m/s), r its yaw rate, beta the rear axle's slip,
-// FmaxF the fronts' grip (N), track: Track Mode. Turns s.steerAng and returns how far the car is
+// FmaxF and FmaxR the fronts' and the rears' grip (N), track: Track Mode. Turns s.steerAng and returns how far the car is
 // sliding (0 to 1) in out.slide, and the understeer control's cue in out.push: how far past the
 // fronts' grip the wheel asks them to go (0 to 1).
 const _out = { slide: 0, push: 0 }
-function steer (s, c, u, w, r, beta, FmaxF, track, dt) {
+function steer (s, c, u, w, r, beta, FmaxF, FmaxR, track, dt) {
   let steerT = c.steer * steerMax(u),
     slide = 0,
     push = 0
@@ -55440,13 +55437,12 @@ function steer (s, c, u, w, r, beta, FmaxF, track, dt) {
       aLim = (1.5 * FmaxF) / CAR.corneringF,
       ab = Math.abs(beta)
     slide = smooth((ab - 0.1) / 0.14)
+    // (the understeer control's cue, but not in a real slide: the rears past the slip they grip
+    // hardest at, not merely cornering hard on them)
     push =
-      smooth((Math.abs(steerT - aKin) / aLim - PUSH_0) / PUSH_W) * (1 - slide)
-    const deep = track ? 0.35 : 0.08,
-      into =
-        c.steer * beta < 0
-          ? 1 - smooth((ab - deep) / (track ? 0.4 : 0.15)) * 0.9
-          : 1,
+      smooth((Math.abs(steerT - aKin) / aLim - PUSH_0) / PUSH_W) *
+      (1 - smooth((ab - (PEAK * FmaxR) / CAR.corneringR) / 0.14))
+    const into = c.steer * beta < 0 ? 1 - smooth((ab - 0.35) / 0.4) * 0.9 : 1,
       // (rad/s it is swinging further round)
       grow = (ab - (s.driftA ?? ab)) / dt,
       catchIt =
@@ -55454,8 +55450,7 @@ function steer (s, c, u, w, r, beta, FmaxF, track, dt) {
       // (steering out of it, the opposite lock is unwound as the car swings back towards straight,
       // all of it once it will be there within UNWIND s: held on, the fronts would swing it on
       // through and over into a slide the other way)
-      out =
-        c.steer * beta > 0 ? 1 - smooth((-grow * UNWIND - ab) / 0.08) : 1
+      out = c.steer * beta > 0 ? 1 - smooth((-grow * UNWIND - ab) / 0.08) : 1
     const slid = aKin + (c.steer * into * out + catchIt) * aLim
     if (c.ebrake) {
       // (handbrake held: the wheel is the driver's, but let go of it, it follows the slide)
@@ -59569,8 +59564,119 @@ function bounceCity (s) {
 __export(__exports, { "rectRect": () => rectRect, "rectPost": () => rectPost, "boxRect": () => boxRect, "carRect": () => carRect, "impulse": () => impulse, "BODY": () => BODY, "playerRect": () => playerRect, "loadBody": () => loadBody, "storeBody": () => storeBody, "nudge": () => nudge, "CONTACT_Y": () => CONTACT_Y, "carFrame": () => carFrame, "bump": () => bump, "collideCity": () => collideCity, "knock": () => knock, "collideAir": () => collideAir, "bumpCars": () => bumpCars, "pushOut": () => pushOut, "bounceCity": () => bounceCity })
 })
 
-// ---- js/sim/flight.js
+// ---- js/sim/ramp.js
 __define(29, function (__exports) {
+// The wall ride at the test site: the car on the curved wall, held on by its tyres and the suction
+// fan (with the 2 G fan it hangs upside down at the top), driven, braked and backed down it, and
+// thrown off into the air past its lip or off its sides. sim.js runs it while s.mode is 'ramp'.
+const { TRACK } = __require(8)
+const { G, CAR, clamp, LIFT_ACC } = __require(4)
+function stepRamp (s, dt, c, main, lift) {
+  const m = CAR.mass,
+    T = TRACK
+  const th = T.theta(s.s),
+    k = T.kappa(s.s)
+  const Fs = s.suction * CAR.suctionG * G
+  const liftA = lift * LIFT_ACC
+  let v = s.v
+  const N = v * v * k + G * Math.cos(th) + Fs - liftA // contact normal accel
+  if (N < 0) {
+    leaveRamp(s)
+    s.toAir(0.4)
+    return
+  }
+  const grip = CAR.tireMu * N
+  const gT = -G * Math.sin(th)
+  let a = gT
+  const driveMax = Math.min(
+    CAR.driveAccelMax,
+    CAR.powerW / (m * Math.max(Math.abs(v), 1)),
+    grip
+  )
+  if (c.throttle > 0) a += c.throttle * driveMax
+  if (c.reverse > 0 && v > -10) a -= c.reverse * Math.min(5, grip)
+  a += (main * CAR.mainThrust) / m
+  const av = Math.abs(v),
+    coasting =
+      c.throttle === 0 &&
+      main === 0 &&
+      c.brake === 0 &&
+      !c.ebrake &&
+      !c.reverse
+  const regen = coasting ? CAR.regenAccel * clamp(av / 2.5, 0, 1) : 0
+  a -=
+    Math.sign(v) *
+    (CAR.rollRes * N * Math.min(1, av / 0.5) + CAR.dragK * v * v + regen)
+  s.drivePower = (c.throttle * driveMax * v - regen * av) * m
+  s.regenOn = regen > 0
+  const brk = Math.max(c.brake, c.ebrake ? 1 : 0)
+  if (brk > 0) {
+    const bmax = brk * Math.min(CAR.brakeAccel, grip)
+    if (Math.abs(v) <= 0.3 && c.throttle === 0 && main === 0 && !c.reverse) {
+      // static hold: tires can resist gravity along the slope
+      if (Math.abs(gT) <= bmax) {
+        a = 0
+        v = 0
+      } else a = gT - Math.sign(gT) * bmax
+    } else a -= Math.sign(v) * bmax
+  }
+  v += a * dt
+  s.accLong = a
+  s.v = v
+  s.s += v * dt
+  s.dVel = -c.steer * Math.abs(v) * 0.1
+  s.d += s.dVel * dt
+  s.steerAng += (c.steer * 0.25 - s.steerAng) * Math.min(1, dt * 8)
+  s.maxRampS = Math.max(s.maxRampS, s.s)
+  s.gLoad +=
+    ((v * v * k + G * Math.cos(th) + liftA) / G - s.gLoad) *
+    Math.min(1, dt * 12)
+  if (Math.cos(th) < -0.5) s.invertedTime += dt
+  if (!s.topAwarded && s.s > T.lipStart) {
+    s.topAwarded = true
+    s.emit('trick', { text: 'Inverted at 170°', pts: 600 })
+  }
+
+  if (s.s < 0) {
+    leaveRamp(s)
+    s.setMode('ground')
+    s.pos.x = T.X0 + s.s
+    s.pos.z = s.d
+    s.yaw = 0
+    s.yawRate = 0
+    s.speed = v
+    s.vel.set(v, 0, 0)
+    s.syncPose()
+    return
+  }
+  if (Math.abs(s.d) > T.W / 2 - 0.45) {
+    s.syncPose()
+    leaveRamp(s)
+    s.toAir(0.5)
+    return
+  }
+  if (s.s >= T.L) {
+    s.syncPose()
+    leaveRamp(s)
+    s.toAir(0.5)
+    return
+  }
+  s.syncPose()
+}
+
+function leaveRamp (s) {
+  if (s.invertedTime > 1.5)
+    s.emit('trick', {
+      text: `Inverted hold ${s.invertedTime.toFixed(1)} s`,
+      pts: Math.round(s.invertedTime * 120)
+    })
+  s.invertedTime = 0
+}
+__export(__exports, { "stepRamp": () => stepRamp })
+})
+
+// ---- js/sim/flight.js
+__define(30, function (__exports) {
 // Free flight: gravity, cold-gas thrust, attitude control (manoeuvres + stability assist) and contacts.
 const THREE = __require(0)
 const { roofAt } = __require(25)
@@ -59789,7 +59895,7 @@ __export(__exports, { "stepAir": () => stepAir, "checkRampContact": () => checkR
 })
 
 // ---- js/sim/street.js
-__define(30, function (__exports) {
+__define(31, function (__exports) {
 // What is underfoot in the city: the kerb's line (straight down each street, round each corner, and
 // along the promenade), the surface a point is on (asphalt, pavement, a park's grass, the verge's
 // grass past the promenade on the north, east and south, the beach's sand on the west and the pier's
@@ -59961,14 +60067,14 @@ __export(__exports, { "kerbDist": () => kerbDist, "SURFACES": () => SURFACES, "s
 })
 
 // ---- js/sim/ground.js
-__define(31, function (__exports) {
+__define(32, function (__exports) {
 const { roofAt, STEP } = __require(25)
 const { TRACK, SOLIDS } = __require(8)
-const { feel, gripOf, dragOf, kerbDist } = __require(30)
-const { collideCity, bumpCars, loadBody, storeBody } = __require(28)
-const { G, CAR, LIFT_ACC, clamp, wrapPi } = __require(4)
 const { smooth, tyreCurve, steer } = __require(9)
-const { BURN_V, BURN_GRIP, trackMode, trackDrive, burnCreep, driftMoment } = __require(10)
+const { feel, gripOf, dragOf, kerbDist } = __require(31)
+const { G, CAR, LIFT_ACC, clamp, wrapPi } = __require(4)
+const { collideCity, bumpCars, loadBody, storeBody } = __require(28)
+const { BURN_V, BURN_GRIP, trackMode, burnCreep, trackDrive, driftMoment } = __require(10)
 // Planar two-axle tyre model: slip angles, a tyre curve that peaks and falls away (tyres.js),
 // friction circle, AWD split, load transfer through the springs, rolling resistance, aero drag,
 // coast regen, a steering rack turned at the speed of a driver's hands (tyres.js), brakes shared out
@@ -60004,12 +60110,16 @@ const DRIVE_FLOOR = 0.12,
   BRAKE_FLOOR = 0.35
 const TRANSFER = 0.09 // s: how far behind the acceleration the weight's shift onto an axle follows
 const PUSH_IN = 0.08, // s: the understeer control's cut eases in, and the power back
-  PUSH_OUT = 0.2
+  PUSH_OUT = 0.2,
+  HELD_AT = 0.9, // the wheel held this far over (of full lock on the keys) ...
+  HELD_T = 0.3 // ... for this long (s) is a turn the understeer control tightens
 const REV_MAX = 9 // m/s: as fast as the car backs up
 // the share of an axle's speed into the kerb the car loses as it climbs it (a tyre meeting an 8 cm
-// edge rolls over it at about 39 degrees), and the most a strike takes (m/s)
+// edge rolls over it at about 39 degrees), the most a strike takes (m/s), and the most it turns the
+// car (rad/s)
 const KERB_LOSS = 0.22,
-  KERB_DV = 1.6
+  KERB_DV = 1.6,
+  KERB_SPIN = 0.35
 // the drive's front share in Track Mode (none: the rears take it all, or the front motor pulling on
 // counter-steered wheels would drag the nose straight), and otherwise
 const TRACK_FRONT = 0,
@@ -60053,7 +60163,9 @@ function kerb (s, sg) {
   const b = loadBody(s)
   b.vx += (nx * j) / CAR.mass
   b.vz += (nz * j) / CAR.mass
-  b.w += (rz * nx * j - rx * nz * j) / CAR.Iz
+  // (the knock to its heading no more than KERB_SPIN rad/s: the tyres give, rather than the car
+  // snapping round)
+  b.w += clamp((rz * nx * j - rx * nz * j) / CAR.Iz, -KERB_SPIN, KERB_SPIN)
   storeBody(s)
 }
 
@@ -60110,7 +60222,7 @@ function stepGround (s, dt, c, main, lift) {
     FmaxR = mu * CAR.rearGrip * Nr * s.rearGrip
 
   // the driver's hands on the wheel (tyres.js)
-  const { slide, push } = steer(s, c, u, w, r, beta, FmaxF, track, dt)
+  const { slide, push } = steer(s, c, u, w, r, beta, FmaxF, FmaxR, track, dt)
   const cd = Math.cos(s.steerAng),
     sd = Math.sin(s.steerAng)
 
@@ -60124,14 +60236,19 @@ function stepGround (s, dt, c, main, lift) {
   if (throttle > 0 && u < CAR.vMax)
     Fdrive +=
       throttle * Math.min(m * CAR.driveAccelMax, CAR.powerW / Math.max(au, 1))
-  // Understeer control, as a Tesla's stability control does it: while the wheel asks the fronts for
-  // more than they can grip, the motors' torque is taken away, so on full lock with W held the car
-  // comes round at the tyres' limit instead of piling on speed and running ever wider (not in Track
-  // Mode: drifting, the driver has the power)
+  // Understeer control, as a Tesla's stability control does it: while the wheel is held over, asking
+  // the fronts for more than they can grip, the motors' torque is taken away, so on full lock with W
+  // held the car comes round at the tyres' limit instead of piling on speed and running ever wider
+  // (not in Track Mode: drifting, the driver has the power). Only while the turn is held (s.held
+  // builds over HELD_T s with the wheel over HELD_AT or more, and is gone at once without): a tap of
+  // the keys at speed, a lane change, is no turn to tighten, and cutting the power for it lurched
+  // the car at every correction.
+  s.held = Math.abs(c.steer) >= HELD_AT ? Math.min(1, s.held + dt / HELD_T) : 0
+  const pushT = push * s.held
   // (eased: the cut comes in over PUSH_IN s and the power back over PUSH_OUT s, as the motors'
   // torque is ramped, rather than switching in one step as the wheel sweeps through the band)
   s.pushF +=
-    (push - s.pushF) * Math.min(1, dt / (push > s.pushF ? PUSH_IN : PUSH_OUT))
+    (pushT - s.pushF) * Math.min(1, dt / (pushT > s.pushF ? PUSH_IN : PUSH_OUT))
   if (!s.track) Fdrive *= 1 - s.pushF
   s.push = s.track || throttle === 0 ? 0 : s.pushF
   // (backing up, the motors ease off as the car nears its reverse limit, REV_MAX m/s)
@@ -60410,117 +60527,6 @@ function stepGround (s, dt, c, main, lift) {
   if (s.hitSolid()) s.toCrash('Hit the tower')
 }
 __export(__exports, { "stepGround": () => stepGround })
-})
-
-// ---- js/sim/ramp.js
-__define(32, function (__exports) {
-// The wall ride at the test site: the car on the curved wall, held on by its tyres and the suction
-// fan (with the 2 G fan it hangs upside down at the top), driven, braked and backed down it, and
-// thrown off into the air past its lip or off its sides. sim.js runs it while s.mode is 'ramp'.
-const { TRACK } = __require(8)
-const { G, CAR, clamp, LIFT_ACC } = __require(4)
-function stepRamp (s, dt, c, main, lift) {
-  const m = CAR.mass,
-    T = TRACK
-  const th = T.theta(s.s),
-    k = T.kappa(s.s)
-  const Fs = s.suction * CAR.suctionG * G
-  const liftA = lift * LIFT_ACC
-  let v = s.v
-  const N = v * v * k + G * Math.cos(th) + Fs - liftA // contact normal accel
-  if (N < 0) {
-    leaveRamp(s)
-    s.toAir(0.4)
-    return
-  }
-  const grip = CAR.tireMu * N
-  const gT = -G * Math.sin(th)
-  let a = gT
-  const driveMax = Math.min(
-    CAR.driveAccelMax,
-    CAR.powerW / (m * Math.max(Math.abs(v), 1)),
-    grip
-  )
-  if (c.throttle > 0) a += c.throttle * driveMax
-  if (c.reverse > 0 && v > -10) a -= c.reverse * Math.min(5, grip)
-  a += (main * CAR.mainThrust) / m
-  const av = Math.abs(v),
-    coasting =
-      c.throttle === 0 &&
-      main === 0 &&
-      c.brake === 0 &&
-      !c.ebrake &&
-      !c.reverse
-  const regen = coasting ? CAR.regenAccel * clamp(av / 2.5, 0, 1) : 0
-  a -=
-    Math.sign(v) *
-    (CAR.rollRes * N * Math.min(1, av / 0.5) + CAR.dragK * v * v + regen)
-  s.drivePower = (c.throttle * driveMax * v - regen * av) * m
-  s.regenOn = regen > 0
-  const brk = Math.max(c.brake, c.ebrake ? 1 : 0)
-  if (brk > 0) {
-    const bmax = brk * Math.min(CAR.brakeAccel, grip)
-    if (Math.abs(v) <= 0.3 && c.throttle === 0 && main === 0 && !c.reverse) {
-      // static hold: tires can resist gravity along the slope
-      if (Math.abs(gT) <= bmax) {
-        a = 0
-        v = 0
-      } else a = gT - Math.sign(gT) * bmax
-    } else a -= Math.sign(v) * bmax
-  }
-  v += a * dt
-  s.accLong = a
-  s.v = v
-  s.s += v * dt
-  s.dVel = -c.steer * Math.abs(v) * 0.1
-  s.d += s.dVel * dt
-  s.steerAng += (c.steer * 0.25 - s.steerAng) * Math.min(1, dt * 8)
-  s.maxRampS = Math.max(s.maxRampS, s.s)
-  s.gLoad +=
-    ((v * v * k + G * Math.cos(th) + liftA) / G - s.gLoad) *
-    Math.min(1, dt * 12)
-  if (Math.cos(th) < -0.5) s.invertedTime += dt
-  if (!s.topAwarded && s.s > T.lipStart) {
-    s.topAwarded = true
-    s.emit('trick', { text: 'Inverted at 170°', pts: 600 })
-  }
-
-  if (s.s < 0) {
-    leaveRamp(s)
-    s.setMode('ground')
-    s.pos.x = T.X0 + s.s
-    s.pos.z = s.d
-    s.yaw = 0
-    s.yawRate = 0
-    s.speed = v
-    s.vel.set(v, 0, 0)
-    s.syncPose()
-    return
-  }
-  if (Math.abs(s.d) > T.W / 2 - 0.45) {
-    s.syncPose()
-    leaveRamp(s)
-    s.toAir(0.5)
-    return
-  }
-  if (s.s >= T.L) {
-    s.syncPose()
-    leaveRamp(s)
-    s.toAir(0.5)
-    return
-  }
-  s.syncPose()
-}
-
-function leaveRamp (s) {
-  if (s.invertedTime > 1.5)
-    s.emit('trick', {
-      text: `Inverted hold ${s.invertedTime.toFixed(1)} s`,
-      pts: Math.round(s.invertedTime * 120)
-    })
-  s.invertedTime = 0
-}
-__export(__exports, { "stepRamp": () => stepRamp })
 })
 
 // ---- js/sim/stunts.js
@@ -60861,9 +60867,9 @@ __define(35, function (__exports) {
 // Uses only THREE math types, so it runs headless in Node for tests.
 const THREE = __require(0)
 const { knock } = __require(28)
-const { stepAir } = __require(29)
-const { stepGround } = __require(31)
-const { stepRamp } = __require(32)
+const { stepRamp } = __require(29)
+const { stepAir } = __require(30)
+const { stepGround } = __require(32)
 const { SPAWN, query } = __require(24)
 const { TRACK, SOLIDS } = __require(8)
 const { drift, donuts } = __require(33)
@@ -60944,6 +60950,7 @@ class Sim {
     this.abs = 0 // how hard the ABS is working, 0 to 1 (ground.js)
     this.push = 0 // how much of the power the understeer control is holding back, 0 to 1
     this.pushF = 0 // (the same, eased, whatever the throttle: ground.js)
+    this.held = 0 // how long the wheel has been held over, for the understeer control (0 to 1)
     this.track = false // Track Mode: the handbrake has the electronics stand back (ground.js)
     this.calm = 0
     this.driftA = 0 // the drift angle a step ago
@@ -64169,7 +64176,7 @@ __define(48, function (__exports) {
 // they have looked and the traffic is far enough off to stop for them (it does: traffic.peds).
 const { atJam } = __require(36)
 const { clamp, wrapPi } = __require(4)
-const { kerbDist } = __require(30)
+const { kerbDist } = __require(31)
 const { N, PITCH, HALF, ROAD_HW, BLOCKS } = __require(24)
 const KERB = ROAD_HW + 0.5
 const STILL = ['phone', 'wait', 'chat'] // what someone standing about is doing
@@ -66355,7 +66362,7 @@ __define(56, function (__exports) {
 // Roadster's way (or a car's it sent sliding) dives clear, then walks back to the pavement; nobody
 // is ever left under the car; and when it does something frightening close by, people run.
 // They live in a bubble round the player, like the traffic: those left far behind turn up ahead.
-const { kerbDist } = __require(30)
+const { kerbDist } = __require(31)
 const { CROWD } = __require(48)
 const { warm } = __require(54)
 const { CAR, clamp } = __require(4)
@@ -79354,7 +79361,7 @@ __define(103, function (__exports) {
 // drawn.
 const THREE = __require(0)
 const { CURB_H } = __require(24)
-const { kerbDist } = __require(30)
+const { kerbDist } = __require(31)
 const { NEAR } = __require(100)
 const { figure } = __require(101)
 const { posed } = __require(102)
@@ -81493,7 +81500,7 @@ __define(114, function (__exports) {
 const THREE = __require(0)
 const { marks } = __require(42)
 const { LANES, ROADS, ROAD_HW, CURB_H, BLOCKS, N, rng } = __require(24)
-const { MANHOLES, DRAINS, MANHOLE_R } = __require(30)
+const { MANHOLES, DRAINS, MANHOLE_R } = __require(31)
 const R = rng(808)
 const tex = (w, h, draw) => {
   const cv = document.createElement('canvas')
