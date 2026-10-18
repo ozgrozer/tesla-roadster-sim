@@ -3,7 +3,8 @@
 // and go), the wind between the buildings (gusting, louder up on the roofs and out by the sea, a
 // hollow whistle down the tall street canyons), the surf on the beach with a wave breaking every
 // few seconds and gulls over it (louder the nearer the water), songbirds by day and crickets at
-// night, a few of them, each chirping at its own rate from its own side.
+// night, a few of them, each chirping at its own rate from its own side; and by the walls east and
+// south, the freeway's roar beyond them, its tyres' hiss dulled by the wall.
 import { clamp } from '../sim/constants.js'
 
 export const STREET = {
@@ -28,7 +29,13 @@ export const STREET = {
       s.playbackRate.value = side < 0 ? 2.3 : 2.9
       s.connect(gain(0.45)).connect(swell.gain)
       swell.connect(p)
-      this.lane([g.gain, hiss.gain], p, this.world, p.connect(gain(0.3)), this.verb)
+      this.lane(
+        [g.gain, hiss.gain],
+        p,
+        this.world,
+        p.connect(gain(0.3)),
+        this.verb
+      )
       return g
     })
     // the wind between the buildings, and its whistle down a tall street
@@ -68,6 +75,25 @@ export const STREET = {
     )
     this.waveT = 1.5
     this.gullT = 5
+    // the freeway: a deep roar of engines and a hiss of tyres, heard over the sound wall (so dulled)
+    n.fwy = gain(0)
+    n.fwyHiss = gain(0)
+    n.fwyPan = ctx.createStereoPanner()
+    loop(this.brown)
+      .connect(n.fwy)
+      .connect(filt('lowpass', 420, 0.6))
+      .connect(n.fwyPan)
+    loop(this.pink)
+      .connect(n.fwyHiss)
+      .connect(filt('bandpass', 1100, 0.6))
+      .connect(n.fwyPan)
+    this.lane(
+      [n.fwy.gain, n.fwyHiss.gain],
+      n.fwyPan,
+      this.world,
+      n.fwyPan.connect(gain(0.25)),
+      this.verb
+    )
   },
   // crickets: a high tone pulsed in quick trains of chirps (on only while both the pulse and the
   // train are), three of them; made the first time night falls
@@ -89,10 +115,7 @@ export const STREET = {
       osc('sine', f).connect(chirp).connect(p).connect(n.crickets)
       osc('square', rate).connect(sum)
       osc('square', train).connect(sum)
-      sum
-        .connect(gate)
-        .connect(filt('lowpass', 180, 0.7))
-        .connect(chirp.gain)
+      sum.connect(gate).connect(filt('lowpass', 180, 0.7)).connect(chirp.gain)
     }
     this.lane(
       [n.crickets.gain],
@@ -135,6 +158,12 @@ export const STREET = {
       this.gullT = 4 + Math.random() * 9
       this.gull(0.02 * sea, Math.random() * 1.6 - 0.8)
     }
+    // (a steady roar by the wall, over the street's own sounds; gone a couple of hundred metres in;
+    // a little quieter at night)
+    const fwy = city ? (st.freeway || 0) ** 2 * (st.night ? 0.8 : 1) : 0
+    R(n.fwy.gain, fwy * 0.22, 0.6)
+    R(n.fwyHiss.gain, fwy * 0.06, 0.6)
+    if (fwy > 0) R(n.fwyPan.pan, clamp(st.freewayPan || 0, -0.8, 0.8), 0.3)
     if (st.night && !n.crickets) this.buildCrickets()
     if (n.crickets) R(n.crickets.gain, city && st.night ? 0.005 : 0, 0.8)
   }

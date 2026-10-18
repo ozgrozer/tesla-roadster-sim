@@ -234,7 +234,10 @@ pieces for the same reason, the moving gondolas and train given fixed bounds ins
 - **Driving (lead)**: a new surface, `wood`, comes from `surfaceAt` and `feel` (SURFACES.wood).
   camera.js's rumble treats it as smooth; it could be a little coarser. The car's bounds now come
   from `keepIn` (edge.js), not a square at `OUTER`.
-- **Sound**: no freeway hum yet beyond the walls; the surf is now only by the western beach.
+- **Sound**: the surf is now only by the western beach. (Added at the merge: the freeway's roar,
+  in `audio/street.js` and `mix.js`: brown noise under 420 Hz for the engines and a band of pink
+  round 1.1 kHz for the tyres, heard from the nearest freeway's side, at full by the wall, about 8 dB
+  over the street there, and gone a couple of hundred metres into the city.)
 - **City**: nothing of this is inside the promenade's edge. The sky's colours and the fog changed
   (citySky.js), which shows in the city's distance and reflections.
 - A warning: on this machine `prettier-standard --format <file>` formats every file under the working

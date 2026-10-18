@@ -8,6 +8,7 @@
 import * as THREE from 'three'
 import { OUTER } from '../sim/city.js'
 import { TYPES } from '../sim/traffic.js'
+import { LANDMARKS } from '../sim/areas.js'
 import { camera } from '../render/scene.js'
 import { clamp } from '../sim/constants.js'
 import { watch, forget, ALARM } from './watch.js'
@@ -222,6 +223,32 @@ let frame = 0,
   crowd = 0
 const NONE = []
 const _cp = new THREE.Vector3()
+// How near the camera is to the nearest freeway (1 at its sound wall, nothing a couple of hundred
+// metres into the city), and FWY.pan, the side it is heard from
+const FWY = { pan: 0 }
+function freeway (x, z) {
+  let best = Infinity,
+    bx = 0,
+    bz = 0
+  for (const f of LANDMARKS.freeways || []) {
+    const dx = f.x1 - f.x0,
+      dz = f.z1 - f.z0,
+      l2 = dx * dx + dz * dz
+    const t = clamp(((x - f.x0) * dx + (z - f.z0) * dz) / l2, 0, 1)
+    const px = f.x0 + dx * t,
+      pz = f.z0 + dz * t,
+      d = Math.hypot(x - px, z - pz)
+    if (d < best) {
+      best = d
+      bx = px
+      bz = pz
+    }
+  }
+  if (best === Infinity) return 0
+  FWY.pan = panOf(bx, bz)
+  return clamp(1 - (best - 30) / 230, 0, 1)
+}
+
 export function mixSound (sound, app, traffic, dt, clock, peds) {
   const sim = app.sim
   const ground = sim.mode === 'ground',
@@ -330,6 +357,9 @@ export function mixSound (sound, app, traffic, dt, clock, peds) {
   st.alarm = ALARM
   st.enclosed = app.enclosed
   st.sea = city ? clamp(1 - shore / 140, 0, 1) : 0
+  // the freeways beyond the walls east and south: how near the nearest is, and which side it is on
+  st.freeway = city ? freeway(cp.x, cp.z) : 0
+  st.freewayPan = FWY.pan
   st.surface = ground && city ? sim.surface : null
   st.dt = dt
   st.world = world
