@@ -59,15 +59,30 @@ export function surfaceAt (x, z) {
     bz = Math.floor((z + HALF) / PITCH)
   const b = bx >= 0 && bz >= 0 && bx < N && bz < N ? BLOCKS[bz * N + bx] : null
   if (
-    b?.kind === 'park' &&
-    x > b.x0 + WALK &&
-    x < b.x1 - WALK &&
-    z > b.z0 + WALK &&
-    z < b.z1 - WALK
+    !b ||
+    x <= b.x0 + WALK ||
+    x >= b.x1 - WALK ||
+    z <= b.z0 + WALK ||
+    z >= b.z1 - WALK
   )
-    return 'grass'
-  return 'walk'
+    return 'walk'
+  if (b.kind === 'park') return 'grass'
+  // on the block's lot: what is laid over its base (a lawn, a drive, a car park; the last laid on
+  // top), or the base itself (city.js: plots.js)
+  let k = b.base
+  const g = b.ground
+  if (g)
+    for (let i = g.length - 1; i >= 0; i--) {
+      const r = g[i]
+      if (x > r.x0 && x < r.x1 && z > r.z0 && z < r.z1) {
+        k = r.k
+        break
+      }
+    }
+  return LOT[k] || 'walk'
 }
+// what a lot's ground is to the tyres: lawns grass, car parks asphalt, the rest paving
+const LOT = { grass: 'grass', asphalt: 'road' }
 
 // ---------- the street's ironwork ----------
 const R = rng(3141)
