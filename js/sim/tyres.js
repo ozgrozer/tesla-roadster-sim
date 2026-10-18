@@ -9,7 +9,7 @@ export const smooth = x => (x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x))
 
 // A tyre's grip against its slip, x: the slip angle in units of its grip over its cornering
 // stiffness, so that the force starts out at the stiffness times the slip. It builds like a sine to
-// its peak at x = pi / 2 (about 7 degrees, CAR.corneringF and R), then falls away to what a sliding
+// its peak at x = pi / 2 (about 12 degrees, CAR.corneringF and R), then falls away to what a sliding
 // tyre keeps (CAR.slideMu), so a tyre pushed past its limit gives less, not more.
 export const PEAK = Math.PI / 2
 export function tyreCurve (x) {
@@ -41,15 +41,14 @@ const UNWIND = 0.3 // s: how far ahead a driver unwinds the opposite lock out of
 // follow the slide (the caster: let go of the wheel and they swing round to point the way the car is
 // going, as a real car's do), and the driver steers from there: no input lets the slide run out
 // (hands off, a touch of counter-steer catching the car as it swings further round, as a driver's
-// would), the way into the turn holds it (less, the further round the car is, so it doesn't spin;
-// with the electronics on, hardly at all) and the other way catches it, the opposite lock unwound
-// as the car swings back towards straight.
+// would), the way into the turn holds it (less, the further round the car is, so it doesn't spin)
+// and the other way catches it, the opposite lock unwound as the car swings back towards straight.
 // u, w: the car's speed along and across itself (m/s), r its yaw rate, beta the rear axle's slip,
-// FmaxF the fronts' grip (N), track: Track Mode. Turns s.steerAng and returns how far the car is
+// FmaxF and FmaxR the fronts' and the rears' grip (N), track: Track Mode. Turns s.steerAng and returns how far the car is
 // sliding (0 to 1) in out.slide, and the understeer control's cue in out.push: how far past the
 // fronts' grip the wheel asks them to go (0 to 1).
 const _out = { slide: 0, push: 0 }
-export function steer (s, c, u, w, r, beta, FmaxF, track, dt) {
+export function steer (s, c, u, w, r, beta, FmaxF, FmaxR, track, dt) {
   let steerT = c.steer * steerMax(u),
     slide = 0,
     push = 0
@@ -58,13 +57,12 @@ export function steer (s, c, u, w, r, beta, FmaxF, track, dt) {
       aLim = (1.5 * FmaxF) / CAR.corneringF,
       ab = Math.abs(beta)
     slide = smooth((ab - 0.1) / 0.14)
+    // (the understeer control's cue, but not in a real slide: the rears past the slip they grip
+    // hardest at, not merely cornering hard on them)
     push =
-      smooth((Math.abs(steerT - aKin) / aLim - PUSH_0) / PUSH_W) * (1 - slide)
-    const deep = track ? 0.35 : 0.08,
-      into =
-        c.steer * beta < 0
-          ? 1 - smooth((ab - deep) / (track ? 0.4 : 0.15)) * 0.9
-          : 1,
+      smooth((Math.abs(steerT - aKin) / aLim - PUSH_0) / PUSH_W) *
+      (1 - smooth((ab - (PEAK * FmaxR) / CAR.corneringR) / 0.14))
+    const into = c.steer * beta < 0 ? 1 - smooth((ab - 0.35) / 0.4) * 0.9 : 1,
       // (rad/s it is swinging further round)
       grow = (ab - (s.driftA ?? ab)) / dt,
       catchIt =
@@ -72,8 +70,7 @@ export function steer (s, c, u, w, r, beta, FmaxF, track, dt) {
       // (steering out of it, the opposite lock is unwound as the car swings back towards straight,
       // all of it once it will be there within UNWIND s: held on, the fronts would swing it on
       // through and over into a slide the other way)
-      out =
-        c.steer * beta > 0 ? 1 - smooth((-grow * UNWIND - ab) / 0.08) : 1
+      out = c.steer * beta > 0 ? 1 - smooth((-grow * UNWIND - ab) / 0.08) : 1
     const slid = aKin + (c.steer * into * out + catchIt) * aLim
     if (c.ebrake) {
       // (handbrake held: the wheel is the driver's, but let go of it, it follows the slide)

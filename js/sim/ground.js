@@ -156,7 +156,7 @@ export function stepGround (s, dt, c, main, lift) {
     FmaxR = mu * CAR.rearGrip * Nr * s.rearGrip
 
   // the driver's hands on the wheel (tyres.js)
-  const { slide, push } = steer(s, c, u, w, r, beta, FmaxF, track, dt)
+  const { slide, push } = steer(s, c, u, w, r, beta, FmaxF, FmaxR, track, dt)
   const cd = Math.cos(s.steerAng),
     sd = Math.sin(s.steerAng)
 

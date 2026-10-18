@@ -468,8 +468,10 @@ test('the steering turns at the speed of hands, and the tyres corner to their li
     c.steer = t > 0.2 ? 1 : 0
     c.throttle = 0.25
   }, 1.5)
+  // (up to a touch over the fronts' 1.26: held on full lock, the understeer control hands the
+  // throttle's share of the grip to the corner, and the wider rears grip 14% more)
   const g = Math.abs(fast.sim.latAcc) / G
-  assert.ok(g > 1.05 && g < 1.3, `cornering at ${g.toFixed(2)} g`)
+  assert.ok(g > 1.05 && g < 1.34, `cornering at ${g.toFixed(2)} g`)
   // a tyre pushed past its peak gives less, down to what a sliding tyre keeps
   assert.ok(Math.abs(tyreCurve(Math.PI / 2) - 1) < 1e-9, 'the peak')
   assert.ok(tyreCurve(0.01) > 0.0099, 'stiff from the start')
