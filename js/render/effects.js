@@ -451,12 +451,12 @@ export function sparkBurst (p, n, floor = 0) {
 // crown, sparks off a steel pole, and dust and grit from its foot, thrown the way the car was going.
 export function knockFx (e) {
   const tree = e.kind === 'tree' || e.kind === 'palm'
-  // (from the crown: a palm's head up its trunk, 21 to 30 m on the tall fan palms, a tree's crown)
+  // (from the crown: a palm's head, 21 to 30 m up the tall fan palms; the middle of a tree's)
   const top =
     e.kind === 'palm'
       ? (PALMS[e.i]?.h ?? 11) - 1
       : e.kind === 'tree'
-      ? 4.4 * (TREES[e.i]?.s ?? 1)
+      ? 4.7 * (TREES[e.i]?.s ?? 1)
       : 7
   const v = Math.min(20, e.impact)
   if (tree)

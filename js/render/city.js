@@ -22,6 +22,7 @@ import { buildProps } from './cityProps.js'
 import { buildGround } from './cityGround.js'
 import { buildStreet } from './cityStreet.js'
 import { buildBuildings, BEACON } from './cityBuildings.js'
+import { updateTrees } from './cityTrees.js'
 
 const _pv = new THREE.Matrix4(),
   _view = new THREE.Frustum()
@@ -189,6 +190,7 @@ export class CityView {
     // once whatever was knocked down has come to rest, its shadow is drawn where it lies
     if (this.falling && !falling) this.shadow.refresh()
     this.falling = falling
+    updateTrees(dt, camera) // (the palms' and trees' sway, and detail near)
     this.signals.update(traffic.t)
     this.aircraft.update(dt, this.dark, camera)
     // (only what the camera can see is drawn)
