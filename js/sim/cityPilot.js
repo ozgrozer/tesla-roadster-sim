@@ -2,9 +2,10 @@
 // the same lane graph as the traffic. It steers by pure pursuit along its lane, keeps its distance
 // to the cars ahead, slows for corners, stops for red lights and gives way when turning left.
 // Started, it heads for the gridlock downtown, sits in it, leans on the horn and then flies over it
-// (cityHop.js); after that it drives on, and hops over any other jam it gets stuck in. On a wet
-// road it drives as a careful driver does: slower on the straights and round the corners, braking
-// earlier and more gently.
+// (cityHop.js); after that it drives on, and hops over any other jam it gets stuck in. With a
+// waypoint set on the map it drives there instead, on the GPS's plan (route.js, which has the shape
+// of the plan to the gridlock), and pulls up at it. On a wet road it drives as a careful driver
+// does: slower on the straights and round the corners, braking earlier and more gently.
 import { ENV } from './env.js'
 import { Hop, landingSpot, routeToJam } from './cityHop.js'
 import { CAR, clamp, wrapPi, makeControls } from './constants.js'
@@ -37,7 +38,9 @@ const CAPS = {
     'Over the traffic',
     'Lift thrusters up, main thrusters along'
   ],
-  free: ['Autopilot · City', 'Back on the road', 'Stuck again? It flies over']
+  free: ['Autopilot · City', 'Back on the road', 'Stuck again? It flies over'],
+  goal: ['Autopilot · City', 'Heading for the waypoint', ''],
+  arrived: ['Autopilot · City', 'Arrived', 'Any drive key takes the wheel']
 }
 const STUCK = 8 // s stopped in traffic before it takes off
 const GIVE = 10 // s waiting to turn left before it goes another way (or counts as stuck)
@@ -62,6 +65,8 @@ export class CityPilot {
   constructor (sim, traffic) {
     this.sim = sim
     this.traffic = traffic
+    this.goal = null // the waypoint's plan (route.js), or null: the gridlock
+    this.kept = null // a waypoint's plan, reached, that this drive still pulls up at
     this.reset()
   }
   // the same fields the test-site autopilot exposes to the main loop and the HUD, plus the horn
@@ -82,11 +87,36 @@ export class CityPilot {
     this.giveT = 0 // s waiting to turn left across oncoming traffic
     this.passT = 0 // s until it may change lanes to overtake again
     this.hop = null
-    this.plan = PLAN || (PLAN = routeToJam()) // until it has flown over the gridlock
+    this.arrived = false // pulled up at the waypoint
+    this.kept = null
+    // to the waypoint, or else to the gridlock (until it has flown over it)
+    this.plan = this.goal || PLAN || (PLAN = routeToJam())
+    if (this.goal) this.cap = this.goalCap(this.goal)
+  }
+  // A new waypoint (its plan, or null: none): Autopilot heads there from the next junction, or
+  // with none drives on wherever the road takes it. keep: the waypoint was reached, so the drive
+  // it is on still pulls up there (even from over a jam), and the next start is for the gridlock.
+  goTo (plan, keep = false) {
+    this.goal = plan
+    this.kept = keep && this.plan?.stops ? this.plan : null
+    if (keep || this.hop) return // (over a jam, it heads there once it has landed)
+    this.releaseLights()
+    this.plan = plan
+    this.arrived = false
+    this.cap = plan ? this.goalCap(plan) : CAPS.free
+    if (this.edge) this.next = this.pick(this.edge)
+    this.go = null
+  }
+  // the caption on the way to a waypoint: where it is
+  goalCap (plan) {
+    const g = plan.goal
+    return [CAPS.goal[0], CAPS.goal[1], `${g.street} · ${g.area}`]
   }
   // where to go at the end of lane e: towards the gridlock while it is still heading there
+  // (on the way to a waypoint, a lane with no room to move over takes its own best turn)
   pick (e, own = false) {
-    const c = this.plan && (this.plan.get(e) || (!own && this.plan.get(e.twin)))
+    const p = this.plan
+    const c = p && (p.get(e) || (!own && p.get(e.twin)) || p.own?.get(e))
     return c || this.traffic.choose(e, DRIVER, own)
   }
 
@@ -159,6 +189,12 @@ export class CityPilot {
     }
     if (sim.mode !== 'ground' || (!this.edge && !this.join())) {
       c.brake = 1
+      return c
+    }
+    // pulled up at the waypoint, it waits there for the driver
+    if (this.arrived) {
+      c.brake = 1
+      this.cap = CAPS.arrived
       return c
     }
     const x = sim.pos.x,
@@ -307,6 +343,23 @@ export class CityPilot {
       }
     }
     this.giveT = giving ? this.giveT + dt : 0
+    // the waypoint ahead, on this lane or just past the junction at its end: pull up with the
+    // car's middle there (toGoal: that is what it is stopping for)
+    let toGoal = false
+    const stops = this.plan?.stops
+    for (let e = lane, d = -this.s, k = 0; stops && e && k < 3; k++) {
+      const at = d + stops.get(e) // (NaN: no stop on e)
+      if (at > -4) {
+        if (at + 2.5 < gap) {
+          gap = at + 2.5
+          vl = 0
+          toGoal = true
+        }
+        break
+      }
+      d += e.len
+      e = e === lane ? this.next : e.next.length === 1 ? e.next[0] : null
+    }
     // cruise, braking in time for the corner ahead
     const b = B * wet('brake')
     let v0 = Math.min(CRUISE * wet('cruise'), corner(lane))
@@ -339,8 +392,9 @@ export class CityPilot {
     // stuck: in the gridlock at once, elsewhere after a long wait in traffic (not at a red light,
     // nor for someone on foot)
     const inJam = lane.closed
-    const held = v < 0.3 && gap < 9 && (inJam || (!red && !walker))
+    const held = v < 0.3 && gap < 9 && (inJam || (!red && !walker && !toGoal))
     this.stuckT = held ? this.stuckT + dt : 0
+    if (toGoal && v < 0.3 && gap < 9) this.arrived = true
     const wait = inJam ? 2.2 : STUCK // (in the jam it sits at the red a moment first)
     if (this.stuckT > wait) this.wait(this.stuckT - wait, gap)
     else if (inJam) this.cap = CAPS.red
@@ -379,7 +433,8 @@ export class CityPilot {
       }
       for (let k = 0; L && !L.closed && k < 16; k++) {
         const c = this.plan.get(L) || this.plan.get(L.twin)
-        if (!c) break
+        // (as far as the gridlock, or the waypoint's street)
+        if (!c || this.plan.stops?.has(L)) break
         want.set(NODES[L.to], L.dir & 1)
         L = c.next[0]
       }
@@ -392,8 +447,11 @@ export class CityPilot {
         releaseLight(node, t)
         this.held.delete(node)
       }
+    // (and a junction it now crosses the other way, its route having changed, turned that way: let
+    // go first, so the way it was held finishes on its amber and all-red)
     for (const [node, axis] of want)
-      if (!this.held.has(node)) {
+      if (this.held.get(node) !== axis) {
+        if (this.held.has(node)) releaseLight(node, t)
         holdLight(node, axis, t)
         this.held.set(node, axis)
       }
@@ -415,10 +473,11 @@ export class CityPilot {
     this.releaseLights()
     const to = this.hop.to
     this.hop = null
-    this.plan = null
+    // (on to the waypoint, if there is one, or the one it reached on the way over)
+    this.plan = this.goal || this.kept
     this.stuckT = 0
     this.acc = 0
-    this.cap = CAPS.free
+    this.cap = this.plan ? this.goalCap(this.plan) : CAPS.free
     const sim = this.sim
     if (sim.mode !== 'ground') return
     this.edge = to.lane
