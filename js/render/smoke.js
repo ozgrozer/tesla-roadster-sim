@@ -9,6 +9,7 @@
 import * as THREE from 'three'
 import { TAU } from '../sim/constants.js'
 import { scene, key, hemi, keyOffset } from './scene.js'
+import { ENV } from '../sim/env.js'
 
 // Kinds of smoke: colour (albedo), life (s), start and end size (m), opacity, drag towards the air
 // (1/s), buoyancy (m/s^2: + rises, - sinks) and how long it lasts before the puff is at the air's
@@ -293,8 +294,11 @@ class Smoke {
     this.carV.copy(sim.vel)
     this.camera = camera
     const city = sim.world === 'city'
-    if (city) this.wind.set(1.4, 0, 0.6)
-    else this.wind.set(0.7, 0, -0.4)
+    // (in the city, the weather's wind: a breeze, or a storm's gale)
+    if (city) {
+      const w = 0.8 + 7 * ENV.wind
+      this.wind.set(Math.cos(ENV.windDir) * w, 0, Math.sin(ENV.windDir) * w)
+    } else this.wind.set(0.7, 0, -0.4)
     const u = this.mat.uniforms,
       inv = camera.matrixWorldInverse,
       e = camera.matrixWorld.elements

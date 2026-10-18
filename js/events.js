@@ -2,7 +2,7 @@
 // turned into GTA-style stunt titles and hints (hud.js), sounds, camera shake, a gamepad's rumble
 // and particles.
 import { HORNS, AIR_HORN } from './audio/shots.js'
-import { burst, knockFx, sparkBurst } from './render/effects.js'
+import { burst, knockFx, sparkBurst, debrisBurst } from './render/effects.js'
 import { hearing, panOf, dullness, placeOf } from './audio/mix.js'
 
 const CONTACT = { x: 0, y: 0, z: 0 }
@@ -113,13 +113,14 @@ export function handleEvents (g) {
         sound.bump(e.impact, e.what, null, side)
         rig.shake(Math.min(0.3, e.impact * 0.025))
         pad?.rumble(e.impact / 12, e.impact / 8, 160)
-        // (the sparks fly from where it was hit, when the sim says where)
-        if (e.impact > 6)
-          sparkBurst(
-            e.px === undefined ? at : contactAt(e.px, at.y, e.pz),
-            Math.min(60, e.impact * 4),
-            sim.floor
-          )
+        // (the sparks fly from where it was hit, when the sim says where, and off a car or a wall
+        // hard enough, bits of bumper and glass)
+        if (e.impact > 6) {
+          const p = e.px === undefined ? at : contactAt(e.px, at.y + 0.3, e.pz)
+          sparkBurst(p, Math.min(60, e.impact * 4), sim.floor)
+          if (e.impact > 7.5 && e.what !== 'post')
+            debrisBurst(p, e.impact, sim.vel, sim.floor)
+        }
       }
     } else if (e.type === 'knock') {
       // a street light, signal or tree snapped off, by the Roadster or a car it sent sliding
@@ -167,6 +168,7 @@ export function handleEvents (g) {
         )
     } else if (e.type === 'crash') {
       sparkBurst(sim.com, 120, sim.floor)
+      debrisBurst(sim.com, 14, sim.vel, sim.floor)
       burst(sim.com.x, sim.com.z, 80, 8, sim.floor)
       rig.shake(0.5)
       app.restHint = false

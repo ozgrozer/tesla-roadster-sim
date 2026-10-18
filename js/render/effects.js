@@ -1,11 +1,11 @@
-// Particles (jet cores, sparks, leaves), supersonic shock-diamond jets, and what the car throws up:
-// thruster vapor, tyre smoke, dust and the beach's sand (smoke.js), and the debris of whatever it
-// knocks over.
+// Particles (jet cores, sparks, leaves, chips, glass), supersonic shock-diamond jets, and what
+// the car throws up: vapor, tyre smoke, dust, sand (smoke.js; spray: spray.js) and debris.
 import * as THREE from 'three'
 import { scene, softTex } from './scene.js'
 import { TAU, clamp01 } from '../sim/constants.js'
 import { PALMS, TREES } from '../sim/city.js'
 import { smoke, VAPOR, TYRE, DUST } from './smoke.js'
+import { emitSpray, WATER } from './spray.js'
 
 class Particles {
   // splash: whether it skips off the ground (sparks, leaves) or is gone when it gets there (jet cores)
@@ -177,7 +177,19 @@ const leaves = new Particles(900, {
   colB: new THREE.Color(0.2, 0.32, 0.08),
   gravity: 9.81
 })
-export const ALL_PARTICLES = [smoke, jets, sparks, leaves]
+// what a hard knock breaks off: dark chips of bumper and trim, and glass, bright specks falling
+const chips = new Particles(600, {
+  colA: new THREE.Color(0.035, 0.036, 0.04),
+  colB: new THREE.Color(0.12, 0.12, 0.13),
+  gravity: 9.81
+})
+const glass = new Particles(700, {
+  additive: true,
+  colA: new THREE.Color(0.55, 0.62, 0.7),
+  colB: new THREE.Color(1.6, 1.7, 1.8),
+  gravity: 9.81
+})
+export const ALL_PARTICLES = [smoke, jets, sparks, leaves, chips, glass]
 
 // supersonic jets with shock diamonds, one per nozzle
 const diamondGeo = new THREE.CylinderGeometry(0.028, 0.058, 1, 12, 1, true)
@@ -315,12 +327,14 @@ const SAND = {
   spread: 0.8
 }
 export function emitTireSmoke (RS, sim, dt) {
+  WATER.splash = 0
   if (dt <= 0 || sim.mode !== 'ground') return
   // (in a burnout the rears' tread runs past the road however slowly the car goes; the fronts are
   // held on their brakes)
   const roll = sim.groundSpeed(),
     spun = Math.max(roll, (sim.burnSpin || 0) * 0.5)
   if (spun < 2.5) return
+  const wet = emitSpray(RS, sim, dt, roll, spun) // (on a wet road: spray.js)
   if (sim.surface === 'sand')
     RS.wheels.forEach(w => {
       // a rooster tail off each tyre, heavier off the driven, slipping rears
@@ -347,7 +361,7 @@ export function emitTireSmoke (RS, sim, dt) {
       }
     })
   RS.wheels.forEach(w => {
-    const amt = w.front ? sim.skidF : sim.skidR
+    const amt = (w.front ? sim.skidF : sim.skidR) * (1 - 0.8 * wet) // (less on water)
     if (amt < 0.3) return
     const speed = w.front ? roll : spun
     w.smoke = (w.smoke || 0) + 46 * amt * amt * Math.min(1.3, speed / 14) * dt
@@ -384,6 +398,30 @@ export function burst (x, z, n, speed, y = 0, size = 1) {
       Math.sin(a) * s,
       y,
       size
+    )
+  }
+}
+// Chips and glass off a hard knock at p (impact: m/s of speed lost), thrown on with the car (vel)
+export function debrisBurst (p, impact, vel, floor = 0) {
+  const n = Math.min(70, Math.floor(impact * 4))
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * TAU,
+      out = 1.5 + Math.random() * impact * 0.5,
+      up = 1 + Math.random() * (2 + impact * 0.25),
+      kind = Math.random() < 0.55 ? chips : glass
+    kind.spawn(
+      p.x + (Math.random() - 0.5) * 0.6,
+      Math.max(floor + 0.25, p.y),
+      p.z + (Math.random() - 0.5) * 0.6,
+      vel.x * 0.35 + Math.cos(a) * out,
+      up,
+      vel.z * 0.35 + Math.sin(a) * out,
+      0.9 + Math.random() * 1.6,
+      kind === chips ? 0.07 : 0.03,
+      kind === chips ? 0.05 : 0.02,
+      kind === chips ? 0.95 : 0.8,
+      0.6,
+      floor
     )
   }
 }
