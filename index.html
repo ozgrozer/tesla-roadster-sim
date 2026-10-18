@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -264,6 +264,10 @@
                 >km/h · mph
               </li>
               <li>
+                <span class="k"><kbd>B</kbd></span
+                >radio: next station · off
+              </li>
+              <li>
                 <span class="k"><kbd>C</kbd></span
                 >city · test site
               </li>
@@ -296,6 +300,10 @@
       <div class="countdown" id="countdown">3</div>
       <!-- stunt titles: NEAR MISS, DRIFT ×2, STUNT BONUS -->
       <div class="notices" id="notices" aria-live="polite"></div>
+      <div class="radio-tag" id="radioTag" aria-live="polite">
+        <div class="r-freq" id="radioFreq"></div>
+        <div class="r-name" id="radioName"></div>
+      </div>
 
       <!-- the city's radar, with the car's condition and its air under it -->
       <div class="radarbox" id="radarBox">
@@ -452,23 +460,26 @@
     <div class="fade" id="fade"></div>
     <script>
       // the loading tips start at a random one (each waits its turn: css/panels.css)
-      ;(function () {
-        var t = document.getElementById('loadTips')
-        var n = t.children.length
-        t.style.setProperty('--start', -Math.floor(Math.random() * n) * 5 + 's')
-      })()
+      (function () {
+        var t = document.getElementById("loadTips");
+        var n = t.children.length;
+        t.style.setProperty(
+          "--start",
+          -Math.floor(Math.random() * n) * 5 + "s",
+        );
+      })();
     </script>
     <!-- One self-contained script built from js/ (npm run build), so this page opens straight from disk. -->
     <script src="dist/roadster.js"></script>
     <script>
       // If the 3D engine never starts (WebGL off, very old browser), say so instead of a blank screen.
       setTimeout(function () {
-        var l = document.getElementById('loading')
-        var m = document.getElementById('loadMsg')
-        if (l && getComputedStyle(l).opacity !== '0' && !m.textContent)
+        var l = document.getElementById("loading");
+        var m = document.getElementById("loadMsg");
+        if (l && getComputedStyle(l).opacity !== "0" && !m.textContent)
           m.textContent =
-            'The game did not start. Check that WebGL is enabled, then reload.'
-      }, 15000)
+            "The game did not start. Check that WebGL is enabled, then reload.";
+      }, 15000);
     </script>
   </body>
 </html>

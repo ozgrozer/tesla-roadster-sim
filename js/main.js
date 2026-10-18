@@ -266,6 +266,7 @@ const COMMANDS = {
       app.fanMode === 'auto' ? 'on' : app.fanMode === 'on' ? 'off' : 'auto'
     hud.fanPopup(app.fanMode)
   },
+  KeyB: () => hud.radio(sound.tuneRadio()), // the radio's next station (radio.js)
   KeyX: () => tryFlip('z'),
   KeyK: () => tryFlip('x')
 }

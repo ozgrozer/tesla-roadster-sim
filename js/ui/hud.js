@@ -19,8 +19,9 @@ const FAN_TEXT = {
   off: 'Suction fan: off'
 }
 const WAKE_S = 3 // s the title and the buttons stay up after the mouse last moved, while driving
-// the keys that drive or fly the car (the keys card's Drive and Fly): they keep the screen clean
-const PLAY_KEYS = new Set([...DRIVE_KEYS, 'KeyH', 'KeyG', 'KeyX', 'KeyK'])
+// the keys that drive or fly the car (the keys card's Drive and Fly), and the radio's: they keep
+// the screen clean
+const PLAY_KEYS = new Set([...DRIVE_KEYS, 'KeyH', 'KeyG', 'KeyX', 'KeyK', 'KeyB'])
 const LINE_S = 7 // s the line of keys along the bottom stays up after it changes
 const DENTED = 1 // m of dents (damage.js's amount) that take the condition bar down to nothing
 
@@ -53,8 +54,12 @@ export class Hud {
       cond: $('condBar'),
       condBox: $('condBox'),
       air: $('airBar'),
-      airBox: $('airBox')
+      airBox: $('airBox'),
+      radio: $('radioTag'),
+      radioFreq: $('radioFreq'),
+      radioName: $('radioName')
     }
+    this.radioLeft = 0 // s the radio's station stays up
     this.world = 'site'
     this.siteSub = this.el.brandSub.textContent
     this.instruments = new Instruments(RS)
@@ -105,6 +110,15 @@ export class Hud {
   }
   fanPopup (mode) {
     this.helpbox.push(FAN_TEXT[mode], 1800, 'fan')
+  }
+  // B: the radio's station (null: off) at the top of the screen as GTA shows it; undefined: the
+  // sound is off, so the radio is too
+  radio (st) {
+    if (st === undefined)
+      return this.helpbox.push('The sound is off · <b>N</b> to turn it on', 1800)
+    put(this.el.radioFreq, 'text', st ? `${st.freq} FM` : '')
+    put(this.el.radioName, 'text', st ? st.name : 'Radio off')
+    this.radioLeft = 2.6
   }
   // U: km/h or mph
   toggleUnits () {
@@ -188,6 +202,8 @@ export class Hud {
       this.keysHint = false
       this.helpbox.push('Press <b>I</b> for the controls', 4000)
     }
+    this.radioLeft -= dt
+    put(this.el.radio, '.on', this.radioLeft > 0)
     this.speedo.update(dt, app)
     this.place.update(dt, app)
     this.instruments.update(dt, app)
