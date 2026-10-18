@@ -38,8 +38,10 @@ export const CAR = {
   recharge: 6, // kg/s while driving without thrust (game assist)
   Iz: 4300, // yaw inertia, kg m^2
   rearGrip: 1.14, // staggered tyres: wider rears keep the car stable (understeer at the limit)
-  corneringF: 105000,
-  corneringR: 120000, // tyre cornering stiffness per axle, N/rad
+  // tyre cornering stiffness per axle (N/rad): a performance tyre's, about 90 to 100 kN/rad a
+  // tyre, so each axle reaches its peak grip at about 7 degrees of slip
+  corneringF: 175000,
+  corneringR: 200000,
   rollRes: 0.015, // rolling resistance coefficient
   regenAccel: 1.3, // lift-off regen (one-pedal driving), m/s^2
   regenPowerW: 250000,
