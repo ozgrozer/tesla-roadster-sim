@@ -111,8 +111,15 @@ function runTraffic (secs) {
     const driving = tr.cars.filter(c => !c.parked && !c.loose)
     for (const car of driving) {
       const was = before.get(car)
-      // into an intersection on a red that was already red a yellow ago: a red-light runner
-      if (was && was.road && car.edge !== was && car.edge.move) {
+      // into an intersection on a red that was already red a yellow ago: a red-light runner (but
+      // a police car on a call, which may go over on red: calls.test.mjs)
+      if (
+        was &&
+        was.road &&
+        car.edge !== was &&
+        car.edge.move &&
+        car.siren !== 1
+      ) {
         const node = NODES[was.to]
         if (
           signal(node, was.dir, tr.t) === RED &&

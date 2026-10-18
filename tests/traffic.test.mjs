@@ -126,7 +126,9 @@ test('a long run: smooth, no car through another, no red light run, no deadlock'
     const driving = tr.cars.filter(c => !c.parked && !c.loose)
     for (const c of driving) {
       const was = before.get(c)
-      if (was?.road && c.edge !== was && c.edge.move) {
+      // (a police car on a call goes over on red, at a crawl once the junction is clear: that is
+      // checked in calls.test.mjs)
+      if (was?.road && c.edge !== was && c.edge.move && c.siren !== 1) {
         const node = NODES[was.to]
         if (signal(node, was.dir, tr.t) === RED && signal(node, was.dir, tr.t - 3) === RED) reds++
       }
