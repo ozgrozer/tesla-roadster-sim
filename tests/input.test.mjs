@@ -196,7 +196,83 @@ test('W and S together at a crawl are a burnout; at speed S still brakes', () =>
   sim.vel.set(25, 0, 0)
   sim.speed = 25
   c = input.controls(sim, 'off')
-  assert.ok(!c.burnout && c.brake === 1, 'at speed, the brake')
+  assert.ok(!c.burnout && c.brake > 0, 'at speed, the brake')
   up('KeyW')
   up('KeyS')
+})
+
+// The brake key from 100 km/h on open ground: S held from `from` s to `to` s (a moment in, so the
+// input has run a frame first); each frame's controls, and the sim after `secs` s
+function brakeKey (from, to, secs) {
+  const input = new Input({ onDrive () {}, onCommand () {} })
+  const sim = new Sim()
+  sim.reset('start')
+  sim.pos.set(-100, 0, 300)
+  sim.suction = 0
+  sim.syncPose()
+  sim.vel.set(100 / 3.6, 0, 0)
+  sim.speed = 100 / 3.6
+  const log = []
+  let t = 0,
+    c
+  while (t < secs) {
+    if (t >= from && t - H < from) down('KeyS')
+    if (t >= to && t - H < to) up('KeyS')
+    c = input.controls(sim, 'off')
+    log.push({ t, brake: c.brake, reverse: c.reverse, v: sim.speed })
+    sim.step(H, c)
+    t += H
+  }
+  up('KeyS')
+  return { sim, log }
+}
+
+test('the brake key squeezes the pedal: a tap slows the car a little, holding it is a full stop', () => {
+  // a tenth of a second's tap at 100 km/h: a light brake, a few km/h off, not a stamp on the pedal
+  const tap = brakeKey(0.1, 0.2, 1)
+  const coast = brakeKey(9, 9, 1) // (the same second without it: regen slows the car too)
+  const lost = (coast.sim.speed - tap.sim.speed) * 3.6
+  assert.ok(
+    Math.max(...tap.log.map(l => l.brake)) < 0.5,
+    'a tap is a light brake'
+  )
+  assert.ok(lost < 4, `a tap takes ${lost.toFixed(1)} km/h off`)
+  // held, the brakes are fully on within a third of a second, and the car stops from 100 km/h in
+  // about what a good car's tyres allow (a hard stop's bite building as the pedal goes down)
+  const held = brakeKey(0.1, 9, 4)
+  const full = held.log.find(l => l.brake === 1)
+  assert.ok(
+    full && full.t < 0.42,
+    `full braking after ${(full?.t - 0.1).toFixed(2)} s`
+  )
+  const stop = held.log.find(l => l.v <= 0)
+  assert.ok(
+    stop.t > 2.3 && stop.t < 2.9,
+    `stopped in ${(stop.t - 0.1).toFixed(2)} s`
+  )
+})
+
+test('S held through a stop holds the car before it backs up, and pressed at a standstill reverses', () => {
+  const r = brakeKey(0.1, 9, 5)
+  const stop = r.log.find(l => l.v <= 0)
+  const back = r.log.find(l => l.reverse > 0)
+  assert.ok(
+    back.t - stop.t > 0.45,
+    `held ${(back.t - stop.t).toFixed(2)} s at a standstill before reversing`
+  )
+  // (and the reverse eases in from there)
+  assert.ok(back.reverse < 0.1, 'the motor eases into reverse')
+  assert.ok(r.sim.speed < -1, 'then it backs up')
+  // let go and press it again at a standstill: it reverses at once
+  const input = new Input({ onDrive () {}, onCommand () {} })
+  const sim = new Sim()
+  sim.reset('start')
+  down('KeyS')
+  sim.step(H, input.controls(sim, 'off'))
+  const c = input.controls(sim, 'off')
+  up('KeyS')
+  assert.ok(
+    c.reverse > 0 && c.brake === 0,
+    'pressed at a standstill, it reverses'
+  )
 })
