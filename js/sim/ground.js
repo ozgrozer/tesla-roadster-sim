@@ -53,9 +53,11 @@ const PUSH_IN = 0.08, // s: the understeer control's cut eases in, and the power
   HELD_T = 0.3 // ... for this long (s) is a turn the understeer control tightens
 const REV_MAX = 9 // m/s: as fast as the car backs up
 // the share of an axle's speed into the kerb the car loses as it climbs it (a tyre meeting an 8 cm
-// edge rolls over it at about 39 degrees), and the most a strike takes (m/s)
+// edge rolls over it at about 39 degrees), the most a strike takes (m/s), and the most it turns the
+// car (rad/s)
 const KERB_LOSS = 0.22,
-  KERB_DV = 1.6
+  KERB_DV = 1.6,
+  KERB_SPIN = 0.35
 // the drive's front share in Track Mode (none: the rears take it all, or the front motor pulling on
 // counter-steered wheels would drag the nose straight), and otherwise
 const TRACK_FRONT = 0,
@@ -99,7 +101,9 @@ function kerb (s, sg) {
   const b = loadBody(s)
   b.vx += (nx * j) / CAR.mass
   b.vz += (nz * j) / CAR.mass
-  b.w += (rz * nx * j - rx * nz * j) / CAR.Iz
+  // (the knock to its heading no more than KERB_SPIN rad/s: the tyres give, rather than the car
+  // snapping round)
+  b.w += clamp((rz * nx * j - rx * nz * j) / CAR.Iz, -KERB_SPIN, KERB_SPIN)
   storeBody(s)
 }
 
