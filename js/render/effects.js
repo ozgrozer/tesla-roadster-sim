@@ -4,6 +4,7 @@
 import * as THREE from 'three'
 import { scene, softTex } from './scene.js'
 import { TAU, clamp01 } from '../sim/constants.js'
+import { PALMS, TREES } from '../sim/city.js'
 import { smoke, VAPOR, TYRE, DUST } from './smoke.js'
 
 class Particles {
@@ -412,7 +413,13 @@ export function sparkBurst (p, n, floor = 0) {
 // crown, sparks off a steel pole, and dust and grit from its foot, thrown the way the car was going.
 export function knockFx (e) {
   const tree = e.kind === 'tree' || e.kind === 'palm'
-  const top = e.kind === 'palm' ? 10 : e.kind === 'tree' ? 4.4 : 7
+  // (from the crown: a palm's head up its trunk, 21 to 30 m on the tall fan palms, a tree's crown)
+  const top =
+    e.kind === 'palm'
+      ? (PALMS[e.i]?.h ?? 11) - 1
+      : e.kind === 'tree'
+      ? 4.4 * (TREES[e.i]?.s ?? 1)
+      : 7
   const v = Math.min(20, e.impact)
   if (tree)
     for (let i = 0; i < 70 + v * 6; i++) {
