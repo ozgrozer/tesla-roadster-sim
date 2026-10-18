@@ -9,6 +9,7 @@ import * as THREE from 'three'
 import { merge, box, tint } from './geo.js'
 import { canvasTex, speckle } from './scene.js'
 import { glowMaterial } from './cityGlow.js'
+import { SKY } from './citySky.js'
 import { LANDMARKS } from '../sim/areas.js'
 import { rng } from '../sim/city.js'
 
@@ -334,14 +335,16 @@ export function buildFreeway (group) {
   const cars = new THREE.Mesh(
     geo,
     new THREE.ShaderMaterial({
-      uniforms: THREE.UniformsUtils.merge([
-        THREE.UniformsLib.fog,
-        {
-          uTime,
-          uNight,
-          uSun: { value: new THREE.Vector3(-66, 30, 28).normalize() }
-        }
-      ]),
+      // (the clock, the night and the sky's light by reference: merging copies what it is given,
+      // which left the traffic standing still and unlit at night)
+      uniforms: {
+        ...THREE.UniformsUtils.merge([THREE.UniformsLib.fog]),
+        uTime,
+        uNight,
+        uSun: SKY.uSun,
+        uSunCol: SKY.uSunCol,
+        uAmb: SKY.uAmb
+      },
       vertexShader: `attribute vec4 aLane; attribute float aPhase; attribute vec3 aColor; attribute vec2 aSize;
         uniform float uTime; varying vec3 vC, vN, vL;
         #include <fog_pars_vertex>
@@ -357,11 +360,13 @@ export function buildFreeway (group) {
           gl_Position = projectionMatrix * mvPosition;
           #include <fog_vertex>
         }`,
-      fragmentShader: `uniform float uNight; uniform vec3 uSun; varying vec3 vC, vN, vL;
+      fragmentShader: `uniform float uNight; uniform vec3 uSun, uSunCol, uAmb; varying vec3 vC, vN, vL;
         #include <fog_pars_fragment>
         void main(){
           vec3 n = normalize(vN);
-          vec3 col = vC * mix(0.5 + 0.35 * n.y + 1.1 * max(dot(n, uSun), 0.0) * vec3(1.0, 0.8, 0.6), vec3(0.05, 0.055, 0.08), uNight);
+          // (lit by the sun and the sky as they are at this hour: daylight.js)
+          vec3 lit = uAmb * (0.75 + 0.55 * n.y) + 1.75 * max(dot(n, uSun), 0.0) * uSunCol;
+          vec3 col = vC * mix(lit, vec3(0.05, 0.055, 0.08), uNight);
           // head and tail lights, front and back at lamp height
           float lamp = step(0.45, vL.y) * step(vL.y, 0.8) * step(0.35, abs(vL.z));
           col += uNight * lamp * (step(2.29, vL.x) * vec3(3.0, 2.8, 2.4) + step(vL.x, -2.29) * vec3(2.6, 0.12, 0.08));

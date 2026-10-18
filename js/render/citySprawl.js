@@ -6,6 +6,7 @@
 import * as THREE from 'three'
 import { LAYER, merge, box, tint } from './geo.js'
 import { glowMaterial, glowPoints } from './cityGlow.js'
+import { SKY } from './citySky.js'
 import { palmsAt } from './cityKit.js'
 import { PITCH, PROMENADE, rng } from '../sim/city.js'
 import { WALL } from '../sim/edge.js'
@@ -27,10 +28,14 @@ function clear (x, z, r) {
 
 function groundMaterial () {
   return new THREE.ShaderMaterial({
-    uniforms: THREE.UniformsUtils.merge([
-      THREE.UniformsLib.fog,
-      { uNight: { value: 0 } }
-    ]),
+    uniforms: {
+      ...THREE.UniformsUtils.merge([
+        THREE.UniformsLib.fog,
+        { uNight: { value: 0 } }
+      ]),
+      uSunCol: SKY.uSunCol,
+      uAmb: SKY.uAmb
+    },
     vertexShader: `varying vec3 vW;
       #include <fog_pars_vertex>
       void main(){
@@ -40,7 +45,7 @@ function groundMaterial () {
         gl_Position = projectionMatrix * mvPosition;
         #include <fog_vertex>
       }`,
-    fragmentShader: `uniform float uNight; varying vec3 vW;
+    fragmentShader: `uniform float uNight; uniform vec3 uSunCol, uAmb; varying vec3 vW;
       #include <fog_pars_fragment>
       float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
       // how much of a line of width w every pitch m along v covers here, smoothed over a pixel
@@ -72,8 +77,8 @@ function groundMaterial () {
         float pool = step(0.86, m) * step(0.3, in_.x) * step(in_.x, 0.55) * step(0.55, in_.y) * step(in_.y, 0.7);
         col = mix(col, vec3(0.16, 0.52, 0.6), pool);
         col = mix(col, vec3(0.2, 0.2, 0.21), street);
-        // (lit like the city's ground in the low sun)
-        vec3 day = col * vec3(0.8, 0.72, 0.64);
+        // (lit like the city's ground, by the sun and the sky as they are at this hour)
+        vec3 day = col * (uSunCol * 0.5 + uAmb * 0.6);
         // night: the streets lit sodium orange, the blocks dark but for a few lit windows' spill
         vec3 nite = col * 0.02 + vec3(1.0, 0.5, 0.18) * (street * 0.2 + avenue * 0.22 + 0.04 * hash(lot + 3.1));
         gl_FragColor = vec4(mix(day, nite, uNight), 1.0);

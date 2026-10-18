@@ -8,7 +8,7 @@
 import * as THREE from 'three'
 import { LAYER, merge, box, tint } from './geo.js'
 import { canvasTex, speckle } from './scene.js'
-import { SUN, SKY_GLSL } from './citySky.js'
+import { SKY, SKY_GLSL } from './citySky.js'
 import { PROMENADE, rng } from '../sim/city.js'
 import { SHORE, WALL, GROYNE, PIER, WHEEL } from '../sim/edge.js'
 
@@ -17,7 +17,6 @@ const FACE = 12 // m: the beach's face, from the flat sand down to the sea bed
 const FLOOR = -3 // the sea bed at the foot of the face
 const WATER = -2.2 // the sea's level
 const COAST = 2600 // m north and south the beach runs on
-const SUN_DIR = SUN.clone().normalize()
 // where the water meets the sand (x = -WET), a little up the face
 const WET = SHORE + (FACE * (SAND - WATER)) / (SAND - FLOOR)
 
@@ -45,30 +44,34 @@ function sandTexture () {
   return t
 }
 
-// the pier's deck as it shades the water: each rectangle moved away from the sun by the height it
-// stands over the water
-function deckShadows () {
-  const k = (0.3 - WATER) / SUN_DIR.y
-  const dx = -SUN_DIR.x * k,
-    dz = -SUN_DIR.z * k
-  return PIER.deck.map(
-    d => new THREE.Vector4(d.x0 + dx, d.x1 + dx, d.z0 + dz, d.z1 + dz)
+// the pier's deck as it shades the water: each rectangle moved away from the sun (sun: toward it)
+// by the height it stands over the water, into out (Vector4s: x0, x1, z0, z1)
+function deckShadows (sun, out) {
+  const k = (0.3 - WATER) / Math.max(sun.y, 0.07)
+  const dx = -sun.x * k,
+    dz = -sun.z * k
+  PIER.deck.forEach((d, i) =>
+    out[i].set(d.x0 + dx, d.x1 + dx, d.z0 + dz, d.z1 + dz)
   )
+  return out
 }
+// (the sky's uniforms the water reads: all but the clock, which it has its own of)
+const SEA_SKY = Object.fromEntries(
+  Object.entries(SKY).filter(([k]) => k !== 'uTime')
+)
 
 function seaMaterial () {
+  const uniforms = THREE.UniformsUtils.merge([
+    THREE.UniformsLib.fog,
+    {
+      uTime: { value: 0 },
+      uShore: { value: WET - 1 },
+      uDeck: { value: PIER.deck.map(() => new THREE.Vector4()) },
+      uWheel: { value: new THREE.Vector3(WHEEL.x, WHEEL.hub, WHEEL.z) }
+    }
+  ])
   return new THREE.ShaderMaterial({
-    uniforms: THREE.UniformsUtils.merge([
-      THREE.UniformsLib.fog,
-      {
-        uTime: { value: 0 },
-        uNight: { value: 0 },
-        uSun: { value: SUN_DIR.clone() },
-        uShore: { value: WET - 1 },
-        uDeck: { value: deckShadows() },
-        uWheel: { value: new THREE.Vector3(WHEEL.x, WHEEL.hub, WHEEL.z) }
-      }
-    ]),
+    uniforms: { ...uniforms, ...SEA_SKY },
     fog: true,
     vertexShader: `varying vec3 vW;
       #include <fog_pars_vertex>
@@ -79,7 +82,7 @@ function seaMaterial () {
         gl_Position = projectionMatrix * mvPosition;
         #include <fog_vertex>
       }`,
-    fragmentShader: `uniform float uTime; uniform float uNight; uniform vec3 uSun; uniform float uShore;
+    fragmentShader: `uniform float uTime; uniform float uShore;
       uniform vec4 uDeck[${PIER.deck.length}]; uniform vec3 uWheel; varying vec3 vW;
       #include <fog_pars_fragment>
       float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -111,8 +114,10 @@ function seaMaterial () {
         float fres = 0.02 + 0.98 * pow(1.0 - max(dot(n, v), 0.0), 5.0);
         vec3 r = reflect(-v, n);
         r.y = abs(r.y);
-        vec3 sky = skyBase(r, uSun, uNight);
-        float sd = max(dot(r, uSun), 0.0);
+        vec3 sky = skyBase(r);
+        // (the sun's glitter path by day, the moon's at night)
+        float sd = max(dot(r, uNight > 0.5 ? uMoon : uSun), 0.0);
+        float grey = smoothstep(0.55, 1.0, uClouds);
         // the pier's shadow on the water, soft at its edges
         float shade = 1.0;
         for (int i = 0; i < ${PIER.deck.length}; i++) {
@@ -120,18 +125,21 @@ function seaMaterial () {
           vec2 in2 = min(vW.xz - d.xz, d.yw - vW.xz);
           shade = min(shade, 1.0 - 0.42 * smoothstep(-0.8, 0.8, min(in2.x, in2.y)));
         }
+        shade = mix(1.0, shade, 1.0 - grey);
         // deep blue out at sea, turquoise over the shallows by the beach
         float out_ = -vW.x - uShore;
         vec3 deep = vec3(0.008, 0.07, 0.22), shallow = vec3(0.05, 0.31, 0.35);
         vec3 body = mix(shallow, deep, smoothstep(2.0, 70.0, out_));
         body = mix(body, vec3(0.003, 0.012, 0.03), uNight * 0.92);
+        // (grey under a grey sky)
+        body = mix(body, vec3(0.05, 0.08, 0.1) * (1.0 - 0.8 * uNight), grey * 0.6);
         // light coming up through a wave's face
         body += vec3(0.02, 0.12, 0.13) * max(0.0, s.x * 0.8 + s.y * 0.4);
         // (the sky in it a little cooler than the sky itself: the water's own blue shows through)
         vec3 col = mix(body, sky * vec3(0.78, 0.88, 1.08), fres * mix(0.7, 0.4, uNight));
         // the sun's glitter path (the moon's at night, cold and fainter), not where the pier shades it
         vec3 glint = mix(vec3(1.0, 0.75, 0.45), vec3(0.75, 0.8, 1.0) * 0.35, uNight);
-        col += (glint * pow(sd, 260.0) * 9.0 + mix(vec3(1.0, 0.6, 0.3), vec3(0.2, 0.22, 0.3), uNight) * pow(sd, 40.0) * 0.35) * shade;
+        col += (glint * pow(sd, 260.0) * 9.0 + mix(vec3(1.0, 0.6, 0.3), vec3(0.2, 0.22, 0.3), uNight) * pow(sd, 40.0) * 0.35) * shade * (1.0 - 0.9 * grey);
         col *= mix(1.0, shade, 1.0 - uNight * 0.8);
         // at night the Ferris wheel's lights shimmer in it
         float wl = max(dot(r, normalize(uWheel - vW)), 0.0);
@@ -269,8 +277,12 @@ export function buildSea (group) {
   sea.position.y = WATER
   sea.renderOrder = LAYER.sea
   group.add(sea)
+  // (the pier's shadow on the water follows the sun round)
+  const deck = mat.uniforms.uDeck.value
   return {
-    update: t => (mat.uniforms.uTime.value = t),
-    night: k => (mat.uniforms.uNight.value = k)
+    update: t => {
+      mat.uniforms.uTime.value = t
+      deckShadows(SKY.uSun.value, deck)
+    }
   }
 }
