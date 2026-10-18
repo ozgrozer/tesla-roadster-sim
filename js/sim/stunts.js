@@ -1,11 +1,13 @@
 // Street stunts, scored alongside the flips and landings (sim.js): a drift, the car held well
 // sideways at speed, scored once it straightens up by how long it lasted and how far sideways it
-// went (lost if it ends in a crash); and a near miss, flashing past a car in traffic close enough to
+// went (lost if it ends in a crash), drifts linked one into the next the other way scoring as one,
+// half as much again for each link; and a near miss, flashing past a car in traffic close enough to
 // touch without touching it, worth more the faster it went by and double if it was coming the other
 // way.
 import { CAR } from './constants.js'
 
 const SIDEWAYS = 0.26 // rad of slip (15 degrees) that counts as a drift; past 1.4 it is a spin
+const LINK_BONUS = 0.5 // the share more a drift scores for each one linked on to it
 const DRIFT_SPEED = 9 // m/s, about 30 km/h
 const MISS = 1 // m of daylight between the cars that still counts as a near miss
 const MISS_SPEED = 12 // m/s they pass each other at, at least
@@ -31,34 +33,50 @@ export function donuts (s, dt) {
 
 // each step: the drift so far (s.drifting), and its score once it is over
 export function drift (s, dt) {
-  const d = s.drifting || (s.drifting = { t: 0, sum: 0, calm: 0 })
+  const d =
+    s.drifting || (s.drifting = { t: 0, sum: 0, calm: 0, side: 0, links: 0 })
   const sp = Math.hypot(s.vel.x, s.vel.z)
-  let slip = 0
+  let slip = 0,
+    side = 0
   if (s.mode === 'ground' && sp > 3) {
     const c = Math.cos(s.yaw),
       sn = Math.sin(s.yaw)
     const u = s.vel.x * c - s.vel.z * sn,
       w = -s.vel.x * sn - s.vel.z * c
     slip = Math.abs(Math.atan2(w, Math.abs(u)))
+    side = Math.sign(w)
   }
-  if (s.mode === 'ground' && sp > DRIFT_SPEED && slip > SIDEWAYS && slip < 1.4) {
+  if (
+    s.mode === 'ground' &&
+    sp > DRIFT_SPEED &&
+    slip > SIDEWAYS &&
+    slip < 1.4
+  ) {
+    // (sideways the other way from before, without straightening up in between: a link)
+    if (d.side && side !== d.side) d.links++
+    d.side = side
     d.t += dt
     d.sum += slip * dt
     d.calm = 0
     return
   }
   if (d.t === 0) return
-  d.calm += dt
+  // (not over while the car swings through straight into a linked drift)
+  d.calm = s.linking ? 0 : d.calm + dt
   if (d.calm < 0.35 && s.mode === 'ground') return
   if (d.t > 0.8 && s.mode === 'ground') {
     const angle = d.sum / d.t
     s.emit('drift', {
       t: d.t,
       angle,
-      pts: Math.round((d.t * angle * 57.3 * 12) / 10) * 10
+      links: d.links,
+      pts:
+        Math.round(
+          ((d.t * angle * 57.3 * 12) / 10) * (1 + LINK_BONUS * d.links)
+        ) * 10
     })
   }
-  d.t = d.sum = d.calm = 0
+  d.t = d.sum = d.calm = d.side = d.links = 0
 }
 
 // each step, once traffic has moved: each car the Roadster has just drawn level with and passed

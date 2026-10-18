@@ -36,7 +36,8 @@ export function handleEvents (g) {
     } else if (e.type === 'drift') {
       app.score += e.pts
       const deg = Math.round(e.angle * 57.3)
-      hud.popup(`Drift ${e.t.toFixed(1)} s · ${deg}° <b>+${e.pts}</b>`)
+      const what = e.links ? `Linked drift ×${e.links + 1}` : 'Drift'
+      hud.popup(`${what} ${e.t.toFixed(1)} s · ${deg}° <b>+${e.pts}</b>`)
       sound.chime()
     } else if (e.type === 'nearMiss') {
       app.score += e.pts
