@@ -81,7 +81,8 @@ const NOTHING = new THREE.Object3D() // (compiling it only sets up the lights)
 function as (cityView, RS, look, fn) {
   const was = {
     city: cityView.on,
-    night: cityView.night,
+    dark: cityView.dark,
+    cars: cityView.cars?.night,
     lights: RS.headlights.visible,
     shadow: cityView.shadow?.pending
   }
@@ -89,7 +90,8 @@ function as (cityView, RS, look, fn) {
   if (look.city && cityView.night !== look.night) cityView.setNight(look.night)
   RS.headlights.visible = !!(look.city && look.night)
   const out = fn()
-  if (cityView.night !== was.night) cityView.setNight(was.night)
+  if (cityView.dark !== was.dark) cityView.setDark(was.dark)
+  if (cityView.cars) cityView.cars.night = was.cars
   if (cityView.on !== was.city) cityView.show(was.city)
   RS.headlights.visible = was.lights
   if (cityView.shadow) cityView.shadow.pending = was.shadow

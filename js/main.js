@@ -12,6 +12,7 @@ import { Traffic } from './sim/traffic.js'
 import { SoundEngine } from './audio/sound.js'
 import { Autopilot } from './sim/autopilot.js'
 import { CityPilot } from './sim/cityPilot.js'
+import { ENV } from './sim/env.js'
 import { buildLineup } from './render/lineup.js'
 import { nearestLane, standUp } from './sim/city.js'
 import { handleEvents as simEvents } from './events.js'
@@ -23,6 +24,7 @@ import { DEG, TAU, makeControls } from './sim/constants.js'
 import { LED_MAT, buildWall, buildTruss } from './render/wall.js'
 import { buildRoadster, updateRoadster } from './render/roadster.js'
 import { Post } from './render/post.js'
+import { Climate } from './climate.js'
 import { Resolution } from './render/resolution.js'
 import { warmUp } from './render/warm.js'
 import { Damage } from './render/damage.js'
@@ -30,6 +32,7 @@ import { MAT, scene, camera, canvas } from './render/scene.js'
 import { renderer, followKeyLight } from './render/scene.js'
 import { fallFx, ALL_PARTICLES, updateNozzles } from './render/effects.js'
 import { emitThrusters, emitTireSmoke } from './render/effects.js'
+import { emitTrafficSpray } from './render/spray.js'
 import { attachDiamonds } from './render/effects.js'
 
 // ---------- world ----------
@@ -76,8 +79,11 @@ const app = {
   wheelAudio: 0,
   lastBump: 0,
   pilotHorn: false,
-  night: false // the city at night (L)
+  quality: 'high', // graphics quality (climate.js)
+  night: false // the city at night (ENV.night: sim/env.js)
 }
+// the clock and the weather, the rain, the wet street and the graphics quality (climate.js)
+const climate = new Climate({ app, hud, RS, cityView, resolution })
 
 function setAuto (on) {
   app.auto = on
@@ -145,7 +151,7 @@ function setWorld (w) {
   app.ap = pilot()
   cityView.show(w === 'city')
   rig.clip = w === 'city' ? clipCamera : null
-  RS.headlights.visible = app.night && w === 'city'
+  climate.world(w)
   hud.setWorld(w)
   for (const p of ALL_PARTICLES) p.clear()
   clearSkids()
@@ -183,25 +189,6 @@ function respawn () {
 function setCam (mode) {
   rig.setMode(mode)
   hud.setCam(CAM_NAMES[mode])
-}
-// L: night falls on the city, or it is golden hour again
-function toggleNight () {
-  if (app.world !== 'city') {
-    hud.popup('Night falls in the city · <b>C</b> to go there', 1800, 'hint')
-    return
-  }
-  hud.fade(() => {
-    app.night = !app.night
-    cityView.setNight(app.night)
-    RS.headlights.visible = app.night
-    hud.popup(
-      app.night
-        ? 'Night · <b>L</b> for golden hour'
-        : 'Golden hour · <b>L</b> for night',
-      2000,
-      'hint'
-    )
-  })
 }
 function toggleSlow () {
   app.slow = !app.slow
@@ -255,7 +242,8 @@ const COMMANDS = {
   },
   KeyV: () => setCam(rig.cycle()),
   KeyT: toggleSlow,
-  KeyL: toggleNight,
+  KeyL: () => climate.skipTime(),
+  KeyO: () => climate.nextWeather(),
   KeyI: () => hud.toggleHelp(),
   KeyU: () => hud.toggleUnits(), // the speedometer in km/h or mph (remembered: hud.js)
   KeyH: () => setHorn(true),
@@ -423,6 +411,7 @@ function frame (now) {
   updateNozzles(RS, sim)
   emitThrusters(RS, sim, simDt, clock)
   emitTireSmoke(RS, sim, simDt)
+  if (city) emitTrafficSpray(traffic, camera, simDt)
   LED_MAT.uniforms.uLit.value = sim.maxRampS
   LED_MAT.uniforms.uTime.value = clock
   const blink = Math.sin(clock * 2.4) > 0.6 ? 1 : 0.15
@@ -442,6 +431,7 @@ function frame (now) {
     p.mat.uniforms.uScale.value = pxScale
     p.update(simDt)
   }
+  climate.update(dt, dt * app.timeScale, clock, city)
   if (city) {
     cityView.update(simDt, clock, traffic, camera, peds)
     minimap.update(dt, sim, traffic, VIEW.heading)
@@ -450,6 +440,9 @@ function frame (now) {
   hud.update(dt, app)
   if (city) cityView.shadows(camera, [RS.car])
   resolution.begin()
+  // (the street's reflection, while it is wet: inside the GPU's timing, so the resolution steps
+  // down for it on a card it is too much for)
+  climate.reflect(city)
   post.render(sim, rig.shot, dt)
   resolution.end()
   resolution.update(dt)
@@ -470,6 +463,8 @@ requestAnimationFrame(frame)
 // debugging hook for the console and automated checks: fast-forward the sim without rendering
 window.__roadster = {
   sim,
+  env: ENV,
+  climate,
   RS,
   damage,
   intro,
