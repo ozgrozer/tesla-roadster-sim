@@ -210,3 +210,103 @@
     font-size: 96px;
   }
 }
+
+/* the pause menu on a small screen: a tighter header and tabs, bigger buttons for fingers, the keys
+   in one column and none along the bottom */
+@media (max-width: 760px) {
+  .mn-head {
+    gap: 10px;
+  }
+  .mn-title h2 {
+    font-size: 17px;
+  }
+  .mn-sub {
+    font-size: 10.5px;
+    letter-spacing: 0.22em;
+  }
+  .mn-now {
+    gap: 8px;
+    font-size: 11px;
+  }
+  .mn-clock {
+    font-size: 18px;
+  }
+  .mn-wx,
+  .mn-place,
+  .mn-foot {
+    display: none;
+  }
+  .mn-tabs button {
+    padding: 13px 4px 12px;
+    font-size: 13px;
+    letter-spacing: 0.12em;
+  }
+  .mn-keys {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .st-row {
+    min-height: 50px;
+    padding-left: 12px;
+    font-size: 14px;
+  }
+  .st-out {
+    min-width: 6.5em;
+  }
+  .st-arr {
+    width: 44px;
+    height: 44px;
+  }
+  .st-row input[type='range'] {
+    width: 30vw;
+  }
+  .mp-info {
+    gap: 8px;
+    padding: 7px 10px;
+    font-size: 13px;
+  }
+  .mp-zoom button {
+    width: 44px;
+    height: 44px;
+  }
+}
+/* short windows (a phone on its side): the menu's header and tabs tighter, more room for the tab */
+@media (max-height: 540px) {
+  .mn-frame {
+    gap: 6px;
+  }
+  .mn-title h2 {
+    font-size: 18px;
+  }
+  .mn-sub {
+    margin-top: 2px;
+    font-size: 10px;
+  }
+  .mn-clock {
+    font-size: 17px;
+  }
+  .mn-place {
+    font-size: 11.5px;
+  }
+  .mn-resume {
+    padding: 7px 12px;
+  }
+  .mn-tabs button {
+    padding: 8px 6px 7px;
+    font-size: 13px;
+  }
+  .mn-settings {
+    padding: 10px 0;
+  }
+}
+/* touch screens: no keys card to show (so no Keys button), no keys or pointer for the menu's
+   prompts or for hovering over the map */
+@media (pointer: coarse) {
+  #btnHelp,
+  .mn-foot,
+  .mp-hover {
+    display: none;
+  }
+  .mn-map canvas {
+    cursor: default;
+  }
+}

@@ -1,6 +1,6 @@
 /* Tesla Roadster Sim: the driving HUD. The radar bottom left with the car's condition and its air
-   under it; bottom right the engineering instruments (only when they matter), the speedometer and
-   where you are. */
+   under it and the clock over it; bottom right the engineering instruments (only when they matter),
+   the speedometer and where you are. */
 
 /* the radar: a rounded rectangle, GTA V's shape, city only */
 .radarbox {
@@ -62,6 +62,33 @@
   50% {
     opacity: 0.35;
   }
+}
+/* over it, the clock: the time of day and an icon for the weather (clock.js) */
+.clock {
+  position: absolute;
+  left: 1px;
+  bottom: calc(100% + 5px);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  font-size: clamp(14px, 1.1vw, 17px);
+  line-height: 1;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+  text-shadow: var(--outline);
+}
+/* a weather icon, drawn in the colour of the words beside it (the clock's, the pause menu's) */
+.wx {
+  width: 1.15em;
+  height: 1.15em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 1px #000) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6));
 }
 
 /* bottom right, stacked up from the corner: where you are, the speedometer, the instruments */

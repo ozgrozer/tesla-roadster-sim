@@ -39,6 +39,8 @@
     <link rel="stylesheet" href="css/hud.css" />
     <link rel="stylesheet" href="css/notify.css" />
     <link rel="stylesheet" href="css/panels.css" />
+    <link rel="stylesheet" href="css/menu.css" />
+    <link rel="stylesheet" href="css/map.css" />
     <link rel="stylesheet" href="css/phone.css" />
   </head>
   <body>
@@ -153,6 +155,9 @@
           <button class="btn" id="btnHelp" type="button" aria-pressed="true">
             Keys
           </button>
+          <button class="btn btn-menu" id="btnMenu" type="button">
+            <i class="burger" aria-hidden="true"></i>Menu
+          </button>
         </div>
       </div>
       <div class="credit">
@@ -231,6 +236,10 @@
           <section>
             <h3>Game</h3>
             <ul>
+              <li>
+                <span class="k"><kbd>Esc</kbd></span
+                >pause: map, settings
+              </li>
               <li class="site-only">
                 <span class="k"><kbd>P</kbd><kbd>M</kbd></span
                 >autopilot demo · manual
@@ -307,6 +316,7 @@
 
       <!-- the city's radar, with the car's condition and its air under it -->
       <div class="radarbox" id="radarBox">
+        <div class="clock" id="clock"></div>
         <canvas class="radar" id="radar" aria-label="City map"></canvas>
         <div class="vitals">
           <div class="vbar cond" id="condBox" title="Condition">

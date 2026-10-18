@@ -39,13 +39,13 @@ export class Speedo {
     this.showUnit()
   }
 
-  // km/h to mph and back; returns the unit's name
-  toggle () {
+  // km/h to mph and back (quiet: without the hint); returns the unit's name
+  toggle (quiet = false) {
     this.unit = this.unit === 'kmh' ? 'mph' : 'kmh'
     remember('units', this.unit)
     this.showUnit()
     const label = UNITS[this.unit].label
-    this.onToggle?.(label)
+    if (!quiet) this.onToggle?.(label)
     return label
   }
   showUnit () {

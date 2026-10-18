@@ -1,9 +1,11 @@
-// The radar's map (minimap.js). The city inside the ring road is drawn once, a pixel a metre: the
-// streets, the blocks, parks and car parks, the buildings (lighter the taller). What lies round it is
-// drawn as shapes every time, so it stays sharp at any zoom, as the edges of the map are built
-// (sim/edge.js): the beach and the ocean to the west with the pier's deck and its big wheel, the
-// verges out to the walls on the other three sides, the hills past the north wall, the freeways past
-// the east and south walls, and more city out of reach beyond them.
+// The radar's map (minimap.js), and the pause menu's (mapDraw.js). The city inside the ring road is
+// a few shapes made once (drawCity): the streets, the blocks, parks and car parks, the buildings
+// (lighter the taller); the radar draws it into a bitmap once, a pixel a metre, the menu's map draws
+// it at whatever scale it is zoomed to. What lies round it is drawn as shapes every time, so it stays
+// sharp at any zoom, as the edges of the map are built (sim/edge.js): the beach and the ocean to the
+// west with the pier's deck and its big wheel, the verges out to the walls on the other three sides,
+// the hills past the north wall, the freeways past the east and south walls, and more city out of
+// reach beyond them.
 import {
   N,
   HALF,
@@ -46,47 +48,75 @@ const FAR = 6000 // m: how far the shapes reach (well past anything the radar sh
 const OUT = { east: [1, 0], south: [0, 1], west: [-1, 0], north: [0, -1] }
 const angleOf = side => Math.atan2(OUT[side][1], OUT[side][0])
 
-// the city inside the ring road's outer pavement, once: { canvas, ext } (ext: m from the middle)
+// The city inside the ring road as layers of shapes, one colour each, made once: the blocks (parks
+// and car parks in their own colours), the lots inside their pavements, the lawns, car parks and
+// pools on them, then the buildings, lighter the taller. Blocks don't overlap, so drawing a layer
+// at a time keeps each block's own order.
+let LAYERS = null
+function cityLayers () {
+  const layers = [],
+    paths = new Map()
+  // the shape for a colour in this layer (a layer: what is drawn over the one before)
+  const shape = (layer, color) => {
+    const key = `${layer} ${color}`
+    if (!paths.has(key)) {
+      paths.set(key, new Path2D())
+      layers.push([layer, color, paths.get(key)])
+    }
+    return paths.get(key)
+  }
+  for (const b of BLOCKS) {
+    const base =
+      b.kind === 'park' ? MAP.park : b.kind === 'parking' ? MAP.lot : MAP.block
+    shape(0, base).roundRect(b.x0, b.z0, b.x1 - b.x0, b.z1 - b.z0, CURB_R)
+    // (on a lot: its lawns, car parks and pools, inside the pavement round the block)
+    const lot =
+      b.base === 'grass' ? MAP.park : b.base === 'asphalt' ? MAP.lot : 0
+    if (lot && b.kind !== 'park')
+      shape(1, lot).rect(
+        b.x0 + WALK,
+        b.z0 + WALK,
+        b.x1 - b.x0 - 2 * WALK,
+        b.z1 - b.z0 - 2 * WALK
+      )
+    for (const r of b.ground || [])
+      if (GROUND[r.k])
+        shape(2, GROUND[r.k]).rect(r.x0, r.z0, r.x1 - r.x0, r.z1 - r.z0)
+  }
+  for (const b of BUILDINGS) {
+    const c = b.h < 15 ? MAP.low : b.h < 45 ? MAP.mid : MAP.tall
+    shape(3, c).rect(b.x0, b.z0, b.x1 - b.x0, b.z1 - b.z0)
+  }
+  // (a layer at a time; within one, lawns before car parks before pools, as they are laid)
+  const rank = [MAP.park, MAP.lot, MAP.water]
+  return layers.sort(
+    (a, b) => a[0] - b[0] || rank.indexOf(a[1]) - rank.indexOf(b[1])
+  )
+}
+
+// The city inside the ring road's outer pavement, in world metres, at whatever scale the canvas is
+// drawn at: the radar's map (cityMap, once) and the pause menu's (every time it is drawn).
+export function drawCity (g) {
+  if (!LAYERS) LAYERS = cityLayers()
+  g.fillStyle = MAP.block // (the ring road's outer pavement)
+  g.fillRect(-EDGE, -EDGE, EDGE * 2, EDGE * 2)
+  const r = HALF + ROAD_HW
+  g.fillStyle = MAP.road
+  g.fillRect(-r, -r, r * 2, r * 2)
+  for (const [, color, path] of LAYERS) {
+    g.fillStyle = color
+    g.fill(path)
+  }
+}
+
+// the city at a pixel a metre, once, for the radar: { canvas, ext } (ext: m from the middle)
 export function cityMap () {
   const ext = Math.ceil(EDGE + 1),
     cv = document.createElement('canvas')
   cv.width = cv.height = ext * 2
   const g = cv.getContext('2d')
   g.translate(ext, ext)
-  g.fillStyle = MAP.block // (the ring road's outer pavement)
-  g.fillRect(-EDGE, -EDGE, EDGE * 2, EDGE * 2)
-  const r = HALF + ROAD_HW
-  g.fillStyle = MAP.road
-  g.fillRect(-r, -r, r * 2, r * 2)
-  for (const b of BLOCKS) {
-    g.fillStyle =
-      b.kind === 'park' ? MAP.park : b.kind === 'parking' ? MAP.lot : MAP.block
-    g.beginPath()
-    g.roundRect(b.x0, b.z0, b.x1 - b.x0, b.z1 - b.z0, CURB_R)
-    g.fill()
-    // (on a lot: its lawns, car parks and pools, inside the pavement round the block)
-    const lot =
-      b.base === 'grass' ? MAP.park : b.base === 'asphalt' ? MAP.lot : 0
-    if (lot && b.kind !== 'park') {
-      g.fillStyle = lot
-      g.fillRect(
-        b.x0 + WALK,
-        b.z0 + WALK,
-        b.x1 - b.x0 - 2 * WALK,
-        b.z1 - b.z0 - 2 * WALK
-      )
-    }
-    for (const r of b.ground || []) {
-      const c = GROUND[r.k]
-      if (!c) continue
-      g.fillStyle = c
-      g.fillRect(r.x0, r.z0, r.x1 - r.x0, r.z1 - r.z0)
-    }
-  }
-  for (const b of BUILDINGS) {
-    g.fillStyle = b.h < 15 ? MAP.low : b.h < 45 ? MAP.mid : MAP.tall
-    g.fillRect(b.x0, b.z0, b.x1 - b.x0, b.z1 - b.z0)
-  }
+  drawCity(g)
   return { canvas: cv, ext }
 }
 

@@ -2,6 +2,7 @@
 import * as THREE from 'three'
 import { Hud } from './ui/hud.js'
 import { Sim } from './sim/sim.js'
+import { Menu } from './ui/menu.js'
 import { Input } from './ui/input.js'
 import { Minimap } from './ui/minimap.js'
 import { smoke } from './render/smoke.js'
@@ -258,6 +259,10 @@ const COMMANDS = {
   KeyX: () => tryFlip('z'),
   KeyK: () => tryFlip('x')
 }
+// the top bar's buttons (each does what its key does) and the pause menu (Esc): ui/menu.js
+// (before the input, so that while the menu is open it hears every key first and keeps it)
+const menu = new Menu(COMMANDS, { app, hud, sound, rig, cityPilot, setCam })
+app.onQuality = q => climate.quality(q) // (the menu's graphics quality)
 const input = new Input({
   onDrive: (code, first) => {
     if (intro.active) intro.finish()
@@ -276,17 +281,6 @@ const input = new Input({
       'hint'
     )
 })
-hud.el.mode.addEventListener('click', () =>
-  app.auto ? setAuto(false) : startAutopilot()
-)
-hud.el.world.addEventListener('click', toggleWorld)
-hud.el.camBtn.addEventListener('click', () => setCam(rig.cycle()))
-hud.el.slow.addEventListener('click', toggleSlow)
-hud.el.helpBtn.addEventListener('click', () => hud.toggleHelp())
-hud.el.sound.addEventListener('click', toggleSound)
-// a clicked button lets go of focus, or Space (the e-brake) would press it again
-for (const b of document.querySelectorAll('.btn'))
-  b.addEventListener('click', e => e.detail && b.blur())
 // browsers only allow audio after a gesture: the first click or key turns sound on
 function unlockSound (e) {
   if (e.code === 'KeyN' || e.target?.closest?.('#btnSound')) return
@@ -339,6 +333,10 @@ let acc = 0,
   firstFrame = true
 function frame (now) {
   requestAnimationFrame(frame)
+  // paused (the pause menu): nothing moves, and the last frame stays up behind it (drawn again if
+  // a resize has blanked it)
+  if (app.paused)
+    return (last = now) && menu.blanked() && post.render(sim, rig.shot, 0)
   resolution.apply() // (a step in resolution before anything is sized or drawn)
   const dt = Math.min(0.05, (now - last) / 1000)
   last = now
@@ -459,7 +457,6 @@ if (location.hash !== '#site') enterCity()
 if (window.top !== window && !document.hasFocus())
   hud.popup('Click the picture, then drive with <b>W A S D</b>', 6000, 'hint')
 requestAnimationFrame(frame)
-
 // debugging hook for the console and automated checks: fast-forward the sim without rendering
 window.__roadster = {
   sim,
@@ -479,6 +476,7 @@ window.__roadster = {
   renderer,
   resolution,
   post,
+  menu,
   setAuto,
   resetTo,
   setWorld,

@@ -1,10 +1,11 @@
 // The HUD, in the spirit of GTA V: a clean screen while driving (the title and the buttons fade away
 // until the mouse moves or a key that isn't a drive key is pressed), the radar bottom left with the
-// car's condition and its air under it (minimap.js), the speedometer over where you are bottom right
-// (speedo.js, place.js), the engineering instruments only when they matter (instruments.js), stunt
-// titles, the help box and the score (notify.js), the keys card, and the test site's captions and
-// countdown.
+// car's condition and its air under it (minimap.js) and the clock over it (clock.js), the
+// speedometer over where you are bottom right (speedo.js, place.js), the engineering instruments
+// only when they matter (instruments.js), stunt titles, the help box and the score (notify.js), the
+// keys card, and the test site's captions and countdown.
 import { $, put } from './dom.js'
+import { Clock } from './clock.js'
 import { Place } from './place.js'
 import { Speedo } from './speedo.js'
 import { DRIVE_KEYS } from './input.js'
@@ -67,6 +68,7 @@ export class Hud {
     this.speedo.onToggle = unit =>
       this.helpbox.push(`Speed in ${unit} · <b>U</b> to switch`, 1800, 'units')
     this.place = new Place()
+    this.daytime = new Clock($('clock'))
     this.notices = new Notices($('notices'))
     this.helpbox = new HelpBox($('helpbox'), $('helpText'))
     this.score = new Score($('scoreBox'), $('score'))
@@ -120,9 +122,9 @@ export class Hud {
     put(this.el.radioName, 'text', st ? st.name : 'Radio off')
     this.radioLeft = 2.6
   }
-  // U: km/h or mph
-  toggleUnits () {
-    this.speedo.toggle()
+  // U: km/h or mph (quiet: no hint, as from the pause menu)
+  toggleUnits (quiet = false) {
+    this.speedo.toggle(quiet)
   }
 
   setMode (auto) {
@@ -200,12 +202,16 @@ export class Hud {
     put(document.body, '.cine', !!app.intro)
     if (this.keysHint) {
       this.keysHint = false
-      this.helpbox.push('Press <b>I</b> for the controls', 4000)
+      this.helpbox.push(
+        'Press <b>Esc</b> for the map and settings, <b>I</b> for the keys',
+        4500
+      )
     }
     this.radioLeft -= dt
     put(this.el.radio, '.on', this.radioLeft > 0)
     this.speedo.update(dt, app)
     this.place.update(dt, app)
+    if (app.world === 'city') this.daytime.update()
     this.instruments.update(dt, app)
     this.helpbox.update(dt)
     this.score.update(dt, app.score, !quiet)

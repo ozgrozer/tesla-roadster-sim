@@ -1,0 +1,428 @@
+/* Tesla Roadster Sim: the pause menu (ui/menu.js), GTA V's: over the last frame, dimmed and blurred,
+   a header with the time, the weather and where the car is, a row of tabs (MAP, SETTINGS,
+   CONTROLS), the tab, and the keys along the bottom; the settings list and the keys. And the top
+   bar's menu button. The map tab is in map.css, phone rules in phone.css. */
+
+/* the menu button: three bars and its name */
+.btn-menu {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.burger,
+.burger::before,
+.burger::after {
+  display: block;
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
+  background: currentColor;
+}
+.burger {
+  position: relative;
+}
+.burger::before,
+.burger::after {
+  content: '';
+  position: absolute;
+  left: 0;
+}
+.burger::before {
+  top: -4px;
+}
+.burger::after {
+  top: 4px;
+}
+
+/* paused: the HUD steps aside for the menu (all of it, the instruments' own visibility too) */
+.paused .hud,
+.paused .hud * {
+  visibility: hidden;
+}
+.menu {
+  position: fixed;
+  inset: 0;
+  z-index: 8;
+  padding: var(--pad-t) var(--pad-r) var(--pad-b) var(--pad-l);
+  color: var(--ink);
+  background: rgba(4, 6, 10, 0.5);
+  -webkit-backdrop-filter: blur(9px) saturate(0.8);
+  backdrop-filter: blur(9px) saturate(0.8);
+  animation: menu-in 0.18s ease-out;
+}
+.menu[hidden] {
+  display: none;
+}
+@keyframes menu-in {
+  from {
+    opacity: 0;
+  }
+}
+.mn-frame {
+  height: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+/* the header: the title and PAUSED, the time, the weather and where the car is, Resume */
+.mn-head {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding-top: 2px;
+}
+.mn-title {
+  flex: 1;
+  min-width: 0;
+  text-shadow: var(--outline);
+}
+.mn-title h2 {
+  margin: 0;
+  font-weight: 800;
+  font-style: italic;
+  font-size: clamp(22px, 2.4vw, 34px);
+  line-height: 1;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.mn-sub {
+  margin: 4px 0 0;
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.mn-status {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+  text-align: right;
+  text-shadow: var(--outline);
+}
+.mn-now {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.mn-clock {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 800;
+  font-size: 22px;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.mn-place {
+  font-weight: 600;
+  font-size: 13px;
+  color: rgba(244, 245, 246, 0.85);
+}
+.mn-resume {
+  padding: 9px 16px;
+}
+
+/* the tabs, GTA's: dark, white capitals; the open one white with a gold edge */
+.mn-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+.mn-tabs button {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: rgba(0, 0, 0, 0.62);
+  border: 0;
+  border-radius: 2px;
+  padding: 10px 12px 9px;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+.mn-tabs button:hover {
+  background: rgba(0, 0, 0, 0.82);
+}
+.mn-tabs button[aria-selected='true'] {
+  background: #f2f2f2;
+  color: #0d0d0d;
+  box-shadow: inset 0 3px 0 var(--gold);
+}
+.mn-tabs button:focus-visible,
+.mn-resume:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+.mn-panel {
+  position: relative;
+  min-height: 0;
+  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.55);
+  overflow: hidden;
+}
+.mn-panel[hidden] {
+  display: none;
+}
+.mn-panel:focus-visible,
+.mn-map canvas:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: -2px;
+}
+
+/* the keys along the bottom, GTA's: a white cap and what it does */
+.mn-foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px 18px;
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-shadow: var(--outline);
+}
+.mn-foot span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.mn-foot kbd,
+.mn-keys kbd {
+  display: inline-block;
+  min-width: 1.45em;
+  padding: 0 0.38em;
+  margin: 0 0.08em;
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 11px;
+  line-height: 1.45;
+  letter-spacing: 0.04em;
+  text-align: center;
+  text-shadow: none;
+  color: #0d0d0d;
+  background: #f2f2f2;
+  border-radius: 3px;
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.28);
+}
+
+/* SETTINGS: GTA's list, a setting a row, its value between arrows; the row in focus white */
+.mn-settings {
+  overflow-y: auto;
+  padding: 18px 0;
+}
+.st-list,
+.st-hint {
+  width: min(720px, calc(100% - 32px));
+  margin: 0 auto;
+}
+.st-head {
+  margin: 14px 0 4px;
+  padding: 0 14px;
+  font-weight: 800;
+  font-size: 11.5px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.st-head:first-child {
+  margin-top: 0;
+}
+.st-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 42px;
+  padding: 0 6px 0 14px;
+  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.45);
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+}
+.st-row + .st-row {
+  margin-top: 2px;
+}
+.st-row:hover {
+  background: rgba(0, 0, 0, 0.72);
+}
+.st-row:focus,
+.st-row:focus-within {
+  outline: none;
+  background: #f2f2f2;
+  color: #0d0d0d;
+}
+.st-name {
+  white-space: nowrap;
+}
+.st-val {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.st-out {
+  min-width: 9em;
+  text-align: center;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+}
+.st-arr {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 24px;
+  line-height: 1;
+  color: inherit;
+  background: none;
+  border: 0;
+  border-radius: 2px;
+  opacity: 0.5;
+  cursor: pointer;
+}
+.st-arr:hover,
+.st-row:focus .st-arr {
+  opacity: 1;
+}
+.st-arr:hover {
+  background: rgba(128, 128, 128, 0.2);
+}
+/* the time of day's slider: a thin line in the row's colour, a gold knob */
+.st-row input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: min(260px, 34vw);
+  height: 26px;
+  margin: 0 8px 0 0;
+  color: inherit;
+  background: none;
+  cursor: pointer;
+}
+.st-row input[type='range']:focus {
+  outline: none;
+}
+.st-row input[type='range']::-webkit-slider-runnable-track {
+  height: 3px;
+  border-radius: 2px;
+  background: currentColor;
+}
+.st-row input[type='range']::-moz-range-track {
+  height: 3px;
+  border-radius: 2px;
+  background: currentColor;
+}
+.st-row input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: -6.5px;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 0 2px #0d0d0d;
+}
+.st-row input[type='range']::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 0 2px #0d0d0d;
+}
+.st-hint {
+  margin-top: 14px;
+  padding: 0 14px;
+  min-height: 1.4em;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--dim);
+}
+
+/* CONTROLS: the keys card's columns and the menu's own, as the card lays them out */
+.mn-controls {
+  overflow-y: auto;
+  padding: 16px;
+}
+.mn-keys {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
+  gap: 8px;
+  max-width: 1120px;
+  margin: 0 auto;
+  font-weight: 600;
+  font-size: 13px;
+  line-height: 1.3;
+}
+.mn-keys section {
+  padding-bottom: 6px;
+  background: rgba(0, 0, 0, 0.45);
+}
+.mn-keys h3 {
+  margin: 0 0 3px;
+  padding: 5px 10px 4px;
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #0d0d0d;
+  background: #f2f2f2;
+}
+.mn-keys ul + h3 {
+  margin-top: 8px;
+}
+.mn-keys ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.mn-keys li {
+  display: grid;
+  grid-template-columns: 104px auto;
+  align-items: center;
+  padding: 3px 10px;
+}
+.mn-keys li:nth-child(even) {
+  background: rgba(255, 255, 255, 0.045);
+}
+.mn-keys .k {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 11.5px;
+  color: var(--dim);
+}
+.mn-keys .note {
+  margin: 6px 10px 0;
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--dim);
+}
+.mn-keys .blip {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 0 1px #000;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu {
+    animation: none;
+  }
+}
