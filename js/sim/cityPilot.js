@@ -2,7 +2,10 @@
 // the same lane graph as the traffic. It steers by pure pursuit along its lane, keeps its distance
 // to the cars ahead, slows for corners, stops for red lights and gives way when turning left.
 // Started, it heads for the gridlock downtown, sits in it, leans on the horn and then flies over it
-// (cityHop.js); after that it drives on, and hops over any other jam it gets stuck in.
+// (cityHop.js); after that it drives on, and hops over any other jam it gets stuck in. On a wet
+// road it drives as a careful driver does: slower on the straights and round the corners, braking
+// earlier and more gently.
+import { ENV } from './env.js'
 import { Hop, landingSpot, routeToJam } from './cityHop.js'
 import { CAR, clamp, wrapPi, makeControls } from './constants.js'
 import { steerMax } from './tyres.js'
@@ -48,7 +51,11 @@ const LAT = 6 // m/s^2 round a corner (traffic takes them at 2.6)
 const HEADWAY = 0.9 // s behind the car ahead (traffic keeps 1.3)
 const LOOK = 110 // m ahead it watches for cars and lights, enough to stop from cruising speed
 const DRIVER = { type: 0 } // how traffic.choose sees the Roadster: an ordinary car
-const corner = e => (e.kind === 1 ? Math.sqrt(LAT * e.r) : Infinity)
+// (the wet road's share of these: 1 dry, less in the rain, the corners least)
+const WET = { cruise: 0.15, lat: 0.22, brake: 0.2 }
+const wet = k => 1 - WET[k] * ENV.wet
+const corner = e =>
+  e.kind === 1 ? Math.sqrt(LAT * wet('lat') * e.r) : Infinity
 const P = { x: 0, z: 0, hx: 1, hz: 0 }
 
 export class CityPilot {
@@ -252,7 +259,7 @@ export class CityPilot {
       !this.next?.closed &&
       gap < 40 &&
       vl > 2 &&
-      vl < CRUISE * 0.75 &&
+      vl < CRUISE * wet('cruise') * 0.75 &&
       v < 22 &&
       this.s > 4 &&
       this.s < cur2.len - 40 &&
@@ -301,24 +308,26 @@ export class CityPilot {
     }
     this.giveT = giving ? this.giveT + dt : 0
     // cruise, braking in time for the corner ahead
-    let v0 = Math.min(CRUISE, corner(lane))
+    const b = B * wet('brake')
+    let v0 = Math.min(CRUISE * wet('cruise'), corner(lane))
     if (this.next && corner(this.next) < v0)
       v0 = Math.min(
         v0,
         Math.sqrt(
-          corner(this.next) ** 2 + 2 * 5 * Math.max(0, lane.len - this.s - 1)
+          corner(this.next) ** 2 +
+            2 * 5 * wet('brake') * Math.max(0, lane.len - this.s - 1)
         )
       )
     let acc = A * (1 - (v / Math.max(v0, 0.1)) ** 4)
     if (gap < LOOK) {
       const ss =
-        2.5 + Math.max(0, v * HEADWAY + (v * (v - vl)) / (2 * Math.sqrt(A * B)))
+        2.5 + Math.max(0, v * HEADWAY + (v * (v - vl)) / (2 * Math.sqrt(A * b)))
       acc -= A * (ss / Math.max(gap, 0.2)) ** 2
     }
     // Pedals that follow the asked-for acceleration smoothly: a touch of throttle holds the speed,
     // the brake (never the on-off step of regen) slows it. Snapping between throttle, regen and brake
     // every few frames is what rocked the car on its springs.
-    acc = clamp(acc, -9, A)
+    acc = clamp(acc, -9 * wet('brake'), A)
     this.acc +=
       (acc - this.acc) * (1 - Math.exp(-dt * (acc < this.acc ? 10 : 4)))
     if (this.acc > -0.25) c.throttle = clamp((this.acc + 0.25) / 15, 0.001, 1)
