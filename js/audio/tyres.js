@@ -7,11 +7,12 @@
 // the asphalt itself changes as the car rolls over patches of it. At the limit: real squeal is
 // noise ringing through a few resonances of the tread and carcass (roughly 700 Hz to 3 kHz),
 // chattering as the rubber sticks and slips, its pitch rising with the slip and the load; the front
-// and rear axles each have their own. A locked wheel on the e-brake is different, a rougher, lower
-// scrub and howl over the tyre hopping; spinning up in a drift chirps higher; and on grass or sand
-// there is no squeal at all, but the grit and turf being scrubbed. The air: wind noise rising
-// steeply with speed (about the cube of it), in gusts that never repeat, buffeting faster and
-// faster, and from the driver's seat a thin whistle off the canopy's seals.
+// and rear axles each have their own; braking at the limit, the ABS holds the fronts at their peak
+// and they howl, lower, fluttering as it lets the pressure off and on. A locked wheel on the e-brake
+// is different, a rougher, lower scrub and howl over the tyre hopping; spinning up in a drift chirps
+// higher; and on grass or sand there is no squeal at all, but the grit and turf being scrubbed. The
+// air: wind noise rising steeply with speed (about the cube of it), in gusts that never repeat,
+// buffeting faster and faster, and from the driver's seat a thin whistle off the canopy's seals.
 import { clamp } from '../sim/constants.js'
 
 const smooth = (a, b, x) => {
@@ -227,7 +228,7 @@ export const TYRES = {
     s.last = e
   },
   // st.wheelSpeed, st.grounded, st.surface, st.skidF, st.skidR, st.slipR, st.latG, st.ebrake,
-  // st.track, st.throttle, st.airspeed, st.inside, st.pitch
+  // st.abs, st.track, st.throttle, st.airspeed, st.inside, st.pitch
   updateTyres (st) {
     const { n, R } = this,
       ps = st.pitch,
@@ -251,7 +252,17 @@ export const TYRES = {
     // the louder, then screams once it is past it)
     const sing = 0.5 * smooth(0.78, 1.02, st.use || 0),
       loud = sq * (inside ? 0.7 : 1)
-    this.axle(n.sqF, st.skidF, sing, (760 + 110 * lat) * ps, v, loud)
+    // (braking at the limit, the ABS holding the fronts at their peak slip: a lower howl, as loud
+    // as a tyre singing near its limit in a bend, the voice's chatter its flutter)
+    const abs = (st.abs || 0) * smooth(2, 10, v)
+    this.axle(
+      n.sqF,
+      st.skidF,
+      Math.max(sing, 0.45 * abs),
+      (760 + 110 * lat - 180 * abs) * ps,
+      v,
+      loud
+    )
     // (the rears spinning, in Track Mode or a burnout, slide however slowly the car goes, and chirp
     // higher)
     const vr = Math.max(v, st.spin || 0),
