@@ -6,15 +6,16 @@
 // (one-shots: horns, air brakes, birds, locks), cars.js (the traffic's engines and tyres),
 // street.js (the city's bed: far traffic, wind, surf, birds, crickets) and ambience.js (sirens,
 // dogs, building work and the people on the pavement).
-import { noises, bank, wobble, wave } from './buffers.js'
+import { CARS } from './cars.js'
 import { SPACE } from './space.js'
 import { DRIVE } from './motor.js'
 import { TYRES } from './tyres.js'
-import { IMPACTS } from './impacts.js'
-import { ONE_SHOTS, HORNS } from './shots.js'
-import { CARS } from './cars.js'
+import { Radio } from './radio.js'
 import { STREET } from './street.js'
+import { IMPACTS } from './impacts.js'
 import { AMBIENCE } from './ambience.js'
+import { ONE_SHOTS, HORNS } from './shots.js'
+import { noises, bank, wobble, wave } from './buffers.js'
 
 export class SoundEngine {
   constructor () {
@@ -82,7 +83,8 @@ export class SoundEngine {
         // (and a context started again while paused, by a key press during a stall, say, is
         // stopped again)
         if (this.paused) {
-          if (this.ctx.state === 'running' && now - this.pausedAt > 100) this.ctx.suspend()
+          if (this.ctx.state === 'running' && now - this.pausedAt > 100)
+            this.ctx.suspend()
           return
         }
         if (!this.enabled || idle < 330) return
@@ -151,7 +153,11 @@ export class SoundEngine {
     this.lane([n.roar2.gain], n.roarLP2, this.carBus)
     // and the crackle of the shocks in a supersonic jet, at full thrust
     n.crackle = gain(0)
-    this.lane([n.crackle.gain], n.crackle.connect(filt('highpass', 900, 0.6)), this.carBus)
+    this.lane(
+      [n.crackle.gain],
+      n.crackle.connect(filt('highpass', 900, 0.6)),
+      this.carBus
+    )
     this.bank.ready('gravel', b => {
       n.crackleSrc = this.loop(b)
       n.crackleSrc.playbackRate.value = 1.7
@@ -180,7 +186,13 @@ export class SoundEngine {
     // (connected only while it sounds, and a moment after)
     n.hornOn = gain(0)
     n.horn.connect(n.hornOn).connect(bite)
-    this.lane([n.hornOn.gain], bite, this.carBus, bite.connect(gain(0.4)), this.verb)
+    this.lane(
+      [n.hornOn.gain],
+      bite,
+      this.carBus,
+      bite.connect(gain(0.4)),
+      this.verb
+    )
     this.hornOff = 0
     // the desert's breath at the test site
     n.desert = gain(0)
@@ -192,6 +204,7 @@ export class SoundEngine {
     this.buildCars()
     this.buildStreet()
     this.buildAmbience()
+    this.radio = this.radio || new Radio(this)
     return true
   }
   // N, or the sound button: on fades in (and the street's watchers start afresh); off fades out and
@@ -349,7 +362,14 @@ export class SoundEngine {
       }
       st.dt = dt
     }
+    this.radio.update(st.inside)
     this.gateLanes()
+  }
+  // B: the radio tuned to its next station, or off after the last; the station (null: off), or
+  // undefined with the sound off
+  tuneRadio () {
+    if (!this.enabled || !this.ensure()) return undefined
+    return this.radio.tune()
   }
 }
 // a disc horn's spectrum: every harmonic, falling off slowly, the diaphragm slapping its stop
