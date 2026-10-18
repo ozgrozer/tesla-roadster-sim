@@ -3,11 +3,13 @@
 // the chest and shoulders, a neck, a head a little longer than it is wide with a jaw and a nose,
 // limbs that taper (thighs to the knee, a calf, an ankle; a deltoid, the elbow, a forearm, the
 // wrist) with hands and trainers, and the pieces only some have: hair cut short, worn long, in a
-// ponytail, a bun or curls, a cap, a hoodie's hood, a skirt, a shoulder bag, a backpack and a phone.
+// ponytail, a bun or curls, a cap, a hoodie's hood (down, or up over the head), a skirt, a shoulder
+// bag, a backpack, a phone, and an umbrella held up in the right hand (the rain's: pedGear.js).
 // Each piece is tagged with what it is (aPart), which decides how it moves and what colour it is
 // (pedShader.js); the pieces only some have fold away to nothing on everyone else. Indexed, so the
 // vertex shader poses each corner once.
 import * as THREE from 'three'
+import { gear } from './pedGear.js'
 
 export const PART = {
   TORSO: 0,
@@ -32,7 +34,10 @@ export const PART = {
   CURLS: 19,
   BUN: 20,
   CAP: 21,
-  HOOD: 22
+  HOOD: 22,
+  BROLLY: 23, // an umbrella's canopy
+  SHAFT: 24, // and its shaft
+  HOOD_UP: 25
 }
 // the head's middle (the face's features are placed from it: pedShader.js)
 export const HEAD_AT = [0.012, 1.645, 0]
@@ -313,7 +318,7 @@ export function figure () {
       .translate(HEAD_AT[0] + 0.07, HEAD_AT[1] + 0.05, 0)
     put(brim, PART.CAP)
   }
-  // a hoodie's hood, bunched behind the neck
+  // a hoodie's hood, bunched behind the neck (and up over the head, and an umbrella: pedGear.js)
   put(
     new THREE.TorusGeometry(0.085, 0.035, 3, 6, Math.PI)
       .rotateX(Math.PI / 2)
@@ -322,6 +327,7 @@ export function figure () {
       .translate(-0.02, 1.47, 0),
     PART.HOOD
   )
+  for (const [g, part] of gear(HEAD_AT)) put(g, PART[part])
   // legs: thigh, shin and trainer each side
   for (const [k, z] of [
     [0, -0.092],

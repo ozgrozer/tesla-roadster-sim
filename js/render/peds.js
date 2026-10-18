@@ -1,19 +1,25 @@
 // People on foot (the sim is peds.js and crowd.js), all in one instanced mesh: a figure with a
 // shaped trunk, tapered limbs, hands and trainers, a head with a face, and the pieces only some
-// have (hair in its several cuts, a cap, a hood, a skirt, a bag, a backpack, a phone; pedFigure.js),
-// posed and dressed in the vertex shader from each one's stride, what they are doing and their look
-// (pedShader.js), so a whole crowd walks in one draw call. Each foot is planted through its stance
-// and travels back at the pace the body moves on (the sim times the stride to the speed and the
-// legs' length, so feet don't slide), the knee folds as the leg swings through, arms swing against
-// the legs, the body rises over each step, and running they lean in with their elbows bent. Heads
-// turn to follow the Roadster; standing about they look down at a phone held up in front of them,
-// or talk with their hands; diving out of the Roadster's way, or running from it, arms fly up. Each
-// stands their own height and build. Only those the camera can see (or whose shadows it can) are
-// drawn.
+// have (hair in its several cuts, a cap, a hood, a skirt, a bag, a backpack, a phone, an umbrella;
+// pedFigure.js), posed and dressed in the vertex shader from each one's stride, what they are doing
+// and their look (pedShader.js), so a whole crowd walks in one draw call. Each foot is planted
+// through its stance and travels back at the pace the body moves on (the sim times the stride to
+// the speed and the legs' length, so feet don't slide), the knee folds as the leg swings through,
+// arms swing against the legs, the body rises over each step, and running they lean in with their
+// elbows bent. Heads turn to follow the Roadster; standing about they look down at a phone held up
+// in front of them, or talk with their hands; diving out of the Roadster's way, or running from
+// it, arms fly up. In the rain umbrellas go up, or hoods; on a bench they sit. Each stands their
+// own height and build. At night each is lit by the street light nearest them (pedLight.js). Their
+// dogs are a second instanced mesh hung from this one (dogs.js). Only those the camera can see (or
+// whose shadows it can) are drawn.
 import * as THREE from 'three'
 import { CURB_H } from '../sim/city.js'
+import { ENV } from '../sim/env.js'
 import { kerbDist } from '../sim/street.js'
 import { NEAR } from './traffic.js'
+import { NIGHT } from './facade.js'
+import { DogView } from './dogs.js'
+import { lampOn } from './pedLight.js'
 import { figure } from './pedFigure.js'
 import { posed } from './pedShader.js'
 
@@ -22,9 +28,10 @@ const _m = new THREE.Matrix4(),
   _q = new THREE.Quaternion(),
   _p = new THREE.Vector3(),
   _s = new THREE.Vector3()
+const LAMP = { x: 0, y: 0, z: 0, w: 0 }
 
 export class PedView {
-  constructor (group, max = 300) {
+  constructor (group, max = 360) {
     const g = figure()
     const at = (name, size) => {
       const a = new THREE.InstancedBufferAttribute(
@@ -38,6 +45,8 @@ export class PedView {
     this.pose = at('aPose', 4)
     this.act = at('aAct', 4)
     this.look = at('aLook', 1)
+    this.gear = at('aGear', 4)
+    this.lamp = at('aLamp', 4)
     // (the colours and roughness are worked out in the shader, pedShader.js)
     const mat = new THREE.MeshStandardMaterial({ side: THREE.DoubleSide })
     mat.onBeforeCompile = shader => posed(shader, true)
@@ -55,7 +64,7 @@ export class PedView {
     this.mesh.frustumCulled = false
     this.mesh.count = 0
     group.add(this.mesh)
-    this.attrs = [this.pose, this.act, this.look]
+    this.attrs = [this.pose, this.act, this.look, this.gear, this.lamp]
     // into the shadow map, only the people near the Roadster (the first `near`)
     this.near = 0
     const mesh = this.mesh
@@ -67,12 +76,16 @@ export class PedView {
       mesh.count = mesh.full
     }
     this.max = max
+    // their dogs, hung from this mesh (so that they are left out of the city's sun shadow with it)
+    this.dogs = new DogView(mesh)
   }
   // view: a THREE.Frustum of what the camera sees (none: draw everyone)
   // People within NEAR of the Roadster go first, and only they are drawn into its shadow map.
   update (peds, view = null) {
     const sim = peds.traffic?.sim,
       me = sim ? (sim.mode === 'ground' ? sim.pos : sim.com) : null
+    // (the street lights: on at night, at dusk and in a storm's gloom)
+    const on = Math.max(NIGHT.value, ENV.dark)
     let i = 0
     for (let pass = 0; pass < 2; pass++) {
       for (const d of peds.list) {
@@ -87,11 +100,12 @@ export class PedView {
           _sp.radius = 4.5 // (and their shadow, a few metres long)
           if (!view.intersectsSphere(_sp)) continue
         }
-        this.put(d, i++)
+        this.put(d, i++, on)
       }
       if (pass === 0) this.near = i
     }
     this.mesh.count = i
+    this.dogs.update(peds.dogs || [], view, me, on)
     // (only the people drawn go up to the GPU, not the whole buffer)
     if (!i) return
     const m = this.mesh.instanceMatrix
@@ -104,7 +118,7 @@ export class PedView {
       a.needsUpdate = true
     }
   }
-  put (d, i) {
+  put (d, i, on) {
     // up on the pavement, down in the road
     const h = kerbDist(d.x, d.z) > 0 ? 0 : CURB_H
     // (fields and arrays written directly: no numbers passed to calls)
@@ -120,6 +134,8 @@ export class PedView {
     this.mesh.setMatrixAt(i, _m)
     const P = this.pose.array,
       A = this.act.array,
+      G = this.gear.array,
+      L = this.lamp.array,
       j = i * 4
     P[j] = d.phase
     P[j + 1] = d.gait
@@ -130,5 +146,18 @@ export class PedView {
     A[j + 2] = d.act === 2 ? 1 : 0
     A[j + 3] = d.phase
     this.look.array[i] = d.look
+    // the rain's umbrella and hood, a seat, and the hand on the dog's side holding its lead (unless
+    // it has dived off out of reach)
+    const dog = d.dog
+    G[j] = d.umb || 0
+    G[j + 1] = d.hunch || 0
+    G[j + 2] = d.sit || 0
+    G[j + 3] =
+      dog && (dog.x - d.x) ** 2 + (dog.z - d.z) ** 2 < 4.8 ? dog.side : 0
+    lampOn(d.x, d.z, on, LAMP)
+    L[j] = LAMP.x
+    L[j + 1] = LAMP.y - h
+    L[j + 2] = LAMP.z
+    L[j + 3] = LAMP.w
   }
 }

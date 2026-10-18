@@ -6,14 +6,24 @@
 // (crowd.js). Traffic and Autopilot stop for anyone in the road (traffic.peds). Anyone in the
 // Roadster's way (or a car's it sent sliding) dives clear, then walks back to the pavement; nobody
 // is ever left under the car; and when it does something frightening close by, people run.
-// They live in a bubble round the player, like the traffic: those left far behind turn up ahead.
+// They live in a bubble round the player, like the traffic: those left far behind turn up ahead,
+// as many as the hour, the rain and the neighbourhood draw (footfall.js). In the rain umbrellas
+// go up and hoods, and they hurry (shelter.js); some sit on the benches, look in a shop window or
+// stand under its canopy out of the rain, some stand talking in threes (linger.js), and a few walk
+// a dog (dogs.js).
+import { ENV } from './env.js'
 import { kerbDist } from './street.js'
 import { CROWD } from './crowd.js'
+import { DOGS } from './dogs.js'
+import { LINGER } from './linger.js'
+import { SHELTER } from './shelter.js'
+import { FOOTFALL } from './footfall.js'
 import { warm } from './traffic.js'
 import { CAR, clamp } from './constants.js'
 import { rng, BLOCKS } from './city.js'
 import {
-  ring,
+  LINES,
+  ringOf,
   ringAt,
   walkOn,
   crossings,
@@ -22,25 +32,21 @@ import {
   standBack
 } from './pavement.js'
 
-export { ringAt, walkOn }
+export { ringAt, walkOn, ENV }
 let WARM = false
-
-// clear of the street lights (0.6 m in), the palms (1.6) and the signal masts (2.2)
-const LINES = [1.05, 2.75, 3.15]
-// each block's ring at each line, made once
-const RINGS = new Map()
-function ringOf (b, k) {
-  let r = RINGS.get(b)
-  if (!r) RINGS.set(b, (r = LINES.map(d => ring(b, d))))
-  return r[k]
-}
 const P = { x: 0, z: 0, hx: 1, hz: 0, piece: 0 }
 
 export class Peds {
   constructor ({ count = 240, radius = 150, seed = 11 } = {}) {
     Object.assign(this, { count, radius })
     this.R = rng(seed)
+    // (a second stream for what came later: the weather, the hour, benches, windows, threes and
+    // dogs, so the first one's sequence is as it was)
+    this.Q = rng(seed * 7 + 3)
     this.list = []
+    this.dogs = []
+    this.held = new Map() // bench seats taken: seat to who (linger.js)
+    this.eve = 0 // how much of an evening it is (footfall.js)
     this.onRoad = [] // in the road just now: what traffic and Autopilot look out for
     this.clock = 0
     this.P = { x: 0, z: 0, hx: 1, hz: 0, piece: 0 }
@@ -55,9 +61,12 @@ export class Peds {
   }
   reset (x, z) {
     this.list.length = 0
+    this.dogs.length = 0
+    this.held.clear()
     this.wasAir = false // (a reset mid-air is no landing)
     this.lastMode = 'ground'
-    for (let i = 0; i < this.count * 4 && this.list.length < this.count; i++)
+    const n = this.target(x, z)
+    for (let i = 0; i < this.count * 4 && this.list.length < n; i++)
       this.spawn(x, z, 0, this.radius)
   }
   // someone on a block's pavement between rMin and rMax from (x, z), out of the view's sight
@@ -74,8 +83,9 @@ export class Peds {
       const ahead =
         view && (P.x - view.x) * view.fx + (P.z - view.z) * view.fz > 0
       if (ahead && d < 120) continue
+      if (!this.welcome(b)) continue
       const p = this.spawnAt(g, s, R() < 0.5 ? 1 : -1)
-      this.extras(p)
+      this.extras(p, view)
       return p
     }
     return null
@@ -128,13 +138,36 @@ export class Peds {
       vz: 0,
       back: null,
       backRing: null,
-      backS: 0
+      backS: 0,
+      mate: null, // the one walking with them, if any
+      // the rain (shelter.js): an umbrella or not, how hard it must rain before they mind, how far
+      // they have taken it (0 to 1), the umbrella up, hunched (and a hood up), running for it, and
+      // how much quicker they go
+      brolly: false,
+      wetK: 0.3,
+      wet: 0,
+      umb: 0,
+      hunch: 0,
+      dash: false,
+      rush: 1,
+      // lingering (linger.js): when next to think of it, the spot, what (1 a seat, 2 a window, 3
+      // out of the rain), the leg of it (0 along their line, 1 over, 2 there, 3 back), for how
+      // long, and how far down onto a seat
+      whimT: 0,
+      spot: { x: 0, z: 0, fx: 0, fz: 0, yaw: 0, s: 0, seat: null },
+      what: 0,
+      leg: 0,
+      lingerT: 0,
+      sit: 0,
+      dog: null // (dogs.js)
     }
     if (!WARM) {
       warm(p) // (see traffic.js)
+      warm(p.spot)
       WARM = true
     }
     this.character(p)
+    this.outfit(p)
     p.piece = this.place(p)
     this.list.push(p)
     return p
@@ -224,6 +257,7 @@ export class Peds {
         this.clear(p, traffic.cars)
       }
     }
+    if (this.dogs.length) this.walkDogs(dt, threats, traffic.cars)
     traffic.peds = this.onRoad
     if (this.clock > 0.5) {
       this.clock = 0
@@ -236,9 +270,15 @@ export class Peds {
     p.t += dt
     p.hop = Math.max(0, p.hop - dt * 1.5)
     p.fright = Math.max(0, p.fright - dt * 1.2)
+    this.rainy(p)
     const R = this.R
     if (p.state === 'walk') {
-      const pace = p.jog ? 1.35 : clamp(p.v / 1.35, 0.7, 1.05)
+      // (quicker in the rain, hunched with shorter steps, or running for it: shelter.js)
+      const v = p.v * p.rush
+      const pace =
+        p.jog || v > 2.2
+          ? 1.35
+          : clamp(v / 1.35, 0.7, 1.05) * (1 - 0.12 * p.hunch)
       p.gait += (pace - p.gait) * Math.min(1, dt * 3)
       const lead = p.lead
       // (whoever they walk with is crossing at this corner: over with them)
@@ -250,7 +290,7 @@ export class Peds {
         return
       }
       const paired = this.follow(p)
-      if (!paired) p.s += p.dir * p.v * dt
+      if (!paired) p.s += p.dir * v * dt
       p.sway += dt * 0.7
       const piece = this.place(p)
       // round a corner: now and then over the road instead
@@ -270,7 +310,9 @@ export class Peds {
         p.idleT = 3 + R() * 12
       }
       p.piece = piece
-    } else if (p.state === 'idle') this.idle(p, dt)
+      if (p.state === 'walk' && !paired) this.whim(p)
+    } else if (p.state === 'linger') this.linger(p)
+    else if (p.state === 'idle') this.idle(p, dt)
     else if (p.state === 'flee') this.flee(p, dt)
     else if (p.state === 'kerb') {
       const [fx, fz] = this.jitter(p.cross, p.cross.from)
@@ -292,7 +334,8 @@ export class Peds {
       // (given up on a light held for Autopilot: on round the block instead)
       else if (p.t > 45) this.join(p, p.ring.b)
     } else if (p.state === 'cross') {
-      p.gait += (1.05 - p.gait) * Math.min(1, dt * 3)
+      const v = p.v * Math.max(p.hurry || 1.08, p.rush)
+      p.gait += ((v > 2.2 ? 1.35 : 1.05) - p.gait) * Math.min(1, dt * 3)
       // (round a car in the way: first a step aside, out to a line clear of it)
       if (p.aside) {
         const d = Math.hypot(p.aside[0] - p.x, p.aside[1] - p.z)
@@ -310,8 +353,7 @@ export class Peds {
         }
       } else {
         const [tx, tz] = this.jitter(p.cross, p.cross.to)
-        if (this.toward(p, tx, tz, p.v * (p.hurry || 1.08), dt))
-          this.join(p, p.cross.block)
+        if (this.toward(p, tx, tz, v, dt)) this.join(p, p.cross.block)
         else {
           // getting nowhere (a car stopped across them, waiting for them to pass): back to the
           // kerb they came from, to wait for the next walk; and if even that is blocked, over
@@ -344,7 +386,7 @@ export class Peds {
       if (p.t > 0.7) {
         p.state = 'back'
         p.back = blockNear(p.x, p.z)
-        const g = ringOf(p.back, Math.floor(R() * LINES.length))
+        const g = this.lineFor(p, p.back, Math.floor(R() * LINES.length))
         p.backRing = g
         p.backS = nearestOn(g, p.x, p.z)
       }
@@ -362,16 +404,26 @@ export class Peds {
     // The stride: two steps to a cycle, each as long as the legs swing (the renderer swings them
     // 0.42 rad a side at a walk, gait 1), so the feet stay planted as they go. Standing about, the
     // phase keeps time for their gestures.
-    const speed =
-      p.state === 'wait' || p.state === 'idle'
-        ? 0
-        : p.state === 'back'
-        ? 2.6
-        : p.state === 'cross'
-        ? p.v * (p.hurry || 1.08)
-        : p.v
+    const still =
+      p.state === 'wait' ||
+      p.state === 'idle' ||
+      (p.state === 'linger' && p.leg === 2)
+    const speed = still
+      ? 0
+      : p.state === 'back'
+      ? 2.6
+      : p.state === 'cross'
+      ? p.v * Math.max(p.hurry || 1.08, p.rush)
+      : p.state === 'walk'
+      ? p.v * p.rush
+      : p.v
     const stride = 3.5 * p.tall * Math.sin(0.42 * Math.max(0.35, p.gait))
-    p.phase += speed ? (dt * speed * Math.PI * 2) / stride : dt * 2
+    // (sitting, the clock stops: no gestures, and no steps to be heard)
+    p.phase += speed
+      ? (dt * speed * Math.PI * 2) / stride
+      : p.sit > 0
+      ? 0
+      : dt * 2
   }
   // where along the stripes this one walks, and waits (back from the kerb)
   jitter (c, [x, z]) {
@@ -383,7 +435,7 @@ export class Peds {
     const g =
       o && o.state === 'walk' && o.ring.b === b
         ? o.ring
-        : ringOf(b, Math.floor(this.R() * LINES.length))
+        : this.lineFor(p, b, Math.floor(this.R() * LINES.length))
     p.ring = g
     p.s = nearestOn(g, p.x, p.z)
     p.state = 'walk'
@@ -398,6 +450,7 @@ export class Peds {
       const d = Math.hypot(p.x - x, p.z - z)
       if (d > this.radius + 40) {
         p.gone = true
+        if (p.spot.seat) this.leave(p, true)
         return false
       }
       const seen =
@@ -405,9 +458,14 @@ export class Peds {
       p.lod = d < 55 || (seen && d < 100) ? 1 : seen || d < 100 ? 2 : 4
       return true
     })
-    // (enough at a time to keep up with a car at full speed)
-    for (let k = 0; k < 40 && this.list.length < this.count; k++)
+    // as many as the hour, the rain and the neighbourhood draw (footfall.js): too many, and some
+    // go indoors; too few, and more come out (enough at a time to keep up with a car at full speed)
+    const n = this.target(x, z)
+    if (this.list.length > n)
+      this.indoors(x, z, view, Math.min(4, this.list.length - n))
+    for (let k = 0; k < 40 && this.list.length < n; k++)
       this.spawn(x, z, 100, this.radius, view)
+    this.strays()
   }
 }
-Object.assign(Peds.prototype, CROWD)
+Object.assign(Peds.prototype, CROWD, SHELTER, LINGER, DOGS, FOOTFALL)

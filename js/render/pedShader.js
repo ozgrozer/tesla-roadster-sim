@@ -4,13 +4,20 @@
 // its stance and travels back at the pace the body moves on, the knee folds as the leg swings
 // through, arms swing against the legs, the body rises over each step, running they lean in with
 // their elbows bent; heads turn and bow, a phone comes up in front of them, hands talk, and in a
-// fright the arms fly up. Dressed, in the fragment shader (so a neckline, a sleeve's hem or a sole
+// fright the arms fly up. In the rain an umbrella goes up in the right hand, or they hunch, arms in,
+// hoods up; on a bench they sit, thighs forward and shins down, hands on their knees; a dog's lead
+// is held a little forward. Dressed, in the fragment shader (so a neckline, a sleeve's hem or a sole
 // is crisp), the way Los Angeles dresses: T-shirts and tank tops, hoodies and long sleeves, jeans,
 // chinos, leggings, shorts, summer dresses and skirts, caps and sunglasses, trainers (and sandals),
 // a shoulder bag or a backpack; hair short, long, in a ponytail, a bun or curls, buzzed or bald;
 // skin from pale to deep brown; a woman's build or a man's. And a face: eyes under brows, a nose, a
-// mouth, a beard on some, enough to read across the street.
+// mouth, a beard on some, enough to read across the street. Umbrellas are black, most of them, or
+// navy or red; a few are golf umbrellas, wider, in panels of two colours, and a few clear bubbles
+// (half their pixels left out, so the head shows through). At night the nearest street light
+// lights each of them (pedLight.js).
 import { PART, HEAD_AT } from './pedFigure.js'
+import { UMBRELLA } from './pedGear.js'
+import { LAMP_VERTEX, LAMP_FRAGMENT } from './pedLight.js'
 
 const P = PART
 // What someone wears, from their look, as bits: 1 a woman; top (2 bits from 2): 0 a tank top, 1 a
@@ -44,12 +51,20 @@ const HASH = `
     if (!woman && pedHash(k, 9.0) < 0.28) s |= 16384;
     return s;
   }
+  // the umbrella someone carries: 0 a plain one, 1 a golf umbrella, 2 a clear bubble
+  int pedBrolly (float k) {
+    float h = pedHash(k, 21.0);
+    return h < 0.15 ? 1 : h < 0.25 ? 2 : 0;
+  }
 `
 const ATTRS = `
   attribute float aPart;
   attribute vec4 aPose; // stride phase, stride (0 standing, 1 walking, 1.6 running), fright, hop
   attribute vec4 aAct; // head turned (rad), on the phone, talking with their hands, gesture clock
   attribute float aLook; // who they are
+  // their umbrella up (0 to 1), hunched in the rain (and a hoodie's hood up), sat down, and the
+  // hand holding a dog's lead (1 the right, -1 the left, 0 none)
+  attribute vec4 aGear;
 `
 const VARY = `
   varying vec3 vRest;
@@ -100,15 +115,37 @@ const POSE = `
     float ph = aPose.x, gait = aPose.y, fright = aPose.z;
     float A = 0.42 * gait, run = clamp((gait - 1.2) * 2.5, 0.0, 1.0);
     float phone = aAct.y * (1.0 - fright), talk = aAct.z * (1.0 - fright);
+    // an umbrella (the arm up first, then it opens), hunched with a hoodie's hood up, sat down
+    float umb = aGear.x, hunch = aGear.y, sit = aGear.z;
+    float hold = smoothstep(0.0, 0.35, umb);
+    bool hood = hunch > 0.5 && ((style >> 1) & 3) == 3;
     if (part == ${P.PHONE}) p = mix(vec3(0.01, 0.8, 0.2) * w, p, phone);
     if (!pedHas(part, style)) p = vec3(0.0, 1.2, 0.0) * w;
-    bool headish = part == ${P.HEAD} || part == ${P.HAIR} || part == ${P.LONG_HAIR} || part == ${P.PONY}
+    bool hair = part == ${P.HAIR} || part == ${P.LONG_HAIR} || part == ${P.PONY}
       || part == ${P.CURLS} || part == ${P.BUN} || part == ${P.CAP};
+    // (the hood up hides the hair, a cap and the hood bunched behind the neck)
+    if (hood ? hair || part == ${P.HOOD} : part == ${P.HOOD_UP}) p = vec3(0.0, 1.2, 0.0) * w;
+    bool headish = hair || part == ${P.HEAD} || part == ${P.HOOD_UP};
+    if (part == ${P.BROLLY} || part == ${P.SHAFT}) {
+      if (umb < 0.02) p = vec3(0.0, 1.2, 0.0) * w;
+      else if (part == ${P.BROLLY}) {
+        // opening out round its shaft: a golf umbrella wider, a clear bubble narrower and deeper
+        int kind = pedBrolly(aLook);
+        float k = (kind == 1 ? 1.35 : kind == 2 ? 0.8 : 1.0) * mix(0.1, 1.0, smoothstep(0.3, 1.0, umb));
+        float d = kind == 1 ? 1.2 : kind == 2 ? 2.3 : 1.0;
+        vec2 ax = vec2(${UMBRELLA.x}, ${UMBRELLA.z});
+        if (w > 0.5) {
+          p.xz = ax + (p.xz - ax) * k;
+          p.y = ${UMBRELLA.top} + (p.y - ${UMBRELLA.top}) * d;
+        } else p = vec3(p.x / k, p.y / d, p.z / k);
+      }
+    }
     if (part >= 3 && part <= 6) {
       bool left = part <= 4;
       float q = ph + (left ? 0.0 : 3.14159);
       float swing = pedLeg(q, A) + fright * (left ? 0.5 : -0.35);
-      // the knee folds as the leg swings through (more running), and gives a little in the stance
+      // the knee folds as the leg swings through (more running), and gives a little in the stance;
+      // sat down, the thigh is forward and the shin down
       if (part == 4 || part == 6) {
         float u = mod(q, 6.28318);
         float knee = u < 3.14159
@@ -116,20 +153,27 @@ const POSE = `
           : sin(u - 3.14159) * (0.45 + 0.9 * A + 0.8 * run);
         knee += fright * 0.6;
         vec2 k = vec2(0.0, 0.5) * w;
-        p.xy = k + pedRot(-knee) * (p.xy - k);
+        p.xy = k + pedRot(-mix(knee, 1.45, sit)) * (p.xy - k);
       }
       vec2 h = vec2(0.0, 0.92) * w;
-      p.xy = h + pedRot(swing) * (p.xy - h);
+      p.xy = h + pedRot(mix(swing, 1.45, sit)) * (p.xy - h);
     }
     if ((part >= 7 && part <= 10) || part == ${P.PHONE}) {
       bool left = part <= 8;
-      // each arm swings with the other side's leg
+      // each arm swings with the other side's leg; less, and bent, hunched in the rain; sat down,
+      // the hands on the thighs; holding a dog's lead, a little forward and swinging a little
       float swing = (0.85 * A + 0.25 * run) * cos(ph + (left ? 3.14159 : 0.0)) + fright * 2.5;
-      float elbow = 0.2 + 0.25 * gait + 1.1 * run;
+      float elbow = 0.2 + 0.25 * gait + 1.1 * run + 0.35 * hunch;
+      swing = mix(swing * (1.0 - 0.45 * hunch), 0.3, sit);
+      elbow = mix(elbow, 0.75, sit);
+      if (aGear.w * (left ? -1.0 : 1.0) > 0.5) {
+        swing = 0.2 + 0.25 * swing;
+        elbow = 0.55;
+      }
       if (!left) {
-        // the phone held up in front of them
-        swing = mix(swing, 0.4, phone);
-        elbow = mix(elbow, 1.9, phone);
+        // the phone held up in front of them; an umbrella held up over their head
+        swing = mix(mix(swing, 0.4, phone), 0.12, hold);
+        elbow = mix(mix(elbow, 1.9, phone), 2.65, hold);
       } else {
         // talking with their hands
         swing = mix(swing, 0.3 + 0.12 * sin(aAct.w * 2.1), talk);
@@ -142,17 +186,29 @@ const POSE = `
       vec2 s = vec2(0.0, 1.45) * w;
       p.xy = s + pedRot(swing) * (p.xy - s);
     }
-    // the head turned (to the Roadster) and bowed (over the phone)
+    // the head turned (to the Roadster) and bowed (over the phone, or in the rain)
     if (headish) {
       vec2 n = vec2(0.0, 1.53) * w;
-      p.xy = n + pedRot(-0.4 * phone) * (p.xy - n);
+      p.xy = n + pedRot(-0.4 * phone - 0.2 * hunch) * (p.xy - n);
       p.xz = pedRot(-aAct.x) * p.xz;
     }
-    // the upper body: twisting against the stride, leaning in to a run
+    // the upper body: twisting against the stride, leaning in to a run, or into the rain; sat
+    // down, back a little
     if (part != ${P.HIPS} && (part < 3 || part > 6) && part != ${P.SKIRT} && part != ${P.BAG}) {
       if (!headish) p.xz = pedRot(0.25 * A * cos(ph)) * p.xz;
       vec2 hip = vec2(0.0, 0.95) * w;
-      p.xy = hip + pedRot(-0.2 * run - 0.05 * gait) * (p.xy - hip);
+      float lean = -0.2 * run - 0.05 * gait - 0.13 * hunch + 0.05 * sit;
+      p.xy = hip + pedRot(lean) * (p.xy - hip);
+    }
+    // sat down: the hips flat on the seat, a skirt over the thighs, and the whole body lowered so
+    // the hips are on the seat (0.48 m up) whatever their height (the instance's scale)
+    if (sit > 0.0 && w > 0.5) {
+      if (part == ${P.HIPS}) p.y = mix(p.y, max(p.y, 0.9), sit);
+      if (part == ${P.SKIRT}) {
+        float u = max(0.0, 0.95 - p.y) * sit;
+        p += vec3(1.1 * u, 0.75 * u, 0.0);
+      }
+      p.y -= sit * (0.84 - 0.48 / length(instanceMatrix[1].xyz));
     }
     // up over each step (the most at mid-stance), higher running, and the hop of a dive
     p.y += w * ((0.026 * gait + 0.03 * run) * -cos(2.0 * ph) + aPose.w);
@@ -177,6 +233,29 @@ const DRESS = `
     vec3(0.06, 0.06, 0.07), vec3(0.09, 0.11, 0.22), vec3(0.86, 0.86, 0.84), vec3(0.66, 0.1, 0.1),
     vec3(0.7, 0.62, 0.46), vec3(0.32, 0.35, 0.22));
   float pedRough = 0.88;
+  // an umbrella's canopy at q (its rest place): black, navy or red; a golf umbrella's panels white
+  // and a colour by turns round its shaft; a clear bubble pale and glossy
+  vec3 pedCanopy (vec3 q, float k) {
+    int kind = pedBrolly(k);
+    float h = pedHash(k, 22.0);
+    pedRough = kind == 2 ? 0.08 : 0.55;
+    if (kind == 2) return vec3(0.84, 0.88, 0.92);
+    if (kind == 1) {
+      float a = atan(q.z - ${UMBRELLA.z}, q.x - ${UMBRELLA.x});
+      vec3 band = h < 0.3 ? vec3(0.62, 0.06, 0.07) : h < 0.55 ? vec3(0.05, 0.08, 0.26)
+        : h < 0.8 ? vec3(0.05, 0.32, 0.14) : vec3(0.9, 0.68, 0.06);
+      return mod(floor(a / 0.7854) + 8.0, 2.0) > 0.5 ? vec3(0.92) : band;
+    }
+    return h < 0.6 ? vec3(0.035) : h < 0.85 ? vec3(0.06, 0.08, 0.2) : vec3(0.6, 0.06, 0.07);
+  }
+  // an ordered pattern over the screen, 0 to 1 by 4 by 4 pixels: a clear bubble leaves out those
+  // under 0.55, so what is behind it shows through
+  const float PED_BAYER[16] = float[16](0.0, 8.0, 2.0, 10.0, 12.0, 4.0, 14.0, 6.0, 3.0, 11.0, 1.0, 9.0,
+    15.0, 7.0, 13.0, 5.0);
+  float pedBayer (vec2 f) {
+    ivec2 i = ivec2(mod(f, 4.0));
+    return (PED_BAYER[i.y * 4 + i.x] + 0.5) / 16.0;
+  }
   vec3 pedDress (int part, vec3 q, float k, int s) {
     int top = (s >> 1) & 3, bottom = (s >> 3) & 3, hairCut = (s >> 5) & 7, shoes = (s >> 12) & 3;
     bool woman = (s & 1) != 0;
@@ -208,7 +287,12 @@ const DRESS = `
       c = hairCut == 5 ? mix(skin, hair, 0.7) : hair;
       pedRough = 0.6;
     } else if (part == ${P.CAP}) c = CAPS[int(pedHash(k, 16.0) * 6.0)];
-    else if (part == ${P.HOOD}) c = shirt * 0.85;
+    else if (part == ${P.HOOD} || part == ${P.HOOD_UP}) c = shirt * 0.85;
+    else if (part == ${P.BROLLY}) c = pedCanopy(q, k);
+    else if (part == ${P.SHAFT}) {
+      c = vec3(0.08);
+      pedRough = 0.35;
+    }
     else if (part == ${P.TORSO}) {
       // a tank top's straps leave the shoulders bare; a scoop or crew neck
       if (top == 0 && q.y > 1.32 && (abs(q.z) > 0.125 || (abs(q.z) < 0.075 && q.x > 0.0 && q.y > 1.4))) c = skin;
@@ -267,7 +351,11 @@ export function posed (shader, colour) {
   shader.vertexShader = shader.vertexShader
     .replace(
       '#include <common>',
-      '#include <common>\n' + ATTRS + HASH + POSE + (colour ? VARY : '')
+      '#include <common>\n' +
+        ATTRS +
+        HASH +
+        POSE +
+        (colour ? VARY + LAMP_VERTEX.head : '')
     )
     // (who they are and what each vertex is part of, worked out once)
     .replace(
@@ -279,7 +367,8 @@ export function posed (shader, colour) {
       `#include <begin_vertex>
       ${
         colour
-          ? 'vRest = position; vPedPart = aPart; vPedLook = aLook; vPedStyle = float(pedS);'
+          ? 'vRest = position; vPedPart = aPart; vPedLook = aLook; vPedStyle = float(pedS);' +
+            LAMP_VERTEX.main
           : ''
       }
       transformed = pedPose(transformed, 1.0, pedPart, pedS);`
@@ -292,14 +381,24 @@ export function posed (shader, colour) {
     )
   if (!colour) return
   shader.fragmentShader = shader.fragmentShader
-    .replace('#include <common>', '#include <common>\n' + VARY + HASH + DRESS)
+    .replace(
+      '#include <common>',
+      '#include <common>\n' + VARY + LAMP_FRAGMENT.head + HASH + DRESS
+    )
     .replace(
       '#include <color_fragment>',
       `#include <color_fragment>
-      diffuseColor.rgb = pedDress(int(vPedPart + 0.5), vRest, vPedLook, int(vPedStyle + 0.5));`
+      int pedPart = int(vPedPart + 0.5);
+      diffuseColor.rgb = pedDress(pedPart, vRest, vPedLook, int(vPedStyle + 0.5));
+      if (pedPart == ${P.BROLLY} && pedBrolly(vPedLook) == 2 && pedBayer(gl_FragCoord.xy) < 0.55)
+        discard;`
     )
     .replace(
       '#include <roughnessmap_fragment>',
       '#include <roughnessmap_fragment>\n  roughnessFactor = pedRough;'
+    )
+    .replace(
+      '#include <lights_fragment_end>',
+      '#include <lights_fragment_end>\n' + LAMP_FRAGMENT.main
     )
 }

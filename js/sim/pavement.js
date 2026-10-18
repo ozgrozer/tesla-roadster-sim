@@ -1,6 +1,7 @@
 // The pavements people walk (peds.js): each block's ring of pavement at a given distance in from
 // the kerb, the point and heading at any distance round it, the crossings from each corner, and
-// when the walk is on at a junction.
+// when the walk is on at a junction. People walk three lines round each block: one between the
+// street lights and the palms, and two further in, past the benches, under the shops' canopies.
 import { clamp } from './constants.js'
 import {
   N,
@@ -16,6 +17,28 @@ import {
 const CROSS_AT = 9.1 // the crosswalk's middle, from the junction's centre (cityGround.js)
 const KERB = ROAD_HW + 0.5 // where people wait and step off, from the road's centre line
 const WALK_FOR = 4 // s into the cross street's green during which people start over
+
+// the lines people walk, m in from the kerb: clear of the street lights (0.6 m in), the palms (1.6)
+// and the signal masts (2.2); the inner two past the benches (to 2.45 m) as well
+export const LINES = [1.05, 2.75, 3.15]
+// each block's ring at each line, made once
+const RINGS = new Map()
+export function ringOf (b, k) {
+  let r = RINGS.get(b)
+  if (!r) RINGS.set(b, (r = LINES.map(d => ring(b, d))))
+  return r[k]
+}
+// The same place as s on ring g, on ring h of the same block: every ring's straights start and end
+// level with each other (their corners' arcs share a centre), so a straight's distance carries
+// over and a corner's angle does.
+export function sameOn (g, s, h) {
+  let u = ((s % g.len) + g.len) % g.len,
+    k = 0
+  while (k < 7 && u > g.runs[k]) u -= g.runs[k++]
+  if (k % 2) u *= h.r / g.r
+  for (let i = 0; i < k; i++) u += h.runs[i]
+  return u
+}
 
 // A block's pavement ring at d in from the kerb: a rounded rectangle, its corners' radius and the
 // straight runs between them. Laid out from one end of its top edge, round the four corners (0: the

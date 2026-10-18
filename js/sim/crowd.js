@@ -8,6 +8,7 @@
 import { atJam } from './jam.js'
 import { clamp, wrapPi } from './constants.js'
 import { kerbDist } from './street.js'
+import { LINES, ringOf, sameOn } from './pavement.js'
 import { N, PITCH, HALF, ROAD_HW, BLOCKS } from './city.js'
 
 const KERB = ROAD_HW + 0.5
@@ -32,14 +33,18 @@ export const CROWD = {
     p.lead = null // walking with someone: them
     p.side = 0 // m in from their line (a pair walks side by side)
   },
-  // A companion for p, walking beside them (or, standing, facing them for a chat)
+  // A companion for p, walking beside them (or, standing, facing them for a chat): on the middle
+  // line, with the companion inside them, where two side by side are clear of the palms, the
+  // benches and the shopfronts
   pairUp (p) {
+    if (p.ring.d !== LINES[1]) this.inward(p, 1)
     const q = this.spawnAt(p.ring, p.s, p.dir)
     if (!q) return
     q.lead = p
+    p.mate = q
     q.v = q.v0 = p.v
     q.jog = p.jog
-    q.side = p.ring.d < 2 ? 0.62 : -0.62
+    q.side = 0.62
     if (p.state === 'idle') {
       q.state = 'idle'
       q.act = p.act = 2
@@ -52,6 +57,13 @@ export const CROWD = {
       p.yaw = a + Math.PI
       q.yaw = a
     }
+  },
+  // over to line k at the same place along the pavement
+  inward (p, k) {
+    const h = ringOf(p.ring.b, k)
+    p.s = sameOn(p.ring, p.s, h)
+    p.ring = h
+    p.piece = this.place(p)
   },
   // standing about for a while: on the phone, waiting, chatting with someone
   idle (p, dt) {
@@ -111,6 +123,7 @@ export const CROWD = {
       }
       if (p.state === 'dodge' || p.state === 'back') continue
       if (p.state === 'kerb' || p.state === 'wait') this.join(p, p.ring.b)
+      if (p.state === 'linger') this.leave(p, true) // (off on their line)
       if (p.state !== 'flee') this.scream++
       p.state = 'flee'
       p.lead = null
@@ -174,7 +187,7 @@ export const CROWD = {
   // Over the street from here, not at a crossing: on a straight stretch, away from the corners, not
   // over the jammed street, and only with no traffic coming within a few seconds either way.
   jaywalk (p) {
-    if (p.piece % 2 || p.jog || p.lead) return false
+    if (p.piece % 2 || p.jog || p.lead || p.dog) return false
     const P = this.P
     this.at(p, P)
     // the street beside this stretch of pavement, and the far side of it
@@ -209,15 +222,23 @@ export const CROWD = {
     p.near = Infinity
     return true
   },
-  // someone new standing about where they spawned, or walking off with a friend
-  extras (p) {
+  // Someone new standing about where they spawned (chatting with one or two), or walking off with a
+  // friend; or (from the second stream, peds.js Q) with a dog, or sat on a bench nearby out of the
+  // camera's sight (view)
+  extras (p, view) {
     const R = this.R
     if (!p.jog && R() < 0.13) {
       p.state = 'idle'
       p.act = STILL[Math.floor(R() * 2)] === 'phone' ? 1 : 0 // (on the phone, or waiting)
       p.idleT = 6 + R() * 40
-      if (R() < 0.35) this.pairUp(p)
+      if (R() < 0.35) {
+        this.pairUp(p)
+        if (this.Q() < 0.3) this.third(p)
+      }
     } else if (R() < 0.16) this.pairUp(p)
+    else if (p.jog) return
+    else if (this.Q() < 0.05) this.adopt(p)
+    else if (this.Q() < 0.07) this.settle(p, p.ring.b, view)
   },
 
   // Out of the way of whatever is coming (th): anyone near its path in the next second and a half
@@ -245,6 +266,7 @@ export const CROWD = {
     const v = a < th.hl + 4 ? 7 : 5
     p.vx = (-th.vz / sp) * sg * v
     p.vz = (th.vx / sp) * sg * v
+    if (p.state === 'linger') this.leave(p, true) // (up off a bench at once)
     p.state = 'dodge'
     p.t = 0
     p.hop = 0.35
