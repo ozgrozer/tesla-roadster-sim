@@ -191,8 +191,14 @@ test('W and S together at a crawl are a burnout; at speed S still brakes', () =>
   down('KeyW')
   down('KeyS')
   let c = input.controls(sim, 'off')
-  assert.ok(c.burnout && c.throttle === 1, 'a burnout at a standstill')
+  assert.ok(c.burnout, 'a burnout at a standstill, at once')
   assert.equal(c.reverse, 0, 'not reversing')
+  // (the throttle pedal goes down over a fifth of a second)
+  for (let i = 0; i < 30; i++) {
+    sim.time += H
+    c = input.controls(sim, 'off')
+  }
+  assert.ok(c.burnout && c.throttle === 1, 'on full throttle a moment later')
   sim.vel.set(25, 0, 0)
   sim.speed = 25
   c = input.controls(sim, 'off')

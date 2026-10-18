@@ -2,7 +2,7 @@
 // mapping (a gamepad's sticks and triggers are analog: gamepad.js).
 import { Pad } from './gamepad.js'
 import { TRACK } from '../sim/track.js'
-import { BURN_V } from '../sim/ground.js'
+import { BURN_V } from '../sim/drift.js'
 import { clamp, makeControls } from '../sim/constants.js'
 
 // The steering keys ease the wheel over rather than throwing it to full lock: full in KEY_T s at a
@@ -24,6 +24,11 @@ const KEY_T = 0.1,
 const BRAKE_T = 0.3,
   BRAKE_OFF = 0.1,
   STOP_HOLD = 0.5
+// The throttle key presses the pedal down over GAS_T s, as a foot does (and the motors' torque
+// builds), rather than all at once: a tap creeps the car forward, holding it is full power a moment
+// later; let go, it is up in GAS_OFF s.
+const GAS_T = 0.2,
+  GAS_OFF = 0.06
 // k eased towards want (-1, 0 or 1) at up per s, and back to the middle at down per s
 export function easeKey (k, want, up, down, dt) {
   if (want !== 0 && k * want >= 0)
@@ -86,7 +91,7 @@ export class Input {
     this.padStale = false // a stick held over since before lift-off
     // the brake key's pedal (0 to 1), the reverse it eases into, and how long it has held the car
     // at a standstill (-1: not braked to one)
-    this.keyBrake = this.backing = 0
+    this.keyBrake = this.backing = this.keyGas = 0
     this.stopT = -1
     // on-screen pad for touch screens: each button behaves like its key
     for (const b of document.querySelectorAll('.tb')) {
@@ -157,7 +162,7 @@ export class Input {
     // a key wins over the stick; the stick and triggers are analog
     const or = (key, analog) => key || analog
     if (air) {
-      this.keyBrake = this.backing = 0
+      this.keyBrake = this.backing = this.keyGas = 0
       this.stopT = -1
       const live = !this.padStale
       c.pitch = or((S ? 1 : 0) - (W ? 1 : 0), live ? pad.stickY : 0)
@@ -167,7 +172,8 @@ export class Input {
         -pad.lookX
       )
     } else {
-      c.throttle = Math.max(W ? 1 : 0, pad.throttle)
+      this.keyGas = easeKey(this.keyGas, W ? 1 : 0, 1 / GAS_T, 1 / GAS_OFF, dt)
+      c.throttle = Math.max(this.keyGas, pad.throttle)
       // (sliding: the rear axle running ten degrees or more off the line of the car)
       const sliding = sim.mode === 'ground' && Math.abs(sim.slipR) > 0.17
       const T =
@@ -194,7 +200,7 @@ export class Input {
       // donut), as in GTA
       let rev = false
       if (
-        c.throttle > 0.5 &&
+        Math.max(W ? 1 : 0, pad.throttle) > 0.5 &&
         Math.max(S ? 1 : 0, pad.brake) > 0.5 &&
         !c.ebrake &&
         sim.mode === 'ground' &&
