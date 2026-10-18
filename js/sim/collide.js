@@ -15,6 +15,7 @@ const KNOCK_SPIN = 1.8
 // A building the car only dips this far into from above (m), it rides on the edge of rather than
 // being shoved off sideways: the roof it is driving off, or one it is coming down onto.
 const EDGE = 0.35
+const EDGE_HOLD = 0.8 // s at most an edge holds the car up
 
 // Rectangles are { x, z, fx, fz, hl, hw }: centre, unit forward axis, half length and half width.
 // The side axis is (-fz, fx).
@@ -289,6 +290,11 @@ export function knock (s, c, nx, nz) {
 export function collideAir (s, bottom, top, dt) {
   const me = playerRect(s)
   query(me.x - 4, me.z - 4, me.x + 4, me.z + 4, hits)
+  // (how long an edge has held the car up: one can't for ever, or a car driven off a roof towards a
+  // taller building across an alley narrower than itself would hang there, held up by the edge it
+  // left and pushed back onto it by the wall in front; after EDGE_HOLD s it drops into the alley)
+  const held = s.edgeT || 0
+  let onEdge = false
   for (const c of hits) {
     if (c.down || bottom >= c.y1 || top <= c.y0) continue
     const hit = c.r ? rectPost(me, c) : rectRect(me, boxRect(c))
@@ -296,6 +302,8 @@ export function collideAir (s, bottom, top, dt) {
     if (c.breakAt && knock(s, c, hit.nx, hit.nz)) continue
     const dip = c.y1 - bottom
     if (!c.r && dip < EDGE && dip < hit.depth && s.vel.y <= 0) {
+      onEdge = true
+      if (held > EDGE_HOLD) continue // (let go: it drops)
       // held up by the edge, and sliding off it the way it overhangs
       s.com.y += dip
       s.vel.y = 0
@@ -310,6 +318,8 @@ export function collideAir (s, bottom, top, dt) {
     me.z = BODY.z
     if (impact > 0.6) bump(s, impact, c.kind, hit)
   }
+  // (the time on an edge goes on counting while it stays on one, held or let go)
+  s.edgeT = onEdge ? held + dt : 0
   hillside(s, bottom) // (and a hillside holds it up: edge.js)
   s.syncPose()
 }
