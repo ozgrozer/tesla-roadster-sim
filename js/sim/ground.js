@@ -44,6 +44,13 @@ const HANDS = 1.8,
 // the rear wheels spinning back up with the road after the e-brake: the share of their grip they get
 // back per second
 const SPIN_UP = 12
+// Stability control under braking and regen, as a Tesla's does: the rears, light as the weight goes
+// onto the nose, are let off their share of the brakes and regen as their slip nears its peak (from
+// ESC_CUT of the way there, all of it ESC_CUT_W further on), so that slowing in a corner at the
+// limit runs a touch wide rather than swinging the tail round. (Not in Track Mode, nor on the
+// handbrake.)
+const ESC_CUT = 0.9,
+  ESC_CUT_W = 0.5
 const LOCK = 0.62 // the road wheels' full lock (rad)
 const smooth = x => (x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x))
 // Track Mode: the e-brake at more than this speed (m/s) switches it on, and it switches itself off
@@ -210,8 +217,19 @@ export function stepGround (s, dt, c, main, lift) {
   }
   // (in Track Mode most of the drive goes to the rears)
   const front = track ? TRACK_FRONT : 0.4
-  let Fxf = front * Fdrive - su * (0.6 * Fbrake + 0.5 * Fregen)
-  let Fxr = (1 - front) * Fdrive - su * (0.4 * Fbrake + 0.5 * Fregen)
+  // (the brakes shared out by the load on each axle, as electronic brake-force distribution does,
+  // so the rears, light under braking, are never asked for more than the fronts: a fixed split
+  // would have them give up first and the tail come round)
+  const bias = Nf / Ntot
+  // (the rears let off their brakes and regen near their limit sideways: ESC_CUT; the rear axle's
+  // slip in units of its grip over its stiffness, peaking at PEAK)
+  const esc = !c.ebrake && !track && !burn && s.rearGrip >= 1 && au > 3
+  const xR = (CAR.corneringR * Math.abs(beta)) / FmaxR
+  const cut = esc ? smooth((xR - ESC_CUT) / ESC_CUT_W) : 0
+  const slow = su * (Fbrake + Fregen)
+  let Fxf = front * Fdrive - su * (bias * Fbrake + 0.5 * Fregen)
+  let Fxr =
+    (1 - front) * Fdrive - su * ((1 - bias) * Fbrake + 0.5 * Fregen) * (1 - cut)
   // traction control + ABS: keep the grip the tyres are using to corner, leave at least 35% for drive/brakes
   const capF = Math.sqrt(
     Math.max(0.1225 * FmaxF * FmaxF, FmaxF * FmaxF - s.lastFyf * s.lastFyf)
@@ -360,6 +378,8 @@ export function stepGround (s, dt, c, main, lift) {
       s.escActive = true
     }
   }
+  // (and while it is letting the rears off their brakes or regen)
+  if (cut > 0.3 && slow !== 0) s.escActive = true
 
   const spd = Math.hypot(u, w)
   if (!c.ebrake && !burn && spd > 4) {
