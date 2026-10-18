@@ -148,9 +148,29 @@ export const REACT = {
   canBack (c) {
     return (
       (c.edge.move || c.s + c.len / 2 > c.edge.len) &&
-      c.s > 0.6 &&
-      this.behind(c) > 2
+      c.s > 1 &&
+      this.behind(c) > 2 &&
+      this.clearBehind(c) > 2
     )
+  },
+  // the room behind a car to anything else in the junction (come into it since, from another way):
+  // what it would back into
+  clearBehind (car) {
+    let room = Infinity
+    for (const o of this.box) {
+      const dx = o.x - car.x,
+        dz = o.z - car.z
+      if (o === car || Math.abs(dx) > 12 || Math.abs(dz) > 12) continue
+      const along = -(dx * car.hx + dz * car.hz),
+        side = dz * car.hx - dx * car.hz
+      const cos = Math.abs(o.hx * car.hx + o.hz * car.hz),
+        sin = Math.abs(o.hx * car.hz - o.hz * car.hx)
+      const across = (o.len / 2) * sin + (o.wid / 2) * cos,
+        deep = (o.len / 2) * cos + (o.wid / 2) * sin
+      if (along < 0 || Math.abs(side) > car.wid / 2 + across + 0.3) continue
+      room = Math.min(room, along - car.len / 2 - deep)
+    }
+    return room
   },
   // Round such a ring, that car backs up a few metres to let the others by. If none of them has
   // room to, the one that came in first edges past at a crawl, judging the gap by the cars' bodies
@@ -171,11 +191,17 @@ export const REACT = {
     }
     return true
   },
-  // Backing up (car.rev s more of it), slowly, until there is no more room behind
+  // Backing up (car.rev s more of it), slowly, until there is no more room behind, and easing to a
+  // stop at the end of it (it carries on until it has stopped)
   backUp (car, dt) {
-    car.rev = Math.max(0, car.rev - dt)
-    const room = this.behind(car)
-    const vT = car.rev > 0.4 && room > 1 && car.s > 0.6 ? -1.3 : 0
+    car.rev = Math.max(car.v < -0.05 ? 1e-3 : 0, car.rev - dt)
+    const room = Math.min(
+      this.behind(car) - 0.9,
+      this.clearBehind(car) - 0.9,
+      car.s - 0.75
+    )
+    const vT =
+      car.rev > 0.6 ? -Math.min(1.3, Math.sqrt(3 * Math.max(0, room))) : 0
     car.acc = clamp((vT - car.v) * 2.5, -2, 2)
     car.v = clamp(car.v + car.acc * dt, -1.3, 0)
     if (car.s + car.v * dt < 0.5) car.v = 0
@@ -187,18 +213,27 @@ export const REACT = {
     if (!car.rev) car.v = car.acc = 0
   },
   // The room behind a car in a junction: to the car behind it on its turn, or on the lane it came in
-  // on (from its tail to their nose)
+  // on (from its tail to their nose), or to one that came in from that lane another way over
   behind (car) {
     const e = car.edge,
       list = e.cars,
       i = list.indexOf(car)
+    const inc = e.move ? NODES[e.node].inc[e.dir]?.[e.lane] : null
+    let room = Infinity
     if (i > 0) {
       const o = list[i - 1]
-      return car.s - o.s - (o.len + car.len) / 2
+      room = car.s - o.s - (o.len + car.len) / 2
+    } else if (!inc) return 0
+    else {
+      const o = inc.cars[inc.cars.length - 1]
+      if (o) room = inc.len - o.s - o.len / 2 + car.s - car.len / 2
     }
-    const inc = e.move ? NODES[e.node].inc[e.dir]?.[e.lane] : null
-    if (!inc) return 0
-    const o = inc.cars[inc.cars.length - 1]
-    return o ? inc.len - o.s - o.len / 2 + car.s - car.len / 2 : Infinity
+    if (inc)
+      for (const m of inc.next)
+        if (m !== e)
+          for (const o of m.cars)
+            if (o.s <= car.s)
+              room = Math.min(room, car.s - o.s - (o.len + car.len) / 2)
+    return room
   }
 }

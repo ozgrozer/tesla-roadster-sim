@@ -325,8 +325,14 @@ export class Peds {
       p.gait += (0 - p.gait) * Math.min(1, dt * 4)
       const [tx, tz] = this.jitter(p.cross, p.cross.to)
       p.yaw = Math.atan2(-(tz - p.z), tx - p.x)
-      // over on the walk, once nothing is on the crossing or right at it
-      if (walkOn(p.cross.node, p.cross.axis, t) && this.clearOver(p.cross)) {
+      // over on the walk (not in its last half second), once nothing is on the crossing or right
+      // at it (nor a police car on a call coming over the junction: traffic.urgent, calls.js)
+      if (
+        walkOn(p.cross.node, p.cross.axis, t) &&
+        walkOn(p.cross.node, p.cross.axis, t + 0.5) &&
+        this.clearOver(p.cross) &&
+        !this.traffic.urgent(p.cross.node)
+      ) {
         p.state = 'cross'
         p.stall = 0
         p.near = Infinity

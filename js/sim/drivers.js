@@ -6,10 +6,11 @@
 // emergency), a queue moves off at a green in a wave, each driver a moment after the one ahead has
 // moved, they stop a little short of the line and creep up to it, a bold one goes on at an amber
 // they could have stopped for, and nobody pulls into a junction with no room to get out of it. A
-// lane change is signalled first, then eased over, and anything that takes a car off its lane's line
-// (a swerve, going round a wreck, pulling back into lane after a knock) is steered: the heading turns
-// no faster than the tyres allow at that speed, and the car only moves sideways as it rolls forward.
-import { LOOK, OB } from './sight.js'
+// lane change is signalled first, then eased over (laneChange.js), and anything that takes a car
+// off its lane's line (a swerve, going round a wreck, pulling back into lane after a knock) is
+// steered: the heading turns no faster than the tyres allow at that speed, and the car only moves
+// sideways as it rolls forward.
+import { LOOK, OB, put } from './sight.js'
 import { temper } from './manners.js'
 import { clamp, wrapPi } from './constants.js'
 import {
@@ -20,23 +21,12 @@ import {
   redAge,
   signal,
   pointAt,
+  LANE_OFF,
   amberLeft
 } from './city.js'
 
-const CHANGE = 30 // m of road a lane change takes at speed (less, slower)
 const QUINTIC = u => u * u * u * (10 + u * (-15 + 6 * u)) // 0 to 1, flat at both ends
 const P = { x: 0, z: 0, hx: 1, hz: 0 }
-// an obstacle into sight.js's OB (inlined where it is used: no numbers passed to a call)
-function put (x, z, vx, vz, hx, hz, hl, hw) {
-  OB.x = x
-  OB.z = z
-  OB.vx = vx
-  OB.vz = vz
-  OB.hx = hx
-  OB.hz = hz
-  OB.hl = hl
-  OB.hw = hw
-}
 
 // Who is at the wheel: drawn once per car. T: its type (traffic.js TYPES).
 export function temperament (car, R, T) {
@@ -135,9 +125,10 @@ export const DRIVE = {
       this.obstacle(car, OB, o)
     }
     // (a car already crossing the junction when this one comes into it is given room to get by;
-    // squeezing out of a standoff, only the cars' bodies count)
+    // squeezing out of a standoff, only the cars' bodies count; on a call, going by those pulled
+    // over for it, a little closer than usual)
     const late = car.squeeze ? -Infinity : e.move ? car.boxT : Infinity
-    this.margin = car.squeeze ? 0.06 : 0.5
+    this.margin = car.squeeze ? 0.06 : car.siren === 1 ? 0.3 : 0.5
     for (const o of this.box)
       if (o !== car && o.edge !== e) {
         const k = o.boxT < late && o.edge.move ? 1 : 0
@@ -150,6 +141,7 @@ export const DRIVE = {
       const turn = e.move ? e : car.next.kind === 1 && e.len - car.s < 30 ? car.next : null
       if (turn) this.atLines(car, NODES[turn.node], turn.next[0]?.twin)
     }
+    if (car.siren === 1) this.callSees(car) // (on a call: responder.js)
     gap = W.gap
     vl = W.vl
     blk = W.blk
@@ -160,8 +152,18 @@ export const DRIVE = {
     const odd = vl < 0.5 && (mine || blk?.loose) && e.road && e.twin && !car.lc
     if (odd && car.s + gap < e.len - 15 && gap > car.s0)
       gap = Math.max(car.s0, gap - (this.pullOut(car) + 0.4 - car.s0))
-    // the signal at the end of this lane
-    const g = e.road && car.next ? this.lights(car, e, dt) : Infinity
+    // the signal at the end of this lane (on a call, its own way over: responder.js; held up in the
+    // junction on a left turn, the oncoming traffic: sight.js), and a police car on a call to make
+    // way for (makeway.js)
+    let g =
+      e.move === 'L'
+        ? this.turnHold(car, e)
+        : !e.road || !car.next
+        ? Infinity
+        : car.siren === 1
+        ? this.callLights(car, e, dt)
+        : this.lights(car, e, dt)
+    if (car.pull || this.call.on) g = Math.min(g, this.giveWay(car, dt))
     if (g < gap) {
       gap = g
       vl = 0
@@ -228,9 +230,11 @@ export const DRIVE = {
     car.still = nv < 0.1 ? car.still + dt : 0
     temper(this, car, dt, mine && !red, gap, want)
     car.v = nv
-    // never into the car ahead in the lane, whatever else happens
+    // never into the car ahead in the lane, whatever else happens (and off its line on a turn, on
+    // a wider or a tighter curve: as far round the turn as its speed takes it on that one)
     const o = this.ahead
     let ds = nv * dt
+    if (e.kind === 1 && car.off) ds *= e.r / Math.max(1, e.r - e.sg * car.off)
     if (o) {
       const room = o.s - (o.len + car.len) / 2 - 0.25 - car.s
       if (ds > room) {
@@ -256,6 +260,8 @@ export const DRIVE = {
       }
       car.s -= car.edge.len
       this.detach(car)
+      // (on a call, a turn from the lane beside, cut across: it starts it where it is)
+      car.off += LANE_OFF[car.edge.lane] - LANE_OFF[nx.lane]
       car.edge = nx
       car.go = car.stop = null
       car.short = car.short0
@@ -276,6 +282,10 @@ export const DRIVE = {
     const node = NODES[e.to],
       st = signal(node, e.dir, this.t),
       v = car.v
+    // (moved off into a gap to turn left, but brought to a stop at the line since: it looks again,
+    // and at red stays where it is)
+    if (car.go === e && st !== YELLOW && v < 0.3 && car.next.move === 'L')
+      car.go = null
     // gone on at the amber but held up since, or misjudged it: at red, they stop if they can (and
     // once the red is a second and a half old, anyone who can still stop short of the junction)
     if (car.go === e && st === RED) {
@@ -287,12 +297,24 @@ export const DRIVE = {
         car.go = null
     }
     // held up with its nose over the line: at red, it stays put if it can still stop short of the
-    // junction proper (moving on, it carries on through)
+    // junction proper (moving on, it carries on through); turning left and not yet committed to it,
+    // it waits there while anything is coming that it can't get across ahead of
     if (toLine < 0) {
-      const room = toLine + car.len / 2 - 0.5
+      const room = toLine + car.len / 2 - 0.5,
+        toGo = e.len - car.s + 14 + car.len / 2
+      if (
+        car.go !== e &&
+        st !== RED &&
+        car.next.move === 'L' &&
+        this.coming(car, node, e.dir, toGo)
+      )
+        return v < 0.3 ? car.s0 - 0.05 : Math.max(0.1, room) + car.s0
       if (st !== RED || car.go === e) return Infinity
       if (v < 0.3) return car.s0 - 0.05 // (stopped: it stays stopped)
-      return room > 0 && v * v < 12 * room ? room + car.s0 : Infinity
+      // (and one creeping up to where it can stop stays short of it, not on over it)
+      return v * v < 12 * Math.max(room, 0.1)
+        ? Math.max(room, 0) + car.s0
+        : Infinity
     }
     let stop = car.go !== e && st !== GREEN
     if (stop && st === YELLOW && car.stop !== e) {
@@ -308,8 +330,10 @@ export const DRIVE = {
     const left = car.next.move === 'L'
     if (!stop && left && toLine < 30 && car.go !== e) {
       stop = this.oncoming(node, e.dir, false, car.gapT)
-      // waiting at the line to turn across the oncoming traffic
+      // waiting at the line to turn across the oncoming traffic (and moving off into a gap,
+      // committed to it)
       car.lw = stop && toLine < 5 ? car.lw + dt : 0
+      if (!stop && toLine < 1.5 && v > 1) car.go = e
     } else if (
       stop &&
       left &&
@@ -356,97 +380,6 @@ export const DRIVE = {
     return wait + Math.sqrt((2 * (toLine + car.len / 2)) / car.a) < left + 2.5
   },
 
-  // Moving over to the other lane: for a turn from there, to get round something stopped in this
-  // one, when the Roadster honks from behind, or (a quicker driver) to get by a slow car. The
-  // indicator goes on first; then, once there is room, over it goes.
-  lanes (car, dt) {
-    const e = car.edge
-    car.yieldT = Math.max(0, car.yieldT - dt)
-    car.passT -= dt
-    car.want = 0
-    if (!e.road || !e.twin || car.lc || !car.next || car.panic > 0) {
-      car.sigT = 0
-      return
-    }
-    const forTurn = !e.next.includes(car.next)
-    // (behind a wreck or the Roadster, not traffic that will move on, a driver decides sooner)
-    const odd = car.blk === this.me || !!car.blk?.loose
-    let move =
-      forTurn ||
-      car.stuck > (odd ? 1 : 2) + car.patience * 0.2 ||
-      (car.yieldT > 0 && e.lane === 0)
-    // a slow car ahead and the other lane going better: a bold driver goes by
-    if (!move && car.passT <= 0) {
-      car.passT = 1 + this.R()
-      move = this.overtake(car)
-    }
-    if (!move) {
-      car.sigT = 0
-      return
-    }
-    // (held up, it may still pull out nearer the junction)
-    const last = car.stuck > 0 ? 10 : 22
-    if (car.s > 4 && car.s < e.len - last) {
-      car.want = e.twin.lane > e.lane ? 2 : 1 // (the kerb lane is the right one)
-      car.sigT += dt
-      if (
-        car.sigT >= car.lead &&
-        Math.abs(car.off) < 0.4 &&
-        this.roomOut(car) &&
-        this.canMerge(e.twin, car)
-      )
-        this.swap(car)
-    } else if (forTurn && car.s >= e.len - 22) {
-      car.sigT = 0
-      car.next = this.choose(e, car, true) // missed the chance: go another way
-    }
-  },
-  // The cars waiting at the lines into a junction (or just short of them), and those setting off
-  // along the lane beside the one a turn leads into, as obstacles
-  atLines (car, node, beside) {
-    if (beside)
-      for (const o of beside.cars) {
-        if (o.s > 25) break
-        put(o.x, o.z, o.hx * o.v, o.hz * o.v, o.hx, o.hz, o.len / 2, o.wid / 2)
-        this.obstacle(car, OB, o)
-      }
-    for (let k = 0; k < 4; k++) {
-      const arm = node.inc[k]
-      if (!arm) continue
-      for (let l = 0; l < arm.length; l++) {
-        const L = arm[l],
-          o = L.cars[L.cars.length - 1]
-        if (!o || o === car || L.len - o.s > 12) continue
-        put(o.x, o.z, o.hx * o.v, o.hz * o.v, o.hx, o.hz, o.len / 2, o.wid / 2)
-        this.obstacle(car, OB, o)
-      }
-    }
-  },
-  // Room to pull out: moving, or (slow) far enough back from what is ahead in the lane to be clear
-  // of it by the time the nose gets there (with a lane change over changeLength).
-  roomOut (car) {
-    if (car.v > 2) return true
-    if (car.len > 7 && !car.stuck) return false // (a bus doesn't change lanes at a crawl)
-    return car.clear > this.pullOut(car)
-  },
-  // (how far back from it: far enough to be clear of it, pulling out over the shortest change)
-  pullOut (car) {
-    return 0.57 * Math.max(9, car.len * 2.2)
-  },
-  // worth going by the car ahead: it is slow for this driver, and the other lane is moving better
-  overtake (car) {
-    if (car.bold < 0.45 || car.v < 4) return false
-    const e = car.edge,
-      list = e.cars,
-      i = list.indexOf(car),
-      o = list[i + 1]
-    if (!o || o.s - car.s > 40 || o.v > car.v0 * 0.8) return false
-    // the twin lane: its car ahead of this one, and room to go on past
-    for (const t of e.twin.cars)
-      if (t.s > car.s - 4 && t.s < o.s + 25 && t.v < o.v + 2) return false
-    return e.twin.next.includes(car.next) || e.len - car.s > 50
-  },
-
   // Off the lane's line: steered back towards offT (0, or a swerve, or room round a wreck). The
   // heading psi (positive to the right of the lane's) turns at a curvature the tyres can hold at
   // this speed, and the car only moves sideways as it rolls forward.
@@ -485,11 +418,5 @@ export const DRIVE = {
     car.x = P.x - P.hz * lat
     car.z = P.z + P.hx * lat
     this.setYaw(car, Math.atan2(-P.hz, P.hx) - turn)
-  },
-  // the length of road a lane change takes: shorter at a crawl, never so short it looks like a jump
-  // (never so short that the nose swings out at a sharp angle: a bus takes the longest)
-  changeLength (car) {
-    const min = Math.max(9, car.len * 2.2)
-    return Math.max(min, Math.min(car.v * (2.4 + (1 - car.bold) * 1.4), CHANGE + 10))
   }
 }

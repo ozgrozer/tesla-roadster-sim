@@ -1,9 +1,11 @@
 // What happens round the camera that the sound engine hears as one-shots, watched each frame from
 // the sim's state: things rushing past the Roadster, brakes squealing and buses' air brakes, parked
 // cars' alarms, wrecks hitting each other, Optimus's footsteps, and the car's side grinding along a
-// wall or its wreck along the road.
+// wall or its wreck along the road; and where the siren of a police car on a call is heard from
+// (siren.js).
 import { CAR } from '../sim/constants.js'
 import { query } from '../sim/city.js'
+import { hearSiren } from './siren.js'
 import { hearing, panOf, dullness, placeOf } from './ears.js'
 
 const NONE = []
@@ -158,6 +160,7 @@ export function watch (sound, app, traffic) {
   passBy(sound, sim, traffic)
   if ((frame & 1) === 0) brakes(sound, traffic)
   else alarms(sound, traffic)
+  hearSiren(traffic, sound.now)
   walker(sound, app, traffic)
   wreckHits(sound, traffic, sim)
   // the car's side grinding along a wall (any corner within a hand's breadth of it, sliding by)

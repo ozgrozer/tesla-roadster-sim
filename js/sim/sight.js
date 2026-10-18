@@ -1,7 +1,7 @@
 // What a traffic driver sees, mixed into Traffic (traffic.js): the car ahead in its path, the
 // Roadster or a knocked or crossing car in the way, the oncoming traffic a left turn would cut, and
 // whether there is room beyond a junction to pull into it.
-import { DIRS, pointAt } from './city.js'
+import { DIRS, NODES, GREEN, signal, pointAt } from './city.js'
 
 export const LOOK = 70 // m a driver watches ahead
 export const STOP_DECEL = 4 // on yellow, go if stopping would need more than this
@@ -19,6 +19,17 @@ const OUT = { g: 0.5 }
 export const OB = { x: 0.5, z: 0.5, vx: 0.5, vz: 0.5, hx: 0.5, hz: 0.5, hl: 0.5, hw: 0.5 }
 const P = { x: 0, z: 0, hx: 1, hz: 0 }
 const NONE = []
+// an obstacle into OB (inlined where it is used: no numbers passed to a call)
+export function put (x, z, vx, vz, hx, hz, hl, hw) {
+  OB.x = x
+  OB.z = z
+  OB.vx = vx
+  OB.vz = vz
+  OB.hx = hx
+  OB.hz = hz
+  OB.hl = hl
+  OB.hw = hw
+}
 
 // Along the straight RAY: the obstacle ob in the way?
 function rayGap (car, r, ob) {
@@ -65,14 +76,16 @@ function arcGap (car, a, ob) {
 
 export const SIGHT = {
   // Gap to whatever is ahead in this car's path (bumper to bumper) and its speed (in this.vl), and
-  // which car that is (this.lead; this.ahead too, if it is in the same lane).
+  // which car that is (this.lead; this.ahead too, if it is in the same lane). (A police car on a
+  // call sees the cars ahead in its lane by their bodies instead, to go by those pulled over for
+  // it: responder.js callSees.)
   leader (car) {
     const e = car.edge,
       list = e.cars,
       i = list.indexOf(car)
     this.vl = 0
     this.ahead = this.lead = null
-    if (i >= 0 && i < list.length - 1) {
+    if (i >= 0 && i < list.length - 1 && (car.siren !== 1 || car.lc)) {
       const o = list[i + 1]
       this.vl = o.v
       this.ahead = this.lead = o
@@ -161,15 +174,42 @@ export const SIGHT = {
     W.vl = Math.max(0, ob.vx * car.hx + ob.vz * car.hz)
     W.blk = o
   },
+  // The cars waiting at the lines into a junction (or just short of them), and those setting off
+  // along the lane beside the one a turn leads into, as obstacles
+  atLines (car, node, beside) {
+    if (beside)
+      for (const o of beside.cars) {
+        if (o.s > 25) break
+        put(o.x, o.z, o.hx * o.v, o.hz * o.v, o.hx, o.hz, o.len / 2, o.wid / 2)
+        this.obstacle(car, OB, o)
+      }
+    for (let k = 0; k < 4; k++) {
+      const arm = node.inc[k]
+      if (!arm) continue
+      for (let l = 0; l < arm.length; l++) {
+        const L = arm[l],
+          o = L.cars[L.cars.length - 1]
+        if (!o || o === car || L.len - o.s > 12) continue
+        put(o.x, o.z, o.hx * o.v, o.hz * o.v, o.hx, o.hz, o.len / 2, o.wid / 2)
+        this.obstacle(car, OB, o)
+      }
+    }
+  },
   // Is anything coming the other way that a left turn into `node` would cut across, within the gap
   // (s) this driver takes? On a yellow (changing), only what is going on through it: the rest will
-  // be stopping.
+  // be stopping. (Those turning right from the kerb lane the other way never cross its path: their
+  // tight turn stays in their corner.)
   oncoming (node, dir, changing = false, gapT = 4.5) {
     const lanes = node.inc[(dir + 2) % 4]
     if (!lanes) return false
     for (const L of lanes) {
       for (const c of L.next)
-        if (c.move !== 'L' && c.cars.length && c.cars[0].s < c.len - 2)
+        if (
+          c.move !== 'L' &&
+          !(c.move === 'R' && L.lane === 1) &&
+          c.cars.length &&
+          c.cars[0].s < c.len - 2
+        )
           return true
       const list = L.cars
       for (let i = list.length - 1; i >= Math.max(0, list.length - 3); i--) {
@@ -179,7 +219,8 @@ export const SIGHT = {
         // at the line, or would reach it within the four and a half seconds or so a turn across
         // takes (a longer gap than that hardly ever comes in busy traffic, and the turn waited out
         // green after green)
-        if (o.next?.move === 'L') continue
+        if (o.next?.move === 'L' || (o.next?.move === 'R' && L.lane === 1))
+          continue
         if (
           changing &&
           o.go !== L &&
@@ -190,6 +231,55 @@ export const SIGHT = {
       }
     }
     return this.meComing(node, dir)
+  },
+  // Turning left, but stopped (or nearly) just over the line, held up on its way: before it goes on
+  // it looks again at the oncoming traffic, and waits where it is while anything is coming through
+  // that it can't get across ahead of. The gap to where it waits, or Infinity to go on.
+  turnHold (car, e) {
+    if (car.s > 2 || car.v > 2 || car.siren === 1) return Infinity
+    if (!this.coming(car, NODES[e.node], e.dir, 14 + car.len / 2 - car.s))
+      return Infinity
+    return car.v < 0.1 ? car.s0 - 0.05 : Math.max(0.2, 2 - car.s) + car.s0
+  },
+  // Anything coming the other way through junction node that a left turn from here can't get across
+  // ahead of: on its way over it, or coming up to the line too fast to stop, and there before the
+  // turn has cleared the far lane (toGo m on round it, from its speed now, and a moment more). What
+  // stands still doesn't count (anything that moves off later sees the turning car in its way), nor
+  // what is already giving way to this car.
+  coming (car, node, dir, toGo) {
+    const lanes = node.inc[(dir + 2) % 4]
+    if (!lanes) return false
+    const a = Math.max(1, car.a),
+      v = Math.max(0, car.v)
+    const tClear = (Math.sqrt(v * v + 2 * a * Math.max(0, toGo)) - v) / a + 0.8
+    const green = signal(node, dir, this.t) === GREEN
+    for (const L of lanes) {
+      const kerb = L.lane === 1
+      for (const c of L.next)
+        if (c.move !== 'L' && !(kerb && c.move === 'R'))
+          for (const o of c.cars)
+            if (o.v > 1 && o.s < c.len - 2 && o.blk !== car) return true
+      const o = L.cars[L.cars.length - 1]
+      if (!o || o.v < 1 || o.blk === car) continue
+      if (o.next?.move === 'L' || (kerb && o.next?.move === 'R')) continue
+      const d = L.len - o.s - o.len / 2
+      if (
+        d < o.v * tClear &&
+        (green ||
+          o.go === L ||
+          o.v * o.v > 2 * STOP_DECEL * Math.max(0, d - 0.5))
+      )
+        return true
+    }
+    return false
+  },
+  // anyone on their way over junction i (on a turn, or straight through it)
+  boxBusy (i) {
+    for (const arm of NODES[i].inc)
+      if (arm)
+        for (const L of arm)
+          for (const m of L.next) if (m.cars.length) return true
+    return false
   },
   // Room to get out of the junction on the far side: the lane the car's turn leads onto has space at
   // its start for it, after whoever is already crossing to it (or its traffic is moving).

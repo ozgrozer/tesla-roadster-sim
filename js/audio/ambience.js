@@ -1,10 +1,12 @@
 // Life in the city round the car, mixed into the SoundEngine (sound.js): now and then a bird by
 // day, a horn a few streets away (once drivers honk at all), a siren wailing or yelping somewhere
-// across town and drifting past, a dog barking, building work (a jackhammer, a reversing lorry's
-// beeper, a steel beam's clang) by day; and the people on the pavement: a murmur of voices as the
-// camera nears a crowd, and the footsteps of anyone walking close by. Everything far off is dulled
-// by the distance and mostly heard in the reverb.
+// across town and drifting past (not over a real one: a police car on a call, siren.js, played
+// from here too), a dog barking, building work (a jackhammer, a reversing lorry's beeper, a steel
+// beam's clang) by day; and the people on the pavement: a murmur of voices as the camera nears a
+// crowd, and the footsteps of anyone walking close by. Everything far off is dulled by the
+// distance and mostly heard in the reverb.
 import { HORNS } from './shots.js'
+import { SIREN, sirenVoice } from './siren.js'
 
 const R = Math.random
 // the first two formants (Hz) of a few vowels: as in "heed", "head", "had", "hod", "who'd", "hut"
@@ -100,6 +102,7 @@ export const AMBIENCE = {
         set(n.alarmLP.frequency, a.lp, 0.1)
       }
     }
+    sirenVoice(this, st.city) // (a police car on a call)
     if (!st.city) return
     // (a panicking crowd is louder, quicker and higher)
     set(n.syll[0].playbackRate, 1.2 + (st.panic || 0) * 0.9, 0.3)
@@ -142,7 +145,8 @@ export const AMBIENCE = {
     }
     if (this.sirenT < 0) {
       this.sirenT = 70 + R() * 110
-      this.siren()
+      // (not while a real one is about, nor for a while after)
+      if (this.now - SIREN.near > 25) this.siren()
     }
     if (this.dogT < 0) {
       this.dogT = 35 + R() * 70

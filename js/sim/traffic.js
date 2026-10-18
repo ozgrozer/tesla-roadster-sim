@@ -7,14 +7,22 @@
 // gridlock: the first horn in the city is the Roadster's.
 // Traffic lives in a bubble round the player: cars far behind are recycled into the streets ahead.
 // Cars far off are driven less often (a longer step every second or fourth one), and a car that has
-// not moved for a long while out of sight is taken off the road.
+// not moved for a long while out of sight is taken off the road. Now and then a police car answers
+// a call, and everyone makes way for it (calls.js, responder.js, makeway.js); the weather slows the
+// drivers and the hour decides how many are out (conditions.js).
+import { ENV } from './env.js'
 import { JAM, atJam } from './jam.js'
 import { REACT } from './react.js'
 import { SIGHT } from './sight.js'
 import { nearMisses } from './stunts.js'
-import { slide, collidePlayer, bumpLoose } from './wrecks.js'
+import { MAKEWAY } from './makeway.js'
+import { RESPOND } from './responder.js'
+import { CALLS, newCall } from './calls.js'
+import { CONDITIONS, busy } from './conditions.js'
+import { slide, restore, collidePlayer, bumpLoose } from './wrecks.js'
 import { DRIVE, temperament } from './drivers.js'
-import { rng, NODES, EDGES, LANES, STALLS, pointAt, LANE_OFF } from './city.js'
+import { LANE_CHANGE } from './laneChange.js'
+import { rng, NODES, EDGES, LANES, STALLS, pointAt } from './city.js'
 
 // cruise: the speed an ordinary driver likes (m/s); acc, brake: how hard they pull away and brake;
 // lat: the sideways acceleration they take a corner at; share: how many in a hundred cars are of
@@ -32,6 +40,7 @@ export const TYPES = [
   { name: 'sports', len: 4.5, wid: 1.9, hgt: 1.28, m: 1500, share: 3, cruise: 14.2, acc: 3.2, brake: 3.6, lat: 3.3 }
 ]
 const BUS = TYPES.findIndex(t => t.name === 'bus')
+const POLICE = TYPES.findIndex(t => t.name === 'police')
 const SHARES = TYPES.reduce((a, t) => a + t.share, 0)
 
 const P = { x: 0, z: 0, hx: 1, hz: 0 }
@@ -78,6 +87,13 @@ export class Traffic {
     this.seen = { gap: 0, vl: 0, blk: null } // (drivers.js: what is in the way)
     warm(this.seen)
     this.margin = 0.5 // (sight.js: room a driver leaves either side)
+    this.bus = BUS
+    this.police = POLICE
+    this.call = newCall(seed) // a police car on a call (calls.js)
+    this.dens = 1 // the share of count out on the road at this hour (conditions.js)
+    this.extra = [] // (and the cars parked in the lots by those who aren't)
+    this.used = new Set()
+    this.wxR = rng(seed * 131 + 17)
   }
 
   // the lane graph is shared, so whichever traffic was there before is cleared off it too
@@ -97,12 +113,21 @@ export class Traffic {
     for (const n of NODES) n.hold = null // every light on its cycle
     for (const st of STALLS) if (st.taken) this.park(st)
     for (const e of JAM) this.jam(e)
-    for (let i = 0; i < this.count * 6 && this.n < this.count; i++)
+    // (as many out as there are at this hour, the rest parked in the lots)
+    this.dens = busy(ENV.hour)
+    const want = this.want()
+    for (let i = 0; i < this.count * 6 && this.n < want; i++)
       this.spawn(x, z, 24, this.radius)
+    this.extra.length = 0
+    this.used.clear()
+    for (let i = 0; i < this.count - want; i++)
+      this.parkOne(this.pickType(true, this.wxR), x, z, null, 0)
+    this.callReset()
   }
 
-  // a car of the given type; with a driver (not one parked in a lot or the jam) their temperament
-  make (type, driver = true) {
+  // a car of the given type; with a driver (not one parked in a lot or the jam) their temperament.
+  // R: the random numbers it is drawn with (the traffic's own, unless a call's or the night's)
+  make (type, driver = true, R = this.R) {
     const T = TYPES[type]
     const car = {
       id: this.ids++,
@@ -112,7 +137,7 @@ export class Traffic {
       hgt: T.hgt,
       m: T.m,
       I: (T.m * (T.len * T.len + T.wid * T.wid)) / 12,
-      paint: this.R(),
+      paint: R(),
       v0: T.cruise,
       edge: null,
       next: null,
@@ -162,6 +187,13 @@ export class Traffic {
       yieldT: 0, // honked at from behind: s it keeps trying to move over
       tuck: false, // (and tucked in towards the kerb for it)
       shaken: 0, // knocked loose: s it sits there, hazards on, before driving on
+      pull: 0, // making way for a car on a call (makeway.js), and since when, and where it stops
+      pullT: 0,
+      pullS: 0,
+      siren: 0, // on a call itself (calls.js): 1 lights and siren on, 2 winding down after
+      flash: false, // (and flashing its headlights at the Roadster in its way)
+      wetK: 0, // the wet and the fog its driver's ways are set for (conditions.js)
+      fogK: 0,
       big: type === BUS,
       brake: false,
       parked: false,
@@ -215,23 +247,24 @@ export class Traffic {
       WARM = true
     }
     car.horn = (car.paint * 7.31) % 1
-    if (driver) temperament(car, this.R, T)
+    if (driver) temperament(car, R, T)
     car.short = car.short0 || 1
     this.cars.push(car)
     return car
   }
-  pickType (noBus) {
-    let r = this.R() * SHARES
+  pickType (noBus, R = this.R) {
+    let r = R() * SHARES
     for (let i = 0; i < TYPES.length; i++)
       if ((r -= TYPES[i].share) < 0) return noBus && i === BUS ? 0 : i
     return 0
   }
-  park (st) {
-    const car = this.make(this.pickType(true), false)
+  park (st, R = this.R, type = this.pickType(true, R)) {
+    const car = this.make(type, false, R)
     car.parked = true
     car.x = car.homeX = st.x
     car.z = car.homeZ = st.z
     this.setYaw(car, (car.homeYaw = st.yaw))
+    return car
   }
   // a lane of the jammed street: nose to tail, a little out of line, brake lights on (and buses
   // only in the kerb lane). The queue's tail stands a car's length and a bit in from the junction,
@@ -280,9 +313,16 @@ export class Traffic {
       // (clear of the cars in the lane and beside it, one changing lanes included)
       const near = o => Math.abs(o.s - s) < o.len + 10 + o.v * 1.5
       if (e.cars.some(near) || e.twin?.cars.some(near)) continue
-      // (and of anyone on foot in the road, and any wreck)
+      // (and of anyone on foot in the road, any wreck, any car off its own lane's line, and not
+      // coming up to a junction someone is on their way over)
       const by = o => Math.abs(o.x - px) < 12 && Math.abs(o.z - pz) < 12
-      if (this.peds.some(by) || this.loose.some(by)) continue
+      if (
+        this.peds.some(by) ||
+        this.loose.some(by) ||
+        this.box.some(by) ||
+        this.boxBusy(e.to)
+      )
+        continue
       const car = this.make(this.pickType())
       car.edge = e
       car.s = s
@@ -302,26 +342,12 @@ export class Traffic {
       if (!c.parked && Math.hypot(c.x - x, c.z - z) < r) this.remove(i)
     }
   }
-  restore (c, x, z, view) {
-    for (const [px, pz] of [[c.x, c.z], [c.homeX, c.homeZ]]) {
-      const d = Math.sqrt((px - x) ** 2 + (pz - z) ** 2)
-      const seen =
-        view && d < 260 && (px - view.x) * view.fx + (pz - view.z) * view.fz > -12
-      if (d < 60 || seen) return
-    }
-    c.loose = false
-    c.x = c.homeX
-    c.z = c.homeZ
-    this.setYaw(c, c.homeYaw)
-    c.vx = c.vz = c.w = c.yr = 0
-    c.sig = 0
-    c.honkIn = 0
-  }
   remove (i) {
     const c = this.cars[i]
     this.detach(c)
     this.cars.splice(i, 1)
     if (!c.parked) this.n--
+    if (c.siren) this.callGone(c)
   }
 
   // keep each lane's cars sorted by distance along it
@@ -339,6 +365,7 @@ export class Traffic {
   // Where to go at the end of this lane: mostly straight on, sometimes a turn, which can mean
   // moving over to the other lane first (unless `own`). Never into the jammed street.
   choose (e, car, own = false) {
+    if (car.siren === 1) return this.route(e, car) // (on a call: calls.js)
     let straight = null
     for (const o of e.next)
       if (o.move === 'S' && !o.next[0].closed) straight = o
@@ -357,19 +384,6 @@ export class Traffic {
   // a crash for the people to hear (crowd.js), kept until they next look
   hear (x, z, r) {
     if (this.heard.length < 16) this.heard.push({ x, z, r })
-  }
-  swap (car) {
-    const t = car.edge.twin
-    car.lat0 = LANE_OFF[car.edge.lane] - LANE_OFF[t.lane] + car.off
-    car.off = car.offT = 0
-    car.lc = 1e-6
-    car.lcLen = this.changeLength(car)
-    car.stuck = car.yieldT = car.sigT = 0
-    this.detach(car)
-    car.from = car.edge
-    car.edge = t
-    this.insert(t, car)
-    if (!t.next.includes(car.next)) car.next = this.choose(t, car, true)
   }
 
   step (dt, sim, view) {
@@ -400,6 +414,7 @@ export class Traffic {
     // the Roadster coming down on the street from the air: everyone in front of it panics
     if (this.wasAir && sim.mode === 'ground' && pl.y < 1) this.landing(pl.x, pl.z)
     this.wasAir = sim.mode === 'air'
+    this.calls(dt, sim.pos.x, sim.pos.z, view) // (a police car on a call: calls.js)
     for (const car of this.cars)
       if (car.loose) slide(this, car, dt, sim)
       else if (!car.parked) {
@@ -419,15 +434,17 @@ export class Traffic {
   }
 
   // Drop cars that fell far behind (or were wrecked long ago, or have stood still for a minute, out
-  // of sight) and refill the streets around (x, z). And how often each car is driven: every step
-  // near the Roadster or in sight, every second or fourth one further off.
+  // of sight) and refill the streets around (x, z), as many as there are at this hour. And how
+  // often each car is driven: every step near the Roadster or in sight (or on a call), every
+  // second or fourth one further off. The weather into the drivers' ways (conditions.js).
   recycle (x, z, view) {
+    this.conditions(x, z, view)
     for (let i = this.cars.length - 1; i >= 0; i--) {
       const c = this.cars[i]
       if (c.parked) {
         // (knocked out of its place a while ago and out of sight: back in it, as if towed and
         // parked again, so wrecks don't pile up)
-        if (c.loose && c.looseT > 20) this.restore(c, x, z, view)
+        if (c.loose && c.looseT > 20) restore(this, c, x, z, view)
         continue
       }
       const d = Math.sqrt((c.x - x) ** 2 + (c.z - z) ** 2)
@@ -443,10 +460,22 @@ export class Traffic {
         this.remove(i)
         continue
       }
-      c.lod = d < 110 || (seen && d < 200) ? 1 : seen || d < 170 ? 2 : 4
+      c.lod =
+        d < 110 || c.siren || (seen && d < 200) ? 1 : seen || d < 170 ? 2 : 4
     }
-    for (let k = 0; k < 4 && this.n < this.count; k++)
+    const want = this.want()
+    for (let k = 0; k < 4 && this.n < want; k++)
       this.spawn(x, z, 150, this.radius, view)
   }
 }
-Object.assign(Traffic.prototype, SIGHT, DRIVE, REACT)
+Object.assign(
+  Traffic.prototype,
+  SIGHT,
+  DRIVE,
+  LANE_CHANGE,
+  REACT,
+  CALLS,
+  RESPOND,
+  MAKEWAY,
+  CONDITIONS
+)

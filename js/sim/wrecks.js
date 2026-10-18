@@ -2,7 +2,8 @@
 // tyres (off walls and posts, through a post it hits hard enough to snap, and into other cars, which
 // it knocks loose in turn), and what the driver does then: sits there a few seconds with the hazards
 // on (leaning on the horn if the Roadster is still about), then, if the car is still more or less
-// on its road and facing the right way, steers back into the lane and drives on.
+// on its road and facing the right way, steers back into the lane and drives on. A parked car
+// knocked out of its place is put back in it a while later, once nobody can see it go.
 import { query } from './city.js'
 import { honk } from './manners.js'
 import { CAR } from './constants.js'
@@ -128,6 +129,27 @@ function rejoin (tr, car) {
     tr.place(car)
     return
   }
+}
+
+// A parked car knocked out of its place a while ago, out of sight both where it lies and where it
+// belongs, and not close to the Roadster: back in its place, as if towed and parked again, so
+// wrecks don't pile up (from the traffic's recycle; x, z: the Roadster, view: the camera)
+export function restore (tr, c, x, z, view) {
+  for (const [px, pz] of [[c.x, c.z], [c.homeX, c.homeZ]]) {
+    const d = Math.sqrt((px - x) ** 2 + (pz - z) ** 2)
+    const seen =
+      view &&
+      d < 260 &&
+      (px - view.x) * view.fx + (pz - view.z) * view.fz > -12
+    if (d < 60 || seen) return
+  }
+  c.loose = false
+  c.x = c.homeX
+  c.z = c.homeZ
+  tr.setYaw(c, c.homeYaw)
+  c.vx = c.vz = c.w = c.yr = 0
+  c.sig = 0
+  c.honkIn = 0
 }
 
 // Cars knocked loose against everything else on the road: they push apart by mass, trade momentum,
