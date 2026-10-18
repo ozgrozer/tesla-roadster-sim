@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -37,11 +37,86 @@
     <link rel="stylesheet" href="css/fonts.css" />
     <link rel="stylesheet" href="css/base.css" />
     <link rel="stylesheet" href="css/hud.css" />
+    <link rel="stylesheet" href="css/notify.css" />
     <link rel="stylesheet" href="css/panels.css" />
+    <link rel="stylesheet" href="css/phone.css" />
   </head>
   <body>
     <canvas id="c"></canvas>
-    <div class="loading" id="loading"><div>Rolling out the Roadster…</div></div>
+
+    <!-- the title card while the city builds -->
+    <div class="loading" id="loading" role="status">
+      <!-- the first div: where a failure to start is said (scene.js, the watchdog below) -->
+      <div class="ld-msg" id="loadMsg"></div>
+      <div class="ld-sky" aria-hidden="true">
+        <svg
+          class="ld-skyline"
+          viewBox="0 0 1200 300"
+          preserveAspectRatio="xMidYMax slice"
+        >
+          <defs>
+            <g id="palm">
+              <path class="trunk" d="M0 300Q7 228 4 150" />
+              <path
+                class="fronds"
+                d="M4 150q-26-4-42 16M4 150q24-8 42 12M4 150q-16-18-38-16M4 150q16-20 38-14M4 150q2-20-6-30M4 150q-12 4-22 26M4 150q14 2 24 24"
+              />
+            </g>
+          </defs>
+          <path
+            class="city"
+            d="M0 300V258H34V246H58V262H90V240H118V252H150V236H176V258H214V244H246V262H286V250H318V230H340V244H372V258H404V150H430V156H446V258H470V146H494V152H510V258H540V214H566V258H600V240H636V252H668V232H700V250H734V190H760V170H784V196H800V120L812 108H828L840 120V196H858V150H876V66L888 36L900 66V150H918V176H944V96Q956 80 968 96V176H990V140H1016V182H1040V210H1070V160H1094V224H1130V246H1170V256H1200V300Z"
+          />
+          <use href="#palm" transform="translate(66 0)" />
+          <use href="#palm" transform="translate(128 45) scale(.85)" />
+          <use href="#palm" transform="translate(196 18) scale(.94)" />
+          <use href="#palm" transform="translate(262 60) scale(.8)" />
+          <use href="#palm" transform="translate(586 36) scale(.88)" />
+          <use href="#palm" transform="translate(648 12) scale(.96)" />
+          <use href="#palm" transform="translate(1110 54) scale(.82)" />
+        </svg>
+      </div>
+      <div class="ld-card">
+        <h2 class="ld-title">Tesla<br />Roadster</h2>
+        <p class="ld-sub">Los Angeles</p>
+      </div>
+      <!-- one tip at a time, the next every few seconds (css/panels.css), starting at a random one -->
+      <div class="ld-tips" id="loadTips" style="--n: 8">
+        <p style="--i: 0">
+          <b>Tip</b>Pull the e-brake at speed for Track Mode: hold W to drift,
+          steer into it to go deeper.
+        </p>
+        <p style="--i: 1">
+          <b>Tip</b>Hold F to lift off on the thrusters. In the air, X is a
+          backflip and K a kickflip.
+        </p>
+        <p style="--i: 2">
+          <b>Tip</b>Flash past a car close enough to touch for a near miss:
+          double points if it is coming the other way.
+        </p>
+        <p style="--i: 3">
+          <b>Tip</b>The gold blip on the radar is the gridlock on Wilshire. Jump
+          it.
+        </p>
+        <p style="--i: 4">
+          <b>Tip</b>Press P for Autopilot: it drives to the gridlock, leans on
+          the horn and flies over it.
+        </p>
+        <p style="--i: 5">
+          <b>Tip</b>W and S together at a crawl is a burnout. Turn the wheel for
+          donuts.
+        </p>
+        <p style="--i: 6">
+          <b>Tip</b>Press L for night in the city, and U to switch between km/h
+          and mph.
+        </p>
+        <p style="--i: 7">
+          <b>Tip</b>C takes you to the McGregor test site, where the Roadster
+          rode the 170° wall.
+        </p>
+      </div>
+      <div class="ld-spin"><i></i>Loading</div>
+    </div>
 
     <div class="hud" id="hud">
       <div class="top">
@@ -84,121 +159,132 @@
         Fan-made simulation built from press coverage of the Oct 15, 2026
         Roadster reveal. Not affiliated with Tesla or SpaceX.
       </div>
-      <a class="promo" href="https://grape.cool" target="_blank" rel="noopener"
-        ><svg viewBox="0 0 16 16" aria-hidden="true">
-          <path
-            class="leaf"
-            d="M8 4.2V2M8 3.2c1-1.5 2.9-1.9 4.4-1-1 1.4-2.8 1.8-4.4 1z"
-          />
-          <circle cx="4.6" cy="6.6" r="1.9" />
-          <circle cx="8" cy="6.6" r="1.9" />
-          <circle cx="11.4" cy="6.6" r="1.9" />
-          <circle cx="6.3" cy="9.8" r="1.9" />
-          <circle cx="9.7" cy="9.8" r="1.9" />
-          <circle cx="8" cy="13" r="1.9" /></svg
-        >grape.cool</a
-      >
 
-      <aside class="help" id="help">
-        <h2>Drive</h2>
-        <ul>
-          <li>
-            <span class="k"><kbd>W</kbd><kbd>S</kbd></span
-            >throttle · brake, reverse
-          </li>
-          <li>
-            <span class="k"><kbd>W</kbd>+<kbd>S</kbd></span
-            >burnout · donut (steer)
-          </li>
-          <li>
-            <span class="k"><kbd>A</kbd><kbd>D</kbd></span
-            >steer · roll a wreck over
-          </li>
-          <li>
-            <span class="k"><kbd>Space</kbd></span
-            >e-brake · drift (then W)
-          </li>
-          <li>
-            <span class="k"><kbd>Shift</kbd></span
-            >boost (main thrusters)
-          </li>
-          <li>
-            <span class="k"><kbd>F</kbd></span
-            >fly (lift thrusters)
-          </li>
-          <li>
-            <span class="k"><kbd>H</kbd></span
-            >horn
-          </li>
-          <li class="site-only">
-            <span class="k"><kbd>G</kbd></span
-            >suction fan: auto, on, off
-          </li>
-        </ul>
-        <h2>Fly</h2>
-        <ul>
-          <li>
-            <span class="k"><kbd>W</kbd><kbd>S</kbd></span
-            >pitch
-          </li>
-          <li>
-            <span class="k"><kbd>A</kbd><kbd>D</kbd></span
-            >roll
-          </li>
-          <li>
-            <span class="k"><kbd>Q</kbd><kbd>E</kbd></span
-            >yaw
-          </li>
-          <li>
-            <span class="k"><kbd>X</kbd><kbd>K</kbd></span
-            >backflip · kickflip
-          </li>
-        </ul>
-        <h2>Sim</h2>
-        <ul>
-          <li class="site-only">
-            <span class="k"><kbd>P</kbd><kbd>M</kbd></span
-            >autopilot demo · manual
-          </li>
-          <li class="site-only">
-            <span class="k"><kbd>R</kbd></span
-            >reset
-          </li>
-          <li class="site-only">
-            <span class="k"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd></span
-            >start · wall top · lineup
-          </li>
-          <li class="city-only">
-            <span class="k"><kbd>P</kbd></span
-            >Autopilot
-          </li>
-          <li class="city-only">
-            <span class="k"><kbd>R</kbd></span
-            >back to the start
-          </li>
-          <li class="city-only">
-            <span class="k"><kbd>L</kbd></span
-            >night · golden hour
-          </li>
-          <li>
-            <span class="k"><kbd>V</kbd><kbd>T</kbd><kbd>N</kbd></span
-            >camera · slow-mo · sound
-          </li>
-          <li>
-            <span class="k"><kbd>C</kbd></span
-            >city · test site
-          </li>
-          <li>
-            <span class="k"><kbd>I</kbd></span
-            >hide this panel
-          </li>
-        </ul>
-        <p class="note city-only">
-          <i class="blip"></i>gold blip on the radar: the gridlock
-        </p>
-        <p class="note">Any drive key takes the wheel back</p>
-        <p class="note">Gamepad: RT drive · LT brake · A e-brake</p>
+      <!-- GTA's help box: one hint at a time, top left -->
+      <div class="helpbox" id="helpbox" role="status" aria-live="polite">
+        <p id="helpText"></p>
+      </div>
+
+      <!-- the keys, as a pause-menu card: shown on the first visit, then on I -->
+      <aside class="help" id="help" aria-label="Controls">
+        <header class="help-head">
+          <h2>Controls</h2>
+          <span><kbd>I</kbd> hide</span>
+        </header>
+        <div class="help-cols">
+          <section>
+            <h3>Drive</h3>
+            <ul>
+              <li>
+                <span class="k"><kbd>W</kbd><kbd>S</kbd></span
+                >throttle · brake, reverse
+              </li>
+              <li>
+                <span class="k"><kbd>W</kbd>+<kbd>S</kbd></span
+                >burnout · donut (steer)
+              </li>
+              <li>
+                <span class="k"><kbd>A</kbd><kbd>D</kbd></span
+                >steer · roll a wreck over
+              </li>
+              <li>
+                <span class="k"><kbd>Space</kbd></span
+                >e-brake · drift (then W)
+              </li>
+              <li>
+                <span class="k"><kbd>Shift</kbd></span
+                >boost (main thrusters)
+              </li>
+              <li>
+                <span class="k"><kbd>F</kbd></span
+                >fly (lift thrusters)
+              </li>
+              <li>
+                <span class="k"><kbd>H</kbd></span
+                >horn
+              </li>
+              <li class="site-only">
+                <span class="k"><kbd>G</kbd></span
+                >suction fan: auto, on, off
+              </li>
+            </ul>
+            <h3>Fly</h3>
+            <ul>
+              <li>
+                <span class="k"><kbd>W</kbd><kbd>S</kbd></span
+                >pitch
+              </li>
+              <li>
+                <span class="k"><kbd>A</kbd><kbd>D</kbd></span
+                >roll
+              </li>
+              <li>
+                <span class="k"><kbd>Q</kbd><kbd>E</kbd></span
+                >yaw
+              </li>
+              <li>
+                <span class="k"><kbd>X</kbd><kbd>K</kbd></span
+                >backflip · kickflip
+              </li>
+            </ul>
+          </section>
+          <section>
+            <h3>Game</h3>
+            <ul>
+              <li class="site-only">
+                <span class="k"><kbd>P</kbd><kbd>M</kbd></span
+                >autopilot demo · manual
+              </li>
+              <li class="site-only">
+                <span class="k"><kbd>R</kbd></span
+                >reset
+              </li>
+              <li class="site-only">
+                <span class="k"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd></span
+                >start · wall top · lineup
+              </li>
+              <li class="city-only">
+                <span class="k"><kbd>P</kbd></span
+                >Autopilot
+              </li>
+              <li class="city-only">
+                <span class="k"><kbd>R</kbd></span
+                >back to the start
+              </li>
+              <li class="city-only">
+                <span class="k"><kbd>L</kbd></span
+                >night · golden hour
+              </li>
+              <li>
+                <span class="k"><kbd>V</kbd><kbd>T</kbd><kbd>N</kbd></span
+                >camera · slow-mo · sound
+              </li>
+              <li>
+                <span class="k"><kbd>U</kbd></span
+                >km/h · mph
+              </li>
+              <li>
+                <span class="k"><kbd>C</kbd></span
+                >city · test site
+              </li>
+              <li>
+                <span class="k"><kbd>I</kbd></span
+                >hide this card
+              </li>
+            </ul>
+            <p class="note city-only">
+              <i class="blip"></i>Radar: the gold blip is the gridlock, the
+              green bar the car's condition, the blue its thruster air
+            </p>
+            <p class="note">Any drive key takes the wheel back</p>
+            <p class="note">Gamepad: RT drive · LT brake · A e-brake</p>
+          </section>
+        </div>
       </aside>
+
+      <div class="score" id="scoreBox" aria-label="Stunt score">
+        <span class="v" id="score">0</span>
+      </div>
 
       <div class="caption" id="caption">
         <div class="eyebrow" id="capEyebrow">Stunt 1</div>
@@ -208,100 +294,141 @@
         </div>
       </div>
       <div class="countdown" id="countdown">3</div>
-      <div class="popups" id="popups"></div>
+      <!-- stunt titles: NEAR MISS, DRIFT ×2, STUNT BONUS -->
+      <div class="notices" id="notices" aria-live="polite"></div>
 
-      <div class="score" id="scoreBox">
-        <span class="k">STUNT SCORE</span>
-        <span class="v" id="score">0</span>
+      <!-- the city's radar, with the car's condition and its air under it -->
+      <div class="radarbox" id="radarBox">
+        <canvas class="radar" id="radar" aria-label="City map"></canvas>
+        <div class="vitals">
+          <div class="vbar cond" id="condBox" title="Condition">
+            <i id="condBar"></i>
+          </div>
+          <div class="vbar air" id="airBox" title="Thruster air">
+            <i id="airBar"></i>
+          </div>
+        </div>
       </div>
 
-      <div class="schematic" aria-label="Thruster status">
-        <div class="k">
-          <span>Thrusters</span><span id="thrTotal">0 kN</span>
+      <!-- bottom right: the instruments when they matter, the speedometer, where you are -->
+      <div class="br">
+        <div class="instruments" id="instruments" aria-label="Instruments">
+          <div class="schematic">
+            <svg
+              viewBox="0 0 120 150"
+              role="img"
+              aria-label="The car from above with its ten thrusters"
+            >
+              <path
+                d="M40 10 L80 10 L94 40 L96 118 L88 140 L32 140 L24 118 L26 40 Z"
+                fill="none"
+                stroke="rgba(238,240,242,.45)"
+                stroke-width="1.6"
+              />
+              <path
+                d="M44 46 L76 46 L80 84 L40 84 Z"
+                fill="rgba(214,168,78,.12)"
+                stroke="rgba(214,168,78,.5)"
+                stroke-width="1.2"
+              />
+              <line
+                x1="34"
+                y1="12"
+                x2="86"
+                y2="12"
+                stroke="#eef0f2"
+                stroke-width="2.4"
+                opacity=".8"
+              />
+              <line
+                x1="30"
+                y1="138"
+                x2="90"
+                y2="138"
+                stroke="#ff3b3b"
+                stroke-width="2.4"
+                opacity=".8"
+              />
+              <g id="thrDots"></g>
+            </svg>
+            <span id="thrTotal">0 kN</span>
+          </div>
+          <dl class="figs">
+            <div>
+              <dt>Alt</dt>
+              <dd id="tAlt">0.0<small>m</small></dd>
+            </div>
+            <div>
+              <dt>Pitch</dt>
+              <dd id="tPitch">0°</dd>
+            </div>
+            <div>
+              <dt>Load</dt>
+              <dd id="tG">1.00<small>G</small></dd>
+            </div>
+            <div>
+              <dt>Air</dt>
+              <dd id="tAir">250<small>kg</small></dd>
+            </div>
+            <div class="site-only">
+              <dt>Fan</dt>
+              <dd id="tSuck">OFF</dd>
+            </div>
+            <div class="site-only">
+              <dt>0–60</dt>
+              <dd id="t060">–</dd>
+            </div>
+          </dl>
         </div>
-        <svg
-          viewBox="0 0 120 150"
-          id="thrSvg"
-          role="img"
-          aria-label="Top-down view of the car with ten thruster positions"
+
+        <div class="speedo" id="speedo">
+          <div class="sp-main">
+            <span class="sp-v" id="spV">0</span>
+            <div class="sp-side">
+              <button class="sp-unit" id="spUnit" type="button">km/h</button>
+              <span class="sp-gear" id="spGear" aria-label="Drive selector"
+                ><i>P</i><i>R</i><i>N</i><i>D</i></span
+              >
+            </div>
+          </div>
+          <div class="sp-pow" aria-hidden="true">
+            <i class="sp-regen"><b id="spRegen"></b></i
+            ><i class="sp-power"><b id="spPow"></b></i>
+          </div>
+          <div class="sp-lamps">
+            <span class="lamp" id="lAbs">ABS</span>
+            <span class="lamp blink" id="lEsc">ESC</span>
+            <span class="lamp track" id="lTrack">TRACK</span>
+            <span class="lamp brake" id="lBrake">E-BRAKE</span>
+          </div>
+        </div>
+
+        <div class="place" id="place" aria-live="polite">
+          <div class="pl-top" id="plTop"></div>
+          <div class="pl-big" id="plBig"></div>
+        </div>
+
+        <a
+          class="promo"
+          href="https://grape.cool"
+          target="_blank"
+          rel="noopener"
+          ><svg viewBox="0 0 16 16" aria-hidden="true">
+            <path
+              class="leaf"
+              d="M8 4.2V2M8 3.2c1-1.5 2.9-1.9 4.4-1-1 1.4-2.8 1.8-4.4 1z"
+            />
+            <circle cx="4.6" cy="6.6" r="1.9" />
+            <circle cx="8" cy="6.6" r="1.9" />
+            <circle cx="11.4" cy="6.6" r="1.9" />
+            <circle cx="6.3" cy="9.8" r="1.9" />
+            <circle cx="9.7" cy="9.8" r="1.9" />
+            <circle cx="8" cy="13" r="1.9" /></svg
+          >grape.cool</a
         >
-          <path
-            d="M40 10 L80 10 L94 40 L96 118 L88 140 L32 140 L24 118 L26 40 Z"
-            fill="none"
-            stroke="rgba(238,240,242,.35)"
-            stroke-width="1.2"
-          />
-          <path
-            d="M44 46 L76 46 L80 84 L40 84 Z"
-            fill="rgba(214,168,78,.12)"
-            stroke="rgba(214,168,78,.45)"
-            stroke-width="1"
-          />
-          <line
-            x1="34"
-            y1="12"
-            x2="86"
-            y2="12"
-            stroke="#eef0f2"
-            stroke-width="2"
-            opacity=".8"
-          />
-          <line
-            x1="30"
-            y1="138"
-            x2="90"
-            y2="138"
-            stroke="#ff3b3b"
-            stroke-width="2"
-            opacity=".8"
-          />
-          <g id="thrDots"></g>
-        </svg>
-        <div class="legend">
-          4 main · 4 lift · 2 side<br /><span id="thrAir"
-            >250 kg air · 380 bar</span
-          >
-        </div>
       </div>
 
-      <canvas class="radar" id="radar" aria-label="City map"></canvas>
-
-      <div class="context-hint" id="hint">
-        Autopilot demo running · press any drive key to take over
-      </div>
-
-      <div class="telemetry" role="status" aria-live="off">
-        <div class="cell speed">
-          <span class="k">km/h <em class="tag" id="tTag"></em></span
-          ><span class="v" id="tSpeed">0</span>
-        </div>
-        <div class="cell">
-          <span class="k">Pitch</span><span class="v" id="tPitch">0°</span>
-        </div>
-        <div class="cell">
-          <span class="k">Load</span
-          ><span class="v" id="tG">1.00<small>G</small></span>
-        </div>
-        <div class="cell">
-          <span class="k">Alt</span
-          ><span class="v" id="tAlt">0.0<small>m</small></span>
-        </div>
-        <div class="cell hide-sm">
-          <span class="k">Power</span
-          ><span class="v" id="tPow">0<small>kW</small></span>
-        </div>
-        <div class="cell hide-sm">
-          <span class="k">Suction</span><span class="v" id="tSuck">OFF</span>
-        </div>
-        <div class="cell">
-          <span class="k">Air</span
-          ><span class="v" id="tAir">250<small>kg</small></span>
-          <div class="bar"><i id="tAirBar"></i></div>
-        </div>
-        <div class="cell hide-sm">
-          <span class="k">0–60</span><span class="v" id="t060">–</span>
-        </div>
-      </div>
+      <div class="context-hint" id="hint"></div>
 
       <div class="touch" id="touch">
         <div class="cluster">
@@ -323,16 +450,25 @@
       </div>
     </div>
     <div class="fade" id="fade"></div>
+    <script>
+      // the loading tips start at a random one (each waits its turn: css/panels.css)
+      ;(function () {
+        var t = document.getElementById('loadTips')
+        var n = t.children.length
+        t.style.setProperty('--start', -Math.floor(Math.random() * n) * 5 + 's')
+      })()
+    </script>
     <!-- One self-contained script built from js/ (npm run build), so this page opens straight from disk. -->
     <script src="dist/roadster.js"></script>
     <script>
       // If the 3D engine never starts (WebGL off, very old browser), say so instead of a blank screen.
       setTimeout(function () {
-        var l = document.getElementById("loading");
-        if (l && getComputedStyle(l).opacity !== "0")
-          l.firstElementChild.textContent =
-            "The game did not start. Check that WebGL is enabled, then reload.";
-      }, 15000);
+        var l = document.getElementById('loading')
+        var m = document.getElementById('loadMsg')
+        if (l && getComputedStyle(l).opacity !== '0' && !m.textContent)
+          m.textContent =
+            'The game did not start. Check that WebGL is enabled, then reload.'
+      }, 15000)
     </script>
   </body>
 </html>
