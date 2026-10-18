@@ -248,6 +248,67 @@ test('brakes and e-brake stop the car in realistic distances', () => {
   )
 })
 
+test('braking hard in a corner at the limit runs a touch wide rather than swinging the tail round', () => {
+  // full lock at the tyres' limit, then the brakes on as hard as they go: the weight goes onto the
+  // nose, and the stability control lets the light rears off their brakes and regen, so the slide
+  // stays about where it was instead of spinning the car
+  for (const kmh of [50, 90, 120]) {
+    const sim = new Sim()
+    sim.reset('start')
+    sim.pos.set(-100, 0, 300)
+    sim.suction = 0
+    sim.syncPose()
+    sim.vel.set(kmh / 3.6, 0, 0)
+    sim.speed = kmh / 3.6
+    let t = 0,
+      worst = 0
+    while (t < 4) {
+      const c = makeControls()
+      c.fan = false
+      c.steer = Math.min(1, t / 0.3)
+      if (t > 1.2 && sim.speed > 0.5) c.brake = Math.min(1, (t - 1.2) / 0.3)
+      sim.step(H, c)
+      t += H
+      if (t > 1.2 && sim.groundSpeed() > 2)
+        worst = Math.max(worst, Math.abs(sim.slipR) / DEG)
+    }
+    assert.ok(
+      worst < 16,
+      `at ${kmh} km/h the rears slide ${worst.toFixed(0)}° at most`
+    )
+  }
+})
+
+test('the ABS works only when the brakes ask for more than the tyres have', () => {
+  let hard = 0,
+    soft = 0
+  const sim = new Sim()
+  sim.reset('start')
+  sim.pos.set(-300, 0, 60)
+  sim.suction = 0
+  sim.syncPose()
+  sim.vel.set(16.67, 0, 0)
+  sim.speed = 16.67
+  for (let i = 0; i < 30; i++) {
+    const c = makeControls()
+    c.fan = false
+    c.brake = 1
+    sim.step(H, c)
+    hard = Math.max(hard, sim.abs)
+  }
+  sim.vel.set(16.67, 0, 0)
+  sim.speed = 16.67
+  for (let i = 0; i < 30; i++) {
+    const c = makeControls()
+    c.fan = false
+    c.brake = 0.6
+    sim.step(H, c)
+    soft = Math.max(soft, sim.abs)
+  }
+  assert.ok(hard > 0.9, `full braking: the ABS at work (${hard.toFixed(2)})`)
+  assert.equal(soft, 0, 'a firm brake within the grip: no ABS')
+})
+
 test('e-brake plus steering rotates the car into a drift', () => {
   const r = from60((c, t) => {
     c.ebrake = t < 0.8
