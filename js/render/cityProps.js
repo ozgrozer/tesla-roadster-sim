@@ -281,11 +281,12 @@ export function buildProps (group) {
   fallers.lamp.onKnock = i => wires.cut(i)
   fallers.lamp.onStandUp = () => wires.restore()
   buildDecor(group)
+  // (the light they throw on the ground is the ground's own to work out: lampLight.js; the pools
+  // that once stood for it stay out of sight)
   const pools = fallers.lamp.parts[3].inst
+  pools.visible = false
   const night = k => {
     LENS.color.copy(hdr(3.2, 2.5, 1.6)).multiplyScalar(1 + 2 * k)
-    POOL.opacity = 0.42 * k
-    pools.visible = k > 0.01
     signals.names.night(k)
   }
   return { signals, fallers, night }

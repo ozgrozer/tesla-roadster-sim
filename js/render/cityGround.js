@@ -6,6 +6,8 @@ import * as THREE from 'three'
 import { merge, marks, LAYER } from './geo.js'
 import { canvasTex, speckle } from './scene.js'
 import { roadMaterial } from './roadSurface.js'
+import { wetGround } from './wet.js'
+import { lampLit } from './lampLight.js'
 import {
   N,
   DIRS,
@@ -132,13 +134,27 @@ function flat (x0, z0, x1, z1, y) {
 
 export function buildGround (group) {
   const T = textures()
-  const mat = (map, color = 0xffffff, rough = 0.92) =>
-    new THREE.MeshStandardMaterial({ map, color, roughness: rough })
+  // (each darker and smoother in the rain: wet.js; the grass hardly shines; and lit at night by the
+  // street lights: lampLight.js)
+  const mat = (
+    map,
+    color = 0xffffff,
+    rough = 0.92,
+    dark = 0.62,
+    gloss = 0.32
+  ) =>
+    lampLit(
+      wetGround(
+        new THREE.MeshStandardMaterial({ map, color, roughness: rough }),
+        dark,
+        gloss
+      )
+    )
   const M = {
-    asphalt: roadMaterial({ map: T.asphalt, roughness: 0.88 }),
+    asphalt: lampLit(roadMaterial({ map: T.asphalt, roughness: 0.88 })),
     walk: mat(T.walk),
     plaza: mat(T.plaza),
-    grass: mat(T.grass, 0xffffff, 0.98)
+    grass: mat(T.grass, 0xffffff, 0.98, 0.75, 0.7)
   }
   // the same, laid over a lot's base: drawn in front of it (a polygon offset), so they never fight
   const over = m => {
@@ -148,10 +164,10 @@ export function buildGround (group) {
     return m
   }
   const O = {
-    asphalt: over(roadMaterial({ map: T.asphalt, roughness: 0.88 })),
+    asphalt: over(lampLit(roadMaterial({ map: T.asphalt, roughness: 0.88 }))),
     concrete: over(mat(T.walk, 0xf2efe8)),
     plaza: over(mat(T.plaza)),
-    grass: over(mat(T.grass, 0xffffff, 0.98))
+    grass: over(mat(T.grass, 0xffffff, 0.98, 0.75, 0.7))
   }
   const add = (geo, m, order = LAYER.ground) => {
     const mesh = new THREE.Mesh(geo, m)
@@ -292,13 +308,19 @@ export function buildGround (group) {
   const paint = (color, list, y, off = 1) => {
     const m = marks(
       list,
-      new THREE.MeshStandardMaterial({
-        color,
-        roughness: 0.7,
-        polygonOffset: true,
-        polygonOffsetFactor: -off,
-        polygonOffsetUnits: -off
-      }),
+      lampLit(
+        wetGround(
+          new THREE.MeshStandardMaterial({
+            color,
+            roughness: 0.7,
+            polygonOffset: true,
+            polygonOffsetFactor: -off,
+            polygonOffsetUnits: -off
+          }),
+          0.8,
+          0.2
+        )
+      ),
       y
     )
     group.add(m)

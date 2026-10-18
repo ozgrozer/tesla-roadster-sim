@@ -2,8 +2,11 @@
 // (polished enough to catch the low sun), a line of oil drips between them, more wear on the
 // approach to each stop line, broad patches of newer and older surface, tar-sealed cracks wandering
 // across it, and a concrete gutter along every kerb that follows the kerb round the corners. All of
-// it worked out in the shader from where on the grid a point is, so it lines up with the lanes.
+// it worked out in the shader from where on the grid a point is, so it lines up with the lanes. In
+// the rain (wet.js) it soaks dark and smooth and mirrors the street, puddles fill its dips and run
+// along its gutters, and the rain rings the water in them.
 import * as THREE from 'three'
+import { WET, PUDDLE_GLSL } from './wet.js'
 import {
   N,
   HALF,
@@ -20,17 +23,31 @@ const f = v => v.toFixed(3)
 export function roadMaterial (opts) {
   const m = new THREE.MeshStandardMaterial(opts)
   m.onBeforeCompile = shader => {
+    Object.assign(shader.uniforms, WET)
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nvarying vec2 vGround;')
+      .replace(
+        '#include <common>',
+        `#include <common>
+        varying vec2 vGround;
+        varying vec4 vRefl;
+        uniform mat4 uReflMat;`
+      )
       .replace(
         '#include <begin_vertex>',
-        '#include <begin_vertex>\nvGround = (modelMatrix * vec4(position, 1.0)).xz;'
+        `#include <begin_vertex>
+        vec4 wPos = modelMatrix * vec4(position, 1.0);
+        vGround = wPos.xz;
+        vRefl = uReflMat * wPos;`
       )
     shader.fragmentShader = shader.fragmentShader
       .replace(
         '#include <common>',
         `#include <common>
         varying vec2 vGround;
+        varying vec4 vRefl;
+        ${PUDDLE_GLSL}
+        float gWater = 0.0;
+        vec2 gSlope = vec2(0.0);
         float rHash (vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
         float rNoise (vec2 p) {
           vec2 i = floor(p), u = fract(p);
@@ -99,14 +116,52 @@ export function roadMaterial (opts) {
             vec3 con = vec3(0.5, 0.49, 0.47) * (0.9 + 0.2 * rNoise(p * 3.0)) * (1.0 - 0.4 * joint);
             diffuseColor.rgb = mix(diffuseColor.rgb, con * (0.85 + 0.15 * smoothstep(0.0, 0.1, kerb)), gGutter);
           }
+          // the rain: the surface soaked dark, water standing in the puddles and running along the
+          // gutter (the road falls to its kerbs), a little uneven so the reflection breaks up
+          if (uWet > 0.0) {
+            float pud = puddle(p, uPool);
+            float run = smoothstep(0.9, 0.0, kerb) * smoothstep(-0.1, 0.05, kerb) * smoothstep(0.35, 0.9, uPool)
+              * (0.55 + 0.45 * rNoise(p * vec2(0.35, 0.35) + 4.0));
+            gWater = clamp(max(smoothstep(0.0, 0.06, pud), run), 0.0, 1.0);
+            diffuseColor.rgb *= mix(1.0, 0.52 - 0.08 * gTrack, uWet);
+            diffuseColor.rgb *= mix(1.0, 0.55, gWater);
+            gSlope = (vec2(rNoise(p * 11.0), rNoise(p * 11.0 + 9.1)) - 0.5) * 0.03 * (1.0 - gWater);
+            if (uRain > 0.01 && gWater > 0.01) gSlope += ripples(p, uRainT) * uRain * gWater;
+          }
         }`
       )
       .replace(
         '#include <roughnessmap_fragment>',
         `#include <roughnessmap_fragment>
-        roughnessFactor = clamp(roughnessFactor - 0.2 * gTrack - 0.45 * gTar + 0.05 * gGutter, 0.3, 1.0);`
+        roughnessFactor = clamp(roughnessFactor - 0.2 * gTrack - 0.45 * gTar + 0.05 * gGutter, 0.3, 1.0);
+        roughnessFactor = mix(roughnessFactor, 0.26 - 0.1 * gTrack, uWet * 0.92);
+        roughnessFactor = mix(roughnessFactor, 0.03, gWater);`
+      )
+      .replace(
+        '#include <normal_fragment_maps>',
+        `#include <normal_fragment_maps>
+        if (uWet > 0.0)
+          normal = normalize(normal + (viewMatrix * vec4(gSlope.x, 0.0, gSlope.y, 0.0)).xyz);`
+      )
+      .replace(
+        '#include <lights_fragment_maps>',
+        `#include <lights_fragment_maps>
+        #if defined( RE_IndirectSpecular )
+        // the street mirrored in the wet: the reflection from below the road (mirror.js) in place
+        // of the sky's, drawn out along the view the rougher the surface, rippled where it is water
+        if (uReflOn > 0.5 && uWet > 0.01) {
+          vec2 ruv = vRefl.xy / vRefl.w + gSlope * 0.06;
+          // (blurred by the target's mipmaps the rougher it is, and drawn out along the view)
+          float lod = clamp((material.roughness - 0.05) * 15.0, 0.0, 4.5);
+          float spread = 0.004 + 0.05 * material.roughness;
+          vec3 rf = textureLod(tReflect, ruv, lod).rgb * 0.4;
+          rf += textureLod(tReflect, ruv + vec2(0.0, spread), lod).rgb * 0.3;
+          rf += textureLod(tReflect, ruv - vec2(0.0, spread), lod).rgb * 0.3;
+          radiance = mix(radiance, rf, smoothstep(0.02, 0.35, uWet));
+        }
+        #endif`
       )
   }
-  m.customProgramCacheKey = () => `road ${N} ${PITCH}`
+  m.customProgramCacheKey = () => `road wet ${N} ${PITCH}`
   return m
 }

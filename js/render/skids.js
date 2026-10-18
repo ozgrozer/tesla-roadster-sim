@@ -3,6 +3,8 @@
 // slides sideways), darkens with how hard the tyre slides and fades in and out at each end.
 import * as THREE from 'three'
 import { scene } from './scene.js'
+import { GROUND } from './mirror.js'
+import { ENV } from '../sim/env.js'
 
 const MAX_SEG = 3000 // ring buffer of ribbon segments (oldest marks are overwritten)
 const STEP = 0.14 // m between ribbon samples
@@ -63,6 +65,7 @@ const mesh = new THREE.Mesh(
 )
 mesh.frustumCulled = false
 mesh.renderOrder = 1
+mesh.layers.set(GROUND) // (on the road, not in its reflection: mirror.js)
 scene.add(mesh)
 
 let head = 0
@@ -140,7 +143,10 @@ export function updateSkids (RS, sim) {
       lz: _c.z + nz,
       rx: _c.x - nx,
       rz: _c.z - nz,
-      alpha: Math.min(0.85, amt * 0.9),
+      // (a wet tyre slides on the water and leaves little rubber behind)
+      alpha:
+        Math.min(0.85, amt * 0.9) *
+        (sim.world === 'city' ? 1 - 0.75 * ENV.wet : 1),
       u: last.u + len
     }
     addSegment(last, next)
