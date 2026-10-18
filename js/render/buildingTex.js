@@ -1,14 +1,15 @@
 // The buildings' textures, drawn at startup: a facade per style (glass curtain wall, office ribbon
 // windows, brick at its real size, stucco with balconies, pale stone or terracotta with tall windows
-// between piers, a house's wall with its few windows), the storefronts' band, a flat roof's
-// membrane, red clay tiles for hip roofs, and the glass of a tower's lit crown.
+// between piers, a house's wall with its few windows), a flat roof's membrane, red clay tiles for hip
+// roofs, and the glass of a tower's lit crown. (The shopfronts are drawn in their shader:
+// shopShader.js, their signs in shopTex.js.)
 import { canvasTex, speckle } from './scene.js'
 import { rng } from '../sim/city.js'
 
 export const COL = 3 // m per window bay
 export const FLOOR = 3.5 // m per storey
 export const CELLS = 8 // bays and storeys in one texture tile
-export const SHOP = 4.6 // height of the storefront band
+export const SHOP = 4.6 // height of the storefront band (shopfronts.js)
 const R = rng(77)
 
 function lighten (g, x, y, w, h, top, bottom) {
@@ -167,63 +168,6 @@ function drawWall (g, style, S) {
 export const facadeMap = style =>
   canvasTex(1024, (g, S) => drawWall(g, style, S))
 
-// storefronts: sign band, lit window, door and sometimes a striped awning (4 m per shop)
-const AWNINGS = [
-  '#b8332e',
-  '#2e6b4f',
-  '#1f4e8c',
-  '#c98a1c',
-  '#6d2f6b',
-  '#2b2b2b',
-  '#c45a2a'
-]
-function drawShops (g, lit, W, H) {
-  const n = 6,
-    w = W / n
-  g.fillStyle = '#3b3631'
-  g.fillRect(0, 0, W, H)
-  lit.fillStyle = '#000'
-  lit.fillRect(0, 0, W, H)
-  for (let k = 0; k < n; k++) {
-    const x = k * w,
-      sign = AWNINGS[Math.floor(R() * AWNINGS.length)]
-    g.fillStyle = sign
-    g.fillRect(x + 6, 10, w - 12, 30)
-    g.fillStyle = 'rgba(255,255,255,0.85)' // lettering, not words
-    for (let t = x + 16; t < x + w - 20; t += 9 + R() * 6)
-      g.fillRect(t, 19, 5 + R() * 4, 12)
-    lit.fillStyle = 'rgba(255,240,220,0.55)'
-    lit.fillRect(x + 14, 18, w - 28, 14)
-    lighten(g, x + 8, 58, w - 16, H - 66, '#6b5a48', '#2a2420')
-    g.fillStyle = '#1c1a18'
-    g.fillRect(x + w * 0.62, 70, w * 0.22, H - 78) // door
-    lighten(lit, x + 8, 58, w - 16, H - 66, '#ffcf8f', '#7a4a1c')
-    if (R() < 0.6) {
-      for (let s = 0; s < w - 8; s += 12) {
-        g.fillStyle = (s / 12) % 2 ? '#e8e2d6' : sign
-        g.fillRect(x + 4 + s, 44, 12, 12)
-      }
-      lit.fillStyle = '#000'
-      lit.fillRect(x + 4, 44, w - 8, 12)
-    }
-    g.fillStyle = '#25211d' // pier between shops
-    g.fillRect(x, 0, 5, H)
-  }
-}
-export function shopMaps () {
-  let litCtx = null
-  const lit = canvasTex(
-    1024,
-    g => {
-      litCtx = g
-    },
-    1,
-    192
-  )
-  const map = canvasTex(1024, g => drawShops(g, litCtx, 1024, 192), 1, 192)
-  lit.needsUpdate = true
-  return { map, lit }
-}
 // a flat roof's membrane (4 m a tile): laid in metre-wide strips lapped at the seams, with the
 // stains where rain stood in puddles
 export function roofTex () {

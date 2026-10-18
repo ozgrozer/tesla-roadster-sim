@@ -6,7 +6,8 @@
 // so six hundred buildings draw in a few calls (the cornices and roofs, heavy with corners, one a
 // district: chunks.js). Every window is its own (facade.js): set back in its opening with a room
 // behind it, lit or dark, warm or cool, blinds up or down, and a glass pane catches the sky at its
-// own slight angle. (Signs, billboards and helipads: citySigns.js; hedges and walls: cityYards.js.)
+// own slight angle; and every shop too, with the shop inside it (shopfronts.js). (Signs, billboards
+// and helipads: citySigns.js; hedges and walls: cityYards.js.)
 import * as THREE from 'three'
 import { LIP, LIP_H } from '../sim/roofs.js'
 import { facadeMaterial } from './facade.js'
@@ -16,6 +17,7 @@ import { hdr } from './scene.js'
 import { Builder } from './builder.js'
 import { buildSigns } from './citySigns.js'
 import { buildYards } from './cityYards.js'
+import { shopfronts } from './shopfronts.js'
 import {
   COL,
   FLOOR,
@@ -25,7 +27,6 @@ import {
   WIN,
   STYLES,
   facadeMap,
-  shopMaps,
   roofTex,
   tileTex,
   crownTex
@@ -59,7 +60,7 @@ const tone = hex => new THREE.Color().setHex(hex)
 
 export function buildBuildings (group) {
   const F = Object.fromEntries(STYLES.map(s => [s, new Builder()]))
-  const shops = new Builder(),
+  const shops = shopfronts(),
     beacons = new Builder(),
     tiles = new Builder(),
     crowns = new Builder()
@@ -90,11 +91,7 @@ export function buildBuildings (group) {
       const style = t.style || b.style,
         tc = t.tint ? tone(t.tint) : c
       const base = k === 0 && b.shop ? SHOP : t.y0
-      if (base > t.y0)
-        shops.walls(t.x0, t.x1, t.z0, t.z1, t.y0, base, white, (w, side) => {
-          const u = b.u * 4 + side * 0.37
-          return [u, 0, u + w / 24, 1]
-        })
+      if (base > t.y0) shops.add(b, t, base, tc)
       // (the top storeys of the top tier in a band of lit glass, on some towers)
       const top =
         b.crownBand && k === b.tiers.length - 1 ? t.y1 - b.crownBand : t.y1
@@ -243,15 +240,7 @@ export function buildBuildings (group) {
     roughness: 0.75
   })
   for (const l of ledgesBy) add(l, ledgeMat, 'cornices')
-  const sm = shopMaps()
-  const shopMat = new THREE.MeshStandardMaterial({
-    map: sm.map,
-    emissiveMap: sm.lit,
-    emissive: 0xffffff,
-    emissiveIntensity: 1.4,
-    roughness: 0.55
-  })
-  add(shops, shopMat, 'storefronts')
+  const shopLight = shops.build(group)
   const roofMat = new THREE.MeshStandardMaterial({
     map: roofTex(),
     vertexColors: true,
@@ -281,11 +270,11 @@ export function buildBuildings (group) {
   add(beacons, BEACON, 'beacons', false)
   const signs = buildSigns(group)
   buildYards(group)
-  // night (0 to 1): the shopfronts' signs and windows brighter, the crowns and every sign lit (the
-  // windows: facade.js)
+  // night (0 to 1): the crowns and every sign lit, the shops' light on the pavement (the windows:
+  // facade.js; the shops follow NIGHT themselves: shopShader.js)
   return {
     night (k) {
-      shopMat.emissiveIntensity = 1.4 + 1.2 * k
+      shopLight.night(k)
       crownMat.emissiveIntensity = 0.35 + 2.4 * k
       signs.night(k)
     }
