@@ -11,10 +11,10 @@ held, which is how anyone drives with keys:
 
 | W and full A held for 2.5 s, from | before | after |
 | --- | --- | --- |
-| 30 km/h | sped up to 93 km/h, 102 m arc | 33 km/h, 7 m arc, 1.24 g |
-| 50 km/h | sped up to 114 km/h, 146 m arc, turned 49° | 41 km/h, 9 m arc, 1.27 g, turned 139° |
-| 80 km/h | sped up to 144 km/h, 195 m arc, turned 36° | 73 km/h, 31 m arc, 1.29 g, turned 80° |
-| 110 km/h | sped up to 170 km/h, 245 m arc | 106 km/h, 68 m arc, 1.30 g |
+| 30 km/h | sped up to 93 km/h, 102 m arc | 8 m arc |
+| 50 km/h | sped up to 114 km/h, 146 m arc, turned 49° | 12 m arc, turned 113° |
+| 80 km/h | sped up to 144 km/h, 195 m arc, turned 36° | 35 m arc, turned 68° |
+| 110 km/h | sped up to 170 km/h, 245 m arc | 74 m arc |
 
 Before, the car piled on speed through the corner (the motors' 1.15 MW at 1.28 g), the weight went
 onto the rears and off the fronts, and the arc opened out until the car ran wide into whatever was
@@ -23,23 +23,32 @@ on the outside of the junction. Off the throttle it turned well, but nobody lift
 ## What changed, and why
 
 - **Understeer control** (`js/sim/tyres.js`, `ground.js`). A Tesla's stability control cuts the
-  motors' torque while the car understeers. Now, while the wheel asks the fronts for more than 85%
-  of the slip they grip hardest at, the drive is taken away (all of it 35% further on). Full lock with
-  W held corners at the tyres' limit and holds its pace; straighten the wheel and the power comes
-  back. The cut eases in over 0.08 s and the power back over 0.2 s (`sim.pushF`), as the motors'
-  torque is ramped: the band it works over is narrow, and slowly the keys sweep the wheel through it
-  within a step, so unramped it switched the drive off and on in one step (an independent review
-  measured 0.6 to 0.9 g jumps in a slalom at 15 to 50 km/h). Not in Track Mode: drifting, the driver
-  has the power. `sim.push` says how much is being held back (the HUD's ESC lamp lights for it).
+  motors' torque while the car understeers. Now, once the wheel has been held over (90% of full lock
+  on the keys or more, for 0.3 s: `sim.held`), while it asks the fronts for more than 85% of the slip
+  they grip hardest at, the drive is taken away (all of it 35% further on), unless the rears are
+  past their own peak (a real slide). Full lock with W held corners at the tyres' limit and holds its
+  pace; straighten the wheel and the power comes back. The cut eases in over 0.08 s and the power
+  back over 0.2 s (`sim.pushF`), as the motors' torque is ramped: the band it works over is narrow,
+  and slowly the keys sweep the wheel through it within a step, so unramped it switched the drive off
+  and on in one step (an independent review measured 0.6 to 0.9 g jumps in a slalom at 15 to 50
+  km/h). Not in Track Mode: drifting, the driver has the power. `sim.push` says how much is being
+  held back (the HUD's ESC lamp lights for it).
+- **No lurch for a quick correction.** Played, the car felt shaky: the first version cut the power
+  for every tap of the steering keys at speed, a quarter-second tap at 80 km/h with W held taking it
+  from 1.34 g to 0.19 g and back, so every lane change or correction pitched the car and surged the
+  camera. Waiting for a held turn leaves taps and lane changes alone (the same tap now dips only to
+  0.89 g, the tyres sharing their grip with the turn; before this upgrade, 0.98 g).
 - **The friction circle** (`ground.js`). Traction control left the drive at least 35% of the tyres'
   grip however hard they were cornering, so the car could accelerate at nearly 0.5 g while turning at
   the limit. The drive now keeps at least 12%; the brakes keep their 35%, so a corner can always be
   braked in.
-- **Tyres stiff like performance tyres** (`constants.js`). Cornering stiffness was 105 and 120 kN/rad
-  per axle, so each axle peaked at about 12° of slip, and the rear tyres merely at their limit read as
-  a slide (the slide logic starts at 6°): the steering then followed "the slide" instead of the
-  driver. Now 175 and 200 kN/rad, about 90 to 100 kN/rad a tyre, peaking at about 7°. The car turns in
-  more crisply too: at 80 km/h the yaw rate reaches 0.48 rad/s 0.2 s into a turn (0.35 before).
+- **The tyres as they were** (`constants.js`). The tyres' cornering stiffness was raised for a while
+  (to 175 and 200 kN/rad per axle, peaking at about 7°), because with 105 and 120 the rear tyres merely
+  at their limit, at about 12° of slip, read as a slide (the slide logic starts at 6°) and the slide
+  switched the understeer control off. It made the car twitchy: every tap of the keys jolted it
+  sideways (at 80 km/h the 2 to 20 Hz part of its lateral acceleration under taps went from 0.13 to
+  0.22 g). Now the tyres are back at 105 and 120, and only the rears past their own peak count as a
+  slide for the understeer control (`tyres.js`); the steering's slide logic is as it was.
 - **The weight shifts through the springs** (`ground.js`, `sim.dN`). The load moved between the axles
   in the same step as the acceleration that caused it, from the step before. With the understeer
   control that closed a loop one step long: full power, the fronts unload, the power is cut, the fronts
@@ -79,7 +88,8 @@ on the outside of the junction. Off the throttle it turned well, but nobody lift
   except the burnout input test, which now expects the throttle pedal to reach full a moment after W
   and S rather than in the first frame. New tests (`tests/handling.test.mjs`): W and full lock held at
   30, 50, 80 and 110 km/h corner at over 1.1 g without gaining more than a fifth in speed, on arcs of
-  under 12, 25, 60 and 110 m, and full power comes back once the wheel is straight; and nothing
+  under 12, 25, 60 and 110 m, and full power comes back once the wheel is straight, while a tap of a
+  quarter of a second at 80 km/h with W held keeps the car pulling at over 0.82 g; and nothing
   chatters step to step (the mean second difference of the car's accelerations stays under 0.006 g)
   at full throttle, turning on the power at 50 and 150 km/h, coasting through a turn, a slalom, a
   drift and backing up, and, slowly, a slalom and a corner's exit on the power (they all fail on the
