@@ -92,11 +92,33 @@ export const STREETS_NS = [
   'Figueroa St',
   'Alameda St'
 ]
-// the landmarks, for the radar and the city's look: the pier off the beach at the end of Wilshire,
-// the sign on the hills above Hollywood
+// The landmarks, for the radar and the city's look (sim/edge.js makes what is solid out there from
+// these; render/cityPier.js and cityHills.js build them). The pier runs out to sea from the
+// promenade at the end of Wilshire: x, z is the middle of its run, its deck is rectangles that meet
+// edge to edge (x0 < x1, z0 < z1: the long run out from the promenade's edge, the amusement park on
+// its south side, the carousel's plaza on its north side, and a wider end to turn round on), and the
+// Ferris wheel stands in the park by the deck. The sign stands on the face of the hills at the head of
+// La Brea, the observatory on a spur east of it. The freeways run behind the sound walls on the east
+// and the south: their centre lines, from end to end.
+const PROM = HALF + ROAD_HW + 5.5 // the promenade's outer edge (city.js PROMENADE)
 export const LANDMARKS = {
-  pier: { x: -HALF - 40, z: 0 },
-  sign: { x: 1.5 * PITCH, z: -HALF - 260 }
+  pier: {
+    x: -627.5,
+    z: 0,
+    deck: [
+      { x0: -724, x1: -PROM, z0: -9, z1: 9 },
+      { x0: -612, x1: -536, z0: 9, z1: 46 },
+      { x0: -566, x1: -520, z0: -28, z1: -9 },
+      { x0: -762.5, x1: -724, z0: -16, z1: 16 }
+    ],
+    wheel: { x: -588, z: 21 }
+  },
+  sign: { x: 2 * PITCH, z: -680 },
+  observatory: { x: 400, z: -640 },
+  freeways: [
+    { x0: 532, z0: -1500, x1: 532, z1: 2000 },
+    { x0: -470, z0: 532, x1: 2000, z1: 532 }
+  ]
 }
 
 // Where (x, z) is, as the HUD says it: the neighbourhood, and the street (or the crossing, at a
