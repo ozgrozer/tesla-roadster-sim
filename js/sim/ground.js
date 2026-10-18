@@ -96,6 +96,20 @@ const DRIFT_MAX_A = 0.7,
   DRIFT_K = 40000,
   DRIFT_D = 9000,
   DRIFT_MAX = 15000
+// The drift's pace: held in a drift, the rears get DRIFT_PUSH of their drive at the pace it began
+// at, more below it and none DRIFT_BAND m/s or so above (the pace creeping up by DRIFT_GAIN m/s each
+// second the power stays on, and coming down to wherever the brakes take it). As the car comes
+// round further than asked, the rears are spun less (all of it DRIFT_EASE rad further round), so
+// they bite and bring it back; and it hands back to the electronics once it is within DRIFT_END rad
+// of straight, not while it is still well sideways (the rears gripping at once would snap it round).
+// Steering out with the power on, the drift links: swung DRIFT_LINK rad the other way, it is a drift
+// that way.
+const DRIFT_PUSH = 0.3,
+  DRIFT_BAND = 2,
+  DRIFT_GAIN = 0.3,
+  DRIFT_EASE = 0.3,
+  DRIFT_END = 0.2,
+  DRIFT_LINK = 0.15
 
 export function stepGround (s, dt, c, main, lift) {
   const m = CAR.mass,
@@ -248,6 +262,15 @@ export function stepGround (s, dt, c, main, lift) {
     Fxr *= 1 - smooth((Math.abs(beta) - 0.85) / 0.45)
     spin = clamp(Fxr / FmaxR - 0.6, 0, 1)
     Fxr = 0.95 * FmaxR * Math.tanh(Fxr / FmaxR)
+    // (in a drift: spun less the further round it is than asked, and no faster than its pace)
+    if (s.driftDir) {
+      spin *= 1 - smooth((Math.abs(beta) - s.driftWant - 0.05) / DRIFT_EASE)
+      Fxr *= clamp(
+        DRIFT_PUSH + (s.driftV - Math.hypot(u, w)) / DRIFT_BAND,
+        0,
+        1
+      )
+    }
   } else if (!c.ebrake) Fxr = clamp(Fxr, -capR, capR)
   if (burn) {
     // the rears' push against the fronts' brakes nets out at a creep, quicker on full lock
@@ -322,6 +345,7 @@ export function stepGround (s, dt, c, main, lift) {
   else if (!s.driftDir && ab > 0.15) {
     s.driftDir = d
     s.driftWant = Math.min(ab, DRIFT_MAX_A)
+    s.driftV = Math.hypot(u, w)
   }
   // (the angle asked for, from where the drift began: deeper, unwinding, or unwinding fast)
   if (s.driftDir && !c.ebrake) {
@@ -334,6 +358,11 @@ export function stepGround (s, dt, c, main, lift) {
     s.driftWant = clamp(s.driftWant + k * dt, 0, DRIFT_MAX_A)
   } else if (s.driftDir)
     s.driftWant = Math.max(s.driftWant, Math.min(ab, DRIFT_MAX_A))
+  // (the pace: creeping up on the power, down to wherever the brakes take it)
+  if (s.driftDir) {
+    if (throttle > 0.2) s.driftV += DRIFT_GAIN * dt
+    if (c.brake > 0) s.driftV = Math.min(s.driftV, Math.hypot(u, w))
+  }
   const letGo = s.driftWant < 0.08 && ab < 0.15
   // (unwound all the way, the drift is over: the electronics are back to catch what is left of it)
   if (s.driftDir && !c.ebrake && s.driftWant < 0.03) s.track = false

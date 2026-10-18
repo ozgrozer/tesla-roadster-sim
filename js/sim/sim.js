@@ -98,6 +98,7 @@ export class Sim {
     this.driftA = 0 // the drift angle a step ago
     this.driftDir = 0 // the way the drift began (1 left, -1 right)
     this.driftWant = 0 // the drift angle the driver is asking for (rad)
+    this.driftV = 0 // the pace the drift holds (m/s)
     this.slipR = 0
     this.escActive = false
     this.wheelSpin = 0
