@@ -15,6 +15,15 @@ const KEY_T = 0.1,
   KEY_T_V = 0.008,
   KEY_V_TOP = 35,
   KEY_BACK = 2.5
+// The brake key squeezes the pedal rather than stamping on it: the brakes come on over BRAKE_T s,
+// as a foot pushes the pedal down and the calipers build pressure (about how long a real hard stop
+// takes to reach its full bite), so a tap slows the car a little and holding it is a full stop; let
+// go, they are off in BRAKE_OFF s. Held through a stop, it keeps the car on its brakes for STOP_HOLD
+// s, as a driver stops and then selects reverse, before it backs up (pressed afresh at a standstill
+// it backs up at once), the motor's pull easing in over BRAKE_T s.
+const BRAKE_T = 0.3,
+  BRAKE_OFF = 0.1,
+  STOP_HOLD = 0.5
 // k eased towards want (-1, 0 or 1) at up per s, and back to the middle at down per s
 export function easeKey (k, want, up, down, dt) {
   if (want !== 0 && k * want >= 0)
@@ -75,6 +84,10 @@ export class Input {
     })
     this.pad = new Pad({ press, release, onConnect: onPad })
     this.padStale = false // a stick held over since before lift-off
+    // the brake key's pedal (0 to 1), the reverse it eases into, and how long it has held the car
+    // at a standstill (-1: not braked to one)
+    this.keyBrake = this.backing = 0
+    this.stopT = -1
     // on-screen pad for touch screens: each button behaves like its key
     for (const b of document.querySelectorAll('.tb')) {
       const code = b.dataset.key
@@ -144,6 +157,8 @@ export class Input {
     // a key wins over the stick; the stick and triggers are analog
     const or = (key, analog) => key || analog
     if (air) {
+      this.keyBrake = this.backing = 0
+      this.stopT = -1
       const live = !this.padStale
       c.pitch = or((S ? 1 : 0) - (W ? 1 : 0), live ? pad.stickY : 0)
       c.roll = or((D ? 1 : 0) - (A ? 1 : 0), live ? pad.stickX : 0)
@@ -167,23 +182,47 @@ export class Input {
         dt
       )
       c.steer = or(this.keySteer, pad.steer)
-      const brake = Math.max(S ? 1 : 0, pad.brake)
+      this.keyBrake = easeKey(
+        this.keyBrake,
+        S ? 1 : 0,
+        1 / BRAKE_T,
+        1 / BRAKE_OFF,
+        dt
+      )
+      const brake = Math.max(this.keyBrake, pad.brake)
       // the throttle and the brake together at a crawl: a burnout (and with the wheel turned, a
       // donut), as in GTA
+      let rev = false
       if (
         c.throttle > 0.5 &&
-        brake > 0.5 &&
+        Math.max(S ? 1 : 0, pad.brake) > 0.5 &&
         !c.ebrake &&
         sim.mode === 'ground' &&
         sim.groundSpeed() < BURN_V
       )
         c.burnout = true
       else if (brake > 0.02) {
-        // S brakes while rolling forward, then reverses (also back down the wall)
+        // S brakes while rolling forward, holds the car once it has stopped, then reverses (also
+        // back down the wall). (stopT: s held at a standstill after braking the car to it, -1 if
+        // it was pressed there)
         const fwd = sim.mode === 'ramp' ? sim.v : sim.speed
-        if (fwd > 0.5) c.brake = brake
-        else c.reverse = brake
-      }
+        if (fwd > 0.5) {
+          c.brake = brake
+          this.stopT = 0
+        } else if (this.stopT >= 0 && this.stopT < STOP_HOLD) {
+          c.brake = brake
+          this.stopT += dt
+        } else {
+          // (from holding the car, the motor's pull eases in; pressed at a standstill, the
+          // pedal or trigger is already easing in)
+          rev = true
+          c.reverse =
+            this.stopT >= 0
+              ? Math.min(brake, this.backing + dt / BRAKE_T)
+              : brake
+        }
+      } else this.stopT = -1
+      this.backing = rev ? c.reverse : 0
     }
     return c
   }
