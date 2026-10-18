@@ -54851,11 +54851,7 @@ class Hud {
       put(el.suck, 'text', `${(sim.suction * CAR.suctionG).toFixed(1)} G`)
       put(el.suck, 'class', 'v status-on')
     } else {
-      put(
-        el.suck,
-        'text',
-        !app.auto && app.fanMode === 'auto' ? 'AUTO' : 'OFF'
-      )
+      put(el.suck, 'text', !app.auto && app.fanMode === 'auto' ? 'AUTO' : 'OFF')
       put(el.suck, 'class', 'v')
     }
     const kw = Math.round(sim.drivePower / 1000)
@@ -54865,20 +54861,22 @@ class Hud {
       ? 'E-BRAKE'
       : sim.escActive
       ? 'ESC'
+      : sim.abs > 0.5 && sim.groundSpeed() > 1
+      ? 'ABS'
       : sim.regenOn && sim.groundSpeed() > 1
       ? 'REGEN'
       : ''
     if (el.tag.textContent !== tag) {
       el.tag.textContent = tag
       el.tag.className =
-        tag === 'ESC' ? 'tag esc' : tag === 'REGEN' ? 'tag status-on' : 'tag'
+        tag === 'ESC' || tag === 'ABS'
+          ? 'tag esc'
+          : tag === 'REGEN'
+          ? 'tag status-on'
+          : 'tag'
     }
     put(el.air, 'html', `${Math.round(sim.air)}<small>kg</small>`)
-    put(
-      el.airBar,
-      'transform',
-      `scaleX(${(sim.air / CAR.airMass).toFixed(3)})`
-    )
+    put(el.airBar, 'transform', `scaleX(${(sim.air / CAR.airMass).toFixed(3)})`)
     put(el.airBar, 'background', sim.air < 50 ? 'var(--warn)' : 'var(--jet)')
     put(
       el.thrAir,
@@ -54893,11 +54891,11 @@ class Hud {
       el.thrTotal,
       'text',
       `${Math.round(
-      (sim.thrMain * CAR.mainThrust +
-        sim.thrLift * CAR.liftThrust +
-        sim.thrSide * CAR.sideThrust) /
-        1000
-    )} kN`
+        (sim.thrMain * CAR.mainThrust +
+          sim.thrLift * CAR.liftThrust +
+          sim.thrSide * CAR.sideThrust) /
+          1000
+      )} kN`
     )
     put(el.score, 'text', app.score.toLocaleString('en-US'))
     if (app.auto) {
@@ -54940,102 +54938,8 @@ class Hud {
 __export(__exports, { "Hud": () => Hud })
 })
 
-// ---- js/sim/stunts.js
-__define(3, function (__exports) {
-// Street stunts, scored alongside the flips and landings (sim.js): a drift, the car held well
-// sideways at speed, scored once it straightens up by how long it lasted and how far sideways it
-// went (lost if it ends in a crash); and a near miss, flashing past a car in traffic close enough to
-// touch without touching it, worth more the faster it went by and double if it was coming the other
-// way.
-const { CAR } = __require(1)
-const SIDEWAYS = 0.26 // rad of slip (15 degrees) that counts as a drift; past 1.4 it is a spin
-const DRIFT_SPEED = 9 // m/s, about 30 km/h
-const MISS = 1 // m of daylight between the cars that still counts as a near miss
-const MISS_SPEED = 12 // m/s they pass each other at, at least
-
-// each step of a burnout: every full turn of a donut scores, more for each one on top (to a point)
-const DONUT_PTS = 250
-function donuts (s, dt) {
-  if (!s.burning) {
-    s.donutTurn = 0
-    s.donutCount = 0
-    return
-  }
-  s.donutTurn = (s.donutTurn || 0) + s.yawRate * dt
-  if (Math.abs(s.donutTurn) < 2 * Math.PI) return
-  s.donutTurn -= Math.sign(s.donutTurn) * 2 * Math.PI
-  s.donutCount = (s.donutCount || 0) + 1
-  const n = s.donutCount
-  s.emit('trick', {
-    text: n > 1 ? `${n}× Donut` : 'Donut',
-    pts: DONUT_PTS * Math.min(n, 4) // (up to four times as much: holding on isn't a jackpot)
-  })
-}
-
-// each step: the drift so far (s.drifting), and its score once it is over
-function drift (s, dt) {
-  const d = s.drifting || (s.drifting = { t: 0, sum: 0, calm: 0 })
-  const sp = Math.hypot(s.vel.x, s.vel.z)
-  let slip = 0
-  if (s.mode === 'ground' && sp > 3) {
-    const c = Math.cos(s.yaw),
-      sn = Math.sin(s.yaw)
-    const u = s.vel.x * c - s.vel.z * sn,
-      w = -s.vel.x * sn - s.vel.z * c
-    slip = Math.abs(Math.atan2(w, Math.abs(u)))
-  }
-  if (s.mode === 'ground' && sp > DRIFT_SPEED && slip > SIDEWAYS && slip < 1.4) {
-    d.t += dt
-    d.sum += slip * dt
-    d.calm = 0
-    return
-  }
-  if (d.t === 0) return
-  d.calm += dt
-  if (d.calm < 0.35 && s.mode === 'ground') return
-  if (d.t > 0.8 && s.mode === 'ground') {
-    const angle = d.sum / d.t
-    s.emit('drift', {
-      t: d.t,
-      angle,
-      pts: Math.round((d.t * angle * 57.3 * 12) / 10) * 10
-    })
-  }
-  d.t = d.sum = d.calm = 0
-}
-
-// each step, once traffic has moved: each car the Roadster has just drawn level with and passed
-function nearMisses (tr, sim) {
-  if (sim.mode !== 'ground') return
-  const v = sim.vel,
-    hx = Math.cos(sim.yaw),
-    hz = -Math.sin(sim.yaw)
-  const sp = v.x * hx + v.z * hz
-  for (const car of tr.cars) {
-    const dx = car.x - sim.pos.x,
-      dz = car.z - sim.pos.z
-    if (car.loose || Math.abs(dx) > 14 || Math.abs(dz) > 14) {
-      car.miss = undefined
-      continue
-    }
-    const along = dx * hx + dz * hz,
-      gap = Math.abs(dz * hx - dx * hz) - CAR.halfW - car.wid / 2
-    const was = car.miss
-    car.miss = along
-    if (!(was > 0 && along <= 0) || gap > MISS || gap < 0) continue
-    const theirs = car.v * (car.hx * hx + car.hz * hz),
-      rel = sp - theirs
-    if (rel < MISS_SPEED) continue
-    const oncoming = theirs < -2,
-      pts = Math.round((100 + (rel - MISS_SPEED) * 10) / 10) * 10
-    sim.emit('nearMiss', { pts: oncoming ? pts * 2 : pts, oncoming })
-  }
-}
-__export(__exports, { "donuts": () => donuts, "drift": () => drift, "nearMisses": () => nearMisses })
-})
-
 // ---- js/sim/signals.js
-__define(4, function (__exports) {
+__define(3, function (__exports) {
 // The city's traffic lights (city.js re-exports all of it): every junction's cycle, east-west then
 // north-south with an all-red gap between, lights held one way for Autopilot, and how long an amber
 // has left or a red has been on.
@@ -55119,13 +55023,13 @@ __export(__exports, { "RED": () => RED, "YELLOW": () => YELLOW, "GREEN": () => G
 })
 
 // ---- js/sim/city.js
-__define(5, function (__exports) {
+__define(4, function (__exports) {
 // The city: a grid of two-lane-each-way roads around downtown blocks, the lane graph its traffic
 // drives on, the signal plan at every intersection and the solid footprints the Roadster can hit.
 // Pure data and math (no DOM, no three.js), so traffic and collisions run headless in tests.
 
 // the signal plan at every junction is in signals.js
-const { RED, YELLOW, GREEN, SIGNAL, CYCLE, signal, holdLight, releaseLight, amberLeft, redAge } = __require(4)
+const { RED, YELLOW, GREEN, SIGNAL, CYCLE, signal, holdLight, releaseLight, amberLeft, redAge } = __require(3)
 
 const N = 10 // blocks across
 const PITCH = 96 // m between road centre lines
@@ -55611,12 +55515,12 @@ __export(__exports, { "N": () => N, "PITCH": () => PITCH, "LANE_W": () => LANE_W
 })
 
 // ---- js/sim/roofs.js
-__define(6, function (__exports) {
+__define(5, function (__exports) {
 // Roofs: the flat top of every building tier is somewhere to land and drive, with plant on the top
 // tier (a stair and lift housing, air-handling units and sometimes a mast) to steer round. The edge is
 // only a low lip the wheels roll over, so the car can drive straight off a tall roof and drop onto a
 // lower one across the alley (or onto the tier below).
-const { BUILDINGS, rng, query, addCollider } = __require(5)
+const { BUILDINGS, rng, query, addCollider } = __require(4)
 const LIP = 0.3 // the roof's edging: m wide
 const LIP_H = 0.1 // and m high, drawn only (the wheels roll over it)
 const STEP = 0.3 // a roof up to this much higher than the one the car is on is driven onto
@@ -55682,12 +55586,12 @@ __export(__exports, { "LIP": () => LIP, "LIP_H": () => LIP_H, "STEP": () => STEP
 })
 
 // ---- js/sim/breakables.js
-__define(7, function (__exports) {
+__define(6, function (__exports) {
 // Street furniture that snaps off at the base when it is hit hard enough: street lights, signal
 // masts, park trees and palms. Each is a post collider with breakAt, the closing speed (m/s) it takes
 // to snap it, and mass (kg), what the car then has to shove out of the way; i is its place in LAMPS,
 // POLES, TREES or PALMS. Hit any slower and it stands: the car bounces off it (collide.js).
-const { LAMPS, PALMS, TREES, POLES, addCollider } = __require(5)
+const { LAMPS, PALMS, TREES, POLES, addCollider } = __require(4)
 const post = (x, z, r, h, kind, i, breakAt, mass) =>
   addCollider({
     x0: x - r,
@@ -55745,15 +55649,15 @@ __export(__exports, { "snap": () => snap })
 })
 
 // ---- js/sim/collide.js
-__define(8, function (__exports) {
+__define(7, function (__exports) {
 // Contacts in the ground plane: oriented boxes (cars, building footprints) and posts (lamps, palms,
 // signal masts), resolved with impulses (restitution, friction, spin) so cars bounce off each other
 // and off the city. No hit tumbles the Roadster, on the road or flying, as in GTA: it bounces off
 // and the driver keeps the wheel.
 const THREE = __require(0)
-const { STEP } = __require(6)
-const { snap } = __require(7)
-const { query, OUTER } = __require(5)
+const { STEP } = __require(5)
+const { snap } = __require(6)
+const { query, OUTER } = __require(4)
 const { G, CAR, clamp } = __require(1)
 // The most yaw rate (rad/s) a knock adds on the ground: the tyres on the road soak up the rest, so a
 // clipped car or wall corner twitches the Roadster instead of spinning it out of the driver's hands.
@@ -56128,7 +56032,7 @@ __export(__exports, { "rectRect": () => rectRect, "rectPost": () => rectPost, "b
 })
 
 // ---- js/sim/track.js
-__define(9, function (__exports) {
+__define(8, function (__exports) {
 // The 21 m curved wall, the parked lineup and the solid obstacles around them.
 const { DEG } = __require(1)
 // ---------- The wall: arc-length parametrised profile in the x-y plane ----------
@@ -56319,12 +56223,12 @@ __export(__exports, { "TRACK": () => TRACK, "LINEUP": () => LINEUP, "LINEUP_FIRS
 })
 
 // ---- js/sim/flight.js
-__define(10, function (__exports) {
+__define(9, function (__exports) {
 // Free flight: gravity, cold-gas thrust, attitude control (manoeuvres + stability assist) and contacts.
 const THREE = __require(0)
-const { roofAt } = __require(6)
-const { TRACK, SOLIDS } = __require(9)
-const { bumpCars, collideAir } = __require(8)
+const { roofAt } = __require(5)
+const { TRACK, SOLIDS } = __require(8)
+const { bumpCars, collideAir } = __require(7)
 const { G, CAR, AX_X, AX_Y, AX_Z, clamp, CORNERS, LIFT_ACC } = __require(1)
 const _a = new THREE.Vector3(),
   _b = new THREE.Vector3(),
@@ -56538,14 +56442,14 @@ __export(__exports, { "stepAir": () => stepAir, "checkRampContact": () => checkR
 })
 
 // ---- js/sim/street.js
-__define(11, function (__exports) {
+__define(10, function (__exports) {
 // What is underfoot in the city: the kerb's line (straight down each street, round each corner, and
 // along the promenade), the surface a point is on (asphalt, pavement, a park's grass or the beach's
 // sand, each with its own grip and drag), and the street's ironwork: manholes out in the lanes and
 // drain grates in the gutter by every corner. The Roadster feels the kerb as it mounts or drops off
 // it, and each manhole a wheel runs over (s.suspV kicks the visual suspension; 'kerb' and 'manhole'
 // events carry it to the sound), and its tyres grip less on grass and less still on sand.
-const { N, HALF, PITCH, BLOCKS, CURB_R, LANES, WALK, ROAD_HW, PROMENADE, LANE_OFF, rng } = __require(5)
+const { N, HALF, PITCH, BLOCKS, CURB_R, LANES, WALK, ROAD_HW, PROMENADE, LANE_OFF, rng } = __require(4)
 const { CAR } = __require(1)
 // How far (x, z) is from the kerb, positive out on the road: folded into one quadrant of the
 // nearest junction, where each block's corner is rounded to CURB_R; outside the ring road, the
@@ -56687,27 +56591,33 @@ __export(__exports, { "kerbDist": () => kerbDist, "SURFACES": () => SURFACES, "s
 })
 
 // ---- js/sim/ground.js
-__define(12, function (__exports) {
-const { roofAt, STEP } = __require(6)
-const { feel, gripOf, dragOf } = __require(11)
-const { TRACK, SOLIDS } = __require(9)
-const { collideCity, bumpCars } = __require(8)
+__define(11, function (__exports) {
+const { roofAt, STEP } = __require(5)
+const { TRACK, SOLIDS } = __require(8)
+const { feel, gripOf, dragOf } = __require(10)
+const { collideCity, bumpCars } = __require(7)
 const { G, CAR, LIFT_ACC, clamp, wrapPi } = __require(1)
 // Planar two-axle tyre model: slip angles, a tyre curve that peaks and falls away, friction circle,
 // AWD split, load transfer, rolling resistance, aero drag, coast regen, a steering rack turned at the
-// speed of a driver's hands, and a handbrake on the rear wheels only. Pulled, it locks the rears,
-// which slide (at the sliding tyre's grip) the way they are going; the fronts still steer and the
-// front motor still pulls. Let go, and the rear wheels spin back up with the road in a few
-// hundredths of a second; a car well sideways by then is past its tyres' peak and slides on until
-// they bite, or the driver catches it.
+// speed of a driver's hands, brakes shared out by the load on each axle with ABS, stability control
+// that backs the rears' brakes and regen off before they let go sideways, and an e-brake: pulled
+// with the wheel straight, an emergency stop on all four wheels at their grip whatever the throttle
+// is doing; turned, a handbrake on the rear wheels only, biting in a twentieth of a second and
+// locking them, so they slide (at the sliding tyre's grip) the way they are going; the fronts still
+// steer. Let go, and the rear wheels spin back up with the road in a few hundredths of a second; a
+// car well sideways by then is past its tyres' peak and slides on until they bite, or the driver
+// catches it.
 // Track Mode: pulled at speed, the handbrake also has traction and stability control stand back
 // and the drive shift to the rears, as in a Tesla's Track Mode with its balance set to the rear, so
 // the throttle holds a drift: on the power the driven rears spin up and slide, and the two rear
 // motors, one to each wheel, share the torque out between them to hold the drift at the angle the
 // driver asks for: steering into the turn holds it or takes it deeper, leaving the wheel be lets it
 // slowly unwind (a small flick is a short slide, a big one a long drift), and steering out of it
-// unwinds it fast; lift off and the rears grip and the car straightens. Once it is lined up again
-// the electronics are back.
+// unwinds it fast; held there with the power on, the car swings on through straight into a drift
+// the other way (a linked drift); lift off and the rears grip and the car straightens. Held in a
+// drift, the throttle keeps the pace the drift began at rather than piling on speed, as a drifter
+// feathers it, so the tyres' grip carries the car round the corner instead of out wide. Once it is
+// lined up again the electronics are back.
 // Three GTA-style touches on top: the handbrake with the wheel turned swings the car round at once,
 // a car spinning faster than its tyres could carry it is caught once the handbrake is let go, and
 // the throttle and brake together at a crawl are a burnout (steered, a donut).
@@ -56733,6 +56643,20 @@ const HANDS = 1.8,
 // the rear wheels spinning back up with the road after the e-brake: the share of their grip they get
 // back per second
 const SPIN_UP = 12
+// the e-brake: pulled, it bites in EB_ON s (a quick pull on a lever, or a press of the Park
+// button); let go, it lets go at once. With the wheel straight (turned no further than EB_STRAIGHT,
+// a stick's small corrections) it is an emergency stop: all four wheels braked as hard as they
+// grip, the rears too held at their peak by the ABS rather than locked, as a Tesla's is (a sliding
+// tyre keeps only slideMu of its grip). Turned, the rears lock and slide for a handbrake turn.
+const EB_ON = 0.06,
+  EB_STRAIGHT = 0.1
+// Stability control under braking and regen, as a Tesla's does: the rears, light as the weight goes
+// onto the nose, are let off their share of the brakes and regen as their slip nears its peak (from
+// ESC_CUT of the way there, all of it ESC_CUT_W further on), so that slowing in a corner at the
+// limit runs a touch wide rather than swinging the tail round. (Not in Track Mode, nor on the
+// handbrake.)
+const ESC_CUT = 0.9,
+  ESC_CUT_W = 0.5
 const LOCK = 0.62 // the road wheels' full lock (rad)
 const smooth = x => (x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x))
 // Track Mode: the e-brake at more than this speed (m/s) switches it on, and it switches itself off
@@ -56778,6 +56702,20 @@ const DRIFT_MAX_A = 0.7,
   DRIFT_K = 40000,
   DRIFT_D = 9000,
   DRIFT_MAX = 15000
+// The drift's pace: held in a drift, the rears get DRIFT_PUSH of their drive at the pace it began
+// at, more below it and none DRIFT_BAND m/s or so above (the pace creeping up by DRIFT_GAIN m/s each
+// second the power stays on, and coming down to wherever the brakes take it). As the car comes
+// round further than asked, the rears are spun less (all of it DRIFT_EASE rad further round), so
+// they bite and bring it back; and it hands back to the electronics once it is within DRIFT_END rad
+// of straight, not while it is still well sideways (the rears gripping at once would snap it round).
+// Steering out with the power on, the drift links: swung DRIFT_LINK rad the other way, it is a drift
+// that way.
+const DRIFT_PUSH = 0.3,
+  DRIFT_BAND = 2,
+  DRIFT_GAIN = 0.3,
+  DRIFT_EASE = 0.3,
+  DRIFT_END = 0.2,
+  DRIFT_LINK = 0.15
 
 function stepGround (s, dt, c, main, lift) {
   const m = CAR.mass,
@@ -56808,9 +56746,16 @@ function stepGround (s, dt, c, main, lift) {
   )
   const Nf = Ntot / 2 - dN,
     Nr = Ntot / 2 + dN
-  // the rears' grip (1: all of it): a sliding tyre's while the e-brake locks them, all of it again
-  // once they have spun back up with the road
-  s.rearGrip = c.ebrake ? CAR.slideMu : Math.min(1, s.rearGrip + dt * SPIN_UP)
+  // the e-brake biting (0 to 1), how straight the wheel is for an emergency stop (1: straight),
+  // and the rears' grip (1: all of it): a sliding tyre's while the handbrake locks them, all of it
+  // again once they have spun back up with the road
+  s.ebLock = c.ebrake ? Math.min(1, s.ebLock + dt / EB_ON) : 0
+  const straight = c.ebrake
+    ? 1 - smooth((Math.abs(c.steer) - EB_STRAIGHT) / 0.5)
+    : 0
+  const locked = s.ebLock >= 1 && straight < 0.5
+  s.rearLocked = locked
+  s.rearGrip = locked ? CAR.slideMu : Math.min(1, s.rearGrip + dt * SPIN_UP)
   // How far the car is sliding: the rear axle's slip (rolling round a tight bend, the car's middle
   // runs at an angle to its nose, but the rear axle runs straight: only a slide moves it sideways)
   const beta = Math.atan2(w - b * r, Math.max(Math.abs(u), 2))
@@ -56823,9 +56768,9 @@ function stepGround (s, dt, c, main, lift) {
     const straight = Math.abs(beta) < TRACK_STRAIGHT || Math.abs(u) < 3
     s.calm = straight ? s.calm + dt : 0
     // (over once the car has run straight a moment, or swung on through straight: the electronics
-    // catch whatever comes next)
+    // catch whatever comes next, unless the driver is linking it into a drift the other way)
     const through = s.driftDir && s.driftDir * beta > 0.03
-    if (s.calm > CALM || through) s.track = false
+    if ((s.calm > CALM || through) && !s.linking) s.track = false
   }
   const track = s.track && !c.ebrake
   const FmaxF = mu * Nf,
@@ -56847,8 +56792,7 @@ function stepGround (s, dt, c, main, lift) {
       aLim = (1.5 * FmaxF) / CAR.corneringF,
       ab = Math.abs(beta)
     slide = smooth((ab - 0.1) / 0.14)
-    const into =
-      c.steer * beta < 0 ? 1 - smooth((ab - 0.35) / 0.4) * 0.9 : 1,
+    const into = c.steer * beta < 0 ? 1 - smooth((ab - 0.35) / 0.4) * 0.9 : 1,
       // (rad/s it is swinging further round)
       grow = (ab - (s.driftA ?? ab)) / dt,
       catchIt =
@@ -56866,8 +56810,7 @@ function stepGround (s, dt, c, main, lift) {
   // spinning through them as the wheels follow a slide)
   const centring =
     Math.abs(steerT) < Math.abs(s.steerAng) && steerT * s.steerAng >= 0
-  const rate =
-    HANDS * (1 + 2 * slide) + (centring ? CENTRE * Math.abs(u) : 0)
+  const rate = HANDS * (1 + 2 * slide) + (centring ? CENTRE * Math.abs(u) : 0)
   s.steerAng += clamp(steerT - s.steerAng, -rate * dt, rate * dt)
   const cd = Math.cos(s.steerAng),
     sd = Math.sin(s.steerAng)
@@ -56875,8 +56818,9 @@ function stepGround (s, dt, c, main, lift) {
   // longitudinal demand at the tyres
   const au = Math.abs(u),
     su = u > 0.02 ? 1 : u < -0.02 ? -1 : 0
-  // (with the rears locked by the e-brake, only the front motor's share reaches the road)
-  const throttle = c.throttle
+  // (the e-brake wins over the throttle while it is held: W held through a handbrake turn or a
+  // flick into a drift picks up again as soon as it comes off)
+  const throttle = c.ebrake ? 0 : c.throttle
   let Fdrive = 0
   if (throttle > 0 && u < CAR.vMax)
     Fdrive +=
@@ -56890,7 +56834,10 @@ function stepGround (s, dt, c, main, lift) {
       clamp(au / 2.5, 0, 1) *
       Math.min(1, CAR.regenPowerW / (m * CAR.regenAccel * Math.max(au, 1)))
     : 0
-  const Fbrake = c.brake * m * CAR.brakeAccel
+  // (pulled with the wheel straight, the fronts brake as hard as the pedal would, with ABS; turned,
+  // it leaves them free, so the locked rears swing the car round)
+  const ebFront = s.ebLock * straight
+  const Fbrake = Math.min(1, c.brake + ebFront) * m * CAR.brakeAccel
   const burn = !!c.burnout && au < BURN_V && !c.ebrake
   if (burn) {
     Fdrive = 0 // (the rears' push and the fronts' brakes, worked out as one below)
@@ -56899,8 +56846,19 @@ function stepGround (s, dt, c, main, lift) {
   }
   // (in Track Mode most of the drive goes to the rears)
   const front = track ? TRACK_FRONT : 0.4
-  let Fxf = front * Fdrive - su * (0.6 * Fbrake + 0.5 * Fregen)
-  let Fxr = (1 - front) * Fdrive - su * (0.4 * Fbrake + 0.5 * Fregen)
+  // (the brakes shared out by the load on each axle, as electronic brake-force distribution does,
+  // so the rears, light under braking, are never asked for more than the fronts: a fixed split
+  // would have them give up first and the tail come round)
+  const bias = Nf / Ntot
+  // (the rears let off their brakes and regen near their limit sideways: ESC_CUT; the rear axle's
+  // slip in units of its grip over its stiffness, peaking at PEAK)
+  const esc = !c.ebrake && !track && !burn && s.rearGrip >= 1 && au > 3
+  const xR = (CAR.corneringR * Math.abs(beta)) / FmaxR
+  const cut = esc ? smooth((xR - ESC_CUT) / ESC_CUT_W) : 0
+  const slow = su * (Fbrake + Fregen)
+  let Fxf = front * Fdrive - su * (bias * Fbrake + 0.5 * Fregen)
+  let Fxr =
+    (1 - front) * Fdrive - su * ((1 - bias) * Fbrake + 0.5 * Fregen) * (1 - cut)
   // traction control + ABS: keep the grip the tyres are using to corner, leave at least 35% for drive/brakes
   const capF = Math.sqrt(
     Math.max(0.1225 * FmaxF * FmaxF, FmaxF * FmaxF - s.lastFyf * s.lastFyf)
@@ -56908,6 +56866,8 @@ function stepGround (s, dt, c, main, lift) {
   const capR = Math.sqrt(
     Math.max(0.1225 * FmaxR * FmaxR, FmaxR * FmaxR - s.lastFyr * s.lastFyr)
   )
+  // (how hard the ABS is working: the fronts asked to brake harder than they can grip)
+  s.abs = Fbrake > 0 ? smooth((-su * Fxf - 0.97 * capF) / (0.06 * capF)) : 0
   Fxf = clamp(Fxf, -capF, capF)
   // In Track Mode the rears may spin: driven harder than they can grip, they transmit most of it
   // and slide sideways, the spin easing in rather than all at once (spin: how much they spin)
@@ -56917,11 +56877,22 @@ function stepGround (s, dt, c, main, lift) {
     Fxr *= 1 - smooth((Math.abs(beta) - 0.85) / 0.45)
     spin = clamp(Fxr / FmaxR - 0.6, 0, 1)
     Fxr = 0.95 * FmaxR * Math.tanh(Fxr / FmaxR)
+    // (in a drift: spun less the further round it is than asked, and no faster than its pace)
+    if (s.driftDir) {
+      spin *= 1 - smooth((Math.abs(beta) - s.driftWant - 0.05) / DRIFT_EASE)
+      Fxr *= clamp(
+        DRIFT_PUSH + (s.driftV - Math.hypot(u, w)) / DRIFT_BAND,
+        0,
+        1
+      )
+    }
   } else if (!c.ebrake) Fxr = clamp(Fxr, -capR, capR)
+  // (the e-brake on the rears short of locking them: biting, or held at their peak by the ABS in an
+  // emergency stop; their motor's share no longer reaches the road)
+  else Fxr = -su * Math.min(FmaxR, s.ebLock * FmaxR + Math.max(0, -su * Fxr))
   if (burn) {
     // the rears' push against the fronts' brakes nets out at a creep, quicker on full lock
-    const creep =
-      BURN_CREEP * (0.3 + 0.7 * Math.abs(c.steer)) * c.throttle
+    const creep = BURN_CREEP * (0.3 + 0.7 * Math.abs(c.steer)) * c.throttle
     Fxf = clamp(m * 3 * (creep - u), -FmaxF, FmaxF)
     Fxr = 0
     spin = 1
@@ -56946,7 +56917,7 @@ function stepGround (s, dt, c, main, lift) {
     Fyr,
     slideR,
     wantR = 0
-  if (c.ebrake) {
+  if (locked) {
     s.slipR = Math.atan2(wr, Math.max(au, 2))
     const vr = Math.hypot(u, wr),
       k = FmaxR / Math.max(vr, 0.6) // (FmaxR is already the sliding grip)
@@ -56991,21 +56962,40 @@ function stepGround (s, dt, c, main, lift) {
   else if (!s.driftDir && ab > 0.15) {
     s.driftDir = d
     s.driftWant = Math.min(ab, DRIFT_MAX_A)
+    s.driftV = Math.hypot(u, w)
   }
   // (the angle asked for, from where the drift began: deeper, unwinding, or unwinding fast)
   if (s.driftDir && !c.ebrake) {
     const k =
-      into > 0
-        ? DRIFT_INTO * into
-        : into < 0
-        ? DRIFT_OUT * into
-        : -DRIFT_UNWIND
+      into > 0 ? DRIFT_INTO * into : into < 0 ? DRIFT_OUT * into : -DRIFT_UNWIND
     s.driftWant = clamp(s.driftWant + k * dt, 0, DRIFT_MAX_A)
   } else if (s.driftDir)
     s.driftWant = Math.max(s.driftWant, Math.min(ab, DRIFT_MAX_A))
+  // (the pace: creeping up on the power, down to wherever the brakes take it)
+  if (s.driftDir) {
+    if (throttle > 0.2) s.driftV += DRIFT_GAIN * dt
+    if (c.brake > 0) s.driftV = Math.min(s.driftV, Math.hypot(u, w))
+  }
   const letGo = s.driftWant < 0.08 && ab < 0.15
-  // (unwound all the way, the drift is over: the electronics are back to catch what is left of it)
-  if (s.driftDir && !c.ebrake && s.driftWant < 0.03) s.track = false
+  // (steering out of it with the power on: linking it into a drift the other way, once the car has
+  // swung through)
+  s.linking =
+    track && !!s.driftDir && throttle > 0.5 && c.steer * s.driftDir < -0.5
+  if (s.linking && d === -s.driftDir && ab > DRIFT_LINK) {
+    s.driftDir = d
+    s.driftWant = Math.min(ab, DRIFT_MAX_A)
+    s.linking = false
+  }
+  // (unwound all the way and nearly straight, the drift is over: the electronics are back to catch
+  // what is left of it)
+  if (
+    s.driftDir &&
+    !c.ebrake &&
+    !s.linking &&
+    s.driftWant < 0.03 &&
+    ab < DRIFT_END
+  )
+    s.track = false
   if (burn)
     Mz += clamp(
       BURN_K * (c.steer * c.throttle * BURN_R - r),
@@ -57029,6 +57019,7 @@ function stepGround (s, dt, c, main, lift) {
     Mz +=
       c.steer *
       HB_YAW *
+      s.ebLock *
       smooth((u - 2) / 8) *
       (1 - smooth((Math.abs(Math.atan2(w, u)) - HB_FADE) / 0.6))
   s.lastFyf = wantF
@@ -57049,6 +57040,8 @@ function stepGround (s, dt, c, main, lift) {
       s.escActive = true
     }
   }
+  // (and while it is letting the rears off their brakes or regen)
+  if (cut > 0.3 && slow !== 0) s.escActive = true
 
   const spd = Math.hypot(u, w)
   if (!c.ebrake && !burn && spd > 4) {
@@ -57185,14 +57178,126 @@ function stepGround (s, dt, c, main, lift) {
 __export(__exports, { "tyreCurve": () => tyreCurve, "BURN_V": () => BURN_V, "stepGround": () => stepGround })
 })
 
+// ---- js/sim/stunts.js
+__define(12, function (__exports) {
+// Street stunts, scored alongside the flips and landings (sim.js): a drift, the car held well
+// sideways at speed, scored once it straightens up by how long it lasted and how far sideways it
+// went (lost if it ends in a crash), drifts linked one into the next the other way scoring as one,
+// half as much again for each link; and a near miss, flashing past a car in traffic close enough to
+// touch without touching it, worth more the faster it went by and double if it was coming the other
+// way.
+const { CAR } = __require(1)
+const SIDEWAYS = 0.26 // rad of slip (15 degrees) that counts as a drift; past 1.4 it is a spin
+const LINK_BONUS = 0.5 // the share more a drift scores for each one linked on to it
+const DRIFT_SPEED = 9 // m/s, about 30 km/h
+const MISS = 1 // m of daylight between the cars that still counts as a near miss
+const MISS_SPEED = 12 // m/s they pass each other at, at least
+
+// each step of a burnout: every full turn of a donut scores, more for each one on top (to a point)
+const DONUT_PTS = 250
+function donuts (s, dt) {
+  if (!s.burning) {
+    s.donutTurn = 0
+    s.donutCount = 0
+    return
+  }
+  s.donutTurn = (s.donutTurn || 0) + s.yawRate * dt
+  if (Math.abs(s.donutTurn) < 2 * Math.PI) return
+  s.donutTurn -= Math.sign(s.donutTurn) * 2 * Math.PI
+  s.donutCount = (s.donutCount || 0) + 1
+  const n = s.donutCount
+  s.emit('trick', {
+    text: n > 1 ? `${n}× Donut` : 'Donut',
+    pts: DONUT_PTS * Math.min(n, 4) // (up to four times as much: holding on isn't a jackpot)
+  })
+}
+
+// each step: the drift so far (s.drifting), and its score once it is over
+function drift (s, dt) {
+  const d =
+    s.drifting || (s.drifting = { t: 0, sum: 0, calm: 0, side: 0, links: 0 })
+  const sp = Math.hypot(s.vel.x, s.vel.z)
+  let slip = 0,
+    side = 0
+  if (s.mode === 'ground' && sp > 3) {
+    const c = Math.cos(s.yaw),
+      sn = Math.sin(s.yaw)
+    const u = s.vel.x * c - s.vel.z * sn,
+      w = -s.vel.x * sn - s.vel.z * c
+    slip = Math.abs(Math.atan2(w, Math.abs(u)))
+    side = Math.sign(w)
+  }
+  if (
+    s.mode === 'ground' &&
+    sp > DRIFT_SPEED &&
+    slip > SIDEWAYS &&
+    slip < 1.4
+  ) {
+    // (sideways the other way from before, without straightening up in between: a link)
+    if (d.side && side !== d.side) d.links++
+    d.side = side
+    d.t += dt
+    d.sum += slip * dt
+    d.calm = 0
+    return
+  }
+  if (d.t === 0) return
+  // (not over while the car swings through straight into a linked drift)
+  d.calm = s.linking ? 0 : d.calm + dt
+  if (d.calm < 0.35 && s.mode === 'ground') return
+  if (d.t > 0.8 && s.mode === 'ground') {
+    const angle = d.sum / d.t
+    s.emit('drift', {
+      t: d.t,
+      angle,
+      links: d.links,
+      pts:
+        Math.round(
+          ((d.t * angle * 57.3 * 12) / 10) * (1 + LINK_BONUS * d.links)
+        ) * 10
+    })
+  }
+  d.t = d.sum = d.calm = d.side = d.links = 0
+}
+
+// each step, once traffic has moved: each car the Roadster has just drawn level with and passed
+function nearMisses (tr, sim) {
+  if (sim.mode !== 'ground') return
+  const v = sim.vel,
+    hx = Math.cos(sim.yaw),
+    hz = -Math.sin(sim.yaw)
+  const sp = v.x * hx + v.z * hz
+  for (const car of tr.cars) {
+    const dx = car.x - sim.pos.x,
+      dz = car.z - sim.pos.z
+    if (car.loose || Math.abs(dx) > 14 || Math.abs(dz) > 14) {
+      car.miss = undefined
+      continue
+    }
+    const along = dx * hx + dz * hz,
+      gap = Math.abs(dz * hx - dx * hz) - CAR.halfW - car.wid / 2
+    const was = car.miss
+    car.miss = along
+    if (!(was > 0 && along <= 0) || gap > MISS || gap < 0) continue
+    const theirs = car.v * (car.hx * hx + car.hz * hz),
+      rel = sp - theirs
+    if (rel < MISS_SPEED) continue
+    const oncoming = theirs < -2,
+      pts = Math.round((100 + (rel - MISS_SPEED) * 10) / 10) * 10
+    sim.emit('nearMiss', { pts: oncoming ? pts * 2 : pts, oncoming })
+  }
+}
+__export(__exports, { "donuts": () => donuts, "drift": () => drift, "nearMisses": () => nearMisses })
+})
+
 // ---- js/sim/crash.js
 __define(13, function (__exports) {
 // Crashes: a rigid box tumbling on the ground with impulse-based contact and friction, and getting
 // back on the road afterwards, GTA-style.
 const THREE = __require(0)
 const { G, TAU, CAR, AX_Y, CORNERS, clamp } = __require(1)
-const { roofAt } = __require(6)
-const { pushOut, bounceCity } = __require(8)
+const { roofAt } = __require(5)
+const { pushOut, bounceCity } = __require(7)
 const _a = new THREE.Vector3(),
   _b = new THREE.Vector3(),
   _c = new THREE.Vector3(),
@@ -57410,12 +57515,12 @@ __define(14, function (__exports) {
 // The vehicle simulation: state, mode switching (ground / ramp / air / crash), the wall ride and scoring.
 // Uses only THREE math types, so it runs headless in Node for tests.
 const THREE = __require(0)
-const { drift, donuts } = __require(3)
-const { knock } = __require(8)
-const { stepAir } = __require(10)
-const { stepGround } = __require(12)
-const { SPAWN, query } = __require(5)
-const { TRACK, SOLIDS } = __require(9)
+const { knock } = __require(7)
+const { stepAir } = __require(9)
+const { stepGround } = __require(11)
+const { SPAWN, query } = __require(4)
+const { TRACK, SOLIDS } = __require(8)
+const { drift, donuts } = __require(12)
 const { enterCrash, stepCrash } = __require(13)
 const { G, DEG, TAU, CAR, AX_X, AX_Y, AX_Z, clamp, wrapPi, clamp01, CORNERS, LIFT_ACC } = __require(1)
 const _a = new THREE.Vector3(),
@@ -57487,11 +57592,16 @@ class Sim {
     this.lastFyf = 0
     this.lastFyr = 0
     this.rearGrip = 1
+    this.ebLock = 0 // how hard the e-brake bites, 0 to 1 (ground.js)
+    this.rearLocked = false // the rear wheels locked by the handbrake (a turn: ground.js)
+    this.abs = 0 // how hard the ABS is working, 0 to 1 (ground.js)
     this.track = false // Track Mode: the handbrake has the electronics stand back (ground.js)
     this.calm = 0
     this.driftA = 0 // the drift angle a step ago
     this.driftDir = 0 // the way the drift began (1 left, -1 right)
     this.driftWant = 0 // the drift angle the driver is asking for (rad)
+    this.driftV = 0 // the pace the drift holds (m/s)
+    this.linking = false // steering out of a drift with the power on, into one the other way
     this.slipR = 0
     this.escActive = false
     this.wheelSpin = 0
@@ -57635,12 +57745,15 @@ class Sim {
       dt
     this.ebrakeOn = !!c.ebrake && this.mode !== 'air'
     this.wheelSpin += roll
-    if (!this.ebrakeOn)
+    if (!this.rearLocked)
       this.wheelSpinR += roll + ((this.burnSpin || 0) / CAR.wheelR) * dt
     if (this.mode !== 'ground') {
       this.burning = false
       this.burnSpin = 0
       this.rearSpin = 0
+      this.abs = 0
+      this.ebLock = 0
+      this.rearLocked = false
       this.skid = this.skidF = this.skidR = 0
       if (this.mode !== 'ramp') {
         this.drivePower = 0
@@ -58003,8 +58116,8 @@ __define(16, function (__exports) {
 // Keyboard, gamepad and touch input: held drive keys, one-shot command keys, and the manual control
 // mapping (a gamepad's sticks and triggers are analog: gamepad.js).
 const { Pad } = __require(15)
-const { TRACK } = __require(9)
-const { BURN_V } = __require(12)
+const { TRACK } = __require(8)
+const { BURN_V } = __require(11)
 const { clamp, makeControls } = __require(1)
 // The steering keys ease the wheel over rather than throwing it to full lock: full in KEY_T s at a
 // standstill and KEY_T_V s more per m/s (up to KEY_V_TOP m/s: past it the wheel turns no slower, as
@@ -58016,6 +58129,15 @@ const KEY_T = 0.1,
   KEY_T_V = 0.008,
   KEY_V_TOP = 35,
   KEY_BACK = 2.5
+// The brake key squeezes the pedal rather than stamping on it: the brakes come on over BRAKE_T s,
+// as a foot pushes the pedal down and the calipers build pressure (about how long a real hard stop
+// takes to reach its full bite), so a tap slows the car a little and holding it is a full stop; let
+// go, they are off in BRAKE_OFF s. Held through a stop, it keeps the car on its brakes for STOP_HOLD
+// s, as a driver stops and then selects reverse, before it backs up (pressed afresh at a standstill
+// it backs up at once), the motor's pull easing in over BRAKE_T s.
+const BRAKE_T = 0.3,
+  BRAKE_OFF = 0.1,
+  STOP_HOLD = 0.5
 // k eased towards want (-1, 0 or 1) at up per s, and back to the middle at down per s
 function easeKey (k, want, up, down, dt) {
   if (want !== 0 && k * want >= 0)
@@ -58076,6 +58198,10 @@ class Input {
     })
     this.pad = new Pad({ press, release, onConnect: onPad })
     this.padStale = false // a stick held over since before lift-off
+    // the brake key's pedal (0 to 1), the reverse it eases into, and how long it has held the car
+    // at a standstill (-1: not braked to one)
+    this.keyBrake = this.backing = 0
+    this.stopT = -1
     // on-screen pad for touch screens: each button behaves like its key
     for (const b of document.querySelectorAll('.tb')) {
       const code = b.dataset.key
@@ -58145,6 +58271,8 @@ class Input {
     // a key wins over the stick; the stick and triggers are analog
     const or = (key, analog) => key || analog
     if (air) {
+      this.keyBrake = this.backing = 0
+      this.stopT = -1
       const live = !this.padStale
       c.pitch = or((S ? 1 : 0) - (W ? 1 : 0), live ? pad.stickY : 0)
       c.roll = or((D ? 1 : 0) - (A ? 1 : 0), live ? pad.stickX : 0)
@@ -58168,23 +58296,47 @@ class Input {
         dt
       )
       c.steer = or(this.keySteer, pad.steer)
-      const brake = Math.max(S ? 1 : 0, pad.brake)
+      this.keyBrake = easeKey(
+        this.keyBrake,
+        S ? 1 : 0,
+        1 / BRAKE_T,
+        1 / BRAKE_OFF,
+        dt
+      )
+      const brake = Math.max(this.keyBrake, pad.brake)
       // the throttle and the brake together at a crawl: a burnout (and with the wheel turned, a
       // donut), as in GTA
+      let rev = false
       if (
         c.throttle > 0.5 &&
-        brake > 0.5 &&
+        Math.max(S ? 1 : 0, pad.brake) > 0.5 &&
         !c.ebrake &&
         sim.mode === 'ground' &&
         sim.groundSpeed() < BURN_V
       )
         c.burnout = true
       else if (brake > 0.02) {
-        // S brakes while rolling forward, then reverses (also back down the wall)
+        // S brakes while rolling forward, holds the car once it has stopped, then reverses (also
+        // back down the wall). (stopT: s held at a standstill after braking the car to it, -1 if
+        // it was pressed there)
         const fwd = sim.mode === 'ramp' ? sim.v : sim.speed
-        if (fwd > 0.5) c.brake = brake
-        else c.reverse = brake
-      }
+        if (fwd > 0.5) {
+          c.brake = brake
+          this.stopT = 0
+        } else if (this.stopT >= 0 && this.stopT < STOP_HOLD) {
+          c.brake = brake
+          this.stopT += dt
+        } else {
+          // (from holding the car, the motor's pull eases in; pressed at a standstill, the
+          // pedal or trigger is already easing in)
+          rev = true
+          c.reverse =
+            this.stopT >= 0
+              ? Math.min(brake, this.backing + dt / BRAKE_T)
+              : brake
+        }
+      } else this.stopT = -1
+      this.backing = rev ? c.reverse : 0
     }
     return c
   }
@@ -58197,7 +58349,7 @@ __define(17, function (__exports) {
 // The jammed street: one block of the central avenue, straight ahead of the city's spawn point,
 // stands gridlocked both ways, nose to tail, for the Roadster to jump. Its lanes are closed:
 // traffic and Autopilot go round, and a wrecked Roadster is never put back inside it.
-const { N, PITCH, ROAD_HW, nodeAt } = __require(5)
+const { N, PITCH, ROAD_HW, nodeAt } = __require(4)
 const west = nodeAt(2, N / 2),
   east = nodeAt(3, N / 2)
 const JAM = [...west.out[0], ...east.out[2]] // both lanes each way
@@ -58217,7 +58369,7 @@ __define(18, function (__exports) {
 // camera, zooming out with speed; traffic shows as dots, wrecks in amber, the jammed street as a
 // gold blip.
 const { JAM_AT } = __require(17)
-const { HALF, CURB_R, BLOCKS, ROAD_HW, BUILDINGS, PROMENADE } = __require(5)
+const { HALF, CURB_R, BLOCKS, ROAD_HW, BUILDINGS, PROMENADE } = __require(4)
 const DOTS = [
   { color: '#6d747e', is: car => !car.loose && !!car.parked },
   { color: '#d6dbe2', is: car => !car.loose && !car.parked },
@@ -60226,7 +60378,7 @@ __define(25, function (__exports) {
 // turns with the steering, Optimus's hands going round with its grips.
 const THREE = __require(0)
 const { MAT } = __require(20)
-const { ROADS, ROAD_HW } = __require(5)
+const { ROADS, ROAD_HW } = __require(4)
 const { ANKLE_UP, poseOptimus } = __require(24)
 // The yoke, its grips either side of the hub, and the driver: Optimus sat back in the bucket seat, feet
 // on the floor and hands round the grips
@@ -60830,8 +60982,8 @@ __define(28, function (__exports) {
 // they have looked and the traffic is far enough off to stop for them (it does: traffic.peds).
 const { atJam } = __require(17)
 const { clamp, wrapPi } = __require(1)
-const { kerbDist } = __require(11)
-const { N, PITCH, HALF, ROAD_HW, BLOCKS } = __require(5)
+const { kerbDist } = __require(10)
+const { N, PITCH, HALF, ROAD_HW, BLOCKS } = __require(4)
 const KERB = ROAD_HW + 0.5
 const STILL = ['phone', 'wait', 'chat'] // what someone standing about is doing
 
@@ -61142,7 +61294,7 @@ __define(29, function (__exports) {
 // up (sooner for an impatient driver), an impatient toot stuck behind something that won't move, and
 // getting out of the way when the Roadster honks at them from behind: over to the kerb lane, or
 // tucked in towards the kerb and slowing to let it by.
-const { LANE_OFF } = __require(5)
+const { LANE_OFF } = __require(4)
 // Indicators, a honk at a Roadster in the way (mine: it is what holds the car up), and moving over
 // when it honks from behind.
 function temper (tr, car, dt, mine, gap, acc) {
@@ -61223,7 +61375,7 @@ __define(30, function (__exports) {
 // across each other in a junction) sort it out, the one that came in later backing up to let the
 // other by.
 const { clamp } = __require(1)
-const { NODES, LANE_OFF, ROAD_HW } = __require(5)
+const { NODES, LANE_OFF, ROAD_HW } = __require(4)
 const { honk } = __require(29)
 const REACT = {
   // The Roadster bearing down on this car: closing fast, in its path (or about to be) within about a
@@ -61426,7 +61578,7 @@ __define(31, function (__exports) {
 // What a traffic driver sees, mixed into Traffic (traffic.js): the car ahead in its path, the
 // Roadster or a knocked or crossing car in the way, the oncoming traffic a left turn would cut, and
 // whether there is room beyond a junction to pull into it.
-const { DIRS, pointAt } = __require(5)
+const { DIRS, pointAt } = __require(4)
 const LOOK = 70 // m a driver watches ahead
 const STOP_DECEL = 4 // on yellow, go if stopping would need more than this
 
@@ -61711,11 +61863,11 @@ __define(32, function (__exports) {
 // it knocks loose in turn), and what the driver does then: sits there a few seconds with the hazards
 // on (leaning on the horn if the Roadster is still about), then, if the car is still more or less
 // on its road and facing the right way, steers back into the lane and drives on.
-const { query } = __require(5)
+const { query } = __require(4)
 const { honk } = __require(29)
 const { CAR } = __require(1)
-const { snap } = __require(7)
-const { BODY, nudge, boxRect, impulse, carRect, rectRect, rectPost, loadBody, storeBody, playerRect } = __require(8)
+const { snap } = __require(6)
+const { BODY, nudge, boxRect, impulse, carRect, rectRect, rectPost, loadBody, storeBody, playerRect } = __require(7)
 const near = []
 const A = { x: 0, z: 0, fx: 1, fz: 0, hl: 0, hw: 0 }
 
@@ -61909,7 +62061,7 @@ __define(33, function (__exports) {
 const { LOOK, OB } = __require(31)
 const { temper } = __require(29)
 const { clamp, wrapPi } = __require(1)
-const { RED, NODES, GREEN, YELLOW, redAge, signal, pointAt, amberLeft } = __require(5)
+const { RED, NODES, GREEN, YELLOW, redAge, signal, pointAt, amberLeft } = __require(4)
 const CHANGE = 30 // m of road a lane change takes at speed (less, slower)
 const QUINTIC = u => u * u * u * (10 + u * (-15 + 6 * u)) // 0 to 1, flat at both ends
 const P = { x: 0, z: 0, hx: 1, hz: 0 }
@@ -62398,10 +62550,10 @@ __define(34, function (__exports) {
 const { JAM, atJam } = __require(17)
 const { REACT } = __require(30)
 const { SIGHT } = __require(31)
-const { nearMisses } = __require(3)
+const { nearMisses } = __require(12)
 const { slide, collidePlayer, bumpLoose } = __require(32)
 const { DRIVE, temperament } = __require(33)
-const { rng, NODES, EDGES, LANES, STALLS, pointAt, LANE_OFF } = __require(5)
+const { rng, NODES, EDGES, LANES, STALLS, pointAt, LANE_OFF } = __require(4)
 // cruise: the speed an ordinary driver likes (m/s); acc, brake: how hard they pull away and brake;
 // lat: the sideways acceleration they take a corner at
 // prettier-ignore
@@ -62842,7 +62994,7 @@ __define(35, function (__exports) {
 // the kerb, the point and heading at any distance round it, the crossings from each corner, and
 // when the walk is on at a junction.
 const { clamp } = __require(1)
-const { N, HALF, PITCH, CYCLE, BLOCKS, CURB_R, ROAD_HW, nodeAt } = __require(5)
+const { N, HALF, PITCH, CYCLE, BLOCKS, CURB_R, ROAD_HW, nodeAt } = __require(4)
 const CROSS_AT = 9.1 // the crosswalk's middle, from the junction's centre (cityGround.js)
 const KERB = ROAD_HW + 0.5 // where people wait and step off, from the road's centre line
 const WALK_FOR = 4 // s into the cross street's green during which people start over
@@ -63013,11 +63165,11 @@ __define(36, function (__exports) {
 // Roadster's way (or a car's it sent sliding) dives clear, then walks back to the pavement; nobody
 // is ever left under the car; and when it does something frightening close by, people run.
 // They live in a bubble round the player, like the traffic: those left far behind turn up ahead.
-const { kerbDist } = __require(11)
+const { kerbDist } = __require(10)
 const { CROWD } = __require(28)
 const { warm } = __require(34)
 const { CAR, clamp } = __require(1)
-const { rng, BLOCKS } = __require(5)
+const { rng, BLOCKS } = __require(4)
 const { ring, ringAt, walkOn, crossings, nearestOn, blockNear, standBack } = __require(35)
 
 let WARM = false
@@ -64410,11 +64562,12 @@ __define(40, function (__exports) {
 // the asphalt itself changes as the car rolls over patches of it. At the limit: real squeal is
 // noise ringing through a few resonances of the tread and carcass (roughly 700 Hz to 3 kHz),
 // chattering as the rubber sticks and slips, its pitch rising with the slip and the load; the front
-// and rear axles each have their own. A locked wheel on the e-brake is different, a rougher, lower
-// scrub and howl over the tyre hopping; spinning up in a drift chirps higher; and on grass or sand
-// there is no squeal at all, but the grit and turf being scrubbed. The air: wind noise rising
-// steeply with speed (about the cube of it), in gusts that never repeat, buffeting faster and
-// faster, and from the driver's seat a thin whistle off the canopy's seals.
+// and rear axles each have their own; braking at the limit, the ABS holds the fronts at their peak
+// and they howl, lower, fluttering as it lets the pressure off and on. A locked wheel on the e-brake
+// is different, a rougher, lower scrub and howl over the tyre hopping; spinning up in a drift chirps
+// higher; and on grass or sand there is no squeal at all, but the grit and turf being scrubbed. The
+// air: wind noise rising steeply with speed (about the cube of it), in gusts that never repeat,
+// buffeting faster and faster, and from the driver's seat a thin whistle off the canopy's seals.
 const { clamp } = __require(1)
 const smooth = (a, b, x) => {
   const t = clamp((x - a) / (b - a), 0, 1)
@@ -64456,13 +64609,13 @@ const TYRES = {
     to(n.sand.connect(grains), n.sand.gain)
     this.bank.ready('sand', b => (n.sandSrc = loop(b)).connect(n.sand))
     n.crunch = gain(0)
-    to(brown.connect(n.crunch).connect(filt('lowpass', 260, 0.7)), n.crunch.gain)
+    to(
+      brown.connect(n.crunch).connect(filt('lowpass', 260, 0.7)),
+      n.crunch.gain
+    )
     n.grass = gain(0)
     const blades = gain(0.6)
-    pink
-      .connect(n.grass)
-      .connect(filt('bandpass', 1800, 0.7))
-      .connect(blades)
+    pink.connect(n.grass).connect(filt('bandpass', 1800, 0.7)).connect(blades)
     loop(this.flutter).connect(gain(0.4)).connect(blades.gain)
     to(blades, n.grass.gain)
     // the wind: broadband, gusting and buffeting, and a whistle off the canopy's seals
@@ -64526,10 +64679,7 @@ const TYRES = {
     n.lockChat = loop(this.chatter)
     n.lockChat.connect(gain(0.35)).connect(n.lockAM.gain)
     n.hop = gain(0)
-    brown
-      .connect(n.hop)
-      .connect(filt('lowpass', 140, 0.8))
-      .connect(n.lockAM)
+    brown.connect(n.hop).connect(filt('lowpass', 140, 0.8)).connect(n.lockAM)
     to(n.lockAM, n.lock.gain, n.hop.gain)
     // a slide on loose ground: grit or turf scrubbed and thrown
     n.scrub = gain(0)
@@ -64629,7 +64779,7 @@ const TYRES = {
     s.last = e
   },
   // st.wheelSpeed, st.grounded, st.surface, st.skidF, st.skidR, st.slipR, st.latG, st.ebrake,
-  // st.track, st.throttle, st.airspeed, st.inside, st.pitch
+  // st.abs, st.track, st.throttle, st.airspeed, st.inside, st.pitch
   updateTyres (st) {
     const { n, R } = this,
       ps = st.pitch,
@@ -64653,7 +64803,17 @@ const TYRES = {
     // the louder, then screams once it is past it)
     const sing = 0.5 * smooth(0.78, 1.02, st.use || 0),
       loud = sq * (inside ? 0.7 : 1)
-    this.axle(n.sqF, st.skidF, sing, (760 + 110 * lat) * ps, v, loud)
+    // (braking at the limit, the ABS holding the fronts at their peak slip: a lower howl, as loud
+    // as a tyre singing near its limit in a bend, the voice's chatter its flutter)
+    const abs = (st.abs || 0) * smooth(2, 10, v)
+    this.axle(
+      n.sqF,
+      st.skidF,
+      Math.max(sing, 0.45 * abs),
+      (760 + 110 * lat - 180 * abs) * ps,
+      v,
+      loud
+    )
     // (the rears spinning, in Track Mode or a burnout, slide however slowly the car goes, and chirp
     // higher)
     const vr = Math.max(v, st.spin || 0),
@@ -64671,8 +64831,8 @@ const TYRES = {
     const locked = eb
       ? smooth(0, 1, st.skidR) * smooth(0.5, 5, v)
       : st.burning
-        ? 0.5 * smooth(0, 1, st.skidR)
-        : 0
+      ? 0.5 * smooth(0, 1, st.skidR)
+      : 0
     const lock = locked * (SQUEAL[surf] + 0.1) * (inside ? 0.6 : 0.9)
     R(n.lock.gain, lock, locked ? 0.04 : 0.12)
     R(n.hop.gain, lock * 0.2, locked ? 0.04 : 0.12)
@@ -66501,7 +66661,7 @@ __define(47, function (__exports) {
 //           full-speed run off the lip, roll upright and come straight down on the thrusters.
 //  Stunt 2: full speed and full thrust over the parked lineup with a kickflip, thruster landing.
 const THREE = __require(0)
-const { TRACK, LINEUP_FIRST, LINEUP_LAST } = __require(9)
+const { TRACK, LINEUP_FIRST, LINEUP_LAST } = __require(8)
 const { G, TAU, CAR, clamp, wrapPi, clamp01, LIFT_ACC, makeControls } = __require(1)
 const _a = new THREE.Vector3()
 const _b = new THREE.Vector3()
@@ -66839,7 +66999,7 @@ __define(48, function (__exports) {
 // whatever holds the car up, and the hop there: straight up on the lift thrusters until it clears the
 // cars, along the street on the main thrusters, then down on a landing burn onto the open road.
 const { JAM } = __require(17)
-const { LANES } = __require(5)
+const { LANES } = __require(4)
 const { G, CAR, LIFT_ACC, clamp, wrapPi, makeControls } = __require(1)
 const ALT = 8.5 // m over the road: clear of a bus, and of the signal heads over the junctions
 const CLEAR = 4.6 // m up before it moves forward over the car in front
@@ -67015,7 +67175,7 @@ __define(49, function (__exports) {
 // (cityHop.js); after that it drives on, and hops over any other jam it gets stuck in.
 const { Hop, landingSpot, routeToJam } = __require(48)
 const { CAR, clamp, wrapPi, makeControls } = __require(1)
-const { LANES, NODES, GREEN, YELLOW, signal, pointAt, holdLight, releaseLight } = __require(5)
+const { LANES, NODES, GREEN, YELLOW, signal, pointAt, holdLight, releaseLight } = __require(4)
 const CAPS = {
   jam: [
     'Autopilot · City',
@@ -67425,7 +67585,7 @@ __define(50, function (__exports) {
 // The parked Tesla lineup for stunt 2: extruded low-poly profiles, parked broadside to the jump.
 const THREE = __require(0)
 const { site, MAT } = __require(20)
-const { LINEUP } = __require(9)
+const { LINEUP } = __require(8)
 // ---------- parked lineup ----------
 function extrudeProfile (pts, depth, mat, bevel = 0.05) {
   const sh = new THREE.Shape(pts.map(([x, y]) => new THREE.Vector2(x, y)))
@@ -67612,600 +67772,8 @@ function buildLineup () {
 __export(__exports, { "buildLineup": () => buildLineup })
 })
 
-// ---- js/audio/ears.js
-__define(51, function (__exports) {
-// How something in the world sounds from where the camera is: how loud, how far left or right,
-// whether a building stands in the way, and how dull the distance and the walls make it.
-const THREE = __require(0)
-const { camera } = __require(20)
-const { clamp } = __require(1)
-const { query, raycast } = __require(5)
-// how loud something at (x, z) sounds from the camera, 0 to 1
-const hearing = (x, z) =>
-  clamp(
-    1.4 / (1 + Math.hypot(camera.position.x - x, camera.position.z - z) / 14),
-    0,
-    1
-  )
-// where (x, z) sits left to right from the camera, -0.85 to 0.85
-const _right = new THREE.Vector3()
-function panOf (x, z) {
-  _right.setFromMatrixColumn(camera.matrixWorld, 0)
-  const dx = x - camera.position.x,
-    dz = z - camera.position.z
-  return clamp(
-    ((dx * _right.x + dz * _right.z) / (Math.hypot(dx, dz) || 1)) * 0.85,
-    -0.85,
-    0.85
-  )
-}
-// the first building the segment a -> b hits, as a share of its length (1: clear)
-const _rays = []
-const ray = (ax, ay, az, bx, by, bz) =>
-  raycast(
-    ax,
-    ay,
-    az,
-    bx,
-    by,
-    bz,
-    query(
-      Math.min(ax, bx),
-      Math.min(az, bz),
-      Math.max(ax, bx),
-      Math.max(az, bz),
-      _rays
-    )
-  )
-// whether a building stands between the camera and (x, z), 0 or 1
-function blocked (x, z, y = 1.2) {
-  const p = camera.position
-  return ray(p.x, Math.max(1, p.y), p.z, x, y, z) < 0.98 ? 1 : 0
-}
-// how dull something at (x, z) sounds (a lowpass, Hz): the air over the distance, and a building
-// in the way
-function dullness (x, z) {
-  const d = Math.hypot(camera.position.x - x, camera.position.z - z)
-  return (
-    clamp(20000 * Math.exp(-d / 90), 2000, 20000) * (blocked(x, z) ? 0.12 : 1)
-  )
-}
-
-// something heard at (x, z): how loud, which side, how dull (one object, reused)
-const AT = { k: 0, pan: 0, lp: 20000 }
-function placeOf (x, z) {
-  AT.k = hearing(x, z)
-  AT.pan = panOf(x, z)
-  AT.lp = dullness(x, z)
-  return AT
-}
-__export(__exports, { "hearing": () => hearing, "panOf": () => panOf, "ray": () => ray, "blocked": () => blocked, "dullness": () => dullness, "placeOf": () => placeOf })
-})
-
-// ---- js/audio/watch.js
-__define(52, function (__exports) {
-// What happens round the camera that the sound engine hears as one-shots, watched each frame from
-// the sim's state: things rushing past the Roadster, brakes squealing and buses' air brakes, parked
-// cars' alarms, wrecks hitting each other, Optimus's footsteps, and the car's side grinding along a
-// wall or its wreck along the road.
-const { CAR } = __require(1)
-const { query } = __require(5)
-const { hearing, panOf, dullness, placeOf } = __require(51)
-const NONE = []
-
-// Things the Roadster passes close and fast: the moment each one is abeam (it stops closing and
-// starts drawing away), a rush of air from its side. last: each thing's closing rate last frame.
-const last = new Map(),
-  seen = new Set(),
-  _near = []
-function passBy (sound, sim, traffic) {
-  const p = sim.mode === 'ground' ? sim.pos : sim.com,
-    v = sim.vel
-  seen.clear()
-  const check = (key, x, z, vx, vz, reach, big) => {
-    const rx = x - p.x,
-      rz = z - p.z,
-      wx = vx - v.x,
-      wz = vz - v.z
-    const closing = rx * wx + rz * wz,
-      w = Math.hypot(wx, wz)
-    seen.add(key)
-    const before = last.get(key)
-    last.set(key, closing)
-    const d = Math.hypot(rx, rz)
-    if (before < 0 && closing >= 0 && w > 10 && d < reach)
-      sound.whoosh(w, panOf(x, z), big, d)
-  }
-  if (p.y < 8)
-    for (const c of query(p.x - 8, p.z - 8, p.x + 8, p.z + 8, _near))
-      if (c.r && !c.down) check(c, c.x, c.z, 0, 0, 4.5, false)
-  if (p.y < 3.5)
-    for (const c of traffic.cars) {
-      if (Math.abs(c.x - p.x) > 12 || Math.abs(c.z - p.z) > 12) continue
-      const vx = c.loose ? c.vx : c.hx * c.v,
-        vz = c.loose ? c.vz : c.hz * c.v
-      check(c, c.x, c.z, vx, vz, 6, true)
-    }
-  for (const k of last.keys()) if (!seen.has(k)) last.delete(k)
-}
-// a bus coming to a stop lets its air brakes go; as it slows the last few km/h its brakes may
-// squeal (and now and then a car's worn pads)
-function brakes (sound, traffic) {
-  for (const c of traffic.cars) {
-    if (c.parked || c.loose) continue
-    const was = c.sndV ?? c.v
-    c.sndV = c.v
-    const squeal =
-      was >= 2.2 && c.v < 2.2 && (c.paint * 17.3) % 1 < (c.big ? 0.6 : 0.08)
-    const stop = c.big && was > 0.8 && c.v < 0.25
-    if (!squeal && !stop) continue
-    const k = hearing(c.x, c.z)
-    if (k < 0.05) continue
-    if (squeal)
-      sound.brakeSqueal(0.6 * k, panOf(c.x, c.z), dullness(c.x, c.z), c.big)
-    if (stop) sound.airbrake(0.3 * k, panOf(c.x, c.z), dullness(c.x, c.z))
-  }
-}
-// a parked car knocked loose sets its alarm off: one at a time, heard from where it is
-const ALARM = { on: false, k: 0, pan: 0, lp: 20000 }
-let alarmCar = null
-function alarms (sound, traffic) {
-  for (const c of traffic.loose || NONE)
-    if (c.parked && !c.jam && !c.sndAlarm) {
-      c.sndAlarm = true
-      if (!alarmCar) {
-        alarmCar = c
-        sound.alarm()
-      }
-    }
-  ALARM.on = !!alarmCar && sound.alarmOn()
-  if (!ALARM.on) {
-    alarmCar = null
-    return
-  }
-  ALARM.k = hearing(alarmCar.x, alarmCar.z)
-  ALARM.pan = panOf(alarmCar.x, alarmCar.z)
-  ALARM.lp = dullness(alarmCar.x, alarmCar.z)
-}
-
-// Grinding along a wall: the sim's bumps come only as the car bounces back into it, a few tenths
-// apart, so instead: how near the nearest corner of the car's footprint is to a building's side (m)
-const _grind = []
-function wallGap (sim) {
-  const p = sim.pos,
-    fx = Math.cos(sim.yaw),
-    fz = -Math.sin(sim.yaw)
-  let best = Infinity
-  for (const c of query(p.x - 4, p.z - 4, p.x + 4, p.z + 4, _grind)) {
-    if (c.r || c.down || c.y0 > p.y + 1 || c.y1 <= p.y + 0.3) continue
-    for (let k = 0; k < 4; k++) {
-      const a = (k & 1 ? 1 : -1) * CAR.halfL,
-        b = (k & 2 ? 1 : -1) * CAR.halfW
-      const x = p.x + fx * a + fz * b,
-        z = p.z + fz * a - fx * b
-      const dx = Math.max(c.x0 - x, 0, x - c.x1),
-        dz = Math.max(c.z0 - z, 0, z - c.z1)
-      best = Math.min(best, Math.hypot(dx, dz))
-    }
-  }
-  return best
-}
-
-// cars knocked loose hitting each other or a post away from the Roadster (whose own knocks the sim
-// reports): a sudden loss of speed is a knock where they are (unless the sim reports these itself,
-// as 'clash' events)
-function wreckHits (sound, traffic, sim) {
-  if (sound.clashed) return
-  for (const c of traffic.loose || NONE) {
-    const v = Math.hypot(c.vx || 0, c.vz || 0),
-      was = c.sndLv ?? v
-    c.sndLv = v
-    if (was - v < 2.5 || Math.hypot(c.x - sim.pos.x, c.z - sim.pos.z) < 7)
-      continue
-    if (hearing(c.x, c.z) < 0.04) continue
-    sound.bump(was - v, 'car', placeOf(c.x, c.z))
-  }
-}
-
-// Optimus walking up to the car in the opening scene: a footfall each half stride
-const walk = { x: 0, z: 0, d: 0, on: false }
-function walker (sound, app, traffic) {
-  const w = app.intro && traffic.walker
-  if (!w) return (walk.on = false)
-  if (walk.on) {
-    walk.d += Math.hypot(w.x - walk.x, w.z - walk.z)
-    if (walk.d > 0.72) {
-      walk.d = 0
-      sound.robotStep(hearing(w.x, w.z), panOf(w.x, w.z))
-    }
-  } else walk.d = 0.5
-  walk.on = true
-  walk.x = w.x
-  walk.z = w.z
-}
-
-// After a pause (muted, a hidden tab): forget what was seen before it, so nothing goes off at once
-// for what changed meanwhile (cars that stopped, slowed, were passed)
-function forget (traffic) {
-  last.clear()
-  for (const c of traffic.cars) {
-    c.sndV = c.v
-    c.sndLv = Math.hypot(c.vx || 0, c.vz || 0)
-  }
-  walk.on = false
-}
-// all of it, on the mix's world frames in the city (every other frame; the slower watches every
-// other one of those)
-let frame = 0
-function watch (sound, app, traffic) {
-  const sim = app.sim
-  frame++
-  passBy(sound, sim, traffic)
-  if ((frame & 1) === 0) brakes(sound, traffic)
-  else alarms(sound, traffic)
-  walker(sound, app, traffic)
-  wreckHits(sound, traffic, sim)
-  // the car's side grinding along a wall (any corner within a hand's breadth of it, sliding by)
-  if (
-    sim.mode === 'ground' &&
-    Math.abs(sim.speed) > 1.5 &&
-    wallGap(sim) < 0.12
-  )
-    sound.contact('building', sim.vel.length())
-  // the wreck sliding on its roof or side: metal grinding on the road
-  if (
-    sim.mode === 'crash' &&
-    !sim.crashSettled &&
-    sim.com.y - (sim.floor || 0) < 1.3
-  ) {
-    const v = sim.vel.length()
-    if (v > 1) sound.contact('ground', v)
-  }
-}
-__export(__exports, { "ALARM": () => ALARM, "forget": () => forget, "watch": () => watch })
-})
-
-// ---- js/audio/mix.js
-__define(53, function (__exports) {
-// What the sound engine hears each frame, from where the camera is: the Roadster's drive state (the
-// motors' force, worked out from the power the sim reports, its wheels and tyres), where the car is
-// from the camera, the cars nearest the camera with their doppler and whether a building stands in
-// the way, how busy the traffic is a few streets off either side, the walls either side and how
-// near the sea is, the people close by, their footsteps and their screams; the one-shots the street
-// makes are watched for in watch.js, and ears.js says how loud, where and how dull a thing sounds.
-// Everything is written into objects kept from frame to frame, so a frame allocates nothing.
-const THREE = __require(0)
-const { camera } = __require(20)
-const { clamp } = __require(1)
-const { TYPES } = __require(34)
-const { OUTER } = __require(5)
-const { hearing, panOf, blocked, dullness, placeOf, ray } = __require(51)
-const { watch, forget, ALARM } = __require(52)
-
-const _right = new THREE.Vector3()
-
-const FMAX = 2200 * 15 // N, the most the motors push (constants.js: mass x driveAccelMax)
-
-// the camera's own velocity, for the doppler (it may ride with the car, or stand still)
-const camVel = new THREE.Vector3(),
-  camLast = new THREE.Vector3()
-let camInit = false,
-  cut = false
-function trackCamera (dt) {
-  const p = camera.position
-  // (a jump of more than a few metres in a frame is a cut)
-  cut = camInit && p.distanceTo(camLast) > 6
-  if (camInit && dt > 0) {
-    const k = Math.min(1, dt * 8)
-    const vx = (p.x - camLast.x) / dt,
-      vz = (p.z - camLast.z) / dt
-    // (a cut is a jump, not a speed)
-    if (Math.hypot(vx, vz) < 150) {
-      camVel.x += (vx - camVel.x) * k
-      camVel.z += (vz - camVel.z) * k
-    }
-  }
-  camLast.copy(p)
-  camInit = true
-}
-
-// the cars within earshot, nearest first: { key, d, pan, doppler, v, type, ev, occl }, from a pool
-// (further off than RANGE, the far traffic's wash stands for them)
-const N_CARS = 5,
-  RANGE = 55
-const pool = Array.from({ length: 24 }, () => ({
-  key: null,
-  d: 0,
-  pan: 0,
-  doppler: 1,
-  v: 0,
-  type: '',
-  ev: false,
-  loose: false,
-  rev: false,
-  acc: NaN,
-  panic: false,
-  back: 0,
-  occl: 0
-}))
-const near = [],
-  occl = new Map()
-let rayAt = 0
-const byDistance = (a, b) => a.d - b.d
-const _fwd = new THREE.Vector3()
-function nearCars (traffic, dt) {
-  near.length = 0
-  _fwd.setFromMatrixColumn(camera.matrixWorld, 2).negate()
-  const cp = camera.position
-  let used = 0,
-    worst = 0
-  for (const c of traffic.cars) {
-    // (parked cars are off, but the gridlock's are idling)
-    if (c.parked && !c.jam) continue
-    const dx = c.x - cp.x,
-      dz = c.z - cp.z
-    if (Math.abs(dx) > RANGE || Math.abs(dz) > RANGE) continue
-    const d = Math.hypot(dx, dz)
-    if (d > RANGE) continue
-    // keep the nearest few: fill the pool, then replace the furthest
-    let e
-    if (used < pool.length) e = pool[used++]
-    else {
-      if (d >= near[worst].d) continue
-      e = near[worst]
-    }
-    const vx = c.loose ? c.vx : c.hx * c.v,
-      vz = c.loose ? c.vz : c.hz * c.v
-    const l = d || 1,
-      ux = dx / l,
-      uz = dz / l
-    // the source drawing away along the line between them, and the listener moving towards it
-    const vs = vx * ux + vz * uz,
-      vl = camVel.x * ux + camVel.z * uz
-    e.key = c
-    e.d = d
-    e.pan = 0
-    e.doppler = clamp((343 + vl) / (343 + vs), 0.75, 1.3)
-    e.v = Math.hypot(vx, vz)
-    e.type = TYPES[c.type]?.name || 'sedan'
-    e.ev = !c.big && (c.paint * 3.7) % 1 < 0.3 // about a third of the cars are electric
-    e.loose = !!c.loose
-    e.rev = c.v < -0.1 // (backing up)
-    e.acc = c.acc
-    e.panic = c.panic > 0
-    // behind the camera, a little duller (the head's shadow)
-    e.back = clamp(-(dx * _fwd.x + dz * _fwd.z) / l, 0, 1)
-    if (e !== near[worst]) near.push(e)
-    worst = 0
-    for (let i = 1; i < near.length; i++)
-      if (near[i].d > near[worst].d) worst = i
-  }
-  near.sort(byDistance)
-  // (five voices for the nearest, but past 35 m only while fewer than four cars are nearer)
-  let close = 0
-  while (close < near.length && near[close].d < 35) close++
-  near.length = Math.min(near.length, N_CARS, Math.max(close, 4))
-  // a building in the way: one or two rays a frame, round the nearest cars, eased in and out
-  for (let i = 0; i < 1 && near.length; i++) {
-    const e = near[rayAt++ % near.length]
-    const o = occl.get(e.key) ?? { t: 0, v: 0 }
-    o.t = blocked(e.key.x, e.key.z)
-    occl.set(e.key, o)
-  }
-  for (const e of near) {
-    e.pan = panOf(e.key.x, e.key.z)
-    const o = occl.get(e.key)
-    if (o) {
-      o.v += (o.t - o.v) * Math.min(1, dt * 5)
-      e.occl = o.v
-    } else e.occl = 0
-  }
-  if (occl.size > 60) occl.clear()
-  return near
-}
-
-// how busy the traffic is off to the left and right, 40 to 250 m away (0 to 1)
-const WASH = { l: 0, r: 0 }
-function wash (traffic) {
-  _right.setFromMatrixColumn(camera.matrixWorld, 0)
-  const cp = camera.position
-  let l = 0,
-    r = 0
-  for (const c of traffic.cars) {
-    const dx = c.x - cp.x,
-      dz = c.z - cp.z,
-      d = Math.hypot(dx, dz)
-    if (d < 40 || d > 250) continue
-    const w = (0.3 + Math.min(1, (c.v || 0) / 12)) / (1 + d / 60)
-    if (dx * _right.x + dz * _right.z < 0) l += w
-    else r += w
-  }
-  WASH.l = 1 - Math.exp(-l / 2.5)
-  WASH.r = 1 - Math.exp(-r / 2.5)
-}
-
-// the people near the camera, and the footsteps of those walking close by (each half of their
-// stride's cycle a step); people taking fright (peds.panic, how many are running scared, rising;
-// peds.scream, how many just started to) scream, from where the fright was
-const steps = Array.from({ length: 6 }, () => ({ k: 0, pan: 0 })),
-  STEPS = []
-const PI = Math.PI
-const SCREAM = { n: 0, k: 0, pan: 0, lp: 20000 }
-let panicWas = 0
-function people (peds) {
-  STEPS.length = 0
-  const panic = peds?.panic || 0
-  SCREAM.n = Math.min(3, Math.max(peds?.scream || 0, panic - panicWas))
-  panicWas = panic
-  if (SCREAM.n > 0) {
-    const at = placeOf(peds.panicX || 0, peds.panicZ || 0)
-    SCREAM.k = at.k
-    SCREAM.pan = at.pan
-    SCREAM.lp = at.lp
-  }
-  const cp = camera.position
-  let crowd = 0
-  for (const p of peds?.list || []) {
-    const d = Math.hypot(p.x - cp.x, p.z - cp.z)
-    if (d > 22) continue
-    crowd += 1 / (1 + d / 6)
-    const ph = Math.floor((p.phase || 0) / PI)
-    if (
-      d < 10 &&
-      p.sndPh !== undefined &&
-      ph !== p.sndPh &&
-      STEPS.length < steps.length
-    ) {
-      const s = steps[STEPS.length]
-      s.k = clamp(1.5 / (1 + d / 2), 0, 1) * clamp(p.gait ?? 1, 0.3, 1.6)
-      s.pan = panOf(p.x, p.z)
-      STEPS.push(s)
-    }
-    p.sndPh = ph
-  }
-  return clamp(crowd / 6, 0, 1)
-}
-
-// the nearest wall to the camera's left and right (m), along the line across its view
-const WALL_RANGE = 70
-const WALLS = { left: Infinity, right: Infinity }
-function walls () {
-  _right.setFromMatrixColumn(camera.matrixWorld, 0)
-  const p = camera.position,
-    l = Math.hypot(_right.x, _right.z) || 1
-  for (let side = -1; side < 2; side += 2) {
-    const x = p.x + ((side * _right.x) / l) * WALL_RANGE,
-      z = p.z + ((side * _right.z) / l) * WALL_RANGE
-    const t = ray(p.x, p.y, p.z, x, p.y, z)
-    WALLS[side < 0 ? 'left' : 'right'] = t < 1 ? t * WALL_RANGE : Infinity
-  }
-  return WALLS
-}
-
-const ST = { cars: near, steps: STEPS }
-let frame = 0,
-  worldDt = 0,
-  wallsAt = null,
-  crowd = 0
-const NONE = []
-const _cp = new THREE.Vector3()
-function mixSound (sound, app, traffic, dt, clock, peds) {
-  const sim = app.sim
-  const ground = sim.mode === 'ground',
-    ramp = sim.mode === 'ramp'
-  const gs = ground ? Math.abs(sim.speed) : ramp ? Math.abs(sim.v) : 0
-  app.wheelAudio =
-    sim.mode === 'air' || sim.mode === 'crash'
-      ? app.wheelAudio * Math.exp(-dt * 0.8)
-      : gs
-  const city = app.world === 'city'
-  const on = city && sound.enabled
-  trackCamera(dt)
-  // (the world round the car is looked at every other frame, the slow things in it every fourth:
-  // the far traffic, the walls either side)
-  frame++
-  const world = (frame & 1) === 0
-  worldDt += dt
-  // (back from a pause: what the watchers remembered is stale)
-  if (on && sound.fresh) {
-    sound.fresh = false
-    forget(traffic)
-    panicWas = peds?.panic || 0
-    for (const p of peds?.list || NONE) p.sndPh = Math.floor((p.phase || 0) / Math.PI)
-  }
-  if (on && world) {
-    watch(sound, app, traffic)
-    if ((frame & 3) === 0) wash(traffic)
-  }
-  const w = on ? ((frame & 3) === 1 || !wallsAt ? (wallsAt = walls()) : wallsAt) : null
-  // how shut in by walls the camera is, for the reverb
-  const shut = w
-    ? (clamp(1 - w.left / 45, 0, 1) + clamp(1 - w.right / 45, 0, 1)) / 2
-    : 1
-  const was = app.enclosed ?? 1
-  app.enclosed = was + (shut - was) * clamp(dt * 2, 0, 1)
-  const cp = camera.position,
-    shore = OUTER + 3 - Math.max(Math.abs(cp.x), Math.abs(cp.z))
-  const c = app.lastCtl,
-    u = Math.max(gs, 0.5)
-  // the motors' force: the power over the speed, or at a standstill what the throttle asks for
-  const force =
-    gs > 1.5
-      ? (sim.drivePower || 0) / u
-      : c.throttle * FMAX - (sim.regenOn ? 2860 : 0)
-  const at = sim.mode === 'ground' || ramp ? sim.pos : sim.com
-  _cp.copy(at)
-  const st = ST
-  st.volume = 0.85
-  st.pitch = 0.55 + 0.45 * app.timeScale
-  st.wheelSpeed = app.wheelAudio
-  st.throttle = c.throttle
-  st.force = sim.mode === 'ground' || ramp ? force : 0
-  st.regen = sim.regenOn
-  st.grounded = ground || ramp ? 1 : 0
-  st.airspeed = sim.vel.length()
-  st.skid = sim.skid
-  st.skidF = sim.skidF ?? sim.skid
-  st.skidR = sim.skidR ?? sim.skid
-  st.slipR = sim.slipR || 0
-  st.latG = (sim.latAcc || 0) / 9.81
-  // how much of the tyres' grip the car is using cornering (braking and pulling count for less: the
-  // electronics keep those just short of a squeal)
-  st.use = ground
-    ? Math.hypot(sim.latAcc || 0, 0.6 * (sim.accLong || 0)) /
-      (9.81 * 1.26 * (sim.grip || 1))
-    : 0
-  st.yawRate = sim.yawRate || 0
-  st.ebrake = !!sim.ebrakeOn && ground
-  st.track = !!sim.track
-  // (sim.rearSpin, 0 to 1, how much the driven rears spin past the road; about 10 m/s at full spin,
-  // and in a burnout the sim says how fast)
-  st.spin = ground
-    ? Math.max((sim.rearSpin || 0) * 10, sim.burnSpin || 0)
-    : 0
-  st.burning = ground && !!sim.burning
-  st.main = sim.thrMain
-  st.lift = sim.thrLift
-  st.side = sim.thrSide
-  st.suction = sim.suction
-  st.city = city
-  st.inside = !!app.inside // the camera in the driver's seat
-  st.carDist = cp.distanceTo(_cp)
-  st.cut = cut
-  st.carPan = panOf(_cp.x, _cp.z)
-  st.camY = cp.y
-  st.night = city && app.night
-  st.honks = !traffic.quiet // (not until the Roadster has honked at the gridlock)
-  st.cars = on ? (world ? nearCars(traffic, worldDt) : near) : NONE
-  st.washL = WASH.l
-  st.washR = WASH.r
-  if (on && world) crowd = people(peds)
-  else {
-    // (between looks, no new footsteps or screams)
-    STEPS.length = 0
-    SCREAM.n = 0
-  }
-  st.peds = on ? crowd : 0
-  st.screams = on ? SCREAM : null
-  st.panic = on ? Math.min(1, (peds?.panic || 0) / 8) : 0
-  st.steps = STEPS
-  st.walls = w
-  st.alarm = ALARM
-  st.enclosed = app.enclosed
-  st.sea = city ? clamp(1 - shore / 140, 0, 1) : 0
-  st.surface = ground && city ? sim.surface : null
-  st.dt = dt
-  st.world = world
-  st.worldDt = worldDt
-  st.t = clock
-  sound.update(st)
-  if (world) worldDt = 0
-}
-__export(__exports, { "mixSound": () => mixSound, "hearing": () => hearing, "panOf": () => panOf, "dullness": () => dullness, "placeOf": () => placeOf })
-})
-
 // ---- js/render/effects.js
-__define(54, function (__exports) {
+__define(51, function (__exports) {
 // Particles (jet cores, sparks, leaves), supersonic shock-diamond jets, and what the car throws up:
 // thruster vapor, tyre smoke, dust and the beach's sand (smoke.js), and the debris of whatever it
 // knocks over.
@@ -68662,13 +68230,609 @@ function fallFx (x, z, kind) {
 __export(__exports, { "ALL_PARTICLES": () => ALL_PARTICLES, "attachDiamonds": () => attachDiamonds, "updateNozzles": () => updateNozzles, "emitThrusters": () => emitThrusters, "emitTireSmoke": () => emitTireSmoke, "burst": () => burst, "sparkBurst": () => sparkBurst, "knockFx": () => knockFx, "fallFx": () => fallFx })
 })
 
+// ---- js/audio/ears.js
+__define(52, function (__exports) {
+// How something in the world sounds from where the camera is: how loud, how far left or right,
+// whether a building stands in the way, and how dull the distance and the walls make it.
+const THREE = __require(0)
+const { camera } = __require(20)
+const { clamp } = __require(1)
+const { query, raycast } = __require(4)
+// how loud something at (x, z) sounds from the camera, 0 to 1
+const hearing = (x, z) =>
+  clamp(
+    1.4 / (1 + Math.hypot(camera.position.x - x, camera.position.z - z) / 14),
+    0,
+    1
+  )
+// where (x, z) sits left to right from the camera, -0.85 to 0.85
+const _right = new THREE.Vector3()
+function panOf (x, z) {
+  _right.setFromMatrixColumn(camera.matrixWorld, 0)
+  const dx = x - camera.position.x,
+    dz = z - camera.position.z
+  return clamp(
+    ((dx * _right.x + dz * _right.z) / (Math.hypot(dx, dz) || 1)) * 0.85,
+    -0.85,
+    0.85
+  )
+}
+// the first building the segment a -> b hits, as a share of its length (1: clear)
+const _rays = []
+const ray = (ax, ay, az, bx, by, bz) =>
+  raycast(
+    ax,
+    ay,
+    az,
+    bx,
+    by,
+    bz,
+    query(
+      Math.min(ax, bx),
+      Math.min(az, bz),
+      Math.max(ax, bx),
+      Math.max(az, bz),
+      _rays
+    )
+  )
+// whether a building stands between the camera and (x, z), 0 or 1
+function blocked (x, z, y = 1.2) {
+  const p = camera.position
+  return ray(p.x, Math.max(1, p.y), p.z, x, y, z) < 0.98 ? 1 : 0
+}
+// how dull something at (x, z) sounds (a lowpass, Hz): the air over the distance, and a building
+// in the way
+function dullness (x, z) {
+  const d = Math.hypot(camera.position.x - x, camera.position.z - z)
+  return (
+    clamp(20000 * Math.exp(-d / 90), 2000, 20000) * (blocked(x, z) ? 0.12 : 1)
+  )
+}
+
+// something heard at (x, z): how loud, which side, how dull (one object, reused)
+const AT = { k: 0, pan: 0, lp: 20000 }
+function placeOf (x, z) {
+  AT.k = hearing(x, z)
+  AT.pan = panOf(x, z)
+  AT.lp = dullness(x, z)
+  return AT
+}
+__export(__exports, { "hearing": () => hearing, "panOf": () => panOf, "ray": () => ray, "blocked": () => blocked, "dullness": () => dullness, "placeOf": () => placeOf })
+})
+
+// ---- js/audio/watch.js
+__define(53, function (__exports) {
+// What happens round the camera that the sound engine hears as one-shots, watched each frame from
+// the sim's state: things rushing past the Roadster, brakes squealing and buses' air brakes, parked
+// cars' alarms, wrecks hitting each other, Optimus's footsteps, and the car's side grinding along a
+// wall or its wreck along the road.
+const { CAR } = __require(1)
+const { query } = __require(4)
+const { hearing, panOf, dullness, placeOf } = __require(52)
+const NONE = []
+
+// Things the Roadster passes close and fast: the moment each one is abeam (it stops closing and
+// starts drawing away), a rush of air from its side. last: each thing's closing rate last frame.
+const last = new Map(),
+  seen = new Set(),
+  _near = []
+function passBy (sound, sim, traffic) {
+  const p = sim.mode === 'ground' ? sim.pos : sim.com,
+    v = sim.vel
+  seen.clear()
+  const check = (key, x, z, vx, vz, reach, big) => {
+    const rx = x - p.x,
+      rz = z - p.z,
+      wx = vx - v.x,
+      wz = vz - v.z
+    const closing = rx * wx + rz * wz,
+      w = Math.hypot(wx, wz)
+    seen.add(key)
+    const before = last.get(key)
+    last.set(key, closing)
+    const d = Math.hypot(rx, rz)
+    if (before < 0 && closing >= 0 && w > 10 && d < reach)
+      sound.whoosh(w, panOf(x, z), big, d)
+  }
+  if (p.y < 8)
+    for (const c of query(p.x - 8, p.z - 8, p.x + 8, p.z + 8, _near))
+      if (c.r && !c.down) check(c, c.x, c.z, 0, 0, 4.5, false)
+  if (p.y < 3.5)
+    for (const c of traffic.cars) {
+      if (Math.abs(c.x - p.x) > 12 || Math.abs(c.z - p.z) > 12) continue
+      const vx = c.loose ? c.vx : c.hx * c.v,
+        vz = c.loose ? c.vz : c.hz * c.v
+      check(c, c.x, c.z, vx, vz, 6, true)
+    }
+  for (const k of last.keys()) if (!seen.has(k)) last.delete(k)
+}
+// a bus coming to a stop lets its air brakes go; as it slows the last few km/h its brakes may
+// squeal (and now and then a car's worn pads)
+function brakes (sound, traffic) {
+  for (const c of traffic.cars) {
+    if (c.parked || c.loose) continue
+    const was = c.sndV ?? c.v
+    c.sndV = c.v
+    const squeal =
+      was >= 2.2 && c.v < 2.2 && (c.paint * 17.3) % 1 < (c.big ? 0.6 : 0.08)
+    const stop = c.big && was > 0.8 && c.v < 0.25
+    if (!squeal && !stop) continue
+    const k = hearing(c.x, c.z)
+    if (k < 0.05) continue
+    if (squeal)
+      sound.brakeSqueal(0.6 * k, panOf(c.x, c.z), dullness(c.x, c.z), c.big)
+    if (stop) sound.airbrake(0.3 * k, panOf(c.x, c.z), dullness(c.x, c.z))
+  }
+}
+// a parked car knocked loose sets its alarm off: one at a time, heard from where it is
+const ALARM = { on: false, k: 0, pan: 0, lp: 20000 }
+let alarmCar = null
+function alarms (sound, traffic) {
+  for (const c of traffic.loose || NONE)
+    if (c.parked && !c.jam && !c.sndAlarm) {
+      c.sndAlarm = true
+      if (!alarmCar) {
+        alarmCar = c
+        sound.alarm()
+      }
+    }
+  ALARM.on = !!alarmCar && sound.alarmOn()
+  if (!ALARM.on) {
+    alarmCar = null
+    return
+  }
+  ALARM.k = hearing(alarmCar.x, alarmCar.z)
+  ALARM.pan = panOf(alarmCar.x, alarmCar.z)
+  ALARM.lp = dullness(alarmCar.x, alarmCar.z)
+}
+
+// Grinding along a wall: the sim's bumps come only as the car bounces back into it, a few tenths
+// apart, so instead: how near the nearest corner of the car's footprint is to a building's side (m)
+const _grind = []
+function wallGap (sim) {
+  const p = sim.pos,
+    fx = Math.cos(sim.yaw),
+    fz = -Math.sin(sim.yaw)
+  let best = Infinity
+  for (const c of query(p.x - 4, p.z - 4, p.x + 4, p.z + 4, _grind)) {
+    if (c.r || c.down || c.y0 > p.y + 1 || c.y1 <= p.y + 0.3) continue
+    for (let k = 0; k < 4; k++) {
+      const a = (k & 1 ? 1 : -1) * CAR.halfL,
+        b = (k & 2 ? 1 : -1) * CAR.halfW
+      const x = p.x + fx * a + fz * b,
+        z = p.z + fz * a - fx * b
+      const dx = Math.max(c.x0 - x, 0, x - c.x1),
+        dz = Math.max(c.z0 - z, 0, z - c.z1)
+      best = Math.min(best, Math.hypot(dx, dz))
+    }
+  }
+  return best
+}
+
+// cars knocked loose hitting each other or a post away from the Roadster (whose own knocks the sim
+// reports): a sudden loss of speed is a knock where they are (unless the sim reports these itself,
+// as 'clash' events)
+function wreckHits (sound, traffic, sim) {
+  if (sound.clashed) return
+  for (const c of traffic.loose || NONE) {
+    const v = Math.hypot(c.vx || 0, c.vz || 0),
+      was = c.sndLv ?? v
+    c.sndLv = v
+    if (was - v < 2.5 || Math.hypot(c.x - sim.pos.x, c.z - sim.pos.z) < 7)
+      continue
+    if (hearing(c.x, c.z) < 0.04) continue
+    sound.bump(was - v, 'car', placeOf(c.x, c.z))
+  }
+}
+
+// Optimus walking up to the car in the opening scene: a footfall each half stride
+const walk = { x: 0, z: 0, d: 0, on: false }
+function walker (sound, app, traffic) {
+  const w = app.intro && traffic.walker
+  if (!w) return (walk.on = false)
+  if (walk.on) {
+    walk.d += Math.hypot(w.x - walk.x, w.z - walk.z)
+    if (walk.d > 0.72) {
+      walk.d = 0
+      sound.robotStep(hearing(w.x, w.z), panOf(w.x, w.z))
+    }
+  } else walk.d = 0.5
+  walk.on = true
+  walk.x = w.x
+  walk.z = w.z
+}
+
+// After a pause (muted, a hidden tab): forget what was seen before it, so nothing goes off at once
+// for what changed meanwhile (cars that stopped, slowed, were passed)
+function forget (traffic) {
+  last.clear()
+  for (const c of traffic.cars) {
+    c.sndV = c.v
+    c.sndLv = Math.hypot(c.vx || 0, c.vz || 0)
+  }
+  walk.on = false
+}
+// all of it, on the mix's world frames in the city (every other frame; the slower watches every
+// other one of those)
+let frame = 0
+function watch (sound, app, traffic) {
+  const sim = app.sim
+  frame++
+  passBy(sound, sim, traffic)
+  if ((frame & 1) === 0) brakes(sound, traffic)
+  else alarms(sound, traffic)
+  walker(sound, app, traffic)
+  wreckHits(sound, traffic, sim)
+  // the car's side grinding along a wall (any corner within a hand's breadth of it, sliding by)
+  if (
+    sim.mode === 'ground' &&
+    Math.abs(sim.speed) > 1.5 &&
+    wallGap(sim) < 0.12
+  )
+    sound.contact('building', sim.vel.length())
+  // the wreck sliding on its roof or side: metal grinding on the road
+  if (
+    sim.mode === 'crash' &&
+    !sim.crashSettled &&
+    sim.com.y - (sim.floor || 0) < 1.3
+  ) {
+    const v = sim.vel.length()
+    if (v > 1) sound.contact('ground', v)
+  }
+}
+__export(__exports, { "ALARM": () => ALARM, "forget": () => forget, "watch": () => watch })
+})
+
+// ---- js/audio/mix.js
+__define(54, function (__exports) {
+// What the sound engine hears each frame, from where the camera is: the Roadster's drive state (the
+// motors' force, worked out from the power the sim reports, its wheels and tyres), where the car is
+// from the camera, the cars nearest the camera with their doppler and whether a building stands in
+// the way, how busy the traffic is a few streets off either side, the walls either side and how
+// near the sea is, the people close by, their footsteps and their screams; the one-shots the street
+// makes are watched for in watch.js, and ears.js says how loud, where and how dull a thing sounds.
+// Everything is written into objects kept from frame to frame, so a frame allocates nothing.
+const THREE = __require(0)
+const { OUTER } = __require(4)
+const { TYPES } = __require(34)
+const { camera } = __require(20)
+const { clamp } = __require(1)
+const { watch, forget, ALARM } = __require(53)
+const { hearing, panOf, blocked, dullness, placeOf, ray } = __require(52)
+
+const _right = new THREE.Vector3()
+
+const FMAX = 2200 * 15 // N, the most the motors push (constants.js: mass x driveAccelMax)
+
+// the camera's own velocity, for the doppler (it may ride with the car, or stand still)
+const camVel = new THREE.Vector3(),
+  camLast = new THREE.Vector3()
+let camInit = false,
+  cut = false
+function trackCamera (dt) {
+  const p = camera.position
+  // (a jump of more than a few metres in a frame is a cut)
+  cut = camInit && p.distanceTo(camLast) > 6
+  if (camInit && dt > 0) {
+    const k = Math.min(1, dt * 8)
+    const vx = (p.x - camLast.x) / dt,
+      vz = (p.z - camLast.z) / dt
+    // (a cut is a jump, not a speed)
+    if (Math.hypot(vx, vz) < 150) {
+      camVel.x += (vx - camVel.x) * k
+      camVel.z += (vz - camVel.z) * k
+    }
+  }
+  camLast.copy(p)
+  camInit = true
+}
+
+// the cars within earshot, nearest first: { key, d, pan, doppler, v, type, ev, occl }, from a pool
+// (further off than RANGE, the far traffic's wash stands for them)
+const N_CARS = 5,
+  RANGE = 55
+const pool = Array.from({ length: 24 }, () => ({
+  key: null,
+  d: 0,
+  pan: 0,
+  doppler: 1,
+  v: 0,
+  type: '',
+  ev: false,
+  loose: false,
+  rev: false,
+  acc: NaN,
+  panic: false,
+  back: 0,
+  occl: 0
+}))
+const near = [],
+  occl = new Map()
+let rayAt = 0
+const byDistance = (a, b) => a.d - b.d
+const _fwd = new THREE.Vector3()
+function nearCars (traffic, dt) {
+  near.length = 0
+  _fwd.setFromMatrixColumn(camera.matrixWorld, 2).negate()
+  const cp = camera.position
+  let used = 0,
+    worst = 0
+  for (const c of traffic.cars) {
+    // (parked cars are off, but the gridlock's are idling)
+    if (c.parked && !c.jam) continue
+    const dx = c.x - cp.x,
+      dz = c.z - cp.z
+    if (Math.abs(dx) > RANGE || Math.abs(dz) > RANGE) continue
+    const d = Math.hypot(dx, dz)
+    if (d > RANGE) continue
+    // keep the nearest few: fill the pool, then replace the furthest
+    let e
+    if (used < pool.length) e = pool[used++]
+    else {
+      if (d >= near[worst].d) continue
+      e = near[worst]
+    }
+    const vx = c.loose ? c.vx : c.hx * c.v,
+      vz = c.loose ? c.vz : c.hz * c.v
+    const l = d || 1,
+      ux = dx / l,
+      uz = dz / l
+    // the source drawing away along the line between them, and the listener moving towards it
+    const vs = vx * ux + vz * uz,
+      vl = camVel.x * ux + camVel.z * uz
+    e.key = c
+    e.d = d
+    e.pan = 0
+    e.doppler = clamp((343 + vl) / (343 + vs), 0.75, 1.3)
+    e.v = Math.hypot(vx, vz)
+    e.type = TYPES[c.type]?.name || 'sedan'
+    e.ev = !c.big && (c.paint * 3.7) % 1 < 0.3 // about a third of the cars are electric
+    e.loose = !!c.loose
+    e.rev = c.v < -0.1 // (backing up)
+    e.acc = c.acc
+    e.panic = c.panic > 0
+    // behind the camera, a little duller (the head's shadow)
+    e.back = clamp(-(dx * _fwd.x + dz * _fwd.z) / l, 0, 1)
+    if (e !== near[worst]) near.push(e)
+    worst = 0
+    for (let i = 1; i < near.length; i++)
+      if (near[i].d > near[worst].d) worst = i
+  }
+  near.sort(byDistance)
+  // (five voices for the nearest, but past 35 m only while fewer than four cars are nearer)
+  let close = 0
+  while (close < near.length && near[close].d < 35) close++
+  near.length = Math.min(near.length, N_CARS, Math.max(close, 4))
+  // a building in the way: one or two rays a frame, round the nearest cars, eased in and out
+  for (let i = 0; i < 1 && near.length; i++) {
+    const e = near[rayAt++ % near.length]
+    const o = occl.get(e.key) ?? { t: 0, v: 0 }
+    o.t = blocked(e.key.x, e.key.z)
+    occl.set(e.key, o)
+  }
+  for (const e of near) {
+    e.pan = panOf(e.key.x, e.key.z)
+    const o = occl.get(e.key)
+    if (o) {
+      o.v += (o.t - o.v) * Math.min(1, dt * 5)
+      e.occl = o.v
+    } else e.occl = 0
+  }
+  if (occl.size > 60) occl.clear()
+  return near
+}
+
+// how busy the traffic is off to the left and right, 40 to 250 m away (0 to 1)
+const WASH = { l: 0, r: 0 }
+function wash (traffic) {
+  _right.setFromMatrixColumn(camera.matrixWorld, 0)
+  const cp = camera.position
+  let l = 0,
+    r = 0
+  for (const c of traffic.cars) {
+    const dx = c.x - cp.x,
+      dz = c.z - cp.z,
+      d = Math.hypot(dx, dz)
+    if (d < 40 || d > 250) continue
+    const w = (0.3 + Math.min(1, (c.v || 0) / 12)) / (1 + d / 60)
+    if (dx * _right.x + dz * _right.z < 0) l += w
+    else r += w
+  }
+  WASH.l = 1 - Math.exp(-l / 2.5)
+  WASH.r = 1 - Math.exp(-r / 2.5)
+}
+
+// the people near the camera, and the footsteps of those walking close by (each half of their
+// stride's cycle a step); people taking fright (peds.panic, how many are running scared, rising;
+// peds.scream, how many just started to) scream, from where the fright was
+const steps = Array.from({ length: 6 }, () => ({ k: 0, pan: 0 })),
+  STEPS = []
+const PI = Math.PI
+const SCREAM = { n: 0, k: 0, pan: 0, lp: 20000 }
+let panicWas = 0
+function people (peds) {
+  STEPS.length = 0
+  const panic = peds?.panic || 0
+  SCREAM.n = Math.min(3, Math.max(peds?.scream || 0, panic - panicWas))
+  panicWas = panic
+  if (SCREAM.n > 0) {
+    const at = placeOf(peds.panicX || 0, peds.panicZ || 0)
+    SCREAM.k = at.k
+    SCREAM.pan = at.pan
+    SCREAM.lp = at.lp
+  }
+  const cp = camera.position
+  let crowd = 0
+  for (const p of peds?.list || []) {
+    const d = Math.hypot(p.x - cp.x, p.z - cp.z)
+    if (d > 22) continue
+    crowd += 1 / (1 + d / 6)
+    const ph = Math.floor((p.phase || 0) / PI)
+    if (
+      d < 10 &&
+      p.sndPh !== undefined &&
+      ph !== p.sndPh &&
+      STEPS.length < steps.length
+    ) {
+      const s = steps[STEPS.length]
+      s.k = clamp(1.5 / (1 + d / 2), 0, 1) * clamp(p.gait ?? 1, 0.3, 1.6)
+      s.pan = panOf(p.x, p.z)
+      STEPS.push(s)
+    }
+    p.sndPh = ph
+  }
+  return clamp(crowd / 6, 0, 1)
+}
+
+// the nearest wall to the camera's left and right (m), along the line across its view
+const WALL_RANGE = 70
+const WALLS = { left: Infinity, right: Infinity }
+function walls () {
+  _right.setFromMatrixColumn(camera.matrixWorld, 0)
+  const p = camera.position,
+    l = Math.hypot(_right.x, _right.z) || 1
+  for (let side = -1; side < 2; side += 2) {
+    const x = p.x + ((side * _right.x) / l) * WALL_RANGE,
+      z = p.z + ((side * _right.z) / l) * WALL_RANGE
+    const t = ray(p.x, p.y, p.z, x, p.y, z)
+    WALLS[side < 0 ? 'left' : 'right'] = t < 1 ? t * WALL_RANGE : Infinity
+  }
+  return WALLS
+}
+
+const ST = { cars: near, steps: STEPS }
+let frame = 0,
+  worldDt = 0,
+  wallsAt = null,
+  crowd = 0
+const NONE = []
+const _cp = new THREE.Vector3()
+function mixSound (sound, app, traffic, dt, clock, peds) {
+  const sim = app.sim
+  const ground = sim.mode === 'ground',
+    ramp = sim.mode === 'ramp'
+  const gs = ground ? Math.abs(sim.speed) : ramp ? Math.abs(sim.v) : 0
+  app.wheelAudio =
+    sim.mode === 'air' || sim.mode === 'crash'
+      ? app.wheelAudio * Math.exp(-dt * 0.8)
+      : gs
+  const city = app.world === 'city'
+  const on = city && sound.enabled
+  trackCamera(dt)
+  // (the world round the car is looked at every other frame, the slow things in it every fourth:
+  // the far traffic, the walls either side)
+  frame++
+  const world = (frame & 1) === 0
+  worldDt += dt
+  // (back from a pause: what the watchers remembered is stale)
+  if (on && sound.fresh) {
+    sound.fresh = false
+    forget(traffic)
+    panicWas = peds?.panic || 0
+    for (const p of peds?.list || NONE)
+      p.sndPh = Math.floor((p.phase || 0) / Math.PI)
+  }
+  if (on && world) {
+    watch(sound, app, traffic)
+    if ((frame & 3) === 0) wash(traffic)
+  }
+  const w = on
+    ? (frame & 3) === 1 || !wallsAt
+      ? (wallsAt = walls())
+      : wallsAt
+    : null
+  // how shut in by walls the camera is, for the reverb
+  const shut = w
+    ? (clamp(1 - w.left / 45, 0, 1) + clamp(1 - w.right / 45, 0, 1)) / 2
+    : 1
+  const was = app.enclosed ?? 1
+  app.enclosed = was + (shut - was) * clamp(dt * 2, 0, 1)
+  const cp = camera.position,
+    shore = OUTER + 3 - Math.max(Math.abs(cp.x), Math.abs(cp.z))
+  const c = app.lastCtl,
+    u = Math.max(gs, 0.5)
+  // the motors' force: the power over the speed, or at a standstill what the throttle asks for
+  const force =
+    gs > 1.5
+      ? (sim.drivePower || 0) / u
+      : c.throttle * FMAX - (sim.regenOn ? 2860 : 0)
+  const at = sim.mode === 'ground' || ramp ? sim.pos : sim.com
+  _cp.copy(at)
+  const st = ST
+  st.volume = 0.85
+  st.pitch = 0.55 + 0.45 * app.timeScale
+  st.wheelSpeed = app.wheelAudio
+  st.throttle = c.throttle
+  st.force = sim.mode === 'ground' || ramp ? force : 0
+  st.regen = sim.regenOn
+  st.grounded = ground || ramp ? 1 : 0
+  st.airspeed = sim.vel.length()
+  st.skid = sim.skid
+  st.skidF = sim.skidF ?? sim.skid
+  st.skidR = sim.skidR ?? sim.skid
+  st.slipR = sim.slipR || 0
+  st.latG = (sim.latAcc || 0) / 9.81
+  // how much of the tyres' grip the car is using cornering (braking and pulling count for less: the
+  // electronics keep those just short of a squeal)
+  st.use = ground
+    ? Math.hypot(sim.latAcc || 0, 0.6 * (sim.accLong || 0)) /
+      (9.81 * 1.26 * (sim.grip || 1))
+    : 0
+  st.yawRate = sim.yawRate || 0
+  st.ebrake = !!sim.rearLocked && ground // (the rears locked by the handbrake)
+  st.abs = ground ? sim.abs || 0 : 0 // (the ABS at work, 0 to 1)
+  st.track = !!sim.track
+  // (sim.rearSpin, 0 to 1, how much the driven rears spin past the road; about 10 m/s at full spin,
+  // and in a burnout the sim says how fast)
+  st.spin = ground ? Math.max((sim.rearSpin || 0) * 10, sim.burnSpin || 0) : 0
+  st.burning = ground && !!sim.burning
+  st.main = sim.thrMain
+  st.lift = sim.thrLift
+  st.side = sim.thrSide
+  st.suction = sim.suction
+  st.city = city
+  st.inside = !!app.inside // the camera in the driver's seat
+  st.carDist = cp.distanceTo(_cp)
+  st.cut = cut
+  st.carPan = panOf(_cp.x, _cp.z)
+  st.camY = cp.y
+  st.night = city && app.night
+  st.honks = !traffic.quiet // (not until the Roadster has honked at the gridlock)
+  st.cars = on ? (world ? nearCars(traffic, worldDt) : near) : NONE
+  st.washL = WASH.l
+  st.washR = WASH.r
+  if (on && world) crowd = people(peds)
+  else {
+    // (between looks, no new footsteps or screams)
+    STEPS.length = 0
+    SCREAM.n = 0
+  }
+  st.peds = on ? crowd : 0
+  st.screams = on ? SCREAM : null
+  st.panic = on ? Math.min(1, (peds?.panic || 0) / 8) : 0
+  st.steps = STEPS
+  st.walls = w
+  st.alarm = ALARM
+  st.enclosed = app.enclosed
+  st.sea = city ? clamp(1 - shore / 140, 0, 1) : 0
+  st.surface = ground && city ? sim.surface : null
+  st.dt = dt
+  st.world = world
+  st.worldDt = worldDt
+  st.t = clock
+  sound.update(st)
+  if (world) worldDt = 0
+}
+__export(__exports, { "mixSound": () => mixSound, "hearing": () => hearing, "panOf": () => panOf, "dullness": () => dullness, "placeOf": () => placeOf })
+})
+
 // ---- js/events.js
 __define(55, function (__exports) {
 // What the sim reports (scores, landings, drifts, near misses, knocks, kerbs, honks, crashes),
 // turned into popups, sounds, camera shake, a gamepad's rumble and particles.
 const { HORNS, AIR_HORN } = __require(42)
-const { hearing, panOf, dullness, placeOf } = __require(53)
-const { burst, knockFx, sparkBurst } = __require(54)
+const { burst, knockFx, sparkBurst } = __require(51)
+const { hearing, panOf, dullness, placeOf } = __require(54)
 const CONTACT = { x: 0, y: 0, z: 0 }
 function contactAt (x, y, z) {
   CONTACT.x = x
@@ -68692,8 +68856,8 @@ function handleEvents (g) {
       if (!app.trackHint) {
         app.trackHint = true
         hud.popup(
-          'Track Mode · <b>W</b> holds the drift · steer into it to go deeper, ' +
-            'out of it to straighten',
+          'Track Mode · <b>W</b> holds the drift · steer into it to go deeper · ' +
+            'hold the other way to link it · lift off to straighten',
           4200,
           'hint'
         )
@@ -68701,7 +68865,8 @@ function handleEvents (g) {
     } else if (e.type === 'drift') {
       app.score += e.pts
       const deg = Math.round(e.angle * 57.3)
-      hud.popup(`Drift ${e.t.toFixed(1)} s · ${deg}° <b>+${e.pts}</b>`)
+      const what = e.links ? `Linked drift ×${e.links + 1}` : 'Drift'
+      hud.popup(`${what} ${e.t.toFixed(1)} s · ${deg}° <b>+${e.pts}</b>`)
       sound.chime()
     } else if (e.type === 'nearMiss') {
       app.score += e.pts
@@ -68818,7 +68983,7 @@ __define(56, function (__exports) {
 // the evening sky in it at a glancing angle, a glitter path under the low sun, clear turquoise over
 // the shallows, deep blue further out, and surf breaking along the beach.
 const THREE = __require(0)
-const { OUTER } = __require(5)
+const { OUTER } = __require(4)
 const { LAYER } = __require(22)
 const { canvasTex, speckle } = __require(20)
 const SHORE = OUTER + 3 // where the beach starts down into the water (square, like the city)
@@ -69007,7 +69172,7 @@ __define(57, function (__exports) {
 // shadows still fall the same way, only faintly), and the city's own glow along the horizon.
 const THREE = __require(0)
 const { LAYER } = __require(22)
-const { rng } = __require(5)
+const { rng } = __require(4)
 const { scene, pmrem, renderer, hemi, key, keyOffset } = __require(20)
 const SUN = new THREE.Vector3(-66, 30, 28) // where the low sun sits relative to the car
 const HAZE = new THREE.Color(0.86, 0.6, 0.48)
@@ -70117,7 +70282,7 @@ __define(62, function (__exports) {
 // can see are drawn (or whose shadows it can: the frustum is let out a little for those), in the
 // view and in the sun's shadow map alike; out of sight a car costs nothing but its springs.
 const THREE = __require(0)
-const { CURB_H } = __require(5)
+const { CURB_H } = __require(4)
 const { clamp } = __require(1)
 const { TYPES } = __require(34)
 const { carShape, archMaterial } = __require(60)
@@ -70610,8 +70775,8 @@ __define(63, function (__exports) {
 // own height and build. Only those the camera can see (or whose shadows it can) are drawn.
 const THREE = __require(0)
 const { merge } = __require(22)
-const { CURB_H } = __require(5)
-const { kerbDist } = __require(11)
+const { CURB_H } = __require(4)
+const { kerbDist } = __require(10)
 const { NEAR } = __require(62)
 // the body's parts, each tagged with what it is (it decides how it moves and what colour it is)
 const TORSO = 0,
@@ -71164,7 +71329,7 @@ __define(65, function (__exports) {
 // three ways across the city each way, the shadow map round the car takes in one district, or two
 // or four where they meet, and the view leaves out whatever districts are behind it.
 const THREE = __require(0)
-const { HALF } = __require(5)
+const { HALF } = __require(4)
 const CUT = HALF / 3 // m from the middle to where the districts meet
 const MARGIN = 12 // m added round each district's bounds (and they are fitted again as things fall)
 const DISTRICTS = 9
@@ -71254,7 +71419,7 @@ const { hdr, softTex } = __require(20)
 const { Instances } = __require(65)
 const { merge, box, tint } = __require(22)
 const { G, clamp } = __require(1)
-const { rng, NODES, CURB_H, LAMPS, PALMS, TREES, POLES, DIRS, RED, YELLOW, GREEN, ROAD_HW, LANE_OFF, signal } = __require(5)
+const { rng, NODES, CURB_H, LAMPS, PALMS, TREES, POLES, DIRS, RED, YELLOW, GREEN, ROAD_HW, LANE_OFF, signal } = __require(4)
 const R = rng(99)
 const _m = new THREE.Matrix4(),
   _l = new THREE.Matrix4(),
@@ -71682,7 +71847,7 @@ __define(67, function (__exports) {
 // across it, and a concrete gutter along every kerb that follows the kerb round the corners. All of
 // it worked out in the shader from where on the grid a point is, so it lines up with the lanes.
 const THREE = __require(0)
-const { N, HALF, STOP, PITCH, CURB_R, LANE_OFF, ROAD_HW } = __require(5)
+const { N, HALF, STOP, PITCH, CURB_R, LANE_OFF, ROAD_HW } = __require(4)
 const GUTTER = 0.42 // m of concrete along the kerb
 const f = v => v.toFixed(3)
 
@@ -71790,7 +71955,7 @@ const THREE = __require(0)
 const { merge, marks, LAYER } = __require(22)
 const { canvasTex, speckle } = __require(20)
 const { roadMaterial } = __require(67)
-const { N, DIRS, WALK, STOP, HALF, ROADS, NODES, STALLS, CURB_H, CURB_R, BLOCKS, LANE_W, ROAD_HW, PROMENADE } = __require(5)
+const { N, DIRS, WALK, STOP, HALF, ROADS, NODES, STALLS, CURB_H, CURB_R, BLOCKS, LANE_W, ROAD_HW, PROMENADE } = __require(4)
 // ---------- textures (UVs are in metres, so each texture's repeat is 1 / its tile size) ----------
 function blotches (g, S, n, dark, light, rMin, rMax) {
   for (let i = 0; i < n; i++) {
@@ -72044,8 +72209,8 @@ __define(69, function (__exports) {
 // is left at the city's corners). Paint and iron are flat instanced quads with alpha-cut textures.
 const THREE = __require(0)
 const { marks } = __require(22)
-const { LANES, rng } = __require(5)
-const { MANHOLES, DRAINS, MANHOLE_R } = __require(11)
+const { LANES, rng } = __require(4)
+const { MANHOLES, DRAINS, MANHOLE_R } = __require(10)
 const R = rng(808)
 const tex = (w, h, draw) => {
   const cv = document.createElement('canvas')
@@ -72213,10 +72378,10 @@ __define(70, function (__exports) {
 // calls (the cornices and roofs, heavy with corners, one a district: chunks.js). Every window is its own (facade.js): set back in its opening with a room behind it, lit or
 // dark, warm or cool, blinds up or down, and a glass pane catches the sky at its own slight angle.
 const THREE = __require(0)
-const { LIP, LIP_H } = __require(6)
+const { LIP, LIP_H } = __require(5)
 const { facadeMaterial } = __require(64)
 const { district, DISTRICTS } = __require(65)
-const { BUILDINGS, rng } = __require(5)
+const { BUILDINGS, rng } = __require(4)
 const { canvasTex, speckle, hdr } = __require(20)
 const COL = 3 // m per window bay
 const FLOOR = 3.5 // m per storey
@@ -72706,7 +72871,7 @@ const { buildSea } = __require(56)
 const { Sky, SUN } = __require(57)
 const { scene, site, renderer } = __require(20)
 const { CityShadow } = __require(58)
-const { raycast, BUILDINGS, OUTER } = __require(5)
+const { raycast, BUILDINGS, OUTER } = __require(4)
 const { PedView } = __require(63)
 const { TrafficView } = __require(62)
 const { NIGHT } = __require(64)
@@ -74489,7 +74654,7 @@ __define(74, function (__exports) {
 // and free orbit.
 const THREE = __require(0)
 const { clamp } = __require(1)
-const { TRACK, LINEUP_FIRST, LINEUP_LAST } = __require(9)
+const { TRACK, LINEUP_FIRST, LINEUP_LAST } = __require(8)
 const { follow, ARM } = __require(72)
 const { OrbitControls } = __require(73)
 const CAM_MODES = [
@@ -75065,7 +75230,7 @@ __define(76, function (__exports) {
 // The curved wall (slab, LED edges that turn white behind the car, centre line) and its steel truss.
 const THREE = __require(0)
 const { site, MAT } = __require(20)
-const { TRACK } = __require(9)
+const { TRACK } = __require(8)
 const { AX_Y } = __require(1)
 // ---------- the wall ----------
 const LED_MAT = new THREE.ShaderMaterial({
@@ -75610,8 +75775,8 @@ function buildWheels (car, body) {
   return { wheels, axles }
 }
 
-// Roll with the ground when the tyres touch it (rears stop dead on the e-brake), keep spinning and
-// slowly run down in the air; steer the fronts with Ackermann geometry.
+// Roll with the ground when the tyres touch it (the rears stop dead, locked by the handbrake), keep
+// spinning and slowly run down in the air; steer the fronts with Ackermann geometry.
 function updateWheels (RS, sim, dt) {
   const grounded = sim.mode === 'ground' || sim.mode === 'ramp'
   const roll = (sim.mode === 'ramp' ? sim.v : sim.speed) / CAR.wheelR
@@ -75619,7 +75784,7 @@ function updateWheels (RS, sim, dt) {
     if (grounded)
       axle.rate =
         name === 'rear'
-          ? sim.ebrakeOn
+          ? sim.rearLocked
             ? 0
             : roll + (sim.burnSpin || 0) / CAR.wheelR // (spinning in a burnout)
           : roll
@@ -75904,7 +76069,7 @@ __define(80, function (__exports) {
 const THREE = __require(0)
 const { freeze } = __require(77)
 const { scene, MAT } = __require(20)
-const { CURB_H } = __require(5)
+const { CURB_H } = __require(4)
 const { CAR, clamp, AX_Z } = __require(1)
 const { buildOptimus, poseOptimus } = __require(24)
 const { DRIVER, buildCabin, updateCabin } = __require(25)
@@ -78127,7 +78292,7 @@ __define(95, function (__exports) {
 // joined.
 const THREE = __require(0)
 const { clamp } = __require(1)
-const { carFrame } = __require(8)
+const { carFrame } = __require(7)
 const MIN_HIT = 2.5 // m/s closing speed below which a knock leaves no mark
 const DEPTH = 0.011 // m of dent per m/s past MIN_HIT
 const MAX_DEPTH = 0.1 // m, the deepest one knock goes
@@ -78343,10 +78508,10 @@ const { SoundEngine } = __require(46)
 const { Autopilot } = __require(47)
 const { CityPilot } = __require(49)
 const { buildLineup } = __require(50)
-const { nearestLane, standUp } = __require(5)
+const { nearestLane, standUp } = __require(4)
 const { handleEvents: simEvents } = __require(55)
 const { CityView, clipCamera } = __require(71)
-const { hearing, panOf, mixSound } = __require(53)
+const { hearing, panOf, mixSound } = __require(54)
 const { CameraRig, CAM_NAMES } = __require(74)
 const { updateSkids, clearSkids } = __require(75)
 const { DEG, TAU, makeControls } = __require(1)
@@ -78358,9 +78523,9 @@ const { warmUp } = __require(94)
 const { Damage } = __require(95)
 const { MAT, scene, camera, canvas } = __require(20)
 const { renderer, followKeyLight } = __require(20)
-const { fallFx, ALL_PARTICLES, updateNozzles } = __require(54)
-const { emitThrusters, emitTireSmoke } = __require(54)
-const { attachDiamonds } = __require(54)
+const { fallFx, ALL_PARTICLES, updateNozzles } = __require(51)
+const { emitThrusters, emitTireSmoke } = __require(51)
+const { attachDiamonds } = __require(51)
 // ---------- world ----------
 buildWall()
 buildTruss()
