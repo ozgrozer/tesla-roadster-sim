@@ -5,7 +5,8 @@
 import * as THREE from 'three'
 import { STEP } from './roofs.js'
 import { snap } from './breakables.js'
-import { query, OUTER } from './city.js'
+import { query } from './city.js'
+import { keepIn, hillside } from './edge.js'
 import { G, CAR, clamp } from './constants.js'
 
 // The most yaw rate (rad/s) a knock adds on the ground: the tyres on the road soak up the rest, so a
@@ -260,12 +261,8 @@ export function collideCity (s) {
     storeBody(s)
     if (impact > 0.6) bump(s, impact, c.kind, hit)
   }
-  // the beach past the ring road ends at the sea
-  for (const k of ['x', 'z'])
-    if (Math.abs(s.pos[k]) > OUTER) {
-      s.pos[k] = Math.sign(s.pos[k]) * OUTER
-      if (s.vel[k] * s.pos[k] > 0) s.vel[k] = 0
-    }
+  // the beach ends at the sea (but for the pier), and nothing gets past the walls (edge.js)
+  keepIn(s)
   s.syncPose()
 }
 
@@ -313,6 +310,7 @@ export function collideAir (s, bottom, top, dt) {
     me.z = BODY.z
     if (impact > 0.6) bump(s, impact, c.kind, hit)
   }
+  hillside(s, bottom) // (and a hillside holds it up: edge.js)
   s.syncPose()
 }
 
