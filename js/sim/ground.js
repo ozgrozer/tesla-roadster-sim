@@ -6,11 +6,14 @@ import { G, CAR, LIFT_ACC, clamp, wrapPi } from './constants.js'
 
 // Planar two-axle tyre model: slip angles, a tyre curve that peaks and falls away, friction circle,
 // AWD split, load transfer, rolling resistance, aero drag, coast regen, a steering rack turned at the
-// speed of a driver's hands, and a handbrake on the rear wheels only. Pulled, it locks the rears,
-// which slide (at the sliding tyre's grip) the way they are going; the fronts still steer and the
-// front motor still pulls. Let go, and the rear wheels spin back up with the road in a few
-// hundredths of a second; a car well sideways by then is past its tyres' peak and slides on until
-// they bite, or the driver catches it.
+// speed of a driver's hands, brakes shared out by the load on each axle with ABS, stability control
+// that backs the rears' brakes and regen off before they let go sideways, and an e-brake: pulled
+// with the wheel straight, an emergency stop on all four wheels at their grip whatever the throttle
+// is doing; turned, a handbrake on the rear wheels only, biting in a twentieth of a second and
+// locking them, so they slide (at the sliding tyre's grip) the way they are going; the fronts still
+// steer. Let go, and the rear wheels spin back up with the road in a few hundredths of a second; a
+// car well sideways by then is past its tyres' peak and slides on until they bite, or the driver
+// catches it.
 // Track Mode: pulled at speed, the handbrake also has traction and stability control stand back
 // and the drive shift to the rears, as in a Tesla's Track Mode with its balance set to the rear, so
 // the throttle holds a drift: on the power the driven rears spin up and slide, and the two rear
@@ -47,6 +50,13 @@ const HANDS = 1.8,
 // the rear wheels spinning back up with the road after the e-brake: the share of their grip they get
 // back per second
 const SPIN_UP = 12
+// the e-brake: pulled, it bites in EB_ON s (a quick pull on a lever, or a press of the Park
+// button); let go, it lets go at once. With the wheel straight (turned no further than EB_STRAIGHT,
+// a stick's small corrections) it is an emergency stop: all four wheels braked as hard as they
+// grip, the rears too held at their peak by the ABS rather than locked, as a Tesla's is (a sliding
+// tyre keeps only slideMu of its grip). Turned, the rears lock and slide for a handbrake turn.
+const EB_ON = 0.06,
+  EB_STRAIGHT = 0.1
 // Stability control under braking and regen, as a Tesla's does: the rears, light as the weight goes
 // onto the nose, are let off their share of the brakes and regen as their slip nears its peak (from
 // ESC_CUT of the way there, all of it ESC_CUT_W further on), so that slowing in a corner at the
@@ -143,9 +153,16 @@ export function stepGround (s, dt, c, main, lift) {
   )
   const Nf = Ntot / 2 - dN,
     Nr = Ntot / 2 + dN
-  // the rears' grip (1: all of it): a sliding tyre's while the e-brake locks them, all of it again
-  // once they have spun back up with the road
-  s.rearGrip = c.ebrake ? CAR.slideMu : Math.min(1, s.rearGrip + dt * SPIN_UP)
+  // the e-brake biting (0 to 1), how straight the wheel is for an emergency stop (1: straight),
+  // and the rears' grip (1: all of it): a sliding tyre's while the handbrake locks them, all of it
+  // again once they have spun back up with the road
+  s.ebLock = c.ebrake ? Math.min(1, s.ebLock + dt / EB_ON) : 0
+  const straight = c.ebrake
+    ? 1 - smooth((Math.abs(c.steer) - EB_STRAIGHT) / 0.5)
+    : 0
+  const locked = s.ebLock >= 1 && straight < 0.5
+  s.rearLocked = locked
+  s.rearGrip = locked ? CAR.slideMu : Math.min(1, s.rearGrip + dt * SPIN_UP)
   // How far the car is sliding: the rear axle's slip (rolling round a tight bend, the car's middle
   // runs at an angle to its nose, but the rear axle runs straight: only a slide moves it sideways)
   const beta = Math.atan2(w - b * r, Math.max(Math.abs(u), 2))
@@ -210,8 +227,9 @@ export function stepGround (s, dt, c, main, lift) {
   // longitudinal demand at the tyres
   const au = Math.abs(u),
     su = u > 0.02 ? 1 : u < -0.02 ? -1 : 0
-  // (with the rears locked by the e-brake, only the front motor's share reaches the road)
-  const throttle = c.throttle
+  // (the e-brake wins over the throttle while it is held: W held through a handbrake turn or a
+  // flick into a drift picks up again as soon as it comes off)
+  const throttle = c.ebrake ? 0 : c.throttle
   let Fdrive = 0
   if (throttle > 0 && u < CAR.vMax)
     Fdrive +=
@@ -225,7 +243,10 @@ export function stepGround (s, dt, c, main, lift) {
       clamp(au / 2.5, 0, 1) *
       Math.min(1, CAR.regenPowerW / (m * CAR.regenAccel * Math.max(au, 1)))
     : 0
-  const Fbrake = c.brake * m * CAR.brakeAccel
+  // (pulled with the wheel straight, the fronts brake as hard as the pedal would, with ABS; turned,
+  // it leaves them free, so the locked rears swing the car round)
+  const ebFront = s.ebLock * straight
+  const Fbrake = Math.min(1, c.brake + ebFront) * m * CAR.brakeAccel
   const burn = !!c.burnout && au < BURN_V && !c.ebrake
   if (burn) {
     Fdrive = 0 // (the rears' push and the fronts' brakes, worked out as one below)
@@ -275,6 +296,9 @@ export function stepGround (s, dt, c, main, lift) {
       )
     }
   } else if (!c.ebrake) Fxr = clamp(Fxr, -capR, capR)
+  // (the e-brake on the rears short of locking them: biting, or held at their peak by the ABS in an
+  // emergency stop; their motor's share no longer reaches the road)
+  else Fxr = -su * Math.min(FmaxR, s.ebLock * FmaxR + Math.max(0, -su * Fxr))
   if (burn) {
     // the rears' push against the fronts' brakes nets out at a creep, quicker on full lock
     const creep =
@@ -303,7 +327,7 @@ export function stepGround (s, dt, c, main, lift) {
     Fyr,
     slideR,
     wantR = 0
-  if (c.ebrake) {
+  if (locked) {
     s.slipR = Math.atan2(wr, Math.max(au, 2))
     const vr = Math.hypot(u, wr),
       k = FmaxR / Math.max(vr, 0.6) // (FmaxR is already the sliding grip)
@@ -409,6 +433,7 @@ export function stepGround (s, dt, c, main, lift) {
     Mz +=
       c.steer *
       HB_YAW *
+      s.ebLock *
       smooth((u - 2) / 8) *
       (1 - smooth((Math.abs(Math.atan2(w, u)) - HB_FADE) / 0.6))
   s.lastFyf = wantF
