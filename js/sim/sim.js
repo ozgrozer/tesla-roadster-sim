@@ -4,6 +4,7 @@ import * as THREE from 'three'
 import { knock } from './collide.js'
 import { stepAir } from './flight.js'
 import { stepGround } from './ground.js'
+import { stepRamp } from './ramp.js'
 import { SPAWN, query } from './city.js'
 import { TRACK, SOLIDS } from './track.js'
 import { drift, donuts } from './stunts.js'
@@ -19,8 +20,7 @@ import {
   clamp,
   wrapPi,
   clamp01,
-  CORNERS,
-  LIFT_ACC
+  CORNERS
 } from './constants.js'
 
 const _a = new THREE.Vector3(),
@@ -87,6 +87,7 @@ export class Sim {
     this.roof = null
     this.crashReason = ''
     this.accLong = 0
+    this.dN = 0 // the weight shifted from the front axle to the rear (N: ground.js)
     this.latAcc = 0
     this.yawRate = 0
     this.lastFyf = 0
@@ -95,6 +96,8 @@ export class Sim {
     this.ebLock = 0 // how hard the e-brake bites, 0 to 1 (ground.js)
     this.rearLocked = false // the rear wheels locked by the handbrake (a turn: ground.js)
     this.abs = 0 // how hard the ABS is working, 0 to 1 (ground.js)
+    this.push = 0 // how much of the power the understeer control is holding back, 0 to 1
+    this.pushF = 0 // (the same, eased, whatever the throttle: ground.js)
     this.track = false // Track Mode: the handbrake has the electronics stand back (ground.js)
     this.calm = 0
     this.driftA = 0 // the drift angle a step ago
@@ -228,7 +231,7 @@ export class Sim {
       this.air = Math.min(CAR.airMass, this.air + CAR.recharge * dt)
 
     if (this.mode === 'ground') stepGround(this, dt, c, main, lift)
-    else if (this.mode === 'ramp') this.stepRamp(dt, c, main, lift)
+    else if (this.mode === 'ramp') stepRamp(this, dt, c, main, lift)
     else if (this.mode === 'air') stepAir(this, dt, c, main, lift)
     else stepCrash(this, dt, c)
 
@@ -252,6 +255,7 @@ export class Sim {
       this.burnSpin = 0
       this.rearSpin = 0
       this.abs = 0
+      this.push = 0
       this.ebLock = 0
       this.rearLocked = false
       this.skid = this.skidF = this.skidR = 0
@@ -284,108 +288,6 @@ export class Sim {
   setMode (m) {
     this.mode = m
     this.modeTime = 0
-  }
-
-  stepRamp (dt, c, main, lift) {
-    const m = CAR.mass,
-      T = TRACK
-    const th = T.theta(this.s),
-      k = T.kappa(this.s)
-    const Fs = this.suction * CAR.suctionG * G
-    const liftA = lift * LIFT_ACC
-    let v = this.v
-    const N = v * v * k + G * Math.cos(th) + Fs - liftA // contact normal accel
-    if (N < 0) {
-      this.leaveRamp()
-      this.toAir(0.4)
-      return
-    }
-    const grip = CAR.tireMu * N
-    const gT = -G * Math.sin(th)
-    let a = gT
-    const driveMax = Math.min(
-      CAR.driveAccelMax,
-      CAR.powerW / (m * Math.max(Math.abs(v), 1)),
-      grip
-    )
-    if (c.throttle > 0) a += c.throttle * driveMax
-    if (c.reverse > 0 && v > -10) a -= c.reverse * Math.min(5, grip)
-    a += (main * CAR.mainThrust) / m
-    const av = Math.abs(v),
-      coasting =
-        c.throttle === 0 &&
-        main === 0 &&
-        c.brake === 0 &&
-        !c.ebrake &&
-        !c.reverse
-    const regen = coasting ? CAR.regenAccel * clamp(av / 2.5, 0, 1) : 0
-    a -=
-      Math.sign(v) *
-      (CAR.rollRes * N * Math.min(1, av / 0.5) + CAR.dragK * v * v + regen)
-    this.drivePower = (c.throttle * driveMax * v - regen * av) * m
-    this.regenOn = regen > 0
-    const brk = Math.max(c.brake, c.ebrake ? 1 : 0)
-    if (brk > 0) {
-      const bmax = brk * Math.min(CAR.brakeAccel, grip)
-      if (Math.abs(v) <= 0.3 && c.throttle === 0 && main === 0 && !c.reverse) {
-        // static hold: tires can resist gravity along the slope
-        if (Math.abs(gT) <= bmax) {
-          a = 0
-          v = 0
-        } else a = gT - Math.sign(gT) * bmax
-      } else a -= Math.sign(v) * bmax
-    }
-    v += a * dt
-    this.accLong = a
-    this.v = v
-    this.s += v * dt
-    this.dVel = -c.steer * Math.abs(v) * 0.1
-    this.d += this.dVel * dt
-    this.steerAng += (c.steer * 0.25 - this.steerAng) * Math.min(1, dt * 8)
-    this.maxRampS = Math.max(this.maxRampS, this.s)
-    this.gLoad +=
-      ((v * v * k + G * Math.cos(th) + liftA) / G - this.gLoad) *
-      Math.min(1, dt * 12)
-    if (Math.cos(th) < -0.5) this.invertedTime += dt
-    if (!this.topAwarded && this.s > T.lipStart) {
-      this.topAwarded = true
-      this.emit('trick', { text: 'Inverted at 170°', pts: 600 })
-    }
-
-    if (this.s < 0) {
-      this.leaveRamp()
-      this.setMode('ground')
-      this.pos.x = T.X0 + this.s
-      this.pos.z = this.d
-      this.yaw = 0
-      this.yawRate = 0
-      this.speed = v
-      this.vel.set(v, 0, 0)
-      this.syncPose()
-      return
-    }
-    if (Math.abs(this.d) > T.W / 2 - 0.45) {
-      this.syncPose()
-      this.leaveRamp()
-      this.toAir(0.5)
-      return
-    }
-    if (this.s >= T.L) {
-      this.syncPose()
-      this.leaveRamp()
-      this.toAir(0.5)
-      return
-    }
-    this.syncPose()
-  }
-
-  leaveRamp () {
-    if (this.invertedTime > 1.5)
-      this.emit('trick', {
-        text: `Inverted hold ${this.invertedTime.toFixed(1)} s`,
-        pts: Math.round(this.invertedTime * 120)
-      })
-    this.invertedTime = 0
   }
 
   toAir (cooldown = 0.4) {
