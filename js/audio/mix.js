@@ -289,7 +289,7 @@ export function mixSound (sound, app, traffic, dt, clock, peds) {
       (9.81 * 1.26 * (sim.grip || 1))
     : 0
   st.yawRate = sim.yawRate || 0
-  st.ebrake = !!sim.ebrakeOn && ground
+  st.ebrake = !!sim.rearLocked && ground // (the rears locked by the handbrake)
   st.abs = ground ? sim.abs || 0 : 0 // (the ABS at work, 0 to 1)
   st.track = !!sim.track
   // (sim.rearSpin, 0 to 1, how much the driven rears spin past the road; about 10 m/s at full spin,

@@ -245,7 +245,7 @@ export class Sim {
       dt
     this.ebrakeOn = !!c.ebrake && this.mode !== 'air'
     this.wheelSpin += roll
-    if (!this.ebrakeOn)
+    if (!this.rearLocked)
       this.wheelSpinR += roll + ((this.burnSpin || 0) / CAR.wheelR) * dt
     if (this.mode !== 'ground') {
       this.burning = false

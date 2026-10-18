@@ -199,8 +199,8 @@ export function buildWheels (car, body) {
   return { wheels, axles }
 }
 
-// Roll with the ground when the tyres touch it (rears stop dead on the e-brake), keep spinning and
-// slowly run down in the air; steer the fronts with Ackermann geometry.
+// Roll with the ground when the tyres touch it (the rears stop dead, locked by the handbrake), keep
+// spinning and slowly run down in the air; steer the fronts with Ackermann geometry.
 export function updateWheels (RS, sim, dt) {
   const grounded = sim.mode === 'ground' || sim.mode === 'ramp'
   const roll = (sim.mode === 'ramp' ? sim.v : sim.speed) / CAR.wheelR
@@ -208,7 +208,7 @@ export function updateWheels (RS, sim, dt) {
     if (grounded)
       axle.rate =
         name === 'rear'
-          ? sim.ebrakeOn
+          ? sim.rearLocked
             ? 0
             : roll + (sim.burnSpin || 0) / CAR.wheelR // (spinning in a burnout)
           : roll
