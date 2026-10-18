@@ -1,19 +1,23 @@
-// Street furniture: street lights, palms on the boulevards, park trees and a signal mast on every
-// corner whose red, yellow and green lamps follow the intersection's signal plan. All instanced (one
-// mesh a district: chunks.js), and all of it goes over when the Roadster hits it hard enough (the sim
-// decides: breakables.js).
+// Street furniture: street lights and a signal mast on every corner whose red, yellow and green
+// lamps follow the intersection's signal plan; with the palms and trees (cityTrees.js), the power
+// lines, benches, hydrants and bins (cityKerb.js). The street lights are Los Angeles' cobra heads:
+// a tapered steel pole, its arm curving up and out over the road to a flattened head, its lens
+// underneath; on Mid-City's and Venice's side streets the light hangs from a wooden power pole, a
+// crossarm at its top carrying the wires. All instanced (one mesh a district: chunks.js), and all of
+// it goes over when the Roadster hits it hard enough (the sim decides: breakables.js; the fall:
+// fallers.js).
 import * as THREE from 'three'
 import { hdr, softTex } from './scene.js'
 import { Instances } from './chunks.js'
 import { merge, box, tint } from './geo.js'
-import { G, clamp } from '../sim/constants.js'
+import { Fallers, pose, instanced, one, subset } from './fallers.js'
+import { greenery } from './cityTrees.js'
+import { Wires, buildDecor } from './cityKerb.js'
+import { nameSigns } from './cityNames.js'
 import {
-  rng,
   NODES,
   CURB_H,
   LAMPS,
-  PALMS,
-  TREES,
   POLES,
   DIRS,
   RED,
@@ -24,144 +28,106 @@ import {
   signal
 } from '../sim/city.js'
 
-const R = rng(99)
 const _m = new THREE.Matrix4(),
-  _l = new THREE.Matrix4(),
-  _q = new THREE.Quaternion(),
-  _p = new THREE.Vector3(),
-  _s = new THREE.Vector3(),
-  _e = new THREE.Euler()
-const pose = (x, y, z, yaw, sx = 1, sy = 1, sz = 1, tilt = 0, tiltDir = 0) => {
-  _e.set(Math.cos(tiltDir) * tilt, yaw, Math.sin(tiltDir) * tilt, 'YXZ')
-  return _m.compose(_p.set(x, y, z), _q.setFromEuler(_e), _s.set(sx, sy, sz))
-}
-// (those that cast no shadow are small: one mesh for the city)
-function instanced (geo, mat, list, place, shadow = true) {
-  const m = new Instances(geo, mat, list.length, i => list[i], {
-    cast: shadow,
-    split: shadow
-  })
-  list.forEach((it, i) => m.setMatrixAt(i, place(it, i)))
-  return m.bounds()
-}
+  _l = new THREE.Matrix4()
 const metal = new THREE.MeshStandardMaterial({
   color: 0x34373c,
   roughness: 0.5,
   metalness: 0.6
 })
 
-// ---------- what goes over when it is hit: the instanced parts of each one, moved as one ----------
-// A post snapped off at its foot falls like a rigid body hinged at the ground: it tips with angular
-// acceleration g sin(tilt) / L, where L is the length of the pendulum it makes (about two thirds of its
-// height for a pole, nearly all of it for a top-heavy tree), starting from the shove the hit gave it.
-// Its foot skids on the way it was shoved until friction stops it, and it comes to rest lying down,
-// or propped on its crown.
-const _ax = new THREE.Vector3(),
-  _tq = new THREE.Quaternion(),
-  _k = new THREE.Matrix4()
-const ZERO = new THREE.Matrix4().makeScale(0, 0, 0)
-class Fallers {
-  // list: the sim's LAMPS, POLES, TREES or PALMS. parts: [{ inst, of: i => its instances in inst,
-  // dark }], dark ones (lit lenses) going out instead of falling. L, rest, h: per item, its pendulum
-  // length, the tilt it comes to rest at and its height. skid: how much of the shove its foot keeps.
-  constructor (kind, list, parts, { L, rest, h, skid }) {
-    Object.assign(this, { kind, list, parts, L, rest, h, skid })
-    this.standing = new Map() // i -> each part's instance matrices as it stood
-    this.moving = []
-    this.onLand = null // (x, z, faller, item): it has hit the ground
-  }
-  // e: the sim's 'knock' event: which one, the way it goes (dx, dz) and how fast it was shoved
-  knock (e) {
-    if (this.standing.has(e.i)) return
-    const it = this.list[e.i]
-    this.standing.set(
-      e.i,
-      this.parts.map(({ inst, of, dark }) =>
-        of(e.i).map(k => {
-          const m = new THREE.Matrix4()
-          inst.getMatrixAt(k, m)
-          if (dark) inst.setMatrixAt(k, ZERO)
-          return m
-        })
-      )
-    )
-    const L = this.L(it)
-    this.moving.push({
-      it,
-      i: e.i,
-      dx: e.dx,
-      dz: e.dz,
-      tilt: 0.03,
-      w: clamp((0.6 * e.speed) / L, 0.2, 2.5),
-      s: 0,
-      v: e.speed * this.skid,
-      L,
-      rest: this.rest(it),
-      down: false
-    })
-  }
-  update (dt) {
-    if (!this.moving.length) return
-    for (const f of this.moving) {
-      f.w += ((G * Math.sin(f.tilt)) / f.L) * dt
-      f.tilt += f.w * dt
-      if (f.tilt >= f.rest) {
-        f.tilt = f.rest
-        f.w = f.w > 1 ? -0.15 * f.w : 0 // a small bounce off the ground
-        if (!f.down) {
-          f.down = true
-          const r = this.h(f.it) * Math.sin(f.rest) + f.s
-          this.onLand?.(f.it.x + f.dx * r, f.it.z + f.dz * r, this, f)
-        }
-      }
-      f.v = Math.max(0, f.v - (f.down ? 7 : 2.5) * dt)
-      f.s += f.v * dt
-      // about its foot, then along the ground: T(foot + skid) R(tilt) T(-foot) times how it stood
-      const { x, z } = f.it
-      _tq.setFromAxisAngle(_ax.set(f.dz, 0, -f.dx), f.tilt)
-      _k.makeRotationFromQuaternion(_tq)
-      _ax.set(-x, 0, -z).applyQuaternion(_tq)
-      _k.setPosition(_ax.x + x + f.dx * f.s, _ax.y, _ax.z + z + f.dz * f.s)
-      const saved = this.standing.get(f.i)
-      this.parts.forEach(({ inst, of, dark }, p) => {
-        if (dark) return
-        const ks = of(f.i)
-        ks.forEach((k, j) =>
-          inst.setMatrixAt(k, _m.multiplyMatrices(_k, saved[p][j]))
-        )
-        inst.refit(ks[0]) // (its district's bounds follow it, so it isn't culled)
-      })
-      f.done = f.down && f.v === 0 && f.w === 0
-    }
-    this.moving = this.moving.filter(f => !f.done)
-  }
-  standUp () {
-    for (const [i, saved] of this.standing)
-      this.parts.forEach(({ inst, of }, p) =>
-        of(i).forEach((k, j) => inst.setMatrixAt(k, saved[p][j]))
-      )
-    if (this.standing.size) for (const p of this.parts) p.inst.bounds()
-    this.standing.clear()
-    this.moving.length = 0
-  }
-}
-const one = i => [i]
-
 // ---------- street lights ----------
 const lampYaw = l => Math.atan2(-l.az, l.ax)
+// an arm curving up from the pole at y0 and out over the road to its head at (x1, y1)
+const arm = (y0, x1, y1) =>
+  new THREE.TubeGeometry(
+    new THREE.QuadraticBezierCurve3(
+      new THREE.Vector3(0.02, y0, 0),
+      new THREE.Vector3(0.06, y1 + 0.05, 0),
+      new THREE.Vector3(x1, y1, 0)
+    ),
+    4,
+    0.045,
+    3
+  )
+// the cobra's head: wider at its far end, flattened, its lens underneath
+const head = (x, y) =>
+  new THREE.CylinderGeometry(0.09, 0.2, 0.8, 6)
+    .rotateZ(Math.PI / 2)
+    .scale(1, 0.55, 1)
+    .translate(x + 0.38, y, 0)
+// where the head is on a steel pole, and on a wooden one
+const HEAD = { steel: [1.97, 9.02], wood: [1.65, 8.25] }
 function lamps (group) {
-  const post = merge([
-    new THREE.CylinderGeometry(0.075, 0.12, 8, 8).translate(0, 4, 0),
-    box(0, 7.8, -0.06, 2.3, 7.92, 0.06),
-    box(1.9, 7.68, -0.17, 2.7, 7.92, 0.17)
-  ])
-  const lens = new THREE.PlaneGeometry(0.66, 0.26)
-    .rotateX(Math.PI / 2)
-    .translate(2.3, 7.66, 0)
+  const steel = subset(LAMPS, l => !l.wood),
+    wood = subset(LAMPS, l => l.wood)
   const stand = l => pose(l.x, 0, l.z, lampYaw(l))
-  const posts = instanced(post, metal, LAMPS, stand)
+  // the steel pole, its arm and head
+  const [sx, sy] = HEAD.steel,
+    [wx, wy] = HEAD.wood
+  const post = merge([
+    new THREE.CylinderGeometry(0.07, 0.13, 8.5, 6, 1, true).translate(
+      0,
+      4.25,
+      0
+    ),
+    arm(8.2, sx, sy),
+    head(sx, sy)
+  ])
+  const posts = instanced(
+    post,
+    metal,
+    steel.items,
+    stand,
+    true,
+    'street lights'
+  )
+  // the wooden pole, its crossarm, a transformer, and the light's arm lower down
+  const brown = 0x5f4c3a,
+    grey = 0x3a3d42
+  const pole = merge([
+    tint(
+      new THREE.CylinderGeometry(0.11, 0.16, 11, 6, 1, true).translate(
+        0,
+        5.5,
+        0
+      ),
+      brown
+    ),
+    tint(box(-1.05, 10.28, -0.06, 1.35, 10.4, 0.06), brown),
+    tint(
+      new THREE.CylinderGeometry(0.28, 0.28, 0.9, 6, 1, true).translate(
+        -0.42,
+        9.2,
+        0
+      ),
+      0x8d9296
+    ),
+    tint(arm(7.7, wx, wy), grey),
+    tint(head(wx, wy), grey)
+  ])
+  const woods = instanced(
+    pole,
+    new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85 }),
+    wood.items,
+    stand,
+    true,
+    'power poles'
+  )
+  // each lens under its head, whichever pole it is on
   LENS.color = hdr(3.2, 2.5, 1.6)
-  const lenses = instanced(lens, LENS, LAMPS, stand, false)
+  const lens = new THREE.PlaneGeometry(0.6, 0.24).rotateX(Math.PI / 2)
+  const lenses = instanced(
+    lens,
+    LENS,
+    LAMPS,
+    l => {
+      const [x, y] = l.wood ? HEAD.wood : HEAD.steel
+      return stand(l).multiply(_l.makeTranslation(x + 0.42, y - 0.1, 0))
+    },
+    false,
+    'lenses'
+  )
   // at night, the light each throws on the ground under its head (on the pavement's height, so it
   // shows on the pavement as well as the road)
   const pools = instanced(
@@ -169,20 +135,27 @@ function lamps (group) {
     POOL,
     LAMPS,
     l => pose(l.x + l.ax * 2.3, CURB_H + 0.02, l.z + l.az * 2.3, 0),
-    false
+    false,
+    'light pools'
   )
   pools.receiveShadow = false
   pools.visible = false
-  group.add(...posts.meshes, ...lenses.meshes, ...pools.meshes)
+  group.add(...posts.meshes, ...woods.meshes, ...lenses.meshes, ...pools.meshes)
   return new Fallers(
     'lamp',
     LAMPS,
     [
-      { inst: posts, of: one },
+      { inst: posts, of: steel.of },
+      { inst: woods, of: wood.of },
       { inst: lenses, of: one, dark: true },
       { inst: pools, of: one, dark: true }
     ],
-    { L: () => 5.6, rest: () => 1.53, h: () => 8, skid: 0.5 }
+    {
+      L: l => (l.wood ? 7.2 : 6),
+      rest: () => 1.53,
+      h: l => (l.wood ? 11 : 9),
+      skid: 0.5
+    }
   )
 }
 const LENS = new THREE.MeshBasicMaterial({ toneMapped: false })
@@ -196,149 +169,6 @@ const POOL = new THREE.MeshBasicMaterial({
   polygonOffsetFactor: -4,
   polygonOffsetUnits: -4
 })
-
-// ---------- palms: a leaning trunk and a crown of drooping fronds ----------
-function frond (a, len) {
-  const P = [],
-    n = 6,
-    ca = Math.cos(a),
-    sa = Math.sin(a)
-  const pt = t => {
-    const r = t * len,
-      w = 0.42 * Math.sin(Math.PI * Math.min(1, t * 1.15)) + 0.04
-    return [r, 0.7 * t - 2.1 * t * t, w]
-  }
-  for (let i = 0; i < n; i++) {
-    const [r0, y0, w0] = pt(i / n),
-      [r1, y1, w1] = pt((i + 1) / n)
-    // a shallow V across the leaf, folded along its rib
-    const L = (r, y, w) => [r * ca + sa * w, y - 0.12 * w, r * sa - ca * w]
-    const M = (r, y) => [r * ca, y, r * sa]
-    const Rr = (r, y, w) => [r * ca - sa * w, y - 0.12 * w, r * sa + ca * w]
-    P.push(
-      ...L(r0, y0, w0),
-      ...M(r0, y0),
-      ...M(r1, y1),
-      ...L(r0, y0, w0),
-      ...M(r1, y1),
-      ...L(r1, y1, w1),
-      ...M(r0, y0),
-      ...Rr(r0, y0, w0),
-      ...Rr(r1, y1, w1),
-      ...M(r0, y0),
-      ...Rr(r1, y1, w1),
-      ...M(r1, y1)
-    )
-  }
-  const g = new THREE.BufferGeometry()
-  g.setAttribute('position', new THREE.Float32BufferAttribute(P, 3))
-  g.computeVertexNormals()
-  return g
-}
-function palms (group) {
-  const trunk = new THREE.CylinderGeometry(0.15, 0.24, 1, 7).translate(
-    0,
-    0.5,
-    0
-  )
-  const parts = []
-  for (let i = 0; i < 9; i++) {
-    const a = (i / 9) * Math.PI * 2 + R() * 0.3
-    parts.push(
-      tint(
-        frond(a, 3.2 + R() * 0.9),
-        new THREE.Color().setHSL(0.24 + R() * 0.05, 0.45, 0.22 + R() * 0.1)
-      )
-    )
-  }
-  parts.push(
-    tint(new THREE.ConeGeometry(0.42, 1.1, 7).translate(0, -0.35, 0), 0x6b5434)
-  )
-  const crown = merge(parts)
-  // each trunk leans a little; its crown sits where the trunk ends
-  const tops = []
-  const tilted = (p, i) => {
-    const m = pose(p.x, 0, p.z, 0, 1, p.h, 1, R() * 0.08, R() * Math.PI * 2)
-    tops[i] = new THREE.Vector3(0, 1, 0).applyMatrix4(m)
-    return m
-  }
-  const trunks = instanced(
-    trunk,
-    new THREE.MeshStandardMaterial({ color: 0x8a7458, roughness: 0.95 }),
-    PALMS,
-    tilted
-  )
-  const crowns = instanced(
-    crown,
-    new THREE.MeshStandardMaterial({
-      vertexColors: true,
-      roughness: 0.8,
-      side: THREE.DoubleSide
-    }),
-    PALMS,
-    (p, i) => pose(tops[i].x, tops[i].y, tops[i].z, R() * Math.PI * 2)
-  )
-  group.add(...trunks.meshes, ...crowns.meshes)
-  // the crown is most of the weight; it comes to rest on its drooping fronds
-  return new Fallers(
-    'palm',
-    PALMS,
-    [
-      { inst: trunks, of: one },
-      { inst: crowns, of: one }
-    ],
-    {
-      L: p => 0.85 * p.h,
-      rest: p => Math.acos(1.3 / p.h),
-      h: p => p.h,
-      skid: 0.2
-    }
-  )
-}
-
-// ---------- park trees ----------
-function trees (group) {
-  const trunk = new THREE.CylinderGeometry(0.16, 0.26, 3.2, 7).translate(
-    0,
-    1.6,
-    0
-  )
-  const crown = new THREE.IcosahedronGeometry(2.4, 1)
-    .scale(1, 0.85, 1)
-    .translate(0, 4.4, 0)
-  const trunks = instanced(
-    trunk,
-    new THREE.MeshStandardMaterial({ color: 0x5a4632, roughness: 0.95 }),
-    TREES,
-    t => pose(t.x, 0, t.z, 0, t.s, t.s, t.s)
-  )
-  const leaves = instanced(
-    crown,
-    new THREE.MeshStandardMaterial({ roughness: 0.9, flatShading: true }),
-    TREES,
-    t => pose(t.x, 0, t.z, R() * 6, t.s, t.s, t.s)
-  )
-  const c = new THREE.Color()
-  TREES.forEach((t, i) =>
-    leaves.setColorAt(i, c.setHSL(0.25 + R() * 0.08, 0.45, 0.2 + R() * 0.1))
-  )
-  group.add(...trunks.meshes, ...leaves.meshes)
-  // top-heavy: it goes over almost like a weight on a stick, and comes to rest propped on its crown
-  return new Fallers(
-    'tree',
-    TREES,
-    [
-      { inst: trunks, of: one },
-      { inst: leaves, of: one }
-    ],
-    {
-      L: t => 4 * t.s,
-      rest: () => Math.acos(2.2 / 4.4),
-      h: t => 4.4 * t.s,
-      skid: 0.12
-    }
-  )
-}
 
 // ---------- signal masts ----------
 // In each mast's frame +x is the direction of the traffic it faces and +z that traffic's right.
@@ -362,12 +192,24 @@ export class Signals {
       parts.push(box(-0.2, ARM_Y - 1.32, z - 0.2, 0.2, ARM_Y - 0.08, z + 0.2))
       parts.push(box(0.2, ARM_Y - 1.42, z - 0.36, 0.23, ARM_Y + 0.02, z + 0.36)) // back plate
     }
+    // the box the street's name hangs in, under the arm by the pole
+    parts.push(box(-0.11, ARM_Y - 0.7, -3.25, -0.06, ARM_Y - 0.08, -0.65))
     const yaw = p => Math.atan2(-DIRS[p.dir][1], DIRS[p.dir][0])
-    const masts = instanced(merge(parts), metal, POLES, p =>
-      pose(p.x, 0, p.z, yaw(p))
+    const place = p => pose(p.x, 0, p.z, yaw(p))
+    const masts = instanced(
+      merge(parts),
+      metal,
+      POLES,
+      place,
+      true,
+      'signal masts'
     )
     group.add(...masts.meshes)
-    const disc = new THREE.CircleGeometry(0.14, 14).rotateY(-Math.PI / 2)
+    // the name of the street it crosses, lit (cityNames.js)
+    this.names = nameSigns(POLES, place, [-0.12, ARM_Y - 0.44, -1.95])
+    group.add(...this.names.signs.meshes)
+    // (a lamp's disc in eight sides: at its size, as round as fourteen)
+    const disc = new THREE.CircleGeometry(0.14, 8).rotateY(-Math.PI / 2)
     const per = HEAD_Z.length * 3,
       n = POLES.length * per
     this.lamps = new Instances(
@@ -397,6 +239,7 @@ export class Signals {
       POLES,
       [
         { inst: masts, of: one },
+        { inst: this.names.signs, of: one },
         {
           inst: this.lamps,
           of: i => Array.from({ length: per }, (_, j) => i * per + j),
@@ -426,17 +269,24 @@ export class Signals {
 // the street lights up
 export function buildProps (group) {
   const signals = new Signals(group)
+  const green = greenery(group)
   const fallers = {
     lamp: lamps(group),
-    palm: palms(group),
-    tree: trees(group),
+    palm: green.palm,
+    tree: green.tree,
     signal: signals.fallers
   }
-  const pools = fallers.lamp.parts[2].inst
+  // the wires come down with a wooden pole, and go back up with it
+  const wires = new Wires(group)
+  fallers.lamp.onKnock = i => wires.cut(i)
+  fallers.lamp.onStandUp = () => wires.restore()
+  buildDecor(group)
+  const pools = fallers.lamp.parts[3].inst
   const night = k => {
     LENS.color.copy(hdr(3.2, 2.5, 1.6)).multiplyScalar(1 + 2 * k)
     POOL.opacity = 0.42 * k
     pools.visible = k > 0.01
+    signals.names.night(k)
   }
   return { signals, fallers, night }
 }

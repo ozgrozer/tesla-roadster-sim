@@ -2,10 +2,11 @@
 // corners (both laid out by the sim, street.js, which feels the lids under the wheels), and the
 // arrows painted in each lane before the stop line, showing the moves the lane graph allows from it
 // (straight on and left from the inner lane, straight on and right from the kerb lane, and whatever
-// is left at the city's corners). Paint and iron are flat instanced quads with alpha-cut textures.
+// is left at the city's corners); and the stars set in Hollywood Boulevard's pavements. Paint, iron
+// and terrazzo are flat instanced quads with alpha-cut textures.
 import * as THREE from 'three'
 import { marks } from './geo.js'
-import { LANES, rng } from '../sim/city.js'
+import { LANES, ROADS, ROAD_HW, CURB_H, BLOCKS, N, rng } from '../sim/city.js'
 import { MANHOLES, DRAINS, MANHOLE_R } from '../sim/street.js'
 
 const R = rng(808)
@@ -107,6 +108,52 @@ function arrowTexture (moves) {
   })
 }
 
+// a star on the Walk of Fame: a coral terrazzo star edged in brass on a charcoal square, the
+// emblem in its middle
+function starTexture () {
+  return tex(64, 64, (g, S) => {
+    g.fillStyle = '#3b3436'
+    g.fillRect(0, 0, S, S)
+    g.strokeStyle = '#b08d4a'
+    g.lineWidth = 2
+    g.strokeRect(1, 1, S - 2, S - 2)
+    g.beginPath()
+    for (let i = 0; i < 10; i++) {
+      const a = -Math.PI / 2 + (i * Math.PI) / 5,
+        r = i % 2 ? S * 0.2 : S * 0.44
+      g.lineTo(S / 2 + Math.cos(a) * r, S / 2 + Math.sin(a) * r)
+    }
+    g.closePath()
+    g.fillStyle = '#d98a8a'
+    g.fill()
+    g.stroke()
+    g.fillStyle = '#b08d4a'
+    g.beginPath()
+    g.arc(S / 2, S / 2 + 4, 5, 0, Math.PI * 2)
+    g.fill()
+  })
+}
+// The stars along both pavements of Hollywood Boulevard through Hollywood, down the middle of the
+// pavement (inside the palms' line), every 2 m (the corners left plain)
+function walkOfFame () {
+  const list = []
+  const c = ROADS[1] // (Hollywood Boulevard: areas.js)
+  for (let j = 0; j < N; j++) {
+    const blk = BLOCKS[j]
+    if (blk.area !== 'boulevard') continue
+    for (let x = ROADS[j] + 13; x < ROADS[j + 1] - 13; x += 2)
+      for (const side of [-1, 1])
+        list.push({
+          x,
+          z: c + side * (ROAD_HW + 2.6),
+          len: 1,
+          wid: 1,
+          yaw: side > 0 ? 0 : Math.PI
+        })
+  }
+  return list
+}
+
 export function buildStreet (group) {
   const iron = (map, rough) =>
     new THREE.MeshStandardMaterial({
@@ -119,6 +166,19 @@ export function buildStreet (group) {
       polygonOffsetUnits: -2
     })
   const d = MANHOLE_R * 2
+  group.add(
+    marks(
+      walkOfFame(),
+      new THREE.MeshStandardMaterial({
+        map: starTexture(),
+        roughness: 0.3,
+        polygonOffset: true,
+        polygonOffsetFactor: -2,
+        polygonOffsetUnits: -2
+      }),
+      CURB_H + 0.006
+    )
+  )
   group.add(
     marks(
       MANHOLES.map(m => ({ ...m, len: d, wid: d, yaw: R() * Math.PI })),
