@@ -1,21 +1,29 @@
-// The sea round the city: past the promenade a strip of beach runs down to the water, which goes out to
-// the hills on the horizon. The water is a shader: a few rolling swells and ripples for its surface,
-// the evening sky in it at a glancing angle, a glitter path under the low sun, clear turquoise over
-// the shallows, deep blue further out, and surf breaking along the beach.
+// The Pacific, west of the city: past the promenade a broad beach runs north and south along the coast
+// and drops down its steeper face into the water, which goes out to the horizon under the setting
+// sun. The water is a shader: a few rolling swells and ripples for its surface, the evening sky in it
+// at a glancing angle (the same sky: citySky.js), a glitter path under the low sun, clear turquoise
+// over the shallows, deep blue further out, surf breaking along the beach, the pier's shadow on it, and
+// at night the Ferris wheel's lights shimmering in it. Lifeguard towers stand along the beach, and a
+// groyne of rocks runs out into the sea at each end of it.
 import * as THREE from 'three'
-import { OUTER } from '../sim/city.js'
-import { LAYER } from './geo.js'
+import { LAYER, merge, box, tint } from './geo.js'
 import { canvasTex, speckle } from './scene.js'
+import { SUN, SKY_GLSL } from './citySky.js'
+import { PROMENADE, rng } from '../sim/city.js'
+import { SHORE, WALL, GROYNE, PIER, WHEEL } from '../sim/edge.js'
 
-const SHORE = OUTER + 3 // where the beach starts down into the water (square, like the city)
-const WATER = -0.5 // the sea's level
-const WET = [SHORE - 1, SHORE + 6] // the wet sand sloping down under the water: from, to
-const FLOOR = -1.4 // the sea bed where the slope ends
-const SUN = new THREE.Vector3(-66, 30, 28).normalize() // as in citySky.js
+const SAND = -0.03 // the beach's level (a little under the promenade's top)
+const FACE = 12 // m: the beach's face, from the flat sand down to the sea bed
+const FLOOR = -3 // the sea bed at the foot of the face
+const WATER = -2.2 // the sea's level
+const COAST = 2600 // m north and south the beach runs on
+const SUN_DIR = SUN.clone().normalize()
+// where the water meets the sand (x = -WET), a little up the face
+const WET = SHORE + (FACE * (SAND - WATER)) / (SAND - FLOOR)
 
 function sandTexture () {
   const t = canvasTex(512, (g, S) => {
-    g.fillStyle = '#d9c49b'
+    g.fillStyle = '#dcc9a0'
     g.fillRect(0, 0, S, S)
     for (let i = 0; i < 40; i++) {
       const x = Math.random() * S,
@@ -37,6 +45,17 @@ function sandTexture () {
   return t
 }
 
+// the pier's deck as it shades the water: each rectangle moved away from the sun by the height it
+// stands over the water
+function deckShadows () {
+  const k = (0.3 - WATER) / SUN_DIR.y
+  const dx = -SUN_DIR.x * k,
+    dz = -SUN_DIR.z * k
+  return PIER.deck.map(
+    d => new THREE.Vector4(d.x0 + dx, d.x1 + dx, d.z0 + dz, d.z1 + dz)
+  )
+}
+
 function seaMaterial () {
   return new THREE.ShaderMaterial({
     uniforms: THREE.UniformsUtils.merge([
@@ -44,11 +63,10 @@ function seaMaterial () {
       {
         uTime: { value: 0 },
         uNight: { value: 0 },
-        uSun: { value: SUN.clone() },
-        uShore: {
-          value:
-            SHORE + ((WET[1] - WET[0]) * (-0.03 - WATER)) / (-0.03 - FLOOR) - 1
-        }
+        uSun: { value: SUN_DIR.clone() },
+        uShore: { value: WET - 1 },
+        uDeck: { value: deckShadows() },
+        uWheel: { value: new THREE.Vector3(WHEEL.x, WHEEL.hub, WHEEL.z) }
       }
     ]),
     fog: true,
@@ -61,11 +79,13 @@ function seaMaterial () {
         gl_Position = projectionMatrix * mvPosition;
         #include <fog_vertex>
       }`,
-    fragmentShader: `uniform float uTime; uniform float uNight; uniform vec3 uSun; uniform float uShore; varying vec3 vW;
+    fragmentShader: `uniform float uTime; uniform float uNight; uniform vec3 uSun; uniform float uShore;
+      uniform vec4 uDeck[${PIER.deck.length}]; uniform vec3 uWheel; varying vec3 vW;
       #include <fog_pars_fragment>
       float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
       float noise(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
         return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y); }
+      ${SKY_GLSL}
       // the surface's slope: long swells, then shorter chop and ripples, each drifting its own way
       vec2 slope(vec2 p, float t){
         vec2 s = vec2(0.0);
@@ -91,94 +111,166 @@ function seaMaterial () {
         float fres = 0.02 + 0.98 * pow(1.0 - max(dot(n, v), 0.0), 5.0);
         vec3 r = reflect(-v, n);
         r.y = abs(r.y);
-        // the evening sky, as in citySky.js
-        vec3 horizon = vec3(1.0, 0.56, 0.32), mid = vec3(0.62, 0.42, 0.52), zenith = vec3(0.13, 0.2, 0.42);
-        vec3 sky = mix(horizon, mid, smoothstep(0.0, 0.16, r.y));
-        sky = mix(sky, zenith, smoothstep(0.12, 0.62, r.y));
-        // (at night: the dark sky, the city's glow low down)
-        vec3 nsky = mix(vec3(0.06, 0.05, 0.06), vec3(0.006, 0.01, 0.03), smoothstep(0.0, 0.4, r.y));
-        sky = mix(sky, nsky, uNight);
+        vec3 sky = skyBase(r, uSun, uNight);
         float sd = max(dot(r, uSun), 0.0);
-        sky += mix(vec3(1.0, 0.55, 0.25), vec3(0.3, 0.32, 0.4), uNight) * pow(sd, 8.0) * 0.6;
+        // the pier's shadow on the water, soft at its edges
+        float shade = 1.0;
+        for (int i = 0; i < ${PIER.deck.length}; i++) {
+          vec4 d = uDeck[i];
+          vec2 in2 = min(vW.xz - d.xz, d.yw - vW.xz);
+          shade = min(shade, 1.0 - 0.42 * smoothstep(-0.8, 0.8, min(in2.x, in2.y)));
+        }
         // deep blue out at sea, turquoise over the shallows by the beach
-        float out_ = max(abs(vW.x), abs(vW.z)) - uShore;
-        vec3 deep = vec3(0.008, 0.08, 0.27), shallow = vec3(0.05, 0.42, 0.5);
+        float out_ = -vW.x - uShore;
+        vec3 deep = vec3(0.008, 0.07, 0.22), shallow = vec3(0.05, 0.31, 0.35);
         vec3 body = mix(shallow, deep, smoothstep(2.0, 70.0, out_));
         body = mix(body, vec3(0.003, 0.012, 0.03), uNight * 0.92);
         // light coming up through a wave's face
-        body += vec3(0.02, 0.12, 0.13) * max(0.0, s.x * 0.8 + s.y * 0.4) ;
+        body += vec3(0.02, 0.12, 0.13) * max(0.0, s.x * 0.8 + s.y * 0.4);
         // (the sky in it a little cooler than the sky itself: the water's own blue shows through)
         vec3 col = mix(body, sky * vec3(0.78, 0.88, 1.08), fres * mix(0.7, 0.4, uNight));
-        // the sun's glitter path (the moon's at night, cold and fainter)
+        // the sun's glitter path (the moon's at night, cold and fainter), not where the pier shades it
         vec3 glint = mix(vec3(1.0, 0.75, 0.45), vec3(0.75, 0.8, 1.0) * 0.35, uNight);
-        col += glint * pow(sd, 260.0) * 9.0;
-        col += mix(vec3(1.0, 0.6, 0.3), vec3(0.2, 0.22, 0.3), uNight) * pow(sd, 40.0) * 0.35;
+        col += (glint * pow(sd, 260.0) * 9.0 + mix(vec3(1.0, 0.6, 0.3), vec3(0.2, 0.22, 0.3), uNight) * pow(sd, 40.0) * 0.35) * shade;
+        col *= mix(1.0, shade, 1.0 - uNight * 0.8);
+        // at night the Ferris wheel's lights shimmer in it
+        float wl = max(dot(r, normalize(uWheel - vW)), 0.0);
+        col += vec3(1.0, 0.55, 0.75) * (pow(wl, 900.0) * 5.0 + pow(wl, 90.0) * 0.12) * uNight;
         // surf: a foam line rolling up the beach, and streaks of it just offshore
         float swash = sin(out_ * 0.9 - uTime * 1.6 + noise(vW.xz * 0.08) * 6.0);
         float foam = smoothstep(2.6, 0.0, out_) * (0.55 + 0.45 * swash);
-        foam += smoothstep(14.0, 4.0, out_) * smoothstep(0.75, 0.95, swash) * noise(vW.xz * 0.6 + uTime * 0.3) * 0.7;
-        col = mix(col, vec3(0.92, 0.9, 0.86) * (1.0 - 0.8 * uNight), clamp(foam, 0.0, 0.9));
+        foam += smoothstep(16.0, 4.0, out_) * smoothstep(0.75, 0.95, swash) * noise(vW.xz * 0.6 + uTime * 0.3) * 0.7;
+        col = mix(col, vec3(0.92, 0.9, 0.86) * (1.0 - 0.8 * uNight) * shade, clamp(foam, 0.0, 0.9));
         gl_FragColor = vec4(col, 1.0);
         #include <fog_fragment>
       }`
   })
 }
 
-// returns a per-frame update (the water moves), with .night(k) to turn it to night (k = 1)
+// The beach: flat sand from under the promenade's edge out to SHORE, all along the coast, then its
+// face sloping down under the water (UVs in metres for the sand texture; the face darker, wet)
+function beach () {
+  const pos = [],
+    uvs = [],
+    col = []
+  const strip = (x0, y0, x1, y1, c0, c1) => {
+    const a = [x0, y0, -COAST],
+      b = [x1, y1, -COAST],
+      c = [x1, y1, COAST],
+      d = [x0, y0, COAST]
+    // (running west, x1 < x0: wound to face up)
+    for (const [p, k] of [
+      [a, c0],
+      [c, c1],
+      [d, c0],
+      [a, c0],
+      [b, c1],
+      [c, c1]
+    ]) {
+      pos.push(...p)
+      uvs.push(p[0], p[2])
+      col.push(k, k * 0.98, k * 0.95)
+    }
+  }
+  strip(-PROMENADE + 1, SAND, -SHORE, SAND, 1, 1)
+  strip(-SHORE, SAND, -SHORE - FACE, FLOOR, 1, 0.62)
+  strip(-SHORE - FACE, FLOOR, -SHORE - 60, -9, 0.62, 0.5)
+  const g = new THREE.BufferGeometry()
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3))
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2))
+  g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3))
+  g.computeVertexNormals()
+  return g
+}
+// the sand's height at x on the beach's face
+const sandAt = x =>
+  x > -SHORE ? SAND : SAND + (FLOOR - SAND) * Math.min(1, (-SHORE - x) / FACE)
+
+// LA County's lifeguard towers: a hut on four legs over the sand, facing the sea, with a deck and a
+// ramp down to the beach; and the groynes' rocks
+const R = rng(88)
+function tower (x, z, paint) {
+  const f = 1.5 // the floor, over the flat beach
+  const parts = [
+    tint(box(-1.9, f, -1.8, 1.9, f + 0.2, 1.8), 0xd8d4cc),
+    tint(box(-0.6, f + 0.2, -1.4, 1.6, f + 2.5, 1.4), paint),
+    tint(box(-0.66, f + 1.2, -1.2, -0.62, f + 2.1, 1.2), 0x1d2328),
+    tint(box(-1, f + 2.5, -1.8, 1.9, f + 2.68, 1.8), 0xefefea),
+    tint(box(-1.9, f + 0.2, -1.8, -1.84, f + 1.25, 1.8), 0xefefea),
+    tint(
+      box(-0.5, -0.1, 0, 0.5, 0.1, 5)
+        .rotateX(0.5)
+        .translate(0.9, f, 1.8),
+      0xb59a74
+    )
+  ]
+  for (const [lx, lz] of [
+    [-1.7, -1.6],
+    [1.7, -1.6],
+    [-1.7, 1.6],
+    [1.7, 1.6]
+  ])
+    parts.push(
+      tint(
+        box(lx - 0.1, sandAt(x + lx) - 0.3, lz - 0.1, lx + 0.1, f, lz + 0.1),
+        0x8d8d8a
+      )
+    )
+  return parts.map(p => p.translate(x, 0, z))
+}
+function rocks (z, out) {
+  for (let x = GROYNE.x1 + 1; x > GROYNE.x0 + 2; x -= 1.4 + R() * 0.8) {
+    const r = 0.9 + R() * 0.9
+    const g = new THREE.DodecahedronGeometry(r, 0)
+    g.scale(1 + R() * 0.5, 0.6 + R() * 0.4, 1 + R() * 0.5)
+    g.rotateY(R() * 6.3)
+    const y = Math.max(sandAt(x), FLOOR) + r * 0.3
+    g.translate(x, y, z + (R() - 0.5) * GROYNE.w * 0.6)
+    const k = 0.42 + R() * 0.16
+    out.push(tint(g, new THREE.Color(k, k * 0.95, k * 0.9)))
+  }
+}
+
+// returns { update (the water moves), night(k) (k = 1: night) }
 export function buildSea (group) {
   const sand = new THREE.MeshStandardMaterial({
     map: sandTexture(),
+    vertexColors: true,
     roughness: 0.96
   })
-  // the beach: flat sand from under the city out past the promenade, then a frame of wet sand sloping
-  // down under the water (UVs in metres for the sand texture)
-  const pos = [],
-    uvs = []
-  const quad = (a, b, c, d) => {
-    for (const p of [a, b, c, a, c, d]) {
-      pos.push(...p)
-      uvs.push(p[0], p[2])
-    }
-  }
-  const [i, o] = WET,
-    y0 = -0.03
-  quad([-i, y0, i], [i, y0, i], [i, y0, -i], [-i, y0, -i])
-  for (let k = 0; k < 4; k++) {
-    // corners of the inner and outer squares, turned a quarter each time
-    const rot = ([x, y, z]) => {
-      for (let n = 0; n < k; n++) [x, z] = [-z, x]
-      return [x, y, z]
-    }
-    quad(
-      rot([-o, FLOOR, o]),
-      rot([o, FLOOR, o]),
-      rot([i, y0, i]),
-      rot([-i, y0, i])
-    )
-  }
-  const beach = new THREE.BufferGeometry()
-  beach.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3))
-  beach.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2))
-  beach.computeVertexNormals()
-  const sandMesh = new THREE.Mesh(beach, sand)
+  const sandMesh = new THREE.Mesh(beach(), sand)
   sandMesh.receiveShadow = true
   sandMesh.renderOrder = LAYER.beach
   group.add(sandMesh)
-  // the water, out to the horizon
+  // the towers along the beach (out past where the car can drive, at the top of its face) and the
+  // rocks of the groynes
+  const parts = []
+  const paints = [0x8fc3dc, 0x9ad0c9, 0xe8c26a, 0x8fc3dc, 0xd88f7d, 0x8fc3dc]
+  ;[-1180, -820, -360, -170, 175, 365, 800, 1150].forEach((z, i) =>
+    parts.push(...tower(-SHORE - 4.5, z, paints[i % paints.length]))
+  )
+  rocks(-WALL - GROYNE.w / 2, parts)
+  rocks(WALL + GROYNE.w / 2, parts)
+  const things = new THREE.Mesh(
+    merge(parts),
+    new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85 })
+  )
+  things.receiveShadow = true
+  group.add(things)
+  // the water, out to the horizon (its near edge under the beach's face)
   const mat = seaMaterial()
+  const w = 3600
   const sea = new THREE.Mesh(
-    new THREE.PlaneGeometry(4200, 4200).rotateX(-Math.PI / 2),
+    new THREE.PlaneGeometry(w, 2 * COAST + 2400)
+      .rotateX(-Math.PI / 2)
+      .translate(-SHORE - 6 - w / 2, 0, 0),
     mat
   )
   sea.position.y = WATER
   sea.renderOrder = LAYER.sea
   group.add(sea)
-  const update = (t, camera) => {
-    mat.uniforms.uTime.value = t
-    // the plane follows the camera so the horizon never runs out
-    sea.position.x = camera.position.x
-    sea.position.z = camera.position.z
+  return {
+    update: t => (mat.uniforms.uTime.value = t),
+    night: k => (mat.uniforms.uNight.value = k)
   }
-  update.night = k => (mat.uniforms.uNight.value = k)
-  return update
 }
