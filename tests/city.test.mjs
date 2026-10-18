@@ -22,6 +22,7 @@ import {
   BLOCKS,
   SIGNAL,
   signal,
+  query,
   pointAt,
   standUp,
   BUILDINGS,
@@ -29,6 +30,13 @@ import {
 } from '../js/sim/city.js'
 
 const H = 1 / 120
+// Nothing solid in a run along +x from x0 to x1, hw either side of z, below y (but what the run is
+// aimed at, skip): so a test's car meets only what it is driven at.
+const openRun = (x0, x1, z, hw = 1.5, y = 2) =>
+  !query(x0, z - hw, x1, z + hw).some(c => c.y0 < y && c.y1 > 0)
+// a steel street light along a pavement that runs along x, with nothing in the 10 m before it
+const lampInTheClear = k =>
+  k.az !== 0 && k.x > 0 && !k.wood && openRun(k.x - 10, k.x - 0.3, k.z, 1.2)
 
 test('the lane graph joins up and, with lane changes, reaches every lane', () => {
   const a = {},
@@ -163,10 +171,20 @@ function driveInto (x, z, speed, secs, setup) {
   }
   return { sim, tr, events }
 }
-// a building with open sidewalk to its west, at street level
+// a building with open sidewalk to its west, at street level, and nothing in the 30 m before its
+// wall (no hedge, post or palm, the street and the far pavement clear)
 const target = BUILDINGS.find(b => {
   const blk = BLOCKS.find(k => b.x0 === k.x0 + WALK + 0.4)
-  return blk && b.tiers[0].y1 > 10
+  const t = b.tiers[0],
+    z = (b.z0 + b.z1) / 2
+  return (
+    blk &&
+    t.y1 > 10 &&
+    t.x0 === b.x0 &&
+    t.z0 < z - 2 &&
+    t.z1 > z + 2 &&
+    openRun(b.x0 - 32, b.x0 - 0.05, z)
+  )
 })
 
 test('the Roadster bounces off buildings, even at speed, and keeps the wheel', () => {
@@ -316,7 +334,7 @@ test('no driver honks before the Roadster has, at the gridlock', () => {
 
 test('street lights fold over when the Roadster hits them hard', () => {
   // a light on a sidewalk that runs along x, with the Roadster lined up on it
-  const l = LAMPS.find(k => k.az !== 0 && k.x > 0)
+  const l = LAMPS.find(lampInTheClear)
   standUp()
   const fast = driveInto(l.x - 8, l.z, 15, 2)
   assert.ok(
@@ -530,11 +548,9 @@ test('a 180 km/h jump clears the jammed street', () => {
     const c = makeControls()
     c.fan = false
     // lift off 45 m short of the first car and climb to 4.5 m on the thrusters
-    c.lift = (
-      sim.mode === 'ground'
-        ? sim.pos.x > lane.x0 - 45
-        : sim.com.y < 4.5 && sim.vel.y >= 0
-    )
+    c.lift = (sim.mode === 'ground'
+    ? sim.pos.x > lane.x0 - 45
+    : sim.com.y < 4.5 && sim.vel.y >= 0)
       ? 1
       : 0
     sim.step(H, c)
@@ -570,7 +586,8 @@ function drive (sim, tr, secs, ctl, events = []) {
 }
 
 test('the Roadster lands on a roof, drives on it, and drives straight off the edge', () => {
-  // a single-tier roof with a clear run from its middle to its east edge
+  // a single-tier roof with a clear run from its middle to its east edge, and room past the edge to
+  // come down (nothing as tall as the roof in the 14 m beyond it)
   const b = BUILDINGS.find(b => {
     const t = b.tiers[0],
       cz = (t.z0 + t.z1) / 2
@@ -580,7 +597,8 @@ test('the Roadster lands on a roof, drives on it, and drives straight off the ed
       t.z1 - t.z0 > 20 &&
       t.y1 > 15 &&
       t.y1 < 60 &&
-      clearRun(b, t.x0, t.x1, cz)
+      clearRun(b, t.x0, t.x1, cz) &&
+      !query(t.x1 + 0.1, cz - 3, t.x1 + 14, cz + 3).some(c => c.y1 > t.y1 - 1)
     )
   })
   const t = b.tiers[0],
@@ -707,7 +725,7 @@ test('a signal mast stops a slow car, and goes over when hit hard at a cost in s
   assert.ok(fast.sim.pos.x > p.x + 2, 'the car drives on through')
   // a breakaway street light costs far less
   standUp()
-  const l = LAMPS.find(k => k.az !== 0 && k.x > 0)
+  const l = LAMPS.find(lampInTheClear)
   const lamp = ram(l.x - 8, l.z, 20)
   assert.equal(lamp.knock?.kind, 'lamp')
   assert.ok(lamp.after > 17.5, `20 -> ${lamp.after.toFixed(1)} m/s`)
@@ -715,14 +733,8 @@ test('a signal mast stops a slow car, and goes over when hit hard at a cost in s
 })
 
 test('park trees and palms snap when hit hard, by how big they are', () => {
-  // a big park tree with no other in the way of a run at it along +x
-  const t = TREES.find(
-    t =>
-      t.s > 1.1 &&
-      !TREES.some(
-        o => o !== t && Math.abs(o.z - t.z) < 1.8 && o.x < t.x && o.x > t.x - 14
-      )
-  )
+  // a big park tree with nothing in the way of a run at it along +x
+  const t = TREES.find(t => t.s > 1.1 && openRun(t.x - 14, t.x - 0.6, t.z, 1.8))
   standUp()
   assert.ok(!ram(t.x - 12, t.z, 6, 3).knock, 'a nudge leaves it standing')
   standUp()
@@ -730,16 +742,20 @@ test('park trees and palms snap when hit hard, by how big they are', () => {
   assert.equal(tree.knock?.kind, 'tree', 'a hard hit takes it down')
   assert.ok(!tree.events.some(e => e.type === 'crash'), 'without a crash')
   assert.ok(tree.after < 19, `20 -> ${tree.after.toFixed(1)} m/s`)
-  // a palm along a boulevard's sidewalk
-  standUp()
-  const p = PALMS.find((p, i) => i % 2 === 1 && p.x > 0 && p.z > 0)
-  const palm = ram(p.x - 9, p.z, 22)
-  assert.equal(palm.knock?.kind, 'palm')
+  // a tall fan palm along a boulevard's sidewalk, and a stout date palm
+  for (const fan of [true, false]) {
+    standUp()
+    const p = PALMS.find(
+      p => p.fan === fan && p.x > 0 && openRun(p.x - 11, p.x - 0.6, p.z, 1.2)
+    )
+    const palm = ram(p.x - 9, p.z, 22)
+    assert.equal(palm.knock?.kind, 'palm', fan ? 'a fan palm' : 'a date palm')
+  }
   standUp()
 })
 
 test('a car knocked loose snaps a street light it slides into', () => {
-  const l = LAMPS.find(k => k.az !== 0 && k.x > 0)
+  const l = LAMPS.find(lampInTheClear)
   standUp()
   // (the Roadster parked on the road nearby: traffic far from it is cleared away)
   const sim = new Sim()
