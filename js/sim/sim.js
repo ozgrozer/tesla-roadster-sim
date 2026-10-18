@@ -92,6 +92,7 @@ export class Sim {
     this.lastFyf = 0
     this.lastFyr = 0
     this.rearGrip = 1
+    this.abs = 0 // how hard the ABS is working, 0 to 1 (ground.js)
     this.track = false // Track Mode: the handbrake has the electronics stand back (ground.js)
     this.calm = 0
     this.driftA = 0 // the drift angle a step ago
@@ -246,6 +247,7 @@ export class Sim {
       this.burning = false
       this.burnSpin = 0
       this.rearSpin = 0
+      this.abs = 0
       this.skid = this.skidF = this.skidR = 0
       if (this.mode !== 'ramp') {
         this.drivePower = 0

@@ -237,6 +237,8 @@ export function stepGround (s, dt, c, main, lift) {
   const capR = Math.sqrt(
     Math.max(0.1225 * FmaxR * FmaxR, FmaxR * FmaxR - s.lastFyr * s.lastFyr)
   )
+  // (how hard the ABS is working: the fronts asked to brake harder than they can grip)
+  s.abs = Fbrake > 0 ? smooth((-su * Fxf - 0.97 * capF) / (0.06 * capF)) : 0
   Fxf = clamp(Fxf, -capF, capF)
   // In Track Mode the rears may spin: driven harder than they can grip, they transmit most of it
   // and slide sideways, the spin easing in rather than all at once (spin: how much they spin)
