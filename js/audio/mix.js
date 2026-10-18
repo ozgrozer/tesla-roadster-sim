@@ -263,7 +263,7 @@ export function mixSound (sound, app, traffic, dt, clock, peds) {
   const was = app.enclosed ?? 1
   app.enclosed = was + (shut - was) * clamp(dt * 2, 0, 1)
   const cp = camera.position,
-    shore = OUTER + 3 - Math.max(Math.abs(cp.x), Math.abs(cp.z))
+    shore = OUTER + 3 + cp.x // (the sea is to the west)
   const c = app.lastCtl,
     u = Math.max(gs, 0.5)
   // the motors' force: the power over the speed, or at a standstill what the throttle asks for

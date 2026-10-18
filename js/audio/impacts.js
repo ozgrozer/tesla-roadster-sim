@@ -73,7 +73,11 @@ export const IMPACTS = {
   // side: a little left or right of the car, where it was hit
   bump (v, what = 'car', at = null, side = 0) {
     const k = clamp(v / 12, 0, 1.2) * (at ? at.k : 1)
-    const wall = what === 'building' || what === 'plant' || what === 'mast'
+    const wall =
+      what === 'building' ||
+      what === 'plant' ||
+      what === 'mast' ||
+      what === 'wall'
     const post = what === 'lamp' || what === 'signal'
     const tree = what === 'tree' || what === 'palm'
     const lp = at ? at.lp : 20000

@@ -19,10 +19,17 @@ const smooth = (a, b, x) => {
   const t = clamp((x - a) / (b - a), 0, 1)
   return t * t * (3 - 2 * t)
 }
-// how much each surface squeals, and how much it roars, under a rolling tyre
-const SQUEAL = { road: 1, walk: 0.8, grass: 0.04, sand: 0 }
-const ROAR = { road: 1, walk: 0.7, grass: 0.12, sand: 0.08 }
+// how much each surface squeals, and how much it roars, under a rolling tyre (the pier's planks
+// a hollow drumming, quieter than the road)
+const SQUEAL = { road: 1, walk: 0.8, wood: 0.7, grass: 0.04, sand: 0 }
+const ROAR = { road: 1, walk: 0.7, wood: 0.5, grass: 0.12, sand: 0.08 }
 const SLAB = 1.6 // m between joints in the pavement's concrete
+// the knock of each joint the wheels run over: the pavement's slabs, and on the pier the deck's
+// beams on their piles (further apart, deeper and hollow, ringing under the deck)
+const JOINTS = {
+  walk: { gap: SLAB, k: 0.08, rate: [1.6, 1.5], lp: 900, verb: 0.05 },
+  wood: { gap: 2.6, k: 0.1, rate: [0.85, 0.8], lp: 520, verb: 0.14 }
+}
 
 export const TYRES = {
   // (each layer's level comes first, straight after its source, so that when it is silent the
@@ -147,9 +154,14 @@ export const TYRES = {
     R(n.roar.gain, roar, 0.08)
     R(n.patchK.gain, roll > 0 ? 0.25 : 0, 0.1)
     R(n.patch.playbackRate, clamp(v / 15, 0.05, 4), 0.2)
-    R(n.roarPk.frequency, (surf === 'walk' ? 1300 : 950) * ps, 0.3)
+    R(
+      n.roarPk.frequency,
+      (surf === 'walk' ? 1300 : surf === 'wood' ? 620 : 950) * ps,
+      0.3
+    )
     R(n.roarLP.frequency, (inside ? 900 : 2200 + v * 45) * ps, 0.1)
-    const bumpy = surf === 'grass' ? 2 : surf === 'sand' ? 1.2 : 1
+    const bumpy =
+      surf === 'grass' ? 2 : surf === 'wood' ? 1.7 : surf === 'sand' ? 1.2 : 1
     R(
       n.low.gain,
       g * Math.min(1.6, Math.pow(v / 28, 1.3)) * bumpy * (inside ? 0.5 : 0.15),
@@ -172,17 +184,18 @@ export const TYRES = {
     R(n.crunch.gain, sand * 0.6, 0.1)
     if (n.sandSrc) R(n.sandSrc.playbackRate, clamp(0.6 + v / 20, 0.6, 2), 0.2)
     R(n.grass.gain, (surf === 'grass' ? g : 0) * smooth(0, 14, v) * 0.1, 0.1)
-    // the pavement's slab joints, front axle and then rear
-    if (surf === 'walk' && g && v > 1.5) {
+    // the pavement's slab joints (or the pier's beams), front axle and then rear
+    const j = JOINTS[surf]
+    if (j && g && v > 1.5) {
       this.slabD += v * dt
-      if (this.slabD > SLAB) {
-        this.slabD -= SLAB
-        const k = Math.min(1, v / 15) * 0.08
-        this.play('thud', k, { rate: 1.6, lp: 900, verb: 0.05 })
+      if (this.slabD > j.gap) {
+        this.slabD -= j.gap
+        const k = Math.min(1, v / 15) * j.k
+        this.play('thud', k, { rate: j.rate[0], lp: j.lp, verb: j.verb })
         this.play('thud', k * 0.8, {
-          rate: 1.5,
-          lp: 900,
-          verb: 0.05,
+          rate: j.rate[1],
+          lp: j.lp,
+          verb: j.verb,
           delay: 2.9 / v
         })
       }
