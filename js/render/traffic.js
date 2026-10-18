@@ -1,21 +1,26 @@
 // Traffic cars: nine body types of today's cars (carShapes.js), instanced per type, painted the way
 // Los Angeles' cars are (carPaint.js), each a solid or a metallic under the clear coat and some with
 // a black roof, on low-profile tyres and rims of their own design (carWheels.js) that roll with the
-// distance driven and steer through the turns; bodies that ride on their springs (nose down under
-// braking, squatting as they pull away, leaning out of a corner, a bus slower and softer),
+// distance driven and steer through the turns; bodies that ride on their springs (carRide.js),
 // headlights, tail lights that brighten under braking, white reversing lights, amber indicators
 // that blink for lane changes and turns, each car's in its own time (and both at once, hazards, for
 // a car knocked out of its lane), a police car's light bar flashing on some, and a soft shadow on
 // the road under each car, where its body shuts out the sky. Parked in a lot, a car's lights are
-// off; at night (this.night) the headlights throw their beams on the road ahead. Only the cars the
-// camera can see are drawn (or whose shadows it can: the frustum is let out a little for those), in
-// the view and in the sun's shadow map alike; out of sight a car costs nothing but its springs.
+// off. Drivers switch their headlights on as the city's light asks for them (sim/env.js headlights:
+// dusk, the dark, the rain, the fog), each at their own moment, and their beams lie on the road
+// once it is dark enough to see them; tail lights read brighter in the rain. A police car on a call
+// has its light bar going all the time, brighter at night, when it throws its red and blue on the
+// road round it, and it flashes its headlights at the Roadster in its way. Only the cars the camera
+// can see are drawn (or whose shadows it can: the frustum is let out a little for those), in the
+// view and in the sun's shadow map alike; out of sight a car costs nothing but its springs.
 import * as THREE from 'three'
+import { ENV } from '../sim/env.js'
 import { CURB_H } from '../sim/city.js'
 import { clamp } from '../sim/constants.js'
 import { TYPES } from '../sim/traffic.js'
+import { ride, RIDE_DT } from './carRide.js'
 import { carShape, bodyMaterial } from './carShapes.js'
-import { lampMaterial, LAMP_T } from './carLamps.js'
+import { lampMaterial, LAMP_T, LAMP_DARK } from './carLamps.js'
 import {
   RIM_FINISH,
   ALLOY,
@@ -29,7 +34,8 @@ import {
   blackRoofOf,
   RIMS,
   underTexture,
-  beamTexture
+  beamTexture,
+  glowTexture
 } from './carPaint.js'
 
 const _m = new THREE.Matrix4(),
@@ -53,58 +59,11 @@ const SHADOW_REACH = 8 // m: the long evening shadow a car just out of sight thr
 // have their full wheels
 export const NEAR = 45
 
-// The body on its springs: a damped spring each for pitch and roll, tuned per type (a car's body
-// bobs at about 1.5 Hz, a van's or pickup's slower, a bus's under 1 Hz and softer still), so a car
-// settles back with a slight bob after it stops. Pitch follows the acceleration the driver asks for
-// (the nose dips about a degree and a half under ordinary braking, more under hard braking, and the
-// tail squats as it pulls away), roll the sideways acceleration round a corner (more for the tall
-// ones, most for a bus), and a car knocked sliding leans into the way it is sliding. The front
-// wheels steer to the curve it is on.
-const RIDE = {
-  sedan: [1.55, 0.42, 1, 1],
-  hatch: [1.6, 0.42, 1, 1],
-  taxi: [1.5, 0.4, 1, 1.05],
-  suv: [1.35, 0.4, 1.15, 1.3],
-  pickup: [1.25, 0.38, 1.1, 1.3],
-  van: [1.15, 0.38, 0.9, 1.5],
-  bus: [0.9, 0.32, 0.55, 1.7],
-  police: [1.4, 0.42, 1.05, 1.2],
-  sports: [1.9, 0.48, 0.7, 0.65]
-} // per type: frequency (Hz), damping ratio, pitch and roll per m/s^2 (relative)
-// (the frame's dt comes in RIDE.dt rather than as an argument: a number passed costs an allocation)
-const RIDE_DT = { dt: 0.5 }
-function ride (car, T, S) {
-  const dt = RIDE_DT.dt
-  if (dt <= 0) return
-  const [f, zeta, kp, kr] = RIDE[T.name]
-  const w = 2 * Math.PI * f,
-    k = w * w,
-    c = 2 * zeta * w
-  const h = Math.min(dt, 1 / 30)
-  let pitchT, rollT, sp
-  if (car.loose) {
-    sp = Math.hypot(car.vx, car.vz)
-    // sliding sideways the tyres scrub, and the body leans the way it slides
-    const side = -car.vx * car.hz + car.vz * car.hx
-    pitchT = 0
-    rollT = clamp(side * 0.012 * kr, -0.08, 0.08)
-  } else {
-    sp = car.v
-    pitchT = clamp((car.acc || 0) * 0.0052 * kp, -0.06, 0.03)
-    rollT = clamp(sp * (car.yr || 0) * 0.0085 * kr, -0.075, 0.075)
-  }
-  car.pitchV += (k * (pitchT - car.pitch) - c * car.pitchV) * h
-  car.pitch += car.pitchV * h
-  car.rollV += (k * (rollT - car.roll) - c * car.rollV) * h
-  car.roll += car.rollV * h
-  // the front wheels: to the curve it is on (from its yaw rate), eased like a driver's hands
-  const wb = S.axles[0] - S.axles[1]
-  const steerT =
-    car.loose || Math.abs(sp) < 0.5
-      ? car.steer
-      : clamp(Math.atan((wb * (car.yr || 0)) / sp), -0.6, 0.6)
-  car.steer += (steerT - car.steer) * Math.min(1, h * 10)
-}
+// How far into the city's light a car's driver switches on (0 to 1, by its paint: each their own
+// moment), and a step a little soft at the edges
+const switchAt = car => 0.06 + 0.5 * ((car.paint * 13.71) % 1)
+const step = (a, x) => clamp((x - a) / 0.08, 0, 1)
+const _c = new THREE.Color()
 
 // Only the instances drawn this frame go up to the GPU, not the whole buffer (nothing, if none are)
 function dirty (a, count) {
@@ -225,6 +184,25 @@ export class TrafficView {
       false
     )
     this.beams.receiveShadow = false
+    this.beams.setColorAt(0, _c.setRGB(1, 1, 1)) // (each car's beams as bright as they are on)
+    // the red and the blue of a light bar on a call, thrown on the road round the car at night
+    this.glow = mesh(
+      new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2),
+      new THREE.MeshBasicMaterial({
+        map: glowTexture(),
+        transparent: true,
+        opacity: 0.55,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        polygonOffset: true,
+        polygonOffsetFactor: -4,
+        polygonOffsetUnits: -4
+      }),
+      8,
+      false
+    )
+    this.glow.receiveShadow = false
+    this.glow.setColorAt(0, _c.setRGB(1, 1, 1))
     // far off, a car's wheels are the plain ones (carWheels.js)
     this.farWheels = mesh(
       farWheelGeometry(),
@@ -236,18 +214,22 @@ export class TrafficView {
       max * 4,
       false
     )
-    this.night = false
+    this.night = false // (night all at once, as before the city's light: sim/env.js)
+    this.env = ENV // the hour and the weather the lights follow
+    this.lights = 0 // how far into needing their headlights drivers are (0 to 1)
+    this.dark = 0 // and how dark it is for their beams to show
     this.max = max
     this.t = 0
     this.counts = new Int32Array(TYPES.length)
     this.near = new Int32Array(TYPES.length) // (how many of each type cast shadows)
-    this.n = { tyre: 0, rim: 0, far: 0, under: 0, beam: 0 }
+    this.n = { tyre: 0, rim: 0, far: 0, under: 0, beam: 0, glow: 0 }
     this.dynamic = [
       this.tyres,
       this.rims,
       this.farWheels,
       this.under,
-      this.beams
+      this.beams,
+      this.glow
     ]
     // into the shadow map, only the cars near the Roadster (the first near[type] instances)
     this.types.forEach((ty, k) => {
@@ -273,8 +255,15 @@ export class TrafficView {
     this.t = traffic.t
     LAMP_T.value = traffic.t
     RIDE_DT.dt = dt
+    // (the city's light: what drivers switch their headlights on for, and how dark it is for their
+    // beams and a light bar's glow on the road; the night switch, while it is still about, as one)
+    const night = this.night ? 1 : 0,
+      env = this.env
+    this.lights = Math.max(night, env.headlights)
+    this.dark = Math.max(night, env.dark)
+    LAMP_DARK.value = this.dark
     const n = this.n
-    n.tyre = n.rim = n.far = n.under = n.beam = 0
+    n.tyre = n.rim = n.far = n.under = n.beam = n.glow = 0
     const s = traffic.sim,
       p = s ? (s.mode === 'ground' ? s.pos : s.com) : null
     for (let pass = 0; pass < 2; pass++) {
@@ -303,9 +292,12 @@ export class TrafficView {
     this.farWheels.count = n.far
     this.under.count = n.under
     this.beams.count = n.beam
+    this.glow.count = n.glow
     for (const m of this.dynamic) dirty(m.instanceMatrix, m.count)
     dirty(this.rims.instanceColor, n.rim)
     dirty(this.rimKind, n.rim)
+    dirty(this.beams.instanceColor, n.beam)
+    dirty(this.glow.instanceColor, n.glow)
   }
   // one car into the instances (near: close to the Roadster, with full wheels)
   put (car, dt, view, near) {
@@ -411,10 +403,12 @@ export class TrafficView {
         }
       }
     }
-    // (in a parking lot, its lights are off; on the road at night, its beams are on the road)
-    const lit = !car.parked || car.jam,
-      night = this.night
-    if (lit && night) {
+    // (in a parking lot its lights are off; on the road its driver switches the headlights on at
+    // their own moment as the light goes, and once it is dark enough their beams show on the road)
+    const lit = !car.parked || car.jam
+    const hl = lit ? step(switchAt(car), this.lights) : 0,
+      beam = hl * clamp((this.dark - 0.25) / 0.45, 0, 1)
+    if (beam > 0.01 && n.beam < this.max) {
       _p.x = T.len / 2 + 7
       _p.y = 0.025
       _p.z = 0
@@ -423,11 +417,37 @@ export class TrafficView {
       _sc.x = 14
       _sc.y = 1
       _sc.z = 6.5
-      this.beams.setMatrixAt(n.beam++, _w.compose(_p, _q, _sc))
+      this.beams.setMatrixAt(n.beam, _w.compose(_p, _q, _sc))
+      this.beams.setColorAt(n.beam++, _c.setRGB(beam, beam, beam))
     }
-    // its lamps: on in traffic (running lights by day, headlights at night), off parked in a lot;
-    // each car's flasher keeps its own time, about one and a half flashes a second. A police car's
-    // light bar flashes on about one in three, parked or not, in its own time (the flags' fraction)
+    // a police car on a call: its light bar going all the time, and at night its red and blue
+    // thrown on the road round it with each flash (the bar's own pattern: carLamps.js)
+    const call = car.siren === 1,
+      phase = ((car.paint * 17.9) % 1) * 0.98
+    if (call && this.dark > 0.15 && n.glow < 8) {
+      const q = (this.t * 1.5 + phase) % 1
+      const red = q < 0.1 || (q > 0.18 && q < 0.28),
+        blue = (q > 0.5 && q < 0.6) || (q > 0.68 && q < 0.78)
+      if (red || blue) {
+        const k = Math.min(1, this.dark * 1.3)
+        _p.x = car.x
+        _p.y = y + 0.03
+        _p.z = car.z
+        yawTo(_q, car.yaw)
+        _sc.x = 12
+        _sc.y = 1
+        _sc.z = 9
+        this.glow.setMatrixAt(n.glow, _w.compose(_p, _q, _sc))
+        if (red) _c.setRGB(k, 0.04 * k, 0.03 * k)
+        else _c.setRGB(0.06 * k, 0.2 * k, k)
+        this.glow.setColorAt(n.glow++, _c)
+      }
+    }
+    // its lamps: on in traffic (running lights by day, headlights once its driver switches them
+    // on), off parked in a lot; each car's flasher keeps its own time, about one and a half flashes
+    // a second; flashing its headlights at the Roadster in its way, about three times a second. A
+    // police car's light bar flashes on about one in three, parked or not, in its own time (the
+    // flags' fraction), and always on a call (brighter at night: 64)
     let flags = 0
     if (lit) {
       const on =
@@ -438,12 +458,18 @@ export class TrafficView {
       if (car.big) flags += 8
       flags += 16 // (running lights)
     }
-    if (T.name === 'police' && (car.paint * 11.3) % 1 < 0.36)
-      flags += 32 + ((car.paint * 17.9) % 1) * 0.98
+    if (T.name === 'police' && (call || (car.paint * 11.3) % 1 < 0.36))
+      flags += 32 + (call ? 64 : 0) + phase
     const L = ty.lit.array,
       j = i * 4
-    L[j] = lit ? (night ? 3.2 : 0.12) : 0
-    L[j + 1] = lit ? (night ? 1.3 : 0.3) : 0
+    L[j] = !lit
+      ? 0
+      : car.flash
+      ? Math.sin(this.t * 19) > 0
+        ? 3.6
+        : 0.12
+      : 0.12 + 3.08 * hl
+    L[j + 1] = lit ? 0.3 + hl + 0.5 * this.env.rain : 0
     L[j + 2] = lit && car.brake ? 1 : 0
     L[j + 3] = flags
   }

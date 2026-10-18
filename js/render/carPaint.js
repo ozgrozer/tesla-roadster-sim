@@ -93,6 +93,22 @@ export function underTexture () {
   t.colorSpace = THREE.SRGBColorSpace
   return t
 }
+// a light bar's glow on the road round the car: soft, brightest at the car and gone by its edge
+export function glowTexture () {
+  const S = 64,
+    cv = document.createElement('canvas')
+  cv.width = cv.height = S
+  const g = cv.getContext('2d'),
+    grad = g.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2)
+  grad.addColorStop(0, 'rgba(255,255,255,1)')
+  grad.addColorStop(0.35, 'rgba(255,255,255,0.45)')
+  grad.addColorStop(1, 'rgba(255,255,255,0)')
+  g.fillStyle = grad
+  g.fillRect(0, 0, S, S)
+  const t = new THREE.CanvasTexture(cv)
+  t.colorSpace = THREE.SRGBColorSpace
+  return t
+}
 // a headlight's throw on the road: a cone, brightest just ahead of the car, widening and fading
 // as it goes
 export function beamTexture () {

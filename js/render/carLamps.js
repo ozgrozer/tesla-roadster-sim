@@ -139,13 +139,15 @@ export function lampsFor (T, B, st) {
 
 // The trim's material, lit where its lamps are: aLit per car (x headlights, y tail lights, z
 // braking, w flags: 1 left indicator, 2 right, 4 reversing, 8 route board lit, 16 running lights,
-// 32 the light bar flashing, and the bar's phase in the fraction). Lenses are glassy; chrome
-// shines and gloss black is glossy.
+// 32 the light bar flashing, 64 on a call (the bar brighter as it gets dark), and the bar's phase
+// in the fraction). Lenses are glassy; chrome shines and gloss black is glossy.
 export const LAMP_T = { value: 0 } // (the traffic's clock, for the light bars)
+export const LAMP_DARK = { value: 0 } // (how dark it is, 0 to 1)
 const GLOW = `
   attribute float aLamp;
   attribute vec4 aLit;
   uniform float uLampT;
+  uniform float uLampDark;
   varying vec3 vGlow;
   varying float vTag;
 `
@@ -153,6 +155,7 @@ export function lampMaterial (base) {
   const m = base.clone()
   m.onBeforeCompile = shader => {
     shader.uniforms.uLampT = LAMP_T
+    shader.uniforms.uLampDark = LAMP_DARK
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>\n' + GLOW)
       .replace(
@@ -171,9 +174,11 @@ export function lampMaterial (base) {
           else if (lamp == 8) g = vec3(1.0, 0.86, 0.45) * (0.08 + 0.3 * aLit.x);
           else if (lamp == 9) g = vec3(0.92, 0.96, 1.0) * ((flags & 16) != 0 ? 1.8 : 0.0);
           else if (lamp == 10 || lamp == 11) {
-            // the light bar: red and blue by turns, each a double flash
+            // the light bar: red and blue by turns, each a double flash (on a call, brighter as it
+            // gets dark)
             float q = fract(uLampT * 1.5 + fract(aLit.w));
             float on = (flags & 32) != 0 ? 1.0 : 0.0;
+            if ((flags & 64) != 0) on *= 1.0 + 1.4 * uLampDark;
             if (lamp == 10) g = vec3(1.0, 0.03, 0.02) * 7.0 * on * (step(q, 0.1) + step(0.18, q) * step(q, 0.28));
             else g = vec3(0.08, 0.22, 1.0) * 9.0 * on * (step(0.5, q) * step(q, 0.6) + step(0.68, q) * step(q, 0.78));
           }
