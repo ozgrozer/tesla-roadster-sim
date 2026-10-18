@@ -20,15 +20,23 @@ const post = (x, z, r, h, kind, i, breakAt, mass) =>
     breakAt,
     mass
   })
-// A street light is a breakaway pole that gives at a walking pace. A signal mast is heavy steel bolted
-// down: only a hit at nearly 50 km/h shears it. Trees and palms go by the size of their trunk.
-LAMPS.forEach((l, i) => post(l.x, l.z, 0.16, 8, 'lamp', i, 3, 150))
+// A street light is a breakaway pole that gives at a walking pace; on a wooden power pole it takes
+// a harder knock, about 30 km/h. A signal mast is heavy steel bolted down: only a hit at nearly
+// 50 km/h shears it. Trees and palms go by the size of their trunk: a tall fan palm's is thin for
+// its height (it goes at about 40 km/h), a date palm's stout.
+LAMPS.forEach((l, i) =>
+  l.wood
+    ? post(l.x, l.z, 0.15, 10, 'lamp', i, 8, 450)
+    : post(l.x, l.z, 0.16, 8, 'lamp', i, 3, 150)
+)
 POLES.forEach((p, i) => post(p.x, p.z, 0.2, 7, 'signal', i, 13, 500))
 TREES.forEach((t, i) =>
   post(t.x, t.z, 0.3 * t.s, 6 * t.s, 'tree', i, 5 + 4 * t.s, 260 * t.s ** 3)
 )
 PALMS.forEach((p, i) =>
-  post(p.x, p.z, 0.28, p.h, 'palm', i, 6 + 0.4 * p.h, 30 * p.h)
+  p.fan
+    ? post(p.x, p.z, 0.2, p.h, 'palm', i, 5 + 0.25 * p.h, 18 * p.h)
+    : post(p.x, p.z, 0.36, p.h, 'palm', i, 6 + 0.5 * p.h, 45 * p.h)
 )
 
 // Whatever hit post c (body: { vx, vz }, of mass m), with the contact normal (nx, nz) pointing from
