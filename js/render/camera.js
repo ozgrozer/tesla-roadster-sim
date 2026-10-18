@@ -407,9 +407,15 @@ export class CameraRig {
       cam.position.y += 0.5 * this.shakeAmt * Math.sin(t * 37 + 1.3)
       this.shakeAmt *= Math.exp(-dt * 6)
     }
-    // the road coming up through the car at speed: a fine tremble, coarser on sand or grass
+    // the road coming up through the car at speed: a fine tremble, coarser on the pier's planks and
+    // coarser still on sand or grass
     if (RIDING.has(shot) && sim.mode === 'ground') {
-      const rough = sim.surface === 'sand' || sim.surface === 'grass' ? 3 : 1
+      const rough =
+        sim.surface === 'sand' || sim.surface === 'grass'
+          ? 3
+          : sim.surface === 'wood'
+          ? 1.8
+          : 1
       const a =
         clamp((sim.groundSpeed() - 18) / 70, 0, 1) * 0.011 * rough +
         (rough > 1 ? clamp(sim.groundSpeed() / 30, 0, 1) * 0.01 : 0)
