@@ -24,15 +24,34 @@ export const NIGHT = { value: 0 }
 // of windows with a light on (and litNight, at night); blinds: share with blinds down; tilt: how far
 // panes go off true;
 // inset: m the glass sits back from the wall face; glassMetal: how mirrored the glass is (0 for
-// clear glass, more for a curtain wall's coated panes)
+// clear glass, more for a curtain wall's coated panes); fill: the share of bays with a window at all
+// (a house's wall has few; where there is none the wall carries on over it, its surround too)
 export function facadeMaterial (
   opts,
-  { cells, win, lit, litNight = lit, blinds, tilt, inset, glassMetal = 0 }
+  {
+    cells,
+    win,
+    lit,
+    litNight = lit,
+    blinds,
+    tilt,
+    inset,
+    glassMetal = 0,
+    fill = 1
+  }
 ) {
   const m = new THREE.MeshStandardMaterial(opts)
   const f = v => v.toFixed(4)
   const [wx, wy, ww, wh] = win.map(f)
   const C = cells.toFixed(1)
+  const blank =
+    fill < 1
+      ? `if (cellHash(gCell + 13.7) > ${f(fill)}) {
+            if (f.x > x0 - 0.07 && f.x < x1 + 0.07 && f.y > bot - 0.07 && f.y < top + 0.07)
+              diffuseColor.rgb = diffuse * textureLod(map, (gCell + vec2(0.06, 0.06)) / ${C}, 2.0).rgb;
+            gWin = 0.0;
+          }`
+      : ''
   m.onBeforeCompile = shader => {
     shader.uniforms.uNight = NIGHT
     shader.fragmentShader = shader.fragmentShader
@@ -56,6 +75,7 @@ export function facadeMaterial (
           vec2 f = fract(cu);
           float x0 = ${wx}, x1 = ${wx} + ${ww}, top = 1.0 - ${wy}, bot = top - ${wh};
           gWin = step(x0, f.x) * step(f.x, x1) * step(bot, f.y) * step(f.y, top);
+          ${blank}
           float pane = 0.0;
           // (the wall between the windows has nothing more to work out)
           if (gWin > 0.5) {
@@ -150,6 +170,6 @@ export function facadeMaterial (
       )
   }
   m.customProgramCacheKey = () =>
-    `facade ${win} ${lit} ${litNight} ${blinds} ${tilt} ${inset} ${glassMetal}`
+    `facade ${win} ${lit} ${litNight} ${blinds} ${tilt} ${inset} ${glassMetal} ${fill}`
   return m
 }
