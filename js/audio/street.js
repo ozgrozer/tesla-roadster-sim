@@ -132,16 +132,28 @@ export const STREET = {
       now = this.now,
       city = st.city
     const quiet = st.night ? 0.6 : 1
+    // (on a wet road the far traffic's tyres hiss through the water)
+    const wet = st.wet || 0
     for (let i = 0; i < 2; i++) {
       const g = n.wash[i],
         w = city ? (0.006 + 0.05 * ((i ? st.washR : st.washL) || 0)) * quiet : 0
       R(g.gain, w, 0.5)
-      R(g.hiss.gain, w * 0.35, 0.5)
+      R(g.hiss.gain, w * (0.35 + 0.9 * wet), 0.5)
     }
+    // (the wind as strong as the weather's: a storm's gusts howl down the streets)
     const sea = st.sea || 0,
-      up = clamp(((st.camY || 2) - 6) / 40, 0, 1)
-    R(n.breeze.gain, city ? 0.012 + 0.03 * up + 0.015 * sea : 0, 0.6)
-    R(n.howl.gain, city ? 0.04 * (st.enclosed ?? 0) + 0.25 * up : 0, 0.8)
+      up = clamp(((st.camY || 2) - 6) / 40, 0, 1),
+      blow = 0.5 + 1.6 * (st.wind ?? 0.2)
+    R(
+      n.breeze.gain,
+      city ? (0.012 + 0.03 * up + 0.015 * sea) * blow : 0,
+      0.6
+    )
+    R(
+      n.howl.gain,
+      city ? (0.04 * (st.enclosed ?? 0) + 0.25 * up) * blow : 0,
+      0.8
+    )
     if (city && (this.howlT -= st.dt) < 0) {
       this.howlT = 0.6 + Math.random()
       R(n.pipe.frequency, 700 + Math.random() * 260, 0.5)
@@ -164,7 +176,9 @@ export const STREET = {
     R(n.fwy.gain, fwy * 0.22, 0.6)
     R(n.fwyHiss.gain, fwy * 0.06, 0.6)
     if (fwy > 0) R(n.fwyPan.pan, clamp(st.freewayPan || 0, -0.8, 0.8), 0.3)
-    if (st.night && !n.crickets) this.buildCrickets()
-    if (n.crickets) R(n.crickets.gain, city && st.night ? 0.005 : 0, 0.8)
+    // (the crickets keep quiet in the rain)
+    const chirp = st.night && (st.rain || 0) < 0.05
+    if (chirp && !n.crickets) this.buildCrickets()
+    if (n.crickets) R(n.crickets.gain, city && chirp ? 0.005 : 0, 0.8)
   }
 }

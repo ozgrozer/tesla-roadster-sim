@@ -4,8 +4,9 @@
 // heard from: the car's place, the canopy, the reverb and the walls' echo), motor.js (the drive
 // units), tyres.js (rolling, squealing, the wind), impacts.js (knocks, crashes, scrapes), shots.js
 // (one-shots: horns, air brakes, birds, locks), cars.js (the traffic's engines and tyres),
-// street.js (the city's bed: far traffic, wind, surf, birds, crickets) and ambience.js (sirens,
-// dogs, building work and the people on the pavement).
+// street.js (the city's bed: far traffic, wind, surf, birds, crickets), ambience.js (sirens,
+// dogs, building work and the people on the pavement), rain.js (the rain, the drumming on the
+// canopy, the tyres in the water, the thunder) and air.js (the helicopter and the airliners).
 import { CARS } from './cars.js'
 import { SPACE } from './space.js'
 import { DRIVE } from './motor.js'
@@ -14,6 +15,8 @@ import { Radio } from './radio.js'
 import { STREET } from './street.js'
 import { IMPACTS } from './impacts.js'
 import { AMBIENCE } from './ambience.js'
+import { WEATHER_SOUND } from './rain.js'
+import { AIRCRAFT_SOUND } from './air.js'
 import { ONE_SHOTS, HORNS } from './shots.js'
 import { noises, bank, wobble, wave } from './buffers.js'
 
@@ -354,6 +357,8 @@ export class SoundEngine {
       st.dt = st.worldDt || dt
       this.updateCars(st)
       this.updateAmbience(st)
+      this.updateRain(st)
+      this.updateAir(st)
       this.slowDt = (this.slowDt || 0) + st.dt
       if ((this.worlds = (this.worlds || 0) + 1) & 1) {
         st.dt = this.slowDt
@@ -390,5 +395,7 @@ Object.assign(
   ONE_SHOTS,
   CARS,
   STREET,
-  AMBIENCE
+  AMBIENCE,
+  WEATHER_SOUND,
+  AIRCRAFT_SOUND
 )

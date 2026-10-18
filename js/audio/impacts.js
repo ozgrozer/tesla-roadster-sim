@@ -72,6 +72,8 @@ export const IMPACTS = {
   // m/s). at: somewhere else in the world ({ k: how loud from here, pan, lp }), not the Roadster
   // side: a little left or right of the car, where it was hit
   bump (v, what = 'car', at = null, side = 0) {
+    // (nothing to play before the sound has first started: and its scratch object isn't made yet)
+    if (!this.playing()) return
     const k = clamp(v / 12, 0, 1.2) * (at ? at.k : 1)
     const wall =
       what === 'building' ||

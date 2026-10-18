@@ -11,6 +11,9 @@ import { TYPES } from '../sim/traffic.js'
 import { LANDMARKS } from '../sim/areas.js'
 import { camera } from '../render/scene.js'
 import { clamp } from '../sim/constants.js'
+import { ENV } from '../sim/env.js'
+import { WATER } from '../render/spray.js'
+import { AIR } from '../render/aircraft.js'
 import { watch, forget, ALARM } from './watch.js'
 import { hearing, panOf, blocked, dullness, placeOf, ray } from './ears.js'
 
@@ -216,6 +219,24 @@ function walls () {
   return WALLS
 }
 
+// the helicopter and the airliner overhead (render/aircraft.js): how loud each is (reach: m at which
+// it is at half its loudest), which side, how dull, its doppler; null when there is none
+const HELI = { k: 0, pan: 0, lp: 20000, doppler: 1 },
+  PLANE = { k: 0, pan: 0, lp: 20000, doppler: 1 }
+function aloft (a, out, reach) {
+  if (!a.on) return null
+  const cp = camera.position,
+    dx = a.x - cp.x,
+    dy = a.y - cp.y,
+    dz = a.z - cp.z,
+    d = Math.hypot(dx, dy, dz) || 1
+  out.k = 1 / (1 + (d / reach) ** 2)
+  out.pan = panOf(a.x, a.z)
+  out.lp = clamp(20000 * Math.exp(-d / 260), 500, 20000)
+  out.doppler = clamp(343 / (343 + (a.vx * dx + a.vz * dz) / d), 0.85, 1.15)
+  return out
+}
+
 const ST = { cars: near, steps: STEPS }
 let frame = 0,
   worldDt = 0,
@@ -339,6 +360,19 @@ export function mixSound (sound, app, traffic, dt, clock, peds) {
   st.carPan = panOf(_cp.x, _cp.z)
   st.camY = cp.y
   st.night = city && app.night
+  // the weather (sim/env.js): the rain, the wet road, the wind and the lightning's strikes, and
+  // the way the camera faces (the same way round as a strike's bearing), for the thunder's side
+  st.rain = city ? ENV.rain : 0
+  st.wet = city ? ENV.wet : 0
+  st.splash = city ? WATER.splash : 0 // (the tyres through a puddle)
+  st.heli = city ? aloft(AIR.heli, HELI, 180) : null
+  st.plane = city ? aloft(AIR.plane, PLANE, 900) : null
+  st.wind = ENV.wind
+  st.strikes = ENV.strikes
+  st.strikeDist = ENV.strikeDist
+  st.strikeDir = ENV.strikeDir
+  _fwd.setFromMatrixColumn(camera.matrixWorld, 2).negate()
+  st.camYaw = Math.atan2(_fwd.z, _fwd.x)
   st.honks = !traffic.quiet // (not until the Roadster has honked at the gridlock)
   st.cars = on ? (world ? nearCars(traffic, worldDt) : near) : NONE
   st.washL = WASH.l
