@@ -51,16 +51,25 @@ THREE.ShaderChunk.lights_fragment_begin = chunk
   )
 
 // The city light: from the sun's direction (sun: a vector towards it), its shadow camera squared up
-// on the city (half: the half-width of the ground it covers, top: the tallest thing on it).
+// on the city (half: the half-width of the ground it covers, top: the tallest thing on it). As the
+// sun moves through the day (and the moon through the night) it is aimed again (aim) and the map
+// drawn again: a whole city's map is under a millisecond of the graphics card's time.
+const _view = new THREE.Matrix4(),
+  _lo = new THREE.Vector3(),
+  _hi = new THREE.Vector3(),
+  _p = new THREE.Vector3(),
+  _o = new THREE.Vector3(),
+  _up = new THREE.Vector3(0, 1, 0),
+  _side = new THREE.Vector3(1, 0, 0)
 export class CityShadow {
   constructor (scene, renderer, sun, half, top) {
     this.scene = scene
     this.renderer = renderer
     this.pending = false
+    this.half = half
+    this.top = top
     this.target = new THREE.WebGLRenderTarget(1, 1) // (a pass that only draws the map)
-    const L = sun.clone().normalize()
     const light = new THREE.DirectionalLight(0xffffff, 0)
-    light.position.copy(L).multiplyScalar(2000)
     light.castShadow = true
     const s = light.shadow
     s.autoUpdate = false
@@ -68,32 +77,43 @@ export class CityShadow {
     s.mapSize.set(big ? 4096 : 2048, big ? 2048 : 1024)
     s.bias = -0.00008
     s.normalBias = 0.35
-    // the ground square and everything up to the tallest roof, seen from the light: its bounds
-    const view = new THREE.Matrix4()
-      .lookAt(light.position, new THREE.Vector3(), new THREE.Vector3(0, 1, 0))
-      .setPosition(light.position)
-      .invert()
-    const lo = new THREE.Vector3(Infinity, Infinity, Infinity),
-      hi = lo.clone().negate(),
-      p = new THREE.Vector3()
-    for (const x of [-half, half])
-      for (const y of [0, top])
-        for (const z of [-half, half]) {
-          p.set(x, y, z).applyMatrix4(view)
-          lo.min(p)
-          hi.max(p)
-        }
-    Object.assign(s.camera, {
-      left: lo.x,
-      right: hi.x,
-      bottom: lo.y,
-      top: hi.y,
-      near: -hi.z - 10,
-      far: -lo.z + 10
-    })
-    s.camera.updateProjectionMatrix()
     scene.add(light, light.target)
     this.light = light
+    this.aim(sun)
+  }
+  // from the direction sun (toward the light), with the ground square and everything up to the
+  // tallest roof, seen from the light, squared up in its shadow camera; the map is due again
+  aim (sun) {
+    const light = this.light,
+      s = light.shadow,
+      half = this.half
+    light.position.copy(sun).normalize().multiplyScalar(2000)
+    // (a sun straight overhead would leave the camera's up the same as its way: look past it)
+    const up = Math.abs(sun.y) > 0.999 ? _side : _up
+    _view
+      .lookAt(light.position, _o, up)
+      .setPosition(light.position)
+      .invert()
+    _lo.set(Infinity, Infinity, Infinity)
+    _hi.copy(_lo).negate()
+    for (const x of [-half, half])
+      for (const y of [0, this.top])
+        for (const z of [-half, half]) {
+          _p.set(x, y, z).applyMatrix4(_view)
+          _lo.min(_p)
+          _hi.max(_p)
+        }
+    Object.assign(s.camera, {
+      left: _lo.x,
+      right: _hi.x,
+      bottom: _lo.y,
+      top: _hi.y,
+      near: -_hi.z - 10,
+      far: -_lo.z + 10
+    })
+    s.camera.up.copy(up)
+    s.camera.updateProjectionMatrix()
+    this.pending = true
   }
   // draw the map again before the next frame
   refresh () {
