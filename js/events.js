@@ -27,8 +27,8 @@ export function handleEvents (g) {
       if (!app.trackHint) {
         app.trackHint = true
         hud.popup(
-          'Track Mode · <b>W</b> holds the drift · steer into it to go deeper, ' +
-            'out of it to straighten',
+          'Track Mode · <b>W</b> holds the drift · steer into it to go deeper · ' +
+            'hold the other way to link it · lift off to straighten',
           4200,
           'hint'
         )

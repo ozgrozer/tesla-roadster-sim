@@ -17,8 +17,11 @@ import { G, CAR, LIFT_ACC, clamp, wrapPi } from './constants.js'
 // motors, one to each wheel, share the torque out between them to hold the drift at the angle the
 // driver asks for: steering into the turn holds it or takes it deeper, leaving the wheel be lets it
 // slowly unwind (a small flick is a short slide, a big one a long drift), and steering out of it
-// unwinds it fast; lift off and the rears grip and the car straightens. Once it is lined up again
-// the electronics are back.
+// unwinds it fast; held there with the power on, the car swings on through straight into a drift
+// the other way (a linked drift); lift off and the rears grip and the car straightens. Held in a
+// drift, the throttle keeps the pace the drift began at rather than piling on speed, as a drifter
+// feathers it, so the tyres' grip carries the car round the corner instead of out wide. Once it is
+// lined up again the electronics are back.
 // Three GTA-style touches on top: the handbrake with the wheel turned swings the car round at once,
 // a car spinning faster than its tyres could carry it is caught once the handbrake is let go, and
 // the throttle and brake together at a crawl are a burnout (steered, a donut).
@@ -155,9 +158,9 @@ export function stepGround (s, dt, c, main, lift) {
     const straight = Math.abs(beta) < TRACK_STRAIGHT || Math.abs(u) < 3
     s.calm = straight ? s.calm + dt : 0
     // (over once the car has run straight a moment, or swung on through straight: the electronics
-    // catch whatever comes next)
+    // catch whatever comes next, unless the driver is linking it into a drift the other way)
     const through = s.driftDir && s.driftDir * beta > 0.03
-    if (s.calm > CALM || through) s.track = false
+    if ((s.calm > CALM || through) && !s.linking) s.track = false
   }
   const track = s.track && !c.ebrake
   const FmaxF = mu * Nf,
@@ -364,8 +367,25 @@ export function stepGround (s, dt, c, main, lift) {
     if (c.brake > 0) s.driftV = Math.min(s.driftV, Math.hypot(u, w))
   }
   const letGo = s.driftWant < 0.08 && ab < 0.15
-  // (unwound all the way, the drift is over: the electronics are back to catch what is left of it)
-  if (s.driftDir && !c.ebrake && s.driftWant < 0.03) s.track = false
+  // (steering out of it with the power on: linking it into a drift the other way, once the car has
+  // swung through)
+  s.linking =
+    track && !!s.driftDir && throttle > 0.5 && c.steer * s.driftDir < -0.5
+  if (s.linking && d === -s.driftDir && ab > DRIFT_LINK) {
+    s.driftDir = d
+    s.driftWant = Math.min(ab, DRIFT_MAX_A)
+    s.linking = false
+  }
+  // (unwound all the way and nearly straight, the drift is over: the electronics are back to catch
+  // what is left of it)
+  if (
+    s.driftDir &&
+    !c.ebrake &&
+    !s.linking &&
+    s.driftWant < 0.03 &&
+    ab < DRIFT_END
+  )
+    s.track = false
   if (burn)
     Mz += clamp(
       BURN_K * (c.steer * c.throttle * BURN_R - r),
