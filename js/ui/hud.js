@@ -8,7 +8,7 @@ import { $, put } from './dom.js'
 import { Clock } from './clock.js'
 import { Place } from './place.js'
 import { Speedo } from './speedo.js'
-import { DRIVE_KEYS } from './input.js'
+import { DRIVE_KEYS, LOOK_BACK } from './input.js'
 import { CAR } from '../sim/constants.js'
 import { recall, remember } from './prefs.js'
 import { Instruments } from './instruments.js'
@@ -22,7 +22,15 @@ const FAN_TEXT = {
 const WAKE_S = 3 // s the title and the buttons stay up after the mouse last moved, while driving
 // the keys that drive or fly the car (the keys card's Drive and Fly), and the radio's: they keep
 // the screen clean
-const PLAY_KEYS = new Set([...DRIVE_KEYS, 'KeyH', 'KeyG', 'KeyX', 'KeyK', 'KeyB'])
+const PLAY_KEYS = new Set([
+  ...DRIVE_KEYS,
+  LOOK_BACK,
+  'KeyH',
+  'KeyG',
+  'KeyX',
+  'KeyK',
+  'KeyB'
+])
 const LINE_S = 7 // s the line of keys along the bottom stays up after it changes
 const DENTED = 1 // m of dents (damage.js's amount) that take the condition bar down to nothing
 

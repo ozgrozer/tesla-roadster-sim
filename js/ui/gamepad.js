@@ -1,10 +1,12 @@
 // A gamepad, any with the standard layout (Xbox, PlayStation and most others): the left stick steers
 // (and in the air pitches and rolls), the triggers are an analog throttle and brake, the right stick
 // looks round the car (and yaws it in the air), and the buttons press the keys they stand for, so
-// they do everything the keys do. It rumbles for knocks, kerbs, landings and crashes.
+// they do everything the keys do. It rumbles for knocks, kerbs, landings and crashes, and buzzes
+// with the tyres near their grip and past it, the rears spinning and the ground rough (input.js).
 //
 //   RT throttle   LT brake, reverse   A e-brake   RB boost (main thrusters)   LB fly (lift thrusters)
 //   X horn   Y camera   D-pad up / down backflip / kickflip   View reset   Menu Autopilot
+//   the right stick pressed in: look behind, held (as in GTA)
 const BUTTONS = {
   0: 'Space',
   2: 'KeyH',
@@ -13,10 +15,12 @@ const BUTTONS = {
   5: 'ShiftLeft',
   8: 'KeyR',
   9: 'KeyP',
+  11: 'KeyZ',
   12: 'KeyX',
   13: 'KeyK'
 }
 const DEAD = 0.12
+const FEEL_MS = 150 // the tyres' and the road's buzz lasts this long each time it is set
 // a stick's axis past its dead zone, rescaled to 0..1 and eased in, for fine control near the centre
 const axis = v => {
   const a = Math.abs(v)
@@ -34,6 +38,7 @@ export class Pad {
     this.steer = this.throttle = this.brake = 0
     this.stickX = this.stickY = this.lookX = this.lookY = 0
     this.active = false // the analog controls are in use
+    this.usedAt = -Infinity // (and when it was last touched: performance.now(), ms)
     window.addEventListener('gamepadconnected', e => {
       if (e.gamepad.mapping === 'standard') this.onConnect?.(e.gamepad.id)
     })
@@ -76,8 +81,10 @@ export class Pad {
     // the first touch of the sticks or triggers takes the wheel, like a drive key
     if (on && !this.active) this.press('Pad')
     this.active = on
+    if (on) this.usedAt = performance.now()
     for (const [i, code] of Object.entries(BUTTONS)) {
       const held = !!b[i]?.pressed
+      if (held) this.usedAt = performance.now()
       if (held && !this.down.has(code)) {
         this.down.add(code)
         this.press(code)
@@ -87,8 +94,19 @@ export class Pad {
       }
     }
   }
-  // strong: the big low motor, weak: the small fast one (0..1), for ms
+  // strong: the big low motor, weak: the small fast one (0..1), for ms (a knock, a kerb, a crash)
   rumble (strong, weak, ms = 120) {
+    this.busy = performance.now() + ms
+    this.play(strong, weak, ms)
+  }
+  // the tyres' and the road's feel (input.js), set again a few times a second while it lasts, and
+  // the buzz of Botts' dots (events.js): it waits for a knock's rumble to finish rather than
+  // cutting it short
+  feel (strong, weak, ms = FEEL_MS) {
+    if (strong + weak < 0.01 || performance.now() < (this.busy || 0)) return
+    this.play(strong, weak, ms)
+  }
+  play (strong, weak, ms) {
     const p = this.index >= 0 ? this.get() : null
     p?.vibrationActuator
       ?.playEffect?.('dual-rumble', {

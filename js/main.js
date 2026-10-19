@@ -281,6 +281,7 @@ const input = new Input({
       'hint'
     )
 })
+Object.assign(rig, { traffic, input }) // (camera.js: clear of the cars, Z to look back)
 // browsers only allow audio after a gesture: the first click or key turns sound on
 function unlockSound (e) {
   if (e.code === 'KeyN' || e.target?.closest?.('#btnSound')) return
@@ -308,12 +309,13 @@ const VIEW = { x: 0, z: 0, fx: 1, fz: 0, heading: 0 }
 const _dir = new THREE.Vector3()
 function updateView () {
   camera.getWorldDirection(_dir)
-  const l = Math.hypot(_dir.x, _dir.z) || 1
+  const l = Math.hypot(_dir.x, _dir.z) || 1,
+    b = rig.behind ? -1 : 1 // (looking back, the radar still faces the way ahead)
   VIEW.x = camera.position.x
   VIEW.z = camera.position.z
   VIEW.fx = _dir.x / l
   VIEW.fz = _dir.z / l
-  VIEW.heading = Math.atan2(-_dir.z, _dir.x)
+  VIEW.heading = Math.atan2(-_dir.z * b, _dir.x * b)
 }
 
 // ---------- main loop: fixed 120 Hz physics, variable-rate rendering ----------

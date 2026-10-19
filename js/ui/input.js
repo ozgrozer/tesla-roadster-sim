@@ -3,7 +3,8 @@
 import { Pad } from './gamepad.js'
 import { TRACK } from '../sim/track.js'
 import { BURN_V } from '../sim/drift.js'
-import { clamp, makeControls } from '../sim/constants.js'
+import { smooth } from '../sim/tyres.js'
+import { G, CAR, clamp, makeControls } from '../sim/constants.js'
 
 // The steering keys ease the wheel over rather than throwing it to full lock: full in KEY_T s at a
 // standstill and KEY_T_V s more per m/s (up to KEY_V_TOP m/s: past it the wheel turns no slower, as
@@ -29,12 +30,23 @@ const BRAKE_T = 0.3,
 // later; let go, it is up in GAS_OFF s.
 const GAS_T = 0.2,
   GAS_OFF = 0.06
+// A gamepad's feel for the tyres and the road (gamepad.js), set every FEEL_T s while a pad drives
+// (it has been touched in the last FEEL_IDLE s): a faint buzz as the tyres near their grip (from
+// FEEL_USE of it), more once they slide or the ABS pulses, and a low rumble while the rears spin
+// (a burnout, a drift on the power) and over grass or sand
+const FEEL_T = 0.1,
+  FEEL_IDLE = 10,
+  FEEL_USE = 0.85
 // k eased towards want (-1, 0 or 1) at up per s, and back to the middle at down per s
 export function easeKey (k, want, up, down, dt) {
   if (want !== 0 && k * want >= 0)
     return want > 0 ? Math.min(want, k + up * dt) : Math.max(want, k - up * dt)
   return k > 0 ? Math.max(0, k - down * dt) : Math.min(0, k + down * dt)
 }
+
+// Held, Z looks behind the car, as GTA's does (camera.js; a gamepad's right stick pressed in
+// presses it: gamepad.js). Not a drive key: it doesn't take the wheel from Autopilot.
+export const LOOK_BACK = 'KeyZ'
 
 export const DRIVE_KEYS = new Set([
   'KeyW',
@@ -116,6 +128,11 @@ export class Input {
   // once a frame: the gamepad's buttons, sticks and triggers
   poll () {
     this.pad.poll()
+  }
+
+  // whether the look-behind key (or the pad's button for it) is held
+  lookBack () {
+    return this.down.has(LOOK_BACK)
   }
 
   // `fresh`: leave out keys still held from before lift-off
@@ -230,6 +247,29 @@ export class Input {
       } else this.stopT = -1
       this.backing = rev ? c.reverse : 0
     }
+    this.feel(sim)
     return c
+  }
+
+  // the pad's feel for the tyres and the road, every FEEL_T s of the sim's time
+  feel (sim) {
+    const pad = this.pad
+    if (pad.index < 0 || performance.now() - pad.usedAt > FEEL_IDLE * 1000)
+      return
+    if (Math.abs(sim.time - (this.feltT ?? -1)) < FEEL_T) return
+    this.feltT = sim.time
+    if (sim.mode !== 'ground') return
+    const grip = CAR.tireMu * ((sim.world === 'city' && sim.grip) || 1),
+      use = Math.hypot(sim.latAcc, 0.6 * sim.accLong) / (G * grip),
+      slide = Math.max(sim.skidF, sim.skidR, 0.8 * sim.abs),
+      spin = sim.burning ? 1 : sim.rearSpin,
+      rough =
+        sim.surface === 'sand' || sim.surface === 'grass'
+          ? clamp(sim.groundSpeed() / 15, 0, 1)
+          : 0
+    pad.feel(
+      0.3 * spin + 0.2 * rough + 0.1 * slide,
+      0.12 * smooth((use - FEEL_USE) / 0.15) + 0.4 * slide + 0.15 * rough
+    )
   }
 }

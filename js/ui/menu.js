@@ -123,6 +123,7 @@ const MORE =
     row('RT · LT', 'throttle · brake, reverse'),
     row('left stick', 'steer · pitch, roll'),
     row('right stick', 'look round · yaw'),
+    row('right stick in', 'look behind (hold)'),
     row('A · X · Y', 'e-brake · horn · camera'),
     row('RB · LB', 'boost · fly'),
     row('D-pad', 'backflip · kickflip'),

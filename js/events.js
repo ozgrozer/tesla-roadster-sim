@@ -51,6 +51,7 @@ function landing (e) {
 
 export function handleEvents (g) {
   const { sim, app, hud, sound, rig, cityView, ap, clock, pad } = g
+  let dots = false
   for (const e of sim.events) {
     if (e.type === 'z60') {
       hud.notify({
@@ -171,6 +172,11 @@ export function handleEvents (g) {
     } else if (e.type === 'manhole') {
       sound.clunk(e.v)
       pad?.rumble(0.05, 0.3, 50)
+    } else if (e.type === 'dot') {
+      // a wheel onto Botts' dots: its knock kept to the moment it struck (how long before the
+      // frame's last step, in real time), and the pad buzzing while they come
+      sound.dot(e.v, e.left, (sim.time - e.t) / Math.max(0.05, app.timeScale))
+      dots = true
     } else if (e.type === 'righted') {
       // rolled back onto its wheels after a crash
       burst(sim.pos.x, sim.pos.z, 60, 5, sim.pos.y)
@@ -198,5 +204,6 @@ export function handleEvents (g) {
       hud.notify({ title: 'Wrecked', sub: e.reason, tone: 'red', ms: 2600 })
     }
   }
+  if (dots) pad?.feel(0.03, 0.28, 40) // (not over a knock's rumble)
   sim.events.length = 0
 }
