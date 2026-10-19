@@ -74,6 +74,7 @@ export const FWY_LANES = {
   fwyLanes (car, dt) {
     const e = car.edge,
       sd = SIDES.get(e.id)
+    car.letIn = sd && car.style !== 2 ? this.fwyLetIn(car, sd) : 0
     if (!sd || car.lc || car.panic > 0 || car.siren === 1 || car.ctl) {
       car.sigT = 0
       car.fwyDir = 0
@@ -102,25 +103,60 @@ export const FWY_LANES = {
     if (car.sigT >= car.lead * 0.8 && Math.abs(car.off) < 0.4 && this.fwyRoom(t, s1, car))
       this.swap(car, t, ds)
   },
+  // Someone waiting at a crawl in the lane beside, indicator on towards this one, a little ahead:
+  // ease off to let them in (the speed to keep to, or 0)
+  fwyLetIn (car, sd) {
+    for (let k = 0; k < 2; k++) {
+      const t = k ? sd.right : sd.left
+      if (!t) continue
+      const ds = k ? sd.dsR : sd.dsL,
+        toMe = k ? 1 : 2 // (their want, to come over into this lane)
+      for (const o of t.cars) {
+        if (o.want !== toMe || o.v > 4 || o.sigT < 1.5) continue
+        const d = o.s - (car.s + ds)
+        if (d > 0 && d < 80) return Math.max(4, d * 0.15)
+      }
+    }
+    return 0
+  },
   // which way, if any: 0 stay, 1 left, 2 right
   fwyDecide (car, e, sd) {
     const rank = RANK.get(e.id) ?? 1
     const want = car.v0 * e.vk
-    const a = this.fwyAhead(e, car.s, car)
-    const slow = a.gap < LOOKF && a.v < want * 0.88 && a.v < car.v + 3
     const exit = draw(car, 7) < EXIT_SHARE
+    const A = this.fwyAhead(e, car.s, car)
+    let gap = A.gap,
+      v = A.v
+    // (something stopped in the lane that isn't traffic: the player, a wreck: round it)
+    const blk = car.blk
+    if (blk && (blk === this.me || blk === this.foot || blk.loose) && car.clear < gap && car.clear < LOOKF) {
+      gap = car.clear
+      v = 0
+    }
+    const slow = gap < LOOKF && v < want * 0.88 && v < car.v + 3
     // making way: honked at from behind, or a car on a call coming
     if ((car.yieldT > 0 || car.pull) && sd.right) return 2
+    // (into a lane that is moving: not one queueing a little way on)
+    const going = t => {
+      const b = this.fwyAhead(t, car.s + (t === sd.left ? sd.dsL : sd.dsR), car)
+      return b.gap > 50 || b.v > want * 0.7
+    }
     // the outer lane goes off at the next ramp: merge in off it, unless leaving there
-    if (!sd.right && rank >= 2 && sd.left && !exit) return 1
+    if (!sd.right && rank >= 2 && sd.left && !exit && going(sd.left)) return 1
     // leaving at the next ramp: over to the outer lane while there is road to do it in
-    if (exit && sd.right && (RANK.get(sd.right.id) ?? 0) >= 2) return 2
+    if (exit && sd.right && (RANK.get(sd.right.id) ?? 0) >= 2 && going(sd.right)) return 2
     // the inner lane ends (it bends back into the through lane): off it in good time
     if (rank === 0 && sd.right && e.len - car.s < 260) return 2
+    // (stopped behind it: whichever side has the room just now, left first)
+    if (slow && gap < 30 && v < 2 && car.v < 4) {
+      if (sd.left && this.fwyRoom(sd.left, car.s + sd.dsL, car)) return 1
+      if (sd.right && this.fwyRoom(sd.right, car.s + sd.dsR, car)) return 2
+      return car.fwyDir || (sd.left ? 1 : 2)
+    }
     if (slow) {
-      if (sd.left && this.fwyBetter(sd.left, car.s + sd.dsL, a, car)) return 1
+      if (sd.left && this.fwyBetter(sd.left, car.s + sd.dsL, gap, v, car)) return 1
       // (passing on the right: only the bold, and only if the right lane is clear going)
-      if (car.style === 2 && sd.right && this.fwyBetter(sd.right, car.s + sd.dsR, a, car)) return 2
+      if (car.style === 2 && sd.right && this.fwyBetter(sd.right, car.s + sd.dsR, gap, v, car)) return 2
       return 0
     }
     // keep right: by now, nothing slow ahead in the lane to the right (the aggressive linger)
@@ -145,25 +181,29 @@ export const FWY_LANES = {
     }
     return out
   },
-  // lane t moving better than the car ahead (a: fwyAhead's, copied before it is reused)?
-  fwyBetter (t, s, a, car) {
-    const gap = a.gap,
-      v = a.v
+  // lane t moving better than the car ahead (gap m on, at v)?
+  fwyBetter (t, s, gap, v, car) {
     const b = this.fwyAhead(t, s, car)
-    const ok = b.gap > gap + 25 || b.v > v + 3
-    a.gap = gap
-    a.v = v
-    return ok
+    return b.gap > gap + 25 || b.v > v + 3
   },
   // a safe gap on lane t at s for the car: by time ahead and behind (the bold take a tighter one)
   fwyRoom (t, s, car) {
-    const k = 1 - car.bold * 0.4
+    // (waiting at a crawl with the indicator on a while, a driver takes a tighter gap, and those
+    // coming up in that lane ease off to let them in: the zip)
+    const k = (1 - car.bold * 0.4) * (car.v < 4 && car.sigT > 3 ? 0.4 : 1)
     for (const o of t.cars) {
       const d = o.s - s,
         need = (o.len + car.len) / 2 + 3
       if (d >= 0 && d < need + (Math.max(0, car.v - o.v) * 2 + car.v * 0.45) * k) return false
       if (d < 0 && -d < need + (Math.max(0, o.v - car.v) * 2.2 + o.v * 0.6) * k) return false
     }
+    // (at a crawl, room ahead to swing out: its nose past what it is stuck behind)
+    if (car.v < 4 && car.clear < this.fwyChangeLength(car) * 0.3) return false
+    // (nothing stopped in that lane that isn't traffic, near where it would pull in: the player, a
+    // wreck)
+    pointAt(t, s, P)
+    for (const o of [this.me, this.foot]) if (o && this.inLane(o, P, car, 1)) return false
+    for (const o of this.loose) if (this.inLane(o, P, car, (o.len || 4) / 2)) return false
     // (nor anyone about to move into the same lane from the far side, level with it)
     const far = this.fwyFar(t, car.edge)
     if (far) {
@@ -177,15 +217,36 @@ export const FWY_LANES = {
     }
     return true
   },
+  // o (half length hl) in the lane at P (pointAt's), within reach of a car pulling in there
+  inLane (o, P, car, hl) {
+    if (Math.abs(o.y - car.y) > 3) return false
+    const dx = o.x - P.x,
+      dz = o.z - P.z
+    const along = dx * P.hx + dz * P.hz,
+      side = dx * P.hz - dz * P.hx
+    return Math.abs(side) < 2.6 && along > -hl - car.len && along < hl + car.len / 2 + 10 + car.v * 1.5
+  },
   // the lane on the other side of t from e
   fwyFar (t, e) {
     const sd = SIDES.get(t.id)
     if (!sd) return null
     return sd.left === e ? sd.right : sd.right === e ? sd.left : null
   },
-  // the stretch of road a freeway lane change takes: three seconds or so, never under 30 m
+  // the stretch of road a freeway lane change takes: three seconds or so, never under 30 m (14 at
+  // a crawl, pulling out round something stopped)
   fwyChangeLength (car) {
-    return Math.max(30, Math.min(110, car.v * (3.6 - car.bold * 1.2)))
+    return Math.max(car.v < 6 ? 14 : 30, Math.min(110, car.v * (3.6 - car.bold * 1.2)))
+  },
+  // a freeway lane with a lane beside it
+  hasSide (e) {
+    return e.hw && SIDES.has(e.id)
+  },
+  // changing lanes, will it be clear across of o (g m ahead on the lane it is leaving) by the time
+  // it gets there?
+  clearOf (car, o, g) {
+    const u = Math.min(1, car.lc + Math.max(0, g) / car.lcLen)
+    const over = Math.abs(car.lat0) * u * u * u * (10 - 15 * u + 6 * u * u)
+    return over > (car.wid + o.wid) / 2 + 0.2
   },
   // across from the old lane's line to the new one's (t), as place reads it (+ to the right)
   latTo (e, s, t) {

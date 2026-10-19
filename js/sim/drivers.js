@@ -88,7 +88,7 @@ export const DRIVE = {
         if (o.s > car.s + car.lcDs) {
           const g = o.s - car.s - car.lcDs - (o.len + car.len) / 2
           if (o.drop?.k > 1) truck = o
-          else if (g < gap && !this.besideStuck(car, o, g)) {
+          else if (g < gap && !this.besideStuck(car, o, g) && !(car.from.hw && this.clearOf(car, o, g))) {
             gap = g
             vl = o.v
             blk = o
@@ -101,7 +101,8 @@ export const DRIVE = {
     W.vl = vl
     W.blk = blk
     const me = this.me
-    if (me) {
+    // (not one on another level: under the freeway's deck, or up on it)
+    if (me && Math.abs(me.y - car.y) < 3) {
       const mv = this.mev
       // (the size of whatever the player drives: onFoot.js sets it for a car not the Roadster)
       put(me.x, me.z, mv.x, mv.z, this.mhx, this.mhz, this.meHL || 2.22, this.meHW || 0.99)
@@ -174,8 +175,7 @@ export const DRIVE = {
         : 0
     if (
       odd > 0 &&
-      e.road &&
-      e.twin &&
+      ((e.road && e.twin) || this.hasSide(e)) &&
       !car.lc &&
       car.s + gap < e.len - 15 &&
       gap > car.s0
@@ -197,6 +197,8 @@ export const DRIVE = {
         ? Infinity
         : car.siren === 1
         ? this.callLights(car, e, dt)
+        : NODES[e.to].stop
+        ? this.stopSign(car, e, dt) // (an all-way stop: trafficStop.js)
         : this.lights(car, e, dt)
     if (car.pull || this.call.on || this.sirens?.length) g = Math.min(g, this.giveWay(car, dt))
     if (car.type === this.idx.truck) g = Math.min(g, this.deliver(car, dt))
@@ -224,6 +226,7 @@ export const DRIVE = {
         )
     }
     if (car.tuck) v0 *= 0.7 // tucked in to let the Roadster by
+    if (car.letIn) v0 = Math.min(v0, car.letIn) // (letting someone in: laneChangeFwy.js)
     if (car.squeeze) v0 = Math.min(v0, 1.5)
     const v = car.v
     // intelligent driver model, with the driver's own settings
@@ -376,7 +379,9 @@ export const DRIVE = {
       stop = this.oncoming(node, e.dir, false, car.gapT)
       // waiting at the line to turn across the oncoming traffic, a long one however short a gap
       // comes that it can't take (and moving off into a gap, committed to it)
-      car.lw = (stop || long) && toLine < 5 ? car.lw + dt : 0
+      // (a gap that opens before it has moved off doesn't wipe out the wait: else, gone again by the
+      // time it reacts, the turn would never get its chance to sneak through on the amber)
+      car.lw = (stop || long) && toLine < 5 ? car.lw + dt : v < 0.3 && toLine < 5 ? car.lw : 0
       if (!stop && toLine < 1.5 && v > 1) car.go = e
     } else if (
       stop &&

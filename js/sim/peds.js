@@ -348,8 +348,9 @@ export class Peds {
       // over on the walk (not in its last half second), once nothing is on the crossing or right
       // at it (nor a police car on a call coming over the junction: traffic.urgent, calls.js)
       if (
-        walkOn(p.cross.node, p.cross.axis, t) &&
-        walkOn(p.cross.node, p.cross.axis, t + 0.5) &&
+        (p.cross.node.stop
+          ? this.traffic.stopWalk(p.cross.node) // (an all-way stop: trafficStop.js)
+          : walkOn(p.cross.node, p.cross.axis, t) && walkOn(p.cross.node, p.cross.axis, t + 0.5)) &&
         this.clearOver(p.cross) &&
         !this.traffic.urgent(p.cross.node)
       ) {

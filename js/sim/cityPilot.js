@@ -318,6 +318,11 @@ export class CityPilot {
         const node = NODES[lane.to],
           st = signal(node, lane.dir, this.traffic.t)
         let stop = st !== GREEN
+        // (an all-way stop, trafficStop.js: stopped at the line and the junction clear, on it goes)
+        if (node.stop) {
+          stop = !(v < 0.5 && toLine < 3 && this.traffic.stopWalk(node))
+          if (!stop) this.go = lane
+        }
         if (st === YELLOW && v * v > 2 * 8 * Math.max(0, toLine - 1)) {
           this.go = lane // too close to stop: carry on through
           stop = false
