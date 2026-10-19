@@ -40,6 +40,7 @@ export function stadium (blk, lot) {
   const b = building('stadium', { style: 'concrete', tint: 0xe6e2da })
   shaft(b, ring(cx, cz, rx, rz, 32), 0, h, { smooth: true })
   b.stadium = { cx, cz, rx, rz, h }
+  stands(b.stadium)
   for (const [sx, sz] of [
     [-1, -1],
     [1, -1],
@@ -51,9 +52,44 @@ export function stadium (blk, lot) {
     post(x, z, 0.7, 42, 'mast')
     prop('mast', { x, z, h: 42, big: true })
   }
-  for (let i = 0; i < 10; i++) palm(x0 + 8 + i * 17, cz - 50, 20 + R() * 6, true)
-  for (let i = 0; i < 10; i++) palm(x0 + 8 + i * 17, cz + 50, 20 + R() * 6, true)
+  for (let i = 0; i < 10; i++)
+    palm(x0 + 8 + i * 17, cz - 50, 20 + R() * 6, true)
+  for (let i = 0; i < 10; i++)
+    palm(x0 + 8 + i * 17, cz + 50, 20 + R() * 6, true)
   billboard(x1 - 10, z0 + 40, 1)
+}
+
+// The bowl's stands and canopy over the drum (drawn: cityStadium.js) as solids, so a car come down
+// on the drum is held by them: the lower tier a step to its top, the upper tier and the back wall up
+// to the canopy's struts, the canopy a roof (each a ring of boxes round the bowl, a band at a time)
+const SEGS = 48
+function stands (s) {
+  const y = s.h
+  for (const [f0, f1, y0, y1] of [
+    [0.58, 0.68, y, y + 4],
+    [0.68, 0.78, y, y + 8],
+    [0.78, 0.9, y, y + 13],
+    [0.9, 1, y, y + 18],
+    [0.8, 0.91, y + 22.2, y + 23],
+    [0.91, 1.02, y + 22.2, y + 23]
+  ])
+    for (let i = 0; i < SEGS; i++) {
+      let x0 = Infinity,
+        x1 = -Infinity,
+        z0 = Infinity,
+        z1 = -Infinity
+      for (const t of [i, i + 1])
+        for (const f of [f0, f1]) {
+          const a = (t / SEGS) * Math.PI * 2,
+            x = s.cx + Math.cos(a) * s.rx * f,
+            z = s.cz + Math.sin(a) * s.rz * f
+          x0 = Math.min(x0, x)
+          x1 = Math.max(x1, x)
+          z0 = Math.min(z0, z)
+          z1 = Math.max(z1, z)
+        }
+      solid(x0, x1, z0, z1, y0, y1, 'building', 'stand')
+    }
 }
 
 // ---------- the LA River ----------
@@ -91,7 +127,8 @@ export function corridor (blk, lot, deckZ0, deckZ1, ramps, end) {
   ]) {
     if (ramps.includes(side)) continue
     ground(blk, 'grass', x0, x1, za + 1, zb - 1)
-    for (let x = x0 + 5; x < x1 - 3; x += 11) tree(x, (za + zb) / 2, 0.8 + R() * 0.3)
+    for (let x = x0 + 5; x < x1 - 3; x += 11)
+      tree(x, (za + zb) / 2, 0.8 + R() * 0.3)
   }
 }
 
@@ -116,7 +153,14 @@ export function sportsPark (blk, lot) {
   // a ball field to the south, bleachers by it, floodlights
   ground(blk, 'dirt', cx - 22, cx + 22, z1 - 46, z1 - 4)
   solid(x1 - 9, x1 - 2, z1 - 40, z1 - 12, 0, 3, 'building', 'prop')
-  prop('bleachers', { x0: x1 - 9, x1: x1 - 2, z0: z1 - 40, z1: z1 - 12, h: 3, face: 3 })
+  prop('bleachers', {
+    x0: x1 - 9,
+    x1: x1 - 2,
+    z0: z1 - 40,
+    z1: z1 - 12,
+    h: 3,
+    face: 3
+  })
   for (const [x, z] of [
     [x0 + 2, z1 - 4],
     [x1 - 2, z1 - 46]
@@ -124,7 +168,8 @@ export function sportsPark (blk, lot) {
     post(x, z, 0.3, 18, 'mast')
     prop('mast', { x, z, h: 18 })
   }
-  for (let i = 0; i < 14; i++) tree(x0 + 3 + R() * 10, z0 + 26 + R() * 40, 0.8 + R() * 0.5)
+  for (let i = 0; i < 14; i++)
+    tree(x0 + 3 + R() * 10, z0 + 26 + R() * 40, 0.8 + R() * 0.5)
 }
 
 // ---------- parking garages ----------
@@ -133,11 +178,23 @@ export const GARAGE_H = 6.4
 export function garage (blk, lot) {
   blk.base = 'asphalt'
   const { x0, x1, z0, z1 } = lot
-  const b = building('garage', { style: 'garage', tint: pick([0xd9d4c9, 0xcfcac0, 0xe0dacd]) })
+  const b = building('garage', {
+    style: 'garage',
+    tint: pick([0xd9d4c9, 0xcfcac0, 0xe0dacd])
+  })
   tier(b, x0 + 1, x1 - 1, z0 + 9, z1 - 1, 0, GARAGE_H)
   b.garage = true
   // the ramp along the north side, rising east to the roof's edge
   ramp(x0 + 1, x1 - 1, z0 + 1, z0 + 9, 'x', 0, GARAGE_H)
   solid(x0 + 1, x1 - 1, z0 + 0.6, z0 + 1, 0, GARAGE_H + 1, 'plant', 'parapet')
-  sign('mall', { x: x1 - 3, z: z1 - 1, y: 2.5, w: 3, h: 3, d: 0.3, face: 2, k: R() })
+  sign('mall', {
+    x: x1 - 3,
+    z: z1 - 1,
+    y: 2.5,
+    w: 3,
+    h: 3,
+    d: 0.3,
+    face: 2,
+    k: R()
+  })
 }
