@@ -70184,6 +70184,8 @@ __define(68, function (__exports) {
 // junction to stop short of it goes on over first. Anyone coming up to the junction it is
 // crossing holds at the line while it crosses, if they can still stop; and the people waiting to
 // cross there stay on the kerb (peds.js asks Traffic.urgent, calls.js).
+// The police on a chase with their sirens going (police.js puts them in Traffic.sirens) are made
+// way for the same way, each driver pulling over for the one coming up behind them (car.yieldTo).
 // car.pull: 0 driving on, 1 pulling over (or pulled over), 3 it has gone by (off again in a
 // moment), 2 pulling back out; car.pullT: s in that state; car.pullS: where it stops on its lane.
 const { LANE_W, LANE_OFF, ROAD_HW } = __require(26)
@@ -70194,12 +70196,13 @@ const MAKEWAY = {
   // it is crossing, or pulled over at the kerb in front of it), or Infinity
   giveWay (car, dt) {
     const C = this.call,
-      S = C.on ? C.car : null
-    if (car === C.car) return Infinity
+      S = C.on ? C.car : this.sirenFor(car)
+    if (car === C.car || car.ctl) return Infinity
     const e = car.edge
     let gap = Infinity
     // the junction it is crossing, or about to: hold at the line, if it can still stop there
     if (
+      C.on &&
       S &&
       C.node &&
       e.road &&
@@ -70251,6 +70254,7 @@ const MAKEWAY = {
     if (stop > line && car.v * car.v > 2 * car.b * Math.max(0, line - car.s))
       return
     car.pull = 1
+    car.yieldTo = S
     car.pullT = 0
     car.pullS = Math.min(stop, line)
   },
@@ -70301,8 +70305,28 @@ const MAKEWAY = {
     car.want = Math.abs(car.off) > 0.25 ? 1 : 0
     if ((car.pullT += dt) > 4 || Math.abs(car.off) < 0.05) {
       car.pull = 0
+      car.yieldTo = null
       car.pullT = -12
     }
+  },
+  // (no call on) the police car with its siren on this driver makes way for: the one it is already
+  // pulled over for while that one still has its siren on, else the nearest coming up behind it
+  sirenFor (car) {
+    const L = this.sirens
+    if (!L || !L.length) return null
+    if (car.pull) return L.includes(car.yieldTo) ? car.yieldTo : null
+    let best = null,
+      bd = 80
+    for (const S of L) {
+      const dx = car.x - S.x,
+        dz = car.z - S.z
+      const along = dx * S.hx + dz * S.hz
+      if (along > 0 && along < bd && Math.abs(dz * S.hx - dx * S.hz) < 6) {
+        bd = along
+        best = S
+      }
+    }
+    return best
   },
   // How far in towards the kerb it can go: up to it, in the kerb lane; half into the kerb lane from
   // the inner one, as far as the cars there alongside leave room
@@ -71907,7 +71931,7 @@ const DRIVE = {
         : car.siren === 1
         ? this.callLights(car, e, dt)
         : this.lights(car, e, dt)
-    if (car.pull || this.call.on) g = Math.min(g, this.giveWay(car, dt))
+    if (car.pull || this.call.on || this.sirens?.length) g = Math.min(g, this.giveWay(car, dt))
     if (car.type === this.idx.truck) g = Math.min(g, this.deliver(car, dt))
     if (g < gap) {
       gap = g
@@ -103974,6 +103998,9 @@ function steerTo (b, inp, tx, tz, vWant, { stopAt = 0 } = {}) {
   }
   inp.throttle = clamp((v - u) * 0.35, 0, 1)
   inp.brake = u > v + 1.5 ? clamp((u - v) * 0.25, 0, 1) : 0
+  // (a point to stop at: firmly, and held there once at it)
+  if (stopAt > 0 && u > v + 0.3) inp.brake = Math.max(inp.brake, clamp((u - v) * 0.6, 0.2, 1))
+  if (stopAt > 0 && d < stopAt + 0.5) inp.brake = 1
   if (inp.brake > 0) inp.throttle = 0
   return err
 }
@@ -104551,6 +104578,7 @@ class Police {
     this.hits = [] // this step's rams between the player and a unit: { impact, byPlayer, unit }
     this.chase = { on: false, car: null, mode: 0, kind: 0, whoops: 0, horns: 0, long: false }
     traffic.chase = this.chase // (heard as the siren: audio/siren.js)
+    traffic.sirens = this.sirens = [] // (made way for: makeway.js)
   }
   get pursuing () {
     let n = 0
@@ -104574,6 +104602,7 @@ class Police {
   }
   clearAll () {
     for (const u of [...this.units]) this.remove(u)
+    this.sirens.length = 0
     this.heli.gone()
   }
 
@@ -104642,6 +104671,10 @@ class Police {
       }
     }
     this.seen = seen
+    // the units the traffic pulls over for: lights on and on the move
+    this.sirens.length = 0
+    for (const u of this.units)
+      if (u.car.siren && (u.role === 'pursuit' || u.role === 'npc') && u.state !== 'leave' && u.body.u > 3) this.sirens.push(u.car)
     this.retire(dt, player, view, stars)
     this.siren(player)
   }
@@ -104758,7 +104791,26 @@ function bodies (a, b) {
   b.w = w1 + clamp(b.w - w1, -2, 2)
   return impact
 }
-__export(__exports, { "UNITS": () => UNITS, "SPAWN_MIN": () => SPAWN_MIN, "SPAWN_MAX": () => SPAWN_MAX, "ROADBLOCK_STARS": () => ROADBLOCK_STARS, "HELI_STARS": () => HELI_STARS, "inView": () => inView, "spawnPoint": () => spawnPoint, "Police": () => Police })
+
+// The arrest: wanted, with a unit stopped beside them in sight (Police.bustable), a player slow
+// enough (at a standstill in a car; walking pace on foot) for BUST_T s is busted; moving on lets
+// the count run back down twice as fast. step: true the moment they are busted.
+const BUST_T = 2.5
+const BUST_V = { car: 1.5, foot: 2.5 }
+class Arrest {
+  constructor () {
+    this.t = 0
+  }
+  step (dt, stars, police, player) {
+    const slow = player.speed < (player.driving ? BUST_V.car : BUST_V.foot)
+    const on = stars > 0 && police.bustable > 0 && slow
+    this.t = on ? this.t + dt : Math.max(0, this.t - dt * 2)
+    if (this.t <= BUST_T) return false
+    this.t = 0
+    return true
+  }
+}
+__export(__exports, { "UNITS": () => UNITS, "SPAWN_MIN": () => SPAWN_MIN, "SPAWN_MAX": () => SPAWN_MAX, "ROADBLOCK_STARS": () => ROADBLOCK_STARS, "HELI_STARS": () => HELI_STARS, "inView": () => inView, "spawnPoint": () => spawnPoint, "Police": () => Police, "BUST_T": () => BUST_T, "BUST_V": () => BUST_V, "Arrest": () => Arrest })
 })
 
 // ---- js/sim/missions/spots.js
@@ -104767,8 +104819,28 @@ __define(217, function (__exports) {
 // corner, 1, 1 its south-east) rather than coordinates, so they keep their meaning on a bigger map
 // (the world workstream's): spot(fx, fz) is the nearest point on a street open to traffic, by the
 // kerb of its outer lane (route.js snap does the snapping). Pure: no DOM.
-const { NODES, LANES, LANE_OFF } = __require(26)
+const { NODES, LANES, LANE_OFF, BLOCKS } = __require(26)
 let B = null
+// the middle of the car park (a 'parking' block) nearest the fraction (fx, fz) of the map, facing
+// east; with none on the map, the kerbside spot there instead
+function lotSpot (fx, fz) {
+  const b = bounds()
+  const x = b.x0 + fx * (b.x1 - b.x0),
+    z = b.z0 + fz * (b.z1 - b.z0)
+  let best = null,
+    bd = Infinity
+  for (const k of BLOCKS) {
+    if (k.kind !== 'parking') continue
+    const cx = (k.x0 + k.x1) / 2,
+      cz = (k.z0 + k.z1) / 2,
+      d = Math.hypot(cx - x, cz - z)
+    if (d < bd) {
+      bd = d
+      best = { x: cx, z: cz, yaw: 0, lane: null, s: 0, lot: true }
+    }
+  }
+  return best || spot(fx, fz)
+}
 function bounds () {
   if (B && B.n === NODES.length) return B
   B = { x0: Infinity, x1: -Infinity, z0: Infinity, z1: -Infinity, n: NODES.length }
@@ -104817,7 +104889,7 @@ function nearestKerb (x, z, kerb = true) {
 }
 // a list of spots
 const spots = list => list.map(([fx, fz]) => spot(fx, fz))
-__export(__exports, { "bounds": () => bounds, "spot": () => spot, "nearestKerb": () => nearestKerb, "spots": () => spots })
+__export(__exports, { "lotSpot": () => lotSpot, "bounds": () => bounds, "spot": () => spot, "nearestKerb": () => nearestKerb, "spots": () => spots })
 })
 
 // ---- js/sim/ambient.js
@@ -105193,9 +105265,74 @@ const TAXI = {
 __export(__exports, { "TAXI": () => TAXI })
 })
 
-// ---- js/sim/missions/index.js
+// ---- js/sim/missions/getaway.js
 __define(224, function (__exports) {
-// The missions on offer (each a data file of its own: drive, race, escape, deliver, taxi), for the
+// Mission: a getaway: the alarm is already ringing (two stars), get to the safehouse garage before
+// the clock runs out, then lie low there until the heat dies down
+const GETAWAY = {
+  id: 'getaway',
+  title: 'Smash and Dash',
+  brief: 'The alarm is ringing. Reach the safehouse before they close the net, then lose them.',
+  start: [0.85, 0.2],
+  color: '#bb6bd9',
+  reward: 2200,
+  wanted: 2,
+  objectives: [
+    { type: 'goto', at: [0.35, 0.75], r: 10, time: 70, vehicle: true, text: 'Get to the <b>safehouse</b>' },
+    { type: 'evade', text: 'Lie low: lose the <b>cops</b>' }
+  ]
+}
+__export(__exports, { "GETAWAY": () => GETAWAY })
+})
+
+// ---- js/sim/missions/valet.js
+__define(225, function (__exports) {
+// Mission: a valet run: collect a client from the car park, then get them to their dinner in
+// Beverly Hills on time; the tip grows with the time to spare
+const VALET = {
+  id: 'valet',
+  title: 'Valet Run',
+  brief: 'Collect the client from the car park and get them to dinner on time.',
+  start: [0.55, 0.55],
+  color: '#27ae60',
+  reward: 900,
+  tip: 12,
+  objectives: [
+    { type: 'pickup', lot: [0.8, 0.8], r: 14, wait: 2, time: 60, text: 'Pick up the client in the <b>car park</b>' },
+    { type: 'dropoff', at: [0.35, 0.12], r: 9, wait: 1, time: 85, text: 'Take them to dinner in <b>Beverly Hills</b>' }
+  ]
+}
+__export(__exports, { "VALET": () => VALET })
+})
+
+// ---- js/sim/missions/trial.js
+__define(226, function (__exports) {
+// Mission: a time trial round the edge of town (the coast road, the hills' edge, downtown and
+// back): no time back for the checkpoints, just the clock; the hill road (the world workstream's)
+// will make a better course once it is in
+const TRIAL = {
+  id: 'trial',
+  title: 'Coast to Core',
+  brief: 'One lap of the edge of town against the clock. No time back: drive clean.',
+  start: [0.05, 0.6],
+  color: '#f2c94c',
+  reward: 1800,
+  objectives: [
+    {
+      type: 'checkpoints',
+      points: [[0.03, 0.3], [0.05, 0.03], [0.4, 0.03], [0.75, 0.05], [0.95, 0.35], [0.7, 0.55], [0.35, 0.55], [0.06, 0.62]],
+      r: 12
+    }
+  ],
+  timer: 95
+}
+__export(__exports, { "TRIAL": () => TRIAL })
+})
+
+// ---- js/sim/missions/index.js
+__define(227, function (__exports) {
+// The missions on offer (each a data file of its own: drive, race, escape, deliver, taxi,
+// getaway, valet, trial), for the
 // manager (manager.js). A mission: { id, title, brief, start ([fx, fz]: spots.js), color, reward,
 // tip?, timer? (s for the whole mission), wanted? (stars on starting), target? ({ model, near }: a
 // car parked for it), objectives: [{ type (objectives.js), ...its data, time? (s for this one) }] }
@@ -105204,23 +105341,27 @@ const { RACE } = __require(220)
 const { ESCAPE } = __require(221)
 const { DELIVER } = __require(222)
 const { TAXI } = __require(223)
-const MISSIONS = [DRIVE, RACE, ESCAPE, DELIVER, TAXI]
+const { GETAWAY } = __require(224)
+const { VALET } = __require(225)
+const { TRIAL } = __require(226)
+const MISSIONS = [DRIVE, RACE, ESCAPE, DELIVER, TAXI, GETAWAY, VALET, TRIAL]
 const missionById = id => MISSIONS.find(m => m.id === id) || null
 __export(__exports, { "MISSIONS": () => MISSIONS, "missionById": () => missionById })
 })
 
 // ---- js/sim/missions/objectives.js
-__define(225, function (__exports) {
+__define(228, function (__exports) {
 // What each kind of mission objective asks, and how it is judged (manager.js runs them): each a
 // { text, start, check } over the objective's data (o), its live state (st) and the mission's
 // context (ctx: { player (playerView), wanted, events (this step's game events), dt }).
 // check returns 'done', 'fail' (with st.why) or nothing (still on it). Pure: no DOM.
-const { spot } = __require(217)
+const { spot, lotSpot } = __require(217)
 const near = (p, at, r) => Math.hypot(p.x - at.x, p.z - at.z) < r
-// a place in an objective: { at: [fx, fz] } (spots.js), or { x, z } already
+// a place in an objective: { at: [fx, fz] } (spots.js), { lot: [fx, fz] } (the car park nearest
+// there), or { x, z } already
 const place = o => {
   if (o._at) return o._at
-  o._at = Array.isArray(o.at) ? spot(o.at[0], o.at[1]) : o.at
+  o._at = o.lot ? lotSpot(o.lot[0], o.lot[1]) : Array.isArray(o.at) ? spot(o.at[0], o.at[1]) : o.at
   return o._at
 }
 const model = v => v?.model || ''
@@ -105341,7 +105482,7 @@ __export(__exports, { "place": () => place, "OBJECTIVES": () => OBJECTIVES })
 })
 
 // ---- js/sim/missions/manager.js
-__define(226, function (__exports) {
+__define(229, function (__exports) {
 // The missions' state machine. Idle, every mission on offer has a marker in the world (its start:
 // spots.js); drive (or walk) into one, slowly enough, and it starts (never forced). Running, its
 // objectives (objectives.js) come one after another, each with the place it points at (for the
@@ -105350,8 +105491,8 @@ __define(226, function (__exports) {
 // reward (and any tip for time to spare) goes on the cash. Side effects (the wanted level, a car to
 // steal, the GPS) are the game's (game.js) through the hooks: on.start(def), on.end(def, passed),
 // on.objective(def, o, st). Pure: no DOM.
-const { MISSIONS } = __require(224)
-const { OBJECTIVES } = __require(225)
+const { MISSIONS } = __require(227)
+const { OBJECTIVES } = __require(228)
 const { spot } = __require(217)
 const START_R = 6 // m: in the marker
 const START_V = 14 // m/s at most to start one, driving in
@@ -105500,7 +105641,7 @@ __export(__exports, { "START_R": () => START_R, "START_V": () => START_V, "LEAVE
 })
 
 // ---- js/sim/playerView.js
-__define(227, function (__exports) {
+__define(230, function (__exports) {
 // What the game's systems (the wanted level, the police, the missions, the street events) know of
 // the player, read through one small adapter so that they never depend on where the player lives.
 // The foot workstream's player.js is bound (game.js: bindPlayer(player, { health, driven })): the
@@ -105620,7 +105761,7 @@ __export(__exports, { "playerView": () => playerView, "bindSim": () => bindSim, 
 })
 
 // ---- js/sim/player.js
-__define(228, function (__exports) {
+__define(231, function (__exports) {
 // The player: one state for whoever the game is following, on foot or at the wheel, and the
 // third-person on-foot movement (walk, run, jump, collision with buildings, posts, cars and kerbs).
 // Pure maths on plain objects (no DOM, no three.js), so it runs headless in Node for tests. Everyone
@@ -105998,7 +106139,7 @@ __export(__exports, { "FOOT": () => FOOT, "player": () => player, "isOnFoot": ()
 })
 
 // ---- js/render/crimeView.js
-__define(229, function (__exports) {
+__define(232, function (__exports) {
 // What the game's systems put in the world to see (game.js updates it each frame): the missions'
 // markers, GTA's glowing cylinders with a ring on the ground (a mission's start, the place an
 // objective points at, the next checkpoint dimmer), and the police helicopter overhead, rotor
@@ -106007,7 +106148,7 @@ __define(229, function (__exports) {
 // traffic's, drawn by render/traffic.js with their light bars going.
 const THREE = __require(0)
 const { scene, canvasTex } = __require(55)
-const MAX_MARKERS = 8
+const MAX_MARKERS = 12
 // a soft fade from the bottom up: the cylinder's glow
 const fadeTex = canvasTex(
   64,
@@ -106124,8 +106265,8 @@ class CrimeView {
       m.visible = !!k
       if (!k) continue
       const { tube, base, pool } = m.userData
-      const r = k.kind === 'start' ? 2.2 : k.kind === 'next' ? 3.2 : 4.2
-      const h = k.kind === 'start' ? 3.6 : k.kind === 'next' ? 4 : 7
+      const r = k.kind === 'start' ? 2.6 : k.kind === 'next' ? 3.2 : 4.2
+      const h = k.kind === 'start' ? 4.6 : k.kind === 'next' ? 4 : 7
       m.position.set(k.x, 0.06, k.z)
       tube.scale.set(r, h * (1 + 0.05 * Math.sin(t * 3 + i)), r)
       base.scale.setScalar(r)
@@ -106133,7 +106274,7 @@ class CrimeView {
       const c = k.color || '#ffd040'
       for (const o of [tube, base, pool]) o.material.color.set(c)
       const a = k.kind === 'next' ? 0.4 : 1
-      tube.material.opacity = (0.55 + 0.25 * Math.sin(t * 2.4 + i)) * a * (1 - 0.3 * dark)
+      tube.material.opacity = (0.75 + 0.2 * Math.sin(t * 2.4 + i)) * a * (1 - 0.3 * dark)
       base.material.opacity = 0.85 * a
       pool.material.opacity = 0.3 * a
     }
@@ -106168,7 +106309,7 @@ __export(__exports, { "CrimeView": () => CrimeView })
 })
 
 // ---- js/ui/crimeHud.js
-__define(230, function (__exports) {
+__define(233, function (__exports) {
 // The game's own HUD, GTA's way (game.js drives it): the cash and the wanted stars top right (the
 // stars only while wanted, flashing while the police search), the mission's objective along the
 // bottom and its clock top middle, the big titles (a mission's name as it starts, MISSION PASSED
@@ -106320,7 +106461,7 @@ __export(__exports, { "CrimeHud": () => CrimeHud })
 })
 
 // ---- js/ui/crimeMap.js
-__define(231, function (__exports) {
+__define(234, function (__exports) {
 // The game's marks on the radar (minimap.js's overlay hook) and the pause menu's map (mapDraw.js's):
 // the police as red and blue blips flashing by turns, the helicopter, the search circle round the
 // last known position (red and blue, pulsing, while the stars flash), the missions' blips in their
@@ -106437,7 +106578,7 @@ __export(__exports, { "radarOverlay": () => radarOverlay, "mapOverlay": () => ma
 })
 
 // ---- js/game.js
-__define(232, function (__exports) {
+__define(235, function (__exports) {
 // The game on top of the drive: the wanted level and the police (sim/wanted.js, police.js), the
 // missions (sim/missions/) and the street events (sim/ambient.js), their marks in the world
 // (render/crimeView.js), on the HUD (ui/crimeHud.js) and on the maps (ui/crimeMap.js), and busted
@@ -106450,24 +106591,23 @@ const { ENV } = __require(3)
 const { IDX } = __require(72)
 const { STALLS, rng } = __require(26)
 const { Wanted } = __require(211)
-const { Police } = __require(216)
+const { Police, Arrest } = __require(216)
 const { Ambient } = __require(218)
 const { witnesses } = __require(213)
-const { MissionManager } = __require(226)
+const { MissionManager } = __require(229)
 const { spot, nearestKerb } = __require(217)
 const { emitGame, onGame } = __require(82)
-const { playerView, bindPlayer, updatePlayerView, setWanted } = __require(227)
-const { player } = __require(228)
-const { CrimeView } = __require(229)
-const { CrimeHud } = __require(230)
-const { radarOverlay, mapOverlay } = __require(231)
+const { playerView, bindPlayer, updatePlayerView, setWanted } = __require(230)
+const { player } = __require(231)
+const { CrimeView } = __require(232)
+const { CrimeHud } = __require(233)
+const { radarOverlay, mapOverlay } = __require(234)
 const { gps } = __require(41)
 const { recall, remember } = __require(7)
 // where the player is put back: the nearest hospital (wasted) or police station (busted), as
 // fractions of the map (missions/spots.js)
 const HOSPITALS = [[0.18, 0.15], [0.78, 0.38], [0.35, 0.86]]
 const STATIONS = [[0.52, 0.45], [0.12, 0.7], [0.86, 0.82]]
-const BUST_T = 2.5 // s at a standstill with a unit beside you
 const PENALTY = { busted: 500, wasted: 1000 }
 const DOWN_T = 3.6 // s of BUSTED / WASTED before the fade
 
@@ -106488,7 +106628,8 @@ class Game {
     this.crimes = [] // crimes since the last step, to be witnessed
     this.events = [] // every game event since the last step (the missions read them)
     this.down = null // { kind: 'busted' | 'wasted', t }
-    this.bustT = 0
+    this.arrest = new Arrest()
+    this.alive = { key: 'foot', hp: 1 } // (wasted is the health running out, not getting into a wreck)
     this.targetCar = null // a car parked for a mission to steal
     this.goal = null // the GPS waypoint a mission set
     this.hinted = new Map()
@@ -106601,10 +106742,20 @@ class Game {
     this.events.length = 0
     // busted: stopped with a unit beside you while wanted; wasted: the car (or you) done for
     // (on foot, walking pace is slow enough to be caught)
-    const bust = W.stars > 0 && this.police.bustable > 0 && P.speed < (P.driving ? 1.5 : 2.5)
-    this.bustT = bust ? this.bustT + h : Math.max(0, this.bustT - h * 2)
-    if (this.bustT > BUST_T) this.fall('busted')
-    else if (P.health <= 0) this.fall('wasted')
+    if (this.arrest.step(h, W.stars, this.police, P)) return this.fall('busted')
+    if (this.wasted(P)) this.fall('wasted')
+  }
+  // wasted: the health running out in the same body (on foot, or the same car); climbing into a
+  // car that is already a wreck is not, it just won't go (and says so)
+  wasted (P) {
+    const key = player.mode === 'car' ? String(P.vehicle?.id ?? 'car') : 'foot',
+      hp = P.health,
+      A = this.alive
+    const out = hp <= 0 && A.key === key && A.hp > 0
+    if (hp <= 0 && A.key !== key && key !== 'foot') this.hud?.popup?.('Wrecked', 1800, 'hint')
+    A.key = key
+    A.hp = hp
+    return out
   }
 
   // the sim's own knocks this frame (main.js passes sim.events): a hard one into the traffic is a
@@ -106617,7 +106768,7 @@ class Game {
 
   fall (kind) {
     this.down = { kind, t: 0 }
-    this.bustT = 0
+    this.arrest.t = 0
     emitGame(kind, { pos: { x: playerView.pos.x, z: playerView.pos.z } })
     const pay = Math.min(this.missions.cash, PENALTY[kind])
     this.missions.cash -= pay
@@ -106719,11 +106870,11 @@ class Game {
     emitGame('car-stolen', { vehicle: 'debug', kind: 'parked', model, pos: { x: playerView.pos.x, z: playerView.pos.z }, how: 'break' })
   }
 }
-__export(__exports, { "HOSPITALS": () => HOSPITALS, "STATIONS": () => STATIONS, "BUST_T": () => BUST_T, "PENALTY": () => PENALTY, "Game": () => Game })
+__export(__exports, { "HOSPITALS": () => HOSPITALS, "STATIONS": () => STATIONS, "PENALTY": () => PENALTY, "Game": () => Game })
 })
 
 // ---- js/sim/vehicles.js
-__define(233, function (__exports) {
+__define(236, function (__exports) {
 // Every car the player can get into, in one registry: the Roadster, the traffic's cars on the road
 // and the cars parked in the lots (and the jammed street's). Pure (no DOM), so it is tested in Node.
 // Each entry is stable for as long as its car exists (a WeakMap keeps it), so what is learnt about a
@@ -106927,7 +107078,7 @@ __export(__exports, { "layoutFor": () => layoutFor, "vehicles": () => vehicles }
 })
 
 // ---- js/sim/drivable.js
-__define(234, function (__exports) {
+__define(237, function (__exports) {
 // Any car the player drives that isn't the Roadster, on the drive workstream's stack: the traffic
 // car is taken off its driver (traffic.takeOver: handover.js), given a body of its handling class
 // (vehicleLink.js bodyFromTraffic, vehicleSim.js stepVehicle, handling.js), knocks the city and the
@@ -107034,7 +107185,7 @@ __export(__exports, { "carInput": () => carInput, "Drivable": () => Drivable })
 })
 
 // ---- js/sim/carsMeet.js
-__define(235, function (__exports) {
+__define(238, function (__exports) {
 // Two of the player's sims meeting: the car the player drives (drivable.js: a, its spec sp)
 // against the Roadster left in the street (b). Pushed apart by mass, momentum traded, a 'bump' for
 // each (heard, and the Roadster dented). Pure, for the Node tests.
@@ -107105,7 +107256,7 @@ __export(__exports, { "carsMeet": () => carsMeet })
 })
 
 // ---- js/sim/boarding.js
-__define(236, function (__exports) {
+__define(239, function (__exports) {
 // Getting into a car and out of it, as timed phases (pure: the render poses the body and the door
 // from them, onFoot.js runs them). Into a car: walk round to the driver's door (the car's other
 // side, its nose or tail in the way, walked round), then
@@ -107115,8 +107266,8 @@ __define(236, function (__exports) {
 //                        then the window goes, and now and then the alarm), then as above
 //   a car with a driver: the door opens, the driver is pulled out (and runs), slide in
 // Out of one: the door opens, slide out onto a free spot beside it, the door shuts.
-const { stepFoot, freeSpot, FOOT } = __require(228)
-const { vehicles } = __require(233)
+const { stepFoot, freeSpot, FOOT } = __require(231)
+const { vehicles } = __require(236)
 const { wrapPi } = __require(2)
 const BOARD = {
   walkV: 2.6, // m/s walking up to the door
@@ -107340,11 +107491,11 @@ __export(__exports, { "BOARD": () => BOARD, "howToEnter": () => howToEnter, "sta
 })
 
 // ---- js/ui/prompt.js
-__define(237, function (__exports) {
+__define(240, function (__exports) {
 // The prompt by a car the player can get into, GTA's: the key, what it does and the car ("E Break
 // in · Sedan"), and what is happening while they get in (onFoot.js shows it in #prompt).
-const { vehicles } = __require(233)
-const { howToEnter } = __require(236)
+const { vehicles } = __require(236)
+const { howToEnter } = __require(239)
 const PROMPT_R = 2.4 // m from a car's body that it offers to be got into
 const TITLE = {
   roadster: 'Roadster',
@@ -107389,7 +107540,7 @@ __export(__exports, { "PROMPT_R": () => PROMPT_R, "TITLE": () => TITLE, "VERB": 
 })
 
 // ---- js/render/footView.js
-__define(238, function (__exports) {
+__define(241, function (__exports) {
 // The player on foot, drawn: Optimus (optimus.js), out of the Roadster and walking the city, its
 // legs and arms swinging with its pace (a longer, quicker stride and a lean running), legs tucked in
 // a jump, flat on its back knocked over; and getting into a car and out of it (boarding.js): at the
@@ -107400,8 +107551,8 @@ __define(238, function (__exports) {
 const THREE = __require(0)
 const { buildOptimus, poseOptimus, HIP_STAND } = __require(59)
 const { boardRoadster, BOARD_T } = __require(61)
-const { doorOf, seatShare, BOARD } = __require(236)
-const { vehicles } = __require(233)
+const { doorOf, seatShare, BOARD } = __require(239)
+const { vehicles } = __require(236)
 const { clamp, wrapPi } = __require(2)
 const STRIDE = { walk: 1.45, run: 2.4 } // m per pair of steps
 const ease = t => t * t * (3 - 2 * t)
@@ -107626,7 +107777,7 @@ __export(__exports, { "FootView": () => FootView })
 })
 
 // ---- js/render/footCam.js
-__define(239, function (__exports) {
+__define(242, function (__exports) {
 // The camera on foot: GTA's third-person orbit over the player's shoulder. The mouse (the pointer
 // locked to the picture: a click) or a gamepad's right stick swings it round and up and down; the
 // wheel brings it in or lets it out. It follows the player smoothly, keeps out of buildings
@@ -107723,7 +107874,7 @@ __export(__exports, { "FootCam": () => FootCam })
 })
 
 // ---- js/audio/steps.js
-__define(240, function (__exports) {
+__define(243, function (__exports) {
 // The player's footsteps on foot (onFoot.js): Optimus's tread from the sample bank (buffers.js), its
 // colour by what is underfoot (a hard heel on the road and the pavement, a hollow knock on the
 // pier's planks, a soft swish through grass, a crunch in the sand, a ring off a roof's metal), heavier
@@ -107792,7 +107943,7 @@ __export(__exports, { "footstep": () => footstep, "landing": () => landing, "sma
 })
 
 // ---- js/onFoot.js
-__define(241, function (__exports) {
+__define(244, function (__exports) {
 // The player out of the car: getting out (E), walking the city as Optimus (WASD, Shift to run,
 // Space to jump, the mouse or the right stick looking round), getting into the Roadster or any other
 // car (E by it: in at once if it is open, broken into if it is parked and locked, taken from its
@@ -107805,21 +107956,21 @@ __define(241, function (__exports) {
 const THREE = __require(0)
 const { emitGame } = __require(82)
 const { footProxy } = __require(91)
-const { vehicles } = __require(233)
-const { Drivable } = __require(234)
+const { vehicles } = __require(236)
+const { Drivable } = __require(237)
 const { collidePlayer } = __require(75)
-const { carsMeet } = __require(235)
+const { carsMeet } = __require(238)
 const { makeControls } = __require(2)
-const { player, setMode, placePlayer, stepFoot, moveDir, knockDown, CITY_WORLD } = __require(228)
-const { startEnter, startExit, stepBoard, cancellable, BOARD } = __require(236)
-const { offerFor, TITLE } = __require(237)
-const { FootView } = __require(238)
-const { FootCam } = __require(239)
+const { player, setMode, placePlayer, stepFoot, moveDir, knockDown, CITY_WORLD } = __require(231)
+const { startEnter, startExit, stepBoard, cancellable, BOARD } = __require(239)
+const { offerFor, TITLE } = __require(240)
+const { FootView } = __require(241)
+const { FootCam } = __require(242)
 const { clipCamera } = __require(198)
 const { scene } = __require(55)
 const { raiseAlarm } = __require(119)
 const { hearing, panOf, placeOf } = __require(120)
-const { footstep, landing, smashWindow, forceLock, doorSound } = __require(240)
+const { footstep, landing, smashWindow, forceLock, doorSound } = __require(243)
 const HOLD = { ...makeControls(), brake: 1, fan: false }
 // what the radar, the GPS and the place name follow while the player walks: the feet, as a car
 class Focus {
@@ -108248,7 +108399,7 @@ __export(__exports, { "OnFoot": () => OnFoot })
 })
 
 // ---- js/main.js
-__define(242, function (__exports) {
+__define(245, function (__exports) {
 // Tesla Roadster Sim: boot, game state, sim events and the main loop.
 const THREE = __require(0)
 const { Hud } = __require(16)
@@ -108285,10 +108436,10 @@ const { MAT, scene, camera, canvas } = __require(55)
 const { renderer, followKeyLight } = __require(55)
 const { fallFx, ALL_PARTICLES, updateNozzles, emitThrusters, emitTireSmoke, attachDiamonds } = __require(116)
 const { emitTrafficSpray } = __require(115)
-const { Game } = __require(232)
-const { OnFoot } = __require(241)
-const { player } = __require(228)
-const { vehicles } = __require(233)
+const { Game } = __require(235)
+const { OnFoot } = __require(244)
+const { player } = __require(231)
+const { vehicles } = __require(236)
 const { GAME_EVENTS, tickGame } = __require(82)
 // ---------- world ----------
 buildWall()
@@ -108736,5 +108887,5 @@ window.__roadster = {
 }
 __export(__exports, {  })
 })
-__require(242)
+__require(245)
 })()
