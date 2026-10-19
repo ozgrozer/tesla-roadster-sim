@@ -1,11 +1,14 @@
 // Emergency runs, as in GTA V's living city, mixed into Traffic (traffic.js): now and then (every
-// two to four minutes or so, never in the city's first minute) a police car answers a call. It sets
-// off out of sight, a couple of hundred metres from the Roadster and heading its way, with its
-// light bar flashing and its siren on, and drives a route through the grid to a junction a block or
-// two past the Roadster, so that it comes by (responder.js: how it drives; makeway.js: how everyone
-// else gets out of its way). Once there it switches off and drives on as ordinary traffic. The run
-// keeps its own random numbers: nothing in the traffic's own sequence changes until a car is sent.
+// two to four minutes or so, never in the city's first minute) a police car, an ambulance or a fire
+// engine answers a call. It sets off out of sight, a couple of hundred metres from the Roadster and
+// heading its way, with its lights flashing and its siren on, and drives a route through the grid
+// to a junction a block or two past the Roadster, so that it comes by (responder.js: how each kind
+// drives; makeway.js: how everyone else gets out of its way). Once there it switches off and drives
+// on as ordinary traffic. The run keeps its own random numbers, and which kind goes keeps its own
+// again: nothing in the traffic's own sequence changes until a car is sent, nor in the runs' for
+// the kind that goes.
 import { rng, NODES, LANES, raycast } from './city.js'
+import { RUNS, KINDS } from './responder.js'
 
 const FIRST = [60, 110] // s after the city starts: the first call comes between these
 const EVERY = [120, 240] // and between the end of one run and the next call
@@ -13,15 +16,19 @@ const LONGEST = 200 // s: a run that hasn't got there by then is called off
 const WIND = 8 // s it takes, siren off, to settle back to its own pace
 const TURN = { S: 0, L: 0.35, R: 0.35 } // a turn costs a little more than a block straight on
 const CUT = 0.3 // and a turn cut across from the other lane a little more again
+const SHARE = [0.4, 0.35] // of the calls, the police's and the ambulances' (the rest fire engines)
 const P = { x: 0, z: 0 }
 
-// a new run's state (Traffic.call): the car on it, the junction it is crossing (others hold at
-// their lines there), the siren's mode, and the whoops given to whatever holds it up
+// a new run's state (Traffic.call): the car on it and its kind, the junction it is crossing (others
+// hold at their lines there), the siren's mode, and the whoops and blasts of the air horn given
 export function newCall (seed) {
   return {
     R: rng(seed * 977 + 31),
+    K: rng(seed * 389 + 5), // (which kind goes)
     J: new Float32Array(NODES.length * 4), // cost to the destination, by junction and heading
     car: null,
+    kind: 0, // 0 a police car, 1 an ambulance, 2 a fire engine (responder.js KINDS)
+    force: -1, // (the kind the next call sends, if not -1: for tests)
     on: false, // the car on it has its lights and siren on
     next: FIRST[0], // when the next call comes (traffic.t)
     t0: 0,
@@ -33,10 +40,16 @@ export function newCall (seed) {
     wrong: false, // over on the wrong side of the road, going round a queue
     passEnd: 0, // (and how far along its lane it stays over there)
     stuck: false, // held up by something that won't get out of its way
-    mode: 0, // the siren: 0 wail, 1 yelp
+    mode: 0, // the siren: 0 wail, 1 yelp, 2 hi-lo (an ambulance's)
     modeT: 0,
+    open: 0, // (the mode on the open road: an ambulance's wail and hi-lo by turns)
     whoops: 0, // how many whoops it has given (the sound plays one each time this goes up)
     whoopT: 0,
+    horns: 0, // a fire engine's blasts of its air horn, and whether the last was a long one
+    long: false,
+    hornN: 0, // (blasts still to come at this junction, when the next is due, which junction)
+    hornT: 0,
+    hornAt: -1,
     blocked: 0, // s held up by the Roadster
     windT: 0,
     saved: null // its driver's own ways, to go back to
@@ -88,11 +101,14 @@ export const CALLS = {
     }
   },
 
-  // A police car out of sight 160 to 280 m from (x, z) in an inner lane heading its way, sent to a
-  // junction a block or two past (x, z); false if there is nowhere to send one from just now.
+  // A police car, an ambulance or a fire engine out of sight 160 to 280 m from (x, z) in an inner
+  // lane heading its way, sent to a junction a block or two past (x, z); false if there is nowhere
+  // to send one from just now.
   dispatch (x, z, view) {
     const C = this.call,
       R = C.R
+    const kind = C.force >= 0 ? C.force : this.callKind(),
+      room = RUNS[kind].room
     for (let tries = 0; tries < 60; tries++) {
       const e = LANES[Math.floor(R() * LANES.length)]
       if (e.closed || e.lane !== 0) continue
@@ -110,9 +126,9 @@ export const CALLS = {
         raycast(view.x, 2, view.z, px, 1.5, pz) > 0.97
       )
         continue
-      const near = o => Math.abs(o.s - s) < o.len + 14 + o.v * 1.5
+      const near = o => Math.abs(o.s - s) < o.len + 14 + room + o.v * 1.5
       if (e.cars.some(near) || e.twin?.cars.some(near)) continue
-      const by = o => Math.abs(o.x - px) < 14 && Math.abs(o.z - pz) < 14
+      const by = o => Math.abs(o.x - px) < 14 + room && Math.abs(o.z - pz) < 14
       if (this.peds.some(by) || this.loose.some(by)) continue
       // where it goes: the junction nearest a point a block or two past the Roadster
       const k = (96 + R() * 110) / d
@@ -122,10 +138,15 @@ export const CALLS = {
       if (dest === e.to || dest === e.from || !this.plan(dest, e)) continue
       // (it takes the place of a car on the road out of sight: as many out as ever)
       if (this.n >= this.want()) this.leave(x, z, view, false)
-      this.send(e, s)
+      this.send(e, s, kind)
       return true
     }
     return false
+  },
+  // which kind goes on the next call (from its own random numbers)
+  callKind () {
+    const r = this.call.K()
+    return r < SHARE[0] ? 0 : r < SHARE[0] + SHARE[1] ? 1 : 2
   },
   nearestNode (x, z) {
     let best = -1,
@@ -170,16 +191,19 @@ export const CALLS = {
     C.dest = dest
     return J[e.to * 4 + e.dir] < Infinity
   },
-  // the police car itself, on lane e at s, already on its way
-  send (e, s) {
-    const C = this.call
-    const car = this.make(this.police, true, C.R)
+  // the car on the call itself (kind k: 0 a police car, 1 an ambulance, 2 a fire engine), on lane e
+  // at s, already on its way
+  send (e, s, k = 0) {
+    const C = this.call,
+      H = RUNS[k]
+    const car = this.make(this.idx[KINDS[k]], true, C.R)
     car.edge = e
     car.s = s
     car.v = 11
     car.siren = 1
     this.insert(e, car)
-    // (its driver's own ways, and those of a run: quick, braking hard, no honking, no overtaking)
+    // (its driver's own ways, and those of a run, as its kind drives one: quick, braking hard, no
+    // honking, no overtaking)
     C.saved = {
       v0: car.v0,
       a: car.a,
@@ -192,13 +216,13 @@ export const CALLS = {
       patience: car.patience
     }
     Object.assign(car, {
-      a: 3.1,
-      b: 4.2,
-      T: 0.9,
-      s0: 2.2,
-      react: 0.35,
-      lat: 3.5,
-      jerk: 6,
+      a: H.a,
+      b: H.b,
+      T: H.T,
+      s0: H.s0,
+      react: H.react,
+      lat: H.lat,
+      jerk: H.jerk,
       patience: 1.5,
       passT: 1e9,
       honkT: 1e9
@@ -207,13 +231,15 @@ export const CALLS = {
     this.place(car)
     this.n++
     C.car = car
+    C.kind = k
     C.on = true
     C.t0 = this.t
     C.node = C.via = null
     C.offT = 0
     C.wrong = C.stuck = false
-    C.mode = C.modeT = C.blocked = 0
-    C.whoopT = 0
+    C.mode = C.modeT = C.blocked = C.open = 0
+    C.whoopT = C.hornN = 0
+    C.hornAt = -1
   },
   // Where the car on a call goes at the end of lane e: the move that costs least to get there, from
   // its own lane or (cut across at the junction: drivers.js) the one beside it; and out of a turn,

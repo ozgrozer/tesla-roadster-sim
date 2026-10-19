@@ -1,8 +1,8 @@
-// Making way for the police car on a call (calls.js), mixed into Traffic (traffic.js). A driver
-// ahead of it on its road, in its lane or the one beside, notices it coming (each at their own
-// distance, and a moment later by their own reactions), signals, pulls over towards the kerb and
-// slows to a stop, waits there until it has gone by, then signals and pulls out again; one too
-// near a junction to stop short of it goes on over first. Anyone coming up to the junction it is
+// Making way for the car on a call (calls.js), mixed into Traffic (traffic.js). A driver ahead of
+// it on its road, in its lane or the one beside, notices it coming (each at their own distance,
+// and a moment later by their own reactions), signals, pulls over towards the kerb and slows to a
+// stop, waits there until it has gone by, then signals and pulls out again; one too near a
+// junction to stop short of it goes on over first. Anyone coming up to the junction it is
 // crossing holds at the line while it crosses, if they can still stop; and the people waiting to
 // cross there stay on the kerb (peds.js asks Traffic.urgent, calls.js).
 // car.pull: 0 driving on, 1 pulling over (or pulled over), 3 it has gone by (off again in a
@@ -41,7 +41,8 @@ export const MAKEWAY = {
     if (car.pull === 1 || car.pull === 3)
       return Math.min(gap, this.pulled(car, S, dt))
     if (car.pull === 2) this.pullBack(car, dt)
-    else if (S && e.road && !car.lc) this.notice(car, S, dt)
+    // (a box truck stopped to deliver, or pulling in to, is already at the kerb: delivery.js)
+    else if (S && e.road && !car.lc && !car.drop?.k) this.notice(car, S, dt)
     return gap
   },
   // Ahead of it on its road, going its way (in its lane or the one beside): the driver notices it
