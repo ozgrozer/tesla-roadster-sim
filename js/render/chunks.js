@@ -76,7 +76,15 @@ export function stream (camera, density = 0) {
 // every streamed mesh shown as it would be but for the distance (for a pass that sees it all: the
 // city's shadow map)
 export function streamAll () {
-  for (const { m } of STREAM) m.visible = m.userData.on
+  for (const e of STREAM) {
+    e.was = e.m.visible
+    e.m.visible = e.m.userData.on
+  }
+}
+// and back as the last stream() left them, once that pass is drawn (else the frame's own view draws
+// the whole city too: some 110 calls more on every frame the shadow map is drawn again)
+export function streamBack () {
+  for (const e of STREAM) if (e.was !== undefined) e.m.visible = e.was
 }
 // how many meshes are streamed (for the perf report)
 export const streamCount = () => STREAM.length

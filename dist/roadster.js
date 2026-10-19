@@ -98113,7 +98113,15 @@ function stream (camera, density = 0) {
 // every streamed mesh shown as it would be but for the distance (for a pass that sees it all: the
 // city's shadow map)
 function streamAll () {
-  for (const { m } of STREAM) m.visible = m.userData.on
+  for (const e of STREAM) {
+    e.was = e.m.visible
+    e.m.visible = e.m.userData.on
+  }
+}
+// and back as the last stream() left them, once that pass is drawn (else the frame's own view draws
+// the whole city too: some 110 calls more on every frame the shadow map is drawn again)
+function streamBack () {
+  for (const e of STREAM) if (e.was !== undefined) e.m.visible = e.was
 }
 // how many meshes are streamed (for the perf report)
 const streamCount = () => STREAM.length
@@ -98182,7 +98190,7 @@ class Instances {
     fit(this.byDistrict[this.which[i]])
   }
 }
-__export(__exports, { "DISTRICTS": () => DISTRICTS, "district": () => district, "DETAIL_FAR": () => DETAIL_FAR, "streamed": () => streamed, "stream": () => stream, "streamAll": () => streamAll, "streamCount": () => streamCount, "Instances": () => Instances })
+__export(__exports, { "DISTRICTS": () => DISTRICTS, "district": () => district, "DETAIL_FAR": () => DETAIL_FAR, "streamed": () => streamed, "stream": () => stream, "streamAll": () => streamAll, "streamBack": () => streamBack, "streamCount": () => streamCount, "Instances": () => Instances })
 })
 
 // ---- js/render/fallers.js
@@ -104267,7 +104275,7 @@ const { buildGround } = __require(204)
 const { buildStreet } = __require(205)
 const { buildBuildings, BEACON } = __require(215)
 const { updateTrees } = __require(195)
-const { streamed, stream, streamAll } = __require(191)
+const { streamed, stream, streamAll, streamBack } = __require(191)
 const _pv = new THREE.Matrix4(),
   _view = new THREE.Frustum()
 
@@ -104435,13 +104443,10 @@ class CityView {
   // before the frame is drawn: the city's shadow map, if it is due (with the cars and hide, the
   // Roadster, left out of it)
   shadows (camera, hide) {
-    if (this.shadow?.pending) streamAll() // (the whole city in it, near or far)
-    if (this.shadow?.pending)
-      this.shadow.update(camera, [
-        ...this.cars.meshes,
-        this.people.mesh,
-        ...hide
-      ])
+    if (!this.shadow?.pending) return
+    streamAll() // (the whole city in it, near or far)
+    this.shadow.update(camera, [...this.cars.meshes, this.people.mesh, ...hide])
+    streamBack() // (and the view as streamed again: chunks.js)
   }
   update (dt, clock, traffic, camera, peds) {
     if (!this.on) return
