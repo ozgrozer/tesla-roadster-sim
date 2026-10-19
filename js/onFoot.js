@@ -336,7 +336,7 @@ export class OnFoot {
   camToCar (e) {
     const rig = this.rig
     rig.noCockpit = e.kind !== 'roadster'
-    if (rig.noCockpit && rig.mode === 'cockpit') this.setCam('follow')
+    this.setCam(rig.mode) // (the Cockpit is the Hood camera in any other car: carCam.js)
     if (rig.mode === 'free' || rig.mode === 'side') this.setCam('follow')
     rig.f.init = false
     rig.shot = 'foot' // (anything not 'follow' or '': eased over from where the camera is)

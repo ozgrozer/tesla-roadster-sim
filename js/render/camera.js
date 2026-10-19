@@ -4,11 +4,13 @@ import * as THREE from 'three'
 import { clamp } from '../sim/constants.js'
 import { TRACK, LINEUP_FIRST, LINEUP_LAST } from '../sim/track.js'
 import { follow, clipTraffic, ARM } from './follow.js'
+import { hoodSeat, smoothClip } from './carCam.js'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 
 export const CAM_MODES = [
   'director',
   'follow',
+  'far',
   'chase',
   'cockpit',
   'side',
@@ -17,13 +19,14 @@ export const CAM_MODES = [
 export const CAM_NAMES = {
   director: 'Director',
   follow: 'Follow',
+  far: 'Far',
   chase: 'Chase',
   cockpit: 'Cockpit',
   side: 'Side',
   free: 'Free'
 }
 // the shots that ride along with the car (the road trembles up through them; speed blurs them)
-export const RIDING = new Set(['follow', 'chase', 'cockpit'])
+export const RIDING = new Set(['follow', 'far', 'chase', 'cockpit'])
 
 const lerpK = (k, dt) => 1 - Math.exp(-k * dt)
 const BLEND_TIME = 1.8 // s to ease from one shot into the next (cuts skip it)
@@ -141,9 +144,15 @@ export class CameraRig {
     this.setMode(
       CAM_MODES[(CAM_MODES.indexOf(this.mode) + 1) % CAM_MODES.length]
     )
-    // (the driver's seat is the Roadster's: in another car, on past it: onFoot.js noCockpit)
-    if (this.mode === 'cockpit' && this.noCockpit) return this.cycle()
+    // (in the city the director's pick is the follow camera: on past it; the driver's seat is the
+    // Roadster's, another car has the Hood camera instead: carCam.js, onFoot.js noCockpit)
+    if (this.mode === 'director' && this.clip) return this.cycle()
+    if (this.mode === 'cockpit' && this.noCockpit && !this.hood) return this.cycle()
     return this.mode
+  }
+  // a shot's name for the HUD (the Cockpit is the Hood camera in a car that isn't the Roadster)
+  nameOf (m = this.mode) {
+    return m === 'cockpit' && this.noCockpit ? 'Hood' : CAM_NAMES[m]
   }
   shake (a) {
     this.shakeAmt = Math.max(this.shakeAmt, a)
@@ -257,6 +266,7 @@ export class CameraRig {
     }
     let shot =
       this.mode === 'director' ? autoShot || this.manualShot(sim) : this.mode
+    if (shot === 'far') shot = 'follow' // (the follow arm let out: follow.js)
     if (shot === 'follow' && this.shot !== 'follow') this.f.init = false
     // Z held looks back from the riding shots only (main.js turns the radar by it), and looking
     // back or ahead again is a cut: what kept the camera out of a car is forgotten
@@ -379,7 +389,7 @@ export class CameraRig {
         k = sim.mode === 'ramp' ? 6 : 5
         break
       case 'cockpit':
-        fov = this.driverSeat(dt, sim)
+        fov = this.hood ? hoodSeat(this, dt, this.hood, this.hoodS) : this.driverSeat(dt, sim)
         cut = snap = true
         break
       default:
@@ -418,7 +428,7 @@ export class CameraRig {
     cam.position.copy(this.fromOff).add(P).lerp(this.shotPos, e)
     this.look.copy(this.fromLookOff).add(P).lerp(this.shotLook, e)
     if (this.clip && (shot === 'follow' || shot === 'chase')) {
-      this.clip(this.look, cam.position)
+      smoothClip(this, this.clip, this.look, cam.position, dt)
       if (this.traffic)
         clipTraffic(this, this.look, cam.position, this.traffic.cars, dt)
     }

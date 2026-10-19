@@ -90,12 +90,17 @@ export function follow (rig, dt, sim, P) {
   // it falls back as the car launches and closes in under hard braking
   const acc = sim.mode === 'ground' ? clamp(sim.accLong, -14, 16) : 0
   f.surge += (acc * 0.05 - f.surge) * lerpK(2.5, dt)
-  const dist = f.dist + f.reach + f.surge
+  // (a van's or a bus's arm further out and higher: carCam.js armScale, set by polish.js; V's Far
+  // camera lets it out further still)
+  f.size = (f.size ?? 1) + ((rig.armK || 1) - (f.size ?? 1)) * lerpK(2, dt)
+  f.up = (f.up ?? 0) + ((rig.armUp || 0) - (f.up ?? 0)) * lerpK(2, dt)
+  f.far = (f.far ?? 0) + ((rig.mode === 'far' ? 1 : 0) - (f.far ?? 0)) * lerpK(4, dt)
+  const dist = (f.dist * f.size + f.reach + f.surge) * (1 + 0.5 * f.far)
   // looking back (rig.behind: Z, or a pad's right stick pressed in, as in GTA): the arm swung round
   // in front of the car at once, looking back over it the way it has come, and straight back again
   // when it is let go
   const yaw = f.heading + f.yawOff + (rig.behind ? Math.PI : 0),
-    pitch = PITCH + f.pitchOff
+    pitch = PITCH + f.pitchOff + 0.06 * f.far
   // (carried along with the car first, so only its jolts are smoothed away: chasing it from
   // behind would leave the arm trailing a few metres longer the faster it went)
   f.target.addScaledVector(v, rig.simDt ?? dt)
@@ -105,7 +110,7 @@ export function follow (rig, dt, sim, P) {
   const h = Math.cos(pitch) * dist
   rig.pos.set(
     f.target.x - Math.cos(yaw) * h,
-    f.target.y + (Math.sin(pitch) * dist + RISE) * f.elev,
+    f.target.y + (Math.sin(pitch) * dist + RISE + f.up) * f.elev,
     f.target.z + Math.sin(yaw) * h
   )
   rig.pos.y = Math.max(rig.pos.y, 0.7)
@@ -113,10 +118,15 @@ export function follow (rig, dt, sim, P) {
   const way = Math.cos(f.heading) * v.x - Math.sin(f.heading) * v.z,
     along2 = hv > 1 && !rig.behind ? Math.max(0, way / hv) : 0
   const ah = f.ahead * along2 * (1 - Math.min(1, Math.abs(f.yawOff)))
+  // and into a turn: the aim led a little to the inside of the bend, the faster the more
+  const leadT = rig.behind ? 0 : clamp((sim.yawRate || 0) * fwdSpeed * 0.045, -1.4, 1.4)
+  f.lead = (f.lead ?? 0) + (leadT - (f.lead ?? 0)) * lerpK(2.5, dt)
+  const sh = Math.sin(f.heading),
+    ch = Math.cos(f.heading)
   rig.aim.set(
-    f.target.x + Math.cos(f.heading) * ah,
-    f.target.y + AIM * f.elev,
-    f.target.z - Math.sin(f.heading) * ah
+    f.target.x + ch * ah - sh * f.lead,
+    f.target.y + (AIM + 0.6 * f.up) * f.elev,
+    f.target.z - sh * ah - ch * f.lead
   )
   // wider with speed, and a kick wider still while the main thrusters fire
   f.kick += (sim.thrMain - f.kick) * lerpK(4, dt)
@@ -156,6 +166,7 @@ export function clipTraffic (rig, aim, pos, cars, dt) {
     mz = aim.z + dz / 2
   let hit = Infinity
   for (const c of cars) {
+    if (c.player) continue // (the car the camera follows)
     const near = len / 2 + c.len / 2 + ROOM
     if (Math.abs(c.x - mx) > near || Math.abs(c.z - mz) > near) continue
     // (the line in the car's own frame: along it, across it and up)
