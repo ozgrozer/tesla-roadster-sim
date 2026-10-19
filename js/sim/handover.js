@@ -151,10 +151,16 @@ export const HANDOVER = {
   // The last resort against gridlock (react.js sorts out the usual standoffs): held up by something
   // that will not move for GRID_SQUEEZE s, a car edges past it at a crawl (but not past the player);
   // still there after GRID_DROP s and out of sight, it is taken off (true: remove it).
+  // (and the queue behind one taken off goes with it, out of sight)
   gridlock (c, d, seen) {
+    if (c.v > 1) c.jammed = false
+    if (c.blk?.jammed && c.stuck > 3 && !seen && d > 30) return (c.jammed = true)
     if (c.stuck < GRID_SQUEEZE || c.blk === this.me) return false
     if (!c.squeeze && !c.rev) c.squeeze = 3
-    return c.stuck > GRID_DROP && !seen && d > 30
+    c.jammed = c.stuck > GRID_DROP && !seen && d > 30
+    // (what held it up is known for a blockage now: the next one behind it goes sooner)
+    if (c.jammed && c.blk && c.blk.len && c.blk.v < 0.5) c.blk.jammed = true
+    return c.jammed
   },
   // how busy the streets round (x, z) are, against the city's average (DISTRICT)
   areaShare (x, z) {
