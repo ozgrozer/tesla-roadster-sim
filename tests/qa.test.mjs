@@ -80,3 +80,29 @@ test("a parked car knocked loose on a garage's deck stays on it: stopped by the 
   assert.ok(Math.abs(car.y - groundHeight(car.x, car.z, car.y + 0.6)) < 0.05, `y ${car.y} over ground ${groundHeight(car.x, car.z, car.y + 0.6)}`)
   assert.ok(car.y > 3, `fell off the deck: y ${car.y} after sliding from x ${x0.toFixed(1)} to ${car.x.toFixed(1)}`)
 })
+
+test('a bus the player drives knocks down someone its long nose reaches, not only within a Roadster’s length', async () => {
+  const { vehicleProxy, bodyFromTraffic, syncProxy } = await import('../js/sim/vehicleLink.js')
+  const { IDX } = await import('../js/sim/carTypes.js')
+  const x = 100, z = 0
+  const tr = new Traffic({ seed: 3, count: 0 })
+  tr.reset(x + 500, z)
+  const peds = new Peds({ seed: 5, count: 1 })
+  peds.reset(x, z)
+  const bus = tr.make(IDX.bus, false)
+  Object.assign(bus, { x: x + 400, z, v: 0 })
+  tr.setYaw(bus, 0)
+  const b = bodyFromTraffic(bus)
+  const proxy = vehicleProxy(b)
+  assert.ok(proxy.halfL > 4, 'a bus is long')
+  const p = peds.list[0]
+  peds.step(1 / 60, proxy, tr, null) // (on their pavement)
+  // the bus's middle 4 m short of them, coming on: they are inside its nose, past a Roadster's
+  b.x = p.x - 4
+  b.z = p.z - 0.4
+  b.vx = 9
+  b.vz = 0
+  syncProxy(proxy, b)
+  peds.step(1 / 60, proxy, tr, null)
+  assert.equal(p.state, 'down')
+})

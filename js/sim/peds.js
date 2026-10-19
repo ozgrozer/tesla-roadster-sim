@@ -233,6 +233,8 @@ export class Peds {
       me.vz = sim.vel.z
       me.hx = Math.cos(sim.yaw)
       me.hz = -Math.sin(sim.yaw)
+      me.hl = sim.halfL || CAR.halfL // (its own size, a bus's: the Roadster's by default)
+      me.hw = sim.halfW || CAR.halfW
       threats.push(me)
     }
     // (and any car knocked sliding)
