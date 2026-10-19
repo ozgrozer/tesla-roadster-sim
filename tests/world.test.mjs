@@ -3,7 +3,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { Sim } from '../js/sim/sim.js'
 import { makeControls } from '../js/sim/constants.js'
-import { N, PITCH, HALF, BLOCKS, LANES, query } from '../js/sim/city.js'
+import { N, PITCH, HALF, BLOCKS, LANES, query, superOf } from '../js/sim/city.js'
 import {
   groundHeight,
   groundNormal,
@@ -80,7 +80,9 @@ test('spawn points: free parking bays and pavement points, none inside a buildin
 test('the pavement graph: four corners a block, joined round it and over every street', () => {
   const g = pavementGraph()
   assert.equal(g.nodes.length, 4 * N * N)
-  // (every corner reaches every other: one walk across the whole city)
+  // (every corner reaches every other: one walk across the whole city; but the superblocks', whose
+  // pavements run through the stadium bowl and the container stacks, are cut off: nobody walks there)
+  const open = g.nodes.filter(n => !superOf(n.block.bx, n.block.bz)).length
   const seen = new Set([0]),
     todo = [0]
   while (todo.length) {
@@ -93,7 +95,7 @@ test('the pavement graph: four corners a block, joined round it and over every s
       }
     }
   }
-  assert.equal(seen.size, g.nodes.length, 'all connected')
+  assert.equal(seen.size, open, 'all connected')
   const over = g.edges.filter(e => e.cross)
   assert.ok(over.every(e => e.len > 10 && e.len < 25), 'crossings a street wide')
 })
