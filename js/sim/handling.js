@@ -20,18 +20,19 @@ import { CAR, clamp } from './constants.js'
 // suspHz: the springs' bounce frequency; travel: m either way; damp: damping ratio; rollK: rad of
 // body roll per g of cornering; pitchK: rad of pitch per g of braking or pulling away
 // hbYaw: N m per tonne the handbrake's swing adds at full lock; stab: how hard a slide is caught
-// once the handbrake is off (1 an ordinary car); assist: how much the driver's hands steer into a
-// slide (0 to 1); tc: traction control (1 on, the default; 0 off: the driven wheels spin up and
-// step out on the power); drag: aero, N per (m/s)^2; rollRes: rolling resistance coefficient
+// once the handbrake is off (1 an ordinary car); feel: how near the fronts' peak slip the
+// driver's feel for the limit lets the keys turn them at speed (1 right to it; less: more
+// understeer); assist: how much the driver's hands steer into a slide (0 to 1); tc: traction
+// control (1 on, the default; 0 off: the driven wheels spin up and step out on the power); drag: aero, N per (m/s)^2; rollRes: rolling resistance coefficient
 // prettier-ignore
 export const HANDLING = {
   sedan: {
     mass: 1550, len: 4.7, wid: 1.85, hgt: 1.45, wb: 2.8, wf: 0.58, comH: 0.55, wheelR: 0.33, track: 1.58,
     torque: 320, rpmIdle: 800, rpmPeak: 4200, rpmRed: 6500, gears: [3.5, 2.1, 1.4, 1.0, 0.8, 0.65], final: 3.6, front: 1, vMax: 58,
-    brake: 9, lock: 0.6, steerV: 18, steerRate: 2.2,
+    brake: 9.6, lock: 0.6, steerV: 18, steerRate: 2.2,
     mu: 1.0, gripF: 1.0, gripR: 1.02, slideMu: 0.78, cornF: 85000, cornR: 95000,
     suspHz: 1.4, travel: 0.12, damp: 0.35, rollK: 0.06, pitchK: 0.035,
-    hbYaw: 1600, stab: 1, assist: 0.6, drag: 0.42, rollRes: 0.013
+    hbYaw: 1600, stab: 1, assist: 0.6, feel: 0.85, drag: 0.42, rollRes: 0.013
   },
   sports: {
     mass: 1450, len: 4.5, wid: 1.9, hgt: 1.28, wb: 2.6, wf: 0.47, comH: 0.45, wheelR: 0.34, track: 1.62,
@@ -39,7 +40,7 @@ export const HANDLING = {
     brake: 11, lock: 0.58, steerV: 22, steerRate: 2.8,
     mu: 1.15, gripF: 1.0, gripR: 1.0, slideMu: 0.8, cornF: 110000, cornR: 120000,
     suspHz: 2.0, travel: 0.08, damp: 0.45, rollK: 0.03, pitchK: 0.02,
-    hbYaw: 2600, tc: 0.3, stab: 0.8, assist: 0.7, drag: 0.38, rollRes: 0.012
+    hbYaw: 2600, tc: 0.3, stab: 0.8, assist: 0.7, feel: 1.0, drag: 0.38, rollRes: 0.012
   },
   suv: {
     mass: 2150, len: 4.85, wid: 1.95, hgt: 1.75, wb: 2.9, wf: 0.55, comH: 0.72, wheelR: 0.37, track: 1.65,
@@ -47,23 +48,23 @@ export const HANDLING = {
     brake: 8.5, lock: 0.58, steerV: 16, steerRate: 2.0,
     mu: 0.95, gripF: 0.98, gripR: 1.0, slideMu: 0.75, cornF: 95000, cornR: 110000,
     suspHz: 1.2, travel: 0.18, damp: 0.32, rollK: 0.1, pitchK: 0.05,
-    hbYaw: 1700, stab: 1.2, assist: 0.5, drag: 0.55, rollRes: 0.015
+    hbYaw: 1700, stab: 1.2, assist: 0.5, feel: 0.82, drag: 0.55, rollRes: 0.015
   },
   pickup: {
     mass: 2300, len: 5.4, wid: 2.0, hgt: 1.85, wb: 3.4, wf: 0.6, comH: 0.75, wheelR: 0.38, track: 1.7,
     torque: 520, rpmIdle: 700, rpmPeak: 3500, rpmRed: 5600, gears: [3.5, 2.1, 1.4, 1.0, 0.75], final: 3.73, front: 0, vMax: 50,
     brake: 8, lock: 0.6, steerV: 15, steerRate: 1.8,
-    mu: 0.95, gripF: 1.0, gripR: 0.92, slideMu: 0.72, cornF: 95000, cornR: 95000,
+    mu: 0.95, gripF: 1.0, gripR: 0.96, slideMu: 0.72, cornF: 95000, cornR: 95000,
     suspHz: 1.3, travel: 0.2, damp: 0.3, rollK: 0.11, pitchK: 0.06,
-    hbYaw: 1900, tc: 0.5, stab: 1, assist: 0.5, drag: 0.6, rollRes: 0.016
+    hbYaw: 1900, tc: 0.5, stab: 1, assist: 0.5, feel: 0.88, drag: 0.6, rollRes: 0.016
   },
   truck: {
     mass: 9500, len: 9.9, wid: 2.55, hgt: 3.8, wb: 5.6, wf: 0.45, comH: 1.3, wheelR: 0.5, track: 2.0,
-    torque: 900, rpmIdle: 600, rpmPeak: 1600, rpmRed: 2600, gears: [6.5, 4.0, 2.6, 1.7, 1.25, 1.0], final: 4.1, front: 0, vMax: 30,
+    torque: 1500, rpmIdle: 600, rpmPeak: 1600, rpmRed: 2600, gears: [6.5, 4.0, 2.6, 1.7, 1.25, 1.0], final: 4.1, front: 0, vMax: 30,
     brake: 6, lock: 0.6, steerV: 11, steerRate: 1.2,
     mu: 0.85, gripF: 1.0, gripR: 1.0, slideMu: 0.7, cornF: 280000, cornR: 400000,
     suspHz: 1.1, travel: 0.15, damp: 0.35, rollK: 0.12, pitchK: 0.05,
-    hbYaw: 400, stab: 1.4, assist: 0.3, drag: 2.5, rollRes: 0.02
+    hbYaw: 400, stab: 1.4, assist: 0.3, feel: 0.75, drag: 2.5, rollRes: 0.02
   },
   van: {
     mass: 3200, len: 6.4, wid: 2.15, hgt: 2.8, wb: 3.7, wf: 0.55, comH: 1.0, wheelR: 0.36, track: 1.8,
@@ -71,7 +72,7 @@ export const HANDLING = {
     brake: 7, lock: 0.6, steerV: 13, steerRate: 1.6,
     mu: 0.9, gripF: 1.0, gripR: 1.0, slideMu: 0.72, cornF: 110000, cornR: 140000,
     suspHz: 1.2, travel: 0.14, damp: 0.32, rollK: 0.13, pitchK: 0.06,
-    hbYaw: 1000, stab: 1.3, assist: 0.4, drag: 1.1, rollRes: 0.017
+    hbYaw: 1000, stab: 1.3, assist: 0.4, feel: 0.8, drag: 1.1, rollRes: 0.017
   },
   bus: {
     mass: 12500, len: 11.6, wid: 2.55, hgt: 3.15, wb: 6.2, wf: 0.4, comH: 1.2, wheelR: 0.5, track: 2.1,
@@ -79,7 +80,7 @@ export const HANDLING = {
     brake: 5.5, lock: 0.62, steerV: 9, steerRate: 1.0,
     mu: 0.85, gripF: 1.0, gripR: 1.0, slideMu: 0.7, cornF: 350000, cornR: 520000,
     suspHz: 1.0, travel: 0.12, damp: 0.35, rollK: 0.12, pitchK: 0.04,
-    hbYaw: 400, stab: 1.5, assist: 0.3, drag: 3.2, rollRes: 0.02
+    hbYaw: 400, stab: 1.5, assist: 0.3, feel: 0.75, drag: 3.2, rollRes: 0.02
   },
   police: {
     mass: 1900, len: 5.05, wid: 2.0, hgt: 1.5, wb: 2.95, wf: 0.54, comH: 0.55, wheelR: 0.35, track: 1.65,
@@ -87,7 +88,7 @@ export const HANDLING = {
     brake: 10.5, lock: 0.6, steerV: 20, steerRate: 2.6,
     mu: 1.08, gripF: 1.0, gripR: 1.02, slideMu: 0.8, cornF: 110000, cornR: 125000,
     suspHz: 1.7, travel: 0.11, damp: 0.4, rollK: 0.05, pitchK: 0.03,
-    hbYaw: 2200, tc: 0.8, stab: 1, assist: 0.65, drag: 0.45, rollRes: 0.013
+    hbYaw: 2200, tc: 0.8, stab: 1, assist: 0.65, feel: 0.95, drag: 0.45, rollRes: 0.013
   },
   // the Roadster: its own physics, untouched (sim.js); these are its spec-sheet figures
   roadster: {
