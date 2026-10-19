@@ -67,8 +67,6 @@ export class CarHud {
       alt = this.foot?.alt,
       ice = !!alt?.active && !app.foot
     put(document.body, '.ice', ice)
-    // (the Roadster's name is the Roadster's: not said as another car drives off, place.js)
-    if (app.vehicle && app.vehicle.kind !== 'roadster') this.hud.place.carDue = false
     if (ice) this.engine(dt, alt.body)
     // health under the radar
     const cond = this.hud.el.cond

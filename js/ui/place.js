@@ -45,6 +45,8 @@ export class Place {
     put(this.el.box, '.on', this.left > 0)
     if (this.world !== 'city' || app.intro) return
     const sim = app.focus || app.sim // (the player on foot: onFoot.js)
+    // (only the Roadster's: another car's name is said as it is got into, carHud.js)
+    if (app.vehicle && app.vehicle.kind !== 'roadster') this.carDue = false
     if (this.carDue) {
       const c = app.lastCtl
       if (!app.auto && !(sim.groundSpeed() > 0.5 || c.throttle > 0)) return
