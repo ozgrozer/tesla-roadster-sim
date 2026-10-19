@@ -10,6 +10,7 @@ import { LANDMARKS, OLD } from './areas.js'
 import { PROMENADE, OUTER, addCollider } from './city.js'
 import { WALL, WALL_H, noise, TERRACE } from './hills.js'
 import { hillHeight, hillNormal, HILL_GAP, onHillRoad, inTunnel } from './hillroad.js'
+import { QUAY, onQuay } from './quay.js'
 
 export { WALL, WALL_H, noise, TERRACE, hillHeight, hillNormal }
 export const SHORE = OUTER + 1 // where the beach's flat sand ends and slopes down into the sea
@@ -183,8 +184,8 @@ const BACK = 2.6 // (its half length, and a little)
 export function keepIn (s) {
   const p = s.pos,
     v = s.vel
-  if (p.x < -OUTER && !onDeck(p.x, p.z)) {
-    p.x = -OUTER
+  if (p.x < -OUTER && !onDeck(p.x, p.z) && !onQuay(p.x, p.z)) {
+    p.x = onQuay(-OUTER, p.z) ? QUAY.x0 : -OUTER // (off the quay's edge: quay.js)
     if (v.x < 0) v.x = 0
   }
   if (p.x > WALL) {

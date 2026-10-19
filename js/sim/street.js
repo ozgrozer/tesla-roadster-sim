@@ -23,6 +23,7 @@ import {
   rng
 } from './city.js'
 import { onDeck } from './edge.js'
+import { onQuay } from './quay.js'
 import { ENV } from './env.js'
 import { dotsRunOver } from './botts.js'
 import { CAR } from './constants.js'
@@ -61,7 +62,7 @@ const offEdge = (x, z) =>
   (Math.abs(x) > PROMENADE || Math.abs(z) > PROMENADE) && !onDeck(x, z)
 // the surface at (x, z) on the city's ground (roofs are concrete, like the pavement)
 export function surfaceAt (x, z) {
-  if (x < -PROMENADE) return onDeck(x, z) ? 'wood' : 'sand'
+  if (x < -PROMENADE) return onDeck(x, z) ? 'wood' : onQuay(x, z) ? 'road' : 'sand'
   if (Math.abs(x) > PROMENADE || Math.abs(z) > PROMENADE) return 'grass'
   if (kerbDist(x, z) > 0) return 'road'
   const bx = Math.floor((x + HALF) / PITCH),

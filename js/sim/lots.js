@@ -32,6 +32,7 @@ import { suburb } from './suburbs.js'
 import { stadium, river, corridor, sportsPark, garage } from './venues.js'
 import { layFreeway, FWY, FWY_FROM, FWY_TO, RAMP_AT } from './freeway.js'
 import { layHillRoad } from './hillroad.js'
+import { layQuay } from './quay.js'
 
 export { BLOCKS, BUILDINGS, TREES, PALMS, STALLS, SOLIDS, SIGNS, PROPS, DECKS, RAMPS }
 
@@ -154,4 +155,5 @@ for (let bz = 0; bz < N; bz++)
   }
 layFreeway()
 layHillRoad()
+layQuay()
 parkCars(267)

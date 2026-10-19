@@ -62,7 +62,9 @@ export function hillRoadNear (x, z, out = _near) {
     if (d < out.d) {
       out.d = d
       out.h = s.h0 + (s.h1 - s.h0) * t
-      out.kind = s.kind
+      // (the tunnel only from portal to portal: its first and last metres, on the landings, open)
+      const u = t * s.len
+      out.kind = s.kind === 'tunnel' && (u < HILL_HW + 1 || u > s.len - HILL_HW - 1) ? 'road' : s.kind
     }
   }
   const L = LOOKOUT
