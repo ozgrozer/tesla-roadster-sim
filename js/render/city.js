@@ -21,6 +21,7 @@ import { NIGHT } from './facade.js'
 import { buildProps } from './cityProps.js'
 import { buildWorks } from './cityWorks.js'
 import { buildPort } from './cityPort.js'
+import { buildStadium } from './cityStadium.js'
 import { buildGround } from './cityGround.js'
 import { buildStreet } from './cityStreet.js'
 import { buildBuildings, BEACON } from './cityBuildings.js'
@@ -88,6 +89,7 @@ export class CityView {
     const props = (this.props = buildProps(g))
     buildWorks(g) // (the new districts' docks, stacks, fences, the freeway deck and ramps)
     buildPort(g) // (the quay, its cranes and the ship alongside)
+    buildStadium(g) // (the stadium's pitch, stands and canopy)
     const top = Math.max(...BUILDINGS.map(b => b.h)) + 30 // (and the masts on top)
     const sun = new THREE.Vector3(ENV.sun.x, ENV.sun.y, ENV.sun.z)
     this.shadow = new CityShadow(scene, renderer, sun, OUTER, top)

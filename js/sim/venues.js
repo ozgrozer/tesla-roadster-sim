@@ -36,7 +36,7 @@ export function stadium (blk, lot) {
   ground(blk, 'plaza', x0 + 6, x1 - 6, cz - 50, cz + 50)
   const rx = 66,
     rz = 44,
-    h = 26
+    h = 8 // (the drum: the concourse; the bowl's stands and canopy stand on it, cityStadium.js)
   const b = building('stadium', { style: 'concrete', tint: 0xe6e2da })
   shaft(b, ring(cx, cz, rx, rz, 32), 0, h, { smooth: true })
   b.stadium = { cx, cz, rx, rz, h }
