@@ -5,6 +5,8 @@
 // junction to stop short of it goes on over first. Anyone coming up to the junction it is
 // crossing holds at the line while it crosses, if they can still stop; and the people waiting to
 // cross there stay on the kerb (peds.js asks Traffic.urgent, calls.js).
+// The police on a chase with their sirens going (police.js puts them in Traffic.sirens) are made
+// way for the same way, each driver pulling over for the one coming up behind them (car.yieldTo).
 // car.pull: 0 driving on, 1 pulling over (or pulled over), 3 it has gone by (off again in a
 // moment), 2 pulling back out; car.pullT: s in that state; car.pullS: where it stops on its lane.
 import { LANE_W, LANE_OFF, ROAD_HW } from './city.js'
@@ -16,12 +18,13 @@ export const MAKEWAY = {
   // it is crossing, or pulled over at the kerb in front of it), or Infinity
   giveWay (car, dt) {
     const C = this.call,
-      S = C.on ? C.car : null
-    if (car === C.car) return Infinity
+      S = C.on ? C.car : this.sirenFor(car)
+    if (car === C.car || car.ctl) return Infinity
     const e = car.edge
     let gap = Infinity
     // the junction it is crossing, or about to: hold at the line, if it can still stop there
     if (
+      C.on &&
       S &&
       C.node &&
       e.road &&
@@ -82,6 +85,7 @@ export const MAKEWAY = {
     if (stop > line && car.v * car.v > 2 * car.b * Math.max(0, line - car.s))
       return
     car.pull = 1
+    car.yieldTo = S
     car.pullT = 0
     car.pullS = Math.min(stop, line)
   },
@@ -132,8 +136,28 @@ export const MAKEWAY = {
     car.want = Math.abs(car.off) > 0.25 ? 1 : 0
     if ((car.pullT += dt) > 4 || Math.abs(car.off) < 0.05) {
       car.pull = 0
+      car.yieldTo = null
       car.pullT = -12
     }
+  },
+  // (no call on) the police car with its siren on this driver makes way for: the one it is already
+  // pulled over for while that one still has its siren on, else the nearest coming up behind it
+  sirenFor (car) {
+    const L = this.sirens
+    if (!L || !L.length) return null
+    if (car.pull) return L.includes(car.yieldTo) ? car.yieldTo : null
+    let best = null,
+      bd = 80
+    for (const S of L) {
+      const dx = car.x - S.x,
+        dz = car.z - S.z
+      const along = dx * S.hx + dz * S.hz
+      if (along > 0 && along < bd && Math.abs(dz * S.hx - dx * S.hz) < 6) {
+        bd = along
+        best = S
+      }
+    }
+    return best
   },
   // How far in towards the kerb it can go: up to it, in the kerb lane; half into the kerb lane from
   // the inner one, as far as the cars there alongside leave room

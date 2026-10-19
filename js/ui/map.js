@@ -129,7 +129,8 @@ export class MapView {
       car,
       line: car ? gps.line : NONE,
       goal: gps.goal,
-      cursor: this.cursor
+      cursor: this.cursor,
+      overlay: app.world === 'city' ? app.mapOverlay : null
     })
     this.info()
   }

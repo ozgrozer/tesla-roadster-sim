@@ -22,6 +22,14 @@ import { WIND } from './treeWind.js'
 import { scene, renderer, hemi, key, keyOffset } from './scene.js'
 
 const DEG = 180 / Math.PI
+// a light touch of the GTA look over it all (the gameplay workstream): a little more colour and
+// punch, and a thin warm haze by day that gives the long avenues their depth; ?look=0 for without
+export const LOOK = {
+  on: typeof location === 'undefined' || !/[?&]look=0/.test(location.search),
+  sat: 1.07,
+  contrast: 1.04,
+  haze: 0.00014
+}
 // keyframes by the sun's height (degrees): [height, value...]
 const K = (...rows) => rows
 const ZENITH = K(
@@ -286,7 +294,7 @@ export class Daylight {
     if (scene.fog) {
       scene.fog.color.copy(fogCol)
       scene.fog.density =
-        _v[2] + 0.0014 * o + 0.0035 * rain + 0.011 * fog * fog
+        _v[2] + 0.0014 * o + 0.0035 * rain + 0.011 * fog * fog + (LOOK.on ? LOOK.haze * day : 0)
     }
     if (scene.background?.isColor) scene.background.copy(fogCol)
     // ---- the grade, duller and cooler as the cloud and the rain and the fog come in
@@ -295,6 +303,10 @@ export class Daylight {
     for (let i = 0; i < _g.length; i++) _g[i] += (DULL[i] - _g[i]) * dull
     GRADE.uSat.value = _g[0]
     GRADE.uContrast.value = _g[1]
+    if (LOOK.on) {
+      GRADE.uSat.value *= LOOK.sat
+      GRADE.uContrast.value *= LOOK.contrast
+    }
     GRADE.uShadow.value.set(_g[2], _g[3], _g[4])
     GRADE.uHigh.value.set(_g[5], _g[6], _g[7])
     GRADE.uVignette.value = _g[8]
