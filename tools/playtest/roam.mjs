@@ -19,8 +19,8 @@ export const PLACES = [
   { name: 'stadium', at: lane(-17, 389), car: 'sedan', drive: [['KeyW', 4], [['KeyW', 'KeyA'], 2]] },
   { name: 'beach', at: lane(-739, -91), car: 'van', drive: [['KeyW', 6]] },
   { name: 'garage-ramp', at: { x: 14, z: 16, yaw: 0 }, car: 'sedan', drive: [['KeyW', 5]], up: 3.4 },
-  { name: 'freeway', at: { x: onRamp.x0 - 6, z: (onRamp.z0 + onRamp.z1) / 2, yaw: 0 }, car: 'sports', drive: [['KeyW', 9]], up: FWY.y },
-  { name: 'hill-road', at: { x: 480, z: -874, yaw: Math.PI / 2 }, car: 'suv', drive: [['KeyW', 3]], up: 2 },
+  { name: 'freeway', at: { x: onRamp.x0 - 6, z: (onRamp.z0 + onRamp.z1) / 2, yaw: 0 }, car: 'sports', drive: [['KeyW', 9]], up: FWY.y, traffic: 'deck' },
+  { name: 'hill-road', at: { x: 480, z: -874, yaw: Math.PI / 2 }, car: 'suv', drive: [['KeyW', 3]], up: 2, traffic: 'hill' },
   { name: 'hill-switchback', at: { x: 527, z: -905, yaw: Math.PI / 2, y: groundHeight(527, -905) }, car: 'pickup', drive: [['KeyW', 2.5], [['KeyW', 'KeyA'], 1.5]] },
   { name: 'lookout', at: { x: 772, z: -989, yaw: 0, y: groundHeight(772, -989) }, car: 'sports', drive: [['KeyW', 4], ['KeyS', 2]], up: 78 }
 ]
@@ -43,5 +43,10 @@ export async function roam (g, place) {
   g.expect(Math.abs(s.y - ground) < 0.7, 'the car is off the ground', { ...s, ground })
   if (place.up !== undefined) g.expect(s.y > place.up - 0.6, `did not get up (to ${place.up} m)`, s)
   g.expect(Math.hypot(s.x - at.x, s.z - at.z) > 8, 'the car hardly moved', s)
+  if (place.traffic) {
+    // (others on it too: the freeway's lanes, inner ones included, or the hill road's)
+    const n = await g.ev(([deck, x, z]) => window.__roadster.traffic.cars.filter(c => c.edge?.hw && (c.edge.vk >= 1) === deck && Math.hypot(c.x - x, c.z - z) < 400).length, [place.traffic === 'deck', s.x, s.z])
+    g.expect(n > 0, `no traffic on the ${place.traffic === 'deck' ? 'freeway' : 'hill road'}`, n)
+  }
   await g.shot(`roam-${place.name}.png`)
 }
