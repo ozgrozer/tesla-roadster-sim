@@ -11,7 +11,8 @@ import {
   BLOCKS,
   CURB_R,
   ROAD_HW,
-  nodeAt
+  nodeAt,
+  superOf
 } from './city.js'
 
 const CROSS_AT = 9.1 // the crosswalk's middle, from the junction's centre (cityGround.js)
@@ -172,8 +173,11 @@ export function crossings (b, k) {
   const out = []
   const tx = b.bx - qx,
     tz = b.bz - qz
+  // (never into a superblock, the stadium's or the container yard's: its blocks' pavements run
+  // through the bowl and the stacks where the streets between them were paved over, grid.js)
+  if (superOf(b.bx, b.bz)) return out
   // over the street that runs along z, on the block's side of the junction
-  if (tx >= 0 && tx < N)
+  if (tx >= 0 && tx < N && !superOf(tx, b.bz))
     out.push({
       node,
       axis: 1,
@@ -182,7 +186,7 @@ export function crossings (b, k) {
       block: BLOCKS[b.bz * N + tx]
     })
   // and over the one along x
-  if (tz >= 0 && tz < N)
+  if (tz >= 0 && tz < N && !superOf(b.bx, tz))
     out.push({
       node,
       axis: 0,

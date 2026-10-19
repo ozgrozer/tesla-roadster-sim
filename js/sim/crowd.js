@@ -9,7 +9,7 @@ import { atJam } from './jam.js'
 import { clamp, wrapPi } from './constants.js'
 import { kerbDist } from './street.js'
 import { LINES, ringOf, sameOn } from './pavement.js'
-import { N, PITCH, HALF, ROAD_HW, BLOCKS } from './city.js'
+import { N, PITCH, HALF, ROAD_HW, BLOCKS, superOf } from './city.js'
 
 const KERB = ROAD_HW + 0.5
 const STILL = ['phone', 'wait', 'chat'] // what someone standing about is doing
@@ -215,6 +215,7 @@ export const CROWD = {
     const bx = clamp(Math.floor((to[0] + HALF) / PITCH), 0, N - 1),
       bz = clamp(Math.floor((to[1] + HALF) / PITCH), 0, N - 1)
     const block = BLOCKS[bz * N + bx]
+    if (superOf(bx, bz)) return false // (pavement.js crossings: not into a superblock)
     p.cross = { node: null, axis: along, from, to, block, j: 0 }
     p.state = 'cross'
     p.jay = true

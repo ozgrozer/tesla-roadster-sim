@@ -8,7 +8,7 @@
 // fills slowly.
 import { ENV } from './env.js'
 import { clamp } from './constants.js'
-import { BLOCKS } from './city.js'
+import { BLOCKS, superOf } from './city.js'
 
 const smooth = (a, b, x) => {
   const t = clamp((x - a) / (b - a), 0, 1)
@@ -58,6 +58,7 @@ export const FOOTFALL = {
   // Whether someone new turns up on block b: always on a lively block, and in the evening less
   // often elsewhere, so the lively ones fill up more (drawn from the second stream, peds.js Q)
   welcome (b) {
+    if (superOf(b.bx, b.bz)) return false // (no pavements to walk round: pavement.js crossings)
     const eve = this.eve
     if (!(eve > 0) || lively(b)) return true
     return this.Q() * (1 + EVE * eve) < 1
