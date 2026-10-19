@@ -1,6 +1,6 @@
 // The headless playtest: node --import ./tools/node-loader/register.mjs tools/playtest/run.mjs
 // [career|roam|perf|all] [--only=step,step] (npm run playtest). Screenshots to $SHOTS
-// (/workspace/shots/qa), a report to $SHOTS/report.json; exit code 1 on any issue.
+// (/workspace/shots/qa), a report to $SHOTS/report-<which>.json; exit code 1 on any issue.
 import fs from 'node:fs'
 import path from 'node:path'
 import { Game, SHOTS } from './lib.mjs'
@@ -74,7 +74,7 @@ if (which === 'perf' || which === 'all') {
   report.runs.push({ name: 'perf', log: [], issues: g.issues, console: g.console })
   await g.close()
 }
-fs.writeFileSync(path.join(SHOTS, 'report.json'), JSON.stringify(report, null, 1))
+fs.writeFileSync(path.join(SHOTS, `report-${which}.json`), JSON.stringify(report, null, 1))
 let n = 0
 for (const r of report.runs) {
   r.console = r.console.filter(c => !/GL Driver Message|GPU stall|swiftshader/i.test(c.text))

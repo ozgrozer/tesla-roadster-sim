@@ -17,5 +17,5 @@ runs at full speed and steps are driven with `__roadster.advance`.
   frame time, draw calls, geometries, heap.
 
 After each step: NaNs, HUD in the wrong mode, stars against the wanted level, the camera, stuck
-BUSTED/WASTED, and peds, police or traffic inside buildings. Screenshots and `report.json` go to
+BUSTED/WASTED, and peds, police or traffic inside buildings. Screenshots and `report-<which>.json` go to
 `$SHOTS` (default `/workspace/shots/qa`). Exit code 1 on any issue or console error.
