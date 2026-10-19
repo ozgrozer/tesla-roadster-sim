@@ -20,8 +20,9 @@ export const RESCUE = {
   reach: 3.2 // m round for a free spot to step to
 }
 const _pt = {}
-// a free spot near (x, z) for feet at about y: rings of candidates, nearest first (null: none)
-export function nearFree (x, z, world = CITY_WORLD, reach = RESCUE.reach) {
+// a free spot near (x, z): rings of candidates, nearest first (null: none). seen: only spots
+// reached from (x, z) in a straight line through nothing (no stepping out through a wall)
+export function nearFree (x, z, world = CITY_WORLD, reach = RESCUE.reach, seen = false) {
   for (let r = 0.4; r <= reach + 1e-6; r += 0.4) {
     const n = Math.max(8, Math.round((2 * Math.PI * r) / 0.4))
     for (let i = 0; i < n; i++) {
@@ -29,10 +30,21 @@ export function nearFree (x, z, world = CITY_WORLD, reach = RESCUE.reach) {
         sx = x + Math.cos(a) * r,
         sz = z + Math.sin(a) * r
       const y = floorAt(sx, sz, world.base(sx, sz) + FOOT.stepUp, world)
-      if (!blockedAt(sx, sz, y, world)) return { x: sx, z: sz, y }
+      if (blockedAt(sx, sz, y, world)) continue
+      if (!seen || through(x, z, sx, sz, y, world)) return { x: sx, z: sz, y }
     }
   }
   return null
+}
+// whether a thin body could go straight from (x0, z0) to (x1, z1) at about height y
+function through (x0, z0, x1, z1, y, world) {
+  const d = Math.hypot(x1 - x0, z1 - z0),
+    n = Math.ceil(d / 0.2)
+  for (let i = 0; i < n; i++) {
+    const t = i / n
+    if (blockedAt(x0 + (x1 - x0) * t, z0 + (z1 - z0) * t, y, world, 0.08)) return false
+  }
+  return true
 }
 // the nearest free point on a pavement's walking line round the block (x, z) is on or nearest
 export function nearestPavement (x, z, world = CITY_WORLD) {

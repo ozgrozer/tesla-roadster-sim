@@ -116,7 +116,7 @@ export function startExit (e, world) {
   const door = vehicles.toWorld(e, e.door.x, e.door.z)
   // (boxed in round the doors: anywhere free a few metres round; on every side: up on the roof)
   const spot = freeSpot(spots, world) ||
-    nearFree(door.x, door.z, world, 4.4) || {
+    nearFree(door.x, door.z, world, 4.4, true) || {
       ...vehicles.toWorld(e, 0, 0),
       y: (e.pos.y || 0) + (e.hgt || 1.4),
       roof: true
