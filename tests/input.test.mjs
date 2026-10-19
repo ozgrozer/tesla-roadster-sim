@@ -282,3 +282,92 @@ test('S held through a stop holds the car before it backs up, and pressed at a s
     'pressed at a standstill, it reverses'
   )
 })
+
+test("a gamepad in use buzzes with the tyres sliding or spinning, not cruising, and never over a knock's rumble", () => {
+  const felt = []
+  const pad = {
+    index: 0,
+    connected: true,
+    mapping: 'standard',
+    axes: [0, 0, 0, 0],
+    buttons: Array.from({ length: 17 }, () => ({ pressed: false, value: 0 })),
+    vibrationActuator: {
+      playEffect: (type, e) => {
+        felt.push(e)
+        return Promise.resolve()
+      }
+    }
+  }
+  navigator.getGamepads = () => [pad]
+  const input = new Input({ onDrive () {}, onCommand () {} })
+  // `secs` s from kmh on open ground, the pad set by set(t): the most each motor was asked for
+  function run (kmh, secs, set) {
+    const sim = new Sim()
+    sim.reset('start')
+    sim.pos.set(-100, 0, 300)
+    sim.suction = 0
+    sim.syncPose()
+    sim.vel.set(kmh / 3.6, 0, 0)
+    sim.speed = kmh / 3.6
+    felt.length = 0
+    for (let t = 0; t < secs; t += H) {
+      set(t)
+      input.poll()
+      sim.step(H, input.controls(sim, 'off'))
+      sim.events.length = 0
+    }
+    pad.axes[0] = 0
+    pad.buttons[0].pressed = pad.buttons[6].value = pad.buttons[7].value = 0
+    input.poll()
+    return {
+      strong: Math.max(0, ...felt.map(e => e.strongMagnitude)),
+      weak: Math.max(0, ...felt.map(e => e.weakMagnitude))
+    }
+  }
+  // cruising on the throttle: nothing
+  const cruise = run(80, 2, () => (pad.buttons[7].value = 0.3))
+  assert.ok(cruise.weak < 0.02 && cruise.strong < 0.02, 'cruising: still')
+  // the e-brake (A) with the stick over: the rears slide, and it buzzes
+  const turn = run(60, 1.5, t => {
+    pad.axes[0] = -1
+    pad.buttons[0].pressed = t < 0.6
+  })
+  assert.ok(turn.weak > 0.2, `a handbrake turn: ${turn.weak.toFixed(2)}`)
+  // a burnout (both triggers at a crawl): the rears spinning rumble
+  const burn = run(0, 1.5, () => {
+    pad.buttons[7].value = 1
+    pad.buttons[6].value = 1
+  })
+  assert.ok(burn.strong > 0.25, `a burnout: ${burn.strong.toFixed(2)}`)
+  // and a knock's rumble plays out rather than being cut short by the tyres' buzz
+  felt.length = 0
+  input.pad.rumble(1, 1, 500)
+  input.pad.feel(0.5, 0.5)
+  input.pad.feel(0.03, 0.28, 40) // (Botts' dots: events.js)
+  assert.equal(felt.length, 1, "the knock's rumble only")
+  input.pad.busy = 0 // (once it has played out)
+  input.pad.feel(0.03, 0.28, 40)
+  assert.equal(felt[1]?.duration, 40, 'then the dots')
+  // a pad plugged in but left alone, the car driven on the keys: it stays still
+  const keys = new Input({ onDrive () {}, onCommand () {} })
+  const sim = new Sim()
+  sim.reset('start')
+  sim.pos.set(-100, 0, 300)
+  sim.suction = 0
+  sim.syncPose()
+  sim.vel.set(60 / 3.6, 0, 0)
+  sim.speed = 60 / 3.6
+  felt.length = 0
+  down('KeyA')
+  down('Space')
+  for (let i = 0; i < 120; i++) {
+    keys.poll()
+    sim.step(H, keys.controls(sim, 'off'))
+    sim.events.length = 0
+  }
+  up('Space')
+  up('KeyA')
+  assert.ok(sim.skidR > 0.3, 'the rears sliding')
+  assert.equal(felt.length, 0, 'an idle pad stays still')
+  navigator.getGamepads = undefined
+})
