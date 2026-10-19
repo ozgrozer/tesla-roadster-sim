@@ -164,6 +164,11 @@ export function handleEvents (g) {
         sparkBurst(p, Math.min(40, e.impact * 3))
         debrisBurst(p, e.impact, STILL, 0, glassOf(e.broke))
       }
+    } else if (e.type === 'smash') {
+      // another car the player drives, hit hard (drivable.js): the crunch, a heavier jolt
+      sound.thump(Math.min(3, e.impact / 6))
+      rig.shake(Math.min(0.35, e.impact * 0.02))
+      pad?.rumble(0.9, 0.9, 300)
     } else if (e.type === 'kerb') {
       // up onto the kerb or down off it (and off the promenade onto the sand)
       sound.kerb(e.v, e.up)

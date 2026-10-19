@@ -20,7 +20,7 @@ import { nearestLane, standUp } from './sim/city.js'
 import { handleEvents as simEvents } from './events.js'
 import { CityView, clipCamera } from './render/city.js'
 import { hearing, panOf, mixSound } from './audio/mix.js'
-import { CameraRig, CAM_NAMES } from './render/camera.js'
+import { CameraRig } from './render/camera.js'
 import { updateSkids, clearSkids } from './render/skids.js'
 import { DEG, TAU, makeControls } from './sim/constants.js'
 import { LED_MAT, buildWall, buildTruss } from './render/wall.js'
@@ -39,6 +39,7 @@ import { OnFoot } from './onFoot.js'
 import { player } from './sim/player.js'
 import { vehicles } from './sim/vehicles.js'
 import { GAME_EVENTS, tickGame } from './sim/gameEvents.js'
+import { Polish } from './polish.js'
 
 // ---------- world ----------
 buildWall()
@@ -203,7 +204,7 @@ function respawn () {
 }
 function setCam (mode) {
   rig.setMode(mode)
-  hud.setCam(CAM_NAMES[mode])
+  hud.setCam(rig.nameOf(mode))
 }
 function toggleSlow () {
   app.slow = !app.slow
@@ -247,7 +248,7 @@ const COMMANDS = {
     resetTo('lineup')
     hud.popup('Build speed, then <b>F</b> to lift and <b>K</b> to kickflip', 2300, 'hint')
   },
-  KeyV: () => setCam(rig.cycle()),
+  KeyV: () => polish.cycleCam(setCam), // (in a car or on foot: polish.js)
   KeyT: toggleSlow,
   KeyL: () => climate.skipTime(),
   KeyO: () => climate.nextWeather(),
@@ -293,6 +294,7 @@ const input = new Input({
 Object.assign(rig, { traffic, input }) // (camera.js: clear of the cars, Z to look back)
 // the player on foot, and in and out of any car (onFoot.js)
 const foot = new OnFoot({ app, sim, RS, rig, camera, canvas, input, hud, sound, traffic, peds, intro, setCam, cityView })
+const polish = new Polish({ foot, rig, sound, hud, cityView, RS, app, game: () => game })
 // the wanted level, the police, the missions and the street events (game.js)
 const game = new Game({ sim, foot, traffic, peds, hud, minimap, app, damage, respawn: at => resetTo('city', at) })
 // browsers only allow audio after a gesture: the first click or key turns sound on
@@ -423,10 +425,11 @@ function frame (now) {
   const walking = foot.frame(dt, Math.min(1, acc / H), clock)
   updateRoadster(RS, sim, foot.inRoadster() ? app.lastCtl : HOLD, dt)
   followKeyLight(app.focus ? app.focus.pos : app.sim.pos)
-  updateSkids(RS, sim)
+  const fx = polish.frame(dt) // (the car the player drives: playerCar.js, polish.js)
+  updateSkids(fx, foot.seen())
   updateNozzles(RS, sim)
   emitThrusters(RS, sim, simDt, clock)
-  emitTireSmoke(RS, sim, simDt)
+  emitTireSmoke(fx, foot.seen(), simDt)
   if (city) emitTrafficSpray(traffic, camera, simDt)
   LED_MAT.uniforms.uLit.value = sim.maxRampS
   LED_MAT.uniforms.uTime.value = clock
@@ -478,10 +481,9 @@ if (window.top !== window && !document.hasFocus())
 requestAnimationFrame(frame)
 // debugging hook for the console and automated checks: fast-forward the sim without rendering
 window.__roadster = {
-  ...{ sim, env: ENV, climate, RS, damage, intro, tween, ap, rig, sound, app, traffic, peds },
-  ...{ cityView, renderer, resolution, post, menu, player, vehicles, foot, events: GAME_EVENTS, game },
-  setAuto,
-  resetTo,
+  ...{ sim, env: ENV, climate, RS, damage, intro, tween, ap, rig, sound, app, traffic, peds, hud },
+  ...{ cityView, renderer, resolution, post, menu, player, vehicles, foot, events: GAME_EVENTS, game, polish },
+  ...{ setAuto, resetTo, seatIn: type => polish.seatIn(type, { traffic, sim }) },
   setWorld,
   toggleWorld,
   // (the player's side, getting in and out and the prompt, kept up each 1/30 s)

@@ -323,7 +323,7 @@ export class TrafficView {
     const { T, S } = ty
     // (the player's car rides on its springs too: drivable.js, handover.js)
     const rides = !car.parked || car.loose || !!car.ctl
-    if (rides) ride(car, T, S)
+    if (rides && !car.posed) ride(car, T, S) // (the player's own: posed, playerCar.js)
     if (view) {
       _sp.center.x = car.x
       _sp.center.y = 1 + (car.y || 0)
@@ -383,7 +383,8 @@ export class TrafficView {
     ty.finish.array[i] =
       pe.metal + (pe.light && (car.paint * 37.3) % 1 < ty.roofs ? 2 : 0)
     // wheels, turning with the distance driven, the fronts steering (far off, the plain ones)
-    const spin = -car.odo / S.r
+    const spin = -car.odo / S.r,
+      wsp = car.wspin || 0 // (the player's rears, spun or locked: playerCar.js)
     const kinds = ty.rims.kinds,
       kind = kinds[Math.floor(((car.paint * 5.3) % 1) * kinds.length)]
     const rimCol = ALLOY.has(kind)
@@ -394,8 +395,8 @@ export class TrafficView {
       for (let side = -1; side <= 1; side += 2) {
         // turning about z with the distance driven, the fronts steered about y
         _q._x = _q._y = 0
-        _q._z = Math.sin(spin / 2)
-        _q._w = Math.cos(spin / 2)
+        _q._z = Math.sin((ax > 0 ? spin : spin - wsp) / 2)
+        _q._w = Math.cos((ax > 0 ? spin : spin - wsp) / 2)
         if (ax > 0 && car.steer) {
           yawTo(_r, car.steer)
           _q.premultiply(_r)
@@ -424,7 +425,7 @@ export class TrafficView {
     // (in a parking lot its lights are off; on the road its driver switches the headlights on at
     // their own moment as the light goes, and once it is dark enough their beams show on the road)
     const lit = !car.parked || car.jam || !!car.ctl
-    const hl = lit ? step(switchAt(car), this.lights) : 0,
+    const hl = lit ? step(car.player ? 0.1 : switchAt(car), this.lights) : 0,
       beam =
         hl * clamp((this.dark - 0.25) / 0.45, 0, 1) * headlightsLeft(car) * 0.5
     if (beam > 0.01 && n.beam < this.max) {
@@ -475,7 +476,7 @@ export class TrafficView {
         car.sig &&
         Math.sin((this.t + car.paint * 3.1) * (8.6 + car.horn * 1.6)) > 0
       if (on) flags = car.sig === 3 ? 3 : car.sig
-      if (car.v < -0.05) flags += 4
+      if (car.v < -0.05 || car.revLamp) flags += 4
       if (car.big) flags += 8
       flags += 16 // (running lights)
     }

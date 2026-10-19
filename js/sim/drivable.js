@@ -89,6 +89,8 @@ export class Drivable {
     for (const e of list)
       if (e.type === 'bump' || e.type === 'clash')
         this.sim.events.push({ type: 'bump', impact: e.impact, what: e.what || 'car', px: e.x ?? e.px, pz: e.z ?? e.pz, broke: e.broke || 0 })
+      // (a hit hard enough to wreck a traffic car: the heavy crunch on top, events.js 'smash')
+      else if (e.type === 'crash') this.sim.events.push({ type: 'smash', impact: e.impact, px: e.x, pz: e.z })
   }
   // out of it: left where it stands, parked, its door unlocked (handBack)
   leave () {

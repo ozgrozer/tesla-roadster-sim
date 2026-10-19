@@ -1,0 +1,61 @@
+/* Tesla Roadster Sim: the HUD kept to whatever the player drives, and made room in for the game's
+   own (crimeHud.js: the cash and the stars top right, the mission's clock top middle, its objective
+   over the line of keys). One family throughout (the display face), GTA's corners: the radar bottom
+   left with the health under it, the speedometer bottom right only at the wheel. */
+
+/* the health bar under the radar: on foot, and in any car (carHud.js) */
+body.in-city.on-foot #condBox,
+body.in-city.other-car #condBox {
+  display: block;
+}
+.vbar.cond {
+  min-width: 40%;
+}
+
+/* in a car with an engine: the gear in place of P R N D, a rev counter for the power meter */
+.sp-num {
+  display: none;
+  font-weight: 800;
+  font-style: italic;
+  font-size: clamp(15px, 1.3vw, 20px);
+  line-height: 1.05;
+  color: #fff;
+  text-shadow: var(--outline);
+  transition: color 0.15s;
+}
+.sp-num.shift {
+  color: var(--gold);
+}
+.ice .sp-num {
+  display: block;
+}
+.ice .sp-gear,
+.ice .sp-regen,
+.ice .sp-lamps {
+  display: none;
+}
+.ice .sp-pow {
+  grid-template-columns: 1fr;
+}
+.ice .sp-power b {
+  transition: transform 0.08s linear;
+}
+.sp-power.red b {
+  background: var(--red);
+}
+
+/* the prompt by a car in the HUD's own face */
+.prompt {
+  font-family: var(--display);
+  letter-spacing: 0.02em;
+}
+
+/* room for the game's HUD: the radio's station under the mission clock while there is one, the
+   objective kept between the radar and the speedometer (the cash and the stars top right sit under
+   the top bar and the credit, which fade while driving) */
+body:has(.crime-clock[style*='block']) .radio-tag {
+  top: 128px;
+}
+.crime-obj {
+  max-width: calc(100vw - 2 * clamp(190px, 19vw, 300px) - 2 * var(--pad-l) - 40px);
+}

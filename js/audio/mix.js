@@ -78,7 +78,8 @@ function nearCars (traffic, dt) {
     worst = 0
   for (const c of traffic.cars) {
     // (parked cars are off, but the gridlock's are idling; a wreck's engine is dead)
-    if ((c.parked && !c.jam) || c.dmg?.wreck) continue
+    // (nor the player's own: its engine is engine.js's)
+    if ((c.parked && !c.jam) || c.dmg?.wreck || c.player) continue
     const dx = c.x - cp.x,
       dz = c.z - cp.z
     if (Math.abs(dx) > RANGE || Math.abs(dz) > RANGE) continue
@@ -355,6 +356,7 @@ export function mixSound (sound, app, traffic, dt, clock, peds) {
   st.suction = sim.suction
   st.city = city
   st.inside = !!app.inside // the camera in the driver's seat
+  st.combustion = !!app.engine // (a car with an engine, not the Roadster's motors: engine.js)
   st.carDist = cp.distanceTo(_cp)
   st.cut = cut
   st.carPan = panOf(_cp.x, _cp.z)
