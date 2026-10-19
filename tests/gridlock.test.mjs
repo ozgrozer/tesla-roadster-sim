@@ -3,6 +3,7 @@
 // makes a driver angry for a while, drivers drive in their styles, and downtown is busier than the
 // estates. npm test
 import { test } from 'node:test'
+import { OLD } from '../js/sim/grid.js'
 import assert from 'node:assert/strict'
 import { Sim } from '../js/sim/sim.js'
 import { Traffic } from '../js/sim/traffic.js'
@@ -108,7 +109,11 @@ test('drivers drive in styles, and downtown is busier than the estates', () => {
   const mean = (l, k) => l.reduce((a, c) => a + c[k], 0) / l.length
   assert.ok(mean(aggr, 'T') < mean(calm, 'T') && mean(aggr, 'v0') > mean(calm, 'v0'))
   tr.districts = true
-  assert.ok(tr.areaShare(400, 0) > tr.areaShare(-150, -400), 'downtown over Beverly Hills')
+  // (the first city sits in the grown one's north-west, shifted by OLD: grid.js)
+  assert.ok(
+    tr.areaShare(400 + OLD, OLD) > tr.areaShare(-150 + OLD, -400 + OLD),
+    'downtown over Beverly Hills'
+  )
   tr.districts = false
   assert.equal(tr.areaShare(400, 0), 1)
 })

@@ -27,7 +27,7 @@ export const MAKEWAY = {
       e.road &&
       car.next &&
       e.to === C.node.i &&
-      e.dir !== C.dir
+      (e.dir !== C.dir || this.cutsAcross(S, car))
     ) {
       const toLine = e.len - car.s - car.len / 2
       if (toLine >= 0) {
@@ -44,6 +44,15 @@ export const MAKEWAY = {
     // (a box truck stopped to deliver, or pulling in to, is already at the kerb: delivery.js)
     else if (S && e.road && !car.lc && !car.drop?.k) this.notice(car, S, dt)
     return gap
+  },
+  // Is the car on a call turning at the junction (or about to)? It cuts across from either lane to
+  // make the turn, so those coming up beside it, its own way, hold at the line too: one let into
+  // the junction beside a fire engine swinging its nose across its lane waits on it, and it on them
+  // (only those behind it: one ahead of it at the line goes on, out of its way)
+  cutsAcross (S, car) {
+    const m = S.edge.move || (S.next?.kind === 1 ? S.next.move : null)
+    if (!m || m === 'S') return false
+    return !!S.edge.move || car.edge.len - car.s > S.edge.len - S.s
   },
   // Ahead of it on its road, going its way (in its lane or the one beside): the driver notices it
   // within their own distance, and pulls over a moment later, by their own reactions
