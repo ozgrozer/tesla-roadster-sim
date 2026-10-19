@@ -17,6 +17,7 @@ export const CRIMES = {
   carjack: 1.5,
   'hit-police': 2.5,
   'traffic-crash': 0.6,
+  'car-alarm': 0.8,
   'shots-fired': 3,
   assault: 1.2,
   debug: 1

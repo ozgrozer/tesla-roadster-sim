@@ -124,14 +124,16 @@ export function think (u, ctx, dt) {
     u.state = 'chase'
     u.car.siren = 1
     u.wpt = null
-    const role = roleFor(ctx.stars, u.slot)
+    // (on foot: every car pulls up beside them, an officer out to make the arrest)
+    const role = P.driving === false ? 'tail' : roleFor(ctx.stars, u.slot)
     const a = aimAt(u, P.pos, P.vel, P.heading, role, u.slot)
     direct = a.d < DIRECT && u.sees
     tx = a.x
     tz = a.z
     // (to a standstill beside a player who has stopped: the bust; ramming at three stars)
     v = role === 'tail' ? Math.min(CHASE_V, a.sp + 10) : CHASE_V * 1.15
-    if (a.sp < 3 && role === 'tail') stopAt = 4.5
+    if (P.driving === false && a.d < 40) stopAt = 5
+    else if (a.sp < 3 && role === 'tail') stopAt = 4.5
     if (a.sp < 3 && role !== 'tail') stopAt = 2.5
     if (!direct) {
       v = CHASE_V

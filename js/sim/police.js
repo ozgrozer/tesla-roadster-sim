@@ -99,8 +99,9 @@ export class Police {
     this.heli.gone()
   }
 
-  // One physics step. ctx: { wanted (wanted.js), player (playerView), sim (the player's car body
-  // for the rams, or null on foot), view (the camera), grip (the road's, 0 to 1) }
+  // One physics step. ctx: { wanted (wanted.js), player (playerView), sim (the Roadster when the
+  // player drives it, for the rams), body (or the vehicleSim body of another car they drive), view
+  // (the camera), grip (the road's, 0 to 1) }
   step (dt, ctx) {
     const { wanted, player, view } = ctx
     const tr = this.traffic
@@ -150,13 +151,16 @@ export class Police {
       collideTraffic(b, tr, u.car)
       for (let j = i + 1; j < this.units.length; j++) bodies(b, this.units[j].body)
       if (ctx.sim) this.ram(u, ctx.sim)
+      else if (ctx.body) this.ramBody(u, ctx.body)
       writeToTraffic(b, u.car)
       u.x = b.x
       u.z = b.z
       if (u.role === 'pursuit' && u.state !== 'leave') {
         const d = Math.hypot(player.pos.x - b.x, player.pos.z - b.z)
         this.nearest = Math.min(this.nearest, d)
-        if (d < BUST_R && Math.abs(b.u) < 4 && u.sees) this.bustable++
+        // (on foot, an officer gets out to them: a unit stopped close by)
+        const r = player.driving ? BUST_R : BUST_R + 3
+        if (d < r && Math.abs(b.u) < 4 && u.sees) this.bustable++
       }
     }
     this.seen = seen
@@ -183,6 +187,18 @@ export class Police {
     if (sim.mode === 'ground') sim.syncPose?.()
     if (impact > 0.6) {
       sim.emit?.('bump', { impact, what: 'car', px: hit.px, pz: hit.pz, nx: hit.nx, nz: hit.nz, peds: true, police: true })
+      this.hits.push({ impact, byPlayer: pv > Math.abs(b.u) + 1, unit: u })
+    }
+  }
+
+  // another car the player drives (a vehicleSim body: drivable.js) against unit u's
+  ramBody (u, pb) {
+    const b = u.body
+    if (Math.abs(pb.x - b.x) > 8 || Math.abs(pb.z - b.z) > 8) return
+    const pv = Math.hypot(pb.vx, pb.vz)
+    const impact = bodies(pb, b)
+    if (impact > 0.6) {
+      pb.events?.push({ type: 'bump', impact, what: 'car', x: b.x, z: b.z, police: true })
       this.hits.push({ impact, byPlayer: pv > Math.abs(b.u) + 1, unit: u })
     }
   }
@@ -243,19 +259,21 @@ export class Police {
   }
 }
 
-// two units' bodies against each other
+// two bodies against each other (two units, or a unit and a car the player drives); returns the
+// closing speed (0: apart)
 function bodies (a, b) {
-  if (Math.abs(a.x - b.x) > 8 || Math.abs(a.z - b.z) > 8) return
+  if (Math.abs(a.x - b.x) > 8 || Math.abs(a.z - b.z) > 8) return 0
   const A = { ...rectOf(a) }
   const hit = rectRect(A, rectOf(b, _a))
-  if (!hit) return
+  if (!hit) return 0
   a.x += hit.nx * hit.depth * 0.5
   a.z += hit.nz * hit.depth * 0.5
   b.x -= hit.nx * hit.depth * 0.5
   b.z -= hit.nz * hit.depth * 0.5
   const w0 = a.w,
     w1 = b.w
-  impulse(a, b, hit, 0.2, 0.3)
+  const impact = impulse(a, b, hit, 0.2, 0.3)
   a.w = w0 + clamp(a.w - w0, -2, 2)
   b.w = w1 + clamp(b.w - w1, -2, 2)
+  return impact
 }

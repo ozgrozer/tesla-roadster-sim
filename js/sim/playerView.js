@@ -1,14 +1,11 @@
 // What the game's systems (the wanted level, the police, the missions, the street events) know of
 // the player, read through one small adapter so that they never depend on where the player lives.
-// Today the player is the Roadster (sim.js Sim: bindSim); once the foot workstream's player.js lands
-// (player { mode, pos, heading, vehicle, wanted } and the vehicles.js registry), bind that instead:
-//
-//   import { player } from './player.js'
-//   bindPlayer(player)          // in game.js, in place of bindSim(sim)
-//
-// and the adapter reads player.pos / player.vel / player.heading / player.mode, and the car being
-// driven from player.vehicle (a vehicles.js entry: { id, kind, type, car, sim, speed, stolen }),
-// and writes the wanted level back to player.wanted. Everything else reads `playerView` only:
+// The foot workstream's player.js is bound (game.js: bindPlayer(player, { health, driven })): the
+// adapter reads player.pos / vel / heading / mode, the car being driven from player.vehicle (a
+// vehicles.js entry: { id, kind, type, car, sim, stolen }) and its speed from the Sim the player's
+// controls drive (onFoot.js driven(): the Roadster's, or a Drivable's mirror of another car's body),
+// and writes the wanted level back to player.wanted. bindSim(sim) still serves a bare Roadster (the
+// Node tests, a harness without player.js). Everything else reads `playerView` only:
 //   playerView.pos { x, y, z }, vel { x, z }, heading (sim.yaw's convention: nose (cos, -sin)),
 //   speed (m/s over the ground), mode ('car' | 'foot' | 'entering' | 'exiting'), driving (bool),
 //   vehicle ({ id, model, kind, stolen } of the car being driven, or null on foot), health (0 to
@@ -31,7 +28,8 @@ export const playerView = {
 
 let SIM = null,
   PLAYER = null,
-  HEALTH = null
+  HEALTH = null,
+  DRIVEN = null
 const ROADSTER = { id: 'roadster', model: 'roadster', kind: 'roadster', stolen: false }
 
 // The Roadster as the player (the city's sim.js Sim). health: () => 0..1, how much is left of it
@@ -43,11 +41,13 @@ export function bindSim (sim, health = null) {
   playerView.source = 'sim'
   return updatePlayerView()
 }
-// The foot workstream's player (player.js); health: as bindSim, or player.health if it has one
-export function bindPlayer (player, health = null) {
+// The foot workstream's player (player.js); health: as bindSim, or player.health if it has one;
+// driven: () => the Sim the player drives just now, or null on foot (onFoot.js driven)
+export function bindPlayer (player, { health = null, driven = null } = {}) {
   PLAYER = player
   SIM = null
   HEALTH = health
+  DRIVEN = driven
   playerView.source = 'player'
   return updatePlayerView()
 }
@@ -71,7 +71,7 @@ export function updatePlayerView (v = playerView) {
         : null
     // (at the wheel, the car's speed; on foot, the walker's)
     const car = e?.car,
-      sim = e?.sim
+      sim = (DRIVEN && DRIVEN()) || e?.sim
     if (v.driving && sim) {
       v.vel.x = sim.vel.x
       v.vel.z = sim.vel.z

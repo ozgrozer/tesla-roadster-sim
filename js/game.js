@@ -2,8 +2,8 @@
 // missions (sim/missions/) and the street events (sim/ambient.js), their marks in the world
 // (render/crimeView.js), on the HUD (ui/crimeHud.js) and on the maps (ui/crimeMap.js), and busted
 // and wasted. main.js makes one Game and calls step() each physics step and frame() each frame in
-// the city. Everything reads the player through sim/playerView.js (the Roadster today; bindPlayer
-// once the foot workstream's player.js is in: see there).
+// the city. Everything reads the player through sim/playerView.js (bound to the foot workstream's
+// player.js: on foot, in the Roadster or in any other car, through onFoot.js).
 // Debugging and screenshots: ?wanted=3 (stars from the start), ?mission=race (a mission started at
 // once), ?ambient=chase (that street event soon), ?cash=5000; window.__crime in the console.
 import { ENV } from './sim/env.js'
@@ -15,8 +15,9 @@ import { Ambient } from './sim/ambient.js'
 import { witnesses } from './sim/witness.js'
 import { MissionManager } from './sim/missions/manager.js'
 import { spot, nearestKerb } from './sim/missions/spots.js'
-import { emitGame, onGame, tickGame } from './sim/gameEvents.js'
-import { playerView, bindSim, updatePlayerView, setWanted } from './sim/playerView.js'
+import { emitGame, onGame } from './sim/gameEvents.js'
+import { playerView, bindPlayer, updatePlayerView, setWanted } from './sim/playerView.js'
+import { player } from './sim/player.js'
 import { CrimeView } from './render/crimeView.js'
 import { CrimeHud } from './ui/crimeHud.js'
 import { radarOverlay, mapOverlay } from './ui/crimeMap.js'
@@ -32,11 +33,13 @@ export const PENALTY = { busted: 500, wasted: 1000 }
 const DOWN_T = 3.6 // s of BUSTED / WASTED before the fade
 
 export class Game {
-  // deps: { sim, traffic, peds, hud, minimap, app, damage, respawn (at) => void }
+  // deps: { sim (the Roadster's), foot (onFoot.js), traffic, peds, hud, minimap, app, damage,
+  // respawn (at) => void }
   constructor (deps) {
     Object.assign(this, deps)
     this.R = rng(31337)
-    bindSim(deps.sim, () => Math.max(0, 1 - (deps.damage?.amount || 0)))
+    this.footHealth = 1 // (on foot: knocked down by cars, back up over time)
+    bindPlayer(player, { health: () => this.health(), driven: () => deps.foot.driven() })
     this.wanted = new Wanted()
     this.police = new Police(deps.traffic)
     this.missions = new MissionManager()
@@ -58,10 +61,12 @@ export class Game {
     deps.app.mapOverlay = (g, sx, sy, k) => mapOverlay(g, sx, sy, k, this.map)
     onGame('*', e => this.events.length < 64 && this.events.push(e))
     onGame('crime', e => this.crimes.push(e))
-    // a car taken: theft, or a carjacking (the foot workstream's onFoot.js)
-    onGame('car-stolen', e =>
-      this.crimes.push({ type: e.how === 'jack' ? 'carjack' : 'car-stolen', pos: e.pos, severity: e.alarm ? 1.3 : 1 })
-    )
+    // a parked car broken into quietly is a crime too (a carjacking and an alarm are reported as
+    // crimes of their own by onFoot.js)
+    onGame('car-stolen', e => {
+      if (e.how !== 'jack' && !e.alarm) this.crimes.push({ type: 'car-stolen', pos: e.pos, severity: 0.7 })
+    })
+    onGame('player-hit', e => (this.footHealth -= Math.min(1, (e.speed || 0) / 24)))
     this.hooks()
     this.debug()
     window.addEventListener('keydown', e => {
@@ -116,10 +121,18 @@ export class Game {
     this.targetCar.mission = true
   }
 
+  // how much is left of the player (0: wasted): the Roadster's dents, another car wrecked, or
+  // knocks taken on foot
+  health () {
+    const f = this.foot
+    if (player.mode !== 'car') return this.footHealth
+    if (f.alt.active) return f.alt.body.dead ? 0 : 1
+    return Math.max(0, 1 - (this.damage?.amount || 0))
+  }
   // One physics step in the city (h s); view: the camera's ground position and heading (main.js)
   step (h, view) {
-    tickGame(h)
     this.t += h
+    this.footHealth = Math.min(1, this.footHealth + h * 0.03)
     const P = updatePlayerView()
     if (this.down) {
       this.crimes.length = 0
@@ -134,7 +147,11 @@ export class Game {
     }
     this.crimes.length = 0
     const grip = 1 - 0.3 * Math.max(ENV.wet, 0.6 * ENV.rain)
-    this.police.step(h, { wanted: W, player: P, sim: P.driving ? this.sim : null, view, grip })
+    const f = this.foot,
+      inCar = player.mode === 'car'
+    const sim = inCar && f.inRoadster() ? this.sim : null,
+      body = inCar && f.alt.active ? f.alt.body : null
+    this.police.step(h, { wanted: W, player: P, sim, body, view, grip })
     for (const hit of this.police.hits)
       if (hit.byPlayer && hit.impact > 3)
         W.report({ type: 'hit-police', pos: { x: P.pos.x, z: P.pos.z }, severity: 1 }, { peds: 0, cars: 0, police: 1 })
@@ -144,7 +161,8 @@ export class Game {
     this.missions.update(h, { player: P, wanted: W, events: this.events })
     this.events.length = 0
     // busted: stopped with a unit beside you while wanted; wasted: the car (or you) done for
-    const bust = W.stars > 0 && this.police.bustable > 0 && P.speed < 1.5
+    // (on foot, walking pace is slow enough to be caught)
+    const bust = W.stars > 0 && this.police.bustable > 0 && P.speed < (P.driving ? 1.5 : 2.5)
     this.bustT = bust ? this.bustT + h : Math.max(0, this.bustT - h * 2)
     if (this.bustT > BUST_T) this.fall('busted')
     else if (P.health <= 0) this.fall('wasted')
@@ -188,6 +206,7 @@ export class Game {
     this.ambient.end()
     this.traffic.clearAround(best.x, best.z, 14)
     this.respawn?.({ x: best.x, z: best.z, yaw: best.yaw })
+    this.footHealth = 1
     this.down = null
     this.ui.grey(false)
   }
