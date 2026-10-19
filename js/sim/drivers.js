@@ -115,6 +115,12 @@ export const DRIVE = {
       put(w.x, w.z, 0, 0, 1, 0, 0.3, 0.3)
       this.obstacle(car, OB, w)
     }
+    const f = this.foot // the player, on foot (handover.js)
+    if (f) {
+      put(f.x, f.z, 0, 0, 1, 0, 0.4, 0.4)
+      this.obstacle(car, OB, f)
+    }
+    if (car.angry) this.mood(car, dt)
     for (const p of this.peds) {
       put(p.x, p.z, 0, 0, 1, 0, 0.35, 0.35)
       this.obstacle(car, OB, p)
@@ -155,7 +161,7 @@ export const DRIVE = {
     vl = W.vl
     blk = W.blk
     car.clear = gap
-    mine = W.blk === me && !!me
+    mine = (W.blk === me && !!me) || (W.blk === this.foot && !!this.foot)
     // (pulling up behind something stopped mid-block that isn't traffic, the Roadster or a wreck, a
     // driver leaves room to pull out round it; behind a box truck making a delivery, more of it as
     // the truck slows for its stop: delivery.js)
