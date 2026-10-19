@@ -7,6 +7,7 @@
 // street.js (the city's bed: far traffic, wind, surf, birds, crickets), ambience.js (sirens,
 // dogs, building work and the people on the pavement), rain.js (the rain, the drumming on the
 // canopy, the tyres in the water, the thunder) and air.js (the helicopter and the airliners).
+import { ZONES } from './zones.js'
 import { CARS } from './cars.js'
 import { SPACE } from './space.js'
 import { DRIVE } from './motor.js'
@@ -207,6 +208,7 @@ export class SoundEngine {
     this.buildCars()
     this.buildStreet()
     this.buildAmbience()
+    this.buildZones()
     this.radio = this.radio || new Radio(this)
     return true
   }
@@ -357,6 +359,7 @@ export class SoundEngine {
       st.dt = st.worldDt || dt
       this.updateCars(st)
       this.updateAmbience(st)
+      this.updateZones(st)
       this.updateRain(st)
       this.updateAir(st)
       this.slowDt = (this.slowDt || 0) + st.dt
@@ -396,6 +399,7 @@ Object.assign(
   CARS,
   STREET,
   AMBIENCE,
+  ZONES,
   WEATHER_SOUND,
   AIRCRAFT_SOUND
 )
