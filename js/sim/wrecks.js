@@ -278,7 +278,7 @@ export function collidePlayer (tr, sim) {
   const mass = sim.mass || CAR.mass // (whatever the player drives: vehicleLink.js)
   for (const car of tr.cars) {
     if (car.ctl || Math.abs(car.x - me.x) > 9 || Math.abs(car.z - me.z) > 9) continue
-    if (bottom > car.hgt) continue
+    if (bottom > (car.y || 0) + car.hgt || bottom + 1.3 < (car.y || 0)) continue // (or under it)
     const hit = rectRect(me, carRect(car))
     if (!hit) continue
     // (the normal from the car towards the Roadster, before anything else reuses the contact, and

@@ -18,6 +18,7 @@ export function bodyFromTraffic (car) {
     paint: car.paint,
     id: car.id
   })
+  b.y = car.y || 0 // (taken over up on the freeway or the hill road: there)
   b.len = car.len
   b.wid = car.wid
   b.hgt = car.hgt
@@ -40,6 +41,9 @@ export function writeToTraffic (b, car) {
   const d = Math.hypot(b.x - car.x, b.z - car.z)
   car.x = b.x
   car.z = b.z
+  car.y = b.y
+  car.gp = b.gp || 0
+  car.gr = b.gr || 0
   car.yaw = b.yaw
   car.hx = b.hx
   car.hz = b.hz
@@ -95,8 +99,8 @@ export function vehicleProxy (b) {
 export function syncProxy (p, b) {
   p.pos.x = p.com.x = b.x
   p.pos.z = p.com.z = b.z
-  p.pos.y = 0
-  p.com.y = 0.6
+  p.pos.y = b.y || 0
+  p.com.y = p.pos.y + 0.6
   p.vel.x = b.vx
   p.vel.z = b.vz
   p.yaw = b.yaw

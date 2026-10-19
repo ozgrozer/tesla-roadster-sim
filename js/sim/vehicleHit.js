@@ -53,6 +53,8 @@ export function collideWorld (b, world) {
   if (world.solids) for (const c of world.solids) list.push(c)
   for (const c of list) {
     if (c.down || c.kind === 'car' || c.y0 > b.y + b.hgt || c.y1 <= b.y + 0.3) continue
+    // (a ramp's treads and a deck's slab, not far above: driven up onto, not hit: bodyGround.js)
+    if ((c.look === 'ramp' || c.look === 'deck') && c.y1 <= b.y + 1.2) continue
     const hit = c.r ? rectPost(me, c) : rectRect(me, boxRect(c))
     if (!hit) continue
     if (c.breakAt) {
@@ -143,7 +145,7 @@ export function collideTraffic (b, tr, skip = null) {
   for (const car of tr.cars) {
     if (car === skip || car.ctl) continue
     if (Math.abs(car.x - b.x) > 14 || Math.abs(car.z - b.z) > 14) continue
-    if (b.y > car.hgt) continue
+    if (b.y > (car.y || 0) + car.hgt || b.y + b.hgt < (car.y || 0)) continue // (one on a deck above)
     const B = { x: car.x, z: car.z, fx: car.hx, fz: car.hz, hl: car.len / 2, hw: car.wid / 2 }
     const hit = rectRect(me, B)
     if (!hit) continue

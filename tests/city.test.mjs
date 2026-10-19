@@ -49,7 +49,8 @@ test('the lane graph joins up and, with lane changes, reaches every lane', () =>
     assert.ok(e.next.length > 0, `edge ${e.id} leads nowhere`)
     pointAt(e, e.len, a)
     for (const n of e.next) {
-      pointAt(n, 0, b)
+      // (a slip road off the freeway joins its street lane joinS along it: highway.js)
+      pointAt(n, e.joinS >= 0 ? e.joinS : 0, b)
       assert.ok(Math.hypot(a.x - b.x, a.z - b.z) < 1e-6, `gap ${e.id}->${n.id}`)
       assert.ok(a.hx * b.hx + a.hz * b.hz > 0.9999, `kink ${e.id}->${n.id}`)
     }
@@ -58,7 +59,8 @@ test('the lane graph joins up and, with lane changes, reaches every lane', () =>
   const todo = [LANES[0]]
   while (todo.length) {
     const e = todo.pop()
-    for (const n of e.twin ? [...e.next, e.twin] : e.next)
+    // (and the ways off a street lane onto the freeway and the hill road: highway.js)
+    for (const n of [...e.next, ...e.exits, ...(e.twin ? [e.twin] : [])])
       if (!seen.has(n)) {
         seen.add(n)
         todo.push(n)

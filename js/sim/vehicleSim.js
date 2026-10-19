@@ -23,6 +23,7 @@ import {
   yawInertia
 } from './handling.js'
 import { collideWorld, kerbs } from './vehicleHit.js'
+import { settle } from './bodyGround.js'
 
 const MAX_DT = 1 / 120
 const TRANSFER = 0.12 // s the weight's shift onto an axle lags the acceleration
@@ -161,6 +162,7 @@ export function stepVehicle (b, inp, dt, world = null) {
       collideWorld(b, world)
     }
   }
+  if (world && world.city !== false) settle(b, dt) // (up the ramps and the hills: bodyGround.js)
   body(b, dt)
   b.lights.brake = !b.dead && inp.brake > 0.05 && b.gear > 0 && b.u > 0.2
   b.lights.reverse = b.gear === -1

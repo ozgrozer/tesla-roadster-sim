@@ -28,6 +28,7 @@ import { LANE_CHANGE } from './laneChange.js'
 import { rng, NODES, EDGES, LANES, STALLS, pointAt } from './city.js'
 import { TYPES, IDX } from './carTypes.js'
 import { HANDOVER, styleOf } from './handover.js'
+import { HWDRIVE } from './hwDrive.js'
 export { TYPES }
 
 const BUS = IDX.bus
@@ -111,7 +112,7 @@ export class Traffic {
     this.dens = busy(ENV.hour) * this.areaShare(x, z)
     const want = this.want()
     for (let i = 0; i < this.count * 6 && this.n < want; i++)
-      this.spawn(x, z, 24, this.radius)
+      this.hwSpawn(x, z, 24, this.radius) || this.spawn(x, z, 24, this.radius)
     this.extra.length = 0
     this.used.clear()
     for (let i = 0; i < this.count - want; i++)
@@ -142,6 +143,8 @@ export class Traffic {
       acc: 0, // its acceleration just now (the pedals, eased)
       x: 0,
       z: 0,
+      y: 0, // (up on the freeway or the hill road, and gp its nose's pitch up the slope: hwDrive.js)
+      gp: 0,
       hx: 1,
       hz: 0,
       yaw: 0,
@@ -371,6 +374,8 @@ export class Traffic {
   // Where to go at the end of this lane: mostly straight on, sometimes a turn, which can mean
   // moving over to the other lane first (unless `own`). Never into the jammed street.
   choose (e, car, own = false) {
+    const hw = this.hwChoose(e, car, own) // (the freeway's and the hill road's: hwDrive.js)
+    if (hw !== undefined) return hw
     if (car.siren === 1) return this.route(e, car) // (on a call: calls.js)
     let straight = null
     for (const o of e.next)
@@ -479,20 +484,8 @@ export class Traffic {
     }
     const want = this.want()
     for (let k = 0; k < 4 && this.n < want; k++)
-      this.spawn(x, z, 150, this.radius, view)
+      this.hwSpawn(x, z, 150, this.radius, view) || this.spawn(x, z, 150, this.radius, view)
   }
 }
-Object.assign(
-  Traffic.prototype,
-  SIGHT,
-  DRIVE,
-  LANE_CHANGE,
-  REACT,
-  CALLS,
-  RESPOND,
-  MAKEWAY,
-  CONDITIONS,
-  FLEET,
-  DELIVERY,
-  HANDOVER
-)
+Object.assign(Traffic.prototype, SIGHT, DRIVE, LANE_CHANGE, REACT, CALLS, RESPOND, MAKEWAY)
+Object.assign(Traffic.prototype, CONDITIONS, FLEET, DELIVERY, HANDOVER, HWDRIVE)

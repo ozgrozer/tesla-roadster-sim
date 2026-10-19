@@ -282,7 +282,7 @@ export const CROWD = {
     for (const c of cars) {
       const dx = p.x - c.x,
         dz = p.z - c.z
-      if (Math.abs(dx) > 8 || Math.abs(dz) > 8) continue
+      if (Math.abs(dx) > 8 || Math.abs(dz) > 8 || c.y > 2) continue // (not one up on the freeway)
       const along = dx * c.hx + dz * c.hz,
         side = dz * c.hx - dx * c.hz
       const ea = c.len / 2 + 0.35 - Math.abs(along),
