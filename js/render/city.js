@@ -27,6 +27,7 @@ import { buildStreet } from './cityStreet.js'
 import { buildBuildings, BEACON } from './cityBuildings.js'
 import { updateTrees } from './cityTrees.js'
 import { streamed, stream, streamAll } from './chunks.js'
+import { InteriorView } from './interiors/view.js'
 
 const _pv = new THREE.Matrix4(),
   _view = new THREE.Frustum()
@@ -108,6 +109,8 @@ export class CityView {
     buildPort(g) // (the quay, its cranes and the ship alongside)
     buildStadium(g) // (the stadium's pitch, stands and canopy)
     streamCity(g)
+    this.interiors = new InteriorView(g) // (the rooms under the city, the doors: interiors/)
+    VIEW.interiors = this.interiors
     const top = Math.max(...BUILDINGS.map(b => b.h)) + 30 // (and the masts on top)
     const sun = new THREE.Vector3(ENV.sun.x, ENV.sun.y, ENV.sun.z)
     this.shadow = new CityShadow(scene, renderer, sun, OUTER, top)
@@ -154,6 +157,7 @@ export class CityView {
     this.edges.night(k)
     this.buildings.night(k)
     this.props.night(k)
+    this.interiors.night(k)
     // (each driver switches their headlights on at their own moment: render/traffic.js reads the
     // hour and the weather itself)
     this.cars.beams.visible = k > 0.25
@@ -166,6 +170,7 @@ export class CityView {
   // the light from the clock and the weather, once a frame while the city is shown (dt: real s)
   light (dt, clock) {
     if (this.on && this.daylight) this.daylight.update(dt, clock)
+    if (this.on) this.interiors?.light()
   }
   show (on) {
     if (on && !this.group) this.build()
@@ -216,6 +221,7 @@ export class CityView {
     if (this.falling && !falling) this.shadow.refresh()
     this.falling = falling
     updateTrees(dt, camera) // (the palms' and trees' sway, and detail near)
+    this.interiors.update(dt)
     this.signals.update(traffic.t)
     this.aircraft.update(dt, this.dark, camera)
     // (the districts' meshes left out past their distance or the fog's: chunks.js)
@@ -230,8 +236,11 @@ export class CityView {
   }
 }
 
-// Pull a camera in front of any building between it and what it looks at.
+// Pull a camera in front of any building between it and what it looks at (or, in a room under the
+// city, inside its walls).
+const VIEW = { interiors: null }
 export function clipCamera (aim, pos) {
+  if (VIEW.interiors?.clip(aim, pos)) return
   const t = raycast(aim.x, aim.y, aim.z, pos.x, pos.y, pos.z)
   if (t < 1)
     pos.lerpVectors(aim, pos, Math.max(0.05, t - 0.4 / aim.distanceTo(pos)))

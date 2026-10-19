@@ -32,6 +32,7 @@ import {
   BOARD
 } from './sim/boarding.js'
 import { offerFor } from './ui/prompt.js'
+import { InteriorGlue } from './render/interiors/glue.js'
 import { FootView } from './render/footView.js'
 import { FootCam } from './render/footCam.js'
 import { clipCamera } from './render/city.js'
@@ -81,6 +82,7 @@ export class OnFoot {
     this.promptText = ''
     vehicles.sync(null, g.sim)
     setMode('car', vehicles.roadster)
+    this.interiors = new InteriorGlue(this) // (the doors into the shops: render/interiors/)
     this.pointer()
   }
 
@@ -105,6 +107,7 @@ export class OnFoot {
   // ---------- the fixed step ----------
   // one physics step of the cars and the city, c the player's controls for what they drive
   step (H, c, city, view, peds, traffic) {
+    const held = this.interiors.step(H) // (going through a door: the feet held under the fade)
     const ds = this.driven(),
       sim = this.sim
     sim.step(H, ds === sim ? c : HOLD)
@@ -132,7 +135,7 @@ export class OnFoot {
       peds.step(H, sim, traffic, view)
       traffic.step(H, sim, view)
     }
-    if (this.onFoot()) this.stepPlayer(H)
+    if (this.onFoot() && !held) this.stepPlayer(H)
   }
 
   // the player's feet, one step: walking under the keys, or getting in or out of a car
@@ -211,6 +214,7 @@ export class OnFoot {
       return player.mode === 'car' ? false : true
     }
     if (this.app.intro || this.app.auto || this.down) return false
+    if (this.interiors.interact()) return true
     if (player.mode === 'car') {
       const s = this.driven()
       if (s.mode !== 'ground' && s.mode !== 'crash') return false
@@ -428,7 +432,7 @@ export class OnFoot {
   }
   // the car on offer: "E · Break in · Sedan" while the player stands by one
   offer () {
-    const o = this.down ? { text: '' } : offerFor(player, this.action)
+    const o = this.down ? { text: '' } : this.interiors.offer(offerFor(player, this.action))
     this.target = o.target
     this.how = o.how
     this.prompt(o.text)
