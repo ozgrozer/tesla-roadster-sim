@@ -175,6 +175,9 @@ export const CAREER2 = [
     await g.until(() => window.__roadster.sim.mode === 'ground' || window.__roadster.sim.mode === 'crash', 30, null, 0.5)
     const s = await g.ev(() => ({ mode: window.__roadster.sim.mode, y: window.__roadster.sim.pos.y }))
     g.expect(s.mode === 'ground' || s.mode === 'crash', 'the Roadster did not come down', s)
+    // (the camera eases back in from the flight's wide view over real frames: main.js)
+    const near = await g.untilReal(() => { const R = window.__roadster, c = R.rig.camera.position, p = R.sim.pos; return Math.hypot(c.x - p.x, c.z - p.z) < 30 }, 8000)
+    g.expect(near, 'the camera stayed out wide after landing')
   }],
   ['test-site-and-back', async g => {
     await g.press('KeyC', 0)
