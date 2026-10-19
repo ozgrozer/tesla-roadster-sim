@@ -6,6 +6,7 @@ import { TRACK, LINEUP_FIRST, LINEUP_LAST } from '../sim/track.js'
 import { follow, clipTraffic, ARM } from './follow.js'
 import { hoodSeat, smoothClip } from './carCam.js'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
+import { MOTION } from './motionPref.js'
 
 export const CAM_MODES = [
   'director',
@@ -155,7 +156,7 @@ export class CameraRig {
     return m === 'cockpit' && this.noCockpit ? 'Hood' : CAM_NAMES[m]
   }
   shake (a) {
-    this.shakeAmt = Math.max(this.shakeAmt, a)
+    this.shakeAmt = Math.max(this.shakeAmt, a * MOTION.shake) // (reduced motion: motionPref.js)
   }
   // swing the follow camera round the car and up or down (a mouse drag, a gamepad's right stick);
   // it drifts back behind the car once it is left alone
@@ -454,8 +455,9 @@ export class CameraRig {
           ? 1.8
           : 1
       const a =
-        clamp((sim.groundSpeed() - 18) / 70, 0, 1) * 0.011 * rough +
-        (rough > 1 ? clamp(sim.groundSpeed() / 30, 0, 1) * 0.01 : 0)
+        (clamp((sim.groundSpeed() - 18) / 70, 0, 1) * 0.011 * rough +
+          (rough > 1 ? clamp(sim.groundSpeed() / 30, 0, 1) * 0.01 : 0)) *
+        MOTION.shake
       cam.position.y += a * Math.sin(t * 61.3) * Math.sin(t * 17.9 + 0.7)
       cam.position.x += a * 0.6 * Math.sin(t * 53.1 + 2.1)
     }
