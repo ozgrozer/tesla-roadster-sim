@@ -198,7 +198,7 @@ export const DRIVE = {
         : car.siren === 1
         ? this.callLights(car, e, dt)
         : this.lights(car, e, dt)
-    if (car.pull || this.call.on) g = Math.min(g, this.giveWay(car, dt))
+    if (car.pull || this.call.on || this.sirens?.length) g = Math.min(g, this.giveWay(car, dt))
     if (car.type === this.idx.truck) g = Math.min(g, this.deliver(car, dt))
     if (g < gap) {
       gap = g
