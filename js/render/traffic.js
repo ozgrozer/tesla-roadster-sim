@@ -320,8 +320,8 @@ export class TrafficView {
     // are sized for max cars: past that, the rest, the far ones, go undrawn)
     if (i >= this.max || n.under >= this.max) return
     const { T, S } = ty
-    // (the player's car rides on its springs too: drivable.js)
-    const rides = !car.parked || car.loose || car.player
+    // (the player's car rides on its springs too: drivable.js, handover.js)
+    const rides = !car.parked || car.loose || !!car.ctl
     if (rides) ride(car, T, S)
     if (view) {
       _sp.center.x = car.x
@@ -335,7 +335,7 @@ export class TrafficView {
     // its springs about the axles' height
     // (vectors and quaternions written field by field: no numbers passed to calls)
     // (one the player drives or left in the street stands on the road, or what it was driven onto)
-    const y = car.parked && !car.jam && !car.player && !car.ditched ? CURB_H : car.alt || 0
+    const y = car.parked && !car.jam && !car.ctl && !car.abandoned ? CURB_H : 0
     yawTo(_q, car.yaw)
     _p.x = car.x
     _p.y = y
@@ -422,7 +422,7 @@ export class TrafficView {
     }
     // (in a parking lot its lights are off; on the road its driver switches the headlights on at
     // their own moment as the light goes, and once it is dark enough their beams show on the road)
-    const lit = !car.parked || car.jam || car.player
+    const lit = !car.parked || car.jam || !!car.ctl
     const hl = lit ? step(switchAt(car), this.lights) : 0,
       beam =
         hl * clamp((this.dark - 0.25) / 0.45, 0, 1) * headlightsLeft(car) * 0.5

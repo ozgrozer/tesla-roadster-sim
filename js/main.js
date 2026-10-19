@@ -10,6 +10,7 @@ import { Intro } from './render/intro.js'
 import { Tween } from './render/tween.js'
 import { Peds } from './sim/peds.js'
 import { Traffic } from './sim/traffic.js'
+import { driveDemo } from './ui/driveDemo.js'
 import { SoundEngine } from './audio/sound.js'
 import { Autopilot } from './sim/autopilot.js'
 import { CityPilot } from './sim/cityPilot.js'
@@ -38,7 +39,7 @@ import { attachDiamonds } from './render/effects.js'
 import { OnFoot } from './onFoot.js'
 import { player } from './sim/player.js'
 import { vehicles } from './sim/vehicles.js'
-import { GAME_EVENTS } from './sim/gameEvents.js'
+import { GAME_EVENTS, tickGame } from './sim/gameEvents.js'
 
 // ---------- world ----------
 buildWall()
@@ -59,6 +60,7 @@ rig.cockpit = { head: RS.optimus.head, body: RS.body }
 const sound = new SoundEngine()
 const hud = new Hud(RS, damage) // (the dents fill its condition bar)
 const traffic = new Traffic()
+traffic.districts = true // (busier downtown than in the estates: handover.js)
 const peds = new Peds() // people on foot
 const cityPilot = new CityPilot(sim, traffic)
 const cityView = new CityView()
@@ -321,7 +323,9 @@ function updateView () {
 // ---------- main loop: fixed 120 Hz physics, variable-rate rendering ----------
 const H = 1 / 120
 // one physics step of everything that moves, under controls c
+const demo = driveDemo(sim, traffic) // (?drive=van: a handling class to try, driveDemo.js)
 function step (c, city) {
+  if (city && demo) demo.step(H, c)
   foot.step(H, c, city, VIEW, peds, traffic)
   app.lastCtl = c
 }
@@ -369,6 +373,7 @@ function frame (now) {
     }
   }
   if (steps >= 14) acc = 0
+  tickGame(simDt) // (the game events' clock: gameEvents.js)
   // Autopilot leaning on the horn, sat in a jam
   const ph = app.auto && !!P.horn
   if (ph !== app.pilotHorn) {
@@ -378,7 +383,6 @@ function frame (now) {
   for (const e of sim.events)
     if (e.type === 'bump') damage.hit(e, sim)
     else if (e.type === 'crash') damage.crash(sim.quat, e.speed, sim.vel)
-  foot.events()
   if (foot.seen() !== sim) sim.events.length = 0 // (the Roadster left in the street: dented, quiet)
   handleEvents()
   // a wreck at rest stays put (no respawn): say how to carry on from it
@@ -460,28 +464,8 @@ if (window.top !== window && !document.hasFocus())
 requestAnimationFrame(frame)
 // debugging hook for the console and automated checks: fast-forward the sim without rendering
 window.__roadster = {
-  sim,
-  env: ENV,
-  climate,
-  RS,
-  damage,
-  intro,
-  tween,
-  ap,
-  rig,
-  sound,
-  app,
-  traffic,
-  peds,
-  cityView,
-  renderer,
-  resolution,
-  post,
-  menu,
-  player,
-  vehicles,
-  foot,
-  events: GAME_EVENTS,
+  ...{ sim, env: ENV, climate, RS, damage, intro, tween, ap, rig, sound, app, traffic, peds },
+  ...{ cityView, renderer, resolution, post, menu, player, vehicles, foot, events: GAME_EVENTS },
   setAuto,
   resetTo,
   setWorld,

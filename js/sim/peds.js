@@ -16,6 +16,7 @@ import { kerbDist } from './street.js'
 import { CROWD } from './crowd.js'
 import { DOGS } from './dogs.js'
 import { ALIGHT } from './alight.js'
+import { PEDBRAIN } from './pedBrain.js'
 import { LINGER } from './linger.js'
 import { SHELTER } from './shelter.js'
 import { FOOTFALL } from './footfall.js'
@@ -57,6 +58,8 @@ export class Peds {
     this.frame = 0
     this.ids = 0
     this.threats = []
+    this.ext = [] // threats raised by others (pedBrain.js threat)
+    this.hornWas = false
     this.pool = []
     this.me = { x: 0, z: 0, vx: 0, vz: 0, hx: 1, hz: 0, hl: CAR.halfL, hw: CAR.halfW }
   }
@@ -138,6 +141,16 @@ export class Peds {
       vx: 0,
       vz: 0,
       back: null,
+      // (pedBrain.js: stepping out to pass, how soon they see a car, s stood in the road, down)
+      pass: 0,
+      alert: 0,
+      roadT: 0,
+      fall: 0,
+      downT: 0,
+      dead: false,
+      jacked: false,
+      fromX: 0,
+      fromZ: 0,
       backRing: null,
       backS: 0,
       mate: null, // the one walking with them, if any
@@ -179,7 +192,9 @@ export class Peds {
   place (p) {
     ringAt(p.ring, p.s, P)
     // drifting a little from side to side as they walk (and beside whoever they walk with)
-    const o = 0.12 * Math.sin(p.sway) * p.dir + p.side
+    let o = 0.12 * Math.sin(p.sway) * p.dir + p.side + p.pass
+    // (stepping out to pass someone never takes them off the pavement: pedBrain.js)
+    if (p.pass && kerbDist(P.x - P.hz * o, P.z + P.hx * o) > -0.5) o -= 2 * p.pass
     p.x = P.x - P.hz * o
     p.z = P.z + P.hx * o
     p.yaw = Math.atan2(-P.hz * p.dir, P.hx * p.dir)
@@ -210,7 +225,7 @@ export class Peds {
     threats.length = 0
     const pl = sim.mode === 'ground' ? sim.pos : sim.com
     let me = null
-    if (sim.mode !== 'ramp' && pl.y - (sim.floor || 0) < 2.5) {
+    if (sim.mode !== 'ramp' && sim.mode !== 'foot' && pl.y - (sim.floor || 0) < 2.5) {
       me = this.me
       me.x = pl.x
       me.z = pl.z
@@ -237,6 +252,7 @@ export class Peds {
       }
     this.alarms(sim, sim.mode === 'ramp' ? null : pl, traffic)
     if (traffic.exits.length) this.alight(traffic) // (out of their wrecks: alight.js)
+    this.think(dt, sim, traffic, me) // (threats, the horn, the road, each other: pedBrain.js)
     // (loud: fast, or on the horn)
     const loud =
       me && (me.vx * me.vx + me.vz * me.vz > 121 || traffic.horn) ? me : null
@@ -263,8 +279,7 @@ export class Peds {
     traffic.peds = this.onRoad
     if (this.clock > 0.5) {
       this.clock = 0
-      const fo = traffic.focus || pl // (the player on foot: onFoot.js)
-      this.recycle(fo.x, fo.z, view)
+      this.recycle(pl.x, pl.z, view)
     }
   }
   // (its step, p.lodT, is read from the person: a number passed in costs an allocation)
@@ -316,6 +331,7 @@ export class Peds {
       if (p.state === 'walk' && !paired) this.whim(p)
     } else if (p.state === 'linger') this.linger(p)
     else if (p.state === 'idle') this.idle(p, dt)
+    else if (p.state === 'down') this.lie(p, dt)
     else if (p.state === 'flee') this.flee(p, dt)
     else if (p.state === 'kerb') {
       const [fx, fz] = this.jitter(p.cross, p.cross.from)
@@ -416,6 +432,7 @@ export class Peds {
     const still =
       p.state === 'wait' ||
       p.state === 'idle' ||
+      p.state === 'down' ||
       (p.state === 'linger' && p.leg === 2)
     const speed = still
       ? 0
@@ -477,4 +494,4 @@ export class Peds {
     this.strays()
   }
 }
-Object.assign(Peds.prototype, CROWD, SHELTER, LINGER, DOGS, FOOTFALL, ALIGHT)
+Object.assign(Peds.prototype, CROWD, SHELTER, LINGER, DOGS, FOOTFALL, ALIGHT, PEDBRAIN)

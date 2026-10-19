@@ -26,6 +26,8 @@ import { posed } from './pedShader.js'
 const _sp = new THREE.Sphere()
 const _m = new THREE.Matrix4(),
   _q = new THREE.Quaternion(),
+  _fall = new THREE.Quaternion(),
+  _side = new THREE.Vector3(0, 0, 1),
   _p = new THREE.Vector3(),
   _s = new THREE.Vector3()
 const LAMP = { x: 0, y: 0, z: 0, w: 0 }
@@ -125,8 +127,13 @@ export class PedView {
     _q._x = _q._z = 0
     _q._y = Math.sin(d.yaw / 2)
     _q._w = Math.cos(d.yaw / 2)
+    // knocked down (sim/pedBrain.js): tipped over backwards onto the road, lying there
+    if (d.fall > 0) {
+      _fall.setFromAxisAngle(_side, (d.fall * Math.PI) / 2.1)
+      _q.multiply(_fall)
+    }
     _p.x = d.x
-    _p.y = h
+    _p.y = h + (d.fall > 0 ? 0.12 * d.fall : 0)
     _p.z = d.z
     _s.x = _s.y = d.tall
     _s.z = d.wide

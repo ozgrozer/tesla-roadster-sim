@@ -8,8 +8,8 @@ const { Traffic } = await import('../js/sim/traffic.js')
 const { Sim } = await import('../js/sim/sim.js')
 const B = await import('../js/sim/boarding.js')
 const D = await import('../js/sim/drivable.js')
-const { CAR, CORNERS, makeControls } = await import('../js/sim/constants.js')
-const { on, emit, GAME_EVENTS, clearEvents } = await import('../js/sim/gameEvents.js')
+const { CAR, makeControls } = await import('../js/sim/constants.js')
+const { onGame, emitGame, drainGame, resetGame } = await import('../js/sim/gameEvents.js')
 const { SPAWN } = await import('../js/sim/city.js')
 
 const H = 1 / 120
@@ -180,19 +180,7 @@ test('a break-in walks round to the door, takes its time and ends seated', () =>
   assert.ok(vehicles.gap(e, out.spot.x, out.spot.z) > 0.2, 'out beside it')
 })
 
-test('the drivable adapter swaps the spec in and always puts it back', () => {
-  const mass = CAR.mass,
-    c0 = CORNERS[0].x
-  const spec = D.specFor('bus')
-  assert.ok(spec.mass > 10000 && spec.vMax < 40 && spec.mainThrust === 0)
-  D.withSpec(spec, () => {
-    assert.equal(CAR.mass, spec.mass)
-    assert.equal(Math.abs(CORNERS[0].x), spec.halfL)
-  })
-  assert.throws(() => D.withSpec(spec, () => { throw new Error('x') }))
-  assert.equal(CAR.mass, mass, 'restored after a throw')
-  assert.equal(CORNERS[0].x, c0)
-  // a sedan driven off: no thrusters, slower than the Roadster
+test('a car taken over drives on its own body and goes back to the traffic parked', () => {
   vehicles.reset()
   const tr = new Traffic({ count: 30 })
   tr.reset(SPAWN.x, SPAWN.z)
@@ -200,35 +188,33 @@ test('the drivable adapter swaps the spec in and always puts it back', () => {
   const e = vehicles.list.find(v => v.kind === 'parked')
   const d = new D.Drivable()
   d.board(e, tr)
-  assert.ok(e.car.player && e.car.parked, 'out of the traffic\'s hands')
+  assert.ok(e.car.player && e.car.ctl === 'player' && e.car.parked, 'out of the traffic\'s hands')
   const c = { ...makeControls(), throttle: 1, main: 1, lift: 1 }
   let top = 0
   for (let i = 0; i < 240; i++) {
     d.step(H, c)
-    top = Math.max(top, d.sim.speed)
+    d.traffic(p => tr.step(H, p, null))
+    top = Math.max(top, d.sim.groundSpeed())
   }
   assert.equal(d.sim.mode, 'ground', 'no lift thrusters')
-  assert.ok(top > 5 && top < 25, `${top.toFixed(1)} m/s after 2 s (the Roadster: ~30)`)
+  assert.ok(top > 3 && top < 30, `${top.toFixed(1)} m/s after 2 s`)
   assert.ok(Math.hypot(e.car.x - e.pos.x, e.car.z - e.pos.z) > 3, 'the car moved with it')
-  assert.equal(CAR.mass, mass)
   const left = d.leave()
-  assert.ok(left.ditched && !left.player && !d.active)
+  assert.ok(left.abandoned && !left.ctl && !left.player && !d.active)
 })
 
-test('game events reach their listeners', () => {
-  clearEvents()
+test('game events go on the shared bus', () => {
+  resetGame()
   const got = []
-  const off = on('car-stolen', e => got.push(e))
-  on('*', () => got.push('any'))
-  emit('car-stolen', { vehicle: 'car1' })
+  const off = onGame('car-stolen', e => got.push(e))
+  emitGame('car-stolen', { vehicle: 'car1' })
   off()
-  emit('car-stolen', { vehicle: 'car2' })
+  emitGame('car-stolen', { vehicle: 'car2' })
+  assert.equal(got.length, 1)
   assert.equal(got[0].vehicle, 'car1')
-  assert.equal(got.filter(g => g === 'any').length, 2)
-  assert.equal(GAME_EVENTS.log.length, 2)
-  // a crime keeps its own type ({ type, pos, severity }, for the police), named by event
-  const c = emit('crime', { type: 'carjack', pos: { x: 1, z: 2 }, severity: 2 })
-  assert.equal(c.type, 'carjack')
-  assert.equal(c.event, 'crime')
-  assert.equal(got[0].type, 'car-stolen')
+  // a crime keeps its own type ({ type, pos, severity }, for the police)
+  emitGame('crime', { type: 'carjack', pos: { x: 1, z: 2 }, severity: 2 })
+  const q = drainGame()
+  assert.equal(q.length, 3)
+  assert.equal(q[2].type, 'carjack')
 })

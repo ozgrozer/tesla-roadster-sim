@@ -27,6 +27,7 @@ import { DRIVE, temperament } from './drivers.js'
 import { LANE_CHANGE } from './laneChange.js'
 import { rng, NODES, EDGES, LANES, STALLS, pointAt } from './city.js'
 import { TYPES, IDX } from './carTypes.js'
+import { HANDOVER, styleOf } from './handover.js'
 export { TYPES }
 
 const BUS = IDX.bus
@@ -65,6 +66,7 @@ export class Traffic {
     this.clock = 0
     this.vl = 0
     this.walker = null // { x, z } of someone crossing on foot
+    this.foot = null // (and the player, on foot: handover.js)
     this.peds = [] // people in the road (peds.js keeps it)
     this.horn = false // the Roadster's horn is sounding
     this.quiet = true // no driver honks yet
@@ -106,7 +108,7 @@ export class Traffic {
     for (const st of STALLS) if (st.taken) this.park(st)
     for (const e of JAM) this.jam(e)
     // (as many out as there are at this hour, the rest parked in the lots)
-    this.dens = busy(ENV.hour)
+    this.dens = busy(ENV.hour) * this.areaShare(x, z)
     const want = this.want()
     for (let i = 0; i < this.count * 6 && this.n < want; i++)
       this.spawn(x, z, 24, this.radius)
@@ -237,10 +239,13 @@ export class Traffic {
       sndLv: undefined,
       sndAlarm: false,
       jam: false,
-      // (the player's: driven by them (drivable.js), or left where they got out of it)
-      player: false,
-      ditched: false,
-      alt: 0 // m off the ground, driven off a roof or a jump
+      // (handover.js: who has taken it over, left parked by them, its driver's mood, style)
+      ctl: null,
+      abandoned: false, // (and taken off, gridlocked: jammed)
+      jammed: false,
+      angry: 0,
+      mad: false,
+      style: 1
     }
     if (!WARM) {
       warm(car)
@@ -248,6 +253,7 @@ export class Traffic {
     }
     car.horn = (car.paint * 7.31) % 1
     if (driver) temperament(car, R, T)
+    car.style = styleOf(car)
     car.short = car.short0 || 1
     this.cars.push(car)
     return car
@@ -404,8 +410,11 @@ export class Traffic {
           c.s + c.len / 2 > c.edge.len)
       )
         this.box.push(c)
-    const pl = sim.mode === 'ground' ? sim.pos : sim.com
-    this.me = sim.mode !== 'ramp' && pl.y < 4 ? pl : null
+    const pl = sim.mode === 'ground' || sim.mode === 'foot' ? sim.pos : sim.com
+    // (the player on foot is someone in the road to stop for and honk at, not a car: handover.js)
+    const foot = sim.mode === 'foot'
+    this.foot = foot ? pl : null
+    this.me = !foot && sim.mode !== 'ramp' && pl.y < 4 ? pl : null
     if (this.quiet && this.horn && atJam(pl.x, pl.z)) this.quiet = false
     this.mev = sim.vel
     this.sim = sim
@@ -414,9 +423,7 @@ export class Traffic {
     // the Roadster coming down on the street from the air: everyone in front of it panics
     if (this.wasAir && sim.mode === 'ground' && pl.y < 1) this.landing(pl.x, pl.z)
     this.wasAir = sim.mode === 'air'
-    // (the bubble is round the player: on foot, wherever they walk to: this.focus, onFoot.js)
-    const fo = this.focus || sim.pos
-    this.calls(dt, fo.x, fo.z, view) // (a police car on a call: calls.js)
+    this.calls(dt, sim.pos.x, sim.pos.z, view) // (a police car on a call: calls.js)
     for (const car of this.cars)
       if (car.loose) slide(this, car, dt, sim)
       else if (!car.parked) {
@@ -431,7 +438,7 @@ export class Traffic {
     this.clock += dt
     if (this.clock > 0.25) {
       this.clock = 0
-      this.recycle(fo.x, fo.z, view)
+      this.recycle(sim.pos.x, sim.pos.z, view)
     }
   }
 
@@ -445,9 +452,12 @@ export class Traffic {
     for (let i = this.cars.length - 1; i >= 0; i--) {
       const c = this.cars[i]
       if (c.parked) {
+        if (c.ctl) continue // (taken over: handover.js)
         // (knocked out of its place a while ago and out of sight: back in it, as if towed and
-        // parked again, so wrecks don't pile up)
+        // parked again, so wrecks don't pile up; one the player left far behind is taken away)
         if (c.loose && c.looseT > 20) restore(this, c, x, z, view)
+        else if (c.abandoned && Math.hypot(c.x - x, c.z - z) > this.radius + 40)
+          this.cars.splice(i, 1)
         continue
       }
       const d = Math.sqrt((c.x - x) ** 2 + (c.z - z) ** 2)
@@ -458,7 +468,8 @@ export class Traffic {
       if (
         d > this.radius + 40 ||
         (c.loose && gone(c, seen) && c.looseT > 20 && d > 40) ||
-        (c.still > 60 && d > 60 && !seen)
+        (c.still > 60 && d > 60 && !seen) ||
+        this.gridlock(c, d, seen)
       ) {
         this.remove(i)
         continue
@@ -482,5 +493,6 @@ Object.assign(
   MAKEWAY,
   CONDITIONS,
   FLEET,
-  DELIVERY
+  DELIVERY,
+  HANDOVER
 )

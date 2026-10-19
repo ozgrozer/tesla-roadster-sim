@@ -1,211 +1,103 @@
-// Any car the player drives that isn't the Roadster: the Roadster's own physics (sim.js, ground.js,
-// the tyres, the crashes, the city's collisions) run with that car's spec sheet in place of the
-// Roadster's for its steps, and its pose written back to the traffic car it is, so it is drawn,
-// heard and run into as itself. A small adapter so the drive workstream can tune each body's
-// handling in one place (HANDLING) without touching the player's code.
+// Any car the player drives that isn't the Roadster, on the drive workstream's stack: the traffic
+// car is taken off its driver (traffic.takeOver: handover.js), given a body of its handling class
+// (vehicleLink.js bodyFromTraffic, vehicleSim.js stepVehicle, handling.js), knocks the city and the
+// traffic about (vehicleHit.js collideTraffic, which also dents it), and its pose goes back onto the
+// traffic car each step (writeToTraffic) so it is drawn and run into as itself. The traffic and
+// the people read it through a stand-in (vehicleProxy); a Sim kept on the body's pose (.sim) is
+// what the camera, the HUD and the sounds follow, as they follow the Roadster's.
 //
-//   specFor(name)            a CAR-shaped spec sheet for a carTypes.js body ('sedan', 'bus', ...)
-//   HANDLING[name]           overrides merged over the derived spec (tune here)
-//   withSpec(spec, fn, sim)  run fn with CAR (and the corners and the collision body built from
-//                            it) set to spec, put back afterwards, even if fn throws
-//   carControls(c)           the controls a car without the Roadster's gear gets: no thrusters, no
-//                            suction fan, no attitude control
-//   new Drivable()           .board(entry), .step(dt, c), .run(fn), .leave(), .sim, .entry, .spec
+//   new Drivable()   .board(entry, traffic), .step(dt, c), .traffic(fn), .leave(), .active
+//                    .sim (the pose for the camera and HUD), .body, .proxy, .entry, .car
+//   carInput(c, out) the Roadster's controls (constants.js makeControls) as a body's input
 import { Sim } from './sim.js'
-import { TYPES, IDX } from './carTypes.js'
-import { CAR, CORNERS } from './constants.js'
-import { BODY, playerRect } from './collide.js'
+import { stepVehicle, makeVehicleInput } from './vehicleSim.js'
+import { bodyFromTraffic, writeToTraffic, vehicleProxy, syncProxy, pullProxy } from './vehicleLink.js'
+import { collideTraffic } from './vehicleHit.js'
 
-// engine power (W) and top speed (m/s) per body; the rest is worked out from carTypes.js
-// prettier-ignore
-const POWER = {
-  sedan: [150e3, 58], hatch: [100e3, 52], suv: [220e3, 55], taxi: [150e3, 56],
-  pickup: [260e3, 52], van: [150e3, 42], bus: [220e3, 30], police: [280e3, 66],
-  sports: [380e3, 80], ambulance: [220e3, 45], fire: [330e3, 35], truck: [260e3, 36],
-  lowrider: [170e3, 48], limo: [220e3, 50]
-}
-// tyre grip (a share of g) by body: sports tyres, everyday ones, the heavy ones
-const GRIP = { sports: 1.12, police: 1.04, bus: 0.8, truck: 0.82, fire: 0.82, van: 0.88 }
-
-// Per-body overrides over the derived spec: the drive workstream's knobs, e.g.
-// HANDLING.sports = { tireMu: 1.2, rearGrip: 0.98 } for a looser tail.
-export const HANDLING = Object.fromEntries(TYPES.map(T => [T.name, {}]))
-
-export function specFor (name) {
-  const T = TYPES[IDX[name] ?? 0]
-  const [powerW, vMax] = POWER[T.name] || POWER.sedan
-  const m = T.m,
-    k = m / CAR.mass
-  const big = !!T.big || m > 5000
-  const base = {
-    mass: m,
-    wheelbase: T.len * (big ? 0.55 : 0.6),
-    halfWB: (T.len * (big ? 0.55 : 0.6)) / 2,
-    halfL: T.len / 2,
-    halfW: T.wid / 2,
-    height: T.hgt,
-    comH: 0.45 + 0.3 * Math.max(0, T.hgt - 1.2),
-    wheelR: big ? 0.5 : 0.33,
-    tireMu: GRIP[T.name] ?? 0.98,
-    driveAccelMax: T.acc * 2.6,
-    powerW,
-    brakeAccel: T.brake * 3,
-    vMax,
-    // (drag that holds it near its top speed at full power)
-    dragK: (0.9 * powerW) / (m * vMax * vMax * vMax),
-    Iz: (m * (T.len * T.len + T.wid * T.wid)) / 12,
-    rearGrip: 1.06,
-    corneringF: CAR.corneringF * k,
-    corneringR: CAR.corneringR * k,
-    rollRes: big ? 0.02 : 0.015,
-    regenAccel: 0.4, // (engine braking, lifting off)
-    regenPowerW: 80e3,
-    slideMu: 0.78,
-    suctionG: 0,
-    mainThrust: 0,
-    liftThrust: 0,
-    sideThrust: 0,
-    airMass: 0,
-    recharge: 0
-  }
-  return { ...base, ...HANDLING[T.name] }
-}
-
-// the Roadster's corners, the collision body's mass and the footprint, saved while a spec runs
-const SAVED = {},
-  CORNER0 = CORNERS.map(v => [v.x, v.y, v.z])
-let depth = 0
-export function withSpec (spec, fn, sim = null) {
-  if (!spec || depth > 0) return fn()
-  depth++
-  const keys = Object.keys(spec)
-  for (const k of keys) SAVED[k] = CAR[k]
-  Object.assign(CAR, spec)
-  for (const v of CORNERS) {
-    v.x = Math.sign(v.x) * spec.halfL
-    v.z = Math.sign(v.z) * spec.halfW
-  }
-  const me = sim ? playerRect(sim) : null,
-    hl = me?.hl,
-    hw = me?.hw,
-    m = BODY.m,
-    I = BODY.I
-  if (me) {
-    me.hl = spec.halfL
-    me.hw = spec.halfW
-  }
-  BODY.m = spec.mass
-  BODY.I = spec.Iz
-  try {
-    return fn()
-  } finally {
-    for (const k of keys) CAR[k] = SAVED[k]
-    CORNERS.forEach((v, i) => v.set(...CORNER0[i]))
-    if (me) {
-      me.hl = hl
-      me.hw = hw
-    }
-    BODY.m = m
-    BODY.I = I
-    depth--
-  }
-}
-
-export function carControls (c) {
-  return {
-    ...c,
-    main: 0,
-    lift: 0,
-    pitch: 0,
-    roll: 0,
-    yaw: 0,
-    fan: false,
-    flare: 0
-  }
+export function carInput (c, out = makeVehicleInput()) {
+  out.throttle = c ? c.throttle : 0
+  out.brake = c ? Math.max(c.brake, c.reverse || 0) : 1
+  out.steer = c ? c.steer : 0
+  out.handbrake = !!c?.ebrake
+  return out
 }
 
 export class Drivable {
   constructor () {
     this.sim = new Sim()
-    this.entry = null
-    this.spec = null
-    this.car = null
+    this.inp = makeVehicleInput()
+    this.entry = this.car = this.body = this.proxy = this.tr = null
   }
   get active () {
     return !!this.car
   }
-  // take over the traffic car of entry e: out of the traffic's hands, the physics put where it is
-  board (e, traffic = null) {
+  // take over the traffic car of entry e (already taken, for a carjack: onFoot.js), its body made
+  // where it stands
+  board (e, traffic) {
     const car = e.car
+    if (!car.ctl) traffic.takeOver(car, 'player')
+    car.player = true
     this.entry = e
     this.car = car
-    this.spec = specFor(e.type)
-    if (traffic && !car.parked) traffic.n-- // (no longer one of the traffic's own)
-    traffic?.detach(car)
-    if (car.siren) traffic?.callGone?.(car)
-    car.siren = 0
-    car.edge = car.next = null
-    car.parked = true
-    car.player = true
-    car.jam = false
-    car.loose = false
-    car.ditched = false
-    car.vx = car.vz = car.w = 0
-    car.sig = 0
-    car.pull = car.drop = null
+    this.tr = traffic
+    this.body = bodyFromTraffic(car)
+    this.proxy = vehicleProxy(this.body)
     this.sim.reset('city', { x: car.x, z: car.z, yaw: car.yaw })
     this.sim.air = 0 // (no thrusters, no tank)
     this.sim.suction = 0
-  }
-  // run fn with this car's spec in place (the traffic's step, its collisions)
-  run (fn) {
-    return withSpec(this.spec, fn, this.sim)
+    this.mirror()
   }
   step (dt, c) {
     if (!this.car) return
-    const s = this.sim
-    withSpec(this.spec, () => s.step(dt, carControls(c)), s)
-    s.air = 0
-    this.writeBack(dt, c)
+    const b = this.body
+    stepVehicle(b, carInput(c, this.inp), dt, { city: true, t: this.tr.t })
+    collideTraffic(b, this.tr, this.car)
+    writeToTraffic(b, this.car)
+    this.sim.time += dt // (the keys ease in on the Sim's clock: input.js)
+    this.mirror()
+    this.hear(b.events)
   }
-  // the sim's pose and motion onto the traffic car (drawn, heard and run into from there)
-  writeBack (dt, c = null) {
+  // fn(proxy): the traffic's or the people's step, seeing the car as the player's; their shoves
+  // put back onto the body
+  traffic (fn) {
+    const p = syncProxy(this.proxy, this.body)
+    p.events.length = 0
+    fn(p)
+    pullProxy(p, this.body)
+    writeToTraffic(this.body, this.car)
+    this.mirror()
+    this.hear(p.events)
+  }
+  // the body's pose onto the Sim the camera and the HUD follow
+  mirror () {
     const s = this.sim,
-      car = this.car
-    if (!car) return
-    const p = s.mode === 'ground' ? s.pos : s.com
-    car.x = p.x
-    car.z = p.z
-    let yaw = s.yaw
-    if (s.mode !== 'ground') {
-      const f = s.fwd()
-      if (Math.hypot(f.x, f.z) > 0.2) yaw = Math.atan2(-f.z, f.x)
-    }
-    car.yaw = yaw
-    car.hx = Math.cos(yaw)
-    car.hz = -Math.sin(yaw)
-    car.v = s.mode === 'ground' ? s.speed : s.groundSpeed()
-    car.odo += car.v * dt
-    car.steer = s.steerAng
-    car.acc = s.accLong || 0
-    car.yr = s.yawRate || 0
-    car.brake = !!c && (c.brake > 0.05 || c.ebrake)
-    car.alt = Math.max(0, s.pos.y) // (off the ground: a roof, a jump)
+      b = this.body
+    s.mode = 'ground'
+    s.pos.set(b.x, 0, b.z)
+    s.com.set(b.x, 0.6, b.z)
+    s.vel.set(b.vx, 0, b.vz)
+    s.yaw = b.yaw
+    s.yawRate = b.w
+    s.speed = b.u
+    s.steerAng = b.steerAng
+    s.accLong = b.accLong
+    s.air = 0
+    s.syncPose()
   }
-  // out of it: the car left where it stands, parked with its door unlocked
+  // its knocks, for the sounds and the shake (events.js): as the Roadster's 'bump's
+  hear (list) {
+    for (const e of list)
+      if (e.type === 'bump' || e.type === 'clash')
+        this.sim.events.push({ type: 'bump', impact: e.impact, what: e.what || 'car', px: e.x ?? e.px, pz: e.z ?? e.pz, broke: e.broke || 0 })
+  }
+  // out of it: left where it stands, parked, its door unlocked (handBack)
   leave () {
     const car = this.car
     if (car) {
       car.player = false
-      car.ditched = true
-      car.v = car.acc = car.steer = 0
-      car.brake = false
-      car.alt = 0
-      car.homeX = car.x
-      car.homeZ = car.z
-      car.homeYaw = car.yaw
+      this.tr.handBack(car)
     }
-    this.car = this.entry = this.spec = null
+    this.entry = this.car = this.body = this.proxy = null
     return car
   }
 }

@@ -8,11 +8,11 @@
 //   vehicles (sim/vehicles.js)  everything that can be driven
 //   game events: 'car-entered', 'car-exited', 'car-stolen', 'crime' (sim/gameEvents.js)
 import * as THREE from 'three'
-import { emit } from './sim/gameEvents.js'
+import { emitGame } from './sim/gameEvents.js'
+import { footProxy } from './sim/vehicleLink.js'
 import { vehicles } from './sim/vehicles.js'
 import { Drivable } from './sim/drivable.js'
 import { collidePlayer } from './sim/wrecks.js'
-import { hurt } from './sim/carDamage.js'
 import { carsMeet } from './sim/carsMeet.js'
 import { makeControls } from './sim/constants.js'
 import {
@@ -110,18 +110,28 @@ export class OnFoot {
     sim.step(H, ds === sim ? c : HOLD)
     if (this.alt.active) this.alt.step(H, ds === this.alt.sim ? c : HOLD)
     if (!city) return
-    const ts = this.seen()
+    // what the traffic and the people see as the player: the car they drive (through its stand-in:
+    // vehicleLink.js), them on foot (footProxy: the drivers stop and honk), or the Roadster
     const walking = this.onFoot() && !this.alt.active
-    traffic.focus = walking ? player.pos : null
     if (!this.app.intro) traffic.walker = walking ? player.pos : null
-    traffic.meHL = this.alt.active ? this.alt.spec.halfL : 0
-    traffic.meHW = this.alt.active ? this.alt.spec.halfW : 0
-    peds.step(H, ts, traffic, view)
+    traffic.meHL = this.alt.active ? this.alt.proxy.halfL : 0
+    traffic.meHW = this.alt.active ? this.alt.proxy.halfW : 0
     if (this.alt.active) {
-      this.alt.run(() => traffic.step(H, ts, view))
-      collidePlayer(traffic, sim) // (the Roadster where it was left, still in the way)
-      carsMeet(this.alt.sim, this.alt.spec, sim)
-    } else traffic.step(H, ts, view)
+      this.alt.traffic(p => {
+        peds.step(H, p, traffic, view)
+        traffic.step(H, p, view)
+        carsMeet(p, p, sim) // (the Roadster where it was left, still in the way)
+      })
+      collidePlayer(traffic, sim)
+    } else if (walking) {
+      const fp = footProxy(player.pos, player.heading)
+      peds.step(H, fp, traffic, view)
+      traffic.step(H, fp, view)
+      collidePlayer(traffic, sim)
+    } else {
+      peds.step(H, sim, traffic, view)
+      traffic.step(H, sim, view)
+    }
     if (this.onFoot()) this.stepPlayer(H)
   }
 
@@ -188,7 +198,7 @@ export class OnFoot {
         vz = r.fz * e.speed * Math.sign(e.car?.v ?? 1)
       knockDown(p, vx * 0.7 + Math.sign(ls || 1) * -r.fz * 2, vz * 0.7 + Math.sign(ls || 1) * r.fx * 2)
       this.sound.bump?.(e.speed, 'car', placeOf(p.pos.x, p.pos.z))
-      emit('player-hit', { by: e.id, speed: e.speed, pos: { ...p.pos } })
+      emitGame('player-hit', { by: e.id, speed: e.speed, pos: { ...p.pos } })
       return
     }
   }
@@ -228,13 +238,8 @@ export class OnFoot {
   }
   // a car with a driver, about to be taken: it stops where it is, its driver at the wheel
   freeze (car) {
-    const tr = this.traffic
-    if (!car.parked) tr.n--
-    tr.detach(car)
-    car.edge = car.next = null
-    car.parked = car.jam = true
-    car.brake = true
-    car.loose = false
+    this.traffic.takeOver(car, 'player') // (handover.js)
+    car.jam = car.brake = true
     car.v = car.vx = car.vz = car.w = 0
   }
   exit () {
@@ -264,7 +269,8 @@ export class OnFoot {
       } else if (ev === 'smash') smashWindow(this.sound, pan)
       else if (ev === 'alarm') {
         raiseAlarm(this.sound, e.car)
-        emit('crime', { type: 'car-alarm', pos: { x: w.x, z: w.z }, severity: 1, vehicle: e.id })
+        this.peds.threat?.(w.x, w.z, 10, 1, 1.5)
+        emitGame('crime', { type: 'car-alarm', pos: { x: w.x, z: w.z }, severity: 1, vehicle: e.id })
       } else if (ev === 'pulled') this.pullOut(e, w)
       else if (ev === 'seated') this.seated(e, a)
       else if (ev === 'out') this.outOf(e, a)
@@ -277,17 +283,12 @@ export class OnFoot {
   }
   // the driver hauled out of their car: on foot, and running
   pullOut (e, w) {
-    const hx = Math.cos(e.heading),
-      hz = -Math.sin(e.heading)
-    this.peds.climbOut({ x: w.x, z: w.z, ox: hz, oz: -hx })
-    const p = this.peds.list[this.peds.list.length - 1]
-    if (p) {
-      p.fright = 1
-      p.v = p.v0 = 3.6
-    }
+    // (out of the driver's door, the left: they run off, and the people round about see it)
+    this.traffic.ejectDriver(e.car, { side: 1, jacked: true })
+    this.peds.threat?.(w.x, w.z, 14, 2, 2)
     e.vacant = true
     this.sound.honk?.([300, 380], 0.05 * hearing(w.x, w.z), panOf(w.x, w.z))
-    emit('crime', { type: 'carjack', pos: { x: w.x, z: w.z }, severity: 2, vehicle: e.id })
+    emitGame('crime', { type: 'carjack', pos: { x: w.x, z: w.z }, severity: 2, vehicle: e.id })
   }
   seated (e, a) {
     this.action = null
@@ -307,9 +308,9 @@ export class OnFoot {
     const pos = { x: e.pos.x, z: e.pos.z }
     if (a.how === 'theft' || a.how === 'jack') {
       e.stolen = true
-      emit('car-stolen', { vehicle: e.id, kind: e.kind, model: e.type, pos, how: a.how, alarm: !!a.alarm })
+      emitGame('car-stolen', { vehicle: e.id, kind: e.kind, model: e.type, pos, how: a.how, alarm: !!a.alarm })
     }
-    emit('car-entered', { vehicle: e.id, kind: e.kind, model: e.type, pos, stolen: e.stolen })
+    emitGame('car-entered', { vehicle: e.id, kind: e.kind, model: e.type, pos, stolen: e.stolen })
     const name = TITLE[e.type] || e.type
     if (e.kind !== 'roadster')
       this.hud.popup(`${name} · <b>E</b> to get out · no thrusters in this one`, 2600, 'hint')
@@ -329,7 +330,7 @@ export class OnFoot {
       e.vacant = true
     }
     this.input.handoff()
-    emit('car-exited', { vehicle: e.id, kind: e.kind, model: e.type, pos: { x: s.x, z: s.z } })
+    emitGame('car-exited', { vehicle: e.id, kind: e.kind, model: e.type, pos: { x: s.x, z: s.z } })
   }
   // the follow camera eased in from the camera on foot, or the camera on foot from the car's
   camToCar (e) {
@@ -356,7 +357,6 @@ export class OnFoot {
     this.RS.door = 0
     this.RS.optimus.root.visible = true
     this.rig.noCockpit = false
-    this.traffic.focus = null
     this.view.hide()
     this.prompt('')
   }
@@ -462,12 +462,6 @@ export class OnFoot {
       { passive: true }
     )
   }
-  // a car the player drives was hit (its sim's 'bump'): dented where it was (carDamage.js)
-  events () {
-    if (!this.alt.active) return
-    for (const e of this.alt.sim.events)
-      if (e.type === 'bump' && e.impact > 0.6 && e.px !== undefined)
-        hurt(this.alt.car, e.px, e.pz, e.impact, 1500, this.traffic.t)
-  }
+
 }
 

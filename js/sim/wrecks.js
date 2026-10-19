@@ -31,7 +31,7 @@ const A = { x: 0, z: 0, fx: 1, fz: 0, hl: 0, hw: 0 }
 export const TOW = 15 // s a wreck is out of sight before it is towed (traffic.js recycle)
 
 // knocked out of its lane: slide on locked-up tyres until it stops
-function loosen (tr, car) {
+export function loosen (tr, car) {
   if (car.loose) return
   tr.detach(car)
   car.loose = true
@@ -232,8 +232,7 @@ export function bumpLoose (tr, sim) {
       continue
     Object.assign(A, carRect(a))
     for (const b of tr.cars) {
-      // (the player's own car meets it from its side: collidePlayer)
-      if (b === a || b.player || Math.abs(b.x - a.x) > 9 || Math.abs(b.z - a.z) > 9)
+      if (b === a || b.ctl || Math.abs(b.x - a.x) > 9 || Math.abs(b.z - a.z) > 9)
         continue
       const hit = rectRect(A, carRect(b))
       if (!hit) continue
@@ -273,12 +272,13 @@ export function bumpLoose (tr, sim) {
 // the Roadster against the traffic: push apart by mass, trade momentum, knock the car loose. However
 // hard the hit, the Roadster stays drivable: it's a shove, not a crash.
 export function collidePlayer (tr, sim) {
-  if (sim.mode === 'ramp') return
+  if (sim.mode === 'ramp' || sim.mode === 'foot') return
   const me = playerRect(sim)
   const bottom = sim.mode === 'ground' ? sim.pos.y : sim.com.y - 0.9
+  const mass = sim.mass || CAR.mass // (whatever the player drives: vehicleLink.js)
   for (const car of tr.cars) {
-    if (Math.abs(car.x - me.x) > 9 || Math.abs(car.z - me.z) > 9) continue
-    if (bottom > car.hgt || car.player) continue // (not the car the player is in)
+    if (car.ctl || Math.abs(car.x - me.x) > 9 || Math.abs(car.z - me.z) > 9) continue
+    if (bottom > car.hgt) continue
     const hit = rectRect(me, carRect(car))
     if (!hit) continue
     // (the normal from the car towards the Roadster, before anything else reuses the contact, and
@@ -289,7 +289,7 @@ export function collidePlayer (tr, sim) {
       pz = at ? at.z : hit.pz
     loosen(tr, car)
     // share out the overlap by mass, then trade momentum
-    const share = car.m / (car.m + CAR.mass)
+    const share = car.m / (car.m + mass)
     nudge(sim, hit.nx * hit.depth * share, hit.nz * hit.depth * share)
     car.x -= hit.nx * hit.depth * (1 - share)
     car.z -= hit.nz * hit.depth * (1 - share)
@@ -298,7 +298,7 @@ export function collidePlayer (tr, sim) {
     me.x = BODY.x
     me.z = BODY.z
     // (the car dented where it was hit; what broke on it goes with the knock, for its sound)
-    const broke = hurt(car, px, pz, impact, CAR.mass, tr.t)
+    const broke = hurt(car, px, pz, impact, mass, tr.t)
     if (impact > 0.6)
       sim.emit('bump', {
         impact,
@@ -312,7 +312,10 @@ export function collidePlayer (tr, sim) {
       })
     if (impact > 5) tr.hear(me.x, me.z, 22)
     if (impact > 2.5 && car.honkT <= 0 && !car.honkIn) car.honkIn = 1.2
-    if (impact > 4) tr.shock(car.x, car.z)
+    if (impact > 4) {
+      tr.shock(car.x, car.z)
+      tr.anger(car, impact) // (handover.js)
+    }
   }
   if (sim.mode === 'ground') sim.syncPose()
 }
