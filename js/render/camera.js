@@ -1,9 +1,9 @@
 // Cameras: the autopilot's director shots, a GTA-style follow camera, chase, the driver's seat, side
-// and free orbit.
+// and free orbit; and, held, the look behind (follow.js), as GTA's.
 import * as THREE from 'three'
 import { clamp } from '../sim/constants.js'
 import { TRACK, LINEUP_FIRST, LINEUP_LAST } from '../sim/track.js'
-import { follow, ARM } from './follow.js'
+import { follow, clipTraffic, ARM } from './follow.js'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 
 export const CAM_MODES = [
@@ -27,6 +27,7 @@ export const RIDING = new Set(['follow', 'chase', 'cockpit'])
 
 const lerpK = (k, dt) => 1 - Math.exp(-k * dt)
 const BLEND_TIME = 1.8 // s to ease from one shot into the next (cuts skip it)
+const SHOULDER = 2.7 // rad: how far round the driver's head turns to look back
 const _p = new THREE.Vector3(),
   _f = new THREE.Vector3(),
   _u = new THREE.Vector3(),
@@ -65,6 +66,12 @@ export class CameraRig {
     this.shotT = 0 // seconds since the current shot began
     this.chaseDir = new THREE.Vector3(1, 0, 0)
     this.clip = null // (aim, pos) => pulls pos in front of anything solid; set in the city
+    // the traffic and the input, when main.js hands them over: the riding shots keep out of the
+    // cars (follow.js: clipTraffic, and how far out it lets the camera, reach), and look behind
+    // while the key is held (behind)
+    this.traffic = this.input = null
+    this.reach = Infinity
+    this.behind = false
     this.cockpit = null // { head, body }: the driver's head and the car's body, for the Cockpit
     this.camUp = new THREE.Vector3(0, 1, 0)
     this.controls = new OrbitControls(camera, dom)
@@ -122,11 +129,13 @@ export class CameraRig {
     if (m === 'free') this.controls.target.copy(this.look)
     if (m === 'follow') this.f.init = false
     this.f.yawOff = this.f.pitchOff = 0
+    this.reach = Infinity
   }
   // the car was just put somewhere else: cut to it rather than ease over from where the camera was
   cut () {
     this.shot = ''
     this.f.init = false
+    this.reach = Infinity
   }
   cycle () {
     this.setMode(
@@ -168,9 +177,10 @@ export class CameraRig {
     head.getWorldPosition(this.pos)
     this.pos.addScaledVector(_u, 0.1).addScaledVector(_f, 0.04)
     this.camUp.copy(_u)
-    // the gaze: along the car, turned about its up axis and tipped down a little
-    const yaw = f.yawOff + sim.steerAng * 0.5,
-      pitch = -0.1 - f.pitchOff * 0.6
+    // the gaze: along the car, turned about its up axis and tipped down a little (looking back, the
+    // head turned round over the right shoulder and the gaze level, over the seats)
+    const yaw = f.yawOff + sim.steerAng * 0.5 - (this.behind ? SHOULDER : 0),
+      pitch = (this.behind ? 0 : -0.1) - f.pitchOff * 0.6
     _t.copy(_f).applyAxisAngle(_u, yaw)
     _r.crossVectors(_t, _u).normalize() // (to the right of the gaze)
     _t.applyAxisAngle(_r, pitch)
@@ -199,9 +209,12 @@ export class CameraRig {
         ? _t.set(v.x / hv, 0, v.z / hv)
         : _t.set(fw.x, 0, fw.z).normalize()
     if (dir.lengthSq() > 0.5) this.chaseDir.lerp(dir, 0.08).normalize()
-    const d = this.chaseDir
-    this.pos.set(P.x - d.x * 9.5, Math.max(P.y + 3.4, 1.2), P.z - d.z * 9.5)
-    this.aim.set(P.x + d.x * 3, P.y + 0.8, P.z + d.z * 3)
+    // (looking back, from as far ahead of the car)
+    const d = this.chaseDir,
+      back = this.behind ? -9.5 : 9.5,
+      on = this.behind ? -3 : 3
+    this.pos.set(P.x - d.x * back, Math.max(P.y + 3.4, 1.2), P.z - d.z * back)
+    this.aim.set(P.x + d.x * on, P.y + 0.8, P.z + d.z * on)
     return 58
   }
 
@@ -225,6 +238,8 @@ export class CameraRig {
   }
 
   update (dt, t, sim, autoShot) {
+    const was = this.behind
+    this.behind = false
     const P =
       sim.mode === 'air' || sim.mode === 'crash'
         ? _p.copy(sim.com)
@@ -241,6 +256,11 @@ export class CameraRig {
     let shot =
       this.mode === 'director' ? autoShot || this.manualShot(sim) : this.mode
     if (shot === 'follow' && this.shot !== 'follow') this.f.init = false
+    // Z held looks back from the riding shots only (main.js turns the radar by it), and looking
+    // back or ahead again is a cut: what kept the camera out of a car is forgotten
+    this.behind = RIDING.has(shot) && !!this.input?.lookBack()
+    const turned = this.behind !== was
+    if (turned) this.reach = Infinity
     const entering = shot !== this.shot
     const st = entering ? 0 : this.shotT // time in the current shot
     let k = 3.5,
@@ -365,8 +385,10 @@ export class CameraRig {
         fov = this.follow(dt, sim, P)
         snap = true
     }
+    if (turned) snap = true // (the chase camera too: round at once, not swept over the car)
     const cam = this.camera
     if (entering) {
+      this.reach = Infinity
       if (cut || this.shot === '') {
         cam.fov = fov
         this.blend = 1
@@ -393,8 +415,11 @@ export class CameraRig {
     const e = this.blend * this.blend * (3 - 2 * this.blend)
     cam.position.copy(this.fromOff).add(P).lerp(this.shotPos, e)
     this.look.copy(this.fromLookOff).add(P).lerp(this.shotLook, e)
-    if (this.clip && (shot === 'follow' || shot === 'chase'))
+    if (this.clip && (shot === 'follow' || shot === 'chase')) {
       this.clip(this.look, cam.position)
+      if (this.traffic)
+        clipTraffic(this, this.look, cam.position, this.traffic.cars, dt)
+    }
     cam.fov += (fov - cam.fov) * lerpK(shot === 'cockpit' ? 12 : 3, dt)
     cam.updateProjectionMatrix()
     // (from the driver's seat the horizon tilts with the car; every other shot keeps it level)
