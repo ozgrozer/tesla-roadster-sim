@@ -3,6 +3,7 @@
 // clear of the streets and pavements: npm test
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
+import { onHillRoad } from '../js/sim/hillroad.js'
 import { Sim } from '../js/sim/sim.js'
 import { roofAt } from '../js/sim/roofs.js'
 import { Traffic } from '../js/sim/traffic.js'
@@ -159,6 +160,8 @@ test('everything built stands on its lot, clear of the streets and pavements', (
   for (const s of SOLIDS) {
     // (the freeway's deck and its parapets cross the streets on purpose, up out of the way: freeway.js)
     if (s.look === 'deck' || (s.look === 'barrier' && s.y0 > 4)) continue
+    // (nor is the hill road on a lot: it runs from the ring road up into the hills, hillroad.js)
+    if (onHillRoad((s.x0 + s.x1) / 2, (s.z0 + s.z1) / 2, 2)) continue
     const blk = blockAt((s.x0 + s.x1) / 2, (s.z0 + s.z1) / 2)
     assert.ok(blk && inLot(blk, s.x0, s.x1, s.z0, s.z1), `a ${s.look} on a lot`)
   }

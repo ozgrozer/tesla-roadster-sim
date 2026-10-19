@@ -9,6 +9,7 @@ import * as THREE from 'three'
 import { SOLIDS } from '../sim/city.js'
 import { PROPS, DECKS, RAMPS } from '../sim/lots.js'
 import { FWY } from '../sim/freeway.js'
+import { TUNNELS, HILL_HW } from '../sim/hillroad.js'
 import { canvasTex } from './scene.js'
 import { Builder } from './builder.js'
 import { district, DISTRICTS, Instances } from './chunks.js'
@@ -125,6 +126,33 @@ function deck (B, d) {
   }
 }
 
+// the hill road's tunnel (hillroad.js): its lining, its roof, lamps down the middle and a concrete
+// portal at each end, set into the ridge
+function tunnel (B, lit, t) {
+  const W = HILL_HW,
+    zc = (t.z0 + t.z1) / 2
+  const lo = Math.min(t.h0, t.h1) - 1,
+    top = t.y1 - 0.5
+  const LINING = C(0xc9c3b4)
+  B.quad([t.x0, lo, zc - W], [t.x1, lo, zc - W], [t.x1, top, zc - W], [t.x0, top, zc - W], [0, 0, 1], [0, 0, 1, 1], LINING)
+  B.quad([t.x1, lo, zc + W], [t.x0, lo, zc + W], [t.x0, top, zc + W], [t.x1, top, zc + W], [0, 0, -1], [0, 0, 1, 1], LINING)
+  B.quad([t.x0, top, zc - W], [t.x0, top, zc + W], [t.x1, top, zc + W], [t.x1, top, zc - W], [0, -1, 0], [0, 0, 1, 1], C(0x8b877e))
+  for (let x = t.x0 + 5; x < t.x1; x += 10) lit.cuboid(x - 1.2, x + 1.2, zc - 0.25, zc + 0.25, top - 0.15, top, WHITE)
+  for (const [x, h, o] of [
+    [t.x0, t.h0, -1],
+    [t.x1, t.h1, 1]
+  ]) {
+    const a = Math.min(x, x + o),
+      b = Math.max(x, x + o)
+    const y0 = h - 1,
+      y1 = h + (t.y1 - Math.max(t.h0, t.h1)) + 8
+    B.cuboid(a, b, zc - W - 12, zc - W, y0, y1, CONCRETE)
+    B.cuboid(a, b, zc + W, zc + W + 12, y0, y1, CONCRETE)
+    B.cuboid(a, b, zc - W, zc + W, h + t.y1 - Math.max(t.h0, t.h1) - 0.5, y1, CONCRETE)
+    B.cuboid(a - 0.3, b + 0.3, zc - W - 12.3, zc + W + 12.3, y1, y1 + 0.5, C(0xa9a397))
+  }
+}
+
 // one of each prop kind, into the builders
 function propOf (B, p) {
   const { x, z } = p
@@ -232,6 +260,9 @@ export function buildWorks (group) {
     } else if (p.kind === 'bush') bushes.push(p)
     else propOf(solid[at(p.x, p.z)], p)
   }
+  const lit = new Builder()
+  for (const t of TUNNELS) tunnel(solid[at((t.x0 + t.x1) / 2, (t.z0 + t.z1) / 2)], lit, t)
+  add(group, lit, new THREE.MeshBasicMaterial({ color: 0xfff1cf }), false, 'tunnel lamps')
   const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, metalness: 0.05 })
   for (const b of solid) add(group, b, mat, true, 'works')
   const chainMat = new THREE.MeshStandardMaterial({

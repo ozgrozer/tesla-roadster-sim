@@ -8,6 +8,7 @@ import * as THREE from 'three'
 import { merge } from './geo.js'
 import { PROMENADE, rng } from '../sim/city.js'
 import { WALL, WALL_H } from '../sim/edge.js'
+import { HILL_GAP } from '../sim/hillroad.js'
 import {
   PLANT,
   roundTree,
@@ -43,7 +44,7 @@ function run (axis, d, a, b, y0, h, thick) {
 
 // The planting along one side, from a to b (axis 'x' or 'z', the wall at d): a hedge of oleanders
 // at the wall's foot (where there is one), palms and trees out on the verge. Pieces, by stretch.
-function planting (axis, d, a, b, hedge) {
+function planting (axis, d, a, b, hedge, skip = () => false) {
   const stretches = new Map()
   const put = (s, ...g) => {
     const k = Math.floor((s - a) / STRETCH)
@@ -70,6 +71,7 @@ function planting (axis, d, a, b, hedge) {
     }
   for (let s = a + 10; s < b - 6; s += 22 + R() * 10) {
     const [x, , z] = at(s, PROMENADE + 3 + R() * 4)
+    if (skip(s)) continue
     if (R() < 0.75)
       put(s, ...palmAt({ x, z, h: 13 + R() * 9, lean: R() * 6.3 }))
     else {
@@ -111,7 +113,14 @@ export function buildWalls (group) {
     run(axis, d, a - 0.08, b + 0.08, h, 0.18, T + 0.16)
   ]
   for (const [kind, runs] of [
-    ['concrete', wall('x', -WALL, -PROMENADE, WALL + T, WALL_H.north)],
+    // (the hill road's gap in the one at the foot of the hills)
+    [
+      'concrete',
+      [
+        ...wall('x', -WALL, -PROMENADE, HILL_GAP[0], WALL_H.north),
+        ...wall('x', -WALL, HILL_GAP[1], WALL + T, WALL_H.north)
+      ]
+    ],
     [
       'blocks',
       [
@@ -129,7 +138,8 @@ export function buildWalls (group) {
   }
   // the planting, a stretch to a mesh
   for (const piece of [
-    ...planting('x', -WALL, -PROMENADE, WALL, false),
+    ...planting('x', -WALL, -PROMENADE, WALL, false, s =>
+      s > HILL_GAP[0] - 6 && s < HILL_GAP[1] + 6),
     ...planting('z', WALL, -WALL + 2, WALL - 2, true),
     ...planting('x', WALL, -PROMENADE + 3, WALL - 3, true)
   ]) {
