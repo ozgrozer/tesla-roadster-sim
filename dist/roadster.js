@@ -104604,7 +104604,7 @@ function stepBoard (a, dt, p, world) {
 // may this walk up be called off (a move key)? Not once a driver is being taken from their car.
 const cancellable = a =>
   a.dir === 'in' && a.phase === 'walk' && a.how !== 'jack'
-__export(__exports, { "BOARD": () => BOARD, "howToEnter": () => howToEnter, "startEnter": () => startEnter, "startExit": () => startExit, "doorOf": () => doorOf, "seatShare": () => seatShare, "stepBoard": () => stepBoard, "cancellable": () => cancellable, "FOOT": () => FOOT })
+__export(__exports, { "BOARD": () => BOARD, "howToEnter": () => howToEnter, "startEnter": () => startEnter, "startExit": () => startExit, "doorOf": () => doorOf, "seatShare": () => seatShare, "stepBoard": () => stepBoard, "cancellable": () => cancellable })
 })
 
 // ---- js/ui/prompt.js

@@ -230,4 +230,3 @@ export function stepBoard (a, dt, p, world) {
 export const cancellable = a =>
   a.dir === 'in' && a.phase === 'walk' && a.how !== 'jack'
 
-export { FOOT }
