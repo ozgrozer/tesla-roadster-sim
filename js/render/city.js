@@ -26,6 +26,7 @@ import { buildGround } from './cityGround.js'
 import { buildStreet } from './cityStreet.js'
 import { buildBuildings, BEACON } from './cityBuildings.js'
 import { updateTrees } from './cityTrees.js'
+import { streamed, stream, streamAll } from './chunks.js'
 
 const _pv = new THREE.Matrix4(),
   _view = new THREE.Frustum()
@@ -71,6 +72,22 @@ function depthMaterials (group) {
   })
 }
 
+// Every district-sized mesh the city has built (not those spanning the city, nor those drawn
+// whatever the view: the sky's) streamed: left out once the fog has swallowed it (chunks.js)
+const DISTRICT_R = 420 // m: the bounds of a district's mesh at most (a district: 288 m across)
+function streamCity (g) {
+  g.updateMatrixWorld(true)
+  g.traverse(o => {
+    if (!o.isMesh || !o.frustumCulled || o.userData.streamed) return
+    let b = o.isInstancedMesh ? o.boundingSphere : o.geometry.boundingSphere
+    if (!b && !o.isInstancedMesh) {
+      o.geometry.computeBoundingSphere()
+      b = o.geometry.boundingSphere
+    }
+    if (b && b.radius < DISTRICT_R) streamed(o)
+  })
+}
+
 export class CityView {
   constructor () {
     this.group = null
@@ -90,6 +107,7 @@ export class CityView {
     buildWorks(g) // (the new districts' docks, stacks, fences, the freeway deck and ramps)
     buildPort(g) // (the quay, its cranes and the ship alongside)
     buildStadium(g) // (the stadium's pitch, stands and canopy)
+    streamCity(g)
     const top = Math.max(...BUILDINGS.map(b => b.h)) + 30 // (and the masts on top)
     const sun = new THREE.Vector3(ENV.sun.x, ENV.sun.y, ENV.sun.z)
     this.shadow = new CityShadow(scene, renderer, sun, OUTER, top)
@@ -177,6 +195,7 @@ export class CityView {
   // before the frame is drawn: the city's shadow map, if it is due (with the cars and hide, the
   // Roadster, left out of it)
   shadows (camera, hide) {
+    if (this.shadow?.pending) streamAll() // (the whole city in it, near or far)
     if (this.shadow?.pending)
       this.shadow.update(camera, [
         ...this.cars.meshes,
@@ -199,6 +218,8 @@ export class CityView {
     updateTrees(dt, camera) // (the palms' and trees' sway, and detail near)
     this.signals.update(traffic.t)
     this.aircraft.update(dt, this.dark, camera)
+    // (the districts' meshes left out past their distance or the fog's: chunks.js)
+    this.shown = stream(camera, scene.fog?.density || 0)
     // (only what the camera can see is drawn)
     _pv.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse)
     _view.setFromProjectionMatrix(_pv)

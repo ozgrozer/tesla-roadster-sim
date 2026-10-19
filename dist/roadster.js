@@ -63901,6 +63901,10 @@ __define(51, function (__exports) {
 const { N, HALF, EDGE, WALK, PITCH, CURB_R, BLOCKS, ROAD_HW, BUILDINGS } = __require(33)
 const { COAST, HILLS, LANDMARKS } = __require(5)
 const { WALL, SHORE, PIER } = __require(36)
+const { DECKS, RAMPS } = __require(31)
+const { FWY } = __require(27)
+const { HILL_ROAD, HILL_HW } = __require(29)
+const { QUAY } = __require(30)
 const MAP = {
   road: '#9ba1a9',
   block: '#4a4f58',
@@ -63968,6 +63972,12 @@ function cityLayers () {
     const c = b.h < 15 ? MAP.low : b.h < 45 ? MAP.mid : MAP.tall
     shape(3, c).rect(b.x0, b.z0, b.x1 - b.x0, b.z1 - b.z0)
   }
+  // the freeway's deck over the streets, its ramps and merge lanes, and the other decks and ramps
+  // (the hill road's landings, its bridge and the lookout), over everything
+  const fwy = shape(4, MAP.freeway)
+  if (FWY.x1 > FWY.x0) fwy.rect(FWY.x0, FWY.z0, FWY.x1 - FWY.x0, FWY.z1 - FWY.z0)
+  for (const r of [...RAMPS, ...DECKS]) fwy.rect(r.x0, r.z0, r.x1 - r.x0, r.z1 - r.z0)
+  if (FWY.x1 > FWY.x0) shape(5, MAP.lane).rect(FWY.x0, FWY.z - 0.3, FWY.x1 - FWY.x0, 0.6)
   // (a layer at a time; within one, lawns before car parks before pools, as they are laid)
   const rank = [MAP.park, MAP.lot, MAP.water]
   return layers.sort(
@@ -64095,6 +64105,26 @@ function drawSurroundings (g, p, reach, px) {
   g.fillRect(-FAR, -FAR, FAR - SHORE - 140, FAR * 2)
   g.restore()
   pier(g)
+  works(g, px)
+}
+
+// the port's quay along the beach, and the hill road winding up into the hills (its tunnel dashed)
+function works (g, px) {
+  g.fillStyle = MAP.lot
+  g.fillRect(QUAY.x0, QUAY.z0, QUAY.x1 - QUAY.x0, QUAY.z1 - QUAY.z0)
+  g.lineCap = 'round'
+  for (const s of HILL_ROAD) {
+    const tunnel = s.kind === 'tunnel'
+    g.strokeStyle = tunnel ? MAP.farBlock : MAP.road
+    g.lineWidth = HILL_HW * 2
+    g.setLineDash(tunnel ? [6, 4] : [])
+    g.beginPath()
+    g.moveTo(s.x0, s.z0)
+    g.lineTo(s.x1, s.z1)
+    g.stroke()
+  }
+  g.setLineDash([])
+  g.lineCap = 'butt'
 }
 
 // the pier's deck, out from the promenade into the sea, and its big wheel
@@ -64123,6 +64153,8 @@ __define(52, function (__exports) {
 // route and the waypoint (gps.js); and the Roadster's arrow, pointing the way it faces.
 const { JAM_AT } = __require(50)
 const { WALL, SHORE } = __require(36)
+const { QUAY } = __require(30)
+const { HILL_ROAD } = __require(29)
 const { N, HALF, EDGE, PITCH, ROADS, STOP } = __require(33)
 const { drawCity, drawSurroundings } = __require(51)
 const { COLOR, GLYPHS, blip, arrow, routeLine } = __require(49)
@@ -64155,8 +64187,11 @@ const SIDES = {
 // small }
 const BEACH = -(EDGE + SHORE) / 2,
   [EAST, SOUTH] = LANDMARKS.freeways
+const HILL_X = HILL_ROAD.length ? HILL_ROAD[0].x0 + 60 : 0
 const REGIONS = [
-  { name: 'Pacific Ocean', x: -860, z: 220, sea: true },
+  { name: 'Pacific Ocean', x: -SHORE - 160, z: 220, sea: true },
+  { name: 'Port', x: (QUAY.x0 + QUAY.x1) / 2, z: (QUAY.z0 + QUAY.z1) / 2, up: true, small: true },
+  { name: 'Santa Fe Canyon Rd', x: HILL_X, z: -WALL - 70, small: true },
   { name: 'Santa Monica Beach', x: BEACH, z: 230, up: true, small: true },
   { name: 'Hollywood Hills', x: -150, z: -WALL - 150 },
   { name: 'Freeway', x: EAST.x0, z: 280, up: true, small: true },
@@ -64324,7 +64359,10 @@ const { gps } = __require(48)
 const { drawMap } = __require(52)
 const { whereIs, LANDMARKS } = __require(5)
 const { WALL, SHORE, onDeck } = __require(36)
-const FIT = { x0: -560, x1: 560, z0: -770, z1: 600 } // what fits in the window to begin with
+const { onQuay } = __require(30)
+const { onHillRoad, inTunnel } = __require(29)
+// what fits in the window to begin with: the city from the beach to the walls, and the hill road
+const FIT = { x0: -SHORE - 40, x1: WALL + 40, z0: -WALL - 160, z1: WALL + 40 }
 const K_MAX = 8 // px a metre, zoomed right in
 const PICK = 16 // px from the waypoint that a click counts as on it
 const DRAG = 6 // px a press has to move to be a drag rather than a click
@@ -64333,6 +64371,8 @@ const NONE = [] // (no route: at the test site, the car isn't in the city)
 // what lies round the city under the pointer (null: in the city, where whereIs names the street)
 function around (x, z) {
   if (onDeck(x, z)) return 'Santa Monica Pier'
+  if (onQuay(x, z)) return 'Port of Los Angeles'
+  if (onHillRoad(x, z)) return inTunnel(x, z) ? 'Santa Fe Canyon Tunnel' : 'Santa Fe Canyon Rd'
   if (x < -SHORE) return 'Pacific Ocean'
   if (z < -WALL) return 'Hollywood Hills'
   if (x <= WALL && z <= WALL) return null
@@ -96649,22 +96689,63 @@ __define(183, function (__exports) {
 // into the car's shadow map on every frame, though it covers only sixty metres round the car. Split
 // three ways across the city each way, the shadow map round the car takes in one district, or two
 // or four where they meet, and the view leaves out whatever districts are behind it.
+// On the grown map (eighteen blocks a side) the districts are a six by six grid, each three blocks
+// across; and they are streamed (stream): small things (signs, bins, bushes, lamps) are left out
+// past their own distance, and everything past where the fog has swallowed it.
 const THREE = __require(0)
 const { HALF } = __require(33)
-const CUT = HALF / 3 // m from the middle to where the districts meet
+const GRID = 6 // districts a side
+const SIZE = (2 * HALF) / GRID // m across a district
 const MARGIN = 12 // m added round each district's bounds (and they are fitted again as things fall)
-const DISTRICTS = 9
+const DISTRICTS = GRID * GRID
+const FOGGED = 2.2 // fog density times distance where the fog has all but swallowed it (e^-4.8)
 
 const fit = m => {
   m.computeBoundingSphere()
   m.boundingSphere.radius += MARGIN
 }
 
-// the district a point on the ground is in: 0 to 8
+// the district a point on the ground is in: 0 to DISTRICTS - 1 (past the edges, the edge's)
 function district (x, z) {
-  const k = v => (v < -CUT ? 0 : v < CUT ? 1 : 2)
-  return k(x) + 3 * k(z)
+  const k = v => Math.max(0, Math.min(GRID - 1, Math.floor((v + HALF) / SIZE) || 0))
+  return k(x) + GRID * k(z)
 }
+
+// The streamed meshes: { m, far } each, shown only within far m of the camera (and the fog's reach)
+const STREAM = []
+const _c = new THREE.Vector3()
+// stream mesh m: left out past far m (Infinity: only once the fog has it); bounds fitted if not yet
+function streamed (m, far = Infinity) {
+  if (m.userData.streamed) return
+  m.userData.streamed = true
+  m.userData.on ??= m.visible
+  STREAM.push({ m, far })
+}
+// Before a frame: each streamed mesh shown or not, by how far its bounds are from the camera
+// against its own distance and the fog's (density: scene.fog's, 0 for none). Returns how many shown.
+function stream (camera, density = 0) {
+  const fog = density > 0 ? FOGGED / density : Infinity
+  let n = 0
+  for (const { m, far } of STREAM) {
+    const b = m.isInstancedMesh ? m.boundingSphere : m.geometry.boundingSphere
+    if (!b) {
+      m.visible = m.userData.on
+      continue
+    }
+    _c.copy(b.center).applyMatrix4(m.matrixWorld)
+    const d = camera.position.distanceTo(_c) - b.radius
+    m.visible = m.userData.on && d < Math.min(far, fog)
+    if (m.visible) n++
+  }
+  return n
+}
+// every streamed mesh shown as it would be but for the distance (for a pass that sees it all: the
+// city's shadow map)
+function streamAll () {
+  for (const { m } of STREAM) m.visible = m.userData.on
+}
+// how many meshes are streamed (for the perf report)
+const streamCount = () => STREAM.length
 
 // One instanced mesh per district for a set of instances, addressed as one: at(i) is where instance
 // i stands ({ x, z }), and the instances keep their numbers whichever district's mesh they are in.
@@ -96676,7 +96757,7 @@ class Instances {
     mat,
     n,
     at,
-    { cast = true, receive = true, split = true } = {}
+    { cast = true, receive = true, split = true, far = Infinity } = {}
   ) {
     this.which = new Uint8Array(n)
     this.local = new Uint32Array(n)
@@ -96694,6 +96775,7 @@ class Instances {
       m.receiveShadow = receive
       return m
     })
+    this.far = split ? far : Infinity
     this.meshes = this.byDistrict.filter(Boolean)
   }
   setMatrixAt (i, m) {
@@ -96710,14 +96792,17 @@ class Instances {
     mesh.instanceColor.needsUpdate = true
   }
   set visible (v) {
-    for (const m of this.meshes) m.visible = v
+    for (const m of this.meshes) m.visible = m.userData.on = v
   }
   set receiveShadow (v) {
     for (const m of this.meshes) m.receiveShadow = v
   }
   // once every instance is placed: each district's bounds, with room for things knocked over
   bounds () {
-    for (const m of this.meshes) fit(m)
+    for (const m of this.meshes) {
+      fit(m)
+      if (this.far < Infinity) streamed(m, this.far)
+    }
     return this
   }
   // the bounds of instance i's district again, after it has moved (something knocked over slides
@@ -96726,7 +96811,7 @@ class Instances {
     fit(this.byDistrict[this.which[i]])
   }
 }
-__export(__exports, { "DISTRICTS": () => DISTRICTS, "district": () => district, "Instances": () => Instances })
+__export(__exports, { "DISTRICTS": () => DISTRICTS, "district": () => district, "streamed": () => streamed, "stream": () => stream, "streamAll": () => streamAll, "streamCount": () => streamCount, "Instances": () => Instances })
 })
 
 // ---- js/render/fallers.js
@@ -96760,10 +96845,12 @@ const pose = (
 // One instanced set a district for the items of list, each placed by place(item, i). (Those that
 // cast no shadow are small: one mesh for the city.) name: what its meshes are called (to tell
 // them apart when counting what a frame draws)
+const FAR = 650 // m: past this a district's posts, bins and benches are left out
 function instanced (geo, mat, list, place, shadow = true, name = '') {
   const m = new Instances(geo, mat, list.length, i => list[i], {
     cast: shadow,
-    split: shadow
+    split: shadow,
+    far: FAR // (streamed: chunks.js)
   })
   list.forEach((it, i) => m.setMatrixAt(i, place(it, i)))
   for (const mesh of m.meshes) mesh.name = name
@@ -98465,7 +98552,7 @@ function buildWorks (group) {
   // the containers: one box each, ribbed by a texture-free shade, instanced
   const col = new THREE.Color()
   if (boxes.length) {
-    const I = new Instances(UNIT, new THREE.MeshStandardMaterial({ roughness: 0.7, metalness: 0.2 }), boxes.length, i => boxes[i])
+    const I = new Instances(UNIT, new THREE.MeshStandardMaterial({ roughness: 0.7, metalness: 0.2 }), boxes.length, i => boxes[i], { far: 1000 })
     boxes.forEach((p, i) => {
       const along = p.yaw === 0
       Q.setFromAxisAngle(UP, 0)
@@ -98480,7 +98567,7 @@ function buildWorks (group) {
   }
   if (bushes.length) {
     const geo = new THREE.IcosahedronGeometry(1, 1)
-    const I = new Instances(geo, new THREE.MeshStandardMaterial({ roughness: 0.95, flatShading: true }), bushes.length, i => bushes[i], { cast: false })
+    const I = new Instances(geo, new THREE.MeshStandardMaterial({ roughness: 0.95, flatShading: true }), bushes.length, i => bushes[i], { cast: false, far: 450 })
     bushes.forEach((p, i) => {
       M.compose(V.set(p.x, p.r * 0.6, p.z), Q.identity(), S.set(p.r, p.r * 0.8, p.r))
       I.setMatrixAt(i, M)
@@ -102805,6 +102892,7 @@ const { buildGround } = __require(196)
 const { buildStreet } = __require(197)
 const { buildBuildings, BEACON } = __require(207)
 const { updateTrees } = __require(187)
+const { streamed, stream, streamAll } = __require(183)
 const _pv = new THREE.Matrix4(),
   _view = new THREE.Frustum()
 
@@ -102849,6 +102937,22 @@ function depthMaterials (group) {
   })
 }
 
+// Every district-sized mesh the city has built (not those spanning the city, nor those drawn
+// whatever the view: the sky's) streamed: left out once the fog has swallowed it (chunks.js)
+const DISTRICT_R = 420 // m: the bounds of a district's mesh at most (a district: 288 m across)
+function streamCity (g) {
+  g.updateMatrixWorld(true)
+  g.traverse(o => {
+    if (!o.isMesh || !o.frustumCulled || o.userData.streamed) return
+    let b = o.isInstancedMesh ? o.boundingSphere : o.geometry.boundingSphere
+    if (!b && !o.isInstancedMesh) {
+      o.geometry.computeBoundingSphere()
+      b = o.geometry.boundingSphere
+    }
+    if (b && b.radius < DISTRICT_R) streamed(o)
+  })
+}
+
 class CityView {
   constructor () {
     this.group = null
@@ -102868,6 +102972,7 @@ class CityView {
     buildWorks(g) // (the new districts' docks, stacks, fences, the freeway deck and ramps)
     buildPort(g) // (the quay, its cranes and the ship alongside)
     buildStadium(g) // (the stadium's pitch, stands and canopy)
+    streamCity(g)
     const top = Math.max(...BUILDINGS.map(b => b.h)) + 30 // (and the masts on top)
     const sun = new THREE.Vector3(ENV.sun.x, ENV.sun.y, ENV.sun.z)
     this.shadow = new CityShadow(scene, renderer, sun, OUTER, top)
@@ -102955,6 +103060,7 @@ class CityView {
   // before the frame is drawn: the city's shadow map, if it is due (with the cars and hide, the
   // Roadster, left out of it)
   shadows (camera, hide) {
+    if (this.shadow?.pending) streamAll() // (the whole city in it, near or far)
     if (this.shadow?.pending)
       this.shadow.update(camera, [
         ...this.cars.meshes,
@@ -102977,6 +103083,8 @@ class CityView {
     updateTrees(dt, camera) // (the palms' and trees' sway, and detail near)
     this.signals.update(traffic.t)
     this.aircraft.update(dt, this.dark, camera)
+    // (the districts' meshes left out past their distance or the fog's: chunks.js)
+    this.shown = stream(camera, scene.fog?.density || 0)
     // (only what the camera can see is drawn)
     _pv.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse)
     _view.setFromProjectionMatrix(_pv)
@@ -110632,7 +110740,7 @@ function frame (now) {
   if (app.paused)
     return (last = now) && menu.blanked() && post.render(app.sim, rig.shot, 0)
   resolution.apply() // (a step in resolution before anything is sized or drawn)
-  const dt = Math.min(0.05, (now - last) / 1000)
+  const dt = Math.max(0, Math.min(0.05, (now - last) / 1000)) // (never back: a first frame stamped before the load ended)
   last = now
   clock += dt
   input.poll()

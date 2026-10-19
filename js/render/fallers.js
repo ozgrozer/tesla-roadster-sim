@@ -28,10 +28,12 @@ export const pose = (
 // One instanced set a district for the items of list, each placed by place(item, i). (Those that
 // cast no shadow are small: one mesh for the city.) name: what its meshes are called (to tell
 // them apart when counting what a frame draws)
+const FAR = 650 // m: past this a district's posts, bins and benches are left out
 export function instanced (geo, mat, list, place, shadow = true, name = '') {
   const m = new Instances(geo, mat, list.length, i => list[i], {
     cast: shadow,
-    split: shadow
+    split: shadow,
+    far: FAR // (streamed: chunks.js)
   })
   list.forEach((it, i) => m.setMatrixAt(i, place(it, i)))
   for (const mesh of m.meshes) mesh.name = name

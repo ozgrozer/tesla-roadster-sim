@@ -276,7 +276,7 @@ export function buildWorks (group) {
   // the containers: one box each, ribbed by a texture-free shade, instanced
   const col = new THREE.Color()
   if (boxes.length) {
-    const I = new Instances(UNIT, new THREE.MeshStandardMaterial({ roughness: 0.7, metalness: 0.2 }), boxes.length, i => boxes[i])
+    const I = new Instances(UNIT, new THREE.MeshStandardMaterial({ roughness: 0.7, metalness: 0.2 }), boxes.length, i => boxes[i], { far: 1000 })
     boxes.forEach((p, i) => {
       const along = p.yaw === 0
       Q.setFromAxisAngle(UP, 0)
@@ -291,7 +291,7 @@ export function buildWorks (group) {
   }
   if (bushes.length) {
     const geo = new THREE.IcosahedronGeometry(1, 1)
-    const I = new Instances(geo, new THREE.MeshStandardMaterial({ roughness: 0.95, flatShading: true }), bushes.length, i => bushes[i], { cast: false })
+    const I = new Instances(geo, new THREE.MeshStandardMaterial({ roughness: 0.95, flatShading: true }), bushes.length, i => bushes[i], { cast: false, far: 450 })
     bushes.forEach((p, i) => {
       M.compose(V.set(p.x, p.r * 0.6, p.z), Q.identity(), S.set(p.r, p.r * 0.8, p.r))
       I.setMatrixAt(i, M)
