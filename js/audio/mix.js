@@ -359,6 +359,8 @@ export function mixSound (sound, app, traffic, dt, clock, peds) {
   st.cut = cut
   st.carPan = panOf(_cp.x, _cp.z)
   st.camY = cp.y
+  st.px = cp.x // (the district round the camera: zones.js)
+  st.pz = cp.z
   st.night = city && app.night
   // the weather (sim/env.js): the rain, the wet road, the wind and the lightning's strikes, and
   // the way the camera faces (the same way round as a strike's bearing), for the thunder's side

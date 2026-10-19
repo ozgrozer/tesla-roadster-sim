@@ -32,10 +32,9 @@ import { warmUp } from './render/warm.js'
 import { Damage } from './render/damage.js'
 import { MAT, scene, camera, canvas } from './render/scene.js'
 import { renderer, followKeyLight } from './render/scene.js'
-import { fallFx, ALL_PARTICLES, updateNozzles } from './render/effects.js'
-import { emitThrusters, emitTireSmoke } from './render/effects.js'
+import { fallFx, ALL_PARTICLES, updateNozzles, emitThrusters, emitTireSmoke, attachDiamonds } from './render/effects.js'
 import { emitTrafficSpray } from './render/spray.js'
-import { attachDiamonds } from './render/effects.js'
+import { Game } from './game.js'
 import { OnFoot } from './onFoot.js'
 import { player } from './sim/player.js'
 import { vehicles } from './sim/vehicles.js'
@@ -287,6 +286,8 @@ Object.assign(rig, { traffic, input }) // (camera.js: clear of the cars, Z to lo
 // the player on foot, and in and out of any car (onFoot.js)
 const foot = new OnFoot({ app, sim, RS, rig, camera, canvas, input, hud, sound, traffic, peds, intro, setCam, cityView })
 const polish = new Polish({ foot, rig, sound, hud, cityView, RS })
+// the wanted level, the police, the missions and the street events (game.js)
+const game = new Game({ sim, foot, traffic, peds, hud, minimap, app, damage, respawn: at => resetTo('city', at) })
 // browsers only allow audio after a gesture: the first click or key turns sound on
 function unlockSound (e) {
   if (e.code === 'KeyN' || e.target?.closest?.('#btnSound')) return
@@ -330,6 +331,7 @@ const demo = driveDemo(sim, traffic) // (?drive=van: a handling class to try, dr
 function step (c, city) {
   if (city && demo) demo.step(H, c)
   foot.step(H, c, city, VIEW, peds, traffic)
+  if (city) game.step(H, VIEW)
   app.lastCtl = c
 }
 // the controls of whatever the player drives (none on foot: their keys walk them, onFoot.js)
@@ -383,6 +385,7 @@ function frame (now) {
     app.pilotHorn = ph
     setHorn(ph)
   }
+  if (city) game.simEvents(foot.seen().events) // (a hard knock into the traffic: a crime, game.js)
   for (const e of sim.events)
     if (e.type === 'bump') damage.hit(e, sim)
     else if (e.type === 'crash') damage.crash(sim.quat, e.speed, sim.vel)
@@ -443,6 +446,7 @@ function frame (now) {
     cityView.update(simDt, clock, traffic, camera, peds)
     minimap.update(dt, app.focus || app.sim, traffic, VIEW.heading)
   }
+  game.frame(dt, city)
   mixSound(sound, app, traffic, dt, clock, peds)
   hud.update(dt, app)
   if (city) cityView.shadows(camera, [RS.car])
@@ -469,7 +473,7 @@ requestAnimationFrame(frame)
 // debugging hook for the console and automated checks: fast-forward the sim without rendering
 window.__roadster = {
   ...{ sim, env: ENV, climate, RS, damage, intro, tween, ap, rig, sound, app, traffic, peds },
-  ...{ cityView, renderer, resolution, post, menu, player, vehicles, foot, events: GAME_EVENTS, polish },
+  ...{ cityView, renderer, resolution, post, menu, player, vehicles, foot, events: GAME_EVENTS, game, polish },
   setAuto,
   resetTo,
   seatIn: type => seatIn({ foot, traffic, sim }, type),
