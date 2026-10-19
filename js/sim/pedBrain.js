@@ -35,7 +35,7 @@ export const PEDBRAIN = {
   // how soon someone sees a car coming (s before it would reach them)
   alertOf (p) {
     // (each their own, from who they are: no draw from the people's random numbers)
-    if (!p.alert) p.alert = 0.3 + ((p.look * 5.17 + p.i * 0.137) % 1) * 1.1
+    if (!p.alert) p.alert = (0.3 + ((p.look * 5.17 + p.i * 0.137) % 1) * 1.1) * (this.traits ? this.traits(p).alert : 1)
     return p.alert * (p.state === 'idle' && p.act === ACT.phone ? 0.45 : 1)
   },
   // once a step, before anyone moves: the threats raised, the horn, the player on foot, a jacked
