@@ -96,9 +96,12 @@ export function roadblockSpot (player, view, R, { min = 110, max = 200 } = {}) {
   let best = null,
     bs = Infinity
   for (const e of LANES) {
-    if (e.closed || e.len < 40) continue
+    if (e.closed || e.len < 24) continue
     if (Math.abs(e.dx * vx + e.dz * vz) < 0.8) continue // (along the way they are going)
-    const s = e.len / 2
+    // (the point of it nearest to (min + max) / 2 ahead of them)
+    const ax = player.pos.x + vx * (min + max) / 2,
+      az = player.pos.z + vz * (min + max) / 2
+    const s = Math.max(8, Math.min(e.len - 8, (ax - e.x0) * e.dx + (az - e.z0) * e.dz))
     const x = e.x0 + e.dx * s,
       z = e.z0 + e.dz * s
     const dx = x - player.pos.x,

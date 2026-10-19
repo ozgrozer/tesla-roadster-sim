@@ -232,7 +232,10 @@ export class Police {
       const d = Math.hypot(player.pos.x - u.x, player.pos.z - u.z)
       const seen = inView(view, u.x, u.z)
       let go = false
-      if (u.role === 'pursuit' && u.state === 'leave') go = (d > 120 && !seen) || u.leaveT > 40
+      if (u.role === 'pursuit' && u.state === 'leave') {
+        u.gone = (u.gone || 0) + dt // (stuck or not, gone in the end, out of sight)
+        go = (d > 120 || u.gone > 30) && !seen
+      }
       else if (u.role === 'pursuit') go = d > 420 && !seen
       else if (u.role === 'block') go = (u.age > 50 || stars < ROADBLOCK_STARS || d > 260) && !seen && d > 60
       if (u.role === 'pursuit' && u.state !== 'leave' && this.pursuing > UNITS[stars] + 1 && d > 160 && !seen) go = true
