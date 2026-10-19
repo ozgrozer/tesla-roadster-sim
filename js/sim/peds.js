@@ -10,11 +10,12 @@
 // as many as the hour, the rain and the neighbourhood draw (footfall.js). In the rain umbrellas
 // go up and hoods, and they hurry (shelter.js); some sit on the benches, look in a shop window or
 // stand under its canopy out of the rain, some stand talking in threes (linger.js), and a few walk
-// a dog (dogs.js).
+// a dog (dogs.js). A wreck's driver climbs out and hurries off to the pavement (alight.js).
 import { ENV } from './env.js'
 import { kerbDist } from './street.js'
 import { CROWD } from './crowd.js'
 import { DOGS } from './dogs.js'
+import { ALIGHT } from './alight.js'
 import { LINGER } from './linger.js'
 import { SHELTER } from './shelter.js'
 import { FOOTFALL } from './footfall.js'
@@ -235,6 +236,7 @@ export class Peds {
         threats.push(th)
       }
     this.alarms(sim, sim.mode === 'ramp' ? null : pl, traffic)
+    if (traffic.exits.length) this.alight(traffic) // (out of their wrecks: alight.js)
     // (loud: fast, or on the horn)
     const loud =
       me && (me.vx * me.vx + me.vz * me.vz > 121 || traffic.horn) ? me : null
@@ -474,4 +476,4 @@ export class Peds {
     this.strays()
   }
 }
-Object.assign(Peds.prototype, CROWD, SHELTER, LINGER, DOGS, FOOTFALL)
+Object.assign(Peds.prototype, CROWD, SHELTER, LINGER, DOGS, FOOTFALL, ALIGHT)
