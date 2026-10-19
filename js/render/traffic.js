@@ -10,16 +10,20 @@
 // dusk, the dark, the rain, the fog), each at their own moment, and their beams lie on the road
 // once it is dark enough to see them; tail lights read brighter in the rain. A police car on a call
 // has its light bar going all the time, brighter at night, when it throws its red and blue on the
-// road round it, and it flashes its headlights at the Roadster in its way. Only the cars the camera
-// can see are drawn (or whose shadows it can: the frustum is let out a little for those), in the
-// view and in the sun's shadow map alike; out of sight a car costs nothing but its springs.
+// road round it, and it flashes its headlights at the Roadster in its way. A car that has been hit
+// shows it: crumpled where it was hit, lamps broken, glass crazed or gone (carDents.js), steam or
+// smoke from under its bonnet (wreckSmoke.js). Only the cars the camera can see are drawn (or whose
+// shadows it can: the frustum is let out a little for those), in the view and in the sun's shadow
+// map alike; out of sight a car costs nothing but its springs.
 import * as THREE from 'three'
 import { ENV } from '../sim/env.js'
 import { CURB_H } from '../sim/city.js'
 import { clamp } from '../sim/constants.js'
 import { TYPES } from '../sim/traffic.js'
 import { ride, RIDE_DT } from './carRide.js'
+import { wreckSmoke } from './wreckSmoke.js'
 import { carShape, bodyMaterial } from './carShapes.js'
+import { dentsFor, putDents, headlightsLeft } from './carDents.js'
 import { lampMaterial, LAMP_T, LAMP_DARK } from './carLamps.js'
 import {
   RIM_FINISH,
@@ -118,7 +122,7 @@ export class TrafficView {
       group.add(m)
       return m
     }
-    this.types = TYPES.map(T => {
+    this.types = TYPES.map((T, k) => {
       const sh = carShape(T)
       const parts = {
         body: mesh(sh.paint, bodyMaterial(paint, sh.arch)),
@@ -127,7 +131,7 @@ export class TrafficView {
       }
       parts.body.setColorAt(0, new THREE.Color()) // allocates the per-car paint
       // each car's finish (bodyMaterial), and which of its lamps are lit: headlights, tail lights,
-      // braking, flags
+      // braking, flags; and its damage, which all its meshes read and are bent by (carDents.js)
       const finish = perCar(sh.paint, 'aPaint', max, 1)
       const lit = perCar(sh.trim, 'aLit', max, 4)
       return {
@@ -135,6 +139,7 @@ export class TrafficView {
         S: sh.S,
         lit,
         finish,
+        ...dentsFor(parts, max, k, sh.S),
         pal: paletteFor(T.name),
         roofs: blackRoofOf(T.name),
         rims: RIMS[T.name],
@@ -276,6 +281,7 @@ export class TrafficView {
       if (pass === 0)
         for (let k = 0; k < counts.length; k++) near[k] = counts[k]
     }
+    if (p) wreckSmoke(traffic, dt, p, this.types) // (off damaged cars and wrecks)
     for (let k = 0; k < this.types.length; k++) {
       const ty = this.types[k],
         c = counts[k]
@@ -286,6 +292,8 @@ export class TrafficView {
       dirty(ty.body.instanceColor, c)
       dirty(ty.finish, c)
       dirty(ty.lit, c)
+      dirty(ty.dent, c)
+      dirty(ty.hurt, c)
     }
     this.tyres.count = n.tyre
     this.rims.count = n.rim
@@ -360,6 +368,7 @@ export class TrafficView {
     ty.body.setMatrixAt(i, _b)
     ty.trim.setMatrixAt(i, _b)
     ty.glass.setMatrixAt(i, _b)
+    putDents(ty, i, car)
     // its paint: colour, solid or metallic, and a black roof on some
     const pe = ty.pal[Math.floor(car.paint * 256) & 255]
     ty.body.setColorAt(i, pe.c)
@@ -407,7 +416,8 @@ export class TrafficView {
     // their own moment as the light goes, and once it is dark enough their beams show on the road)
     const lit = !car.parked || car.jam
     const hl = lit ? step(switchAt(car), this.lights) : 0,
-      beam = hl * clamp((this.dark - 0.25) / 0.45, 0, 1)
+      beam =
+        hl * clamp((this.dark - 0.25) / 0.45, 0, 1) * headlightsLeft(car) * 0.5
     if (beam > 0.01 && n.beam < this.max) {
       _p.x = T.len / 2 + 7
       _p.y = 0.025
