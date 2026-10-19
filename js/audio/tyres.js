@@ -10,15 +10,24 @@
 // and rear axles each have their own; braking at the limit, the ABS holds the fronts at their peak
 // and they howl, lower, fluttering as it lets the pressure off and on. A locked wheel on the e-brake
 // is different, a rougher, lower scrub and howl over the tyre hopping; spinning up in a drift chirps
-// higher; and on grass or sand there is no squeal at all, but the grit and turf being scrubbed. The
-// air: wind noise rising steeply with speed (about the cube of it), in gusts that never repeat,
-// buffeting faster and faster, and from the driver's seat a thin whistle off the canopy's seals.
+// higher; and on grass or sand there is no squeal at all, but the grit and turf being scrubbed.
+// Over Botts' dots each tyre knocks on each dome, a dull thud up through the car (louder from the
+// driver's seat) with the tread's click, at the moment it struck, so crossing a line drums at the
+// rate the dots pass. The air: wind noise rising steeply with speed (about the cube of it), in
+// gusts that never repeat, buffeting faster and faster, and from the driver's seat a thin whistle
+// off the canopy's seals.
 import { clamp } from '../sim/constants.js'
 
 const smooth = (a, b, x) => {
   const t = clamp((x - a) / (b - a), 0, 1)
   return t * t * (3 - 2 * t)
 }
+// no two knocks quite alike (a share either side of 1)
+const vary = (a = 0.15) => 1 - a + Math.random() * 2 * a
+// s: how far ahead a Botts' dot's knock is set, a frame and a little (it struck up to a frame ago),
+// and how long after the last the dots' levels go back to rest
+const DOT_LAG = 0.03,
+  DOT_REST = 0.4
 // how much each surface squeals, and how much it roars, under a rolling tyre (the pier's planks
 // a hollow drumming, quieter than the road)
 const SQUEAL = { road: 1, walk: 0.8, wood: 0.7, grass: 0.04, sand: 0 }
@@ -139,6 +148,44 @@ export const TYRES = {
     to(n.scrub.connect(filt('bandpass', 1300, 0.6)), n.scrub.gain)
     this.bank.ready('gravel', b => (n.scrubSrc = loop(b)).connect(n.scrub))
     this.slabD = 0
+    // Botts' dots under a tyre: a dull knock up through the car and the click of the tread on the
+    // dome, each struck at its own moment (dot), through levels that rest between runs of them
+    n.dots = gain(0)
+    n.dotsK = gain(0)
+    n.dotT = gain(0)
+    n.dotK = gain(0)
+    n.dotPan = this.ctx.createStereoPanner()
+    brown
+      .connect(n.dots)
+      .connect(filt('lowpass', 230, 1.3))
+      .connect(n.dotT)
+      .connect(n.dotPan)
+    white
+      .connect(n.dotsK)
+      .connect(filt('bandpass', 1500, 1.4))
+      .connect(n.dotK)
+      .connect(n.dotPan)
+    to(n.dotPan, n.dots.gain, n.dotsK.gain)
+    this.dotAt = -9
+  },
+  // A wheel onto a Botts' dot (the sim's 'dot' event: v, the car's speed, m/s; left: a left wheel;
+  // ago: how long before the frame's last physics step it struck, in real seconds): its knock is
+  // set DOT_LAG s ahead less that, so a run of them keeps the rate they passed at rather than
+  // bunching into the frames they were counted in.
+  dot (v, left, ago) {
+    if (!this.playing()) return
+    const n = this.n,
+      now = this.ctx.currentTime,
+      t = now + Math.max(0, DOT_LAG - ago),
+      k = (this.inside ? 1 : 0.7) * clamp(0.3 + v / 20, 0.3, 1.5) * vary()
+    n.dotT.gain.setValueAtTime(1.1 * k, t)
+    n.dotT.gain.setTargetAtTime(0, t + 0.002, 0.016)
+    n.dotK.gain.setValueAtTime(0.2 * k * vary(), t)
+    n.dotK.gain.setTargetAtTime(0, t + 0.001, 0.005)
+    n.dotPan.pan.setValueAtTime(left ? -0.3 : 0.3, t)
+    this.R(n.dots.gain, 1, 0.004)
+    this.R(n.dotsK.gain, 1, 0.004)
+    this.dotAt = now
   },
   // the rolling roar, the surfaces and the wind; dt since they were last set
   rolling (st, dt, surf) {
@@ -246,6 +293,12 @@ export const TYRES = {
       g = st.grounded,
       inside = st.inside
     const surf = st.surface || 'road'
+    // (the dots heard louder from the driver's seat, through the car; at rest between runs of them)
+    this.inside = inside
+    if (this.now - this.dotAt > DOT_REST) {
+      R(n.dots.gain, 0, 0.05)
+      R(n.dotsK.gain, 0, 0.05)
+    }
     // (the squeal's waver: a new aim every few tenths of a second, eased towards)
     if ((this.waverT -= st.dt) < 0) {
       this.waverT = 0.12 + Math.random() * 0.3

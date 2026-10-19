@@ -8,6 +8,7 @@ import { canvasTex, speckle } from './scene.js'
 import { roadMaterial } from './roadSurface.js'
 import { wetGround } from './wet.js'
 import { lampLit } from './lampLight.js'
+import { dotted, eachMarker } from '../sim/botts.js'
 import {
   N,
   DIRS,
@@ -228,13 +229,11 @@ export function buildGround (group) {
 
   // ---------- paint ----------
   // (the lane lines in painted dashes, or, along the low-rise neighbourhoods' streets, in raised
-  // markers as on California's roads: four round dots and a square reflector every 7.3 m)
+  // markers as on California's roads: four round dots and a square reflector every 7.3 m, where
+  // the sim feels them: botts.js)
   const white = [],
     yellow = [],
     dots = []
-  const block = (bx, bz) =>
-    bx >= 0 && bz >= 0 && bx < N && bz < N ? BLOCKS[bz * N + bx].area : ''
-  const DOTS = new Set(['strip', 'venice', 'beach', 'estates'])
   for (let r = 0; r <= N; r++)
     for (let j = 0; j < N; j++) {
       const c = ROADS[r],
@@ -249,17 +248,14 @@ export function buildGround (group) {
           )
         for (const off of [-0.17, 0.17])
           put(yellow, (a + b) / 2, c + off, b - a, 0.12)
-        const side = alongZ
-          ? [block(r - 1, j), block(r, j)]
-          : [block(j, r - 1), block(j, r)]
-        const botts = DOTS.has(side[0]) || DOTS.has(side[1])
+        const botts = dotted(r, j, alongZ)
         for (const off of [-LANE_W, LANE_W])
           if (botts)
-            for (let u = a + 3; u < b - 4; u += 7.3) {
-              for (let k = 0; k < 4; k++)
-                put(dots, u + k * 0.9, c + off, 0.12, 0.12)
-              put(white, u + 3.65, c + off, 0.1, 0.1)
-            }
+            eachMarker(a, b, (u, square) =>
+              square
+                ? put(white, u, c + off, 0.1, 0.1)
+                : put(dots, u, c + off, 0.12, 0.12)
+            )
           else
             for (let u = a + 3; u < b - 2; u += 9)
               put(white, u, c + off, 3, 0.13)

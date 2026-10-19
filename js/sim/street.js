@@ -4,8 +4,10 @@
 // timber deck, each with its own grip and drag), and the street's ironwork: manholes out in the lanes
 // and drain grates in the gutter by every corner. The Roadster feels the kerb as it mounts or drops
 // off it, and each manhole a wheel runs over (s.suspV kicks the visual suspension; 'kerb' and
-// 'manhole' events carry it to the sound), and its tyres grip less on the pier's planks and grass and
-// less still on sand; and less on all of them in the wet (ENV.wet, env.js), most on the planks.
+// 'manhole' events carry it to the sound), and the Botts' dots each wheel runs onto (botts.js:
+// 'dot' events, heard and felt in a gamepad's rumble only), and its tyres grip less on the pier's
+// planks and grass and less still on sand; and less on all of them in the wet (ENV.wet, env.js),
+// most on the planks.
 import {
   N,
   HALF,
@@ -21,6 +23,7 @@ import {
 } from './city.js'
 import { onDeck } from './edge.js'
 import { ENV } from './env.js'
+import { dotsRunOver } from './botts.js'
 import { CAR } from './constants.js'
 
 // How far (x, z) is from the kerb, positive out on the road: folded into one quadrant of the
@@ -145,8 +148,14 @@ export function feel (s) {
   const moved = s.feel ? Math.hypot(x - s.feel.x, z - s.feel.z) : 99
   const fresh = !s.feel || moved > 3
   const st = (s.feel = s.feel || { x, z, kerb: [true, true], holes: new Set() })
+  const px = st.x,
+    pz = st.z,
+    pyaw = st.yaw ?? s.yaw,
+    gap = s.time - (st.t ?? -1)
   st.x = x
   st.z = z
+  st.yaw = s.yaw
+  st.t = s.time
   if (s.floor > 0) return
   // each axle mounting or dropping off the kerb (the promenade's edge onto the sand or the verge
   // too; not onto the pier, which is level with it)
@@ -176,6 +185,26 @@ export function feel (s) {
       s.emit('manhole', { v })
     }
   st.holes = under
+  // each wheel running onto Botts' dots since the step before (botts.js): a knock in its tyre for
+  // each dome or reflector, which the 'dot' event carries to the sound and a gamepad's rumble (with
+  // the step's time, so the drumming keeps the rate they pass at), and nothing to the handling;
+  // swept from where each wheel was the step before, so not after a hop through the air or a reset
+  // (gap: s since then)
+  if (on !== 'road' || fresh || v < 1 || !(gap > 0 && gap < 0.02)) return
+  const pfx = Math.cos(pyaw),
+    pfz = -Math.sin(pyaw)
+  for (const [sx, sl] of WHEELS) {
+    const a = CAR.halfWB * sx,
+      b = TRACK_HALF * sl
+    const n = dotsRunOver(
+      px + pfx * a + pfz * b,
+      pz + pfz * a - pfx * b,
+      x + fx * a + lx * b,
+      z + fz * a + lz * b
+    )
+    for (let i = 0; i < n; i++)
+      s.emit('dot', { v, front: sx > 0, left: sl > 0, t: s.time })
+  }
 }
 
 // grip and extra rolling drag for the car's surface (1 and 0 off the city's ground)
