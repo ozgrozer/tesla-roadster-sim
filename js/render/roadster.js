@@ -97,6 +97,8 @@ const box = (w, h, d, mat, x, y, z) => {
   m.position.set(x, y, z)
   return m
 }
+// a lamp's own copy of material m, marked with the end of the car it is at
+const lampAt = (m, end) => Object.assign(m.clone(), { userData: { lamp: end } })
 // a dark line along the roof glass at z, from x0 to x1 (the glass roof's panel joints)
 function roofLine (z, x0, x1) {
   const pos = [],
@@ -203,7 +205,10 @@ export function buildRoadster () {
 
   // front: light line along the hood's leading edge, squinting triangular headlights on the fenders'
   // facets, black splitter, amber markers behind the front arches and red ones ahead of the tail
-  body.add(box(0.014, 0.014, 1.18, MAT.headlight, 2.224, 0.525, 0))
+  // (the lamps' materials marked with the end they are at: a hard knock there breaks those on its
+  // side, damage.js)
+  const head = lampAt(MAT.headlight, 'front')
+  body.add(box(0.014, 0.014, 1.18, head, 2.224, 0.525, 0))
   // at night the headlights light the road ahead, dipped like low beams so a car stopped in front
   // is lit rather than blown out (headlights.visible: main.js switches them)
   const headlights = new THREE.SpotLight(0xfff2e0, 500, 70, 0.38, 0.6, 2)
@@ -245,16 +250,17 @@ export function buildRoadster () {
     m.side = THREE.DoubleSide
     return new THREE.Mesh(g, m)
   }
-  body.add(flat(lamp, MAT.headlight))
+  body.add(flat(lamp, head))
   body.add(
     flat(
       mark,
       new THREE.MeshBasicMaterial({
         color: new THREE.Color(1.5, 0.32, 0.05),
-        toneMapped: false
+        toneMapped: false,
+        userData: { lamp: 'front' }
       })
     ),
-    flat(markR, MAT.ledRed)
+    flat(markR, lampAt(MAT.ledRed, 'rear'))
   )
   body.add(box(0.28, 0.025, 1.56, MAT.trim, 2.12, 0.125, 0))
   // the side camera on each front fender, where a mirror would be

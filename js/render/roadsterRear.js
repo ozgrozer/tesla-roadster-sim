@@ -86,10 +86,12 @@ export function buildTail (body, fans) {
     clearcoat: 1,
     clearcoatRoughness: 0.05
   })
-  // (the output pass tone-maps everything: past about 2 a red burns out to orange)
+  // (the output pass tone-maps everything: past about 2 a red burns out to orange; marked as lamps
+  // at the rear, to break: damage.js)
   const red = new THREE.MeshBasicMaterial({
     color: hdr(1.8, 0.03, 0.02),
-    toneMapped: false
+    toneMapped: false,
+    userData: { lamp: 'rear' }
   })
   // the light bar, full width under the deck lip, in its smoked band
   body.add(box(1.74, 0.085, 0.03, smoked, X - 0.004, 0.87, 0))
@@ -116,7 +118,8 @@ export function buildTail (body, fans) {
   // the black lower fascia: reflectors at its outer corners
   const reflector = new THREE.MeshBasicMaterial({
     color: hdr(0.9, 0.02, 0.015),
-    toneMapped: false
+    toneMapped: false,
+    userData: { lamp: 'rear' }
   })
   for (const s of [-1, 1])
     body.add(box(0.15, 0.014, 0.01, reflector, X - 0.006, 0.57, s * 0.76))
