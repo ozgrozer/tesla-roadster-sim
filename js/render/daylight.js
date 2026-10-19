@@ -13,6 +13,7 @@
 // in the rain. The city's shadows are aimed again as the sun moves (a whole city's shadow map is
 // under a millisecond to draw), and the reflections' environment map drawn again as the sky
 // changes, each only when it has changed enough to see.
+import { OPTS, DRAW_FOG } from '../ui/options.js'
 import * as THREE from 'three'
 import { ENV } from '../sim/env.js'
 import { SKY } from './citySky.js'
@@ -271,7 +272,9 @@ export class Daylight {
       .copy(key.color)
       .multiplyScalar(moon ? moonK : sunK / 4.6)
     // the shadows soften and go as the cloud closes in (and with the light's strength at dusk)
-    const shade = (1 - 0.9 * o) * (1 - 0.6 * fog)
+    // (none at all with the shadows off: options.js; the maps aren't redrawn then either)
+    const shade = (1 - 0.9 * o) * (1 - 0.6 * fog) * (OPTS.shadows === 'on' ? 1 : 0)
+    renderer.shadowMap.autoUpdate = OPTS.shadows === 'on'
     key.shadow.intensity = shade
     if (city.shadow) city.shadow.light.shadow.intensity = shade
     // ---- the sky's light: flat and grey under cloud, cold in a lightning flash
@@ -295,6 +298,8 @@ export class Daylight {
       scene.fog.color.copy(fogCol)
       scene.fog.density =
         _v[2] + 0.0014 * o + 0.0035 * rain + 0.011 * fog * fog + (LOOK.on ? LOOK.haze * day : 0)
+      // (the draw distance: nearer, the haze closes in, and the streaming leaves out what it hides)
+      scene.fog.density = Math.max(scene.fog.density, DRAW_FOG[OPTS.draw] || 0)
     }
     if (scene.background?.isColor) scene.background.copy(fogCol)
     // ---- the grade, duller and cooler as the cloud and the rain and the fog come in

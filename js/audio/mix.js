@@ -406,3 +406,17 @@ export function mixSound (sound, app, traffic, dt, clock, peds) {
   sound.update(st)
   if (world) worldDt = 0
 }
+
+// The player's three levels (options.js: 0 to 1 each) onto the engine's buses, on a gentle curve
+// (half way is about a third as loud), eased over a few hundredths of a second so a change never
+// clicks. Nothing until the engine has its context (main.js calls this again once it has).
+const curve = v => Math.pow(Math.max(0, Math.min(1, v)), 1.6)
+export function setVolumes (sound, { master = 1, music = 1, sfx = 1 }) {
+  const ctx = sound?.ctx
+  if (!ctx || !sound.outVol) return false
+  const t = ctx.currentTime
+  sound.outVol.gain.setTargetAtTime(curve(master), t, 0.03)
+  sound.musicBus.gain.setTargetAtTime(curve(music), t, 0.03)
+  sound.mixIn.gain.setTargetAtTime(curve(sfx), t, 0.03)
+  return true
+}

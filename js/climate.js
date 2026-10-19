@@ -13,6 +13,7 @@ import { Beams } from './render/beams.js'
 import { Mirror } from './render/mirror.js'
 import { lampLit } from './render/lampLight.js'
 import { recall, remember } from './ui/prefs.js'
+import { OPTS } from './ui/options.js'
 import { ENV, stepEnv, setHour, setWeather, WEATHERS } from './sim/env.js'
 
 // L: the times of day the clock runs on to, and the s it takes to run on to the next
@@ -64,7 +65,9 @@ export class Climate {
     this.app.quality = name
     this.mirror.scale = s.mirror
     this.rain.share = s.rain
-    r.max = Math.min(window.devicePixelRatio || 1, s.px)
+    // (the player's own resolution, if not Auto: options.js)
+    r.max = OPTS.px === 'auto' ? Math.min(window.devicePixelRatio || 1, s.px) : OPTS.px
+    r.min = Math.min(r.max, 0.6)
     if (r.ratio > r.max) r.set(r.max, 2)
     remember('quality', name)
   }

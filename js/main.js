@@ -297,6 +297,7 @@ const foot = new OnFoot({ app, sim, RS, rig, camera, canvas, input, hud, sound, 
 const polish = new Polish({ foot, rig, sound, hud, cityView, RS, app, game: () => game })
 // the wanted level, the police, the missions and the street events (game.js)
 const game = new Game({ sim, foot, traffic, peds, hud, minimap, app, damage, respawn: at => resetTo('city', at) })
+menu.game = game // (the stats tab, the hints: ui/ux.js)
 // browsers only allow audio after a gesture: the first click or key turns sound on
 function unlockSound (e) {
   if (e.code === 'KeyN' || e.target?.closest?.('#btnSound')) return
@@ -458,6 +459,7 @@ function frame (now) {
   game.frame(dt, city)
   mixSound(sound, app, traffic, dt, clock, peds)
   hud.update(dt, app)
+  menu.frame(dt, city) // (hints, captions, stats: ui/ux.js)
   if (city) cityView.shadows(camera, [RS.car])
   resolution.begin()
   // (the street's reflection, while it is wet: inside the GPU's timing, so the resolution steps
