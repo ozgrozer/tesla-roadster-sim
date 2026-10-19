@@ -282,7 +282,7 @@ function move (b, inp, dt, world) {
   // (and stability control takes the power away in a slide, so the rears can grip again)
   // (the rears' share only: pulling front wheels straighten the car)
   if (Fdrive > 0)
-    Fdrive *= 1 - (1 - S.front) * (S.tc ?? 1) * smooth((Math.abs(beta) - 0.12) / 0.25)
+    Fdrive *= 1 - (1 - S.front) * (S.tc ?? 1) * smooth((Math.abs(beta) - 0.07) / 0.18)
   b.shiftT = Math.max(0, b.shiftT - dt)
   b.rpmN = clamp(b.rpm / (S.rpmRed || 1), 0, 1)
   b.load = thr || rev

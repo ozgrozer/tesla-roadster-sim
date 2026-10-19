@@ -17,7 +17,7 @@ import { roadGrip } from './roadGrip.js'
 
 // the share of a hit's harm the player's car takes (a traffic car's is 1): GTA-tough, so it
 // takes a few hard crashes to wreck, dented and smoking well before
-export const PLAYER_TOUGH = 0.45
+export const PLAYER_TOUGH = 0.35
 
 export function carInput (c, out = makeVehicleInput()) {
   out.throttle = c ? c.throttle : 0

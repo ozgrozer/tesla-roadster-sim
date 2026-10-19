@@ -31,7 +31,7 @@ export const HANDLING = {
     torque: 320, rpmIdle: 800, rpmPeak: 4200, rpmRed: 6500, gears: [3.5, 2.1, 1.4, 1.0, 0.8, 0.65], final: 3.6, front: 1, vMax: 58,
     brake: 9.6, lock: 0.6, steerV: 18, steerRate: 2.2,
     mu: 1.0, gripF: 1.0, gripR: 1.02, slideMu: 0.78, cornF: 85000, cornR: 95000,
-    suspHz: 1.4, travel: 0.12, damp: 0.35, rollK: 0.06, pitchK: 0.035,
+    suspHz: 1.4, travel: 0.12, damp: 0.35, rollK: 0.08, pitchK: 0.045,
     hbYaw: 1600, stab: 1, assist: 0.6, feel: 0.85, drag: 0.42, rollRes: 0.013
   },
   sports: {
@@ -39,8 +39,8 @@ export const HANDLING = {
     torque: 560, rpmIdle: 900, rpmPeak: 5500, rpmRed: 7800, gears: [3.1, 2.2, 1.65, 1.3, 1.05, 0.86, 0.72], final: 3.5, front: 0, vMax: 86,
     brake: 11, lock: 0.58, steerV: 22, steerRate: 2.8,
     mu: 1.15, gripF: 1.0, gripR: 1.0, slideMu: 0.8, cornF: 110000, cornR: 120000,
-    suspHz: 2.0, travel: 0.08, damp: 0.45, rollK: 0.03, pitchK: 0.02,
-    hbYaw: 2600, tc: 0.3, stab: 0.8, assist: 0.7, feel: 1.0, drag: 0.38, rollRes: 0.012
+    suspHz: 2.0, travel: 0.08, damp: 0.45, rollK: 0.038, pitchK: 0.03,
+    hbYaw: 2600, tc: 0.6, stab: 0.8, assist: 0.7, feel: 1.0, drag: 0.38, rollRes: 0.012
   },
   suv: {
     mass: 2150, len: 4.85, wid: 1.95, hgt: 1.75, wb: 2.9, wf: 0.55, comH: 0.72, wheelR: 0.37, track: 1.65,
@@ -56,7 +56,7 @@ export const HANDLING = {
     brake: 8, lock: 0.6, steerV: 15, steerRate: 1.8,
     mu: 0.95, gripF: 1.0, gripR: 0.96, slideMu: 0.72, cornF: 95000, cornR: 95000,
     suspHz: 1.3, travel: 0.2, damp: 0.3, rollK: 0.11, pitchK: 0.06,
-    hbYaw: 1900, tc: 0.5, stab: 1, assist: 0.5, feel: 0.88, drag: 0.6, rollRes: 0.016
+    hbYaw: 1900, tc: 0.7, stab: 1, assist: 0.5, feel: 0.88, drag: 0.6, rollRes: 0.016
   },
   truck: {
     mass: 9500, len: 9.9, wid: 2.55, hgt: 3.8, wb: 5.6, wf: 0.45, comH: 1.3, wheelR: 0.5, track: 2.0,
@@ -87,7 +87,7 @@ export const HANDLING = {
     torque: 520, rpmIdle: 800, rpmPeak: 4800, rpmRed: 6800, gears: [3.0, 2.0, 1.45, 1.12, 0.87, 0.7], final: 3.4, front: 0.35, vMax: 70,
     brake: 10.5, lock: 0.6, steerV: 20, steerRate: 2.6,
     mu: 1.08, gripF: 1.0, gripR: 1.02, slideMu: 0.8, cornF: 110000, cornR: 125000,
-    suspHz: 1.7, travel: 0.11, damp: 0.4, rollK: 0.05, pitchK: 0.03,
+    suspHz: 1.7, travel: 0.11, damp: 0.4, rollK: 0.065, pitchK: 0.04,
     hbYaw: 2200, tc: 0.8, stab: 1, assist: 0.65, feel: 0.95, drag: 0.45, rollRes: 0.013
   },
   // the Roadster: its own physics, untouched (sim.js); these are its spec-sheet figures
