@@ -76389,7 +76389,7 @@ const { FOOTFALL } = __require(99)
 const { warm } = __require(92)
 const { CAR, clamp } = __require(2)
 const { rng, BLOCKS } = __require(35)
-const { LINES, ringOf, ringAt, walkOn, crossings, nearestOn, blockNear, standBack } = __require(74)
+const { LINES, ringOf, ringAt, walkOn, crossings, nearestOn, standBack } = __require(74)
 
 let WARM = false
 const P = { x: 0, z: 0, hx: 1, hz: 0, piece: 0 }
@@ -76766,13 +76766,8 @@ class Peds {
       const k = Math.exp(-dt * 3)
       p.vx *= k
       p.vz *= k
-      if (p.t > 0.7) {
-        p.state = 'back'
-        p.back = blockNear(p.x, p.z)
-        const g = this.lineFor(p, p.back, Math.floor(R() * LINES.length))
-        p.backRing = g
-        p.backS = nearestOn(g, p.x, p.z)
-      }
+      this.unwall(p) // (a dive into a wall stops at its face)
+      if (p.t > 0.7) this.goBack(p)
     } else if (p.state === 'back') {
       // hurrying back to the pavement
       p.gait += (1.4 - p.gait) * Math.min(1, dt * 3)
@@ -109902,6 +109897,7 @@ const { recall, remember } = __require(7)
 // where the player is put back: the nearest hospital (wasted) or police station (busted), as
 // fractions of the map: HOSPITALS, STATIONS in missions/spots.js
 const PENALTY = { busted: 500, wasted: 1000 }
+const WRECK_HURT = 0.6 // (of footHealth: a car wrecked with you in it)
 const DOWN_T = 3.6 // s of BUSTED / WASTED before the fade
 
 class Game {
@@ -110044,8 +110040,15 @@ class Game {
     const key = player.mode === 'car' ? String(P.vehicle?.id ?? 'car') : 'foot',
       hp = P.health,
       A = this.alive
-    const out = hp <= 0 && A.key === key && A.hp > 0
+    let out = hp <= 0 && A.key === key && A.hp > 0
     if (hp <= 0 && A.key !== key && key !== 'foot') this.hud?.popup?.('Wrecked', 1800, 'hint')
+    // (a stolen car wrecked under you is a hard knock, not the end: you climb out of it; two in a row
+    // before you get your breath back is)
+    if (out && key !== 'foot' && this.foot.alt.active) {
+      this.footHealth -= WRECK_HURT
+      this.hud?.popup?.('Wrecked', 1800, 'hint')
+      out = this.footHealth <= 0
+    }
     A.key = key
     A.hp = hp
     return out

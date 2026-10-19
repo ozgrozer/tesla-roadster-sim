@@ -30,7 +30,6 @@ import {
   walkOn,
   crossings,
   nearestOn,
-  blockNear,
   standBack
 } from './pavement.js'
 
@@ -410,13 +409,8 @@ export class Peds {
       const k = Math.exp(-dt * 3)
       p.vx *= k
       p.vz *= k
-      if (p.t > 0.7) {
-        p.state = 'back'
-        p.back = blockNear(p.x, p.z)
-        const g = this.lineFor(p, p.back, Math.floor(R() * LINES.length))
-        p.backRing = g
-        p.backS = nearestOn(g, p.x, p.z)
-      }
+      this.unwall(p) // (a dive into a wall stops at its face)
+      if (p.t > 0.7) this.goBack(p)
     } else if (p.state === 'back') {
       // hurrying back to the pavement
       p.gait += (1.4 - p.gait) * Math.min(1, dt * 3)

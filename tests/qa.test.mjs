@@ -106,3 +106,17 @@ test('a bus the player drives knocks down someone its long nose reaches, not onl
   peds.step(1 / 60, proxy, tr, null)
   assert.equal(p.state, 'down')
 })
+
+test('someone diving out of a car’s way by a building stops at its wall, not inside it', () => {
+  const peds = new Peds({ seed: 5, count: 1 })
+  peds.reset(-697, -296)
+  const p = peds.list[0]
+  // (on the pavement just south of a building whose face is at z -300.4, diving north into it)
+  Object.assign(p, { x: -697, z: -299.6, vx: 0, vz: -6, state: 'dodge', t: 0 })
+  const sim = new Sim()
+  sim.reset('city', { x: -297, z: -296, yaw: 0 })
+  const tr = new Traffic({ seed: 3, count: 0 })
+  tr.reset(-297, -296)
+  for (let i = 0; i < 40; i++) peds.step(1 / 60, sim, tr, null)
+  assert.ok(!walled(p.x, p.z, 0.2), `inside the building at ${p.x.toFixed(1)}, ${p.z.toFixed(1)}`)
+})
