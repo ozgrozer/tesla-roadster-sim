@@ -9,6 +9,11 @@ import { clamp } from './constants.js'
 import { NODES, LANE_OFF, ROAD_HW } from './city.js'
 import { honk } from './manners.js'
 
+// m off the inner lane's line going round a wreck on the wrong side: in the inner lane the other
+// way (as responder.js goes round a queue), or further over, round one reaching across the line
+const WRONG_OFF = -3,
+  WRONG_MOST = -4.6
+
 export const REACT = {
   // The Roadster bearing down on this car: closing fast, in its path (or about to be) within about a
   // second and a half.
@@ -59,26 +64,101 @@ export const REACT = {
   },
   // A wreck at rest just ahead reaching into the lane, by little enough to edge round within the
   // lane (or a little over its line): the offset to steer for, else 0 (it waits, then pulls out).
+  // A wrecked car (carDamage.js), which nobody will drive away, too far in to edge round, is gone
+  // round on the wrong side of the road by the one held up behind it in the inner lane, once it
+  // has waited a while and that side is clear, as a police car goes round a queue (responder.js);
+  // once over there, it keeps on round until it is past. (Changing lanes, it does only that: one
+  // pulling out into the inner lane behind it goes on round it.)
   roomRound (car) {
     let off = 0
+    const e = car.edge,
+      round = e.lane === 0 && (car.off < -1.2 || car.offT <= WRONG_OFF)
     for (const o of this.loose) {
       if (o.vx * o.vx + o.vz * o.vz > 0.25) continue
+      // (a wreck, or changing lanes, by the lane's own line and way: the car may be turned across
+      // it, pulling out)
+      const wreck = !!o.dmg?.wreck,
+        lined = wreck || !!car.lc,
+        hx = lined ? e.dx : car.hx,
+        hz = lined ? e.dz : car.hz
       const dx = o.x - car.x,
         dz = o.z - car.z,
-        along = dx * car.hx + dz * car.hz
-      if (along < 0 || along > 25 + o.len) continue
-      const side = dz * car.hx - dx * car.hz + car.off, // from the lane's line
+        along = dx * hx + dz * hz
+      const over = round && wreck
+      if (along < (over ? -(o.len + car.len) / 2 - 2 : 0) || along > 25 + o.len)
+        continue
+      const side = lined
+          ? (o.z - e.z0) * e.dx - (o.x - e.x0) * e.dz // (from the lane's line)
+          : dz * hx - dx * hz + car.off,
         across =
-          (o.len / 2) * Math.abs(o.hx * car.hz - o.hz * car.hx) +
-          (o.wid / 2) * Math.abs(o.hx * car.hx + o.hz * car.hz)
+          (o.len / 2) * Math.abs(o.hx * hz - o.hz * hx) +
+          (o.wid / 2) * Math.abs(o.hx * hx + o.hz * hz)
       const need = car.wid / 2 + 0.3 - (Math.abs(side) - across)
+      if (over && need > -1) {
+        if (car.blk === o && car.clear < 0.8) this.backOff(car) // (wedged)
+        return Math.min(car.offT, WRONG_OFF)
+      }
       if (need <= 0) continue
       const way = side > 0 ? -1 : 1,
         room = this.dodgeRoom(car, way)
-      if (need > Math.abs(room)) return 0 // (too far in: wait, then change lanes)
+      // (too far in: wait, then change lanes, or go round on the wrong side; changing lanes,
+      // only that)
+      if (need > Math.abs(room) || car.lc)
+        return this.wrongRound(car, o, along, side - across)
       if (need > Math.abs(off)) off = way * need
     }
     return off
+  },
+  // How far off the lane's line to go round wreck o on the wrong side of the road (along: m ahead
+  // of car; left: how far its left side is from the line, m to the right), or 0: from the inner
+  // lane, held up behind it a few seconds, with room past it in the inner lane the other way, and
+  // that clear until it is past
+  wrongRound (car, o, along, left) {
+    const e = car.edge
+    if (!o.dmg?.wreck || e.lane !== 0 || car.blk !== o || car.v > 3) return 0
+    // (one pulling out into its lane goes on round, as it goes)
+    if (car.stuck < 3 && !car.lc) return 0
+    const off = Math.min(WRONG_OFF, left - car.wid / 2 - 0.5)
+    if (off < WRONG_MOST) return 0
+    if (car.clear < 4.5) {
+      if (car.stuck > 3) this.backOff(car)
+      return 0
+    }
+    const end = car.s + along + o.len / 2 + car.len / 2 + 4
+    const clear = this.wrongClear(car, Math.min(end, e.len - car.len / 2 - 0.3))
+    return clear ? off : 0
+  },
+  // (going round a wreck on the wrong side of the road: the cars coming the other way in the lane
+  // it is in, and those turning into it, as the police car on a call sees them, responder.js)
+  wrongSees (car) {
+    const e = car.edge,
+      back = e.road ? NODES[e.to].out[(e.dir + 2) % 4]?.[0] : null
+    if (!back) return
+    for (const o of back.cars) this.seeCar(car, o)
+    for (const f of back.feeds) for (const o of f.cars) this.seeCar(car, o)
+  },
+  // (held up by o coming the other way on this side of the road, round a wreck: it backs up a
+  // little to give it room to get by, if there is room behind)
+  makeRoom (car, o) {
+    if (o.siren !== 1 && o.edge?.dir !== car.edge.dir) this.backOff(car)
+  },
+  // (too close to a wreck to turn out round it: it backs up a little first, if there is room)
+  backOff (car) {
+    if (car.v < 0.1 && this.behind(car) > 2 && this.clearBehind(car) > 2)
+      car.rev = 2
+  },
+  // (changing lanes, far enough over into the new one to clear a car o held up in the old one by
+  // the time it gets to it, g m on, with a wreck about: o is no longer in its way, or the two could
+  // wait on each other for good, o for the wreck and this one for o. How far over: the S of place,
+  // drivers.js)
+  besideStuck (car, o, g) {
+    const u = Math.min(1, car.lc + Math.max(0, g) / car.lcLen),
+      over = Math.abs(car.lat0) * u * u * u * (10 - 15 * u + 6 * u * u)
+    return (
+      over > (car.wid + o.wid) / 2 + 0.2 &&
+      o.stuck > 3 &&
+      this.loose.some(w => w.dmg?.wreck)
+    )
   },
   // The Roadster has come down on the road at (x, z): everyone heading at it within 50 m brakes
   // hard and swerves; anyone else close by honks.

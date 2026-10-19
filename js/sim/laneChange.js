@@ -63,9 +63,10 @@ export const LANE_CHANGE = {
     if (car.len > 7 && !car.stuck) return false // (a bus doesn't change lanes at a crawl)
     return car.clear > this.pullOut(car)
   },
-  // (how far back from it: far enough to be clear of it, pulling out over the shortest change)
-  pullOut (car) {
-    return 0.57 * Math.max(9, car.len * 2.2)
+  // (how far back from it: far enough to be clear of it, pulling out over the shortest change; from
+  // o, a wreck, a few metres more, to have room to go on round it on the wrong side: react.js)
+  pullOut (car, o = null) {
+    return 0.57 * Math.max(9, car.len * 2.2) + (o?.dmg?.wreck ? 4 : 0)
   },
   // worth going by the car ahead: it is slow for this driver, and the other lane is moving better
   overtake (car) {

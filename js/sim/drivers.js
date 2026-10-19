@@ -83,7 +83,7 @@ export const DRIVE = {
       for (const o of car.from.cars)
         if (o.s > car.s) {
           const g = o.s - car.s - (o.len + car.len) / 2
-          if (g < gap) {
+          if (g < gap && !this.besideStuck(car, o, g)) {
             gap = g
             vl = o.v
             blk = o
@@ -117,7 +117,7 @@ export const DRIVE = {
     // (a wreck at rest is edged round if it reaches into the lane a little, and crept past closer
     // than one still sliding)
     if (!car.panic && !car.tuck && (car.offT || this.loose.length))
-      car.offT = e.road && !car.lc ? this.roomRound(car) : 0
+      car.offT = e.road ? this.roomRound(car) : 0
     for (const o of this.loose) {
       put(o.x, o.z, o.vx, o.vz, o.hx, o.hz, o.len / 2, o.wid / 2)
       this.margin =
@@ -142,6 +142,7 @@ export const DRIVE = {
       if (turn) this.atLines(car, NODES[turn.node], turn.next[0]?.twin)
     }
     if (car.siren === 1) this.callSees(car) // (on a call: responder.js)
+    else if (car.offT < -2.5) this.wrongSees(car) // (round a wreck: react.js)
     gap = W.gap
     vl = W.vl
     blk = W.blk
@@ -151,7 +152,10 @@ export const DRIVE = {
     // driver leaves room to pull out round it)
     const odd = vl < 0.5 && (mine || blk?.loose) && e.road && e.twin && !car.lc
     if (odd && car.s + gap < e.len - 15 && gap > car.s0)
-      gap = Math.max(car.s0, gap - (this.pullOut(car) + 0.4 - car.s0))
+      gap = Math.max(car.s0, gap - (this.pullOut(car, blk) + 0.4 - car.s0))
+    // (pulling out round a wreck on the wrong side, react.js roomRound: it creeps on as it turns)
+    if (car.offT < -2.5 && blk?.loose && gap > 1)
+      gap = Math.max(gap, car.s0 + 2)
     // the signal at the end of this lane (on a call, its own way over: responder.js; held up in the
     // junction on a left turn, the oncoming traffic: sight.js), and a police car on a call to make
     // way for (makeway.js)
@@ -175,8 +179,9 @@ export const DRIVE = {
     car.blk = blk
     car.stuck = this.held(car, blk, gap, red) ? car.stuck + dt : 0
     this.unjam(car, dt)
-    // the speed it wants: its own, slowing in time for the turn ahead
-    let v0 = Math.min(car.v0, this.corner(car, e))
+    if (car.stuck > 3 && blk?.offT < -2.5) this.makeRoom(car, blk) // (react.js)
+    // the speed it wants: its own (less, damaged: carDamage.js), slowing in time for the turn ahead
+    let v0 = Math.min(car.v0 * (car.dmg?.limp ?? 1), this.corner(car, e))
     if (car.next) {
       const vc = this.corner(car, car.next)
       if (vc < v0)
