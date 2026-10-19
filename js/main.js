@@ -164,8 +164,18 @@ function setWorld (w) {
   } catch {}
 }
 // the city opens on Optimus walking up to the Roadster and getting in
+// (a debug start anywhere in the city: ?spawn=x,z or ?spawn=x,z,yaw)
+const SPAWN_AT = (() => {
+  const v = new URLSearchParams(location.search).get('spawn')
+  const [x, z, yaw = 0] = (v || '').split(',').map(Number)
+  return v && Number.isFinite(x) && Number.isFinite(z) ? { x, z, yaw } : null
+})()
 function enterCity () {
-  resetTo('city')
+  resetTo('city', SPAWN_AT)
+  if (SPAWN_AT) {
+    traffic.reset(sim.pos.x, sim.pos.z)
+    peds.reset(sim.pos.x, sim.pos.z)
+  }
   setCam('follow')
   intro.start(() => {
     traffic.walker = null
