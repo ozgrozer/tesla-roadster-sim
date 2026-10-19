@@ -222,6 +222,7 @@ export class CityView {
     this.falling = falling
     updateTrees(dt, camera) // (the palms' and trees' sway, and detail near)
     this.interiors.update(dt)
+    this.buildings.update(dt) // (the Meridian's rings, the lighthouse's beam)
     this.signals.update(traffic.t)
     this.aircraft.update(dt, this.dark, camera)
     // (the districts' meshes left out past their distance or the fog's: chunks.js)
