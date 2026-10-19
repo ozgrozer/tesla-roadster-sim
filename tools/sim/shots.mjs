@@ -118,12 +118,16 @@ const SCENES = {
       const T = window.__roadster.traffic
       const stops = T.cars.filter(c => !c.parked && c.arrive > 0).length
       const through = T.cars.filter(c => !c.parked && c.go && c.edge?.road).length
-      return { waitingAtStops: stops, stuck: T.stuckN, n: T.n }
+      // (a car stopped at a stop line just now, to look at)
+      const at = T.cars.find(c => !c.parked && c.arrive > 0 && c.v < 1 && c.edge && T.stopNode?.(c)) ||
+        T.cars.find(c => !c.parked && c.arrive > 0 && c.v < 1)
+      return { waitingAtStops: stops, stuck: T.stuckN, n: T.n, at: at ? { x: at.x, z: at.z } : null }
     })
-    await aerial(page, { up: 45, bx: 30, bz: 40, lx: -192, lz: 480 })
+    const at = r.at || { x: -192, z: 480 }
+    await aerial(page, { up: 32, bx: 22, bz: 26, lx: at.x, lz: at.z })
     r.shot = await shot(page, 's1-allway-stop.png', [
-      'S1 all-way stop at a quiet junction (Leimert Park, node 7,14): heads flash red',
-      `cars stopped at all-way-stop lines now ${r.waitingAtStops}; stuck watchdog ${JSON.stringify(r.stuck)}`
+      'S1 all-way stop at a quiet suburban junction: heads flash red, each car stops, first come first go',
+      `cars that have stopped at all-way-stop lines ${r.waitingAtStops}; stuck watchdog ${JSON.stringify(r.stuck)}`
     ])
     return r
   })

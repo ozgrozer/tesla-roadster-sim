@@ -194,6 +194,7 @@ export const PED_LIFE = {
       const moving = MOVING.has(p.state) || (p.state === 'linger' && p.leg !== 2)
       if (!moving || moved > 0.08 || p.lead) {
         L.stuckT = 0
+        if (moved > 1) L.tries = 0
         continue
       }
       if ((L.stuckT += T) < STUCK) continue
@@ -204,12 +205,15 @@ export const PED_LIFE = {
       }
       const seen = view && (p.x - view.x) * view.fx + (p.z - view.z) * view.fz > -8
       this.unstuckN = (this.unstuckN || 0) + 1
-      if (L.stuckT > STUCK * 3 && !seen) {
+      if (L.tries >= 2 && !seen) {
         p.gone = drop = true
         continue
       }
       this.unstick(p)
-      L.stuckT = STUCK * 0.5 // (stuck again soon: off, if out of sight)
+      L.lastX = p.x
+      L.lastZ = p.z
+      L.tries++
+      L.stuckT = 0 // (stuck again after twice put right: off, if out of sight)
     }
     if (drop) this.list = this.list.filter(p => !p.gone)
   },

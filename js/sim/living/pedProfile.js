@@ -76,7 +76,7 @@ export const PED_PROFILE = {
     const kind = p.ring?.b?.area
     const k = p.jog ? PROF.jogger : pick(kind, ENV.hour ?? 12, drawOf(p, 1))
     const T = TRAITS[k]
-    p.liv = { prof: k, cowerT: 0, callT: 0, call: null, stuckT: 0, lastX: p.x, lastZ: p.z, poi: null, seen: 0 }
+    p.liv = { prof: k, cowerT: 0, callT: 0, call: null, stuckT: 0, tries: 0, fled: false, perf: null, lastX: p.x, lastZ: p.z, poi: null, seen: 0 }
     p.jog = k === PROF.jogger
     p.v = p.v0 = T.pace[0] + (T.pace[1] - T.pace[0]) * drawOf(p, 2)
     p.alert = 0 // (pedBrain.js alertOf works it out again, with the profile's)
