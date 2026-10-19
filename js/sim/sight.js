@@ -141,6 +141,9 @@ export const SIGHT = {
     const dx = ob.x - car.x,
       dz = ob.z - car.z
     if (dx > LOOK || dx < -LOOK || dz > LOOK || dz < -LOOK) return
+    // (not one on the street under the freeway's deck, or up on it over the street)
+    const dy = (o?.y || 0) - (car.y || 0)
+    if (dy > 3 || dy < -3) return
     MARGIN = this.margin
     const e = car.edge
     if (e.kind === 1) {

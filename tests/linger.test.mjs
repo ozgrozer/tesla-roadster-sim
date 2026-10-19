@@ -153,7 +153,8 @@ test('dogs walk beside their owners, on the pavement, over the road with them', 
         d.dash > 0
       if (k > -0.2 && !out) off++
       for (const c of tr.cars)
-        if (Math.abs(c.x - d.x) < 8 && Math.abs(c.z - d.z) < 8)
+        // (not one up on the freeway's deck overhead)
+        if (Math.abs(c.x - d.x) < 8 && Math.abs(c.z - d.z) < 8 && !(c.y > 2))
           if (under(d.x, d.z, c, c.len / 2, c.wid / 2, 0.05)) hit++
     }
   })

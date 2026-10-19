@@ -30,6 +30,7 @@ import { TYPES, IDX } from './carTypes.js'
 import { HANDOVER, styleOf } from './handover.js'
 import { PARKNEAR } from './parkNear.js'
 import { HWDRIVE } from './hwDrive.js'
+import { groundHeight } from './world.js'
 export { TYPES }
 
 const BUS = IDX.bus
@@ -421,7 +422,7 @@ export class Traffic {
     // (the player on foot is someone in the road to stop for and honk at, not a car: handover.js)
     const foot = sim.mode === 'foot'
     this.foot = foot ? pl : null
-    this.me = !foot && sim.mode !== 'ramp' && pl.y < 4 ? pl : null
+    this.me = !foot && sim.mode !== 'ramp' && pl.y < groundHeight(pl.x, pl.z, pl.y) + 4 ? pl : null
     if (this.quiet && this.horn && atJam(pl.x, pl.z)) this.quiet = false
     this.mev = sim.vel
     this.sim = sim

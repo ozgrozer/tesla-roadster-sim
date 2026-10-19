@@ -10,7 +10,9 @@ import { HW } from './highway.js'
 const TAKE = 0.35 // the share of drivers who take a way off onto the freeway
 const TAKE_HILL = 0.2 // ...and up the hill road
 const NOSE = 1.6 // m fore and aft of the middle the slope is read at
-const SPAWN_HW = 0.3 // the share of new cars put on the freeway or the hill road, when one is near
+const _span = []
+const SPAWN_HW = 0.45
+const HILL_MAX = 10 // the share of new cars put on the freeway or the hill road, when one is near
 
 export const HWDRIVE = {
   // the way on from edge e, if the freeway's or the hill road's say (undefined: the street's own)
@@ -53,14 +55,40 @@ export const HWDRIVE = {
   // sight as spawn's are), now and then; null if none.
   hwSpawn (x, z, rMin, rMax, view) {
     const R = (this.hwS ||= rng(55117))
-    if (!HW.length || R() > SPAWN_HW) return null
-    const e = HW[Math.floor(R() * HW.length)]
-    const s = 10 + R() * Math.max(0, e.len - 20)
+    // (along the stretches of it within reach, each as likely as its length there)
+    let sum = 0
+    _span.length = 0
+    for (const e of HW) {
+      const t = (x - e.x0) * e.dx + (z - e.z0) * e.dz,
+        p = Math.abs((x - e.x0) * e.dz - (z - e.z0) * e.dx)
+      if (p >= rMax) continue
+      const h = Math.sqrt(rMax * rMax - p * p),
+        a = Math.max(10, t - h),
+        b = Math.min(e.len - 10, t + h)
+      if (b > a) _span.push(e, a, b, (sum += b - a))
+    }
+    if (!sum || R() > SPAWN_HW) return null
+    const pick = R() * sum
+    let i = 0
+    while (_span[i + 3] < pick) i += 4
+    const e = _span[i],
+      s = _span[i + 1] + R() * (_span[i + 2] - _span[i + 1])
+    // (the hill road's a quiet one: a few cars on it at a time)
+    if (
+      e.vk < 1 &&
+      this.cars.filter(c => c.edge?.hw && c.edge.vk < 1).length >= HILL_MAX
+    )
+      return null
     const px = e.x0 + e.dx * s,
       pz = e.z0 + e.dz * s
     const d = Math.hypot(px - x, pz - z)
     if (d < rMin || d > rMax) return null
-    if (view && d < 240 && (px - view.x) * view.fx + (pz - view.z) * view.fz > 0) return null
+    if (
+      view &&
+      d < 240 &&
+      (px - view.x) * view.fx + (pz - view.z) * view.fz > 0
+    )
+      return null
     if (e.cars.some(o => Math.abs(o.s - s) < o.len + 14)) return null
     const car = this.make(this.pickType())
     car.edge = e

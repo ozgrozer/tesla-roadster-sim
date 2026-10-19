@@ -60254,19 +60254,35 @@ function curve (line, x0, z0, h0x, h0z, x1, z1, h1x, h1z, k) {
       d = t * t * t
     xs[i] = a * px[0] + b * px[1] + c * px[2] + d * px[3]
     zs[i] = a * pz[0] + b * pz[1] + c * pz[2] + d * pz[3]
-    if (i) cum[i] = cum[i - 1] + Math.hypot(xs[i] - xs[i - 1], zs[i] - zs[i - 1])
+    if (i)
+      cum[i] = cum[i - 1] + Math.hypot(xs[i] - xs[i - 1], zs[i] - zs[i - 1])
   }
   const len = cum[SAMPLES]
-  const e = line(x0, z0, (x1 - x0) / (Math.hypot(x1 - x0, z1 - z0) || 1), (z1 - z0) / (Math.hypot(x1 - x0, z1 - z0) || 1), len)
+  const e = line(
+    x0,
+    z0,
+    (x1 - x0) / (Math.hypot(x1 - x0, z1 - z0) || 1),
+    (z1 - z0) / (Math.hypot(x1 - x0, z1 - z0) || 1),
+    len
+  )
   // (the tightest bend along it, for the speed it is taken at)
   let r = Infinity
   for (let i = 1; i < SAMPLES; i++) {
-    const ax = xs[i] - xs[i - 1], az = zs[i] - zs[i - 1],
-      bx = xs[i + 1] - xs[i], bz = zs[i + 1] - zs[i]
+    const ax = xs[i] - xs[i - 1],
+      az = zs[i] - zs[i - 1],
+      bx = xs[i + 1] - xs[i],
+      bz = zs[i + 1] - zs[i]
     const turn = Math.abs(Math.atan2(ax * bz - az * bx, ax * bx + az * bz))
-    if (turn > 1e-4) r = Math.min(r, ((cum[i + 1] - cum[i - 1]) / 2) / turn)
+    if (turn > 1e-4) r = Math.min(r, (cum[i + 1] - cum[i - 1]) / 2 / turn)
   }
-  Object.assign(e, { kind: 2, xs, zs, cum, r: Math.max(2, r), cp: [...px, ...pz] })
+  Object.assign(e, {
+    kind: 2,
+    xs,
+    zs,
+    cum,
+    r: Math.max(2, r),
+    cp: [...px, ...pz]
+  })
   e.vmax = Math.sqrt(2.6 * e.r)
   return e
 }
@@ -60282,10 +60298,26 @@ function curveAt (e, s, out) {
   const t = (i + u) / SAMPLES,
     w = 1 - t,
     p = e.cp
-  out.x = w * w * w * p[0] + 3 * w * w * t * p[1] + 3 * w * t * t * p[2] + t * t * t * p[3]
-  out.z = w * w * w * p[4] + 3 * w * w * t * p[5] + 3 * w * t * t * p[6] + t * t * t * p[7]
-  const dx = 3 * (w * w * (p[1] - p[0]) + 2 * w * t * (p[2] - p[1]) + t * t * (p[3] - p[2])),
-    dz = 3 * (w * w * (p[5] - p[4]) + 2 * w * t * (p[6] - p[5]) + t * t * (p[7] - p[6]))
+  out.x =
+    w * w * w * p[0] +
+    3 * w * w * t * p[1] +
+    3 * w * t * t * p[2] +
+    t * t * t * p[3]
+  out.z =
+    w * w * w * p[4] +
+    3 * w * w * t * p[5] +
+    3 * w * t * t * p[6] +
+    t * t * t * p[7]
+  const dx =
+      3 *
+      (w * w * (p[1] - p[0]) +
+        2 * w * t * (p[2] - p[1]) +
+        t * t * (p[3] - p[2])),
+    dz =
+      3 *
+      (w * w * (p[5] - p[4]) +
+        2 * w * t * (p[6] - p[5]) +
+        t * t * (p[7] - p[6]))
   const d = Math.hypot(dx, dz) || 1
   out.hx = dx / d
   out.hz = dz / d
@@ -60312,7 +60344,21 @@ function exitTo (line, L, x, z, hx, hz) {
   const side = Math.abs((x - L.x0) * -L.dz + (z - L.z0) * L.dx) // (off L's line)
   const s = along(L, x, z) - side
   if (!(s > 4 && s < L.len - 4)) return null
-  const e = mark(curve(line, L.x0 + L.dx * s, L.z0 + L.dz * s, L.dx, L.dz, x, z, hx, hz, side * 0.55), 1)
+  const e = mark(
+    curve(
+      line,
+      L.x0 + L.dx * s,
+      L.z0 + L.dz * s,
+      L.dx,
+      L.dz,
+      x,
+      z,
+      hx,
+      hz,
+      side * 0.55
+    ),
+    1
+  )
   e.atS = s
   e.dir = L.dir
   L.exits.push(e)
@@ -60324,7 +60370,21 @@ function joinTo (line, L, x, z, hx, hz) {
   const side = Math.abs((x - L.x0) * -L.dz + (z - L.z0) * L.dx)
   const s = along(L, x, z) + side
   if (!(s > 4 && s < L.len - 12)) return null
-  const e = mark(curve(line, x, z, hx, hz, L.x0 + L.dx * s, L.z0 + L.dz * s, L.dx, L.dz, side * 0.55), 1)
+  const e = mark(
+    curve(
+      line,
+      x,
+      z,
+      hx,
+      hz,
+      L.x0 + L.dx * s,
+      L.z0 + L.dz * s,
+      L.dx,
+      L.dz,
+      side * 0.55
+    ),
+    1
+  )
   e.joinS = s
   e.next.push(L)
   return e
@@ -60350,7 +60410,8 @@ function freeway (line, nodeAt) {
       down = south(N, r10)
     const on = up && exitTo(line, up, ends.w, z1, 1, 0)
     const off = down && joinTo(line, down, ends.e, z1, 1, 0)
-    if (on && off) HW.push(chain([on, seg(line, ends.w, z1, ends.e, z1, FWY_K), off])[1])
+    if (on && off)
+      HW.push(chain([on, seg(line, ends.w, z1, ends.e, z1, FWY_K), off])[1])
     else if (on) up.exits.pop()
   }
   {
@@ -60359,7 +60420,8 @@ function freeway (line, nodeAt) {
       down = north(FWY_FROM, r10 + 1)
     const on = up && exitTo(line, up, ends.e, z1, -1, 0)
     const off = down && joinTo(line, down, ends.w, z1, -1, 0)
-    if (on && off) HW.push(chain([on, seg(line, ends.e, z1, ends.w, z1, FWY_K), off])[1])
+    if (on && off)
+      HW.push(chain([on, seg(line, ends.e, z1, ends.w, z1, FWY_K), off])[1])
     else if (on) up.exits.pop()
   }
   // the outer lanes, on at one side ramp and off at the next
@@ -60410,9 +60472,15 @@ function freeway (line, nodeAt) {
         const list = chain([
           on,
           seg(line, a.x1, zr, a.x0, zr, RAMP_K),
-          mark(curve(line, a.x0, zr, -1, 0, a.x0 - MERGE, zo, -1, 0, 14), RAMP_K),
+          mark(
+            curve(line, a.x0, zr, -1, 0, a.x0 - MERGE, zo, -1, 0, 14),
+            RAMP_K
+          ),
           seg(line, a.x0 - MERGE, zo, b.x1 + MERGE, zo, FWY_K),
-          mark(curve(line, b.x1 + MERGE, zo, -1, 0, b.x1, zr, -1, 0, 14), RAMP_K),
+          mark(
+            curve(line, b.x1 + MERGE, zo, -1, 0, b.x1, zr, -1, 0, 14),
+            RAMP_K
+          ),
           seg(line, b.x1, zr, b.x0, zr, RAMP_K),
           off
         ])
@@ -60435,7 +60503,15 @@ function hillLane (line, pts) {
     const l = Math.hypot(x1 - x0, z1 - z0),
       dx = (x1 - x0) / l,
       dz = (z1 - z0) / l
-    off.push({ x0: x0 - dz * o, z0: z0 + dx * o, x1: x1 - dz * o, z1: z1 + dx * o, dx, dz, l })
+    off.push({
+      x0: x0 - dz * o,
+      z0: z0 + dx * o,
+      x1: x1 - dz * o,
+      z1: z1 + dx * o,
+      dx,
+      dz,
+      l
+    })
   }
   // (consecutive pieces meet at a corner: each trimmed back from it and joined by a curve)
   const T = 9
@@ -60458,13 +60534,19 @@ function hillLane (line, pts) {
     const trim = q ? Math.min(T, Math.hypot(ex - sx, ez - sz) / 2.2) : 0
     let fx = ex - p.dx * trim,
       fz = ez - p.dz * trim
-    if (Math.hypot(fx - sx, fz - sz) > 0.5) edges.push(seg(line, sx, sz, fx, fz, HILL_K))
+    if (Math.hypot(fx - sx, fz - sz) > 0.5)
+      edges.push(seg(line, sx, sz, fx, fz, HILL_K))
     else (fx = sx), (fz = sz) // (too short a piece between two corners: the curves meet)
     if (q) {
       const t2 = Math.min(T, trim)
       const nx = ex + q.dx * t2,
         nz = ez + q.dz * t2
-      edges.push(mark(curve(line, fx, fz, p.dx, p.dz, nx, nz, q.dx, q.dz, trim * 0.55), HILL_K))
+      edges.push(
+        mark(
+          curve(line, fx, fz, p.dx, p.dz, nx, nz, q.dx, q.dz, trim * 0.55),
+          HILL_K
+        )
+      )
       sx = nx
       sz = nz
     }
@@ -60485,9 +60567,13 @@ function hillRoad (line, nodeAt) {
     ds = down[0]
   const ux = ue.x0 + ue.dx * ue.len,
     uz = ue.z0 + ue.dz * ue.len
-  const turn = mark(curve(line, ux, uz, ue.dx, ue.dz, ds.x0, ds.z0, ds.dx, ds.dz, 24), 0.5)
+  const turn = mark(
+    curve(line, ux, uz, ue.dx, ue.dz, ds.x0, ds.z0, ds.dx, ds.dz, 24),
+    0.5
+  )
   chain([...up, turn, ...down])
-  HW.push(up[3], down[down.length - 4])
+  for (const e of [...up, ...down.slice(0, -1)])
+    if (!e.kind && e.len > 25) HW.push(e)
   // the last piece down is a street lane into the junction, at its lights (dir 1: southbound)
   const last = down[down.length - 1]
   Object.assign(last, { road: true, dir: 1, from: n.i, to: n.i })
@@ -60501,7 +60587,10 @@ function hillRoad (line, nodeAt) {
   ]
   for (const [move, o] of outs) {
     if (!o) continue
-    const c = mark(curve(line, lx, lz, 0, 1, o.x0, o.z0, o.dx, o.dz, move === 'S' ? 6 : 8), 1)
+    const c = mark(
+      curve(line, lx, lz, 0, 1, o.x0, o.z0, o.dx, o.dz, move === 'S' ? 6 : 8),
+      1
+    )
     Object.assign(c, { move, node: n.i, dir: 1, lane: 1 })
     c.next.push(o) // (not among o's feeds: those are the grid's turns, route.js)
     last.next.push(c)
@@ -60517,7 +60606,21 @@ function hillRoad (line, nodeAt) {
   const u0 = up[0]
   for (const [move, L, dir] of ins) {
     if (!L) continue
-    const c = mark(curve(line, L.x0 + L.dx * L.len, L.z0 + L.dz * L.len, L.dx, L.dz, u0.x0, u0.z0, u0.dx, u0.dz, move === 'S' ? 6 : 8), 1)
+    const c = mark(
+      curve(
+        line,
+        L.x0 + L.dx * L.len,
+        L.z0 + L.dz * L.len,
+        L.dx,
+        L.dz,
+        u0.x0,
+        u0.z0,
+        u0.dx,
+        u0.dz,
+        move === 'S' ? 6 : 8
+      ),
+      1
+    )
     Object.assign(c, { move, node: n.i, dir, lane: L.lane, atS: L.len })
     link(c, u0)
     L.exits.push(c)
@@ -71802,6 +71905,9 @@ const SIGHT = {
     const dx = ob.x - car.x,
       dz = ob.z - car.z
     if (dx > LOOK || dx < -LOOK || dz > LOOK || dz < -LOOK) return
+    // (not one on the street under the freeway's deck, or up on it over the street)
+    const dy = (o?.y || 0) - (car.y || 0)
+    if (dy > 3 || dy < -3) return
     MARGIN = this.margin
     const e = car.edge
     if (e.kind === 1) {
@@ -74617,7 +74723,9 @@ const { HW } = __require(33)
 const TAKE = 0.35 // the share of drivers who take a way off onto the freeway
 const TAKE_HILL = 0.2 // ...and up the hill road
 const NOSE = 1.6 // m fore and aft of the middle the slope is read at
-const SPAWN_HW = 0.3 // the share of new cars put on the freeway or the hill road, when one is near
+const _span = []
+const SPAWN_HW = 0.45
+const HILL_MAX = 10 // the share of new cars put on the freeway or the hill road, when one is near
 
 const HWDRIVE = {
   // the way on from edge e, if the freeway's or the hill road's say (undefined: the street's own)
@@ -74660,14 +74768,40 @@ const HWDRIVE = {
   // sight as spawn's are), now and then; null if none.
   hwSpawn (x, z, rMin, rMax, view) {
     const R = (this.hwS ||= rng(55117))
-    if (!HW.length || R() > SPAWN_HW) return null
-    const e = HW[Math.floor(R() * HW.length)]
-    const s = 10 + R() * Math.max(0, e.len - 20)
+    // (along the stretches of it within reach, each as likely as its length there)
+    let sum = 0
+    _span.length = 0
+    for (const e of HW) {
+      const t = (x - e.x0) * e.dx + (z - e.z0) * e.dz,
+        p = Math.abs((x - e.x0) * e.dz - (z - e.z0) * e.dx)
+      if (p >= rMax) continue
+      const h = Math.sqrt(rMax * rMax - p * p),
+        a = Math.max(10, t - h),
+        b = Math.min(e.len - 10, t + h)
+      if (b > a) _span.push(e, a, b, (sum += b - a))
+    }
+    if (!sum || R() > SPAWN_HW) return null
+    const pick = R() * sum
+    let i = 0
+    while (_span[i + 3] < pick) i += 4
+    const e = _span[i],
+      s = _span[i + 1] + R() * (_span[i + 2] - _span[i + 1])
+    // (the hill road's a quiet one: a few cars on it at a time)
+    if (
+      e.vk < 1 &&
+      this.cars.filter(c => c.edge?.hw && c.edge.vk < 1).length >= HILL_MAX
+    )
+      return null
     const px = e.x0 + e.dx * s,
       pz = e.z0 + e.dz * s
     const d = Math.hypot(px - x, pz - z)
     if (d < rMin || d > rMax) return null
-    if (view && d < 240 && (px - view.x) * view.fx + (pz - view.z) * view.fz > 0) return null
+    if (
+      view &&
+      d < 240 &&
+      (px - view.x) * view.fx + (pz - view.z) * view.fz > 0
+    )
+      return null
     if (e.cars.some(o => Math.abs(o.s - s) < o.len + 14)) return null
     const car = this.make(this.pickType())
     car.edge = e
@@ -74718,6 +74852,7 @@ const { TYPES, IDX } = __require(57)
 const { HANDOVER, styleOf } = __require(87)
 const { PARKNEAR } = __require(89)
 const { HWDRIVE } = __require(90)
+const { groundHeight } = __require(88)
 
 const BUS = IDX.bus
 const SHARES = TYPES.reduce((a, t) => a + t.share, 0)
@@ -75108,7 +75243,7 @@ class Traffic {
     // (the player on foot is someone in the road to stop for and honk at, not a car: handover.js)
     const foot = sim.mode === 'foot'
     this.foot = foot ? pl : null
-    this.me = !foot && sim.mode !== 'ramp' && pl.y < 4 ? pl : null
+    this.me = !foot && sim.mode !== 'ramp' && pl.y < groundHeight(pl.x, pl.z, pl.y) + 4 ? pl : null
     if (this.quiet && this.horn && atJam(pl.x, pl.z)) this.quiet = false
     this.mev = sim.vel
     this.sim = sim
