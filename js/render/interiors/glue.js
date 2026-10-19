@@ -119,7 +119,7 @@ export class InteriorGlue {
     const e = player.vehicle
     if (f.inRoadster()) {
       this.damage?.repair()
-      MAT.paint.color.setHex(c.hex)
+      this.paintRoadster(c.hex)
     } else if (f.alt?.car) {
       const car = f.alt.car
       car.dmg = null
@@ -128,6 +128,19 @@ export class InteriorGlue {
     this.sprays++
     f.hud?.popup?.(`Repaired and resprayed · ${c.name} · <b>-$${PRICE}</b>`, 2600, 'hint')
     emitGame('car-resprayed', { site: s.id, vehicle: e?.id, colour: c.name, price: PRICE, wanted: player.wanted })
+  }
+
+  // the Roadster's paint: its material and the copies of it its panels were made with
+  paintRoadster (hex) {
+    if (!this.paints) {
+      const was = MAT.paint.color.getHex()
+      this.paints = new Set([MAT.paint])
+      this.foot.RS?.car?.traverse(o => {
+        for (const m of [].concat(o.material || []))
+          if (m?.isMeshPhysicalMaterial && m.color?.getHex() === was) this.paints.add(m)
+      })
+    }
+    for (const m of this.paints) m.color.setHex(hex)
   }
 
   // ---------- the prompt (onFoot.js offer: o is the car's offer, changed in place) ----------
