@@ -8,7 +8,11 @@ import { makeControls } from '../js/sim/constants.js'
 import { EDGES, pointAt } from '../js/sim/city.js'
 import { EXITS, HW } from '../js/sim/highway.js'
 import { FWY } from '../js/sim/freeway.js'
-import { createVehicleBody, stepVehicle, makeVehicleInput } from '../js/sim/vehicleSim.js'
+import {
+  createVehicleBody,
+  stepVehicle,
+  makeVehicleInput
+} from '../js/sim/vehicleSim.js'
 import '../js/sim/breakables.js'
 
 const H = 1 / 120
@@ -22,15 +26,20 @@ test('the freeway and the hill road: ways off the streets onto them, and every o
     for (const x of L.exits) {
       pointAt(L, x.atS, P)
       pointAt(x, 0, Q)
-      assert.ok(Math.hypot(P.x - Q.x, P.z - Q.z) < 1e-6, 'the way off starts on its lane')
-      assert.ok(P.hx * Q.hx + P.hz * Q.hz > 0.9999, 'heading the lane\'s way')
+      assert.ok(
+        Math.hypot(P.x - Q.x, P.z - Q.z) < 1e-6,
+        'the way off starts on its lane'
+      )
+      assert.ok(P.hx * Q.hx + P.hz * Q.hz > 0.9999, "heading the lane's way")
       // (and on along it, back onto a street lane, the grid's)
       let e = x,
         n = 0
       while (e.hw && !e.road && n++ < 80) e = e.next[0]
       assert.ok(!e.hw || e.road, 'back onto a street')
     }
-  assert.ok(EDGES.filter(e => e.hw && e.kind === 2).every(e => e.r > 1.9 && e.vmax > 2))
+  assert.ok(
+    EDGES.filter(e => e.hw && e.kind === 2).every(e => e.r > 1.9 && e.vmax > 2)
+  )
 })
 
 function drive (x, z, secs, each) {
@@ -70,7 +79,8 @@ test('the traffic drives the freeway up on its deck, at freeway speed, and comes
 test('the traffic drives up the hill road, through the tunnel and over the bridge', () => {
   let high = 0
   drive(480, -850, 90, tr => {
-    for (const c of tr.cars) if (c.edge?.hw && !c.parked) high = Math.max(high, c.y)
+    for (const c of tr.cars)
+      if (c.edge?.hw && !c.parked) high = Math.max(high, c.y)
   })
   assert.ok(high > 40, `up to ${high.toFixed(0)} m`)
 })

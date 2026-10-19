@@ -15,6 +15,7 @@ import { buildOptimus, poseOptimus } from './optimus.js'
 import { DRIVER, buildCabin, updateCabin } from './roadsterCabin.js'
 import { loft, loftGeos, at, seam, withStations } from './loft.js'
 import { buildWheels, updateWheels, withWheelArches } from './wheels.js'
+import { slopeRoadster } from './roadsterSlope.js'
 import { buildTail, buildWing, updateWing, fanUnit } from './roadsterRear.js'
 
 const _a = new THREE.Vector3()
@@ -431,6 +432,7 @@ export function updateRoadster (RS, sim, ctl, dt) {
   RS.car.position.copy(sim.pos)
   RS.car.quaternion.copy(sim.quat)
   kerb(RS, sim, dt)
+  slopeRoadster(RS.car, sim, dt)
   if (RS.settle.k > 0.002) {
     RS.car.position.y += RS.settle.dy * RS.settle.k
     RS.car.quaternion.premultiply(
