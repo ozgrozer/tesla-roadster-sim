@@ -108,3 +108,36 @@ test('weather: one grip getter, 1 dry and about 0.7 soaked; the weather in a wor
   ENV.wet = 0
   ENV.pool = 0
 })
+
+test('map places: gas stations, car parks, hospitals, police stations, and added ones', async () => {
+  await import('../js/sim/city.js')
+  const { pois, addPoi, removePoi } = await import('../js/sim/poi.js')
+  const kinds = k => pois().filter(p => p.kind === k).length
+  assert.ok(kinds('gas') >= 1)
+  assert.ok(kinds('garage') >= 1)
+  assert.equal(kinds('hospital'), 3)
+  assert.equal(kinds('police'), 3)
+  for (const p of pois()) assert.ok(Number.isFinite(p.x) && Number.isFinite(p.z), p.id)
+  addPoi({ id: 'shop1', kind: 'shop', x: 1, z: 2, name: 'Corner shop' })
+  addPoi({ id: 'door1', kind: 'weird', x: 1, z: 2 })
+  assert.equal(kinds('shop'), 1)
+  assert.equal(pois().find(p => p.id === 'door1').kind, 'interior')
+  removePoi('shop1')
+  removePoi('door1')
+  assert.equal(kinds('shop'), 0)
+})
+
+test("the police stream's search area wins while fresh, and its absence is fine", async () => {
+  const { emitGame, tickGame } = await import('../js/sim/gameEvents.js')
+  const { searchOf } = await import('../js/ui/crimeMap.js')
+  const own = { x: 0, z: 0, r: 50 }
+  assert.equal(searchOf({ search: own, units: [] }), own)
+  assert.equal(searchOf({ search: null, units: [] }), null)
+  emitGame('police-search', { pos: { x: 10, z: 20 }, radius: 80, ttl: 5 })
+  const s = searchOf({ search: own, units: [{ x: 0, z: 0 }] })
+  assert.deepEqual([s.x, s.z, s.r], [10, 20, 80])
+  tickGame(6)
+  assert.equal(searchOf({ search: own, units: [{ x: 0, z: 0 }] }), own)
+  emitGame('police-search', { pos: null, radius: 0 })
+  assert.equal(searchOf({ search: own, units: [{ x: 0, z: 0 }] }), null)
+})

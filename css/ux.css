@@ -234,3 +234,9 @@
   animation-iteration-count: 1 !important;
   transition-duration: 0.001s !important;
 }
+
+/* the map's legend in two columns (it has grown) */
+.mp-legend ul {
+  grid-template-columns: auto auto;
+  column-gap: 14px;
+}

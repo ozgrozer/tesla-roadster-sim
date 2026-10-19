@@ -18,6 +18,7 @@ import { ENV, WEATHERS } from '../sim/env.js'
 import { KeyCard, installRemap } from './remap.js'
 import { Stats } from './stats.js'
 import { UxFrame } from './ux.js'
+import { poiIcon } from './poiMap.js'
 
 const TABS = ['map', 'settings', 'controls', 'stats']
 // the top bar's buttons and the keys they press (the mode button: M or P, menu.bar)
@@ -60,6 +61,13 @@ const LEGEND = [
   [icon(LINE), 'GPS route'],
   [icon(disc(COLOR.jam) + JUMP), 'Gridlock'],
   [icon(disc('#f2f2f2')), 'Landmark'],
+  [icon('<circle cx="8" cy="8" r="6" fill="#f0c24b" stroke="#0a0c12" stroke-width="1.4"/><text x="8" y="11" font-size="8" font-weight="800" text-anchor="middle" fill="#111">M</text>'), 'Mission'],
+  [icon('<circle cx="5.5" cy="8" r="3.4" fill="#ff3b3b"/><circle cx="10.5" cy="8" r="3.4" fill="#3b7bff"/>'), 'Police'],
+  [icon('<circle cx="8" cy="8" r="6.5" fill="rgba(255,60,60,0.3)" stroke="rgba(255,255,255,0.5)"/>'), 'Search area'],
+  [poiIcon('gas'), 'Gas station'],
+  [poiIcon('garage'), 'Car park'],
+  [poiIcon('hospital'), 'Hospital'],
+  [poiIcon('police'), 'Police station'],
   ['<i class="lg-sw park"></i>', 'Park'],
   ['<i class="lg-sw sand"></i>', 'Beach']
 ]
