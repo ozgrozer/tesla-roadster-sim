@@ -8,7 +8,16 @@ import { CityPilot } from '../js/sim/cityPilot.js'
 import { Peds, walkOn } from '../js/sim/peds.js'
 import { kerbDist } from '../js/sim/street.js'
 import { CAR, makeControls } from '../js/sim/constants.js'
-import { RED, ROADS, ROAD_HW, LANE_OFF, signal } from '../js/sim/city.js'
+import {
+  RED,
+  ROADS,
+  ROAD_HW,
+  LANE_OFF,
+  WILSHIRE,
+  signal
+} from '../js/sim/city.js'
+
+const W = ROADS[WILSHIRE]
 
 const H = 1 / 120
 // is (x, z) inside the rectangle of something at (o.x, o.z) heading (hx, hz), with a margin?
@@ -116,12 +125,13 @@ test('people dive out of the Roadster\'s way, and nobody is ever under it', () =
 
 test('Autopilot stops for someone in the road', () => {
   const sim = new Sim()
-  sim.reset('city', { x: ROADS[6] + 20, z: LANE_OFF[1], yaw: 0 }) // (clear of the jam)
+  // (on Wilshire, clear of the jam: Wilshire is ROADS[WILSHIRE] since the city grew, z 0 before)
+  sim.reset('city', { x: ROADS[6] + 20, z: W + LANE_OFF[1], yaw: 0 })
   const tr = new Traffic({ seed: 1, count: 0 })
   tr.reset(sim.pos.x, sim.pos.z)
   const pilot = new CityPilot(sim, tr)
   assert.ok(pilot.join(), 'finds its lane')
-  const p = { x: sim.pos.x + 45, z: LANE_OFF[1] }
+  const p = { x: sim.pos.x + 45, z: W + LANE_OFF[1] }
   let closest = Infinity
   for (let i = 0; i < 12 / H; i++) {
     tr.peds = [p] // (as peds.js would leave it: someone standing in the lane)
@@ -149,7 +159,7 @@ test('people walk in pairs, stand about, jog, each at their own pace', () => {
 
 test('the Roadster on the pavement sends people running, and they calm down after', () => {
   const sim = new Sim()
-  const z = ROAD_HW + 2.2
+  const z = W + ROAD_HW + 2.2 // (Wilshire's pavement, as before the city grew)
   sim.reset('city', { x: ROADS[6] + 14, z, yaw: 0 })
   const tr = new Traffic({ seed: 4, count: 0 })
   tr.reset(sim.pos.x, sim.pos.z)

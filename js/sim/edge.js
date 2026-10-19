@@ -6,10 +6,10 @@
 // the verges and the pier's deck), and the hills' shape: the same heights the renderer draws, so a
 // car flown into a hillside is held up by it rather than passing through. Pure data and math, like
 // city.js, so it runs headless in the tests.
-import { LANDMARKS } from './areas.js'
-import { PROMENADE, OUTER, addCollider } from './city.js'
+import { LANDMARKS, OLD } from './areas.js'
+import { PROMENADE, OUTER, HALF, addCollider } from './city.js'
 
-export const WALL = 505 // the walls' inner face, north, east and south: the verge runs out to it
+export const WALL = HALF + 25 // the walls' inner face, north, east and south: the verge runs out to it
 export const WALL_H = { north: 3.2, side: 4.8 } // the retaining wall, and the sound walls
 export const SHORE = OUTER + 1 // where the beach's flat sand ends and slopes down into the sea
 export const PIER = LANDMARKS.pier
@@ -117,20 +117,20 @@ export const ARCH = { x: -PROMENADE - 6, w: 8.5 }
 // The roller coaster: its track through these points (x, y, z), a closed loop round the east of the
 // park, out of the station over the lift hill and down; a column under each.
 export const COASTER = [
-  [-572, 3, 41],
-  [-560, 3.2, 42],
-  [-550, 8.5, 42],
-  [-543, 14.5, 41],
-  [-539, 12, 36],
-  [-539, 3.5, 28],
-  [-541, 4.5, 20],
-  [-546, 9, 15],
-  [-555, 7, 13],
-  [-564, 3.5, 14],
-  [-571, 7.5, 18],
-  [-574, 9.5, 25],
-  [-574, 6, 33],
-  [-575, 3.2, 38]
+  [-572 + OLD, 3, 41 + OLD],
+  [-560 + OLD, 3.2, 42 + OLD],
+  [-550 + OLD, 8.5, 42 + OLD],
+  [-543 + OLD, 14.5, 41 + OLD],
+  [-539 + OLD, 12, 36 + OLD],
+  [-539 + OLD, 3.5, 28 + OLD],
+  [-541 + OLD, 4.5, 20 + OLD],
+  [-546 + OLD, 9, 15 + OLD],
+  [-555 + OLD, 7, 13 + OLD],
+  [-564 + OLD, 3.5, 14 + OLD],
+  [-571 + OLD, 7.5, 18 + OLD],
+  [-574 + OLD, 9.5, 25 + OLD],
+  [-574 + OLD, 6, 33 + OLD],
+  [-575 + OLD, 3.2, 38 + OLD]
 ]
 // The pier's buildings (the renderer draws each by its name): the carousel's hall on the plaza, the
 // arcade in the park, the coaster's station, the restaurant at the end and a few kiosks along it. You
@@ -148,7 +148,7 @@ export const PIER_HOUSES = [
     z1: -5.7,
     h: 3.4
   }))
-]
+].map(b => ({ ...b, x0: b.x0 + OLD, x1: b.x1 + OLD, z0: b.z0 + OLD, z1: b.z1 + OLD }))
 for (const b of PIER_HOUSES) solid(b.x0, b.x1, b.z0, b.z1, b.h, 'building')
 // the arch's posts; the wheel's base and legs, and (for a car flying into it) its rim; the coaster's
 // columns
@@ -232,7 +232,7 @@ function ridges (x, z) {
 }
 // canyons running back into the hills (their floors' x), opening onto the flats at the wall; the
 // pass the east freeway takes north; the peak behind the sign; the observatory's terrace
-const CANYONS = [-300, -95, 70, 310, 860, 1180]
+const CANYONS = [-300, -95, 70, 310, 860, 1180].map(x => x + OLD)
 const PASS = LANDMARKS.freeways[0].x0
 const SIGN = LANDMARKS.sign
 const OBS = LANDMARKS.observatory
@@ -247,11 +247,14 @@ export function hillHeight (x, z) {
     WALL_H.north *
     sstep(-PROMENADE, -PROMENADE + 10, x) *
     (1 - sstep(WALL, WALL + 30, x))
-  const crest = 255 + 45 * Math.sin(x / 330 + 0.6) + 50 * noise(x / 210, 3.7)
-  let top = 140 + 70 * noise(x / 290, 9.2)
+  // (shaped as they were behind the first city: xo is x where it stood then)
+  const xo = x - OLD
+  const crest = 255 + 45 * Math.sin(xo / 330 + 0.6) + 50 * noise(xo / 210, 3.7)
+  let top = 140 + 70 * noise(xo / 290, 9.2)
   // (lower toward the sea in the west, and far off in the east)
   top *=
-    (0.4 + 0.6 * sstep(-PROMENADE, -120, x)) * (1 - 0.55 * sstep(1100, 2400, x))
+    (0.4 + 0.6 * sstep(-PROMENADE, -120 + OLD, x)) *
+    (1 - 0.55 * sstep(1100, 2400, xo))
   // (the slope eases in from the wall: a shelf behind it before it climbs)
   let h =
     (u < crest
@@ -264,7 +267,7 @@ export function hillHeight (x, z) {
   let cut = 0
   for (const c of CANYONS) cut = Math.max(cut, Math.exp(-(((x - c) / 60) ** 2)))
   h *= 1 - 0.5 * cut * sstep(0, 160, u)
-  h += 38 * (ridges(x / 170, u / 170) - 0.45) * sstep(0, 140, u)
+  h += 38 * (ridges(xo / 170, u / 170) - 0.45) * sstep(0, 140, u)
   // the pass: a broad floor, steep sides
   h = Math.min(h, 3 + Math.max(0, Math.abs(x - PASS) - 45) * 1.1)
   // the observatory's terrace, on its spur

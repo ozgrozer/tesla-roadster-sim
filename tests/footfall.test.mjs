@@ -17,6 +17,7 @@ import {
   ROADS,
   LAMPS,
   COLLIDERS,
+  OLD,
   signal
 } from '../js/sim/city.js'
 import { lampOn } from '../js/render/pedLight.js'
@@ -50,8 +51,12 @@ function run (peds, x, z, t, each) {
     each?.(i)
   }
 }
-const HOLLYWOOD = { x: 30, z: ROADS[1] + LANE_OFF[1] }
-const MIDCITY = { x: 60, z: ROADS[7] + LANE_OFF[1] }
+// (the old city sits in the north-west of the grown one, its x shifted by OLD: these are on the
+// same stretches of Hollywood Blvd and Olympic as before; the shops along Hollywood were drawn
+// again as the lots' stream grew, so its spot moved a block east, to where they stand at the back
+// of the pavement)
+const HOLLYWOOD = { x: 90 + OLD, z: ROADS[1] + LANE_OFF[1] }
+const MIDCITY = { x: 60 + OLD, z: ROADS[7] + LANE_OFF[1] }
 
 test('fewer people late at night, a third at three in the morning, all back by seven', () => {
   assert.equal(hourShare(17), 1)
@@ -171,7 +176,10 @@ test('in a downpour fewer come out, and some wait it out under the shop canopies
     // and on their way once it stops
     ENV.rain = 0
     run(peds, HOLLYWOOD.x, HOLLYWOOD.z, 8)
-    const still = [...under].filter(p => p.state === 'linger' && !p.gone)
+    // (still under the canopy: one who has walked on and stopped at a window since is on their way)
+    const still = [...under].filter(
+      p => p.state === 'linger' && p.what === 3 && !p.gone
+    )
     assert.equal(still.length, 0, 'on their way once it stops')
   })
 })

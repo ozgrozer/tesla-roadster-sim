@@ -13,8 +13,15 @@ import {
   ROADS,
   PROMENADE,
   query,
-  COLLIDERS
+  COLLIDERS,
+  OLD,
+  WILSHIRE
 } from '../js/sim/city.js'
+
+// (the pier stands where it did by the first city, moved with it: grid.js OLD; W is Wilshire's
+// centre line, where z was 0)
+const O = OLD,
+  W = ROADS[WILSHIRE]
 
 const H = 1 / 120
 function run (sim, t, set = () => {}) {
@@ -33,8 +40,10 @@ function run (sim, t, set = () => {}) {
 test('the pier runs out from the promenade at the end of Wilshire, and is drawn where it is solid', () => {
   const [main] = LANDMARKS.pier.deck
   assert.equal(main.x1, -PROMENADE, 'its deck starts at the promenade')
-  assert.ok(main.z0 < 0 && main.z1 > 0, 'in line with Wilshire')
-  assert.ok(onDeck(-600, 0) && !onDeck(-600, -30) && !onDeck(-800, 0))
+  assert.ok(main.z0 < W && main.z1 > W, 'in line with Wilshire')
+  assert.ok(
+    onDeck(-600 + O, W) && !onDeck(-600 + O, W - 30) && !onDeck(-800 + O, W)
+  )
   // every railing is on the deck's edge, with deck on one side and none on the other
   for (const r of RAILS) {
     const mx = (r.x0 + r.x1) / 2,
@@ -66,16 +75,16 @@ test('the pier runs out from the promenade at the end of Wilshire, and is drawn 
 
 test('driving west down Wilshire, onto the pier and out over the sea on its planks', () => {
   const sim = new Sim()
-  sim.reset('city', { x: ROADS[0] + 50, z: -2, yaw: Math.PI })
+  sim.reset('city', { x: ROADS[0] + 50, z: W - 2, yaw: Math.PI })
   let out = 0,
     surf = new Set()
   run(sim, 14, (c, s) => {
-    c.throttle = s.pos.x > -560 ? 0.5 : 0
-    c.brake = s.pos.x < -620 ? 1 : 0
+    c.throttle = s.pos.x > -560 + O ? 0.5 : 0
+    c.brake = s.pos.x < -620 + O ? 1 : 0
     surf.add(s.surface)
     out = Math.min(out, s.pos.x)
   })
-  assert.ok(out < -600, `out along the pier (to x ${out.toFixed(0)})`)
+  assert.ok(out < -600 + O, `out along the pier (to x ${out.toFixed(0)})`)
   assert.ok(sim.pos.x < -OUTER - 40, 'past where the beach meets the sea')
   assert.ok(onDeck(sim.pos.x, sim.pos.z), 'and still on the deck')
   assert.ok(surf.has('wood') && sim.surface === 'wood', 'on its planks')
@@ -85,7 +94,7 @@ test('driving west down Wilshire, onto the pier and out over the sea on its plan
 test('the railings keep the car on the deck, and the sea sends it back to the beach', () => {
   const sim = new Sim()
   // on the deck between two kiosks, heading straight for the north railing at 15 m/s
-  sim.reset('city', { x: -645, z: 2, yaw: Math.PI / 2 })
+  sim.reset('city', { x: -645 + O, z: W + 2, yaw: Math.PI / 2 })
   sim.vel.set(0, 0, -15)
   sim.speed = 15
   const events = run(sim, 2)
@@ -93,11 +102,11 @@ test('the railings keep the car on the deck, and the sea sends it back to the be
     events.some(e => e.type === 'bump' && e.what === 'wall'),
     'it hits it'
   )
-  assert.ok(sim.pos.z > -9 + CAR.halfW - 0.3, 'and stays inside it')
+  assert.ok(sim.pos.z > W - 9 + CAR.halfW - 0.3, 'and stays inside it')
   assert.ok(onDeck(sim.pos.x, sim.pos.z), 'on the deck')
-  assert.ok(Math.abs(sim.pos.x + 645) < 3, 'where it was')
+  assert.ok(Math.abs(sim.pos.x + 645 - O) < 3, 'where it was')
   // come down in the sea (flown out there): back on the beach
-  sim.reset('city', { x: -640, z: 200, yaw: 0 })
+  sim.reset('city', { x: -640 + O, z: W + 200, yaw: 0 })
   run(sim, 0.1)
   assert.ok(Math.abs(sim.pos.x + OUTER) < 0.5, 'at the edge of the sand')
   assert.equal(sim.surface, 'sand')

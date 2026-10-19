@@ -12,7 +12,8 @@ import {
 } from '../js/sim/areas.js'
 
 test('the neighbourhoods and streets cover the grid areas.js shares with city.js', () => {
-  assert.equal(N, 10)
+  // (18 blocks across since the city grew east and south: was 10)
+  assert.equal(N, 18)
   assert.equal(PITCH, 96)
   assert.equal(ROAD_HW, 7)
   assert.equal(STREETS_EW.length, ROADS.length)

@@ -7,10 +7,11 @@
 // the car is.
 
 // blocks across, and m between road centre lines (as city.js: tests/areas.test.mjs checks)
-const N = 10,
+const N = 18,
   PITCH = 96,
   HALF = (N / 2) * PITCH,
-  ROAD_HW = 7
+  ROAD_HW = 7,
+  OLD = (10 / 2 - N / 2) * PITCH // (the first city's blocks are its north-west: grid.js OLD)
 
 // Each neighbourhood: its name, and its character, which decides what is built there
 //   beach: a beach town's mid-rise, two to six storeys of stucco and brick over shops, palms
@@ -21,6 +22,12 @@ const N = 10,
 //   strip: Mid-City: strip malls and their car parks, gas stations, two- and three-storey
 //          apartments over carports, the odd mid-rise
 //   downtown: the skyline: the tallest towers, older brick and stone blocks between them
+//   industrial: warehouses, factories, loading docks, truck yards, water towers on old roofs
+//   port: the docks: container stacks, gantry cranes over the quay, sheds, trucks
+//   suburb: one-storey houses on lawns with a drive and a car in it, low walls, street trees
+//   river: the LA River's concrete channel, the streets crossing it on bridges
+//   corridor: the freeway on its deck through the middle of the blocks, ramps, car parks under it
+//   stadium: the stadium on its superblock, car parks round it
 export const AREAS = {
   santaMonica: { name: 'Santa Monica', kind: 'beach' },
   venice: { name: 'Venice', kind: 'venice' },
@@ -28,30 +35,64 @@ export const AREAS = {
   hollywood: { name: 'Hollywood', kind: 'boulevard' },
   centuryCity: { name: 'Century City', kind: 'towers' },
   midCity: { name: 'Mid-City', kind: 'strip' },
-  downtown: { name: 'Downtown', kind: 'downtown' }
+  downtown: { name: 'Downtown', kind: 'downtown' },
+  losFeliz: { name: 'Los Feliz', kind: 'boulevard' },
+  artsDistrict: { name: 'Arts District', kind: 'industrial' },
+  vernon: { name: 'Vernon', kind: 'industrial' },
+  river: { name: 'LA River', kind: 'river' },
+  freeway: { name: 'Santa Monica Freeway', kind: 'corridor' },
+  crenshaw: { name: 'Crenshaw', kind: 'strip' },
+  inglewood: { name: 'Inglewood', kind: 'suburb' },
+  leimert: { name: 'Leimert Park', kind: 'suburb' },
+  stadium: { name: 'Inglewood Stadium', kind: 'stadium' },
+  port: { name: 'Port of Los Angeles', kind: 'port' },
+  playa: { name: 'Playa del Rey', kind: 'venice' }
 }
-// The block grid, north (top row, bz = 0) to south, west (bx = 0) to east. The spawn is in Santa
-// Monica on Wilshire (the central avenue) heading east, Century City's towers ahead round the
-// gridlocked block (jam.js, between the second and third roads).
+// The block grid, north (top row, bz = 0) to south, west (bx = 0) to east. The first city is the
+// top-left ten by ten; the spawn is in Santa Monica on Wilshire heading east, Century City's towers
+// ahead round the gridlocked block (jam.js, between the second and third roads). East of Downtown
+// the LA River runs north to south down a column of its own, the Arts District's warehouses past
+// it; the Santa Monica Freeway crosses the city on its deck down row 10; south of it Crenshaw's
+// strips, the suburbs of Leimert Park and Inglewood round the stadium, Vernon's factories in the
+// south-east, and the port in the south-west where the coast turns to quays.
 const S = 'santaMonica',
   V = 'venice',
   B = 'beverlyHills',
   H = 'hollywood',
   C = 'centuryCity',
   M = 'midCity',
-  D = 'downtown'
+  D = 'downtown',
+  L = 'losFeliz',
+  A = 'artsDistrict',
+  X = 'vernon',
+  W = 'river',
+  F = 'freeway',
+  K = 'crenshaw',
+  I = 'inglewood',
+  E = 'leimert',
+  T = 'stadium',
+  P = 'port',
+  Y = 'playa'
 // prettier-ignore
 const GRID = [
-  [S, S, B, B, B, H, H, H, D, D],
-  [S, S, B, B, B, H, H, H, D, D],
-  [S, S, B, B, B, H, H, H, D, D],
-  [S, S, C, C, C, M, H, D, D, D],
-  [S, S, C, C, C, M, M, D, D, D],
-  [S, S, C, C, C, M, M, D, D, D],
-  [V, V, M, M, M, M, M, D, D, D],
-  [V, V, M, M, M, M, M, M, D, D],
-  [V, V, V, M, M, M, M, M, D, D],
-  [V, V, V, M, M, M, M, M, D, D]
+  [S, S, B, B, B, H, H, H, D, D, L, L, W, A, A, A, A, A],
+  [S, S, B, B, B, H, H, H, D, D, L, L, W, A, A, A, A, A],
+  [S, S, B, B, B, H, H, H, D, D, L, L, W, A, A, A, A, A],
+  [S, S, C, C, C, M, H, D, D, D, D, D, W, A, A, A, A, A],
+  [S, S, C, C, C, M, M, D, D, D, D, D, W, A, A, A, A, A],
+  [S, S, C, C, C, M, M, D, D, D, D, D, W, A, A, A, A, A],
+  [V, V, M, M, M, M, M, D, D, D, D, D, W, A, A, A, A, A],
+  [V, V, M, M, M, M, M, M, D, D, D, D, W, X, X, X, X, X],
+  [V, V, V, M, M, M, M, M, D, D, D, D, W, X, X, X, X, X],
+  [V, V, V, M, M, M, M, M, D, D, K, K, W, X, X, X, X, X],
+  [Y, Y, F, F, F, F, F, F, F, F, F, F, W, F, F, F, F, F],
+  [Y, Y, K, K, K, K, K, K, K, K, K, K, W, X, X, X, X, X],
+  [Y, Y, E, E, E, E, E, E, K, K, K, K, W, X, X, X, X, X],
+  [Y, Y, E, E, E, E, E, E, T, T, I, I, W, X, X, X, X, X],
+  [P, P, P, E, E, E, E, E, T, T, I, I, W, X, X, X, X, X],
+  [P, P, P, E, E, E, I, I, I, I, I, I, W, X, X, X, X, X],
+  [P, P, P, I, I, I, I, I, I, I, I, I, W, X, X, X, X, X],
+  [P, P, P, I, I, I, I, I, I, I, I, I, W, X, X, X, X, X]
 ]
 // the key of the neighbourhood a block (bx, bz) is in
 export const areaOf = (bx, bz) =>
@@ -77,7 +118,15 @@ export const STREETS_EW = [
   'Pico Blvd',
   'Venice Blvd',
   'Washington Blvd',
-  'Jefferson Blvd'
+  'Jefferson Blvd',
+  'Exposition Blvd',
+  'Martin Luther King Jr Blvd',
+  'Slauson Ave',
+  'Florence Ave',
+  'Manchester Ave',
+  'Century Blvd',
+  'Imperial Hwy',
+  'El Segundo Blvd'
 ]
 export const STREETS_NS = [
   'Ocean Ave',
@@ -90,7 +139,15 @@ export const STREETS_NS = [
   'La Brea Ave',
   'Vine St',
   'Figueroa St',
-  'Alameda St'
+  'Alameda St',
+  'Central Ave',
+  'Santa Fe Ave',
+  'Mission Rd',
+  'Soto St',
+  'Indiana St',
+  'Atlantic Blvd',
+  'Garfield Ave',
+  'Eastern Ave'
 ]
 // The landmarks, for the radar and the city's look (sim/edge.js makes what is solid out there from
 // these; render/cityPier.js and cityHills.js build them). The pier runs out to sea from the
@@ -99,27 +156,30 @@ export const STREETS_NS = [
 // its south side, the carousel's plaza on its north side, and a wider end to turn round on), and the
 // Ferris wheel stands in the park by the deck. The sign stands on the face of the hills at the head of
 // La Brea, the observatory on a spur east of it. The freeways run behind the sound walls on the east
-// and the south: their centre lines, from end to end.
+// and the south: their centre lines, from end to end. (All where they stood by the first city, moved
+// with it: OLD.)
 const PROM = HALF + ROAD_HW + 5.5 // the promenade's outer edge (city.js PROMENADE)
+const WIL = OLD // Wilshire's centre line (z)
 export const LANDMARKS = {
   pier: {
-    x: -627.5,
-    z: 0,
+    x: -627.5 + OLD,
+    z: WIL,
     deck: [
-      { x0: -724, x1: -PROM, z0: -9, z1: 9 },
-      { x0: -612, x1: -536, z0: 9, z1: 46 },
-      { x0: -566, x1: -520, z0: -28, z1: -9 },
-      { x0: -762.5, x1: -724, z0: -16, z1: 16 }
+      { x0: -724 + OLD, x1: -PROM, z0: WIL - 9, z1: WIL + 9 },
+      { x0: -612 + OLD, x1: -536 + OLD, z0: WIL + 9, z1: WIL + 46 },
+      { x0: -566 + OLD, x1: -520 + OLD, z0: WIL - 28, z1: WIL - 9 },
+      { x0: -762.5 + OLD, x1: -724 + OLD, z0: WIL - 16, z1: WIL + 16 }
     ],
-    wheel: { x: -588, z: 21 }
+    wheel: { x: -588 + OLD, z: WIL + 21 }
   },
-  sign: { x: 2 * PITCH, z: -680 },
-  observatory: { x: 400, z: -640 },
+  sign: { x: 2 * PITCH + OLD, z: -680 + OLD },
+  observatory: { x: 400 + OLD, z: -640 + OLD },
   freeways: [
-    { x0: 532, z0: -1500, x1: 532, z1: 2000 },
-    { x0: -470, z0: 532, x1: 2000, z1: 532 }
+    { x0: HALF + 52, z0: -1500 + OLD, x1: HALF + 52, z1: 2000 - OLD },
+    { x0: -HALF + 10, z0: HALF + 52, x1: 2000 - OLD, z1: HALF + 52 }
   ]
 }
+export { OLD }
 
 // Where (x, z) is, as the HUD says it: the neighbourhood, and the street (or the crossing, at a
 // junction) the car is on or beside; off the grid, the beach or the hills.
@@ -135,8 +195,14 @@ export function whereIs (x, z, out = _out) {
     bz = Math.floor(z / PITCH + N / 2)
   out.cross = ''
   if (x < -HALF - ROAD_HW - 6) {
-    out.area = 'Santa Monica Beach'
+    const port = z > (13 - N / 2) * PITCH
+    out.area = port ? 'Port of Los Angeles' : 'Santa Monica Beach'
     out.street = Math.abs(z - LANDMARKS.pier.z) < 12 ? 'Santa Monica Pier' : ''
+    return out
+  }
+  if (z < -HALF - ROAD_HW - 6) {
+    out.area = 'Hollywood Hills'
+    out.street = x > -HALF && x < HALF ? 'Mulholland Dr' : ''
     return out
   }
   out.area = AREAS[areaOf(bx, bz)].name

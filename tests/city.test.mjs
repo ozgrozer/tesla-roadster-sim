@@ -26,7 +26,11 @@ import {
   pointAt,
   standUp,
   BUILDINGS,
-  nearestLane
+  nearestLane,
+  N,
+  PITCH,
+  SUPERS,
+  superOf
 } from '../js/sim/city.js'
 
 const H = 1 / 120
@@ -63,13 +67,24 @@ test('the lane graph joins up and, with lane changes, reaches every lane', () =>
   assert.equal(seen.size, EDGES.length, 'every lane and turn is reachable')
 })
 
+const blockOf = (x, z) => [
+  Math.floor(x / PITCH + N / 2),
+  Math.floor(z / PITCH + N / 2)
+]
 test('buildings stand inside their blocks, clear of the sidewalks', () => {
   for (const b of BUILDINGS) {
     const cx = (b.x0 + b.x1) / 2,
       cz = (b.z0 + b.z1) / 2
-    const blk = BLOCKS.find(
+    let blk = BLOCKS.find(
       k => cx > k.x0 && cx < k.x1 && cz > k.z0 && cz < k.z1
     )
+    // (on a superblock, grid.js: its north-west block, stretched over all four and the closed
+    // streets between, is its lot)
+    const sup = blk?.super || SUPERS.find(s => superOf(...blockOf(cx, cz)) === s)
+    if (sup) {
+      const o = BLOCKS[sup.bz * N + sup.bx]
+      blk = { ...o, x1: o.x1 + PITCH, z1: o.z1 + PITCH }
+    }
     assert.ok(blk, 'in a block')
     for (const t of b.tiers) {
       assert.ok(t.x0 >= blk.x0 + WALK - 1e-9 && t.x1 <= blk.x1 - WALK + 1e-9)
