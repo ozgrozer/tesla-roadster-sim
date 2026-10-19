@@ -99,7 +99,7 @@ export const CONDITIONS = {
       if (st.taken || this.used.has(st)) continue
       const d2 = (st.x - x) ** 2 + (st.z - z) ** 2
       if (d2 < near * near || this.inView(st.x, st.z, view)) continue
-      const car = this.park(st, R, type === this.bus ? 0 : type)
+      const car = this.park(st, R, this.lotType(type))
       this.used.add(st)
       this.extra.push(car)
       return

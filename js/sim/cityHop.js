@@ -95,13 +95,20 @@ export class Hop {
     this.look = 0
     this.done = false
   }
-  // a car under the Roadster (or about to be), too close to come down on
+  // a car under the Roadster (or about to be), too close to come down on: within 3.5 m of its ends,
+  // 2.5 m of its sides (a car in the next lane, a limousine's length beside it, is no reason not to
+  // come down)
   under (p, v) {
     const x = p.x + v.x * 0.5,
       z = p.z + v.z * 0.5
-    return this.traffic.cars.some(
-      c => Math.hypot(c.x - x, c.z - z) < c.len / 2 + 3.5
-    )
+    return this.traffic.cars.some(c => {
+      const rx = c.x - x,
+        rz = c.z - z
+      return (
+        Math.abs(rx * c.hx + rz * c.hz) < c.len / 2 + 3.5 &&
+        Math.abs(rz * c.hx - rx * c.hz) < c.wid / 2 + 2.5
+      )
+    })
   }
   update (dt) {
     const s = this.sim,

@@ -7,9 +7,10 @@
 // gridlock: the first horn in the city is the Roadster's.
 // Traffic lives in a bubble round the player: cars far behind are recycled into the streets ahead.
 // Cars far off are driven less often (a longer step every second or fourth one), and a car that has
-// not moved for a long while out of sight is taken off the road. Now and then a police car answers
-// a call, and everyone makes way for it (calls.js, responder.js, makeway.js); the weather slows the
-// drivers and the hour decides how many are out (conditions.js).
+// not moved for a long while out of sight is taken off the road. Now and then an emergency vehicle
+// answers a call, and everyone makes way for it (calls.js, responder.js, makeway.js); the weather
+// slows the drivers and the hour decides how many are out (conditions.js); box trucks stop to
+// deliver (delivery.js), and lowriders and limousines come by where they belong (fleet.js).
 import { ENV } from './env.js'
 import { JAM, atJam } from './jam.js'
 import { REACT } from './react.js'
@@ -19,28 +20,16 @@ import { MAKEWAY } from './makeway.js'
 import { RESPOND } from './responder.js'
 import { CALLS, newCall } from './calls.js'
 import { CONDITIONS, busy } from './conditions.js'
+import { FLEET, streams } from './fleet.js'
+import { DELIVERY } from './delivery.js'
 import { gone, slide, restore, collidePlayer, bumpLoose } from './wrecks.js'
 import { DRIVE, temperament } from './drivers.js'
 import { LANE_CHANGE } from './laneChange.js'
 import { rng, NODES, EDGES, LANES, STALLS, pointAt } from './city.js'
+import { TYPES, IDX } from './carTypes.js'
+export { TYPES }
 
-// cruise: the speed an ordinary driver likes (m/s); acc, brake: how hard they pull away and brake;
-// lat: the sideways acceleration they take a corner at; share: how many in a hundred cars are of
-// the type (the odd police car and sports car among them)
-// prettier-ignore
-export const TYPES = [
-  { name: 'sedan', len: 4.7, wid: 1.85, hgt: 1.45, m: 1600, share: 30, cruise: 13.4, acc: 2.6, brake: 3.2, lat: 2.9 },
-  { name: 'hatch', len: 4.1, wid: 1.78, hgt: 1.5, m: 1300, share: 16, cruise: 13.2, acc: 2.5, brake: 3.2, lat: 2.9 },
-  { name: 'suv', len: 4.85, wid: 1.95, hgt: 1.75, m: 2100, share: 20, cruise: 13.4, acc: 2.4, brake: 3.1, lat: 2.5 },
-  { name: 'taxi', len: 4.8, wid: 1.85, hgt: 1.62, m: 1650, share: 9, cruise: 14, acc: 2.8, brake: 3.4, lat: 3 },
-  { name: 'pickup', len: 5.4, wid: 2.0, hgt: 1.85, m: 2300, share: 10, cruise: 13.4, acc: 2.2, brake: 3, lat: 2.4 },
-  { name: 'van', len: 6.4, wid: 2.15, hgt: 2.8, m: 3800, share: 7, cruise: 12.4, acc: 1.7, brake: 2.8, lat: 2.1 },
-  { name: 'bus', len: 11.6, wid: 2.55, hgt: 3.15, m: 12500, share: 3, cruise: 10.6, acc: 1.15, brake: 2.4, lat: 1.6 },
-  { name: 'police', len: 5.05, wid: 2.0, hgt: 1.86, m: 2300, share: 2, cruise: 13.6, acc: 2.7, brake: 3.4, lat: 2.8 },
-  { name: 'sports', len: 4.5, wid: 1.9, hgt: 1.28, m: 1500, share: 3, cruise: 14.2, acc: 3.2, brake: 3.6, lat: 3.3 }
-]
-const BUS = TYPES.findIndex(t => t.name === 'bus')
-const POLICE = TYPES.findIndex(t => t.name === 'police')
+const BUS = IDX.bus
 const SHARES = TYPES.reduce((a, t) => a + t.share, 0)
 
 const P = { x: 0, z: 0, hx: 1, hz: 0 }
@@ -88,9 +77,11 @@ export class Traffic {
     this.seen = { gap: 0, vl: 0, blk: null } // (drivers.js: what is in the way)
     warm(this.seen)
     this.margin = 0.5 // (sight.js: room a driver leaves either side)
+    this.idx = IDX
     this.bus = BUS
-    this.police = POLICE
-    this.call = newCall(seed) // a police car on a call (calls.js)
+    this.police = IDX.police
+    this.call = newCall(seed) // an emergency vehicle on a call (calls.js)
+    Object.assign(this, streams(seed)) // (the box trucks, lowriders and limousines: fleet.js)
     this.dens = 1 // the share of count out on the road at this hour (conditions.js)
     this.extra = [] // (and the cars parked in the lots by those who aren't)
     this.used = new Set()
@@ -193,9 +184,10 @@ export class Traffic {
       pullS: 0,
       siren: 0, // on a call itself (calls.js): 1 lights and siren on, 2 winding down after
       flash: false, // (and flashing its headlights at the Roadster in its way)
+      drop: null, // a box truck's delivery stop (delivery.js)
       wetK: 0, // the wet and the fog its driver's ways are set for (conditions.js)
       fogK: 0,
-      big: type === BUS,
+      big: !!T.big,
       brake: false,
       parked: false,
       loose: false,
@@ -222,8 +214,8 @@ export class Traffic {
       short0: 1,
       gapT: 4.5,
       // (fields other parts keep on each car, set here so every car has the same shape: tween.js,
-      // the body on its springs in render/traffic.js, stunts.js, the sound. The tween's start at 0:
-      // no car stands within its 5 m of the origin, so none is blended from there)
+      // the body on its springs and a lowrider's hydraulics (render/carRide.js), stunts.js, the
+      // sound. The tween's start at 0: no car stands within 5 m of the origin, so none is blended)
       px: 0,
       pz: 0,
       pyaw: 0,
@@ -236,6 +228,8 @@ export class Traffic {
       pitchV: 0,
       roll: 0,
       rollV: 0,
+      lift: 0,
+      hop: 0,
       steer: 0,
       ryaw: 0,
       miss: undefined,
@@ -260,7 +254,7 @@ export class Traffic {
       if ((r -= TYPES[i].share) < 0) return noBus && i === BUS ? 0 : i
     return 0
   }
-  park (st, R = this.R, type = this.pickType(true, R)) {
+  park (st, R = this.R, type = this.lotPick(R, st.x, st.z)) {
     const car = this.make(type, false, R)
     car.parked = true
     car.x = car.homeX = st.x
@@ -325,7 +319,7 @@ export class Traffic {
         this.boxBusy(e.to)
       )
         continue
-      const car = this.make(this.pickType())
+      const car = this.make(this.fleet(this.pickType(), px, pz))
       car.edge = e
       car.s = s
       car.v = car.v0 * 0.6
@@ -480,5 +474,7 @@ Object.assign(
   CALLS,
   RESPOND,
   MAKEWAY,
-  CONDITIONS
+  CONDITIONS,
+  FLEET,
+  DELIVERY
 )
