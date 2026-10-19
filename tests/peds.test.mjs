@@ -69,7 +69,8 @@ test('people keep to the pavement, cross on the walk, and traffic never runs int
       if (i % 6) continue
       if (p.state === 'walk' && kerbDist(p.x, p.z) > -0.3) off++
       for (const o of tr.cars)
-        if (Math.abs(o.x - p.x) < 8 && Math.abs(o.z - p.z) < 8)
+        // (a car up on the freeway's deck over the pavement is not running into anyone)
+        if (Math.abs(o.x - p.x) < 8 && Math.abs(o.z - p.z) < 8 && !(o.y > 2))
           if (under(p.x, p.z, o, o.len / 2, o.wid / 2, 0.1)) hit++
     }
   }

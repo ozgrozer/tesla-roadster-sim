@@ -221,7 +221,8 @@ test('in the rain people still keep to the pavement, cross on the walk, and are 
         for (const o of tr.cars) {
           const dx = p.x - o.x,
             dz = p.z - o.z
-          if (Math.abs(dx) > 8 || Math.abs(dz) > 8) continue
+          // (a car up on the freeway's deck over the pavement is not running into anyone)
+          if (Math.abs(dx) > 8 || Math.abs(dz) > 8 || o.y > 2) continue
           if (
             Math.abs(dx * o.hx + dz * o.hz) < o.len / 2 + 0.1 &&
             Math.abs(dz * o.hx - dx * o.hz) < o.wid / 2 + 0.1

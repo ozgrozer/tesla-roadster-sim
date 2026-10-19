@@ -20,6 +20,8 @@ import {
   post,
   prop,
   stalls,
+  free,
+  STALLS,
   palm,
   tree
 } from './plots.js'
@@ -27,7 +29,14 @@ import { mural, roofSign } from './towers.js'
 import { billboard } from './strip.js'
 
 // the sheds' cladding: corrugated metal (pale greys, a faded blue or green) or concrete panels
-export const METAL = [0xc9ccce, 0xb8bfc4, 0xa9b6be, 0x9fb2a6, 0xd2cbbd, 0x8e9aa6]
+export const METAL = [
+  0xc9ccce,
+  0xb8bfc4,
+  0xa9b6be,
+  0x9fb2a6,
+  0xd2cbbd,
+  0x8e9aa6
+]
 export const CONCRETE = [0xd9d4c9, 0xcfcac0, 0xc4c1ba, 0xe0dacd]
 // the boxes' colours (an index each into the renderer's palette)
 const BOXES = 10
@@ -39,7 +48,13 @@ export function fence (x0, x1, z0, z1, gate = 2, gw = 12) {
     t = 0.12
   const run = (a, b, along, c, s) => {
     const m = (a + b) / 2
-    const parts = s === gate ? [[a, m - gw / 2], [m + gw / 2, b]] : [[a, b]]
+    const parts =
+      s === gate
+        ? [
+            [a, m - gw / 2],
+            [m + gw / 2, b]
+          ]
+        : [[a, b]]
     for (const [u, v] of parts)
       if (v - u > 0.5)
         along
@@ -53,13 +68,19 @@ export function fence (x0, x1, z0, z1, gate = 2, gw = 12) {
 }
 
 // a trailer (13.6 m, a cab on it or not) parked at (x, z) heading yaw: solid, not landable
-export function trailer (x, z, yaw, cab = chance(0.4)) {
+export function trailer (
+  x,
+  z,
+  yaw,
+  cab = chance(0.4),
+  c = Math.floor(R() * BOXES)
+) {
   const along = Math.abs(Math.cos(yaw)) > 0.5,
     L = cab ? 18.5 : 13.6,
     hw = along ? L / 2 : 1.3,
     hd = along ? 1.3 : L / 2
   solid(x - hw, x + hw, z - hd, z + hd, 0, 4, 'plant', 'prop')
-  prop('trailer', { x, z, yaw, cab, c: Math.floor(R() * BOXES) })
+  prop('trailer', { x, z, yaw, cab, c })
 }
 
 // A stack of n shipping containers (each 2.59 m high, 12.2 or 6.1 m long, 2.44 m wide) at (x, z),
@@ -153,6 +174,9 @@ export function industrial (blk, lot) {
       }
     ground(blk, 'concrete', x0, x1, z0 + 30, z1 - 30)
     for (let x = x0 + 6; x < x1 - 4; x += 9) tree(x, (z0 + z1) / 2, 0.7)
+    // (the residents' cars nose in along the yard)
+    stalls(0, x0 + 4, x1 - 4, z0 + 33, -1, 0.7)
+    stalls(0, x0 + 4, x1 - 4, z1 - 33, 1, 0.7)
     return
   }
   if (kind < 0.62) {
@@ -166,7 +190,16 @@ export function industrial (blk, lot) {
   }
   if (kind < 0.8) {
     // a factory: its shed, a taller block, chimneys and tanks
-    const b = shed(blk, x0 + 4, x1 - 30, z0 + 6, z1 - 20, range(10, 15), 2, area)
+    const b = shed(
+      blk,
+      x0 + 4,
+      x1 - 30,
+      z0 + 6,
+      z1 - 20,
+      range(10, 15),
+      2,
+      area
+    )
     b.saw = true // (a sawtooth roof's north lights: drawn as ridges)
     const top = range(18, 26)
     const t = building(area, { style: 'concrete', tint: pick(CONCRETE) })
@@ -185,15 +218,34 @@ export function industrial (blk, lot) {
         x = x1 - 22 + (i % 2) * 11,
         z = z0 + 46 + Math.floor(i / 2) * 11
       if (z + r > z1 - 1) break
-      solid(x - r * 0.8, x + r * 0.8, z - r * 0.8, z + r * 0.8, 0, h, 'building', 'prop')
+      solid(
+        x - r * 0.8,
+        x + r * 0.8,
+        z - r * 0.8,
+        z + r * 0.8,
+        0,
+        h,
+        'building',
+        'prop'
+      )
       prop('tank', { x, z, r, h, c: R() })
     }
+    // (the staff car park between the works and the gate)
+    const n = STALLS.length
+    stalls(0, x0 + 6, x1 - 32, z1 - 10, -1, 0.7)
+    // (not where a trailer stands backed up to a dock)
+    for (let i = STALLS.length - 1; i >= n; i--)
+      if (!free(STALLS[i].x, STALLS[i].z, 2.4)) STALLS.splice(i, 1)
     fence(x0 + 0.5, x1 - 0.5, z0 + 0.5, z1 - 0.5, 2)
     return
   }
   // a truck yard: trailers in rows, an office at the gate, a billboard over the fence
   ground(blk, 'asphalt', x0, x1, z0, z1)
-  const off = building(area, { style: 'concrete', tint: pick(CONCRETE), shop: false })
+  const off = building(area, {
+    style: 'concrete',
+    tint: pick(CONCRETE),
+    shop: false
+  })
   tier(off, x0 + 3, x0 + 17, z1 - 13, z1 - 3, 0, range(4, 7.5))
   for (let x = x0 + 22; x < x1 - 4; x += 4.2)
     for (const z of [z0 + 10, z0 + 34])
@@ -213,7 +265,8 @@ export function port (blk, lot) {
   const yard = blk.super
   if (!yard && chance(0.35)) {
     shed(blk, x0 + 4, x1 - 4, z0 + 4, z0 + 40, range(10, 14), 2, 'port')
-    for (let x = x0 + 8; x < x1 - 8; x += 14) containers(x, z1 - 10, 0, 1 + Math.floor(R() * 3))
+    for (let x = x0 + 8; x < x1 - 8; x += 14)
+      containers(x, z1 - 10, 0, 1 + Math.floor(R() * 3))
     fence(x0 + 0.5, x1 - 0.5, z0 + 0.5, z1 - 0.5, 2)
     return
   }

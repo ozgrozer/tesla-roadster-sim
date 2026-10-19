@@ -57,6 +57,7 @@ import {
   SIGNS
 } from './lots.js'
 import { LAMPS, WIRES, DECOR } from './kerbside.js'
+import { layHighways, curveAt } from './highway.js'
 export {
   RED,
   YELLOW,
@@ -138,6 +139,17 @@ function line (x0, z0, dx, dz, len) {
     to: 0,
     twin: null,
     closed: false, // (the jammed street: jam.js)
+    // the freeway's and the hill road's (highway.js): on it, its speed against a street's; a way off
+    // a street lane starting atS along it, or onto one joining it joinS along; a street lane's ways
+    // off; a curve's points
+    hw: false,
+    vk: 1,
+    atS: -1,
+    joinS: -1,
+    exits: [],
+    xs: null,
+    zs: null,
+    cum: null,
     // a turn: the move (S, L or R) and the junction it is in; its arc's centre, radius, sense
     move: null,
     node: 0,
@@ -162,6 +174,7 @@ function arc (px, pz, dx, dz, qx, qz, sg) {
 }
 // position and unit heading at distance s along an edge
 export function pointAt (e, s, out) {
+  if (e.kind === 2) return curveAt(e, s, out)
   if (e.kind === 0) {
     out.x = e.x0 + e.dx * s
     out.z = e.z0 + e.dz * s
@@ -258,6 +271,9 @@ for (const n of NODES)
       }
     }
   }
+
+// the freeway and the hill road, on the streets' lanes (highway.js)
+layHighways(line, nodeAt)
 
 // ---------- signal masts ----------
 export const POLES = [] // signal masts: { node, dir, x, z }

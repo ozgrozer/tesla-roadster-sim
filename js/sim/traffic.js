@@ -28,6 +28,9 @@ import { LANE_CHANGE } from './laneChange.js'
 import { rng, NODES, EDGES, LANES, STALLS, pointAt } from './city.js'
 import { TYPES, IDX } from './carTypes.js'
 import { HANDOVER, styleOf } from './handover.js'
+import { PARKNEAR } from './parkNear.js'
+import { HWDRIVE } from './hwDrive.js'
+import { groundHeight } from './world.js'
 export { TYPES }
 
 const BUS = IDX.bus
@@ -111,11 +114,12 @@ export class Traffic {
     this.dens = busy(ENV.hour) * this.areaShare(x, z)
     const want = this.want()
     for (let i = 0; i < this.count * 6 && this.n < want; i++)
-      this.spawn(x, z, 24, this.radius)
+      this.hwSpawn(x, z, 24, this.radius) || this.spawn(x, z, 24, this.radius)
     this.extra.length = 0
     this.used.clear()
     for (let i = 0; i < this.count - want; i++)
       this.parkOne(this.pickType(true, this.wxR), x, z, null, 0)
+    this.parkNear(x, z, null, true) // (and the spaces round about: parkNear.js)
     this.callReset()
   }
 
@@ -142,6 +146,8 @@ export class Traffic {
       acc: 0, // its acceleration just now (the pedals, eased)
       x: 0,
       z: 0,
+      y: 0, // (up on the freeway or the hill road, and gp its nose's pitch up the slope: hwDrive.js)
+      gp: 0,
       hx: 1,
       hz: 0,
       yaw: 0,
@@ -269,6 +275,7 @@ export class Traffic {
     car.parked = true
     car.x = car.homeX = st.x
     car.z = car.homeZ = st.z
+    car.y = st.y || 0 // (up on a car park's deck: garage.js)
     this.setYaw(car, (car.homeYaw = st.yaw))
     return car
   }
@@ -371,6 +378,8 @@ export class Traffic {
   // Where to go at the end of this lane: mostly straight on, sometimes a turn, which can mean
   // moving over to the other lane first (unless `own`). Never into the jammed street.
   choose (e, car, own = false) {
+    const hw = this.hwChoose(e, car, own) // (the freeway's and the hill road's: hwDrive.js)
+    if (hw !== undefined) return hw
     if (car.siren === 1) return this.route(e, car) // (on a call: calls.js)
     let straight = null
     for (const o of e.next)
@@ -414,7 +423,7 @@ export class Traffic {
     // (the player on foot is someone in the road to stop for and honk at, not a car: handover.js)
     const foot = sim.mode === 'foot'
     this.foot = foot ? pl : null
-    this.me = !foot && sim.mode !== 'ramp' && pl.y < 4 ? pl : null
+    this.me = !foot && sim.mode !== 'ramp' && pl.y < groundHeight(pl.x, pl.z, pl.y) + 4 ? pl : null
     if (this.quiet && this.horn && atJam(pl.x, pl.z)) this.quiet = false
     this.mev = sim.vel
     this.sim = sim
@@ -479,20 +488,8 @@ export class Traffic {
     }
     const want = this.want()
     for (let k = 0; k < 4 && this.n < want; k++)
-      this.spawn(x, z, 150, this.radius, view)
+      this.hwSpawn(x, z, 150, this.radius, view) || this.spawn(x, z, 150, this.radius, view)
   }
 }
-Object.assign(
-  Traffic.prototype,
-  SIGHT,
-  DRIVE,
-  LANE_CHANGE,
-  REACT,
-  CALLS,
-  RESPOND,
-  MAKEWAY,
-  CONDITIONS,
-  FLEET,
-  DELIVERY,
-  HANDOVER
-)
+Object.assign(Traffic.prototype, SIGHT, DRIVE, LANE_CHANGE, REACT, CALLS, RESPOND, MAKEWAY)
+Object.assign(Traffic.prototype, CONDITIONS, FLEET, DELIVERY, HANDOVER, HWDRIVE, PARKNEAR)

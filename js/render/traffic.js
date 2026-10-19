@@ -18,6 +18,7 @@
 // shadows it can: the frustum is let out a little for those), in the view and in the sun's shadow
 // map alike; out of sight a car costs nothing but its springs.
 import * as THREE from 'three'
+import { slopeTo } from './carSlope.js'
 import { ENV } from '../sim/env.js'
 import { CURB_H } from '../sim/city.js'
 import { clamp } from '../sim/constants.js'
@@ -325,7 +326,7 @@ export class TrafficView {
     if (rides && !car.posed) ride(car, T, S) // (the player's own: posed, playerCar.js)
     if (view) {
       _sp.center.x = car.x
-      _sp.center.y = 1
+      _sp.center.y = 1 + (car.y || 0)
       _sp.center.z = car.z
       _sp.radius = T.len / 2 + SHADOW_REACH
       if (!view.intersectsSphere(_sp)) return
@@ -335,8 +336,8 @@ export class TrafficView {
     // its springs about the axles' height
     // (vectors and quaternions written field by field: no numbers passed to calls)
     // (one the player drives or left in the street stands on the road, or what it was driven onto)
-    const y = car.parked && !car.jam && !car.ctl && !car.abandoned ? CURB_H : 0
-    yawTo(_q, car.yaw)
+    const y = car.parked && !car.jam && !car.ctl && !car.abandoned ? car.y || CURB_H : car.y || 0
+    slopeTo(_q, car.yaw, car.gp, car.gr) // (up a slope: carSlope.js)
     _p.x = car.x
     _p.y = y
     _p.z = car.z

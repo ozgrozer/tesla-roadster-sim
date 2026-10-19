@@ -60,7 +60,7 @@ export function temperament (car, R, T) {
 export const DRIVE = {
   // the speed a driver takes a turn at
   corner (car, e) {
-    return e.kind === 1 ? Math.sqrt(car.lat * e.r) : Infinity
+    return e.kind ? Math.sqrt(car.lat * e.r) : Infinity // (a turn's arc, or a curve: highway.js)
   },
 
   // (its step, car.lodT, is read from the car: a number passed in costs an allocation)
@@ -200,6 +200,7 @@ export const DRIVE = {
         : this.lights(car, e, dt)
     if (car.pull || this.call.on || this.sirens?.length) g = Math.min(g, this.giveWay(car, dt))
     if (car.type === this.idx.truck) g = Math.min(g, this.deliver(car, dt))
+    if (e.joinS >= 0) g = Math.min(g, this.mergeHold(car, e)) // (off a slip road: hwDrive.js)
     if (g < gap) {
       gap = g
       vl = 0
@@ -213,7 +214,7 @@ export const DRIVE = {
     this.unjam(car, dt)
     if (car.stuck > 3 && blk?.offT < -2.5) this.makeRoom(car, blk) // (react.js)
     // the speed it wants: its own (less, damaged: carDamage.js), slowing in time for the turn ahead
-    let v0 = Math.min(car.v0 * (car.dmg?.limp ?? 1), this.corner(car, e))
+    let v0 = Math.min(car.v0 * e.vk * (car.dmg?.limp ?? 1), this.corner(car, e))
     if (car.next) {
       const vc = this.corner(car, car.next)
       if (vc < v0)
@@ -288,17 +289,21 @@ export const DRIVE = {
       car.from = null
     }
     const yaw = car.yaw
-    while (car.s > car.edge.len) {
+    // (a way off a lane onto the freeway or the hill road starts atS along it, a slip road back
+    // onto a street joins it joinS along: highway.js)
+    while (car.s > (car.next?.atS >= 0 ? car.next.atS : car.edge.len)) {
       const nx = car.next
       if (!nx) {
         car.s = car.edge.len
         car.v = 0
         break
       }
-      car.s -= car.edge.len
+      const was = car.edge
+      car.s -= nx.atS >= 0 ? nx.atS : was.len
+      if (was.joinS >= 0) car.s += was.joinS
       this.detach(car)
       // (on a call, a turn from the lane beside, cut across: it starts it where it is)
-      car.off += LANE_OFF[car.edge.lane] - LANE_OFF[nx.lane]
+      if (!was.hw && !nx.hw) car.off += LANE_OFF[was.lane] - LANE_OFF[nx.lane]
       car.edge = nx
       car.go = car.stop = null
       car.short = car.short0
@@ -460,5 +465,6 @@ export const DRIVE = {
     car.x = P.x - P.hz * lat
     car.z = P.z + P.hx * lat
     this.setYaw(car, Math.atan2(-P.hz, P.hx) - turn)
+    if (car.edge.hw || car.y) this.hwPlace(car)
   }
 }

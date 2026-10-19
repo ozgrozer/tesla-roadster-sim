@@ -71,14 +71,18 @@ export class PlayerCar {
     s.latAcc = b.latAcc
     s.surface = 'asphalt'
     s.world = 'city'
-    s.floor = 0
+    s.floor = b.y || 0 // (up a ramp, the freeway or the hill road: bodyGround.js)
     // the four pivots, where the tyres meet the road, each turned the way its tyre points
     const hx = Math.cos(car.yaw),
       hz = -Math.sin(car.yaw)
     for (const w of this.wheels) {
       const ax = S.axles[w.front ? 0 : 1],
         lz = w.side * S.track
-      _p.set(car.x + ax * hx - lz * hz, 0, car.z + ax * hz + lz * hx)
+      _p.set(
+        car.x + ax * hx - lz * hz,
+        (car.y || 0) + ax * Math.sin(car.gp || 0),
+        car.z + ax * hz + lz * hx
+      )
       w.pivot.position.copy(_p)
       w.pivot.rotation.set(0, car.yaw + (w.front ? car.steer : 0), 0)
       w.pivot.updateMatrixWorld(true)

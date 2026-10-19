@@ -93,10 +93,11 @@ export const SIGHT = {
     }
     const n1 = car.next
     if (!n1) return Infinity
-    let dist = e.len - car.s - car.len / 2,
+    // (a way off onto the freeway or the hill road, n1.atS along: highway.js)
+    let dist = (n1.atS >= 0 ? n1.atS : e.len) - car.s - car.len / 2,
       best = Infinity
     // a car just turning off this lane onto another branch still blocks the mouth of the junction
-    for (const sib of e.next)
+    for (const sib of e.exits.length ? [...e.next, ...e.exits] : e.next)
       if (sib !== n1 && sib.cars.length) {
         const o = sib.cars[0],
           g = dist + o.s - o.len / 2
@@ -118,8 +119,10 @@ export const SIGHT = {
     }
     dist += n1.len
     if (dist < LOOK && n1.next.length === 1 && n1.next[0].cars.length) {
-      const o = n1.next[0].cars[0],
-        g = dist + o.s - o.len / 2
+      // (a slip road joins its street lane joinS along it: the first car past that)
+      const j = n1.joinS >= 0 ? n1.joinS : 0,
+        o = n1.next[0].cars.find(c => c.s + c.len / 2 > j),
+        g = o ? dist + o.s - j - o.len / 2 : Infinity
       if (g < best) {
         best = g
         this.vl = o.v
@@ -138,6 +141,9 @@ export const SIGHT = {
     const dx = ob.x - car.x,
       dz = ob.z - car.z
     if (dx > LOOK || dx < -LOOK || dz > LOOK || dz < -LOOK) return
+    // (not one on the street under the freeway's deck, or up on it over the street)
+    const dy = (o?.y || 0) - (car.y || 0)
+    if (dy > 3 || dy < -3) return
     MARGIN = this.margin
     const e = car.edge
     if (e.kind === 1) {
