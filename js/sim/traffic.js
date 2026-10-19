@@ -25,6 +25,7 @@ import { DELIVERY } from './delivery.js'
 import { gone, slide, restore, collidePlayer, bumpLoose } from './wrecks.js'
 import { DRIVE, temperament } from './drivers.js'
 import { LANE_CHANGE } from './laneChange.js'
+import { FWY_LANES } from './laneChangeFwy.js'
 import { rng, NODES, EDGES, LANES, STALLS, pointAt } from './city.js'
 import { TYPES, IDX } from './carTypes.js'
 import { HANDOVER, styleOf } from './handover.js'
@@ -157,6 +158,8 @@ export class Traffic {
       lcLen: 30, // m of road it takes
       lat0: 0, // sideways offset from the new lane when the change began
       from: null, // (and the lane it is leaving)
+      lcDs: 0, // (and how much further along that lane it was: laneChangeFwy.js)
+      fwyDir: 0, // (on the freeway: the way it means to move over, 1 left, 2 right)
       off: 0, // steered off the lane's line, m to the right
       psi: 0, // and heading off its line, to the right
       offT: 0, // the offset it steers for
@@ -493,3 +496,4 @@ export class Traffic {
 }
 Object.assign(Traffic.prototype, SIGHT, DRIVE, LANE_CHANGE, REACT, CALLS, RESPOND, MAKEWAY)
 Object.assign(Traffic.prototype, CONDITIONS, FLEET, DELIVERY, HANDOVER, HWDRIVE, PARKNEAR)
+Object.assign(Traffic.prototype, FWY_LANES)

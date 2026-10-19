@@ -85,8 +85,8 @@ export const DRIVE = {
     let truck = null
     if (car.lc && car.from)
       for (const o of car.from.cars)
-        if (o.s > car.s) {
-          const g = o.s - car.s - (o.len + car.len) / 2
+        if (o.s > car.s + car.lcDs) {
+          const g = o.s - car.s - car.lcDs - (o.len + car.len) / 2
           if (o.drop?.k > 1) truck = o
           else if (g < gap && !this.besideStuck(car, o, g)) {
             gap = g
@@ -286,6 +286,7 @@ export const DRIVE = {
     this.steer(car, dt)
     if (car.lc && (car.lc += ds / car.lcLen) >= 1) {
       car.lc = 0
+      car.lcDs = 0
       car.from = null
     }
     const yaw = car.yaw

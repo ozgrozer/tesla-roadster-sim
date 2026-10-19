@@ -16,6 +16,8 @@ export const LANE_CHANGE = {
     car.yieldT = Math.max(0, car.yieldT - dt)
     car.passT -= dt
     car.want = 0
+    // (the freeway's lanes are edges of their own side by side: laneChangeFwy.js)
+    if (e.hw && !e.road) return this.fwyLanes(car, dt)
     // (nor while pulled over for a car on a call, makeway.js, or making a delivery, delivery.js)
     const pulled = car.pull === 1 || car.pull === 3 || car.drop?.k > 0
     if (!e.road || !e.twin || car.lc || !car.next || car.panic > 0 || pulled) {
@@ -93,14 +95,20 @@ export const LANE_CHANGE = {
 
   // over it goes: into the other lane, eased across from where it was on this one (its offset
   // from the line included), and on from there to the same turn if that lane has it
-  swap (car) {
-    const t = car.edge.twin
-    car.lat0 = LANE_OFF[car.edge.lane] - LANE_OFF[t.lane] + car.off
+  // (onto t, ds further along it than on this lane: a freeway lane beside, laneChangeFwy.js; the
+  // city's twin starts level with it)
+  swap (car, t = car.edge.twin, ds = 0) {
+    const e = car.edge
+    const fwy = e.hw && !e.road
+    car.lat0 = (fwy ? this.latTo(e, car.s, t) : LANE_OFF[e.lane] - LANE_OFF[t.lane]) + car.off
     car.off = car.offT = 0
     car.lc = 1e-6
-    car.lcLen = this.changeLength(car)
+    car.lcLen = fwy ? this.fwyChangeLength(car) : this.changeLength(car)
     car.stuck = car.yieldT = car.sigT = 0
+    car.lcDs = -ds // (s on the lane it leaves is car.s + lcDs: drivers.js)
+    if (fwy) this.fwyChanges = (this.fwyChanges || 0) + 1
     this.detach(car)
+    car.s += ds
     car.from = car.edge
     car.edge = t
     this.insert(t, car)
