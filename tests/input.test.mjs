@@ -2,6 +2,9 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 
+// (Node 20 has no navigator: the gamepad tests hang a getGamepads on one, as a browser has)
+globalThis.navigator ??= {}
+
 const on = {}
 globalThis.window = { addEventListener: (type, fn) => (on[type] = fn) }
 globalThis.document = { querySelectorAll: () => [] }
