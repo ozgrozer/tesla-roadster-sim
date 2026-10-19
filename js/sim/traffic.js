@@ -28,6 +28,7 @@ import { LANE_CHANGE } from './laneChange.js'
 import { rng, NODES, EDGES, LANES, STALLS, pointAt } from './city.js'
 import { TYPES, IDX } from './carTypes.js'
 import { HANDOVER, styleOf } from './handover.js'
+import { PARKNEAR } from './parkNear.js'
 import { HWDRIVE } from './hwDrive.js'
 export { TYPES }
 
@@ -117,6 +118,7 @@ export class Traffic {
     this.used.clear()
     for (let i = 0; i < this.count - want; i++)
       this.parkOne(this.pickType(true, this.wxR), x, z, null, 0)
+    this.parkNear(x, z, null, true) // (and the spaces round about: parkNear.js)
     this.callReset()
   }
 
@@ -488,4 +490,4 @@ export class Traffic {
   }
 }
 Object.assign(Traffic.prototype, SIGHT, DRIVE, LANE_CHANGE, REACT, CALLS, RESPOND, MAKEWAY)
-Object.assign(Traffic.prototype, CONDITIONS, FLEET, DELIVERY, HANDOVER, HWDRIVE)
+Object.assign(Traffic.prototype, CONDITIONS, FLEET, DELIVERY, HANDOVER, HWDRIVE, PARKNEAR)

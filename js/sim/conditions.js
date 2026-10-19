@@ -57,6 +57,7 @@ export const CONDITIONS = {
     const want = this.want()
     if (this.n > want + 1 && want < this.count) this.leave(x, z, view)
     else if (this.n < want && this.extra.length) this.unpark(x, z, view)
+    this.parkNear(x, z, view)
   },
   // a driver's ways from the weather they last drove in (car.wetK, car.fogK) to w and f
   weather (car, w, f) {
