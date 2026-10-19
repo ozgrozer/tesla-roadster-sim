@@ -92734,6 +92734,12 @@ const WRECK_SMOKE = {
 }
 const REACH = 140
 const RATE = [0, 12, 24] // puffs a second: none, a hurt engine's steam, a wreck's smoke
+// (progressive: a faint wisp from a quarter of the way to a wreck, thickening with the harm, and
+// going grey, then dark, the nearer the car is to done for)
+const WISP = 0.25
+const rateOf = D =>
+  D.smoke === 2 ? RATE[2] : D.harm >= WISP ? 3 + 21 * Math.min(1, (D.harm - WISP) / 0.75) : D.smoke ? RATE[1] : 0
+const darkOf = D => (D.smoke === 2 ? 0.8 : 0.5 * Math.max(0, Math.min(1, (D.harm - 0.7) / 0.3)))
 
 // each frame (dt: the sim's time it covers), round p (the Roadster); types: render/traffic.js's,
 // each with its body's lines (S)
@@ -92741,11 +92747,11 @@ function wreckSmoke (traffic, dt, p, types) {
   if (dt <= 0) return
   for (const c of traffic.cars) {
     const D = c.dmg
-    if (!D || !D.smoke) continue
+    if (!D || !(D.smoke || D.harm >= WISP)) continue
     const dx = c.x - p.x,
       dz = c.z - p.z
     if (dx * dx + dz * dz > REACH * REACH) continue
-    D.puff += RATE[D.smoke] * dt
+    D.puff += rateOf(D) * dt
     if (D.puff < 1) continue
     const S = types[c.type].S,
       bus = TYPES[c.type].name === 'bus'
@@ -92759,7 +92765,7 @@ function wreckSmoke (traffic, dt, p, types) {
       const lx = bus ? -S.L + 0.3 : S.L - 0.15 - Math.random() * 0.75,
         lz = (Math.random() - 0.5) * S.W * 1.1
       const y = y0 + (bus ? 0.9 + Math.random() * 0.4 : S.top(lx) + 0.04)
-      const dark = D.smoke === 2 && Math.random() < 0.8
+      const dark = Math.random() < darkOf(D)
       smoke.spawn(
         dark ? WRECK_SMOKE : STEAM,
         c.x + lx * hx - lz * hz,
