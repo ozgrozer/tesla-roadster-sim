@@ -70904,7 +70904,7 @@ __define(74, function (__exports) {
 // when the walk is on at a junction. People walk three lines round each block: one between the
 // street lights and the palms, and two further in, past the benches, under the shops' canopies.
 const { clamp } = __require(2)
-const { N, HALF, PITCH, CYCLE, BLOCKS, CURB_R, ROAD_HW, nodeAt } = __require(35)
+const { N, HALF, PITCH, CYCLE, BLOCKS, CURB_R, ROAD_HW, nodeAt, superOf } = __require(35)
 const CROSS_AT = 9.1 // the crosswalk's middle, from the junction's centre (cityGround.js)
 const KERB = ROAD_HW + 0.5 // where people wait and step off, from the road's centre line
 const WALK_FOR = 4 // s into the cross street's green during which people start over
@@ -71063,8 +71063,11 @@ function crossings (b, k) {
   const out = []
   const tx = b.bx - qx,
     tz = b.bz - qz
+  // (never into a superblock, the stadium's or the container yard's: its blocks' pavements run
+  // through the bowl and the stacks where the streets between them were paved over, grid.js)
+  if (superOf(b.bx, b.bz)) return out
   // over the street that runs along z, on the block's side of the junction
-  if (tx >= 0 && tx < N)
+  if (tx >= 0 && tx < N && !superOf(tx, b.bz))
     out.push({
       node,
       axis: 1,
@@ -71073,7 +71076,7 @@ function crossings (b, k) {
       block: BLOCKS[b.bz * N + tx]
     })
   // and over the one along x
-  if (tz >= 0 && tz < N)
+  if (tz >= 0 && tz < N && !superOf(b.bx, tz))
     out.push({
       node,
       axis: 0,
@@ -71099,7 +71102,7 @@ const { atJam } = __require(52)
 const { clamp, wrapPi } = __require(2)
 const { kerbDist } = __require(44)
 const { LINES, ringOf, sameOn } = __require(74)
-const { N, PITCH, HALF, ROAD_HW, BLOCKS } = __require(35)
+const { N, PITCH, HALF, ROAD_HW, BLOCKS, superOf } = __require(35)
 const KERB = ROAD_HW + 0.5
 const STILL = ['phone', 'wait', 'chat'] // what someone standing about is doing
 
@@ -71304,6 +71307,7 @@ const CROWD = {
     const bx = clamp(Math.floor((to[0] + HALF) / PITCH), 0, N - 1),
       bz = clamp(Math.floor((to[1] + HALF) / PITCH), 0, N - 1)
     const block = BLOCKS[bz * N + bx]
+    if (superOf(bx, bz)) return false // (pavement.js crossings: not into a superblock)
     p.cross = { node: null, axis: along, from, to, block, j: 0 }
     p.state = 'cross'
     p.jay = true
@@ -76268,7 +76272,7 @@ __define(99, function (__exports) {
 // fills slowly.
 const { ENV } = __require(3)
 const { clamp } = __require(2)
-const { BLOCKS } = __require(35)
+const { BLOCKS, superOf } = __require(35)
 const smooth = (a, b, x) => {
   const t = clamp((x - a) / (b - a), 0, 1)
   return t * t * (3 - 2 * t)
@@ -76317,6 +76321,7 @@ const FOOTFALL = {
   // Whether someone new turns up on block b: always on a lively block, and in the evening less
   // often elsewhere, so the lively ones fill up more (drawn from the second stream, peds.js Q)
   welcome (b) {
+    if (superOf(b.bx, b.bz)) return false // (no pavements to walk round: pavement.js crossings)
     const eve = this.eve
     if (!(eve > 0) || lively(b)) return true
     return this.Q() * (1 + EVE * eve) < 1
@@ -108165,7 +108170,12 @@ function nearestKerb (x, z, kerb = true) {
 }
 // a list of spots
 const spots = list => list.map(([fx, fz]) => spot(fx, fz))
-__export(__exports, { "lotSpot": () => lotSpot, "bounds": () => bounds, "spot": () => spot, "nearestKerb": () => nearestKerb, "spots": () => spots })
+
+// where the player is put back (game.js): the nearest hospital (wasted) or police station
+// (busted), as fractions of the map
+const HOSPITALS = [[0.18, 0.15], [0.78, 0.38], [0.35, 0.86]]
+const STATIONS = [[0.52, 0.45], [0.12, 0.7], [0.86, 0.82]]
+__export(__exports, { "lotSpot": () => lotSpot, "bounds": () => bounds, "spot": () => spot, "nearestKerb": () => nearestKerb, "spots": () => spots, "HOSPITALS": () => HOSPITALS, "STATIONS": () => STATIONS })
 })
 
 // ---- js/sim/ambient.js
@@ -109873,7 +109883,7 @@ const { Police, Arrest } = __require(235)
 const { Ambient } = __require(237)
 const { witnesses } = __require(232)
 const { MissionManager } = __require(248)
-const { spot, nearestKerb } = __require(236)
+const { spot, nearestKerb, HOSPITALS, STATIONS } = __require(236)
 const { emitGame, onGame } = __require(95)
 const { playerView, bindPlayer, updatePlayerView, setWanted } = __require(249)
 const { player } = __require(250)
@@ -109883,9 +109893,7 @@ const { radarOverlay, mapOverlay } = __require(253)
 const { gps } = __require(50)
 const { recall, remember } = __require(7)
 // where the player is put back: the nearest hospital (wasted) or police station (busted), as
-// fractions of the map (missions/spots.js)
-const HOSPITALS = [[0.18, 0.15], [0.78, 0.38], [0.35, 0.86]]
-const STATIONS = [[0.52, 0.45], [0.12, 0.7], [0.86, 0.82]]
+// fractions of the map: HOSPITALS, STATIONS in missions/spots.js
 const PENALTY = { busted: 500, wasted: 1000 }
 const DOWN_T = 3.6 // s of BUSTED / WASTED before the fade
 
@@ -110148,7 +110156,7 @@ class Game {
     emitGame('car-stolen', { vehicle: 'debug', kind: 'parked', model, pos: { x: playerView.pos.x, z: playerView.pos.z }, how: 'break' })
   }
 }
-__export(__exports, { "HOSPITALS": () => HOSPITALS, "STATIONS": () => STATIONS, "PENALTY": () => PENALTY, "Game": () => Game })
+__export(__exports, { "PENALTY": () => PENALTY, "Game": () => Game })
 })
 
 // ---- js/sim/vehicles.js

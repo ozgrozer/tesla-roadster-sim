@@ -79,3 +79,28 @@ export const placeCar = ({ x, z, yaw, u = 0 }) => {
   b.lat = 0
   return true
 }
+// the player put by the Roadster's door
+export const toRoadster = () => {
+  const R = window.__roadster,
+    e = R.vehicles.roadster
+  const w = R.vehicles.toWorld(e, e.door.x, e.door.z - 0.6)
+  const P = R.player
+  P.pos.x = w.x
+  P.pos.z = w.z
+  P.vel.x = P.vel.z = 0
+  if (R.foot.prev) {
+    R.foot.prev.x = w.x
+    R.foot.prev.z = w.z
+  }
+  return { x: w.x, z: w.z }
+}
+// the driven car stopped where it is
+export const stopCar = () => {
+  const b = window.__roadster.foot.alt.body
+  if (b) Object.assign(b, { u: 0, vx: 0, vz: 0, w: 0, lat: 0 })
+}
+// whether the player drives a city car (not the Roadster), and how damaged it is
+export const inCityCar = () => {
+  const a = window.__roadster.foot.alt
+  return a.active && window.__roadster.player.mode === 'car' ? a.body.dmg?.harm || 0 : -1
+}

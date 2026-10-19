@@ -56,7 +56,7 @@ export class Game {
     })
     page.on('pageerror', e => this.console.push({ step: this.step, type: 'pageerror', text: String(e.stack || e.message).slice(0, 600) }))
   }
-  static async open ({ query = '', width = 640, height = 360 } = {}) {
+  static async open ({ query = '', width = 960, height = 540 } = {}) {
     const { chromium } = loadPlaywright()
     const server = await serve()
     const base = `http://127.0.0.1:${server.address().port}/`
@@ -71,10 +71,31 @@ export class Game {
     return g
   }
   async goto (query = '') {
-    this.step = 'load ' + query
+    if (this.step === 'load') this.step = 'load ' + query
     await this.page.goto(this.base + 'index.html' + query)
     await this.page.waitForFunction(() => window.__roadster && window.__roadster.app.world, null, { timeout: 120000 })
     await this.wait(1500)
+    // drawing off between screenshots: a software GL takes a second or more a frame, the game's
+    // own work a few ms (the frame loop still runs: the clock, the HUD, the camera)
+    await this.ev(() => {
+      const R = window.__roadster
+      window.__draw = false
+      for (const o of [R.renderer, R.post]) {
+        if (!o || !o.render || o.__wrapped) continue
+        const f = o.render.bind(o)
+        o.render = (...a) => window.__draw && f(...a)
+        o.__wrapped = true
+      }
+    })
+  }
+  // n frames drawn (then drawing off again)
+  async draw (n = 2) {
+    await this.ev(n => new Promise(resolve => {
+      window.__draw = true
+      let k = 0
+      const f = () => (++k > n ? resolve() : requestAnimationFrame(f))
+      requestAnimationFrame(f)
+    }), n)
   }
   async close () {
     await this.browser.close()
@@ -88,10 +109,10 @@ export class Game {
   }
   // the game's clock on by sec (physics, the player, the police, the missions), a frame drawn now
   // and then
-  async run (sec, chunk = 0.25, drawMs = 40) {
+  async run (sec, chunk = 0.25, waitMs = 20) {
     for (let t = 0; t < sec - 1e-6; t += chunk) {
       await this.ev(s => window.__roadster.advance(s), Math.min(chunk, sec - t))
-      if (drawMs) await this.wait(drawMs)
+      if (waitMs) await this.wait(waitMs)
     }
   }
   // keys held while fn runs (fn: a number is seconds of game clock)
@@ -111,9 +132,10 @@ export class Game {
   }
   async shot (name) {
     await this.ev(() => { if (window.__roadster.rig) window.__roadster.rig.blend = 1 })
-    await this.wait(600)
+    await this.draw(2)
     const p = path.join(SHOTS, name)
-    await this.page.screenshot({ path: p })
+    await this.page.screenshot({ path: p, timeout: 120000 })
+    await this.ev(() => { window.__draw = false })
     return p
   }
   issue (what, detail = '') {
@@ -122,6 +144,15 @@ export class Game {
   expect (ok, what, detail) {
     if (!ok) this.issue(what, detail)
     return !!ok
+  }
+  // wait (real time: what the frame loop does, the fades, the titles, the clock's lapse) until
+  // test() in the page is true, up to ms
+  async untilReal (test, ms, arg) {
+    for (let t = 0; t < ms; t += 250) {
+      if (await this.ev(test, arg)) return true
+      await this.wait(250)
+    }
+    return !!(await this.ev(test, arg))
   }
   // wait (on the game clock) until test() in the page is true, up to sec
   async until (test, sec, arg, chunk = 0.25) {

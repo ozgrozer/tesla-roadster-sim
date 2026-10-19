@@ -53,7 +53,7 @@ export const CAREER = [
     // break into parked cars until one sets its alarm off (BOARD.alarm: about half do)
     const tried = []
     let ok = false
-    for (let k = 0; k < 6 && !ok; k++) {
+    for (let k = 0; k < 10 && !ok; k++) {
       const i = await g.ev(findCar, { kind: 'parked', r: 400, not: tried })
       if (i < 0) break
       tried.push(i)
@@ -69,22 +69,31 @@ export const CAREER = [
         g.issue('could not break into a parked car', { car, mode: await g.ev(mode), prompt })
         continue
       }
-      g.expect(has(ev, 'car-stolen'), 'no car-stolen event', ev)
+      // (some are left unlocked: in, and no theft)
+      if (!has(ev, 'car-stolen')) g.expect(has(ev, 'car-entered'), 'no car-entered event', ev)
       ok = has(ev, 'crime', e => e.what === 'car-alarm')
-      if (!ok && k < 5) {
+      if (ok) g.expect(has(ev, 'car-stolen', e => e.alarm), 'an alarm but no car-stolen event with it', ev)
+      if (!ok && k < 9) {
         // out again, for the next one
         await g.press('KeyE', 0)
         await g.until(() => window.__roadster.player.mode === 'foot', 6)
         await g.run(0.5)
       } else g.car = car
     }
-    g.expect(ok, 'no alarm in six break-ins')
+    g.expect(ok, 'no alarm in ten cars tried')
     g.car = await g.ev(() => window.__roadster.player.vehicle?.type)
     await g.run(0.5)
     await g.shot('03-stolen-parked.png')
   }],
   ['drive-stolen', async g => {
-    await g.hold('KeyW', 3)
+    await g.hold('KeyW', 2)
+    // (parked nose in against a wall or a hedge: back out first)
+    if ((await g.ev(() => Math.abs(window.__roadster.foot.alt.body?.u || 0))) < 2) {
+      await g.hold('KeyS', 2.5)
+      await g.hold('KeyA', 0.3)
+      await g.hold(['KeyW', 'KeyD'], 1)
+      await g.hold('KeyW', 2)
+    }
     const s = await g.ev(() => {
       const R = window.__roadster, b = R.foot.alt.body
       return { u: b?.u, rpm: b?.rpm, gear: b?.gear, gearEl: document.querySelector('.sp-num')?.textContent, place: document.getElementById('place').textContent.replace(/\s+/g, ' '), engine: R.app.engine, motor: R.sound.n?.front?.gD?.gain?.value }
@@ -112,23 +121,26 @@ export const CAREER = [
   }],
   ['hit-ped', async g => {
     await g.ev(events)
-    const hit = await g.ev(() => {
-      const R = window.__roadster, b = R.foot.alt.body
-      const p = R.peds.list.find(p => !p.dead && !p.hidden)
-      if (!p) return null
-      // the car on a clear stretch towards someone standing in the road
-      p.x = b.x + b.hx * 10
-      p.z = b.z + b.hz * 10
-      p.vx = p.vz = 0
-      b.u = 12
-      b.vx = b.hx * 12
-      b.vz = b.hz * 12
-      b.w = 0
-      return true
-    })
-    if (!g.expect(hit, 'no pedestrian to hit')) return
-    await g.hold('KeyW', 1.5)
-    const ev = await g.ev(events)
+    let ev = []
+    for (let k = 0; k < 4 && !has(ev, 'ped-hit'); k++) {
+      const ok = await g.ev(k => {
+        const R = window.__roadster, b = R.foot.alt.body, P = R.player.pos
+        let p = null, bd = Infinity
+        for (const q of R.peds.list) {
+          const d = Math.hypot(q.x - P.x, q.z - P.z)
+          if (!q.dead && q.state !== 'down' && !q.hidden && d < bd) { bd = d; p = q }
+        }
+        if (!p) return false
+        // the car at speed, a few metres short of someone (on the pavement or not)
+        const yaw = b.yaw, hx = Math.cos(yaw), hz = -Math.sin(yaw), d = 6 - k
+        Object.assign(b, { x: p.x - hx * d, z: p.z - hz * d, hx, hz, u: 14, vx: hx * 14, vz: hz * 14, w: 0, lat: 0 })
+        return true
+      }, k)
+      if (!g.expect(ok, 'no pedestrian to hit')) return
+      await g.hold('KeyW', 1)
+      ev = ev.concat(await g.ev(events))
+    }
     g.expect(has(ev, 'ped-hit'), 'no ped-hit event', ev.slice(-10))
+    g.expect(has(ev, 'crime', e => /ped-/.test(e.what)), 'hitting a ped was no crime', ev.slice(-10))
   }]
 ]

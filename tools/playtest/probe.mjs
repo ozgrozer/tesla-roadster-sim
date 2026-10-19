@@ -62,7 +62,7 @@ export function snapshot () {
       help: vis('helpbox') ? document.getElementById('helpText').textContent.trim().slice(0, 80) : '',
       place: document.getElementById('place').textContent.replace(/\s+/g, ' ').trim(),
       crime: crime ? vis(crime) : null,
-      stars: document.querySelectorAll('.crime .star.on, .crime .on.star').length,
+      stars: document.querySelector('.crime .stars.on') ? document.querySelectorAll('.crime .stars i.lit').length : 0,
       menu: document.body.classList.contains('paused')
     },
     wanted: g.wanted.stars,
@@ -98,7 +98,8 @@ export function check (g, s, { allowNoHud = false } = {}) {
     if (car && s.vehicle?.kind !== 'roadster' && /Tesla Roadster/.test(s.hud.place)) g.issue('Roadster name in another car', s.hud.place)
   }
   // the camera near what it follows (not in Free, nor looking from far on a cut)
-  if (s.cam.mode !== 'free' && s.cam.dist > 40) g.issue('camera far from the player', s.cam)
+  if (s.cam.mode !== 'free' && s.cam.dist > (s.rsMode === 'air' ? 90 : 40)) g.issue('camera far from the player', s.cam)
+  if (s.wanted !== s.hud.stars) g.issue('stars on the HUD not the wanted level', { wanted: s.wanted, hud: s.hud.stars })
   if (s.cam.pos[1] < -0.5) g.issue('camera under the ground', s.cam)
   if (car && s.vehicle?.kind === 'roadster' && s.mode === 'car' && Math.hypot(s.pos[0] - s.rsPos[0], s.pos[2] - s.rsPos[2]) > 3)
     g.issue('player not where the Roadster is', { pos: s.pos, rs: s.rsPos })
@@ -108,9 +109,10 @@ export function check (g, s, { allowNoHud = false } = {}) {
 export function insideBuildings (s) {
   const bad = []
   // (a building's walls from the ground up: not a deck or a roof overhead, under which is fine)
-  const walled = (x, z) => {
+  // (more than a body's width in: brushing a wall's face is not inside it)
+  const walled = (x, z, m = 0.6) => {
     const c = roofAt(x, z, Infinity)
-    return c && c.y1 > 2.5 && (c.y0 || 0) < 1
+    return c && c.y1 > 2.5 && (c.y0 || 0) < 1 && Math.min(x - c.x0, c.x1 - x, z - c.z0, c.z1 - z) > m
   }
   for (const [x, z, st] of s.peds) if (walled(x, z)) bad.push(['ped', x, z, st])
   for (const [x, z, role, st] of s.cops) if (walled(x, z)) bad.push(['police', x, z, role, st])

@@ -73,3 +73,8 @@ export function nearestKerb (x, z, kerb = true) {
 }
 // a list of spots
 export const spots = list => list.map(([fx, fz]) => spot(fx, fz))
+
+// where the player is put back (game.js): the nearest hospital (wasted) or police station
+// (busted), as fractions of the map
+export const HOSPITALS = [[0.18, 0.15], [0.78, 0.38], [0.35, 0.86]]
+export const STATIONS = [[0.52, 0.45], [0.12, 0.7], [0.86, 0.82]]

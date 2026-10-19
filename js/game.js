@@ -14,7 +14,7 @@ import { Police, Arrest } from './sim/police.js'
 import { Ambient } from './sim/ambient.js'
 import { witnesses } from './sim/witness.js'
 import { MissionManager } from './sim/missions/manager.js'
-import { spot, nearestKerb } from './sim/missions/spots.js'
+import { spot, nearestKerb, HOSPITALS, STATIONS } from './sim/missions/spots.js'
 import { emitGame, onGame } from './sim/gameEvents.js'
 import { playerView, bindPlayer, updatePlayerView, setWanted } from './sim/playerView.js'
 import { player } from './sim/player.js'
@@ -25,9 +25,7 @@ import { gps } from './ui/gps.js'
 import { recall, remember } from './ui/prefs.js'
 
 // where the player is put back: the nearest hospital (wasted) or police station (busted), as
-// fractions of the map (missions/spots.js)
-export const HOSPITALS = [[0.18, 0.15], [0.78, 0.38], [0.35, 0.86]]
-export const STATIONS = [[0.52, 0.45], [0.12, 0.7], [0.86, 0.82]]
+// fractions of the map: HOSPITALS, STATIONS in missions/spots.js
 export const PENALTY = { busted: 500, wasted: 1000 }
 const DOWN_T = 3.6 // s of BUSTED / WASTED before the fade
 
