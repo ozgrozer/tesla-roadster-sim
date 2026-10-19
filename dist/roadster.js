@@ -55272,7 +55272,7 @@ class Place {
     this.left -= dt
     put(this.el.box, '.on', this.left > 0)
     if (this.world !== 'city' || app.intro) return
-    const { sim } = app
+    const sim = app.focus || app.sim // (the player on foot: onFoot.js)
     if (this.carDue) {
       const c = app.lastCtl
       if (!app.auto && !(sim.groundSpeed() > 0.5 || c.throttle > 0)) return
@@ -55461,12 +55461,14 @@ __define(9, function (__exports) {
 // with the tyres near their grip and past it, the rears spinning and the ground rough (input.js).
 //
 //   RT throttle   LT brake, reverse   A e-brake   RB boost (main thrusters)   LB fly (lift thrusters)
-//   X horn   Y camera   D-pad up / down backflip / kickflip   View reset   Menu Autopilot
-//   the right stick pressed in: look behind, held (as in GTA)
+//   X horn   Y get in / out (E)   B camera   D-pad up / down backflip / kickflip   View reset
+//   Menu Autopilot   the right stick pressed in: look behind, held (as in GTA)
+// On foot (onFoot.js): the left stick walks, the right stick looks, A jumps, RB sprints, Y gets in.
 const BUTTONS = {
   0: 'Space',
+  1: 'KeyV',
   2: 'KeyH',
-  3: 'KeyV',
+  3: 'KeyE',
   4: 'KeyF',
   5: 'ShiftLeft',
   8: 'KeyR',
@@ -56165,6 +56167,7 @@ class Input {
   constructor ({ onDrive, onCommand, onRelease = () => {}, onPad }) {
     this.keys = new Set()
     this.stale = new Set() // held since before lift-off: they don't fly the car until pressed again
+    this.handed = new Set() // held over from on foot or from the car: they count once pressed again
     this.wasAir = false
     this.lastT = -1
     this.down = new Set() // every key held, drive or not
@@ -56175,6 +56178,7 @@ class Input {
         const first = !this.keys.has(code)
         this.keys.add(code)
         this.stale.delete(code)
+        this.handed.delete(code)
         onDrive(code, first)
       } else onCommand(code)
     }
@@ -56187,7 +56191,10 @@ class Input {
       this.keys.delete(code)
       if (this.down.delete(code)) onRelease(code)
     }
-    window.addEventListener('keyup', e => release(e.code))
+    window.addEventListener('keyup', e => {
+      this.handed.delete(e.code)
+      release(e.code)
+    })
     window.addEventListener('blur', () => {
       for (const code of this.down) release(code)
       this.keys.clear()
@@ -56228,9 +56235,17 @@ class Input {
     return this.down.has(LOOK_BACK)
   }
 
+  // getting into or out of a car (onFoot.js): what is held now does nothing in the new mode until
+  // it is let go and pressed again (W held walking up to a car doesn't floor the throttle)
+  handoff () {
+    for (const k of this.keys) this.handed.add(k)
+  }
+  has (k) {
+    return this.keys.has(k) && !this.handed.has(k)
+  }
   // `fresh`: leave out keys still held from before lift-off
   held (a, b, fresh = false) {
-    const on = k => this.keys.has(k) && !(fresh && this.stale.has(k))
+    const on = k => this.has(k) && !(fresh && this.stale.has(k))
     return on(a) || (b !== undefined && on(b))
   }
 
@@ -56266,9 +56281,9 @@ class Input {
       fanMode === 'on' ||
       (fanMode === 'auto' && (sim.mode === 'ramp' || nearWall))
     // Space is the handbrake, as in GTA; F (fly) fires the lift thrusters
-    c.ebrake = this.keys.has('Space')
+    c.ebrake = this.has('Space')
     c.main = this.held('ShiftLeft', 'ShiftRight') ? 1 : 0
-    c.lift = this.keys.has('KeyF') ? 1 : 0
+    c.lift = this.has('KeyF') ? 1 : 0
     // a key wins over the stick; the stick and triggers are analog
     const or = (key, analog) => key || analog
     if (air) {
@@ -56278,7 +56293,7 @@ class Input {
       c.pitch = or((S ? 1 : 0) - (W ? 1 : 0), live ? pad.stickY : 0)
       c.roll = or((D ? 1 : 0) - (A ? 1 : 0), live ? pad.stickX : 0)
       c.yaw = or(
-        (this.keys.has('KeyQ') ? 1 : 0) - (this.keys.has('KeyE') ? 1 : 0),
+        (this.has('KeyQ') ? 1 : 0) - (this.has('KeyE') ? 1 : 0),
         -pad.lookX
       )
     } else {
@@ -56946,6 +56961,11 @@ class Hud {
         : `${what} · click or press N for sound · any drive key takes over`
     }
     if (app.intro) return 'Optimus is getting in · any drive key skips'
+    // (on foot, and in a car that isn't the Roadster: onFoot.js)
+    if (app.foot)
+      return 'W A S D walk · Shift run · Space jump · mouse look (click) · E get in a car'
+    if (app.vehicle && app.vehicle.kind !== 'roadster' && sim.mode !== 'crash')
+      return 'W throttle · S brake · A/D steer · Space handbrake · H horn · E get out'
     if (sim.mode === 'crash')
       return sim.up().y > 0.95
         ? 'Crashed · W to drive on · R to reset · P to watch the autopilot'
@@ -56955,7 +56975,7 @@ class Hud {
     if (sim.mode === 'ramp')
       return 'W climb · S brake, then reverse down · Space hold · Shift main burn off the lip'
     return this.world === 'city'
-      ? 'W throttle · S brake · A/D steer · Space e-brake · Shift boost · F fly · H horn'
+      ? 'W throttle · S brake · A/D steer · Space e-brake · Shift boost · F fly · E get out'
       : 'W throttle · release to coast · S brake · Space e-brake · A/D steer · Shift boost · F fly'
   }
 }
@@ -65310,6 +65330,8 @@ class CameraRig {
     this.setMode(
       CAM_MODES[(CAM_MODES.indexOf(this.mode) + 1) % CAM_MODES.length]
     )
+    // (the driver's seat is the Roadster's: in another car, on past it: onFoot.js noCockpit)
+    if (this.mode === 'cockpit' && this.noCockpit) return this.cycle()
     return this.mode
   }
   shake (a) {
@@ -68683,28 +68705,8 @@ class Intro {
   }
   apply () {
     const t = this.t,
-      RS = this.RS,
-      O = RS.optimus
-    O.root.rotation.set(0, 0, 0)
-    if (t < KEYS[0].t) {
-      // walking up, the stride dying away as it stops by the door
-      const k = clamp(t / T.walk, 0, 1)
-      O.root.position.set(
-        FROM[0] + (DOORSIDE[0] - FROM[0]) * k,
-        HIP_STAND,
-        FROM[1] + (DOORSIDE[1] - FROM[1]) * k
-      )
-      poseOptimus(O, {
-        walk:
-          t < T.walk ? 1 : clamp(1 - (t - T.walk) / (KEYS[0].t - T.walk), 0, 1),
-        phase: (Math.PI * 2 * Math.min(t, T.walk) * SPEED) / STRIDE
-      })
-    } else {
-      const P = keyed(t)
-      O.root.position.set(...P.hips)
-      poseOptimus(O, P)
-    }
-    RS.door = span(t, T.doorUp) - span(t, T.doorDown)
+      RS = this.RS
+    boardRoadster(RS, t)
     this.camera(t)
     if (t >= T.end) {
       this.active = false
@@ -68739,7 +68741,36 @@ class Intro {
     cam.lookAt(_l)
   }
 }
-__export(__exports, { "Intro": () => Intro })
+
+// The way into the Roadster at time t of the scene (s): Optimus walking up, getting in, and the
+// driver's door, without the scene's camera. The player gets in (and, run backwards, out) this way
+// too (onFoot.js: BOARD_T, from DOORSIDE to the door shut).
+const BOARD_T = { start: KEYS[0].t, doorDown: T.doorDown[1], end: T.end }
+const DOOR_SPOT = DOORSIDE
+function boardRoadster (RS, t) {
+  const O = RS.optimus
+  O.root.rotation.set(0, 0, 0)
+  if (t < KEYS[0].t) {
+    // walking up, the stride dying away as it stops by the door
+    const k = clamp(t / T.walk, 0, 1)
+    O.root.position.set(
+      FROM[0] + (DOORSIDE[0] - FROM[0]) * k,
+      HIP_STAND,
+      FROM[1] + (DOORSIDE[1] - FROM[1]) * k
+    )
+    poseOptimus(O, {
+      walk:
+        t < T.walk ? 1 : clamp(1 - (t - T.walk) / (KEYS[0].t - T.walk), 0, 1),
+      phase: (Math.PI * 2 * Math.min(t, T.walk) * SPEED) / STRIDE
+    })
+  } else {
+    const P = keyed(t)
+    O.root.position.set(...P.hips)
+    poseOptimus(O, P)
+  }
+  RS.door = span(t, T.doorUp) - span(t, T.doorDown)
+}
+__export(__exports, { "Intro": () => Intro, "BOARD_T": () => BOARD_T, "DOOR_SPOT": () => DOOR_SPOT, "boardRoadster": () => boardRoadster })
 })
 
 // ---- js/render/tween.js
@@ -71778,7 +71809,8 @@ const DRIVE = {
     const me = this.me
     if (me) {
       const mv = this.mev
-      put(me.x, me.z, mv.x, mv.z, this.mhx, this.mhz, 2.22, 0.99)
+      // (the size of whatever the player drives: onFoot.js sets it for a car not the Roadster)
+      put(me.x, me.z, mv.x, mv.z, this.mhx, this.mhz, this.meHL || 2.22, this.meHW || 0.99)
       // (stopped, it is crept past like a wreck)
       this.margin = mv.x * mv.x + mv.z * mv.z < 0.25 ? Math.min(0.5, 0.15 + car.v * 0.06) : 0.5
       this.obstacle(car, OB, me)
@@ -82343,6 +82375,13 @@ function brakes (sound, traffic) {
 // a parked car knocked loose sets its alarm off: one at a time, heard from where it is
 const ALARM = { on: false, k: 0, pan: 0, lp: 20000 }
 let alarmCar = null
+// a car the player breaks into sets its alarm off (onFoot.js), heard from where it is
+function raiseAlarm (sound, car) {
+  car.sndAlarm = true
+  if (alarmCar) return
+  alarmCar = car
+  sound.alarm()
+}
 function alarms (sound, traffic) {
   for (const c of traffic.loose || NONE)
     if (c.parked && !c.jam && !c.sndAlarm) {
@@ -82457,7 +82496,7 @@ function watch (sound, app, traffic) {
     if (v > 1) sound.contact('ground', v)
   }
 }
-__export(__exports, { "ALARM": () => ALARM, "forget": () => forget, "watch": () => watch })
+__export(__exports, { "ALARM": () => ALARM, "raiseAlarm": () => raiseAlarm, "forget": () => forget, "watch": () => watch })
 })
 
 // ---- js/audio/mix.js
@@ -93197,7 +93236,9 @@ class TrafficView {
     // are sized for max cars: past that, the rest, the far ones, go undrawn)
     if (i >= this.max || n.under >= this.max) return
     const { T, S } = ty
-    if (!car.parked || car.loose) ride(car, T, S)
+    // (the player's car rides on its springs too: drivable.js, handover.js)
+    const rides = !car.parked || car.loose || !!car.ctl
+    if (rides) ride(car, T, S)
     if (view) {
       _sp.center.x = car.x
       _sp.center.y = 1
@@ -93209,7 +93250,8 @@ class TrafficView {
     // the car where it stands (in a parking lot, up on its raised slab), and its body tipped on
     // its springs about the axles' height
     // (vectors and quaternions written field by field: no numbers passed to calls)
-    const y = car.parked && !car.jam ? CURB_H : 0
+    // (one the player drives or left in the street stands on the road, or what it was driven onto)
+    const y = car.parked && !car.jam && !car.ctl && !car.abandoned ? CURB_H : 0
     yawTo(_q, car.yaw)
     _p.x = car.x
     _p.y = y
@@ -93221,7 +93263,7 @@ class TrafficView {
     _sc.z = T.wid + 0.45
     this.under.setMatrixAt(n.under++, _w.compose(_p, _q, _sc))
     _b.copy(_m)
-    if (!car.parked || car.loose) {
+    if (rides) {
       // tipped about the axles' height: roll about x, then pitch about z
       const cr = Math.cos(car.roll),
         sr = Math.sin(car.roll),
@@ -93296,7 +93338,7 @@ class TrafficView {
     }
     // (in a parking lot its lights are off; on the road its driver switches the headlights on at
     // their own moment as the light goes, and once it is dark enough their beams show on the road)
-    const lit = !car.parked || car.jam
+    const lit = !car.parked || car.jam || !!car.ctl
     const hl = lit ? step(switchAt(car), this.lights) : 0,
       beam =
         hl * clamp((this.dark - 0.25) / 0.45, 0, 1) * headlightsLeft(car) * 0.5
@@ -103570,8 +103612,1911 @@ const CRAZED = `{
 __export(__exports, { "Damage": () => Damage })
 })
 
-// ---- js/main.js
+// ---- js/sim/vehicles.js
 __define(210, function (__exports) {
+// Every car the player can get into, in one registry: the Roadster, the traffic's cars on the road
+// and the cars parked in the lots (and the jammed street's). Pure (no DOM), so it is tested in Node.
+// Each entry is stable for as long as its car exists (a WeakMap keeps it), so what is learnt about a
+// car (stolen, left with its door unlocked) stays with it.
+//
+//   vehicles.list               every entry, the Roadster first
+//   vehicles.nearest(pos, r, f) the entry nearest pos ({ x, z }) within r m of its body, f(entry)
+//                               filtering (null: none)
+//   vehicles.sync(traffic, sim) once a frame: the list rebuilt from the traffic and the Roadster
+//   vehicles.toWorld(e, lx, lz) a point in the car's frame (+x its nose, +z its right: the driver
+//                               sits on the left, -z) into the world, and toLocal back
+//
+// An entry: { id, kind: 'roadster' | 'traffic' | 'parked', type (its body: carTypes.js name, or
+// 'roadster'), pos { x, y, z }, heading (yaw, as sim.yaw), speed, occupant: 'player' | 'npc' | null,
+// parked, locked, seat { x, y, z } (the driver's hips, car frame), door { x, z } (where to stand to
+// get in, car frame), doorLen, len, wid, hgt, car (the traffic car, or null), sim (the Roadster's,
+// or null), stolen, vacant }.
+const { TYPES } = __require(72)
+const { CAR } = __require(2)
+// cabs that sit over the front axle (the driver high up behind the windscreen)
+const CAB = new Set(['bus', 'van', 'truck', 'fire', 'ambulance'])
+// seat heights (the hips over the road, m) for the cars that sit higher or lower than a sedan's
+const SEAT_Y = { sports: 0.34, lowrider: 0.4, suv: 0.72, pickup: 0.78, police: 0.6 }
+
+// Where the driver sits and gets in, by body: { seat, door, doorLen } in the car's frame
+function layoutFor (name, len, wid, hgt) {
+  if (name === 'roadster')
+    return {
+      seat: { x: -0.3, y: 0.36, z: -0.42 },
+      door: { x: -0.2, z: -1.32 },
+      doorLen: 1.3
+    }
+  const cab = CAB.has(name)
+  const seat = cab
+    ? {
+        x: len / 2 - (name === 'bus' ? 1.3 : 1.5),
+        y: Math.min(1.5, hgt * 0.42),
+        z: -wid / 2 + 0.6
+      }
+    : { x: 0.1 - 0.08 * len, y: SEAT_Y[name] ?? 0.48, z: -0.38 }
+  return {
+    seat,
+    door: { x: seat.x + 0.15, z: -(wid / 2 + 0.5) },
+    doorLen: cab ? 0.95 : name === 'sports' ? 1.25 : 1.1
+  }
+}
+
+const ROADSTER = {
+  len: CAR.halfL * 2,
+  wid: CAR.halfW * 2,
+  hgt: CAR.height,
+  ...layoutFor('roadster')
+}
+
+const entries = new WeakMap()
+let roadsterEntry = null
+
+function make (car, sim) {
+  const T = car ? TYPES[car.type] : null
+  const L = car ? layoutFor(T.name, car.len, car.wid, car.hgt) : ROADSTER
+  return {
+    id: car ? `car${car.id}` : 'roadster',
+    kind: car ? (car.parked && !car.jam ? 'parked' : 'traffic') : 'roadster',
+    type: car ? T.name : 'roadster',
+    pos: { x: 0, y: 0, z: 0 },
+    heading: 0,
+    speed: 0,
+    occupant: car ? null : 'player',
+    parked: false,
+    locked: false,
+    seat: L.seat,
+    door: L.door,
+    doorLen: L.doorLen,
+    len: car ? car.len : ROADSTER.len,
+    wid: car ? car.wid : ROADSTER.wid,
+    hgt: car ? car.hgt : ROADSTER.hgt,
+    car: car || null,
+    sim: sim || null,
+    stolen: false, // broken into or taken from its driver by the player
+    vacant: false // its driver gone (pulled out, or left by the player)
+  }
+}
+
+// a traffic car's state into its entry
+function readCar (e, car) {
+  e.pos.x = car.x
+  e.pos.z = car.z
+  e.pos.y = 0
+  e.heading = car.yaw
+  e.speed = car.loose ? Math.hypot(car.vx, car.vz) : Math.abs(car.v)
+  e.parked = !!car.parked && !car.player
+  if (car.player) e.occupant = 'player'
+  else if (e.vacant || (car.parked && !car.jam) || car.dmg?.alight)
+    e.occupant = null
+  else e.occupant = 'npc'
+  // (a parked car is locked until the player has broken into it; a car on the road has its driver
+  // in it, and is taken from them instead)
+  e.locked = e.kind === 'parked' && !e.stolen && !e.vacant
+}
+function readSim (e, sim) {
+  const p = sim.mode === 'ground' ? sim.pos : sim.com
+  e.pos.x = p.x
+  e.pos.y = sim.pos.y
+  e.pos.z = p.z
+  e.heading = sim.yaw
+  e.speed = sim.groundSpeed()
+  e.parked = e.occupant !== 'player'
+}
+
+const vehicles = {
+  list: [],
+  get roadster () {
+    return roadsterEntry
+  },
+  // the entry for a traffic car (made the first time it is asked for)
+  of (car) {
+    let e = entries.get(car)
+    if (!e) entries.set(car, (e = make(car)))
+    return e
+  },
+  byId (id) {
+    return this.list.find(e => e.id === id) || null
+  },
+  // the list again from the traffic's cars and the Roadster's sim (either may be missing)
+  sync (traffic, sim) {
+    const list = this.list
+    list.length = 0
+    if (sim) {
+      if (!roadsterEntry || roadsterEntry.sim !== sim)
+        roadsterEntry = make(null, sim)
+      readSim(roadsterEntry, sim)
+      list.push(roadsterEntry)
+    }
+    if (traffic)
+      for (const car of traffic.cars) {
+        const e = this.of(car)
+        readCar(e, car)
+        list.push(e)
+      }
+    return list
+  },
+  // how far (x, z) is from the car's body (0 inside it)
+  gap (e, x, z) {
+    const l = this.toLocal(e, x, z, _l)
+    const dx = Math.max(0, Math.abs(l.x) - e.len / 2),
+      dz = Math.max(0, Math.abs(l.z) - e.wid / 2)
+    return Math.hypot(dx, dz)
+  },
+  nearest (pos, r = 4, filter = null) {
+    let best = null,
+      bd = r
+    for (const e of this.list) {
+      if (Math.abs(e.pos.x - pos.x) > r + 8 || Math.abs(e.pos.z - pos.z) > r + 8)
+        continue
+      if (filter && !filter(e)) continue
+      const d = this.gap(e, pos.x, pos.z)
+      if (d <= bd) {
+        bd = d
+        best = e
+      }
+    }
+    return best
+  },
+  toWorld (e, lx, lz, out = { x: 0, z: 0 }) {
+    const hx = Math.cos(e.heading),
+      hz = -Math.sin(e.heading)
+    out.x = e.pos.x + lx * hx - lz * hz
+    out.z = e.pos.z + lx * hz + lz * hx
+    return out
+  },
+  toLocal (e, x, z, out = { x: 0, z: 0 }) {
+    const hx = Math.cos(e.heading),
+      hz = -Math.sin(e.heading),
+      dx = x - e.pos.x,
+      dz = z - e.pos.z
+    out.x = dx * hx + dz * hz
+    out.z = dz * hx - dx * hz
+    return out
+  },
+  // the car as an oriented rectangle, for the feet to keep out of (player.js)
+  rect (e, out = {}) {
+    out.x = e.pos.x
+    out.z = e.pos.z
+    out.fx = Math.cos(e.heading)
+    out.fz = -Math.sin(e.heading)
+    out.hl = e.len / 2
+    out.hw = e.wid / 2
+    out.top = e.pos.y + e.hgt
+    out.ignore = false
+    out.e = e
+    return out
+  },
+  // forget the Roadster's entry (a new sim, in tests)
+  reset () {
+    roadsterEntry = null
+    this.list.length = 0
+  }
+}
+const _l = { x: 0, z: 0 }
+__export(__exports, { "layoutFor": () => layoutFor, "vehicles": () => vehicles })
+})
+
+// ---- js/sim/drivable.js
+__define(211, function (__exports) {
+// Any car the player drives that isn't the Roadster, on the drive workstream's stack: the traffic
+// car is taken off its driver (traffic.takeOver: handover.js), given a body of its handling class
+// (vehicleLink.js bodyFromTraffic, vehicleSim.js stepVehicle, handling.js), knocks the city and the
+// traffic about (vehicleHit.js collideTraffic, which also dents it), and its pose goes back onto the
+// traffic car each step (writeToTraffic) so it is drawn and run into as itself. The traffic and
+// the people read it through a stand-in (vehicleProxy); a Sim kept on the body's pose (.sim) is
+// what the camera, the HUD and the sounds follow, as they follow the Roadster's.
+//
+//   new Drivable()   .board(entry, traffic), .step(dt, c), .traffic(fn), .leave(), .active
+//                    .sim (the pose for the camera and HUD), .body, .proxy, .entry, .car
+//   carInput(c, out) the Roadster's controls (constants.js makeControls) as a body's input
+const { Sim } = __require(39)
+const { stepVehicle, makeVehicleInput } = __require(90)
+const { bodyFromTraffic, writeToTraffic, vehicleProxy, syncProxy, pullProxy } = __require(91)
+const { collideTraffic } = __require(89)
+function carInput (c, out = makeVehicleInput()) {
+  out.throttle = c ? c.throttle : 0
+  out.brake = c ? Math.max(c.brake, c.reverse || 0) : 1
+  out.steer = c ? c.steer : 0
+  out.handbrake = !!c?.ebrake
+  return out
+}
+
+class Drivable {
+  constructor () {
+    this.sim = new Sim()
+    this.inp = makeVehicleInput()
+    this.entry = this.car = this.body = this.proxy = this.tr = null
+  }
+  get active () {
+    return !!this.car
+  }
+  // take over the traffic car of entry e (already taken, for a carjack: onFoot.js), its body made
+  // where it stands
+  board (e, traffic) {
+    const car = e.car
+    if (!car.ctl) traffic.takeOver(car, 'player')
+    car.player = true
+    this.entry = e
+    this.car = car
+    this.tr = traffic
+    this.body = bodyFromTraffic(car)
+    this.proxy = vehicleProxy(this.body)
+    this.sim.reset('city', { x: car.x, z: car.z, yaw: car.yaw })
+    this.sim.air = 0 // (no thrusters, no tank)
+    this.sim.suction = 0
+    this.mirror()
+  }
+  step (dt, c) {
+    if (!this.car) return
+    const b = this.body
+    stepVehicle(b, carInput(c, this.inp), dt, { city: true, t: this.tr.t })
+    collideTraffic(b, this.tr, this.car)
+    writeToTraffic(b, this.car)
+    this.sim.time += dt // (the keys ease in on the Sim's clock: input.js)
+    this.mirror()
+    this.hear(b.events)
+  }
+  // fn(proxy): the traffic's or the people's step, seeing the car as the player's; their shoves
+  // put back onto the body
+  traffic (fn) {
+    const p = syncProxy(this.proxy, this.body)
+    p.events.length = 0
+    fn(p)
+    pullProxy(p, this.body)
+    writeToTraffic(this.body, this.car)
+    this.mirror()
+    this.hear(p.events)
+  }
+  // the body's pose onto the Sim the camera and the HUD follow
+  mirror () {
+    const s = this.sim,
+      b = this.body
+    s.mode = 'ground'
+    s.pos.set(b.x, 0, b.z)
+    s.com.set(b.x, 0.6, b.z)
+    s.vel.set(b.vx, 0, b.vz)
+    s.yaw = b.yaw
+    s.yawRate = b.w
+    s.speed = b.u
+    s.steerAng = b.steerAng
+    s.accLong = b.accLong
+    s.air = 0
+    s.syncPose()
+  }
+  // its knocks, for the sounds and the shake (events.js): as the Roadster's 'bump's
+  hear (list) {
+    for (const e of list)
+      if (e.type === 'bump' || e.type === 'clash')
+        this.sim.events.push({ type: 'bump', impact: e.impact, what: e.what || 'car', px: e.x ?? e.px, pz: e.z ?? e.pz, broke: e.broke || 0 })
+  }
+  // out of it: left where it stands, parked, its door unlocked (handBack)
+  leave () {
+    const car = this.car
+    if (car) {
+      car.player = false
+      this.tr.handBack(car)
+    }
+    this.entry = this.car = this.body = this.proxy = null
+    return car
+  }
+}
+__export(__exports, { "carInput": () => carInput, "Drivable": () => Drivable })
+})
+
+// ---- js/sim/carsMeet.js
+__define(212, function (__exports) {
+// Two of the player's sims meeting: the car the player drives (drivable.js: a, its spec sp)
+// against the Roadster left in the street (b). Pushed apart by mass, momentum traded, a 'bump' for
+// each (heard, and the Roadster dented). Pure, for the Node tests.
+const { rectRect, impulse } = __require(31)
+const { CAR } = __require(2)
+function carsMeet (a, sp, b) {
+  const A = rectOf(a, sp.halfL, sp.halfW, RA),
+    Bq = rectOf(b, CAR.halfL, CAR.halfW, RB)
+  const hit = rectRect(A, Bq)
+  if (!hit) return
+  const ma = sp.mass,
+    mb = CAR.mass,
+    share = mb / (ma + mb)
+  const pa = a.mode === 'ground' ? a.pos : a.com,
+    pb = b.mode === 'ground' ? b.pos : b.com
+  pa.x += hit.nx * hit.depth * share
+  pa.z += hit.nz * hit.depth * share
+  pb.x -= hit.nx * hit.depth * (1 - share)
+  pb.z -= hit.nz * hit.depth * (1 - share)
+  const ba = body(a, ma, sp.Iz, BA),
+    bb = body(b, mb, CAR.Iz, BB)
+  const v = impulse(ba, bb, hit, 0.25, 0.3)
+  for (const [s, q] of [
+    [a, ba],
+    [b, bb]
+  ]) {
+    s.vel.x = q.vx
+    s.vel.z = q.vz
+    if (s.mode === 'ground') {
+      s.speed = s.vel.x * Math.cos(s.yaw) - s.vel.z * Math.sin(s.yaw)
+      s.syncPose()
+    }
+  }
+  if (v > 0.6) {
+    const e = { impact: v, what: 'car', px: hit.px, pz: hit.pz, nx: hit.nx, nz: hit.nz }
+    a.emit('bump', e)
+    b.emit('bump', { ...e, nx: -hit.nx, nz: -hit.nz })
+  }
+}
+
+
+const RA = { x: 0, z: 0, fx: 1, fz: 0, hl: 1, hw: 1 },
+  RB = { ...RA },
+  BA = { x: 0, z: 0, vx: 0, vz: 0, w: 0, m: 1, I: 1 },
+  BB = { ...BA }
+function rectOf (s, hl, hw, out) {
+  const p = s.mode === 'ground' ? s.pos : s.com
+  out.x = p.x
+  out.z = p.z
+  out.fx = Math.cos(s.yaw)
+  out.fz = -Math.sin(s.yaw)
+  out.hl = hl
+  out.hw = hw
+  return out
+}
+function body (s, m, I, out) {
+  const p = s.mode === 'ground' ? s.pos : s.com
+  out.x = p.x
+  out.z = p.z
+  out.vx = s.vel.x
+  out.vz = s.vel.z
+  out.w = s.mode === 'ground' ? s.yawRate : 0
+  out.m = m
+  out.I = I
+  return out
+}
+__export(__exports, { "carsMeet": () => carsMeet })
+})
+
+// ---- js/sim/player.js
+__define(213, function (__exports) {
+// The player: one state for whoever the game is following, on foot or at the wheel, and the
+// third-person on-foot movement (walk, run, jump, collision with buildings, posts, cars and kerbs).
+// Pure maths on plain objects (no DOM, no three.js), so it runs headless in Node for tests. Everyone
+// else READS `player`; only this module and the foot glue (onFoot.js) write it.
+//
+//   player.mode     'car' at the wheel, 'foot' walking, 'entering' / 'exiting' a car (boarding.js)
+//   player.pos      { x, y, z }: the feet on foot, the car's position at the wheel (y the floor)
+//   player.heading  rad, the game's yaw convention: facing (cos h, -sin h) in x, z (as sim.yaw and
+//                   a traffic car's yaw)
+//   player.vehicle  the vehicles.js entry being driven, entered or left (null on foot)
+//   player.wanted   0 to 5 (the crime workstream sets it)
+const { query, CURB_H, OUTER, PROMENADE } = __require(26)
+const { kerbDist, surfaceAt } = __require(35)
+const { WALL, onDeck, hillHeight } = __require(29)
+const { clamp, wrapPi } = __require(2)
+// How a person moves: m/s walking and sprinting, how hard they get up to speed and stop (m/s²),
+// steering in the air, how fast they turn to face the way they go (rad/s), the jump's take-off
+// speed and the game's gravity (stronger than the world's, as games' are, for a snappy jump), the
+// body's radius and height, the most it steps up (a kerb, a low step) without a jump and how far
+// down it keeps to the ground walking off one, and how long a knock down lasts.
+const FOOT = {
+  walk: 1.8,
+  run: 5.8,
+  accel: 14,
+  decel: 18,
+  airAccel: 3,
+  turn: 10,
+  jumpV: 4.6,
+  gravity: 16,
+  radius: 0.32,
+  height: 1.75,
+  stepUp: 0.42,
+  stepDown: 0.45,
+  downT: 1.6
+}
+
+const player = {
+  mode: 'car',
+  pos: { x: 0, y: 0, z: 0 },
+  vel: { x: 0, y: 0, z: 0 },
+  heading: 0,
+  vehicle: null,
+  wanted: 0,
+  grounded: true,
+  speed: 0, // m/s over the ground
+  run: 0, // 0 walking to 1 sprinting, eased (the animation's gait)
+  dist: 0, // m walked on the ground (footsteps, the stride's phase)
+  surface: 'walk',
+  floor: 0, // the height of what the feet stand on
+  down: 0, // s left lying down after being knocked over
+  airT: 0 // s since the feet left the ground
+}
+
+const isOnFoot = (p = player) => p.mode === 'foot'
+const isDriving = (p = player) => p.mode === 'car'
+// between modes: walking up to a car and getting in, or getting out
+const isBoarding = (p = player) =>
+  p.mode === 'entering' || p.mode === 'exiting'
+
+function setMode (mode, vehicle = player.vehicle, p = player) {
+  p.mode = mode
+  p.vehicle = vehicle
+}
+// stand the player at (x, z), facing heading, on the ground there (or at y)
+function placePlayer (x, z, heading = 0, y = null, p = player) {
+  p.pos.x = x
+  p.pos.z = z
+  p.pos.y = y ?? groundBase(x, z)
+  p.vel.x = p.vel.y = p.vel.z = 0
+  p.heading = heading
+  p.grounded = true
+  p.speed = p.run = p.airT = p.down = 0
+  p.floor = p.pos.y
+}
+
+// The ground under (x, z) before anything stands on it: the road, the pavement and lots a kerb up
+// from it, the hills north of the wall.
+function groundBase (x, z) {
+  const inside = Math.abs(x) <= PROMENADE && Math.abs(z) <= PROMENADE
+  const kerb = inside && kerbDist(x, z) <= 0 ? CURB_H : 0
+  return Math.max(kerb, z < -WALL ? hillHeight(x, z) : 0)
+}
+
+// The camera-relative move: forward and right (-1 to 1 each, a key or a stick) with the camera
+// looking along yaw camYaw, as a direction in the world and how much of the full pace it asks for.
+function moveDir (camYaw, fwd, right, out = { x: 0, z: 0, mag: 0 }) {
+  const fx = Math.cos(camYaw),
+    fz = -Math.sin(camYaw)
+  // (right of the facing (fx, fz) is (-fz, fx))
+  let x = fx * fwd - fz * right,
+    z = fz * fwd + fx * right
+  const l = Math.hypot(x, z)
+  out.mag = Math.min(1, l)
+  if (l > 1e-6) {
+    x /= l
+    z /= l
+  }
+  out.x = x
+  out.z = z
+  return out
+}
+
+// The world the feet move in: the city's colliders, the ground, and cars as oriented rectangles
+// ({ x, z, fx, fz, hl, hw, top }). Tests hand in their own.
+const _near = []
+const CITY_WORLD = {
+  solids: (x0, z0, x1, z1) => query(x0, z0, x1, z1, _near),
+  base: groundBase,
+  cars: []
+}
+
+// (x, z) against a box, as the push out of it for a circle of radius r (null: clear)
+const _push = { x: 0, z: 0 }
+function pushBox (x, z, r, c) {
+  if (c.r) {
+    const dx = x - c.x,
+      dz = z - c.z,
+      d = Math.hypot(dx, dz),
+      m = c.r + r
+    if (d >= m) return null
+    if (d < 1e-6) return ((_push.x = m), (_push.z = 0), _push)
+    _push.x = (dx / d) * (m - d)
+    _push.z = (dz / d) * (m - d)
+    return _push
+  }
+  const qx = clamp(x, c.x0, c.x1),
+    qz = clamp(z, c.z0, c.z1)
+  const dx = x - qx,
+    dz = z - qz,
+    d = Math.hypot(dx, dz)
+  if (d >= r) return null
+  if (d > 1e-6) {
+    _push.x = (dx / d) * (r - d)
+    _push.z = (dz / d) * (r - d)
+    return _push
+  }
+  // inside it: out by the nearest side
+  const l = x - c.x0 + r,
+    rr = c.x1 - x + r,
+    b = z - c.z0 + r,
+    t = c.z1 - z + r
+  const m = Math.min(l, rr, b, t)
+  _push.x = m === l ? -l : m === rr ? rr : 0
+  _push.z = m === b ? -b : m === t ? t : 0
+  return _push
+}
+// the same against a car's oriented rectangle
+function pushRect (x, z, r, c) {
+  const dx = x - c.x,
+    dz = z - c.z
+  const lf = dx * c.fx + dz * c.fz,
+    ls = dz * c.fx - dx * c.fz
+  const cf = clamp(lf, -c.hl, c.hl),
+    cs = clamp(ls, -c.hw, c.hw)
+  let nf = lf - cf,
+    ns = ls - cs
+  const d = Math.hypot(nf, ns)
+  if (d >= r) return null
+  let k
+  if (d > 1e-6) k = (r - d) / d
+  else {
+    const ef = c.hl - Math.abs(lf),
+      es = c.hw - Math.abs(ls)
+    if (ef < es) {
+      nf = Math.sign(lf || 1)
+      ns = 0
+      k = ef + r
+    } else {
+      nf = 0
+      ns = Math.sign(ls || 1)
+      k = es + r
+    }
+  }
+  nf *= k
+  ns *= k
+  _push.x = c.fx * nf - c.fz * ns
+  _push.z = c.fz * nf + c.fx * ns
+  return _push
+}
+const inRect = (x, z, c) => {
+  const dx = x - c.x,
+    dz = z - c.z
+  return (
+    Math.abs(dx * c.fx + dz * c.fz) < c.hl &&
+    Math.abs(dz * c.fx - dx * c.fz) < c.hw
+  )
+}
+// a box or post at body height for feet at y: a wall to push out of (anything lower is stepped onto)
+const walls = (c, y) =>
+  !c.down && c.y0 < y + FOOT.height && c.y1 > y + FOOT.stepUp
+
+// The highest thing the feet at height y can stand on at (x, z): the ground, or the top of a box,
+// post or car under them no more than a step up.
+function floorAt (x, z, y, world = CITY_WORLD) {
+  let f = world.base(x, z)
+  for (const c of world.solids(x - 0.1, z - 0.1, x + 0.1, z + 0.1)) {
+    if (c.down || c.y1 > y + FOOT.stepUp || c.y1 <= f) continue
+    const over = c.r
+      ? Math.hypot(x - c.x, z - c.z) < c.r
+      : x > c.x0 && x < c.x1 && z > c.z0 && z < c.z1
+    if (over) f = c.y1
+  }
+  for (const c of world.cars)
+    if (c.top <= y + FOOT.stepUp && c.top > f && inRect(x, z, c)) f = c.top
+  return f
+}
+
+// Whether someone standing at (x, z) with their feet at y would be inside something.
+function blockedAt (x, z, y, world = CITY_WORLD, r = FOOT.radius) {
+  for (const c of world.solids(x - r, z - r, x + r, z + r))
+    if (walls(c, y) && pushBox(x, z, r, c)) return true
+  for (const c of world.cars)
+    if (!c.ignore && c.top > y + FOOT.stepUp && pushRect(x, z, r, c))
+      return true
+  return false
+}
+
+// Push the body at p out of everything at its height; returns how many contacts there were
+function resolve (p, world) {
+  const r = FOOT.radius,
+    pos = p.pos
+  let n = 0
+  for (let pass = 0; pass < 3; pass++) {
+    let moved = false
+    for (const c of world.solids(pos.x - r, pos.z - r, pos.x + r, pos.z + r)) {
+      if (!walls(c, pos.y)) continue
+      const q = pushBox(pos.x, pos.z, r, c)
+      if (!q) continue
+      pos.x += q.x
+      pos.z += q.z
+      cancel(p.vel, q)
+      moved = true
+      n++
+    }
+    for (const c of world.cars) {
+      if (c.top <= pos.y + FOOT.stepUp || c.ignore) continue
+      const q = pushRect(pos.x, pos.z, r, c)
+      if (!q) continue
+      pos.x += q.x
+      pos.z += q.z
+      cancel(p.vel, q)
+      moved = true
+      n++
+    }
+    if (!moved) break
+  }
+  return n
+}
+// take the part of v going into the surface whose push out is q
+function cancel (v, q) {
+  const l = Math.hypot(q.x, q.z)
+  if (l < 1e-9) return
+  const nx = q.x / l,
+    nz = q.z / l,
+    vn = v.x * nx + v.z * nz
+  if (vn < 0) {
+    v.x -= vn * nx
+    v.z -= vn * nz
+  }
+}
+// the map's edges: the sea (but for the pier), and the walls north, east and south
+function keepOnMap (pos, v) {
+  if (pos.x < -OUTER && !onDeck(pos.x, pos.z)) {
+    pos.x = -OUTER
+    if (v.x < 0) v.x = 0
+  }
+  const W = WALL - 1
+  if (pos.x > W) {
+    pos.x = W
+    if (v.x > 0) v.x = 0
+  }
+  if (Math.abs(pos.z) > W) {
+    pos.z = Math.sign(pos.z) * W
+    if (v.z * pos.z > 0) v.z = 0
+  }
+}
+
+// One step of walking: ctl { x, z, mag } the way to go (moveDir), run (sprint held), jump (pressed
+// this step). Returns what happened worth a sound or a camera's notice: { landed (the speed coming
+// down, m/s, or 0), jumped, stepped (m stepped up) }.
+const _out = { landed: 0, jumped: false, stepped: 0 }
+function stepFoot (p, dt, ctl, world = CITY_WORLD) {
+  const out = _out
+  out.landed = 0
+  out.jumped = false
+  out.stepped = 0
+  const v = p.vel,
+    pos = p.pos
+  if (p.down > 0) {
+    p.down = Math.max(0, p.down - dt)
+    ctl = null // (lying in the road: no say over it for a moment)
+  }
+  const mag = ctl ? ctl.mag : 0
+  p.run += ((ctl?.run && mag > 0.1 ? 1 : 0) - p.run) * Math.min(1, dt * 4)
+  const pace = mag * (FOOT.walk + (FOOT.run - FOOT.walk) * (ctl?.run ? 1 : 0))
+  const tx = mag > 0.02 ? ctl.x * pace : 0,
+    tz = mag > 0.02 ? ctl.z * pace : 0
+  // up to speed and to a stop, on the ground; only a little steering in the air
+  const dvx = tx - v.x,
+    dvz = tz - v.z,
+    dv = Math.hypot(dvx, dvz)
+  const a = p.grounded ? (pace > 0.1 ? FOOT.accel : FOOT.decel) : FOOT.airAccel
+  if (dv > 1e-6) {
+    const k = Math.min(1, (a * dt) / dv)
+    v.x += dvx * k
+    v.z += dvz * k
+  }
+  // facing the way it goes (or the way it is asked to, setting off)
+  if (mag > 0.1 && p.down <= 0) {
+    const want = Math.atan2(-ctl.z, ctl.x),
+      d = wrapPi(want - p.heading)
+    p.heading = wrapPi(
+      p.heading + clamp(d, -FOOT.turn * dt, FOOT.turn * dt)
+    )
+  }
+  if (ctl?.jump && p.grounded && p.down <= 0) {
+    v.y = FOOT.jumpV
+    p.grounded = false
+    out.jumped = true
+  }
+  const x0 = pos.x,
+    z0 = pos.z
+  pos.x += v.x * dt
+  pos.z += v.z * dt
+  keepOnMap(pos, v)
+  resolve(p, world)
+  // down onto the ground, a kerb or a step up, or falling off an edge
+  const f = floorAt(pos.x, pos.z, pos.y, world)
+  if (p.grounded) {
+    if (f > pos.y) {
+      out.stepped = f - pos.y
+      pos.y = f // (up a step: no more than stepUp, or it would have been a wall)
+    } else if (pos.y - f <= FOOT.stepDown) pos.y = f
+    else p.grounded = false // (walked off an edge)
+    v.y = 0
+  }
+  if (!p.grounded) {
+    p.airT += dt
+    v.y -= FOOT.gravity * dt
+    pos.y += v.y * dt
+    if (pos.y <= f) {
+      out.landed = -v.y
+      pos.y = f
+      v.y = 0
+      p.grounded = true
+      p.airT = 0
+    }
+  }
+  p.floor = f
+  const moved = Math.hypot(pos.x - x0, pos.z - z0)
+  p.speed = moved / dt
+  if (p.grounded) p.dist += moved
+  p.surface = f > world.base(pos.x, pos.z) + 0.3 ? 'roof' : surfaceAt(pos.x, pos.z)
+  return out
+}
+
+// Knocked over (a car, a fall): thrown along (vx, vz), lying there FOOT.downT s
+function knockDown (p, vx, vz) {
+  p.down = FOOT.downT
+  p.vel.x = vx
+  p.vel.z = vz
+  p.vel.y = Math.min(4, Math.hypot(vx, vz) * 0.3)
+  p.grounded = false
+}
+
+// The first free spot of a list of candidates ({ x, z }) for someone to stand on (null: none).
+function freeSpot (spots, world = CITY_WORLD) {
+  for (const s of spots) {
+    const y = floorAt(s.x, s.z, world.base(s.x, s.z) + FOOT.stepUp, world)
+    if (!blockedAt(s.x, s.z, y, world)) return { x: s.x, z: s.z, y }
+  }
+  return null
+}
+__export(__exports, { "FOOT": () => FOOT, "player": () => player, "isOnFoot": () => isOnFoot, "isDriving": () => isDriving, "isBoarding": () => isBoarding, "setMode": () => setMode, "placePlayer": () => placePlayer, "groundBase": () => groundBase, "moveDir": () => moveDir, "CITY_WORLD": () => CITY_WORLD, "floorAt": () => floorAt, "blockedAt": () => blockedAt, "stepFoot": () => stepFoot, "knockDown": () => knockDown, "freeSpot": () => freeSpot })
+})
+
+// ---- js/sim/boarding.js
+__define(214, function (__exports) {
+// Getting into a car and out of it, as timed phases (pure: the render poses the body and the door
+// from them, onFoot.js runs them). Into a car: walk round to the driver's door (the car's other
+// side, its nose or tail in the way, walked round), then
+//   the Roadster:        the reveal's own way in (intro.js keys): the door swings up, in, door down
+//   a car left unlocked: the door opens, slide in, the door shuts
+//   a parked car:        break in first (a couple of seconds at the window or the lock: now and
+//                        then the window goes, and now and then the alarm), then as above
+//   a car with a driver: the door opens, the driver is pulled out (and runs), slide in
+// Out of one: the door opens, slide out onto a free spot beside it, the door shuts.
+const { stepFoot, freeSpot, FOOT } = __require(213)
+const { vehicles } = __require(210)
+const { wrapPi } = __require(2)
+const BOARD = {
+  walkV: 2.6, // m/s walking up to the door
+  near: 0.18, // m from a point on the way that counts as there
+  stuck: 3, // s without getting closer before it gives up walking and steps to the door
+  jimmy: 2.2, // s breaking into a parked car
+  smashAt: 0.7, // (and when, into that, a window goes)
+  smash: 0.5, // the share of break-ins through the window rather than the lock
+  alarm: 0.45, // the share that set the alarm off
+  open: 0.45, // s for the door to open
+  pull: 1.3, // s pulling a driver out (out at pullAt)
+  pullAt: 0.55,
+  slide: 0.9, // s sliding into the seat
+  close: 0.4, // s for the door to shut
+  outSlide: 0.75, // s out of the seat
+  roadIn: 3.2, // s of the Roadster's own way in (its keys, sped up: intro.js)
+  roadOut: 2.6, // and out
+  jackV: 3, // m/s: a car slower than this can be taken from its driver
+  exitV: 6 // m/s: the most the car may still be rolling to get out
+}
+
+// How the player gets into entry e: 'roadster', 'open' (unlocked, empty), 'theft' (parked, locked)
+// or 'jack' (a driver in it); null if not now (a driver on the move: why says so)
+function howToEnter (e) {
+  if (!e || e.occupant === 'player') return null
+  if (e.kind === 'roadster') return 'roadster'
+  if (e.occupant === 'npc') return e.speed < BOARD.jackV ? 'jack' : null
+  return e.locked ? 'theft' : 'open'
+}
+
+// the way round to the door, in the car's frame, from where the player is (car frame)
+function route (e, l) {
+  const hw = e.wid / 2,
+    hl = e.len / 2,
+    out = []
+  const A = (l.x >= 0 ? 1 : -1) * (hl + 0.8)
+  const side = -(hw + 0.6)
+  if (l.z > -hw + 0.05) {
+    // (on the far side or off an end: round the nearer end)
+    if (Math.abs(l.x) <= hl + 0.4) out.push({ x: A, z: hw + 0.8 })
+    out.push({ x: A, z: side })
+  }
+  out.push({ x: e.door.x, z: e.door.z })
+  return out
+}
+
+// A walk up to e's door to get in by `how`; rng: Math.random-like (the break-in's luck)
+function startEnter (e, how, p, rng = Math.random) {
+  const l = vehicles.toLocal(e, p.pos.x, p.pos.z)
+  return {
+    dir: 'in',
+    entry: e,
+    how,
+    phase: 'walk',
+    t: 0,
+    path: route(e, l),
+    best: Infinity,
+    stuckT: 0,
+    smash: how === 'theft' && rng() < BOARD.smash,
+    alarm: how === 'theft' && rng() < BOARD.alarm,
+    spot: null,
+    done: false
+  }
+}
+// Getting out of e: where to (the first free spot round the door), worked out now
+function startExit (e, world) {
+  const spots = []
+  const hw = e.wid / 2,
+    hl = e.len / 2
+  for (const [x, z] of [
+    [e.door.x, e.door.z],
+    [e.door.x - 1, e.door.z - 0.4],
+    [e.door.x + 1, e.door.z - 0.4],
+    [e.door.x, hw + 0.6],
+    [-hl - 0.9, 0],
+    [hl + 0.9, 0]
+  ])
+    spots.push(vehicles.toWorld(e, x, z))
+  const spot = freeSpot(spots, world) || {
+    ...vehicles.toWorld(e, e.door.x, e.door.z),
+    y: null
+  }
+  return {
+    dir: 'out',
+    entry: e,
+    how: e.kind === 'roadster' ? 'roadster' : 'open',
+    phase: 'open',
+    t: 0,
+    spot,
+    done: false
+  }
+}
+
+// how far open the door is (0 to 1), for the render; the Roadster's own (intro.js) while it runs
+function doorOf (a) {
+  if (!a) return 0
+  const { phase, t } = a
+  if (phase === 'open') return Math.min(1, t / BOARD.open)
+  if (phase === 'close') return Math.max(0, 1 - t / BOARD.close)
+  if (phase === 'pull' || phase === 'in' || phase === 'out') return 1
+  return 0
+}
+// the share of the slide done (0 at the door, 1 in the seat), for the body and the camera
+function seatShare (a) {
+  if (!a) return 0
+  if (a.dir === 'in') {
+    if (a.phase === 'in') return Math.min(1, a.t / BOARD.slide)
+    return a.phase === 'close' || a.phase === 'roadster' ? 1 : 0
+  }
+  if (a.phase === 'open') return 1
+  if (a.phase === 'out') return Math.max(0, 1 - a.t / BOARD.outSlide)
+  return 0
+}
+
+const NEXT_IN = {
+  theft: ['jimmy', 'open', 'in', 'close'],
+  open: ['open', 'in', 'close'],
+  jack: ['open', 'pull', 'in', 'close'],
+  roadster: ['roadster']
+}
+const NEXT_OUT = { open: ['open', 'out', 'close'], roadster: ['roadster', 'close'] }
+const LEN = a => {
+  switch (a.phase) {
+    case 'jimmy':
+      return BOARD.jimmy
+    case 'open':
+      return BOARD.open
+    case 'pull':
+      return BOARD.pull
+    case 'in':
+      return BOARD.slide
+    case 'out':
+      return BOARD.outSlide
+    case 'close':
+      return a.how === 'roadster' ? 0.6 : BOARD.close
+    case 'roadster':
+      return a.dir === 'in' ? BOARD.roadIn : BOARD.roadOut
+  }
+  return Infinity
+}
+
+const _ctl = { x: 0, z: 0, mag: 0, run: false, jump: false },
+  _w = { x: 0, z: 0 }
+// One step of it: p the player (moved along on the walk, stood still otherwise), world the feet's
+// (player.js). Returns what happened this step, in order: 'arrived', 'smash', 'alarm', 'pulled',
+// 'seated' (in: the end), 'out' (out of the seat: the feet on the ground), 'closed' (out: the end).
+function stepBoard (a, dt, p, world) {
+  const ev = []
+  const e = a.entry
+  if (a.phase === 'walk') {
+    const wp = a.path[0]
+    const w = vehicles.toWorld(e, wp.x, wp.z, _w)
+    const dx = w.x - p.pos.x,
+      dz = w.z - p.pos.z,
+      d = Math.hypot(dx, dz)
+    if (d < BOARD.near) {
+      a.path.shift()
+      a.best = Infinity
+      a.stuckT = 0
+    } else {
+      _ctl.x = dx / d
+      _ctl.z = dz / d
+      _ctl.mag = Math.min(1, (d / dt / BOARD.walkV) * 0.5 + 0.2)
+      const v = p.vel,
+        k = Math.min(1, (d / dt) / BOARD.walkV)
+      // (straight there at the walking pace, through stepFoot for the walls and the kerbs)
+      v.x = _ctl.x * BOARD.walkV * k
+      v.z = _ctl.z * BOARD.walkV * k
+      stepFoot(p, dt, null, world)
+      p.heading = Math.atan2(-dz, dx)
+      if (d < a.best - 0.05) {
+        a.best = d
+        a.stuckT = 0
+      } else if ((a.stuckT += dt) > BOARD.stuck) {
+        // (held up by something: step to the door)
+        const door = vehicles.toWorld(e, e.door.x, e.door.z)
+        p.pos.x = door.x
+        p.pos.z = door.z
+        a.path.length = 0
+      }
+    }
+    if (!a.path.length) {
+      a.phase = NEXT_IN[a.how][0]
+      a.t = 0
+      p.vel.x = p.vel.z = 0
+      ev.push('arrived')
+    }
+    return ev
+  }
+  // at the door: facing the car, side on to it (the Roadster's way in faces along it)
+  if (a.dir === 'in' && a.phase !== 'roadster')
+    p.heading = wrapPi(e.heading - Math.PI / 2)
+  const t0 = a.t
+  a.t += dt
+  if (a.phase === 'jimmy') {
+    if (a.smash && t0 < BOARD.smashAt && a.t >= BOARD.smashAt) ev.push('smash')
+  } else if (a.phase === 'pull') {
+    if (t0 < BOARD.pullAt && a.t >= BOARD.pullAt) ev.push('pulled')
+  }
+  if (a.t >= LEN(a)) {
+    const list = a.dir === 'in' ? NEXT_IN[a.how] : NEXT_OUT[a.how]
+    const i = list.indexOf(a.phase)
+    if (a.phase === 'jimmy' && a.alarm) ev.push('alarm')
+    if (a.dir === 'out' && (a.phase === 'out' || a.phase === 'roadster'))
+      ev.push('out')
+    if (i + 1 < list.length) {
+      a.phase = list[i + 1]
+      a.t = 0
+    } else {
+      a.done = true
+      ev.push(a.dir === 'in' ? 'seated' : 'closed')
+    }
+  }
+  return ev
+}
+
+// may this walk up be called off (a move key)? Not once a driver is being taken from their car.
+const cancellable = a =>
+  a.dir === 'in' && a.phase === 'walk' && a.how !== 'jack'
+__export(__exports, { "BOARD": () => BOARD, "howToEnter": () => howToEnter, "startEnter": () => startEnter, "startExit": () => startExit, "doorOf": () => doorOf, "seatShare": () => seatShare, "stepBoard": () => stepBoard, "cancellable": () => cancellable })
+})
+
+// ---- js/ui/prompt.js
+__define(215, function (__exports) {
+// The prompt by a car the player can get into, GTA's: the key, what it does and the car ("E Break
+// in · Sedan"), and what is happening while they get in (onFoot.js shows it in #prompt).
+const { vehicles } = __require(210)
+const { howToEnter } = __require(214)
+const PROMPT_R = 2.4 // m from a car's body that it offers to be got into
+const TITLE = {
+  roadster: 'Roadster',
+  sedan: 'Sedan',
+  hatch: 'Hatchback',
+  suv: 'SUV',
+  taxi: 'Taxi',
+  pickup: 'Pickup',
+  van: 'Van',
+  bus: 'Bus',
+  police: 'Police cruiser',
+  sports: 'Sports car',
+  ambulance: 'Ambulance',
+  fire: 'Fire engine',
+  truck: 'Box truck',
+  lowrider: 'Lowrider',
+  limo: 'Limousine'
+}
+const VERB = { roadster: 'Get in', open: 'Get in', theft: 'Break in', jack: 'Carjack' }
+
+function offerFor (player, a) {
+let text = ''
+let target = null,
+  how = null
+  if (player.mode === 'foot' && a?.dir !== 'in') {
+    const e = vehicles.nearest(player.pos, PROMPT_R, v => v.occupant !== 'player')
+    if (e) {
+      how = howToEnter(e)
+      if (how) {
+        target = e
+        text = `<kbd>E</kbd> ${VERB[how]} · ${TITLE[e.type] || e.type}`
+      } else if (e.occupant === 'npc') text = `${TITLE[e.type] || e.type} · moving`
+    }
+  } else if (a?.dir === 'in') {
+    if (a.phase === 'walk') text = a.how === 'jack' ? 'Carjacking…' : 'To the door…'
+    else if (a.phase === 'jimmy') text = a.smash ? 'Breaking the window…' : 'Forcing the lock…'
+    else if (a.phase === 'pull') text = 'Out you get!'
+  }
+  return { text, target, how }
+}
+__export(__exports, { "PROMPT_R": () => PROMPT_R, "TITLE": () => TITLE, "VERB": () => VERB, "offerFor": () => offerFor })
+})
+
+// ---- js/render/footView.js
+__define(216, function (__exports) {
+// The player on foot, drawn: Optimus (optimus.js), out of the Roadster and walking the city, its
+// legs and arms swinging with its pace (a longer, quicker stride and a lean running), legs tucked in
+// a jump, flat on its back knocked over; and getting into a car and out of it (boarding.js): at the
+// window breaking in, a hand on the door as it opens, reaching in for a driver, ducking and sliding
+// in sideways into the seat. The Roadster's own door and its own Optimus do the Roadster's way in
+// (intro.js boardRoadster); any other car gets a door of its own drawn over its side, in its paint,
+// that swings open on its front hinge.
+const THREE = __require(0)
+const { buildOptimus, poseOptimus, HIP_STAND } = __require(59)
+const { boardRoadster, BOARD_T } = __require(61)
+const { doorOf, seatShare, BOARD } = __require(214)
+const { vehicles } = __require(210)
+const { clamp, wrapPi } = __require(2)
+const STRIDE = { walk: 1.45, run: 2.4 } // m per pair of steps
+const ease = t => t * t * (3 - 2 * t)
+const lerp = (a, b, k) => a + (b - a) * k
+const _w = { x: 0, z: 0 }
+
+class FootView {
+  constructor (scene, RS, cars = null) {
+    this.RS = RS
+    this.cars = cars // the traffic's view (its paint, for a door)
+    this.group = new THREE.Group()
+    scene.add(this.group)
+    const O = (this.O = buildOptimus())
+    O.root.rotation.order = 'YXZ'
+    O.root.traverse(o => {
+      if (o.isMesh) o.castShadow = o.receiveShadow = true
+    })
+    this.group.add(O.root)
+    O.root.visible = false
+    this.phase = 0
+    this.lastDist = 0
+    this.walk = 0 // how much of the walk shows, eased
+    // a car door, for any car not the Roadster: a hinge, the panel in paint and its window
+    this.paint = new THREE.MeshPhysicalMaterial({
+      color: 0x888888,
+      roughness: 0.36,
+      metalness: 0.5,
+      clearcoat: 1,
+      clearcoatRoughness: 0.05
+    })
+    this.glass = new THREE.MeshPhysicalMaterial({
+      color: 0x10161c,
+      roughness: 0.05,
+      clearcoat: 1
+    })
+    const box = new THREE.BoxGeometry(1, 1, 1)
+    this.door = new THREE.Group() // in the car's frame
+    this.hinge = new THREE.Group()
+    this.panel = new THREE.Mesh(box, this.paint)
+    this.window = new THREE.Mesh(box, this.glass)
+    this.panel.castShadow = true
+    this.hinge.add(this.panel, this.window)
+    this.door.add(this.hinge)
+    this.door.visible = false
+    this.group.add(this.door)
+    this.doorFor = null
+  }
+
+  // the figure where the player is (pos: drawn between physics steps), posed for what they do
+  update (dt, p, pos, action) {
+    const O = this.O,
+      RS = this.RS
+    const a = action
+    const roadster = a && a.entry.kind === 'roadster'
+    this.doorPanel(a)
+    // the Roadster's way in and out, on its own Optimus
+    if (roadster && a.phase === 'roadster') {
+      O.root.visible = false
+      const k = clamp(a.t / (a.dir === 'in' ? BOARD.roadIn : BOARD.roadOut), 0, 1)
+      const t =
+        a.dir === 'in'
+          ? lerp(BOARD_T.start, BOARD_T.end, k)
+          : lerp(BOARD_T.doorDown, BOARD_T.start, k)
+      RS.optimus.root.visible = true
+      boardRoadster(RS, t)
+      return
+    }
+    if (roadster && a.dir === 'out' && a.phase === 'close') RS.door = doorOf(a)
+    if (p.mode === 'car' || (a && seatShare(a) > 0.72)) {
+      O.root.visible = false
+      return
+    }
+    O.root.visible = true
+    if (a && a.phase !== 'walk' && !(a.dir === 'out' && a.phase === 'close'))
+      return this.boarding(a, p, pos)
+    this.onFoot(dt, p, pos)
+  }
+
+  onFoot (dt, p, pos) {
+    const O = this.O
+    const run = p.run
+    // the stride's phase with the distance walked, its swing with the pace
+    const d = p.dist - this.lastDist
+    this.lastDist = p.dist
+    const stride = lerp(STRIDE.walk, STRIDE.run, run)
+    if (d > 0 && d < 3) this.phase += (Math.PI * 2 * d) / stride
+    const want = p.grounded ? clamp(p.speed / 1.2, 0, 1) * (1 + 0.45 * run) : 0
+    this.walk += (want - this.walk) * Math.min(1, dt * 10)
+    O.root.position.set(pos.x, pos.y + HIP_STAND, pos.z)
+    O.root.rotation.set(0, p.heading, 0)
+    if (p.down > 0) {
+      // flat on its back, then getting up
+      const up = clamp((0.5 - p.down) / 0.5, 0, 1)
+      O.root.rotation.set(0, p.heading, lerp(Math.PI / 2 - 0.1, 0, ease(up)))
+      O.root.position.y = pos.y + lerp(0.25, HIP_STAND, ease(up))
+      poseOptimus(O, { lean: -0.2 * (1 - up) })
+      return
+    }
+    if (!p.grounded) {
+      // a jump: knees up under it, arms out
+      const h = p.heading,
+        fx = Math.cos(h),
+        fz = -Math.sin(h)
+      const tuck = clamp(p.airT * 4, 0, 1) * clamp(1 - Math.max(0, -p.vel.y) / 8, 0.3, 1)
+      const feet = [-1, 1].map(s => ({
+        at: [
+          pos.x + fx * 0.12 * tuck - fz * 0.11 * s,
+          pos.y + HIP_STAND - 0.86 + 0.32 * tuck,
+          pos.z + fz * 0.12 * tuck + fx * 0.11 * s
+        ],
+        knee: [fx, 0.4, fz]
+      }))
+      poseOptimus(O, { feet, lean: 0.1 * tuck, walk: 0.3, phase: 1.2 })
+      return
+    }
+    poseOptimus(O, { walk: this.walk, phase: this.phase, lean: 0.14 * run * this.walk })
+  }
+
+  // at the door, and sliding in or out (pos: the feet at the door, or where it gets out)
+  boarding (a, p, pos) {
+    const O = this.O,
+      e = a.entry
+    const side = wrapPi(e.heading - Math.PI / 2) // (facing the car, from its left)
+    const door = vehicles.toWorld(e, e.door.x, e.door.z, _w)
+    const dx = door.x,
+      dz = door.z
+    const gy = pos.y
+    const k = seatShare(a)
+    const hgt = e.hgt
+    // a point on the car (its frame) into the world, at height y
+    const W = (lx, y, lz) => {
+      const w = vehicles.toWorld(e, lx, lz)
+      return [w.x, y, w.z]
+    }
+    if (a.dir === 'out' && a.phase === 'out') {
+      // out of the seat onto the spot beside it
+      const seat = vehicles.toWorld(e, e.seat.x, e.seat.z)
+      const u = ease(1 - k)
+      const x = lerp(seat.x, a.spot.x, u),
+        z = lerp(seat.z, a.spot.z, u)
+      O.root.position.set(x, gy + lerp(e.seat.y + 0.1, HIP_STAND, u), z)
+      O.root.rotation.set(0, 0, 0)
+      O.root.rotation.y = lerp(e.heading, side + Math.PI, u)
+      poseOptimus(O, { lean: 0.4 * (1 - u), walk: 0 })
+      return
+    }
+    if (a.phase === 'in') {
+      // ducking in sideways: the hips from the door to the seat, turning to face ahead
+      const seat = vehicles.toWorld(e, e.seat.x, e.seat.z)
+      const u = ease(k)
+      O.root.position.set(
+        lerp(dx, seat.x, u),
+        gy + lerp(HIP_STAND, e.seat.y + 0.1, u),
+        lerp(dz, seat.z, u)
+      )
+      O.root.rotation.set(0, side + wrapPi(e.heading - side) * u, 0)
+      poseOptimus(O, { lean: 0.45 * Math.sin(Math.PI * u), walk: 0, look: 0.3 * u })
+      return
+    }
+    O.root.position.set(dx, gy + HIP_STAND, dz)
+    O.root.rotation.set(0, side, 0)
+    const t = a.t
+    let hands = null
+    let lean = 0.05
+    if (a.phase === 'jimmy') {
+      // at the window: worrying the lock, or a sharp blow through the glass
+      const j = Math.sin(t * 18) * 0.02
+      const win = W(e.door.x + 0.15, gy + Math.min(hgt * 0.7, 1.3), -e.wid / 2 - 0.05)
+      const lock = W(e.door.x + 0.45 + j, gy + Math.min(hgt * 0.5, 1.0), -e.wid / 2 - 0.05)
+      const blow = a.smash && t > BOARD.smashAt - 0.35 && t < BOARD.smashAt + 0.15
+      hands = [
+        { at: lock, w: 1 },
+        { at: blow ? win : W(e.door.x + 0.3, gy + 1.05 + j, -e.wid / 2 - 0.08), w: 1 }
+      ]
+      lean = blow ? 0.25 : 0.12
+    } else if (a.phase === 'open' || (a.dir === 'out' && a.phase === 'close')) {
+      const h = W(e.door.x + 0.5, gy + Math.min(hgt * 0.55, 1.05), -e.wid / 2 - 0.1)
+      hands = [{ at: h, w: a.dir === 'in' ? 1 : 0.5 }, null]
+    } else if (a.phase === 'pull') {
+      // in after the driver, and hauling them out
+      const s = Math.sin(Math.PI * clamp(t / BOARD.pull, 0, 1))
+      const at = W(lerp(e.door.x, e.seat.x, s), gy + e.seat.y + 0.45, lerp(e.door.z, e.seat.z, s))
+      hands = [{ at, w: 1 }, { at: [at[0], at[1] + 0.1, at[2]], w: 1 }]
+      lean = 0.3 * s
+    }
+    poseOptimus(O, { hands, lean, walk: 0 })
+  }
+
+  // a door of its own over the side of a car that isn't the Roadster, swinging on its front hinge
+  doorPanel (a) {
+    const show = a && a.entry.kind !== 'roadster' && a.phase !== 'walk' && a.phase !== 'jimmy'
+    this.door.visible = !!show
+    if (!show) return
+    const e = a.entry
+    if (this.doorFor !== e) {
+      this.doorFor = e
+      const len = e.doorLen,
+        y0 = 0.32,
+        y1 = Math.min(e.hgt * 0.6, e.hgt - 0.5),
+        y2 = Math.min(e.hgt - 0.12, y1 + 0.55)
+      this.hingeX = e.door.x - 0.15 + len * 0.55
+      this.panel.scale.set(len, y1 - y0, 0.06)
+      this.panel.position.set(-len / 2, (y0 + y1) / 2, 0)
+      this.window.scale.set(len * 0.85, y2 - y1, 0.03)
+      this.window.position.set(-len / 2 - 0.05, (y1 + y2) / 2, 0)
+      const ty = this.cars?.types?.[e.car?.type]
+      const pe = ty?.pal?.[Math.floor((e.car?.paint || 0) * 256) & 255]
+      if (pe) this.paint.color.copy(pe.c)
+    }
+    this.door.position.set(e.pos.x, (e.car?.alt || 0) + e.pos.y, e.pos.z)
+    this.door.rotation.set(0, e.heading, 0)
+    this.hinge.position.set(this.hingeX, 0, -e.wid / 2 - 0.035)
+    this.hinge.rotation.y = -1.1 * ease(doorOf(a))
+  }
+
+  hide () {
+    this.O.root.visible = false
+    this.door.visible = false
+  }
+}
+__export(__exports, { "FootView": () => FootView })
+})
+
+// ---- js/render/footCam.js
+__define(217, function (__exports) {
+// The camera on foot: GTA's third-person orbit over the player's shoulder. The mouse (the pointer
+// locked to the picture: a click) or a gamepad's right stick swings it round and up and down; the
+// wheel brings it in or lets it out. It follows the player smoothly, keeps out of buildings
+// (clip: render/city.js clipCamera) and, taking over from the car's camera, eases from wherever that
+// left it rather than cutting.
+const THREE = __require(0)
+const { clamp } = __require(2)
+const HEAD = 1.55 // m: what it looks at, over the feet
+const BLEND = 0.9 // s easing over from the previous camera
+const _f = new THREE.Vector3()
+const lerpK = (k, dt) => 1 - Math.exp(-k * dt)
+
+class FootCam {
+  constructor (camera, clip = null) {
+    this.camera = camera
+    this.clip = clip
+    this.yaw = 0 // looking along (cos yaw, -sin yaw), as the player's heading
+    this.pitch = 0.22 // up over the player (rad)
+    this.dist = 4.2
+    this.target = new THREE.Vector3()
+    this.look = new THREE.Vector3()
+    this.pos = new THREE.Vector3()
+    this.from = new THREE.Vector3()
+    this.fromLook = new THREE.Vector3()
+    this.blend = 1
+    this.init = false
+    this.idle = 0
+  }
+  // a mouse's movement (px) or a stick's (scaled the same)
+  turn (dx, dy) {
+    this.yaw -= dx * 0.0026
+    this.pitch = clamp(this.pitch + dy * 0.0022, -0.45, 1.15)
+    this.idle = 0
+  }
+  zoom (out) {
+    this.dist = clamp(this.dist * (out ? 1.1 : 0.9), 2.2, 9)
+  }
+  // take over from wherever the camera is now, turned the way it faces
+  begin (focus) {
+    const cam = this.camera
+    cam.getWorldDirection(_f)
+    if (Math.hypot(_f.x, _f.z) > 0.1) this.yaw = Math.atan2(-_f.z, _f.x)
+    this.pitch = clamp(-Math.asin(clamp(_f.y, -1, 1)) + 0.05, -0.2, 0.8)
+    this.from.copy(cam.position)
+    this.fromLook.copy(cam.position).addScaledVector(_f, 6)
+    this.target.set(focus.x, focus.y + HEAD, focus.z)
+    this.blend = 0
+    this.init = true
+  }
+  // each frame: focus the player's feet ({ x, y, z }), heading theirs (it drifts round behind
+  // them as they walk, once the mouse has been left alone a while)
+  update (dt, focus, heading = null, moving = false) {
+    const cam = this.camera
+    if (!this.init) {
+      this.target.set(focus.x, focus.y + HEAD, focus.z)
+      if (heading !== null) this.yaw = heading
+      this.init = true
+    }
+    this.idle += dt
+    if (moving && heading !== null && this.idle > 2.5) {
+      let d = heading - this.yaw
+      d = Math.atan2(Math.sin(d), Math.cos(d))
+      this.yaw += d * lerpK(0.6, dt)
+    }
+    const t = this.target
+    t.x += (focus.x - t.x) * lerpK(14, dt)
+    t.z += (focus.z - t.z) * lerpK(14, dt)
+    t.y += (focus.y + HEAD - t.y) * lerpK(8, dt)
+    const c = Math.cos(this.pitch)
+    this.pos.set(
+      t.x - Math.cos(this.yaw) * c * this.dist,
+      t.y + Math.sin(this.pitch) * this.dist,
+      t.z + Math.sin(this.yaw) * c * this.dist
+    )
+    // (over the right shoulder a little, as GTA's)
+    const sx = Math.sin(this.yaw) * 0.35,
+      sz = Math.cos(this.yaw) * 0.35
+    this.look.set(t.x + sx, t.y, t.z + sz)
+    this.pos.x += sx
+    this.pos.z += sz
+    if (this.pos.y < focus.y + 0.3) this.pos.y = focus.y + 0.3
+    if (this.clip) this.clip(this.look, this.pos)
+    this.blend = Math.min(1, this.blend + dt / BLEND)
+    const e = this.blend * this.blend * (3 - 2 * this.blend)
+    cam.position.lerpVectors(this.from, this.pos, e)
+    _f.lerpVectors(this.fromLook, this.look, e)
+    cam.up.set(0, 1, 0)
+    cam.fov += (55 - cam.fov) * lerpK(4, dt)
+    cam.updateProjectionMatrix()
+    cam.lookAt(_f)
+  }
+}
+__export(__exports, { "FootCam": () => FootCam })
+})
+
+// ---- js/audio/steps.js
+__define(218, function (__exports) {
+// The player's footsteps on foot (onFoot.js): Optimus's tread from the sample bank (buffers.js), its
+// colour by what is underfoot (a hard heel on the road and the pavement, a hollow knock on the
+// pier's planks, a soft swish through grass, a crunch in the sand, a ring off a roof's metal), heavier
+// running, with the faint whirr of its actuators; a landing from a jump; a window broken in a theft.
+const R = Math.random
+// per surface: the tread's level and pitch, and the texture laid over it ([sample, level, rate])
+const TREAD = {
+  road: [0.13, 0.95, null],
+  walk: [0.12, 1, null],
+  roof: [0.12, 1.08, ['clank', 0.025, 1.6]],
+  wood: [0.1, 0.75, ['wood', 0.05, 1.9]],
+  grass: [0.05, 0.7, ['leaves', 0.06, 1.5]],
+  sand: [0.04, 0.6, ['sand', 0.09, 1.3]]
+}
+
+// one footfall: k how loud (0 to 1, by distance and pace), pan left to right, run sprinting
+function footstep (sound, surface, k, pan = 0, run = false) {
+  if (!sound?.playing?.() || k < 0.02) return
+  const [lv, rate, tex] = TREAD[surface] || TREAD.walk
+  const v = k * (run ? 1.4 : 1)
+  const o = { world: true, pan, rate: rate * (0.94 + 0.12 * R()), verb: 0.12 }
+  sound.play('step', lv * v, o)
+  if (run) sound.play('thud', 0.025 * v, { world: true, pan, rate: 1.6, verb: 0.05 })
+  if (tex)
+    sound.play(tex[0], tex[1] * v, {
+      world: true,
+      pan,
+      rate: tex[2] * (0.9 + 0.2 * R()),
+      verb: 0.08
+    })
+  // (a robot's joints: the faintest servo whirr with each step)
+  sound.tone(380, 560, 0.12, 'sawtooth', 0.003 * v, 0.015, {
+    pan,
+    verb: 0.05,
+    attack: 0.03,
+    filter: ['bandpass', 1100, 2]
+  })
+}
+// coming down from a jump or a fall (v: m/s down)
+function landing (sound, surface, v, pan = 0) {
+  if (!sound?.playing?.()) return
+  const k = Math.min(1, v / 6)
+  sound.play('thud', 0.08 * k, { world: true, pan, rate: 1.1, verb: 0.15 })
+  footstep(sound, surface, 0.6 * k, pan, true)
+}
+// a car window broken in to steal it, and the door's lock forced
+function smashWindow (sound, pan = 0) {
+  if (!sound?.playing?.()) return
+  sound.play('glass', 0.5, { world: true, pan, rate: 1.1, verb: 0.3 })
+  sound.play('thud', 0.06, { world: true, pan, rate: 1.4, verb: 0.1 })
+}
+function forceLock (sound, pan = 0) {
+  if (!sound?.playing?.()) return
+  sound.play('clank', 0.05, { world: true, pan, rate: 1.8, verb: 0.1 })
+  sound.noise(0.06, 0.05, 'bandpass', 2400, 1800, 0.12, { pan, verb: 0.1 })
+}
+// a car door opening and shutting (car: the door's latch and its weight)
+function doorSound (sound, shut, pan = 0) {
+  if (!sound?.playing?.()) return
+  if (shut) {
+    sound.play('thud', 0.09, { world: true, pan, rate: 0.9, verb: 0.15 })
+    sound.noise(0.03, 0.06, 'highpass', 2600, 2400, 0, { pan, verb: 0.1 })
+  } else sound.noise(0.05, 0.05, 'bandpass', 1800, 1200, 0, { pan, verb: 0.1 })
+}
+__export(__exports, { "footstep": () => footstep, "landing": () => landing, "smashWindow": () => smashWindow, "forceLock": () => forceLock, "doorSound": () => doorSound })
+})
+
+// ---- js/onFoot.js
+__define(219, function (__exports) {
+// The player out of the car: getting out (E), walking the city as Optimus (WASD, Shift to run,
+// Space to jump, the mouse or the right stick looking round), getting into the Roadster or any other
+// car (E by it: in at once if it is open, broken into if it is parked and locked, taken from its
+// driver if it has one), and driving whichever it is. Hands the camera, the controls and the HUD
+// between the modes so nothing held for one leaks into the other. main.js steps it with the rest.
+//
+//   player (sim/player.js)      who the game follows, on foot or at the wheel
+//   vehicles (sim/vehicles.js)  everything that can be driven
+//   game events: 'car-entered', 'car-exited', 'car-stolen', 'crime' (sim/gameEvents.js)
+const THREE = __require(0)
+const { emitGame } = __require(82)
+const { footProxy } = __require(91)
+const { vehicles } = __require(210)
+const { Drivable } = __require(211)
+const { collidePlayer } = __require(75)
+const { carsMeet } = __require(212)
+const { makeControls } = __require(2)
+const { player, setMode, placePlayer, stepFoot, moveDir, knockDown, CITY_WORLD } = __require(213)
+const { startEnter, startExit, stepBoard, cancellable, BOARD } = __require(214)
+const { offerFor, TITLE } = __require(215)
+const { FootView } = __require(216)
+const { FootCam } = __require(217)
+const { clipCamera } = __require(197)
+const { scene } = __require(55)
+const { raiseAlarm } = __require(118)
+const { hearing, panOf, placeOf } = __require(119)
+const { footstep, landing, smashWindow, forceLock, doorSound } = __require(218)
+const HOLD = { ...makeControls(), brake: 1, fan: false }
+// what the radar, the GPS and the place name follow while the player walks: the feet, as a car
+class Focus {
+  constructor () {
+    this.mode = 'ground'
+    this.pos = new THREE.Vector3()
+    this.com = this.pos
+    this.vel = new THREE.Vector3()
+    this.floor = 0
+    this.yaw = 0
+    this.speed = 0
+  }
+  groundSpeed () {
+    return this.speed
+  }
+  fwd (out = new THREE.Vector3()) {
+    return out.set(Math.cos(this.yaw), 0, -Math.sin(this.yaw))
+  }
+}
+
+class OnFoot {
+  constructor (g) {
+    // g: { app, sim, RS, rig, camera, canvas, input, hud, sound, traffic, peds, intro, setCam, cityView }
+    Object.assign(this, g)
+    this.alt = new Drivable() // a car that isn't the Roadster, while the player has it
+    this.view = new FootView(scene, g.RS, g.cityView.cars)
+    this.cam = new FootCam(g.camera, clipCamera)
+    this.focus = new Focus()
+    this.action = null // getting in or out (boarding.js)
+    this.target = null // the car the prompt is for
+    this.how = null
+    this.jumpQ = false
+    this.prev = { x: 0, y: 0, z: 0 } // the feet a step ago (drawn between steps)
+    this.stepD = 0
+    this.lastDist = 0
+    this.world = { ...CITY_WORLD, cars: [] }
+    this.rects = []
+    this.promptEl = document.getElementById('prompt')
+    this.promptText = ''
+    vehicles.sync(null, g.sim)
+    setMode('car', vehicles.roadster)
+    this.pointer()
+  }
+
+  // ---------- who is driving what ----------
+  // the sim the player's controls drive (null: on foot or getting in or out)
+  driven () {
+    if (player.mode !== 'car') return null
+    return this.alt.active ? this.alt.sim : this.sim
+  }
+  // the car the traffic and the people see as the player's: the one they drive or are getting out
+  // of, else the Roadster
+  seen () {
+    return this.alt.active ? this.alt.sim : this.sim
+  }
+  inRoadster () {
+    return player.mode === 'car' && !this.alt.active
+  }
+  onFoot () {
+    return player.mode !== 'car'
+  }
+
+  // ---------- the fixed step ----------
+  // one physics step of the cars and the city, c the player's controls for what they drive
+  step (H, c, city, view, peds, traffic) {
+    const ds = this.driven(),
+      sim = this.sim
+    sim.step(H, ds === sim ? c : HOLD)
+    if (this.alt.active) this.alt.step(H, ds === this.alt.sim ? c : HOLD)
+    if (!city) return
+    // what the traffic and the people see as the player: the car they drive (through its stand-in:
+    // vehicleLink.js), them on foot (footProxy: the drivers stop and honk), or the Roadster
+    const walking = this.onFoot() && !this.alt.active
+    if (!this.app.intro) traffic.walker = walking ? player.pos : null
+    traffic.meHL = this.alt.active ? this.alt.proxy.halfL : 0
+    traffic.meHW = this.alt.active ? this.alt.proxy.halfW : 0
+    if (this.alt.active) {
+      this.alt.traffic(p => {
+        peds.step(H, p, traffic, view)
+        traffic.step(H, p, view)
+        carsMeet(p, p, sim) // (the Roadster where it was left, still in the way)
+      })
+      collidePlayer(traffic, sim)
+    } else if (walking) {
+      const fp = footProxy(player.pos, player.heading)
+      peds.step(H, fp, traffic, view)
+      traffic.step(H, fp, view)
+      collidePlayer(traffic, sim)
+    } else {
+      peds.step(H, sim, traffic, view)
+      traffic.step(H, sim, view)
+    }
+    if (this.onFoot()) this.stepPlayer(H)
+  }
+
+  // the player's feet, one step: walking under the keys, or getting in or out of a car
+  stepPlayer (H) {
+    const p = player
+    this.prev.x = p.pos.x
+    this.prev.y = p.pos.y
+    this.prev.z = p.pos.z
+    this.nearCars()
+    const a = this.action
+    if (a && !(a.dir === 'out' && player.mode === 'foot')) {
+      if (a.dir === 'in' && cancellable(a) && this.moveKeys().mag > 0.3) {
+        this.action = null
+        setMode('foot', null)
+      } else return this.board(H)
+    }
+    if (a) this.board(H) // (the door shutting behind the player, as they walk off)
+    const k = this.moveKeys()
+    const ctl = moveDir(this.cam.yaw, k.f, k.r)
+    ctl.run = this.input.held('ShiftLeft', 'ShiftRight')
+    ctl.jump = this.jumpQ
+    this.jumpQ = false
+    const out = stepFoot(p, H, ctl, this.world)
+    if (out.landed > 3) landing(this.sound, p.surface, out.landed, 0)
+    this.hitByCars()
+  }
+  // forward and right asked for, from the keys and the left stick
+  moveKeys () {
+    const i = this.input,
+      pad = i.pad
+    const f = (i.held('KeyW', 'ArrowUp') ? 1 : 0) - (i.held('KeyS', 'ArrowDown') ? 1 : 0) - pad.stickY
+    const r = (i.held('KeyD', 'ArrowRight') ? 1 : 0) - (i.held('KeyA', 'ArrowLeft') ? 1 : 0) + pad.stickX
+    return { f: Math.max(-1, Math.min(1, f)), r: Math.max(-1, Math.min(1, r)), mag: Math.hypot(f, r) }
+  }
+  // the cars near the player, as rectangles for the feet to keep out of
+  nearCars () {
+    const list = this.world.cars
+    list.length = 0
+    const p = player.pos
+    let n = 0
+    for (const e of vehicles.list) {
+      if (Math.abs(e.pos.x - p.x) > 14 || Math.abs(e.pos.z - p.z) > 14) continue
+      const r = vehicles.rect(e, this.rects[n] || (this.rects[n] = {}))
+      if (e.car?.parked && !e.car.jam && !e.car.player && !e.car.ditched) r.top += 0.08
+      r.ignore = this.action?.entry === e && this.action.dir === 'in'
+      list.push(r)
+      n++
+    }
+  }
+  // a moving car into the player on foot: knocked over
+  hitByCars () {
+    const p = player
+    if (p.down > 0) return
+    for (const r of this.world.cars) {
+      const e = r.e
+      if (e.speed < 4 || r.ignore) continue
+      const dx = p.pos.x - r.x,
+        dz = p.pos.z - r.z
+      const lf = dx * r.fx + dz * r.fz,
+        ls = dz * r.fx - dx * r.fz
+      if (Math.abs(lf) > r.hl + 0.5 || Math.abs(ls) > r.hw + 0.5) continue
+      const vx = r.fx * e.speed * Math.sign(e.car?.v ?? 1),
+        vz = r.fz * e.speed * Math.sign(e.car?.v ?? 1)
+      knockDown(p, vx * 0.7 + Math.sign(ls || 1) * -r.fz * 2, vz * 0.7 + Math.sign(ls || 1) * r.fx * 2)
+      this.sound.bump?.(e.speed, 'car', placeOf(p.pos.x, p.pos.z))
+      emitGame('player-hit', { by: e.id, speed: e.speed, pos: { ...p.pos } })
+      return
+    }
+  }
+  // ---------- getting in and out ----------
+  // E (or the pad's Y): in or out. true when it was taken (in the air it yaws the Roadster instead)
+  interact () {
+    if (this.app.world !== 'city') {
+      if (player.mode === 'car')
+        this.hud.popup('You can get out in the city · <b>C</b> to go there', 2200, 'hint')
+      return player.mode === 'car' ? false : true
+    }
+    if (this.app.intro || this.app.auto) return false
+    if (player.mode === 'car') {
+      const s = this.driven()
+      if (s.mode !== 'ground' && s.mode !== 'crash') return false
+      if (s.groundSpeed() > BOARD.exitV) {
+        this.hud.popup('Slow down to get out', 1400, 'hint')
+        return true
+      }
+      return this.exit()
+    }
+    if (player.mode === 'foot' && this.target && this.how) {
+      this.enter(this.target, this.how)
+      return true
+    }
+    if (this.action && cancellable(this.action)) {
+      this.action = null
+      setMode('foot', null)
+      return true
+    }
+    return player.mode !== 'car'
+  }
+  enter (e, how) {
+    if (how === 'jack') this.freeze(e.car)
+    this.action = startEnter(e, how, player)
+    setMode('entering', e)
+  }
+  // a car with a driver, about to be taken: it stops where it is, its driver at the wheel
+  freeze (car) {
+    this.traffic.takeOver(car, 'player') // (handover.js)
+    car.jam = car.brake = true
+    car.v = car.vx = car.vz = car.w = 0
+  }
+  exit () {
+    const e = player.vehicle
+    this.nearCars()
+    this.action = startExit(e, this.world)
+    setMode('exiting', e)
+    if (e.kind === 'roadster') this.RS.seated = false
+    else doorSound(this.sound, false, 0)
+    this.camToFoot()
+    return true
+  }
+  // the boarding's step and what comes of it
+  board (H) {
+    const a = this.action,
+      e = a.entry
+    for (const ev of stepBoard(a, H, player, this.world)) {
+      const w = vehicles.toWorld(e, e.door.x, e.door.z)
+      const pan = panOf(w.x, w.z)
+      if (ev === 'arrived') {
+        if (a.how === 'theft' && !a.smash) forceLock(this.sound, pan)
+        else if (a.how !== 'theft' && a.how !== 'roadster') doorSound(this.sound, false, pan)
+        if (a.how === 'roadster') {
+          player.heading = e.heading
+          this.sound.unlock?.(pan)
+        }
+      } else if (ev === 'smash') smashWindow(this.sound, pan)
+      else if (ev === 'alarm') {
+        raiseAlarm(this.sound, e.car)
+        this.peds.threat?.(w.x, w.z, 10, 1, 1.5)
+        emitGame('crime', { type: 'car-alarm', pos: { x: w.x, z: w.z }, severity: 1, vehicle: e.id })
+      } else if (ev === 'pulled') this.pullOut(e, w)
+      else if (ev === 'seated') this.seated(e, a)
+      else if (ev === 'out') this.outOf(e, a)
+      else if (ev === 'closed') {
+        if (e.kind !== 'roadster') doorSound(this.sound, true, pan)
+        else this.sound.lock?.(pan)
+        this.action = null
+      }
+    }
+  }
+  // the driver hauled out of their car: on foot, and running
+  pullOut (e, w) {
+    // (out of the driver's door, the left: they run off, and the people round about see it)
+    this.traffic.ejectDriver(e.car, { side: 1, jacked: true })
+    this.peds.threat?.(w.x, w.z, 14, 2, 2)
+    e.vacant = true
+    this.sound.honk?.([300, 380], 0.05 * hearing(w.x, w.z), panOf(w.x, w.z))
+    emitGame('crime', { type: 'carjack', pos: { x: w.x, z: w.z }, severity: 2, vehicle: e.id })
+  }
+  seated (e, a) {
+    this.action = null
+    if (e.kind === 'roadster') {
+      this.RS.seated = true
+      this.RS.door = 0
+      this.RS.optimus.root.visible = true
+      e.occupant = 'player'
+    } else {
+      this.alt.board(e, this.traffic)
+      doorSound(this.sound, true, 0)
+    }
+    setMode('car', e)
+    this.view.hide()
+    this.input.handoff()
+    this.camToCar(e)
+    const pos = { x: e.pos.x, z: e.pos.z }
+    if (a.how === 'theft' || a.how === 'jack') {
+      e.stolen = true
+      emitGame('car-stolen', { vehicle: e.id, kind: e.kind, model: e.type, pos, how: a.how, alarm: !!a.alarm })
+    }
+    emitGame('car-entered', { vehicle: e.id, kind: e.kind, model: e.type, pos, stolen: e.stolen })
+    const name = TITLE[e.type] || e.type
+    if (e.kind !== 'roadster')
+      this.hud.popup(`${name} · <b>E</b> to get out · no thrusters in this one`, 2600, 'hint')
+  }
+  outOf (e, a) {
+    const s = a.spot
+    placePlayer(s.x, s.z, e.heading, s.y ?? null)
+    this.prev.x = s.x
+    this.prev.y = player.pos.y
+    this.prev.z = s.z
+    setMode('foot', null)
+    if (e.kind === 'roadster') {
+      this.RS.optimus.root.visible = false
+      e.occupant = null
+    } else {
+      this.alt.leave()
+      e.vacant = true
+    }
+    this.input.handoff()
+    emitGame('car-exited', { vehicle: e.id, kind: e.kind, model: e.type, pos: { x: s.x, z: s.z } })
+  }
+  // the follow camera eased in from the camera on foot, or the camera on foot from the car's
+  camToCar (e) {
+    const rig = this.rig
+    rig.noCockpit = e.kind !== 'roadster'
+    if (rig.noCockpit && rig.mode === 'cockpit') this.setCam('follow')
+    if (rig.mode === 'free' || rig.mode === 'side') this.setCam('follow')
+    rig.f.init = false
+    rig.shot = 'foot' // (anything not 'follow' or '': eased over from where the camera is)
+    rig.look.copy(this.cam.look)
+  }
+  camToFoot () {
+    this.cam.begin(player.vehicle.pos)
+  }
+
+  // back in the Roadster at once (a reset, the other world)
+  reset () {
+    if (this.alt.active) this.alt.leave()
+    this.action = null
+    vehicles.sync(null, this.sim)
+    setMode('car', vehicles.roadster)
+    vehicles.roadster.occupant = 'player'
+    this.RS.seated = true
+    this.RS.door = 0
+    this.RS.optimus.root.visible = true
+    this.rig.noCockpit = false
+    this.view.hide()
+    this.prompt('')
+  }
+
+  // ---------- each frame ----------
+  // before the frame's steps: what the tween draws between steps
+  before (tween) {
+    tween.sim = this.seen()
+  }
+  // after them: the registry, the prompt, the figure, the camera, the sounds and the HUD's mode.
+  // alpha: how far the frame is between the last two steps. Returns whether it owned the camera.
+  frame (dt, alpha, clock) {
+    const p = player,
+      app = this.app
+    vehicles.sync(this.traffic, this.sim)
+    if (player.mode === 'car') {
+      const s = this.driven()
+      p.pos.x = s.pos.x
+      p.pos.y = s.pos.y
+      p.pos.z = s.pos.z
+      p.heading = s.yaw
+      p.speed = s.groundSpeed()
+    }
+    app.sim = this.seen()
+    app.foot = this.onFoot()
+    app.vehicle = player.vehicle
+    const f = this.focus
+    const pos = this.drawPos(alpha)
+    f.pos.set(pos.x, pos.y, pos.z)
+    f.yaw = p.heading
+    f.speed = p.speed
+    app.focus = this.onFoot() && !this.alt.active ? f : null
+    this.look(dt)
+    if (this.onFoot()) {
+      this.view.update(dt, p, pos, this.action)
+      this.steps(pos)
+      this.cam.update(dt, pos, p.heading, p.speed > 0.5)
+    } else if (this.action) this.view.update(dt, p, pos, this.action) // (a door still shutting)
+    this.offer()
+    document.body.classList.toggle('on-foot', this.onFoot())
+    document.body.classList.toggle('other-car', !this.onFoot() && this.alt.active)
+    if (app.paused && document.pointerLockElement) document.exitPointerLock?.()
+    return this.onFoot()
+  }
+  drawPos (alpha) {
+    const p = player.pos,
+      q = this.prev
+    if ((p.x - q.x) ** 2 + (p.z - q.z) ** 2 > 4) return p
+    return { x: q.x + (p.x - q.x) * alpha, y: q.y + (p.y - q.y) * alpha, z: q.z + (p.z - q.z) * alpha }
+  }
+  // the right stick, and the mouse wheel's zoom on foot
+  look (dt) {
+    const pad = this.input.pad
+    if (!pad.lookX && !pad.lookY) return
+    if (this.onFoot()) this.cam.turn(pad.lookX * dt * 900, -pad.lookY * dt * 600)
+    else if (this.driven()?.mode !== 'air')
+      this.rig.turn(pad.lookX * dt * 2.6, -pad.lookY * dt * 1.6)
+  }
+  // a footfall each half stride walked
+  steps (pos) {
+    const p = player
+    if (p.mode !== 'foot' || !p.grounded) return
+    this.stepD += p.speed > 0.2 ? Math.min(0.2, Math.abs(p.dist - this.lastDist)) : 0
+    this.lastDist = p.dist
+    const half = p.run > 0.5 ? 1.15 : 0.72
+    if (this.stepD > half) {
+      this.stepD = 0
+      footstep(this.sound, p.surface, 0.55 + 0.45 * p.run, 0, p.run > 0.5)
+    }
+  }
+  // the car on offer: "E · Break in · Sedan" while the player stands by one
+  offer () {
+    const o = offerFor(player, this.action)
+    this.target = o.target
+    this.how = o.how
+    this.prompt(o.text)
+  }
+  prompt (html) {
+    if (html === this.promptText || !this.promptEl) return
+    this.promptText = html
+    this.promptEl.innerHTML = html
+    this.promptEl.classList.toggle('on', !!html)
+  }
+  // the mouse: a click locks the pointer to the picture in the city, and it then looks round
+  pointer () {
+    const cv = this.canvas
+    cv.addEventListener('click', () => {
+      if (this.app.world !== 'city' || this.app.paused || document.pointerLockElement) return
+      try {
+        cv.requestPointerLock?.()?.catch?.(() => {})
+      } catch {}
+    })
+    window.addEventListener('mousemove', e => {
+      if (document.pointerLockElement !== cv) return
+      if (this.onFoot()) this.cam.turn(e.movementX, e.movementY)
+      else this.rig.turn(e.movementX * 0.0026, e.movementY * 0.002)
+    })
+    cv.addEventListener(
+      'wheel',
+      e => {
+        if (this.onFoot()) this.cam.zoom(e.deltaY > 0)
+      },
+      { passive: true }
+    )
+  }
+
+}
+__export(__exports, { "OnFoot": () => OnFoot })
+})
+
+// ---- js/main.js
+__define(220, function (__exports) {
 // Tesla Roadster Sim: boot, game state, sim events and the main loop.
 const THREE = __require(0)
 const { Hud } = __require(16)
@@ -103610,6 +105555,10 @@ const { fallFx, ALL_PARTICLES, updateNozzles } = __require(115)
 const { emitThrusters, emitTireSmoke } = __require(115)
 const { emitTrafficSpray } = __require(114)
 const { attachDiamonds } = __require(115)
+const { OnFoot } = __require(219)
+const { player } = __require(213)
+const { vehicles } = __require(210)
+const { GAME_EVENTS, tickGame } = __require(82)
 // ---------- world ----------
 buildWall()
 buildTruss()
@@ -103674,6 +105623,7 @@ function setAuto (on) {
 // the autopilot for the world the car is in: the reveal demo, or Autopilot on the city's streets
 const pilot = () => (app.world === 'city' ? cityPilot : ap)
 function startDemo () {
+  foot.reset()
   damage.repair()
   setWorld('site')
   sim.reset('start')
@@ -103688,21 +105638,19 @@ function startDemo () {
 // P and the mode button: the demo at the test site, Autopilot in the city
 function startAutopilot () {
   intro.finish(true)
+  if (!foot.inRoadster())
+    return hud.popup('Autopilot drives the Roadster · get back in it first', 2200, 'hint')
   if (app.world !== 'city') return startDemo()
   cityPilot.reset()
   if (!cityPilot.join()) {
-    hud.popup(
-      'Autopilot needs a street · drive onto a lane first',
-      2200,
-      'hint'
-    )
-    return
+    return hud.popup('Autopilot needs a street · drive onto a lane first', 2200, 'hint')
   }
   setCam('follow')
   setAuto(true)
 }
 function resetTo (spot, at = null) {
   intro.finish(true)
+  foot.reset()
   damage.repair()
   traffic.walker = null
   setWorld(spot === 'city' ? 'city' : 'site')
@@ -103802,19 +105750,11 @@ const COMMANDS = {
   Digit1: () => resetTo('start'),
   Digit2: () => {
     resetTo('top')
-    hud.popup(
-      'Hanging at 170° · hold <b>Shift</b> to fire the main thrusters',
-      2300,
-      'hint'
-    )
+    hud.popup('Hanging at 170° · hold <b>Shift</b> to fire the main thrusters', 2300, 'hint')
   },
   Digit3: () => {
     resetTo('lineup')
-    hud.popup(
-      'Build speed, then <b>F</b> to lift and <b>K</b> to kickflip',
-      2300,
-      'hint'
-    )
+    hud.popup('Build speed, then <b>F</b> to lift and <b>K</b> to kickflip', 2300, 'hint')
   },
   KeyV: () => setCam(rig.cycle()),
   KeyT: toggleSlow,
@@ -103841,6 +105781,9 @@ app.onQuality = q => climate.quality(q) // (the menu's graphics quality)
 const input = new Input({
   onDrive: (code, first) => {
     if (intro.active) intro.finish()
+    // E: in or out of a car (onFoot.js); on foot, Space jumps
+    if (code === 'KeyE' && first && foot.interact()) return input.handoff()
+    if (foot.onFoot()) return code === 'Space' && first && (foot.jumpQ = true)
     if (code === 'Space' && first) sound.ratchet()
     if (app.auto) setAuto(false)
   },
@@ -103851,12 +105794,14 @@ const input = new Input({
   onPad: () =>
     hud.popup(
       'Gamepad ready · <b>RT</b> drive · <b>LT</b> brake · <b>A</b> e-brake · ' +
-        '<b>RB</b> boost · <b>LB</b> fly',
+        '<b>RB</b> boost · <b>LB</b> fly · <b>Y</b> get in / out',
       4000,
       'hint'
     )
 })
 Object.assign(rig, { traffic, input }) // (camera.js: clear of the cars, Z to look back)
+// the player on foot, and in and out of any car (onFoot.js)
+const foot = new OnFoot({ app, sim, RS, rig, camera, canvas, input, hud, sound, traffic, peds, intro, setCam, cityView })
 // browsers only allow audio after a gesture: the first click or key turns sound on
 function unlockSound (e) {
   if (e.code === 'KeyN' || e.target?.closest?.('#btnSound')) return
@@ -103870,8 +105815,8 @@ window.addEventListener('pointerdown', unlockSound, true)
 window.addEventListener('keydown', unlockSound, true)
 
 // ---------- events from the sim: events.js ----------
-const handleEvents = () =>
-  simEvents({ sim, app, hud, sound, rig, cityView, ap, clock, pad: input.pad })
+const handleEvents = (s = foot.seen()) =>
+  simEvents({ sim: s, app, hud, sound, rig, cityView, ap, clock, pad: input.pad })
 // a knocked-down light, signal or tree hits the ground
 cityView.onLand = (x, z, kind) => {
   fallFx(x, z, kind)
@@ -103899,13 +105844,11 @@ const H = 1 / 120
 const demo = driveDemo(sim, traffic) // (?drive=van: a handling class to try, driveDemo.js)
 function step (c, city) {
   if (city && demo) demo.step(H, c)
-  sim.step(H, c)
-  if (city) {
-    peds.step(H, sim, traffic, VIEW)
-    traffic.step(H, sim, VIEW)
-  }
+  foot.step(H, c, city, VIEW, peds, traffic)
   app.lastCtl = c
 }
+// the controls of whatever the player drives (none on foot: their keys walk them, onFoot.js)
+const controls = () => (foot.driven() ? input.controls(foot.driven(), app.fanMode) : HOLD)
 let acc = 0,
   last = performance.now(),
   clock = 0,
@@ -103915,15 +105858,12 @@ function frame (now) {
   // paused (the pause menu): nothing moves, and the last frame stays up behind it (drawn again if
   // a resize has blanked it)
   if (app.paused)
-    return (last = now) && menu.blanked() && post.render(sim, rig.shot, 0)
+    return (last = now) && menu.blanked() && post.render(app.sim, rig.shot, 0)
   resolution.apply() // (a step in resolution before anything is sized or drawn)
   const dt = Math.min(0.05, (now - last) / 1000)
   last = now
   clock += dt
   input.poll()
-  // the right stick looks round the car (in the air it yaws it instead)
-  if (sim.mode !== 'air' && (input.pad.lookX || input.pad.lookY))
-    rig.turn(input.pad.lookX * dt * 2.6, -input.pad.lookY * dt * 1.6)
   const P = pilot()
   const target = (app.slow ? 0.3 : 1) * (app.auto ? P.slow : 1)
   app.timeScale += (target - app.timeScale) * (1 - Math.exp(-5 * dt))
@@ -103937,7 +105877,8 @@ function frame (now) {
       ? P.update(H)
       : intro.active
       ? HOLD
-      : input.controls(sim, app.fanMode)
+      : controls()
+    foot.before(tween)
     tween.before(city)
     step(c, city)
     acc -= H
@@ -103950,6 +105891,7 @@ function frame (now) {
     }
   }
   if (steps >= 14) acc = 0
+  tickGame(simDt) // (the game events' clock: gameEvents.js)
   // Autopilot leaning on the horn, sat in a jam
   const ph = app.auto && !!P.horn
   if (ph !== app.pilotHorn) {
@@ -103959,9 +105901,10 @@ function frame (now) {
   for (const e of sim.events)
     if (e.type === 'bump') damage.hit(e, sim)
     else if (e.type === 'crash') damage.crash(sim.quat, e.speed, sim.vel)
+  if (foot.seen() !== sim) sim.events.length = 0 // (the Roadster left in the street: dented, quiet)
   handleEvents()
   // a wreck at rest stays put (no respawn): say how to carry on from it
-  if (!app.auto && sim.mode === 'crash' && sim.crashSettled && !app.restHint) {
+  if (!app.auto && foot.inRoadster() && sim.mode === 'crash' && sim.crashSettled && !app.restHint) {
     app.restHint = true
     hud.popup(
       sim.up().y > 0.95
@@ -103982,8 +105925,9 @@ function frame (now) {
   app.intro = intro.active
   // draw this frame part of the way between the last two physics steps, so nothing judders
   tween.apply(Math.min(1, acc / H), city)
-  updateRoadster(RS, sim, app.lastCtl, dt)
-  followKeyLight(sim.pos)
+  const walking = foot.frame(dt, Math.min(1, acc / H), clock)
+  updateRoadster(RS, sim, foot.inRoadster() ? app.lastCtl : HOLD, dt)
+  followKeyLight(app.focus ? app.focus.pos : app.sim.pos)
   updateSkids(RS, sim)
   updateNozzles(RS, sim)
   emitThrusters(RS, sim, simDt, clock)
@@ -103994,10 +105938,10 @@ function frame (now) {
   const blink = Math.sin(clock * 2.4) > 0.6 ? 1 : 0.15
   MAT.beacon.color.setRGB(4 * blink, 0.2 * blink, 0.15 * blink)
   rig.simDt = simDt // (the sim's own time this frame: slow motion slows it)
-  if (!intro.active) rig.update(dt, clock, sim, app.auto ? P.shot : null)
+  if (!intro.active && !walking) rig.update(dt, clock, foot.seen(), app.auto ? P.shot : null)
   // (from the driver's seat, the driver's head is where the camera is, and the street is heard
   // through the canopy)
-  app.inside = !intro.active && rig.shot === 'cockpit'
+  app.inside = !intro.active && foot.inRoadster() && rig.shot === 'cockpit'
   RS.optimus.head.visible = !app.inside
   // (after the camera has moved: the smoke is lit and sorted from where it now looks)
   camera.updateMatrixWorld()
@@ -104011,7 +105955,7 @@ function frame (now) {
   climate.update(dt, dt * app.timeScale, clock, city)
   if (city) {
     cityView.update(simDt, clock, traffic, camera, peds)
-    minimap.update(dt, sim, traffic, VIEW.heading)
+    minimap.update(dt, app.focus || app.sim, traffic, VIEW.heading)
   }
   mixSound(sound, app, traffic, dt, clock, peds)
   hud.update(dt, app)
@@ -104020,7 +105964,7 @@ function frame (now) {
   // (the street's reflection, while it is wet: inside the GPU's timing, so the resolution steps
   // down for it on a card it is too much for)
   climate.reflect(city)
-  post.render(sim, rig.shot, dt)
+  post.render(app.sim, rig.shot, dt)
   resolution.end()
   resolution.update(dt)
   tween.restore()
@@ -104038,38 +105982,23 @@ if (window.top !== window && !document.hasFocus())
 requestAnimationFrame(frame)
 // debugging hook for the console and automated checks: fast-forward the sim without rendering
 window.__roadster = {
-  sim,
-  env: ENV,
-  climate,
-  RS,
-  damage,
-  intro,
-  tween,
-  ap,
-  rig,
-  sound,
-  app,
-  traffic,
-  peds,
-  cityView,
-  renderer,
-  resolution,
-  post,
-  menu,
+  ...{ sim, env: ENV, climate, RS, damage, intro, tween, ap, rig, sound, app, traffic, peds },
+  ...{ cityView, renderer, resolution, post, menu, player, vehicles, foot, events: GAME_EVENTS },
   setAuto,
   resetTo,
   setWorld,
   toggleWorld,
+  // (the player's side, getting in and out and the prompt, kept up each 1/30 s)
   advance (sec) {
-    for (let t = 0; t < sec; t += H)
-      step(
-        app.auto ? pilot().update(H) : input.controls(sim, app.fanMode),
-        app.world === 'city'
-      )
+    for (let t = 0, n = 0; t < sec; t += H, n++) {
+      foot.before(tween)
+      step(app.auto ? pilot().update(H) : controls(), app.world === 'city')
+      if (n % 4 === 3) foot.frame(H * 4, 1, clock)
+    }
     handleEvents()
   }
 }
 __export(__exports, {  })
 })
-__require(210)
+__require(220)
 })()

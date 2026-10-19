@@ -141,6 +141,8 @@ export class CameraRig {
     this.setMode(
       CAM_MODES[(CAM_MODES.indexOf(this.mode) + 1) % CAM_MODES.length]
     )
+    // (the driver's seat is the Roadster's: in another car, on past it: onFoot.js noCockpit)
+    if (this.mode === 'cockpit' && this.noCockpit) return this.cycle()
     return this.mode
   }
   shake (a) {

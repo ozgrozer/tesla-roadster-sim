@@ -1,0 +1,103 @@
+// Any car the player drives that isn't the Roadster, on the drive workstream's stack: the traffic
+// car is taken off its driver (traffic.takeOver: handover.js), given a body of its handling class
+// (vehicleLink.js bodyFromTraffic, vehicleSim.js stepVehicle, handling.js), knocks the city and the
+// traffic about (vehicleHit.js collideTraffic, which also dents it), and its pose goes back onto the
+// traffic car each step (writeToTraffic) so it is drawn and run into as itself. The traffic and
+// the people read it through a stand-in (vehicleProxy); a Sim kept on the body's pose (.sim) is
+// what the camera, the HUD and the sounds follow, as they follow the Roadster's.
+//
+//   new Drivable()   .board(entry, traffic), .step(dt, c), .traffic(fn), .leave(), .active
+//                    .sim (the pose for the camera and HUD), .body, .proxy, .entry, .car
+//   carInput(c, out) the Roadster's controls (constants.js makeControls) as a body's input
+import { Sim } from './sim.js'
+import { stepVehicle, makeVehicleInput } from './vehicleSim.js'
+import { bodyFromTraffic, writeToTraffic, vehicleProxy, syncProxy, pullProxy } from './vehicleLink.js'
+import { collideTraffic } from './vehicleHit.js'
+
+export function carInput (c, out = makeVehicleInput()) {
+  out.throttle = c ? c.throttle : 0
+  out.brake = c ? Math.max(c.brake, c.reverse || 0) : 1
+  out.steer = c ? c.steer : 0
+  out.handbrake = !!c?.ebrake
+  return out
+}
+
+export class Drivable {
+  constructor () {
+    this.sim = new Sim()
+    this.inp = makeVehicleInput()
+    this.entry = this.car = this.body = this.proxy = this.tr = null
+  }
+  get active () {
+    return !!this.car
+  }
+  // take over the traffic car of entry e (already taken, for a carjack: onFoot.js), its body made
+  // where it stands
+  board (e, traffic) {
+    const car = e.car
+    if (!car.ctl) traffic.takeOver(car, 'player')
+    car.player = true
+    this.entry = e
+    this.car = car
+    this.tr = traffic
+    this.body = bodyFromTraffic(car)
+    this.proxy = vehicleProxy(this.body)
+    this.sim.reset('city', { x: car.x, z: car.z, yaw: car.yaw })
+    this.sim.air = 0 // (no thrusters, no tank)
+    this.sim.suction = 0
+    this.mirror()
+  }
+  step (dt, c) {
+    if (!this.car) return
+    const b = this.body
+    stepVehicle(b, carInput(c, this.inp), dt, { city: true, t: this.tr.t })
+    collideTraffic(b, this.tr, this.car)
+    writeToTraffic(b, this.car)
+    this.sim.time += dt // (the keys ease in on the Sim's clock: input.js)
+    this.mirror()
+    this.hear(b.events)
+  }
+  // fn(proxy): the traffic's or the people's step, seeing the car as the player's; their shoves
+  // put back onto the body
+  traffic (fn) {
+    const p = syncProxy(this.proxy, this.body)
+    p.events.length = 0
+    fn(p)
+    pullProxy(p, this.body)
+    writeToTraffic(this.body, this.car)
+    this.mirror()
+    this.hear(p.events)
+  }
+  // the body's pose onto the Sim the camera and the HUD follow
+  mirror () {
+    const s = this.sim,
+      b = this.body
+    s.mode = 'ground'
+    s.pos.set(b.x, 0, b.z)
+    s.com.set(b.x, 0.6, b.z)
+    s.vel.set(b.vx, 0, b.vz)
+    s.yaw = b.yaw
+    s.yawRate = b.w
+    s.speed = b.u
+    s.steerAng = b.steerAng
+    s.accLong = b.accLong
+    s.air = 0
+    s.syncPose()
+  }
+  // its knocks, for the sounds and the shake (events.js): as the Roadster's 'bump's
+  hear (list) {
+    for (const e of list)
+      if (e.type === 'bump' || e.type === 'clash')
+        this.sim.events.push({ type: 'bump', impact: e.impact, what: e.what || 'car', px: e.x ?? e.px, pz: e.z ?? e.pz, broke: e.broke || 0 })
+  }
+  // out of it: left where it stands, parked, its door unlocked (handBack)
+  leave () {
+    const car = this.car
+    if (car) {
+      car.player = false
+      this.tr.handBack(car)
+    }
+    this.entry = this.car = this.body = this.proxy = null
+    return car
+  }
+}
