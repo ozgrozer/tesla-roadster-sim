@@ -92502,7 +92502,19 @@ class CityShadow {
     const r = this.renderer,
       was = r.getRenderTarget()
     r.setRenderTarget(this.target)
-    r.render(this.scene, camera)
+    // (only the shadow maps' draws go through: three.js has no way to draw a shadow map alone, so the
+    // pass draws the scene too, every mesh of the city into a 1 px target, some 800 draw calls a
+    // refresh for nothing; the shadow maps' draws are the ones with no scene)
+    const direct = r.renderBufferDirect
+    r.renderBufferDirect = function (cam, sc, ...rest) {
+      if (sc !== null) return
+      return direct.call(this, cam, sc, ...rest)
+    }
+    try {
+      r.render(this.scene, camera)
+    } finally {
+      r.renderBufferDirect = direct
+    }
     r.setRenderTarget(was)
     hide.forEach((o, i) => (o.visible = shown[i]))
   }
@@ -98054,6 +98066,18 @@ function district (x, z) {
 
 // The streamed meshes: { m, far } each, shown only within far m of the camera (and the fog's reach)
 const STREAM = []
+// Details left out past their own distance, by the name their meshes go by (m from the camera to
+// a district's bounds, which reach 240 m or so out from its middle). In clear weather the fog only
+// swallows the city some 2 km off, past the whole of it, so without these every district's
+// ledges and trees ahead were drawn however far: at the spawn some 30 calls for each of them and a
+// few hundred thousand triangles, for ledges under a pixel high and trees a few pixels across.
+// (Roofs, facades and the ground are never left out: from the hills or the air they are the city.)
+const DETAIL_FAR = {
+  cornices: 520, // ledges 0.3 to 0.6 m: under a pixel at 1080p past 600 m
+  trees: 900,
+  'date palms': 900,
+  'fan palms': 1150 // (the skyline's palms: their crowns still read at a kilometre)
+}
 const _c = new THREE.Vector3()
 // stream mesh m: left out past far m (Infinity: only once the fog has it); bounds fitted if not yet
 function streamed (m, far = Infinity) {
@@ -98067,7 +98091,13 @@ function streamed (m, far = Infinity) {
 function stream (camera, density = 0) {
   const fog = density > 0 ? FOGGED / density : Infinity
   let n = 0
-  for (const { m, far } of STREAM) {
+  for (const e of STREAM) {
+    // (each detail's own distance taken the first time: names are given after the mesh is made)
+    if (!e.named) {
+      e.named = true
+      e.far = Math.min(e.far, DETAIL_FAR[e.m.name] ?? Infinity)
+    }
+    const { m, far } = e
     const b = m.isInstancedMesh ? m.boundingSphere : m.geometry.boundingSphere
     if (!b) {
       m.visible = m.userData.on
@@ -98152,7 +98182,7 @@ class Instances {
     fit(this.byDistrict[this.which[i]])
   }
 }
-__export(__exports, { "DISTRICTS": () => DISTRICTS, "district": () => district, "streamed": () => streamed, "stream": () => stream, "streamAll": () => streamAll, "streamCount": () => streamCount, "Instances": () => Instances })
+__export(__exports, { "DISTRICTS": () => DISTRICTS, "district": () => district, "DETAIL_FAR": () => DETAIL_FAR, "streamed": () => streamed, "stream": () => stream, "streamAll": () => streamAll, "streamCount": () => streamCount, "Instances": () => Instances })
 })
 
 // ---- js/render/fallers.js
@@ -109538,8 +109568,13 @@ __define(251, function (__exports) {
 // materials (cheap, nothing for the lights to recompile); the police cars themselves are the
 // traffic's, drawn by render/traffic.js with their light bars going.
 const THREE = __require(0)
-const { scene, canvasTex } = __require(66)
+const { scene, camera, canvasTex } = __require(66)
 const MAX_MARKERS = 12
+// m from the camera a marker is drawn within (three draws each: past this they are a few pixels,
+// and the radar and the map show them anyway)
+const MARKER_FAR = 450
+const _up = new THREE.Vector3(0, -1, 0),
+  _way = new THREE.Vector3()
 // a soft fade from the bottom up: the cylinder's glow
 const fadeTex = canvasTex(
   64,
@@ -109653,8 +109688,9 @@ class CrimeView {
     for (let i = 0; i < MAX_MARKERS; i++) {
       const m = this.markers[i],
         k = markers[i]
-      m.visible = !!k
-      if (!k) continue
+      const cp = camera.position
+      m.visible = !!k && Math.abs(k.x - cp.x) < MARKER_FAR && Math.abs(k.z - cp.z) < MARKER_FAR && Math.hypot(k.x - cp.x, k.z - cp.z) < MARKER_FAR
+      if (!m.visible) continue
       const { tube, base, pool } = m.userData
       const r = k.kind === 'start' ? 2.6 : k.kind === 'next' ? 3.2 : 4.2
       const h = k.kind === 'start' ? 4.6 : k.kind === 'next' ? 4 : 7
@@ -109689,14 +109725,14 @@ class CrimeView {
     const r = 6 + 2 * Math.sin(t * 0.8)
     u.cone.position.set(heli.x, heli.y - 1, heli.z)
     u.cone.scale.set(r, len, r)
-    u.cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, -1, 0), new THREE.Vector3(dx / len, dy / len, dz / len))
+    u.cone.quaternion.setFromUnitVectors(_up, _way.set(dx / len, dy / len, dz / len))
     u.cone.material.opacity = 0.05 + 0.18 * dark
     u.pool.position.set(sx, 0.12, sz)
     u.pool.scale.setScalar(r * 1.15)
     u.pool.material.opacity = 0.25 + 0.6 * dark
   }
 }
-__export(__exports, { "CrimeView": () => CrimeView })
+__export(__exports, { "MARKER_FAR": () => MARKER_FAR, "CrimeView": () => CrimeView })
 })
 
 // ---- js/ui/crimeHud.js

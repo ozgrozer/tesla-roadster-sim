@@ -64,7 +64,7 @@ export async function jackTrace (g) {
 }
 
 // Another carjacking, drawn as it goes: pictures at the given times (s of game clock after E)
-export async function jackShots (g, at = [0.6, 0.75, 0.95, 1.3, 1.9, 2.6], tag = 'jack') {
+export async function jackShots (g, at = [1.0, 1.15, 1.35, 1.7, 2.1, 3.0], tag = 'jack') {
   await g.ev(() => { const R = window.__roadster; if (R.player.mode === 'car') R.foot.alt.body && Object.assign(R.foot.alt.body, { u: 0, vx: 0, vz: 0 }) })
   if (await g.ev(() => window.__roadster.player.mode === 'car')) {
     await g.press('KeyE', 0)

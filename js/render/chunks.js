@@ -29,6 +29,18 @@ export function district (x, z) {
 
 // The streamed meshes: { m, far } each, shown only within far m of the camera (and the fog's reach)
 const STREAM = []
+// Details left out past their own distance, by the name their meshes go by (m from the camera to
+// a district's bounds, which reach 240 m or so out from its middle). In clear weather the fog only
+// swallows the city some 2 km off, past the whole of it, so without these every district's
+// ledges and trees ahead were drawn however far: at the spawn some 30 calls for each of them and a
+// few hundred thousand triangles, for ledges under a pixel high and trees a few pixels across.
+// (Roofs, facades and the ground are never left out: from the hills or the air they are the city.)
+export const DETAIL_FAR = {
+  cornices: 520, // ledges 0.3 to 0.6 m: under a pixel at 1080p past 600 m
+  trees: 900,
+  'date palms': 900,
+  'fan palms': 1150 // (the skyline's palms: their crowns still read at a kilometre)
+}
 const _c = new THREE.Vector3()
 // stream mesh m: left out past far m (Infinity: only once the fog has it); bounds fitted if not yet
 export function streamed (m, far = Infinity) {
@@ -42,7 +54,13 @@ export function streamed (m, far = Infinity) {
 export function stream (camera, density = 0) {
   const fog = density > 0 ? FOGGED / density : Infinity
   let n = 0
-  for (const { m, far } of STREAM) {
+  for (const e of STREAM) {
+    // (each detail's own distance taken the first time: names are given after the mesh is made)
+    if (!e.named) {
+      e.named = true
+      e.far = Math.min(e.far, DETAIL_FAR[e.m.name] ?? Infinity)
+    }
+    const { m, far } = e
     const b = m.isInstancedMesh ? m.boundingSphere : m.geometry.boundingSphere
     if (!b) {
       m.visible = m.userData.on

@@ -130,7 +130,19 @@ export class CityShadow {
     const r = this.renderer,
       was = r.getRenderTarget()
     r.setRenderTarget(this.target)
-    r.render(this.scene, camera)
+    // (only the shadow maps' draws go through: three.js has no way to draw a shadow map alone, so the
+    // pass draws the scene too, every mesh of the city into a 1 px target, some 800 draw calls a
+    // refresh for nothing; the shadow maps' draws are the ones with no scene)
+    const direct = r.renderBufferDirect
+    r.renderBufferDirect = function (cam, sc, ...rest) {
+      if (sc !== null) return
+      return direct.call(this, cam, sc, ...rest)
+    }
+    try {
+      r.render(this.scene, camera)
+    } finally {
+      r.renderBufferDirect = direct
+    }
     r.setRenderTarget(was)
     hide.forEach((o, i) => (o.visible = shown[i]))
   }
