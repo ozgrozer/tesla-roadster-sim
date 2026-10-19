@@ -20,6 +20,9 @@ and checked, and what is still open. The main README describes the result for pl
 | The traffic: emergency runs, the weather and the hour, the lights | [traffic.md](traffic.md) |
 | The pause menu, the map, waypoints and the GPS, the settings, the clock | [menu.md](menu.md) |
 | What flies over the city: airliners and a helicopter | [aircraft.md](aircraft.md) |
+| Damage: crumpled cars, broken lamps and glass, steam and smoke, wrecks, their drivers and the traffic round them, the Roadster's lamps and glass | [damage.md](damage.md) |
+| The city's own vehicles: the ambulance and the fire engine on calls, their sirens, the delivery box truck, the lowrider, the limousine | [vehicles.md](vehicles.md) |
+| The driving and the camera: the handling measured as a player drives, Botts' dots heard and felt, a gamepad's feel for the tyres, looking behind, the camera kept out of buses and vans | [driving.md](driving.md) |
 
 The areas were built side by side, each by its own engineer in a worktree of its own, and merged
 into the clock and the weather (`js/sim/env.js`), which each built against. At the merge: the menu's
@@ -35,3 +38,14 @@ before: the freeway's traffic had stood still and unlit at night since it was bu
 was handed copies of its clock), and a knock before the sound had ever started threw in the sound
 engine. Every change kept `npm test` green (139 tests at the end) and was checked in a headless
 browser against screenshots of the same views before and after.
+
+A second round on 19 October 2026 added the damage, the city's own vehicles and the driving's review
+(the last three rows), each built in a branch of its own and finished and reviewed before the merge.
+At the merge: a box truck knocked loose while it was stopped to deliver kept its stop (the drivers
+behind took it for a stop that would end, not a wreck) and now has it called off, which a test
+checks, a damaged fire engine's or box truck's steam was moved from the back, where a bus's engine
+is, to under its cab, and the room a driver leaves to pull out round something stopped now takes
+both a wreck's few metres and a delivering truck's. The three were checked together: `npm test`
+green (165 tests), the traffic with the new vehicles off and no crashes identical to before after
+600 s, car for car and draw for draw, and the handling's shake and stopping distances unchanged to
+the last digit.
