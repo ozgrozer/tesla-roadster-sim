@@ -127,7 +127,10 @@ test('a hit crumples a car where it lands, nose, tail, flanks or corner, the har
     ram(sim, tr, car, spot, 9)
     const d = car.dmg?.dents
     assert.ok(d, `${spot}: damaged`)
-    assert.ok(most(d, hit) > 0.08, `${spot}: crumpled ${most(d, hit).toFixed(3)} m`)
+    assert.ok(
+      most(d, hit) > 0.08,
+      `${spot}: crumpled ${most(d, hit).toFixed(3)} m`
+    )
     assert.ok(
       most(d, clean) < 0.01,
       `${spot}: nothing elsewhere (${most(d, clean).toFixed(3)} m)`
@@ -140,7 +143,10 @@ test('a hit crumples a car where it lands, nose, tail, flanks or corner, the har
   ram(hard.sim, hard.tr, hard.car, 'nose', 14)
   const a = soft.car.dmg.dents[1],
     b = hard.car.dmg.dents[1]
-  assert.ok(b > a * 2.2, `deeper: ${a.toFixed(3)} m at 5 m/s, ${b.toFixed(3)} m at 14 m/s`)
+  assert.ok(
+    b > a * 2.2,
+    `deeper: ${a.toFixed(3)} m at 5 m/s, ${b.toFixed(3)} m at 14 m/s`
+  )
   assert.ok(hard.car.dmg.harm > soft.car.dmg.harm * 3, 'and more harm done')
 })
 
@@ -150,7 +156,11 @@ test('a hard hit breaks the lamps on the side it lands, and the glass of that fa
     ram(sim, tr, car, spot, v)
     return car.dmg
   }
-  assert.equal(lamps('fl', 9).lamps, LAMPS.FL, 'the front left corner: its headlight')
+  assert.equal(
+    lamps('fl', 9).lamps,
+    LAMPS.FL,
+    'the front left corner: its headlight'
+  )
   assert.equal(lamps('rr', 9).lamps, LAMPS.RR, 'the rear right: its tail light')
   assert.equal(lamps('nose', 4).lamps, 0, 'a gentle nudge on the nose: none')
   assert.equal(lamps('nose', 13).lamps, LAMPS.FL | LAMPS.FR, 'a hard one: both')
@@ -158,7 +168,10 @@ test('a hard hit breaks the lamps on the side it lands, and the glass of that fa
   const D = lamps('right', 13, true)
   assert.ok(paneOf(D, PANE.right) > 0, 'its side windows crazed')
   assert.equal(paneOf(D, PANE.left), 0, 'the far side whole')
-  assert.ok(paneOf(lamps('nose', 13), PANE.front) > 0, 'a hard hit on the nose: the windscreen')
+  assert.ok(
+    paneOf(lamps('nose', 13), PANE.front) > 0,
+    'a hard hit on the nose: the windscreen'
+  )
 })
 
 test('a wreck stays where it stops, smoking, its driver gets out, and traffic goes round it', () => {
@@ -171,7 +184,10 @@ test('a wreck stays where it stops, smoking, its driver gets out, and traffic go
   const car = put(tr, e, 60, 0)
   car.v0 = 0
   const bumps = ram(sim, tr, car, 'tail', 19, 3)
-  assert.ok(bumps.some(b => b.broke & BROKE.wreck), 'wrecked by the hit')
+  assert.ok(
+    bumps.some(b => b.broke & BROKE.wreck),
+    'wrecked by the hit'
+  )
   // (the Roadster back in the park, and the wreck where it would block one lane, turned a little
   // across it, as the giveway tests have one: thrown across both, it would block the street until
   // it was towed, as nobody goes round on the wrong side of the road)
@@ -198,7 +214,12 @@ test('a wreck stays where it stops, smoking, its driver gets out, and traffic go
   const rest = { x: car.x, z: car.z, yaw: car.yaw }
   // traffic coming up behind it, along its lane, watched from behind it (in sight, it isn't towed)
   const cars = [10, 22].map(s => put(tr, e, s, 9))
-  const view = { x: car.x - e.dx * 40, z: car.z - e.dz * 40, fx: e.dx, fz: e.dz }
+  const view = {
+    x: car.x - e.dx * 40,
+    z: car.z - e.dz * 40,
+    fx: e.dx,
+    fz: e.dz
+  }
   let overlaps = 0
   for (let i = 0; i < 60 / H; i++) {
     sim.step(H, coast())
@@ -212,15 +233,27 @@ test('a wreck stays where it stops, smoking, its driver gets out, and traffic go
         if (a !== b && Math.abs(a.x - b.x) < 14 && Math.abs(a.z - b.z) < 14)
           if (rectRect({ ...carRect(a) }, carRect(b))?.depth > 0.3) overlaps++
   }
-  assert.ok(Math.hypot(car.x - rest.x, car.z - rest.z) < 0.05, 'it stayed where it stopped')
+  assert.ok(
+    Math.hypot(car.x - rest.x, car.z - rest.z) < 0.05,
+    'it stayed where it stopped'
+  )
   assert.ok(car.loose && !car.edge?.cars.includes(car), 'nobody drives it away')
   assert.equal(car.sig, 3, 'its hazards on')
   assert.equal(car.dmg.smoke, 2, 'smoking')
-  assert.ok(out && door < 2.5, `its driver climbed out (${door?.toFixed(1)} m from it)`)
-  assert.ok(kerbDist(out.x, out.z) < 0 && out.state === 'walk', 'and walked off to the pavement')
+  assert.ok(
+    out && door < 2.5,
+    `its driver climbed out (${door?.toFixed(1)} m from it)`
+  )
+  assert.ok(
+    kerbDist(out.x, out.z) < 0 && out.state === 'walk',
+    'and walked off to the pavement'
+  )
   for (const c of cars) {
     const along = (c.x - car.x) * e.dx + (c.z - car.z) * e.dz
-    assert.ok(along > 5, `car #${c.id} got round it (${along.toFixed(1)} m past)`)
+    assert.ok(
+      along > 5,
+      `car #${c.id} got round it (${along.toFixed(1)} m past)`
+    )
     assert.ok(!c.loose && !c.dmg, `#${c.id} untouched`)
   }
   assert.equal(overlaps, 0, 'no car through another')
@@ -238,7 +271,10 @@ test('a damaged car drives on, slower; a wreck out of sight is towed, a parked o
   car.v0 = 12
   ram(sim, tr, car, 'tail', 7, 1.5)
   sim.reset('city', MID)
-  assert.ok(car.dmg && !car.dmg.wreck && car.dmg.limp < 0.95, 'damaged, not wrecked')
+  assert.ok(
+    car.dmg && !car.dmg.wreck && car.dmg.limp < 0.95,
+    'damaged, not wrecked'
+  )
   let top = 0
   for (let i = 0; i < 30 / H; i++) {
     sim.step(H, coast())
@@ -247,14 +283,21 @@ test('a damaged car drives on, slower; a wreck out of sight is towed, a parked o
     if (!car.loose) top = Math.max(top, car.v)
   }
   assert.ok(top > 3, `it drove on (${top.toFixed(1)} m/s)`)
-  assert.ok(top < 12 * car.dmg.limp + 0.3, `slower than its own pace (${top.toFixed(1)} m/s)`)
+  assert.ok(
+    top < 12 * car.dmg.limp + 0.3,
+    `slower than its own pace (${top.toFixed(1)} m/s)`
+  )
   // a wreck left out of sight is towed after a while; a parked car knocked out of its place and
   // wrecked is put back in it, as good as new, once nobody can see it go
   const wreck = put(tr, laneByPark(1), 100, 0)
   wreck.v0 = 0
   ram(sim, tr, wreck, 'tail', 19)
-  const st = STALLS.find(s => s.taken && Math.hypot(s.x - wreck.x, s.z - wreck.z) < 200)
-  const lot = tr.cars.find(c => c.parked && !c.jam && c.homeX === st.x && c.homeZ === st.z)
+  const st = STALLS.find(
+    s => s.taken && Math.hypot(s.x - wreck.x, s.z - wreck.z) < 200
+  )
+  const lot = tr.cars.find(
+    c => c.parked && !c.jam && c.homeX === st.x && c.homeZ === st.z
+  )
   ram(sim, tr, lot, 'right', 19)
   assert.ok(wreck.dmg.wreck && lot.dmg.wreck && lot.loose, 'both wrecked')
   sim.reset('city', { x: wreck.x + 400, z: wreck.z, yaw: 0 })
@@ -267,7 +310,10 @@ test('a damaged car drives on, slower; a wreck out of sight is towed, a parked o
     if (towed === null && !tr.cars.includes(wreck)) towed = tr.t
     if (back === null && !lot.loose) back = tr.t
   }
-  assert.ok(towed - 6 > 20, `the wreck towed, a while out of sight (${towed?.toFixed(0)} s)`)
+  assert.ok(
+    towed - 6 > 20,
+    `the wreck towed, a while out of sight (${towed?.toFixed(0)} s)`
+  )
   assert.ok(back - 6 > 20, `the parked one put back (${back?.toFixed(0)} s)`)
   assert.equal(lot.dmg, null, 'as good as new')
   assert.ok(Math.hypot(lot.x - st.x, lot.z - st.z) < 0.01, 'in its own space')
@@ -280,7 +326,10 @@ test("every new car is whole, and damage draws nothing from the traffic's random
     const sim = parked()
     const tr = new Traffic({ count: 110, seed: 7 })
     tr.reset(sim.pos.x, sim.pos.z)
-    assert.ok(tr.cars.every(c => c.dmg === null), 'all of them whole')
+    assert.ok(
+      tr.cars.every(c => c.dmg === null),
+      'all of them whole'
+    )
     if (dent)
       for (const c of tr.cars.filter(c => c.parked && !c.jam))
         hurt(c, c.x + c.hx * c.len * 0.5, c.z + c.hz * c.len * 0.5, 15, 2200, 0)
@@ -299,7 +348,13 @@ test("every new car is whole, and damage draws nothing from the traffic's random
 
 test("the Roadster's lamps break on the side it hits, its glass crazes, and a reset mends them", () => {
   const { sim, tr, car } = scene()
-  const bus = standing(tr, car.x + car.hx * 30, car.z + car.hz * 30, car.yaw, tr.bus)
+  const bus = standing(
+    tr,
+    car.x + car.hx * 30,
+    car.z + car.hz * 30,
+    car.yaw,
+    tr.bus
+  )
   const wear = new Wear()
   const frame = { l: new THREE.Vector3(), n: new THREE.Vector3() }
   // (each knock into the Roadster's frame and onto its wear, as damage.js does)
@@ -327,7 +382,10 @@ test("the Roadster's lamps break on the side it hits, its glass crazes, and a re
   go.throttle = 1
   const v = sim.speed
   for (let i = 0; i < 2 / H; i++) sim.step(H, go)
-  assert.ok(sim.speed > v + 8, `drivable (${sim.speed.toFixed(1)} m/s after 2 s)`)
+  assert.ok(
+    sim.speed > v + 8,
+    `drivable (${sim.speed.toFixed(1)} m/s after 2 s)`
+  )
   wear.repair()
   assert.equal(wear.lamps, 0, 'a reset mends the lamps')
   assert.equal(wear.glass, 0, 'and the glass')
@@ -375,7 +433,10 @@ test('a wreck across both lanes, in sight, is gone round on the wrong side of th
     assert.ok(t !== null && t < 45, `car ${k} got round (${t?.toFixed(1)} s)`)
   assert.ok(wrong > 0, 'on the wrong side of the road')
   assert.equal(overlaps, 0, 'no car through another, or through the wreck')
-  assert.ok(cars.every(c => !c.loose && !c.dmg), 'nobody knocked into')
+  assert.ok(
+    cars.every(c => !c.loose && !c.dmg),
+    'nobody knocked into'
+  )
 })
 
 test("a wreck's driver climbing out draws nothing from the people's own random numbers", () => {
@@ -443,4 +504,19 @@ test("the Roadster's lamps go dark and their light with them, its glass crazes, 
   assert.deepEqual(front(), [0, 0], 'a reset: the headlights whole')
   assert.deepEqual(dmg.crazed.value.toArray(), [0, 0, 0, 0], 'the glass clear')
   assert.equal(headlights.intensity, 500, 'and its light back')
+})
+
+test('a box truck knocked loose while it delivers has its stop called off', () => {
+  // (the drivers behind take a truck stopped to deliver for a stop that will end, and a car knocked
+  // loose, or a wreck, for one that won't: drivers.js, react.js)
+  const e = laneByPark(1)
+  const sim = parked()
+  const tr = new Traffic({ count: 0, seed: 3 })
+  tr.reset(sim.pos.x, sim.pos.z)
+  const car = put(tr, e, 60, 0, tr.idx.truck)
+  car.v0 = 0
+  car.drop = { k: 2, s: 60, t: 5, stay: 90, e, door: 1, since: 0 }
+  ram(sim, tr, car, 'tail', 19, 3)
+  assert.ok(car.loose && car.dmg, 'knocked loose and dented')
+  assert.equal(car.drop.k, 0, 'its delivery stop is off')
 })

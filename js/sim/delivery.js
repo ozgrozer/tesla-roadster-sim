@@ -111,9 +111,12 @@ export const DELIVERY = {
   crowded (car) {
     const e = car.edge,
       o = e.cars[e.cars.indexOf(car) - 1]
-    const near = o => car.s - o.s - (car.len + o.len) / 2 < this.pullOut(o) + 0.5
+    const near = o =>
+      car.s - o.s - (car.len + o.len) / 2 < this.pullOut(o) + 0.5
     if (o && !o.lc && near(o)) return true
-    return !!e.twin?.cars.some(o => o.lc && o.from === e && o.s < car.s && near(o))
+    return !!e.twin?.cars.some(
+      o => o.lc && o.from === e && o.s < car.s && near(o)
+    )
   },
   // (a car changing lanes out from behind a truck stopped to deliver sees it by its body, as it
   // sees a wreck: drivers.js)

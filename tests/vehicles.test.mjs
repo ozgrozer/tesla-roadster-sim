@@ -247,7 +247,10 @@ test('over a long run every delivery stop ends, and nobody waits long behind one
   })
   const ends = [...stops.values()]
   assert.ok(ends.length > 0, 'box trucks made deliveries')
-  assert.ok(ends.every(t => t < 135), 'none stopped longer than its stay')
+  assert.ok(
+    ends.every(t => t < 135),
+    'none stopped longer than its stay'
+  )
   assert.ok(longest < 30, `the longest wait behind one ${longest.toFixed(0)} s`)
   assert.equal(overlap, 0, 'no two cars through each other')
 })
