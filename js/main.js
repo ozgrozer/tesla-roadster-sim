@@ -285,7 +285,7 @@ const input = new Input({
 Object.assign(rig, { traffic, input }) // (camera.js: clear of the cars, Z to look back)
 // the player on foot, and in and out of any car (onFoot.js)
 const foot = new OnFoot({ app, sim, RS, rig, camera, canvas, input, hud, sound, traffic, peds, intro, setCam, cityView })
-const polish = new Polish({ foot, rig, sound, hud, cityView, RS })
+const polish = new Polish({ foot, rig, sound, hud, cityView, RS, app, game: () => game })
 // the wanted level, the police, the missions and the street events (game.js)
 const game = new Game({ sim, foot, traffic, peds, hud, minimap, app, damage, respawn: at => resetTo('city', at) })
 // browsers only allow audio after a gesture: the first click or key turns sound on
@@ -472,7 +472,7 @@ if (window.top !== window && !document.hasFocus())
 requestAnimationFrame(frame)
 // debugging hook for the console and automated checks: fast-forward the sim without rendering
 window.__roadster = {
-  ...{ sim, env: ENV, climate, RS, damage, intro, tween, ap, rig, sound, app, traffic, peds },
+  ...{ sim, env: ENV, climate, RS, damage, intro, tween, ap, rig, sound, app, traffic, peds, hud },
   ...{ cityView, renderer, resolution, post, menu, player, vehicles, foot, events: GAME_EVENTS, game, polish },
   setAuto,
   resetTo,

@@ -226,6 +226,7 @@ export class Hud {
     this.vitals(sim)
     this.captions(app)
     this.keysLine(dt, app)
+    this.carHud?.update(dt, app) // (whatever the player drives, or on foot: carHud.js)
   }
 
   // under the radar: the car's condition (its dents) and the thrusters' air

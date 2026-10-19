@@ -10,22 +10,19 @@ import { clamp } from '../sim/constants.js'
 
 const lerpK = (k, dt) => 1 - Math.exp(-k * dt)
 // The eye, in the car's frame from its middle on the road (x forward, y up), from its shape
-// (carSpecs.js: ws, the windscreen's foot, and top, the centre line over the top): just over the
+// (carBody.js: ws, the windscreen's foot, and top(x), the centre line's height over the top): just over the
 // bonnet ahead of the windscreen; on a cab-forward van, bus or truck, at the windscreen, at the
 // driver's height. Kept per shape.
 const EYES = new WeakMap()
 function eyeOf (S) {
   let e = EYES.get(S)
   if (e) return e
-  const t = S.top
-  let y = t[0][1],
-    roof = 0
-  for (let i = 1; i < t.length; i++) {
-    roof = Math.max(roof, t[i][1])
-    if (t[i - 1][0] < S.ws && t[i][0] >= S.ws)
-      y = t[i - 1][1] + ((t[i][1] - t[i - 1][1]) * (S.ws - t[i - 1][0])) / (t[i][0] - t[i - 1][0])
-  }
-  const cab = t[t.length - 1][0] - S.ws < 0.9
+  // (S.top: the centre line's height at x, carBody.js; S.L: half the length)
+  const y = S.top(S.ws),
+    nose = S.L ?? 2.3
+  let roof = 0
+  for (let x = -nose; x <= nose; x += 0.25) roof = Math.max(roof, S.top(x))
+  const cab = nose - S.ws < 0.9
   e = cab ? [S.ws - 0.5, Math.max(y + 0.4, 0.6 * roof)] : [S.ws + 0.12, y + 0.3]
   EYES.set(S, e)
   return e

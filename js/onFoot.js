@@ -31,7 +31,7 @@ import {
   cancellable,
   BOARD
 } from './sim/boarding.js'
-import { offerFor, TITLE } from './ui/prompt.js'
+import { offerFor } from './ui/prompt.js'
 import { FootView } from './render/footView.js'
 import { FootCam } from './render/footCam.js'
 import { clipCamera } from './render/city.js'
@@ -311,9 +311,7 @@ export class OnFoot {
       emitGame('car-stolen', { vehicle: e.id, kind: e.kind, model: e.type, pos, how: a.how, alarm: !!a.alarm })
     }
     emitGame('car-entered', { vehicle: e.id, kind: e.kind, model: e.type, pos, stolen: e.stolen })
-    const name = TITLE[e.type] || e.type
-    if (e.kind !== 'roadster')
-      this.hud.popup(`${name} · <b>E</b> to get out · no thrusters in this one`, 2600, 'hint')
+    this.hud.carHud?.entered(e) // (its name bottom right, its hints: ui/carHud.js)
   }
   outOf (e, a) {
     const s = a.spot
@@ -330,6 +328,7 @@ export class OnFoot {
       e.vacant = true
     }
     this.input.handoff()
+    this.hud.carHud?.exited()
     emitGame('car-exited', { vehicle: e.id, kind: e.kind, model: e.type, pos: { x: s.x, z: s.z } })
   }
   // the follow camera eased in from the camera on foot, or the camera on foot from the car's

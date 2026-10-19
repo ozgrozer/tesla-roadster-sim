@@ -3,10 +3,13 @@
 // what it is following (render/carCam.js), its engine, tyres and horn heard (audio/engine.js) and
 // the HUD's speedometer, condition bar and car name kept to it (ui/carHud.js).
 //
-//   new Polish({ foot, rig, sound, hud, cityView, RS })
+//   new Polish({ foot, rig, sound, hud, cityView, RS, app, game })
+//   (game: () => the Game, game.js: the player's health on foot)
 //   .frame(dt)  after the physics steps: returns the RS-like stand-in for skids.js and effects.js
 import { PlayerCar } from './render/playerCar.js'
 import { armScale, armRise } from './render/carCam.js'
+import { EngineVoice } from './audio/engine.js'
+import { CarHud } from './ui/carHud.js'
 
 // V on foot: the camera over the shoulder close, middling or far (footCam.js dist)
 const FOOT_CAMS = [
@@ -19,6 +22,8 @@ export class Polish {
   constructor (g) {
     Object.assign(this, g)
     this.car = new PlayerCar(g.cityView)
+    this.engine = new EngineVoice(g.sound)
+    g.hud.carHud = new CarHud(g.hud, g.foot, g.game)
   }
   frame (dt) {
     const alt = this.foot.alt
@@ -30,6 +35,10 @@ export class Polish {
     rig.hoodS = car ? this.cityView.cars.types[car.type].S : null
     rig.armK = car ? armScale(car.type) : 1
     rig.armUp = car ? armRise(car.type) : 0
+    // its engine, its horn (engine.js), and the Roadster's motors quiet meanwhile (mix.js)
+    this.app.engine = !!car
+    this.engine.update(car ? alt.body : null, dt)
+    this.engine.hornFor(car ? alt.body.kind : 'roadster')
     return fx || this.RS
   }
   // V: the next camera, in a car (camera.js cycle: Follow, Far, Cockpit or Hood, Chase, Side, Free)
