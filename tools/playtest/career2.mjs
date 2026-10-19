@@ -41,27 +41,24 @@ export const CAREER2 = [
     await g.shot('06-police-pursuit.png')
   }],
   ['evade', async g => {
-    // far off across the city, out of their sight, and keep moving (stopped beside a unit with
-    // stars is busted)
+    // far off across the city, out of their sight and outside their search circle (wanted.js), and
+    // lie low there; somewhere else again if a unit comes near
     await ensureCar(g)
     const s = await g.ev(st)
     let to = lane(s.pos.x > 0 ? -600 : 600, s.pos.z > 0 ? -500 : 500)
-    await g.ev(placeCar, { ...to, u: 8 })
+    await g.ev(placeCar, { ...to, u: 0 })
     let ok = false
     for (let t = 0; t < 150 && !ok; t += 3) {
-      await g.hold('KeyW', 3)
+      await g.hold('Space', 3)
       const now = await g.ev(st)
-      g.harm = await g.ev(inCityCar)
       if (now.down) {
-        g.issue('busted/wasted while evading', { ...now, harm: g.harm })
+        g.issue('busted/wasted while evading', { ...now, harm: await g.ev(inCityCar) })
         break
       }
       ok = now.wanted === 0
-      const v = await g.ev(() => Math.abs(window.__roadster.foot.alt.body?.u || 0))
-      if (!ok && v < 2) {
-        // (stuck: on to another lane further on)
-        to = lane(to.x + (Math.random() - 0.5) * 300, to.z + (Math.random() - 0.5) * 300)
-        await g.ev(placeCar, { ...to, u: 8 })
+      if (!ok && now.near !== null && now.near < 150) {
+        to = lane(-to.x + (Math.random() - 0.5) * 200, -to.z + (Math.random() - 0.5) * 200)
+        await g.ev(placeCar, { ...to, u: 0 })
       }
     }
     g.expect(ok, 'stars did not clear in 150 s out of sight', await g.ev(st))
@@ -162,6 +159,9 @@ export const CAREER2 = [
     }
     const ok = await g.until(() => window.__roadster.player.mode === 'car' && window.__roadster.player.vehicle?.kind === 'roadster', 10)
     if (!g.expect(ok, 'could not get back into the Roadster', await g.ev(st))) return
+    // (facing the middle of the city: flown north over the wall it comes down on the hills, where
+    // it can't land, only slide, and F takes it off again: flight.js, edge.js hillside)
+    await g.ev(() => { const s = window.__roadster.sim; s.yaw = Math.atan2(s.pos.z, -s.pos.x); s.syncPose() })
     await g.hold('KeyW', 1.5)
     const v0 = await g.ev(() => window.__roadster.sim.speed)
     let boost = 0
