@@ -7,7 +7,7 @@
 import * as THREE from 'three'
 import { scene, canvasTex } from './scene.js'
 
-const MAX_MARKERS = 8
+const MAX_MARKERS = 12
 // a soft fade from the bottom up: the cylinder's glow
 const fadeTex = canvasTex(
   64,
@@ -124,8 +124,8 @@ export class CrimeView {
       m.visible = !!k
       if (!k) continue
       const { tube, base, pool } = m.userData
-      const r = k.kind === 'start' ? 2.2 : k.kind === 'next' ? 3.2 : 4.2
-      const h = k.kind === 'start' ? 3.6 : k.kind === 'next' ? 4 : 7
+      const r = k.kind === 'start' ? 2.6 : k.kind === 'next' ? 3.2 : 4.2
+      const h = k.kind === 'start' ? 4.6 : k.kind === 'next' ? 4 : 7
       m.position.set(k.x, 0.06, k.z)
       tube.scale.set(r, h * (1 + 0.05 * Math.sin(t * 3 + i)), r)
       base.scale.setScalar(r)
@@ -133,7 +133,7 @@ export class CrimeView {
       const c = k.color || '#ffd040'
       for (const o of [tube, base, pool]) o.material.color.set(c)
       const a = k.kind === 'next' ? 0.4 : 1
-      tube.material.opacity = (0.55 + 0.25 * Math.sin(t * 2.4 + i)) * a * (1 - 0.3 * dark)
+      tube.material.opacity = (0.75 + 0.2 * Math.sin(t * 2.4 + i)) * a * (1 - 0.3 * dark)
       base.material.opacity = 0.85 * a
       pool.material.opacity = 0.3 * a
     }

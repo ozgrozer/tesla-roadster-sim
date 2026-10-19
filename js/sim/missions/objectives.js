@@ -2,13 +2,14 @@
 // { text, start, check } over the objective's data (o), its live state (st) and the mission's
 // context (ctx: { player (playerView), wanted, events (this step's game events), dt }).
 // check returns 'done', 'fail' (with st.why) or nothing (still on it). Pure: no DOM.
-import { spot } from './spots.js'
+import { spot, lotSpot } from './spots.js'
 
 const near = (p, at, r) => Math.hypot(p.x - at.x, p.z - at.z) < r
-// a place in an objective: { at: [fx, fz] } (spots.js), or { x, z } already
+// a place in an objective: { at: [fx, fz] } (spots.js), { lot: [fx, fz] } (the car park nearest
+// there), or { x, z } already
 export const place = o => {
   if (o._at) return o._at
-  o._at = Array.isArray(o.at) ? spot(o.at[0], o.at[1]) : o.at
+  o._at = o.lot ? lotSpot(o.lot[0], o.lot[1]) : Array.isArray(o.at) ? spot(o.at[0], o.at[1]) : o.at
   return o._at
 }
 const model = v => v?.model || ''
