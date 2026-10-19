@@ -27,9 +27,16 @@ export async function profile (g, { minutes = 4, every = 10 } = {}) {
       window.__draw = true
       const busy = R.resolution.busy
       const n0 = busy.length
+      const info = R.renderer.info
       let k = 0
+      // (counted over the whole of the last frame: the post pass's own draw would be all there is)
       const f = () => {
+        if (k === 3) {
+          info.autoReset = false
+          info.reset()
+        }
         if (++k <= 4) return requestAnimationFrame(f)
+        info.autoReset = true
         window.__draw = false
         let objs = 0
         R.cityView.group?.traverse?.(() => objs++)

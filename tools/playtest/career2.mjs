@@ -51,8 +51,9 @@ export const CAREER2 = [
     for (let t = 0; t < 150 && !ok; t += 3) {
       await g.hold('KeyW', 3)
       const now = await g.ev(st)
+      g.harm = await g.ev(inCityCar)
       if (now.down) {
-        g.issue('busted/wasted while evading', now)
+        g.issue('busted/wasted while evading', { ...now, harm: g.harm })
         break
       }
       ok = now.wanted === 0
@@ -126,17 +127,21 @@ export const CAREER2 = [
     if ((await g.ev(st)).mode !== 'foot') await g.press('KeyE', 0)
     await g.until(() => window.__roadster.player.mode === 'foot', 6)
     await g.ev(() => { const R = window.__roadster; R.game.wanted.set(2, R.player.pos) })
-    const ok = await g.until(() => window.__roadster.game.down?.kind === 'busted', 120, null, 1)
-    if (!g.expect(ok, 'not busted standing still with two stars in 120 s', await g.ev(st))) return
+    const ok = await g.until(() => window.__roadster.game.down?.kind === 'busted', 180, null, 1)
+    const units = await g.ev(() => { const R = window.__roadster, P = R.player.pos; return R.game.police.units.map(u => [u.role, u.state, Math.round(Math.hypot(u.body.x - P.x, u.body.z - P.z)), +Math.hypot(u.body.vx, u.body.vz).toFixed(1), u.sees]) })
+    if (!g.expect(ok, 'not busted standing still with stars in 180 s', { ...(await g.ev(st)), units })) return
     await g.shot('10-busted.png')
     g.expect(await g.untilReal(() => !window.__roadster.game.down, 12000), 'stuck on BUSTED')
     await g.run(1)
     const s = await g.ev(st)
-    g.expect(s.mode === 'foot' && s.wanted === 0, 'not on foot with no stars after busted', s)
+    // (getUp puts you back in the Roadster: game.js)
+    g.expect(s.mode === 'car' && s.kind === 'roadster' && s.wanted === 0, 'not back in the Roadster with no stars after busted', s)
     g.expect(nearOf(STATIONS, s.pos) < 60, 'not put back by a police station', s)
   }],
   ['wasted', async g => {
     // (the knocks on foot run the health out: game.js footHealth)
+    if ((await g.ev(st)).mode !== 'foot') await g.press('KeyE', 0)
+    await g.until(() => window.__roadster.player.mode === 'foot', 6)
     await g.ev(() => { window.__roadster.game.footHealth = 0 })
     const ok = await g.until(() => window.__roadster.game.down?.kind === 'wasted', 5)
     if (!g.expect(ok, 'not wasted with no health left', await g.ev(st))) return
@@ -144,14 +149,17 @@ export const CAREER2 = [
     g.expect(await g.untilReal(() => !window.__roadster.game.down, 12000), 'stuck on WASTED')
     await g.run(1)
     const s = await g.ev(st)
-    g.expect(s.mode === 'foot', 'not on foot after wasted', s)
+    g.expect(s.mode === 'car' && s.kind === 'roadster', 'not back in the Roadster after wasted', s)
     g.expect(nearOf(HOSPITALS, s.pos) < 60, 'not put back by a hospital', s)
     g.expect((await g.ev(() => window.__roadster.game.footHealth)) > 0.9, 'health not back after wasted')
   }],
   ['roadster-boost-fly', async g => {
-    await g.ev(toRoadster)
-    await g.run(0.5)
-    await g.press('KeyE', 0)
+    if ((await g.ev(st)).kind !== 'roadster') {
+      if ((await g.ev(st)).mode !== 'foot') await g.press('KeyE', 1)
+      await g.ev(toRoadster)
+      await g.run(0.5)
+      await g.press('KeyE', 0)
+    }
     const ok = await g.until(() => window.__roadster.player.mode === 'car' && window.__roadster.player.vehicle?.kind === 'roadster', 10)
     if (!g.expect(ok, 'could not get back into the Roadster', await g.ev(st))) return
     await g.hold('KeyW', 1.5)

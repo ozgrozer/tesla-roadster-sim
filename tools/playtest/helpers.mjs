@@ -67,6 +67,9 @@ export const placeCar = ({ x, z, yaw, u = 0 }) => {
   const R = window.__roadster,
     b = R.foot.alt.body
   if (!b) return false
+  // (room made there first, and the camera cut to it: a teleport, not a drive)
+  R.traffic.clearAround(x, z, 14)
+  R.rig.cut?.()
   b.x = x
   b.z = z
   b.yaw = yaw
