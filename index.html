@@ -170,6 +170,9 @@
         <p id="helpText"></p>
       </div>
 
+      <!-- by a car the player can take: the key and what it does (onFoot.js) -->
+      <div class="prompt" id="prompt" aria-live="polite"></div>
+
       <!-- the keys, as a pause-menu card: shown on the first visit, then on I -->
       <aside class="help" id="help" aria-label="Controls">
         <header class="help-head">
@@ -238,6 +241,25 @@
             </ul>
           </section>
           <section>
+            <h3 class="city-only">On foot</h3>
+            <ul class="city-only">
+              <li>
+                <span class="k"><kbd>E</kbd></span
+                >get out · get in, steal, carjack
+              </li>
+              <li>
+                <span class="k"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span
+                >walk (the way the camera faces)
+              </li>
+              <li>
+                <span class="k"><kbd>Shift</kbd><kbd>Space</kbd></span
+                >run · jump
+              </li>
+              <li>
+                <span class="k"><kbd>Mouse</kbd></span
+                >look round (click the picture)
+              </li>
+            </ul>
             <h3>Game</h3>
             <ul>
               <li>
@@ -294,7 +316,7 @@
               green bar the car's condition, the blue its thruster air
             </p>
             <p class="note">Any drive key takes the wheel back</p>
-            <p class="note">Gamepad: RT drive · LT brake · A e-brake</p>
+            <p class="note">Gamepad: RT drive · LT brake · A e-brake / jump · Y get in / out · B camera</p>
           </section>
         </div>
       </aside>

@@ -386,3 +386,45 @@
 .cine .speedo {
   opacity: 0;
 }
+
+/* by a car the player can take (onFoot.js): the key, then what it does and the car */
+.prompt {
+  position: fixed;
+  left: 50%;
+  bottom: 22%;
+  transform: translateX(-50%);
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: rgba(10, 12, 16, 0.72);
+  color: #eef2f6;
+  font: 600 15px/1.2 var(--font, system-ui), sans-serif;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+  z-index: 6;
+}
+.prompt.on {
+  opacity: 1;
+}
+.prompt kbd {
+  display: inline-block;
+  min-width: 1.4em;
+  margin-right: 6px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #eef2f6;
+  color: #111;
+  text-align: center;
+}
+/* on foot the HUD is the radar and little else; in a car that isn't the Roadster, no thrusters */
+body.on-foot #speedo,
+body.on-foot #instruments,
+body.on-foot #airBox,
+body.on-foot #condBox,
+body.on-foot #scoreBox,
+body.other-car #airBox,
+body.other-car #instruments,
+body.other-car #condBox {
+  display: none;
+}
