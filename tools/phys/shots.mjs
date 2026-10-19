@@ -29,6 +29,7 @@ const browser = await pw.chromium.launch({
   args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist']
 })
 const page = await browser.newPage({ viewport: { width: 960, height: 540 } })
+page.setDefaultTimeout(240000) // (a busy machine: the load can take minutes)
 const g = new Game(browser, page, 'http://127.0.0.1:8094/')
 g.server = server
 const log = {}
@@ -102,6 +103,38 @@ try {
     await shot('p2-footcam-along-wall.png')
     await g.hold(['KeyW', 'ShiftLeft'], 1.5)
     await shot('p2-run-along-wall.png')
+  }
+  if (want('tight')) {
+    // a sedan nosed slowly up to a building, then turned so its driver's side is hard against it:
+    // out by the other side
+    await g.ev(() => window.__roadster.seatIn('sedan'))
+    await g.run(1)
+    const at = await lane()
+    await g.ev(({ x, z, yaw }) => {
+      const b = window.__roadster.foot.alt.body
+      const y = yaw + Math.PI / 2
+      Object.assign(b, { x, z, yaw: y, hx: Math.cos(y), hz: -Math.sin(y), w: 0, lat: 0, u: 3, vx: Math.cos(y) * 3, vz: -Math.sin(y) * 3 })
+    }, at)
+    await g.hold('KeyW', 4)
+    await g.ev(() => {
+      const b = window.__roadster.foot.alt.body
+      const dx = b.hx, dz = b.hz
+      const wx = b.x + dx * b.len / 2, wz = b.z + dz * b.len / 2
+      const hx = -dz, hz = dx
+      Object.assign(b, { hx, hz, yaw: Math.atan2(-hz, hx), x: wx - dx * (b.wid / 2 + 0.06), z: wz - dz * (b.wid / 2 + 0.06), vx: 0, vz: 0, u: 0, w: 0 })
+    })
+    await g.run(0.5)
+    log.tightBefore = await state()
+    await g.press('KeyE', 0)
+    await g.run(2.5)
+    log.tightExit = await g.ev(() => {
+      const R = window.__roadster, p = R.player.pos
+      return { mode: R.player.mode, x: p.x, z: p.z }
+    })
+    console.log('tight', JSON.stringify(log.tightBefore), JSON.stringify(log.tightExit))
+    await g.ev(() => { const c = window.__roadster.foot.cam; c.pitch = 0.5; c.dist = 6.6 })
+    await g.run(0.8)
+    await shot('p2-tight-exit-far-side.png')
   }
   fs.writeFileSync(path.join(OUT, 'shots.json'), JSON.stringify({ log, console: g.console }, null, 1))
   console.log('console issues:', g.console.length, JSON.stringify(g.console.slice(0, 5)))
