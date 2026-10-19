@@ -107542,6 +107542,7 @@ const { query, CURB_H, OUTER, PROMENADE } = __require(33)
 const { kerbDist, surfaceAt } = __require(42)
 const { WALL, onDeck, hillHeight } = __require(36)
 const { clamp, wrapPi } = __require(2)
+const { inTunnel } = __require(29)
 // How a person moves: m/s walking and sprinting, how hard they get up to speed and stop (m/s²),
 // steering in the air, how fast they turn to face the way they go (rad/s), the jump's take-off
 // speed and the game's gravity (stronger than the world's, as games' are, for a snappy jump), the
@@ -107607,7 +107608,8 @@ function placePlayer (x, z, heading = 0, y = null, p = player) {
 function groundBase (x, z) {
   const inside = Math.abs(x) <= PROMENADE && Math.abs(z) <= PROMENADE
   const kerb = inside && kerbDist(x, z) <= 0 ? CURB_H : 0
-  return Math.max(kerb, z < -WALL ? hillHeight(x, z) : 0)
+  // (in the hill road's tunnel the hill over it is no floor: its road's treads are, as solids)
+  return Math.max(kerb, z < -WALL && !inTunnel(x, z) ? hillHeight(x, z) : 0)
 }
 
 // The camera-relative move: forward and right (-1 to 1 each, a key or a stick) with the camera
