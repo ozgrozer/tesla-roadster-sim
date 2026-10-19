@@ -1,10 +1,11 @@
 // The traffic's wheels: a low-profile tyre with rounded shoulders, and a rim whose face is set in a
 // shallow dish, standing just proud of the tyre's bead. All the rims are one instanced mesh: their
-// faces come from one atlas of eight designs (a ten-spoke alloy, ten slim spokes with machined
+// faces come from one atlas of nine designs (a ten-spoke alloy, ten slim spokes with machined
 // faces, an aero wheel, a five-spoke, a police car's black steel wheel with a chrome cap, a van's
-// steel wheel, a bus's polished aluminium, a pickup's six-spoke), each car's chosen per instance
-// (aRim) and sized to its tyre (carPaint.js RIMS), in its own finish (silver, graphite or black).
-// Radius 1 and width 1 along z, scaled per type.
+// steel wheel, a bus's polished aluminium, a pickup's six-spoke, and a lowrider's chrome wire wheel
+// with its knock-off, the face taking in the tyre's sidewall and its thin whitewall), each car's
+// chosen per instance (aRim) and sized to its tyre (carPaint.js RIMS), in its own finish (silver,
+// graphite or black). Radius 1 and width 1 along z, scaled per type.
 import * as THREE from 'three'
 import { merge } from './geo.js'
 
@@ -88,22 +89,23 @@ export function rimGeometry () {
   ])
 }
 
-// The rims' faces: eight designs in a 4 x 2 atlas, as a colour map (a finish multiplies it) and a
+// The rims' faces: nine designs in a 4 x 3 atlas, as a colour map (a finish multiplies it) and a
 // roughness (green) and metalness (blue) map
-const CELL = 256
+const CELL = 256,
+  ROWS = 3
 function atlas (rm) {
   const cv = document.createElement('canvas')
   cv.width = CELL * 4
-  cv.height = CELL * 2
+  cv.height = CELL * ROWS
   const g = cv.getContext('2d')
   g.fillStyle = rm ? 'rgb(0,128,128)' : '#202124'
   g.fillRect(0, 0, cv.width, cv.height)
-  for (let k = 0; k < 8; k++) {
+  for (let k = 0; k < 9; k++) {
     g.save()
     // (a texture's rows run bottom up: design k's row from the bottom)
     g.translate(
       (k % 4) * CELL + CELL / 2,
-      (1 - Math.floor(k / 4)) * CELL + CELL / 2
+      (ROWS - 1 - Math.floor(k / 4)) * CELL + CELL / 2
     )
     design(g, k, rm, CELL * 0.47)
     g.restore()
@@ -255,6 +257,33 @@ function design (g, k, rm, R) {
     disc(0.24, k === 1 ? col('#3c3f44', 0.4, 0.6) : SILVER)
     disc(0.12, col('#2a2c30', 0.35, 0.6))
   }
+  if (k === 8) wire(g, R, col, disc, ring, at, poly)
+}
+// A lowrider's wheel: the tyre's black sidewall with its thin whitewall round the rim, a chrome
+// wire wheel inside it, its spokes laced across each other from the hub to the rim's lip, and a
+// chrome knock-off with three ears at its middle (the face is set out over the sidewall: RIMS)
+function wire (g, R, col, disc, ring, at, poly) {
+  disc(1, col('#151617', 0.85, 0))
+  ring(0.745, 0.075, col('#ebe8e0', 0.6, 0))
+  disc(0.63, col('#e6e8ea', 0.12, 1))
+  disc(0.575, col('#1d1e20', 0.6, 0.4))
+  g.lineWidth = 0.011 * R
+  g.strokeStyle = col('#d8dbde', 0.18, 1)
+  g.beginPath()
+  for (let i = 0; i < 72; i++) {
+    const a = (i / 72) * Math.PI * 2,
+      lace = i % 2 ? 0.42 : -0.42
+    g.moveTo(...at(a + lace, 0.15))
+    g.lineTo(...at(a, 0.575))
+  }
+  g.stroke()
+  disc(0.17, col('#eceef0', 0.1, 1))
+  for (let i = 0; i < 3; i++) {
+    const a = (i / 3) * Math.PI * 2 + 0.5
+    const pts = [at(a - 0.25, 0.08), at(a - 0.1, 0.24), at(a + 0.1, 0.24)]
+    poly([...pts, at(a + 0.25, 0.08)], col('#f4f5f6', 0.08, 1))
+  }
+  disc(0.07, col('#c4c7ca', 0.15, 1))
 }
 
 // The rims' material: the atlas, each instance's design (aRim) picking its cell
@@ -275,7 +304,7 @@ export function rimMaterial () {
         '#include <uv_vertex>',
         `#include <uv_vertex>
         {
-          vec2 ruv = (vec2(mod(aRim, 4.0), floor(aRim / 4.0)) + 0.03 + uv * 0.94) / vec2(4.0, 2.0);
+          vec2 ruv = (vec2(mod(aRim, 4.0), floor(aRim / 4.0)) + 0.03 + uv * 0.94) / vec2(4.0, 3.0);
           vMapUv = ruv;
           vRoughnessMapUv = ruv;
           vMetalnessMapUv = ruv;

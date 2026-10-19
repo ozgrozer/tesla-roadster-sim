@@ -2,7 +2,10 @@
 // today's cars, the kind on Los Angeles' streets. A midsize sedan with a long raked windscreen and
 // a fastback rear window, a compact hatch, a crossover SUV with roof rails, a hybrid liftback cab,
 // a full-size pickup with an open bed, a high-roof delivery van, a city bus with its gas tanks under
-// a fairing on the roof, a police SUV and a sports coupe.
+// a fairing on the roof, a police SUV and a sports coupe; and the city's own (carRigs.js and
+// carClassics.js): a box ambulance on a pickup's cab, a fire engine's flat-fronted crew cab and
+// body, a box truck's cab over its engine ahead of a tall box, an early-'60s hardtop riding low,
+// and a stretch limousine.
 //
 // Lines (x along the car, + forward; y up; m): top, the centre line over the top, nose to tail;
 // belt, the beltline (the side's top: the glass's foot, or the hood's or deck's edge); bot, the
@@ -11,7 +14,9 @@
 // foot; dTop and cp, where the side windows' back edge leaves the roof and meets the beltline;
 // glass, the side windows' span when not [cp, ws]. sill, mid, crease: the rocker's top, the widest
 // point and the character line. nose and tail: the plan's rounding (how far back, the end's width
-// as a share); haunch: [extra half width, x, spread] over the rear wheels.
+// as a share); haunch: [extra half width, x, spread] over the rear wheels; inset: how far in the
+// lower body and the beltline are, along the car (a cab narrower than its box); breaks: where the
+// normals break across the car (a box's front face); chromed: chrome round the windows.
 // Wheels: r, axles, track (half, to the tyre's middle), tyre (its width). Pieces: doors (shut lines
 // at x), pillars (black pillars at x between side windows), mirror (x), and the rest in carTrim.js
 // and carLamps.js.
@@ -106,5 +111,55 @@ export const SPECS = {
     rail: 1.205, roofW: 0.6, ws: 0.72, rf: 0.0, rr: -0.55, rw: -1.75, dTop: -0.5, cp: -1.2,
     nose: [0.5, 0.6], tail: [0.36, 0.8],
     doors: [0.6, -0.95], pillars: [], mirror: 0.58
+  },
+  ambulance: {
+    r: 0.4, axles: [2.48, -1.42], track: 0.88, tyre: 0.3,
+    sill: 0.75, mid: 1.05, crease: 1.3, beltIn: 0.04, edgeIn: 0.05, edgeUp: 0.88,
+    top: [[-3.45, 2.8], [-3.41, 2.86], [0.9, 2.86], [0.98, 1.56], [1.02, 2.12], [1.08, 2.17], [1.6, 2.17], [1.66, 2.12], [2.08, 1.5], [2.3, 1.47], [3.2, 1.39], [3.45, 1.3]],
+    belt: [[-3.45, 2.8], [0.9, 2.8], [0.98, 1.55], [2.08, 1.49], [2.3, 1.45], [3.45, 1.28]],
+    bot: [[-3.45, 0.74], [-3.1, 0.68], [0.9, 0.68], [0.98, 0.55], [3.05, 0.55], [3.45, 0.45]],
+    rail: 2.08, roofW: 0.94, ws: 2.08, rf: 1.66, rr: 1.02, rw: 0.98, dTop: 1.1, cp: 1.06,
+    nose: [0.25, 0.86], tail: [0.05, 0.97], inset: [[0.9, 0], [0.98, 0.12]], breaks: [0.9, 0.98],
+    doors: [2.04, 1.07], pillars: [], mirror: 1.98
+  },
+  fire: {
+    r: 0.53, axles: [3.35, -2.05], track: 1.0, tyre: 0.32,
+    sill: 0.7, mid: 1.0, crease: 1.2, beltIn: 0.04, edgeIn: 0.05, edgeUp: 0.85,
+    top: [[-5.2, 2.5], [-5.15, 2.55], [2.08, 2.55], [2.15, 2.9], [2.2, 2.98], [4.6, 2.98], [4.7, 2.9], [4.82, 1.86], [4.86, 0.97], [5.2, 0.95]],
+    belt: [[-5.2, 2.48], [2.08, 2.48], [2.15, 1.95], [4.82, 1.92], [4.86, 0.96], [5.2, 0.94]],
+    bot: [[-5.2, 0.62], [-4.9, 0.55], [4.86, 0.55], [5.2, 0.45]],
+    rail: 2.8, roofW: 1.13, ws: 4.82, rf: 4.7, rr: 2.2, rw: 2.15, dTop: 2.32, cp: 2.26,
+    nose: [0.2, 0.9], tail: [0.08, 0.96], breaks: [2.08, 2.15],
+    doors: [4.74, 3.62, 3.5, 2.32], pillars: [3.56], mirror: 4.74
+  },
+  truck: {
+    r: 0.5, axles: [3.85, -2.45], track: 0.96, tyre: 0.3,
+    sill: 0.8, mid: 1.05, crease: 1.3, beltIn: 0.04, edgeIn: 0.05, edgeUp: 0.88,
+    top: [[-4.95, 3.75], [-4.91, 3.8], [3.2, 3.8], [3.28, 1.73], [3.32, 2.5], [3.38, 2.55], [4.67, 2.56], [4.77, 2.47], [4.88, 1.6], [4.92, 0.76], [4.95, 0.72]],
+    belt: [[-4.95, 3.75], [3.2, 3.75], [3.28, 1.71], [4.85, 1.65], [4.88, 1.59], [4.92, 0.74], [4.95, 0.7]],
+    bot: [[-4.95, 1.15], [-4.75, 1.1], [3.2, 1.1], [3.28, 0.75], [4.85, 0.75], [4.95, 0.5]],
+    rail: 2.42, roofW: 1.0, ws: 4.88, rf: 4.77, rr: 3.32, rw: 3.28, dTop: 3.47, cp: 3.41,
+    nose: [0.22, 0.9], tail: [0.04, 0.98], inset: [[3.2, 0], [3.28, 0.19]], breaks: [3.2, 3.28],
+    doors: [4.83, 3.45], pillars: [], mirror: 4.75
+  },
+  lowrider: {
+    r: 0.3, axles: [1.72, -1.3], track: 0.76, tyre: 0.17,
+    sill: 0.24, mid: 0.5, crease: 0.72, beltIn: 0.06,
+    top: [[-2.675, 0.86], [-2.6, 0.95], [-2.2, 0.97], [-1.45, 0.98], [-1.0, 1.24], [-0.85, 1.29], [0.05, 1.3], [0.2, 1.28], [0.75, 0.92], [1.2, 0.9], [2.4, 0.86], [2.675, 0.78]],
+    belt: [[-2.675, 0.85], [-2.2, 0.93], [-1.45, 0.94], [0.75, 0.9], [1.2, 0.88], [2.4, 0.84], [2.675, 0.77]],
+    bot: [[-2.675, 0.4], [-2.4, 0.24], [-1.9, 0.2], [2.1, 0.2], [2.5, 0.25], [2.675, 0.36]],
+    rail: 1.26, roofW: 0.72, ws: 0.75, rf: 0.2, rr: -0.85, rw: -1.45, dTop: -0.8, cp: -1.3,
+    nose: [0.25, 0.86], tail: [0.2, 0.88], chromed: true,
+    doors: [0.7, -0.55], pillars: [], mirror: 0.6
+  },
+  limo: {
+    r: 0.34, axles: [3.05, -2.68], track: 0.8, tyre: 0.225,
+    sill: 0.28, mid: 0.55, crease: 0.78,
+    top: [[-4.3, 1.0], [-4.27, 1.06], [-3.95, 1.08], [-3.55, 1.08], [-3.15, 1.38], [-2.95, 1.45], [2.0, 1.46], [2.25, 1.43], [2.75, 1.16], [3.15, 1.0], [3.8, 0.96], [4.3, 0.84]],
+    belt: [[-4.3, 0.98], [-3.95, 1.03], [-3.55, 1.04], [2.75, 1.0], [3.15, 0.95], [4.3, 0.82]],
+    bot: [[-4.3, 0.42], [-3.9, 0.24], [-3.5, 0.2], [3.4, 0.2], [3.9, 0.24], [4.3, 0.36]],
+    rail: 1.4, roofW: 0.66, ws: 2.75, rf: 2.25, rr: -2.95, rw: -3.55, dTop: -2.9, cp: -3.25,
+    nose: [0.5, 0.65], tail: [0.35, 0.82], chromed: true,
+    doors: [2.7, 1.3, -1.9, -2.9], pillars: [1.25, 0.15, -0.95, -1.95], mirror: 2.6
   }
 }

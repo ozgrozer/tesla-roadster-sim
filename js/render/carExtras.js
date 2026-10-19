@@ -3,7 +3,8 @@
 // bumpers, a van's split back doors, a bus's glass doors, the fairing over the gas tanks on its roof,
 // its engine grille and the bike rack folded up on its nose, a cab's lit roof sign, a police car's
 // light bar (red on the driver's side, blue on the other), push bar and spotlight, and a sports
-// car's quad exhausts.
+// car's quad exhausts; and the ambulance's, the fire engine's and the box truck's (carRigs.js), and
+// the lowrider's and the limousine's (carClassics.js).
 import * as THREE from 'three'
 import { lerp, sideAt } from './carBody.js'
 import {
@@ -16,8 +17,20 @@ import {
   piece,
   rounded
 } from './carParts.js'
+import { rigs } from './carRigs.js'
+import { classics } from './carClassics.js'
 
 const LINER = 0x18191b
+// (the cars with a shark fin aerial on the roof)
+const FIN = new Set([
+  'sedan',
+  'hatch',
+  'suv',
+  'taxi',
+  'police',
+  'sports',
+  'limo'
+])
 
 // put(geometry, colour, lamp tag) adds a trim piece; glass: pieces of glass
 export function extras (T, B, st, put, glass) {
@@ -55,7 +68,7 @@ export function extras (T, B, st, put, glass) {
         )
     }
   }
-  if (name !== 'bus' && name !== 'van' && name !== 'pickup') {
+  if (FIN.has(name)) {
     // the shark fin aerial
     const x = Math.max(B.rr, B.dTop) + 0.18,
       y = B.top(x)
@@ -107,6 +120,8 @@ export function extras (T, B, st, put, glass) {
     put(box(x - 0.095, y + 0.15, -0.275, x + 0.095, y + 0.175, 0.275), 0xf2b705)
   }
   if (name === 'police') police(B, st, put)
+  rigs(T, B, st, put, glass)
+  classics(T, B, st, put)
   if (name === 'sports')
     // twin exhausts each side, under the tail
     for (const s of [-1, 1])

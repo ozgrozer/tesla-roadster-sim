@@ -1,9 +1,10 @@
 // The trim on the traffic's bodies (carShapes.js), in vertex colours (carParts.js): the black round
-// the glass (the window surrounds, the pillars, the frit at the edges of the windscreen and rear
-// window, the cowl and its wipers), the doors' shut lines and flush handles, wing mirrors on the
-// doors with their indicators, dark wheel wells, grilles and intakes, the bumpers' shut lines,
-// California plates front and back, and each type's own pieces (carExtras.js). Chrome and gloss
-// black are tagged for the trim's material (carLamps.js) to give them their shine.
+// the glass (the window surrounds, chrome on the old and the stately, the pillars, the frit at the
+// edges of the windscreen and rear window, the cowl and its wipers), the doors' shut lines and
+// flush handles, wing mirrors on the doors with their indicators (a truck's big ones out on their
+// arms), dark wheel wells, grilles and intakes, the bumpers' shut lines, California plates front
+// and back, and each type's own pieces (carExtras.js). Chrome and gloss black are tagged for the
+// trim's material (carLamps.js) to give them their shine.
 import * as THREE from 'three'
 import { at } from './loft.js'
 import { P, sideAt, lerp } from './carBody.js'
@@ -33,11 +34,12 @@ export function trimFor (T, B, st, paint_, glass) {
   const name = T.name
   const g0 = Math.max(B.glass[0], B.cp),
     g1 = B.glass[1]
-  // round the side windows: gloss black along their tops and the backs of them, a slim strip along
-  // their feet, and the black pillars between them
+  // round the side windows: gloss black (or chrome) along their tops and the backs of them, a slim
+  // strip along their feet, and the black pillars between them
+  const frame = B.chromed ? [CHROME, LAMP.chrome] : [GLOSS, LAMP.gloss]
   if (g1 > g0) {
-    put(band(st, P.rail, P.belt, g0, g1, 0.035), GLOSS, LAMP.gloss)
-    put(band(st, P.belt, P.rail, g0 + 0.02, g1, 0.02, 0.003), GLOSS, LAMP.gloss)
+    put(band(st, P.rail, P.belt, g0, g1, 0.035), ...frame)
+    put(band(st, P.belt, P.rail, g0 + 0.02, g1, 0.02, 0.003), ...frame)
   }
   for (const x of B.pillars || [])
     put(across(st, x, P.belt, P.rail, 0.09), GLOSS, LAMP.gloss)
@@ -76,21 +78,28 @@ export function trimFor (T, B, st, paint_, glass) {
   return out
 }
 
-// wing mirrors on the doors: a housing in the body colour (into paint), rounded in front and flat
-// behind, on a black arm, the glass facing back, an indicator along its outer edge; a bus's and a
-// van's are big rectangles out on their arms
+// wing mirrors on the doors: a housing in the body colour (into paint; chrome on the chromed ones),
+// rounded in front and flat behind, on a black arm, the glass facing back, an indicator along its
+// outer edge; a van's, an ambulance's and a box truck's bigger, and a bus's and a fire engine's
+// tall rectangles out on their arms
+const BIG = { van: 1.35, ambulance: 1.55, truck: 1.55 }
+// (the mirror's foot and top)
+const TALL = { bus: [1.95, 2.55], fire: [1.85, 2.4] }
 function mirrors (B, st, put, paint_) {
   const mx = B.mirror
-  const big = B.name === 'van' ? 1.35 : 1
+  const big = BIG[B.name] || 1,
+    tall = TALL[B.name]
   for (const s of [-1, 1]) {
     const zw = sideAt(st, mx, B.belt(mx) - 0.02)
-    if (B.name === 'bus') {
-      const z = s * (B.W + 0.32)
+    if (tall) {
+      const [y0, y1] = tall,
+        z = s * (B.W + 0.32)
       const z0 = s > 0 ? B.W - 0.05 : -B.W - 0.3,
         z1 = s > 0 ? B.W + 0.3 : -B.W + 0.05
-      put(box(mx - 0.03, 2.55, z0, mx + 0.03, 2.6, z1), BLACK)
-      put(box(mx - 0.05, 1.95, z - 0.12, mx + 0.04, 2.55, z + 0.12), BLACK)
-      put(box(mx - 0.058, 1.98, z - 0.1, mx - 0.05, 2.52, z + 0.1), 0x1a2632)
+      put(box(mx - 0.03, y1, z0, mx + 0.03, y1 + 0.05, z1), BLACK)
+      put(box(mx - 0.05, y0, z - 0.12, mx + 0.04, y1, z + 0.12), BLACK)
+      const gx = mx - 0.058
+      put(box(gx, y0 + 0.03, z - 0.1, gx + 0.008, y1 - 0.03, z + 0.1), 0x1a2632)
       continue
     }
     const my = B.belt(mx) + 0.07 * big,
@@ -98,7 +107,8 @@ function mirrors (B, st, put, paint_) {
     const cap = new THREE.SphereGeometry(1, 6, 4, Math.PI / 2, Math.PI)
       .scale(0.075 * big, 0.072 * big, 0.125 * big)
       .translate(mx - 0.035 * big, my, s * zc)
-    paint_.push(cap)
+    if (B.chromed) put(cap, CHROME, LAMP.chrome)
+    else paint_.push(cap)
     const a0 = s > 0 ? zw - 0.02 : -zc,
       a1 = s > 0 ? zc : -zw + 0.02
     const arm = box(
@@ -128,18 +138,19 @@ function mirrors (B, st, put, paint_) {
   }
 }
 
-// the wheel wells: an inner wall and a dark roof over each wheel
+// the wheel wells: an inner wall and a dark roof over each wheel, out to the body's side there
 function wells (B, put) {
   const r = B.r + 0.045,
     inner = B.track - B.tyre / 2 - 0.05
   for (const s of [-1, 1])
     for (const ax of B.axles) {
+      const W = B.W - B.inset(ax)
       const wall = new THREE.CircleGeometry(r, 10, 0, Math.PI)
       put(wall.translate(ax, B.r, s * inner), BLACK)
       const arc = new THREE.CylinderGeometry(
         r,
         r,
-        B.W - inner + 0.02,
+        W - inner + 0.02,
         10,
         1,
         true,
@@ -147,7 +158,7 @@ function wells (B, put) {
         Math.PI
       )
         .rotateX(Math.PI / 2)
-        .translate(ax, B.r, (s * (inner + B.W)) / 2)
+        .translate(ax, B.r, (s * (inner + W)) / 2)
       put(arc, BLACK)
     }
 }
@@ -179,7 +190,9 @@ function wipers (B, st, put) {
 }
 
 // What sits on the nose and the tail's faces: grilles ([bottom, top, half width]), intakes, plates
-// (their heights, front and back), the bumpers' shut lines (their heights, front and back)
+// (their heights, front and back), the bumpers' shut lines (their heights, front and back). (A
+// fire engine's, a box truck's, a lowrider's and a limousine's grilles are their own: carRigs.js,
+// carClassics.js.)
 // prettier-ignore
 const FACE = {
   sedan: { grille: [0.62, 0.66, 0.3], intake: [0.36, 0.56, 0.5], plate: [0.46, 0.62], lines: [0.6, 0.835] },
@@ -190,7 +203,12 @@ const FACE = {
   van: { grille: [0.66, 0.94, 0.42], plate: [0.5, 0.86] },
   bus: { plate: [0.6, 1.32] },
   police: { grille: [0.62, 0.82, 0.38], intake: [0.48, 0.6, 0.5], plate: [0.66, 0.78], lines: [0.8, 0.96] },
-  sports: { intake: [0.26, 0.44, 0.62], plate: [0.4, 0.6], lines: [0.5, 0.78] }
+  sports: { intake: [0.26, 0.44, 0.62], plate: [0.4, 0.6], lines: [0.5, 0.78] },
+  ambulance: { grille: [0.68, 1.16, 0.4], chrome: true, plate: [0.54, 0.95] },
+  fire: { plate: [0.7, 0.98] },
+  truck: { plate: [0.6, 1.05] },
+  lowrider: { plate: [0.42, 0.58] },
+  limo: { plate: [0.42, 0.64], lines: [0.62, 0.82] }
 }
 function faces (T, B, st, put, out) {
   const F = FACE[T.name],

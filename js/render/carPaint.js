@@ -2,8 +2,11 @@
 // white, a fifth black, a third greys and silvers, then dark blues and reds and the odd bright
 // one), each a solid gloss or a metallic under the clear coat, some with a black roof; sports cars
 // in brighter colours more often, cabs yellow, police cars black (their white goes on in the body's
-// shader), buses in their operators' orange, blue or red, vans mostly white. And the rims each car
-// rolls on (carWheels.js draws them), and the textures for the shade under a car and its beams.
+// shader), buses in their operators' orange, blue or red, vans mostly white; ambulances white, fire
+// engines red, box trucks' cabs mostly white (their boxes are, in the body's shader), lowriders in
+// candy and pearl, deep and metallic, some with a white top, and limousines black or white. And the
+// rims each car rolls on (carWheels.js draws them: a lowrider's wire wheels on whitewall tyres),
+// and the textures for the shade under a car and its beams.
 import * as THREE from 'three'
 
 // [colour, weight, metallic share]
@@ -29,10 +32,23 @@ const FIXED = {
   taxi: [[0xf0b404, 10, 0.15], [0xf4c41f, 3, 0.2]],
   police: [[0x0a0b0d, 1, 0.1]],
   bus: [[0xe0661e, 6, 0], [0x1f4f9c, 3, 0], [0xb8232a, 1, 0]],
-  van: [[0xe0e0dc, 12, 0], [0xa7abaf, 2, 0.7], [0x0b0c0e, 1.5, 0], [0x2d3035, 1, 0.5], [0x264a80, 0.5, 0.5]]
+  van: [[0xe0e0dc, 12, 0], [0xa7abaf, 2, 0.7], [0x0b0c0e, 1.5, 0], [0x2d3035, 1, 0.5], [0x264a80, 0.5, 0.5]],
+  ambulance: [[0xe8e9e6, 1, 0]],
+  fire: [[0xa50f18, 1, 0.25]],
+  truck: [[0xe2e2de, 10, 0], [0xb8232a, 1.5, 0.2], [0x1f4f9c, 1.5, 0.3], [0x0b0c0e, 1.2, 0], [0x9da1a5, 1.5, 0.6], [0xe3b52a, 0.6, 0.1], [0x2b6b3e, 0.5, 0.3]],
+  lowrider: [[0x8f0c19, 4, 0.85], [0x0f3a8a, 3, 0.85], [0x4a1660, 2.5, 0.85], [0x0b5a33, 2, 0.8], [0xb8600f, 1.5, 0.8], [0x5a2410, 1.2, 0.85],
+    [0xe6e2d8, 2.5, 0.4], [0x0a0a0c, 1.5, 0.5], [0x168a86, 1.2, 0.7], [0x7a1a3c, 1, 0.85], [0xc9a227, 0.8, 0.8]],
+  limo: [[0x0b0c0e, 6, 0.3], [0xe4e4e0, 3, 0.15], [0xa7abaf, 1, 0.7], [0x1a1c20, 1, 0.6]]
 }
-// how often a type's cars have a black roof
-const BLACK_ROOF = { sedan: 0.1, hatch: 0.16, suv: 0.14, sports: 0.22 }
+// how often a type's cars have a black roof (a lowrider's is white instead: carShapes.js)
+const BLACK_ROOF = {
+  sedan: 0.1,
+  hatch: 0.16,
+  suv: 0.14,
+  sports: 0.22,
+  lowrider: 0.35,
+  limo: 0.45
+}
 
 // (a lookup from a car's paint draw, 0 to 1, to its colour and finish)
 function palette (list) {
@@ -62,7 +78,8 @@ export function blackRoofOf (name) {
 }
 
 // the rims each type rolls on (the designs in carWheels.js), and how big they are (their share of
-// the tyre's radius)
+// the tyre's radius; a lowrider's wire wheels take in the whitewall tyre's sidewall too, set out
+// over it: out, their face's distance out as a share of the tyre's)
 // prettier-ignore
 export const RIMS = {
   sedan: { kinds: [0, 1, 2, 3], size: 0.72 },
@@ -73,7 +90,12 @@ export const RIMS = {
   van: { kinds: [5], size: 0.6 },
   bus: { kinds: [6], size: 0.58 },
   police: { kinds: [4], size: 0.64 },
-  sports: { kinds: [1, 3, 0], size: 0.75 }
+  sports: { kinds: [1, 3, 0], size: 0.75 },
+  ambulance: { kinds: [6], size: 0.6 },
+  fire: { kinds: [6], size: 0.6 },
+  truck: { kinds: [5], size: 0.58 },
+  lowrider: { kinds: [8], size: 0.92, out: 1.07 },
+  limo: { kinds: [0, 2], size: 0.7 }
 }
 
 // the dark under a car: a rounded rectangle, blurred, darkest in the middle

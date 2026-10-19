@@ -1,7 +1,8 @@
-// What the traffic's trim and lamps (carTrim.js, carExtras.js, carLamps.js) are made of: pieces in
-// vertex colours, each vertex tagged with what it is (aLamp: a lamp to light, chrome or gloss black
-// to shine), as boxes, flat rounded pieces on a car's faces, bands along its sections, and strips
-// laid on its surface and wrapped round its rounded corners.
+// What the traffic's trim and lamps (carTrim.js, carExtras.js, carRigs.js, carClassics.js,
+// carLamps.js) are made of: pieces in vertex colours, each vertex tagged with what it is (aLamp: a
+// lamp to light, chrome, gloss black or brushed aluminium to shine, a roller door to roll up), as
+// boxes, flat rounded pieces and discs on a car's faces, bands along its sections, and strips laid
+// on its surface and wrapped round its rounded corners.
 import * as THREE from 'three'
 import { at, seam } from './loft.js'
 import { sideAt, lerp } from './carBody.js'
@@ -22,8 +23,15 @@ export const LAMP = {
   barBlue: 11,
   markFront: 12,
   markRear: 13,
+  barWhite: 14,
+  barAmber: 15,
+  clearFront: 16, // (a truck's clearance lamps, high up: amber in front, red behind)
+  clearRear: 17,
   chrome: 20,
-  gloss: 21
+  gloss: 21,
+  door: 22, // (a box truck's roller door: its opening's top in the fraction, carLamps.js)
+  satin: 23,
+  shutter: 24
 }
 // each lens's own coloured glass, unlit
 export const LENS = {
@@ -39,12 +47,17 @@ export const LENS = {
   [LAMP.barRed]: 0x4a0709,
   [LAMP.barBlue]: 0x0a1650,
   [LAMP.markFront]: 0xa8641a,
-  [LAMP.markRear]: 0x6a0a0c
+  [LAMP.markRear]: 0x6a0a0c,
+  [LAMP.barWhite]: 0xb8bcc0,
+  [LAMP.barAmber]: 0x8a4a0c,
+  [LAMP.clearFront]: 0xa8641a,
+  [LAMP.clearRear]: 0x6a0a0c
 }
 // (one export each: the bundler takes a declaration's first name only)
 export const BLACK = 0x0d0e10
 export const GLOSS = 0x060708
 export const CHROME = 0xd4d8dc
+export const SATIN = 0xa9adb2
 
 // colour and lamp tag on every vertex of g
 export function paint (g, color, lamp = LAMP.none) {
@@ -68,6 +81,9 @@ export const box = (x0, y0, z0, x1, y1, z1) =>
     (y0 + y1) / 2,
     (z0 + z1) / 2
   )
+// a plain rectangle w x h, flat, facing +z (two triangles), and a disc of radius r
+export const quad = (w, h) => new THREE.PlaneGeometry(w, h)
+export const disc = (r, segs = 8) => new THREE.CircleGeometry(r, segs)
 
 // A rounded rectangle w x h (corner radius r), flat, facing +z
 export function rounded (w, h, r, segs = 2) {
@@ -134,11 +150,12 @@ export const across = (st, x, k0, k1, w, lift = 0.004) =>
 
 // A strip on the body's surface round one end (f: 1 the nose, -1 the tail), along a path from z0 on
 // the end face out to its edge, round the corner and back along the side to d from the end; or,
-// with z1, along the face from z0 to z1 only; or, with side: [xa, xb], along the side only. Each
-// part [u0, u1, colour, lamp] covers that share of the path, between heights yb(u) and yt(u),
-// lifted off the surface. Both sides (lamp 'ind': each side's indicator), or one with mirror false.
+// with z1, along the face from z0 to z1 only (at x, if given: a face set back from the very end,
+// as a cab's behind its bumper); or, with side: [xa, xb], along the side only. Each part [u0, u1,
+// colour, lamp] covers that share of the path, between heights yb(u) and yt(u), lifted off the
+// surface. Both sides (lamp 'ind': each side's indicator), or one with mirror false.
 export function wrap (st, f, o, parts, lift, out, mirror = true) {
-  const E = st[f > 0 ? st.length - 1 : 0].x
+  const E = o.x ?? st[f > 0 ? st.length - 1 : 0].x
   const yb = u => lerp(o.yb[0], o.yb[1], u),
     yt = u => lerp(o.yt[0], o.yt[1], u)
   const ym = (yb(0.5) + yt(0.5)) / 2

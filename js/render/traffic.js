@@ -1,18 +1,20 @@
-// Traffic cars: nine body types of today's cars (carShapes.js), instanced per type, painted the way
-// Los Angeles' cars are (carPaint.js), each a solid or a metallic under the clear coat and some with
-// a black roof, on low-profile tyres and rims of their own design (carWheels.js) that roll with the
+// Traffic cars: fourteen body types (carShapes.js), instanced per type, painted the way Los
+// Angeles' cars are (carPaint.js), each a solid or a metallic under the clear coat and some with a
+// black roof, on low-profile tyres and rims of their own design (carWheels.js) that roll with the
 // distance driven and steer through the turns; bodies that ride on their springs (carRide.js),
 // headlights, tail lights that brighten under braking, white reversing lights, amber indicators
 // that blink for lane changes and turns, each car's in its own time (and both at once, hazards, for
-// a car knocked out of its lane), a police car's light bar flashing on some, and a soft shadow on
-// the road under each car, where its body shuts out the sky. Parked in a lot, a car's lights are
-// off. Drivers switch their headlights on as the city's light asks for them (sim/env.js headlights:
-// dusk, the dark, the rain, the fog), each at their own moment, and their beams lie on the road
-// once it is dark enough to see them; tail lights read brighter in the rain. A police car on a call
-// has its light bar going all the time, brighter at night, when it throws its red and blue on the
-// road round it, and it flashes its headlights at the Roadster in its way. A car that has been hit
-// shows it: crumpled where it was hit, lamps broken, glass crazed or gone (carDents.js), steam or
-// smoke from under its bonnet (wreckSmoke.js). Only the cars the camera can see are drawn (or whose
+// a car knocked out of its lane or making a delivery), a police car's light bar flashing on some, a
+// box truck's roller door run up at a delivery stop, and a soft shadow on the road under each car,
+// where its body shuts out the sky. Parked in a lot, a car's lights are off. Drivers switch their
+// headlights on as the city's light asks for them (sim/env.js headlights: dusk, the dark, the rain,
+// the fog), each at their own moment, and their beams lie on the road once it is dark enough to see
+// them; tail lights read brighter in the rain. A car on a call has its warning lamps going all the
+// time, brighter at night, when it throws their red and blue (or red and white) on the road round
+// it, and it flashes its headlights at the Roadster in its way; a lowrider's body rises off its
+// wheels on its hydraulics (carRide.js). A car that has been hit shows it: crumpled where it was
+// hit, lamps broken, glass crazed or gone (carDents.js), steam or smoke from under its bonnet
+// (wreckSmoke.js). Only the cars the camera can see are drawn (or whose
 // shadows it can: the frustum is let out a little for those), in the view and in the sun's shadow
 // map alike; out of sight a car costs nothing but its springs.
 import * as THREE from 'three'
@@ -24,7 +26,7 @@ import { ride, RIDE_DT } from './carRide.js'
 import { wreckSmoke } from './wreckSmoke.js'
 import { carShape, bodyMaterial } from './carShapes.js'
 import { dentsFor, putDents, headlightsLeft } from './carDents.js'
-import { lampMaterial, LAMP_T, LAMP_DARK } from './carLamps.js'
+import { lampMaterial, LAMP_T, LAMP_DARK, BARS } from './carLamps.js'
 import {
   RIM_FINISH,
   ALLOY,
@@ -143,6 +145,8 @@ export class TrafficView {
         pal: paletteFor(T.name),
         roofs: blackRoofOf(T.name),
         rims: RIMS[T.name],
+        rimOut: RIMS[T.name].out || 1,
+        bar: BARS[T.name] || null,
         ...parts
       }
     })
@@ -359,7 +363,7 @@ export class TrafficView {
       e[9] = -sr
       e[10] = cr
       e[12] = r * sp
-      e[13] = r - r * cr * cp
+      e[13] = r - r * cr * cp + car.lift
       e[14] = -r * sr * cp
       e[3] = e[7] = e[11] = 0
       e[15] = 1
@@ -403,6 +407,7 @@ export class TrafficView {
         else {
           this.tyres.setMatrixAt(n.tyre++, _w)
           _sc.x = _sc.y = S.r * ty.rims.size
+          _sc.z = S.tyre * ty.rimOut
           _w.compose(_p, _q, _sc)
           _w.premultiply(_m)
           const k = n.rim++
@@ -448,8 +453,9 @@ export class TrafficView {
         _sc.y = 1
         _sc.z = 9
         this.glow.setMatrixAt(n.glow, _w.compose(_p, _q, _sc))
+        const g = ty.bar.glow
         if (red) _c.setRGB(k, 0.04 * k, 0.03 * k)
-        else _c.setRGB(0.06 * k, 0.2 * k, k)
+        else _c.setRGB(g[0] * k, g[1] * k, g[2] * k)
         this.glow.setColorAt(n.glow++, _c)
       }
     }
@@ -457,7 +463,8 @@ export class TrafficView {
     // on), off parked in a lot; each car's flasher keeps its own time, about one and a half flashes
     // a second; flashing its headlights at the Roadster in its way, about three times a second. A
     // police car's light bar flashes on about one in three, parked or not, in its own time (the
-    // flags' fraction), and always on a call (brighter at night: 64)
+    // flags' fraction), and any car's warning lamps always on a call (brighter at night: 64); a box
+    // truck's door up (128), how far in the fraction
     let flags = 0
     if (lit) {
       const on =
@@ -468,8 +475,9 @@ export class TrafficView {
       if (car.big) flags += 8
       flags += 16 // (running lights)
     }
-    if (T.name === 'police' && (call || (car.paint * 11.3) % 1 < 0.36))
+    if (ty.bar && (call || (car.paint * 11.3) % 1 < ty.bar.off))
       flags += 32 + (call ? 64 : 0) + phase
+    else if (car.drop?.door > 0) flags += 128 + Math.min(car.drop.door, 0.999)
     const L = ty.lit.array,
       j = i * 4
     L[j] = !lit

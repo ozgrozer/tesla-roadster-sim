@@ -4,7 +4,9 @@
 // the wheel arches out of the body, darkens the plastic under the bumpers (and an SUV's sills and
 // arch flares), gives each car its own finish (a solid gloss or a metallic, under the clear coat,
 // and on some a black roof), and paints the liveries: a police car's white doors and roof, a cab's
-// checker band, a bus's white roof and dark skirt.
+// checker band, a bus's white roof and dark skirt, an ambulance's red stripes, a fire engine's
+// white cab roof and gold stripe, the chevrons on their backs, a box truck's white box, and the
+// chrome of the bumpers that are part of the body (a fire engine's, an ambulance's, a lowrider's).
 import { SPECS } from './carSpecs.js'
 import { bodyLines, stationsOf, pieceOf, loftIx, mergeIx } from './carBody.js'
 import { lampsFor } from './carLamps.js'
@@ -70,7 +72,10 @@ export function bodyMaterial (base, A) {
     ck = f(A.W * 0.75),
     x0 = f(A.door[0] + 0.06),
     x1 = f(A.door[1] - 0.08),
-    roof = f(A.rail + 0.02)
+    roof = f(A.rail + 0.02),
+    back = f(0.03 - A.L)
+  // (diagonal stripes, red and yellow-green, 15 cm wide)
+  const chevron = 'mod(q.y + abs(q.z), 0.3) < 0.15 ? 6 : 7'
   const LIVERY = {
     // white doors (the mirrors on them black) and a white roof
     police: `if (carPart == 0 && ((q.x > ${d0} && q.x < ${d1} && q.y > ${sill} && abs(q.z) < ${side})
@@ -79,7 +84,30 @@ export function bodyMaterial (base, A) {
     taxi: `if (carPart == 0 && abs(q.z) > ${ck} && q.y > ${c0} && q.y < ${c1} && q.x > ${x0} && q.x < ${x1})
       carPart = mod(floor(q.x / 0.035) + floor((q.y - ${c0}) / 0.035), 2.0) < 0.5 ? 3 : 2;`,
     // a white roof over the windows, a dark skirt
-    bus: `if (carPart == 0) { if (q.y > ${roof}) carPart = 2; else if (q.y < 0.62) carPart = 5; }`
+    bus: `if (carPart == 0) { if (q.y > ${roof}) carPart = 2; else if (q.y < 0.62) carPart = 5; }`,
+    // a red band along each side and a thin stripe over it on the box, a chrome bumper, and red and
+    // yellow-green chevrons across the back
+    ambulance: `if (carPart == 0) {
+      if (q.x > ${f(A.L - 0.3)} && q.y < 0.67) carPart = 4;
+      else if (q.x < ${back} && q.y > 0.78 && q.y < 1.62) carPart = ${chevron};
+      else if ((q.y > 1.18 && q.y < 1.42) || (q.x < 0.9 && q.y > 1.5 && q.y < 1.54)) carPart = 6;
+    }`,
+    // the cab's roof white, a gold stripe along the sides, a chrome bumper, the chevrons under the
+    // shutter at the back
+    fire: `if (carPart == 0) {
+      if (q.x > ${f(A.L - 0.345)} && q.y < 0.975) carPart = 4;
+      else if (q.x > 2.12 && q.y > 2.84) carPart = 2;
+      else if (q.x < ${back} && q.y < 0.84) carPart = ${chevron};
+      else if (q.y > 1.13 && q.y < 1.21) carPart = 8;
+    }`,
+    // the box white, whatever colour the cab is, over a charcoal bumper
+    truck: `if (carPart == 0) {
+      if (q.x < 3.25) carPart = 2;
+      else if (q.x > ${f(A.L - 0.12)} && q.y < 0.73) carPart = 5;
+    }`,
+    // a white top where the others have a black one, and the bumpers chrome round both ends
+    lowrider: `if (carPart == 3) carPart = 2;
+    if (carPart < 2 && abs(q.x) > ${f(A.L - 0.14)} && q.y > 0.3 && q.y < 0.52) carPart = 4;`
   }
   const livery = LIVERY[A.name] || ''
   m.onBeforeCompile = shader => {
@@ -100,7 +128,8 @@ export function bodyMaterial (base, A) {
       .replace(
         'void main() {',
         `void main() {
-  // 0 the paint, 1 dark plastic, 2 a livery's white, 3 black (a black roof, a checker), 5 charcoal
+  // 0 the paint, 1 dark plastic, 2 a livery's white, 3 black (a black roof, a checker), 4 chrome,
+  // 5 charcoal, 6 red, 7 yellow-green, 8 gold
   vec3 q = vCarPos;
   carPart = 0;
   {
@@ -128,13 +157,17 @@ export function bodyMaterial (base, A) {
   if (carPart == 1) diffuseColor.rgb = vec3(0.022, 0.023, 0.025);
   else if (carPart == 2) diffuseColor.rgb = vec3(0.84, 0.85, 0.86);
   else if (carPart == 3) diffuseColor.rgb = vec3(0.008, 0.009, 0.01);
-  else if (carPart == 5) diffuseColor.rgb = vec3(0.045, 0.047, 0.05);`
+  else if (carPart == 5) diffuseColor.rgb = vec3(0.045, 0.047, 0.05);
+  else if (carPart == 4) diffuseColor.rgb = vec3(0.86, 0.87, 0.88);
+  else if (carPart == 6) diffuseColor.rgb = vec3(0.6, 0.025, 0.03);
+  else if (carPart == 7) diffuseColor.rgb = vec3(0.7, 0.85, 0.08);
+  else if (carPart == 8) diffuseColor.rgb = vec3(0.8, 0.6, 0.2);`
       )
       .replace(
         '#include <roughnessmap_fragment>',
         `#include <roughnessmap_fragment>
-  float carMetal = carPart == 0 ? fract(vPaint) : 0.0;
-  roughnessFactor = carPart == 1 ? 0.62 : mix(0.4, 0.3, carMetal);`
+  float carMetal = carPart == 0 ? fract(vPaint) : carPart == 4 ? 1.0 : carPart == 8 ? 0.7 : 0.0;
+  roughnessFactor = carPart == 1 ? 0.62 : carPart == 4 ? 0.14 : mix(0.4, 0.3, carMetal);`
       )
       .replace(
         '#include <metalnessmap_fragment>',

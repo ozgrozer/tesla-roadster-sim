@@ -2,12 +2,14 @@
 // the way a designer draws one (each type's are in carSpecs.js): the centre line over the top
 // (nose, hood, windscreen, roof, rear window, deck or tailgate), the beltline, the underside, the
 // roof's side, and the plan, rounded at both ends and, on a sports car, swelling over the rear
-// wheels. Each station's half section runs from under the sill up the rocker, out to the widest
-// point of the lower body, in again at a crisp character line, over the shoulder to the beltline,
-// then up the glass (leaning in) to the roof's side and over to its crown; ahead of the windscreen
-// and behind the rear window, across the hood or the deck instead. Which piece is glass, pillar or
-// roof falls out of where it lies. The geometry is indexed, its normals smooth across each panel
-// and sharp along the character line, the beltline and the edges of the glass.
+// wheels, or (a truck's cab ahead of its box) narrower over part of its length. Each station's half
+// section runs from under the sill up the rocker, out to the widest point of the lower body, in
+// again at a crisp character line, over the shoulder to the beltline, then up the glass (leaning
+// in) to the roof's side and over to its crown; ahead of the windscreen and behind the rear window,
+// across the hood or the deck instead. Which piece is glass, pillar or roof falls out of where it
+// lies. The geometry is indexed, its normals smooth across each panel and sharp along the character
+// line, the beltline and the edges of the glass, and across the car where a box's face meets its
+// sides (breaks).
 import * as THREE from 'three'
 import { at } from './loft.js'
 
@@ -48,7 +50,8 @@ const DEFAULTS = {
   panel: 0.7, // across a hood or deck, where its crown begins
   nose: [0.5, 0.62], // plan: how far back the rounding of the nose goes, and how wide its end is
   tail: [0.34, 0.8],
-  wIn: 0.012 // (the body a little inside the sim's width)
+  wIn: 0.012, // (the body a little inside the sim's width)
+  breaks: [] // where the normals break across the car (a box's front face, say)
 }
 
 // The lines of a body, from its spec S (carSpecs.js SPECS) and type T (sim/traffic.js TYPES)
@@ -62,6 +65,8 @@ export function bodyLines (S, T) {
   B.railY = typeof S.rail === 'number' ? () => S.rail : line(S.rail)
   B.glass = S.glass || [S.cp, S.ws]
   B.knots = [...S.top, ...S.belt]
+  // (how far in the lower body and the beltline are at x: a cab narrower than its box)
+  B.inset = S.inset ? line(S.inset) : () => 0
   return B
 }
 
@@ -88,7 +93,8 @@ function bulge (B, x) {
 // The half section at x: 11 points [z, y]
 export function sectionAt (B, x) {
   const s = plan(B, x),
-    Wl = B.W + bulge(B, x)
+    inset = B.inset(x),
+    Wl = B.W + bulge(B, x) - inset
   const bot = B.bot(x),
     belt = B.belt(x),
     top = Math.max(B.top(x), belt)
@@ -98,7 +104,7 @@ export function sectionAt (B, x) {
     y2 = Math.max(B.sill, bot + 0.03),
     y4 = Math.max(Math.min(B.mid, y5 - 0.08), y2 + 0.06),
     y3 = Math.min(Math.max(B.sill + 0.09, y2 + 0.03), y4 - 0.03)
-  const z7 = B.W - B.beltIn
+  const z7 = B.W - B.beltIn - inset
   const p = [
     [0, bot],
     [Wl - 0.17, bot],
@@ -151,10 +157,10 @@ function upper (B, x, ez, ey, top) {
 }
 
 // The stations along the car: at every knot of its lines, every boundary between its pieces, and
-// round each rounded end
+// round each rounded end (each marked where the normals break across the car)
 export function stationsOf (B) {
   const { L } = B
-  const edges = [B.ws, B.rf, B.rr, B.rw, B.cp, B.dTop, ...B.glass]
+  const edges = [B.ws, B.rf, B.rr, B.rw, B.cp, B.dTop, ...B.glass, ...B.breaks]
   const xs = [-L, L, ...edges]
   for (const [x] of B.knots) xs.push(x)
   for (const a of [0, 0.6, 0.92]) {
@@ -171,7 +177,8 @@ export function stationsOf (B) {
     if (!near) keep.push(x)
     else if (must.has(x)) keep[keep.length - 1] = x
   }
-  return keep.map(x => ({ x, p: sectionAt(B, x) }))
+  const sharp = new Set(B.breaks.map(x => Math.round(x * 1000) / 1000))
+  return keep.map(x => ({ x, p: sectionAt(B, x), sharp: sharp.has(x) }))
 }
 
 // Which piece segment j (between points j and j + 1) is, between stations at xa and xb: 'paint',
@@ -206,7 +213,7 @@ const tri = (pos, a, b, c) => {
 
 // Sweep the stations into indexed geometries by piece, mirrored to both sides, with each end closed
 // by a flat cap in capKey. Normals are smooth within a piece except along the section points in
-// sharp, where they break.
+// sharp, and across the car at the stations marked sharp, where they break.
 export function loftIx (
   st,
   keyFor,
@@ -214,11 +221,13 @@ export function loftIx (
   sharp = [P.crease, P.belt, P.rail]
 ) {
   const n = st[0].p.length
-  const grp = []
+  const grp = [],
+    across = []
   for (let j = 0, g = 0; j < n - 1; j++) {
     if (j && sharp.includes(j)) g++
     grp.push(g)
   }
+  for (let i = 0, g = 0; i < st.length; i++) across.push((g += st[i].sharp))
   const buckets = new Map()
   const get = key => {
     let b = buckets.get(key)
@@ -226,10 +235,10 @@ export function loftIx (
       buckets.set(key, (b = { pos: [], idx: [], ids: new Map(), nrm: null }))
     return b
   }
-  const vert = (b, i, j, sg, g) => {
+  const vert = (b, i, j, sg, g, a) => {
     const [z, y] = st[i].p[j]
     const side = Math.abs(z) < 1e-6 ? 0 : sg
-    const id = `${i},${j},${g},${side}`
+    const id = `${i},${j},${g},${side},${a}`
     let v = b.ids.get(id)
     if (v === undefined) {
       v = b.pos.length / 3
@@ -243,12 +252,13 @@ export function loftIx (
       const key = keyFor(j, st[i].x, st[i + 1].x)
       if (key === null) continue
       const b = get(key),
-        g = grp[j]
+        g = grp[j],
+        x = across[i]
       for (const sg of [1, -1]) {
-        const a = vert(b, i, j, sg, g),
-          c = vert(b, i + 1, j, sg, g),
-          bb = vert(b, i, j + 1, sg, g),
-          d = vert(b, i + 1, j + 1, sg, g)
+        const a = vert(b, i, j, sg, g, x),
+          c = vert(b, i + 1, j, sg, g, x),
+          bb = vert(b, i, j + 1, sg, g, x),
+          d = vert(b, i + 1, j + 1, sg, g, x)
         const t = sg > 0 ? [a, c, bb, c, d, bb] : [a, bb, c, c, bb, d]
         for (let k = 0; k < 6; k += 3)
           if (tri(b.pos, t[k], t[k + 1], t[k + 2]) > 1e-7)
