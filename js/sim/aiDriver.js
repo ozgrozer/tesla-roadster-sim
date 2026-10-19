@@ -61,6 +61,9 @@ export function steerTo (b, inp, tx, tz, vWant, { stopAt = 0 } = {}) {
   }
   inp.throttle = clamp((v - u) * 0.35, 0, 1)
   inp.brake = u > v + 1.5 ? clamp((u - v) * 0.25, 0, 1) : 0
+  // (a point to stop at: firmly, and held there once at it)
+  if (stopAt > 0 && u > v + 0.3) inp.brake = Math.max(inp.brake, clamp((u - v) * 0.6, 0.2, 1))
+  if (stopAt > 0 && d < stopAt + 0.5) inp.brake = 1
   if (inp.brake > 0) inp.throttle = 0
   return err
 }

@@ -73,6 +73,7 @@ export class Police {
     this.hits = [] // this step's rams between the player and a unit: { impact, byPlayer, unit }
     this.chase = { on: false, car: null, mode: 0, kind: 0, whoops: 0, horns: 0, long: false }
     traffic.chase = this.chase // (heard as the siren: audio/siren.js)
+    traffic.sirens = this.sirens = [] // (made way for: makeway.js)
   }
   get pursuing () {
     let n = 0
@@ -96,6 +97,7 @@ export class Police {
   }
   clearAll () {
     for (const u of [...this.units]) this.remove(u)
+    this.sirens.length = 0
     this.heli.gone()
   }
 
@@ -164,6 +166,10 @@ export class Police {
       }
     }
     this.seen = seen
+    // the units the traffic pulls over for: lights on and on the move
+    this.sirens.length = 0
+    for (const u of this.units)
+      if (u.car.siren && (u.role === 'pursuit' || u.role === 'npc') && u.state !== 'leave' && u.body.u > 3) this.sirens.push(u.car)
     this.retire(dt, player, view, stars)
     this.siren(player)
   }
@@ -279,4 +285,23 @@ function bodies (a, b) {
   a.w = w0 + clamp(a.w - w0, -2, 2)
   b.w = w1 + clamp(b.w - w1, -2, 2)
   return impact
+}
+
+// The arrest: wanted, with a unit stopped beside them in sight (Police.bustable), a player slow
+// enough (at a standstill in a car; walking pace on foot) for BUST_T s is busted; moving on lets
+// the count run back down twice as fast. step: true the moment they are busted.
+export const BUST_T = 2.5
+export const BUST_V = { car: 1.5, foot: 2.5 }
+export class Arrest {
+  constructor () {
+    this.t = 0
+  }
+  step (dt, stars, police, player) {
+    const slow = player.speed < (player.driving ? BUST_V.car : BUST_V.foot)
+    const on = stars > 0 && police.bustable > 0 && slow
+    this.t = on ? this.t + dt : Math.max(0, this.t - dt * 2)
+    if (this.t <= BUST_T) return false
+    this.t = 0
+    return true
+  }
 }

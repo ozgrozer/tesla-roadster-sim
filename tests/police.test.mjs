@@ -8,7 +8,9 @@ import assert from 'node:assert/strict'
 import { Traffic } from '../js/sim/traffic.js'
 import { LANES, SPAWN, rng } from '../js/sim/city.js'
 import { Wanted } from '../js/sim/wanted.js'
-import { Police, UNITS, spawnPoint, inView, SPAWN_MIN, SPAWN_MAX } from '../js/sim/police.js'
+import { Police, UNITS, spawnPoint, inView, SPAWN_MIN, SPAWN_MAX, Arrest, BUST_T } from '../js/sim/police.js'
+import { Sim } from '../js/sim/sim.js'
+import { BLOCKS } from '../js/sim/city.js'
 import { roleFor } from '../js/sim/policeUnit.js'
 
 const H = 1 / 60
@@ -118,4 +120,62 @@ test('stars cleared: the units switch off their lights, leave, and are taken awa
   run(o, P, 45)
   assert.equal(o.pol.units.length, 0)
   assert.equal(o.tr.cars.filter(c => c.ctl === 'police').length, 0)
+})
+
+test('busted on foot: the units pull up beside a player standing (or walking) and arrest them', () => {
+  const o = world(2)
+  const P = player()
+  P.driving = false
+  P.mode = 'foot'
+  P.vehicle = null
+  const A = new Arrest()
+  let busted = false,
+    t = 0
+  for (; t < 60 && !busted; t += H) {
+    o.tr.t += H
+    o.pol.step(H, { wanted: o.w, player: P, view: null })
+    o.w.update(H, P.pos, o.pol.seen)
+    busted = A.step(H, o.w.stars, o.pol, P)
+  }
+  assert.ok(busted, 'busted on foot')
+  // (no unit closer than a few metres: they stop short of a pedestrian)
+  for (const u of o.pol.units) assert.ok(Math.hypot(u.x - P.pos.x, u.z - P.pos.z) > 2.5)
+  // walking pace still counts on foot; a run gets away; in a car it takes a standstill
+  const near = { bustable: 1 }
+  const walk = { speed: 2, driving: false },
+    run_ = { speed: 5, driving: false },
+    roll = { speed: 2, driving: true }
+  const step = (who, sec) => {
+    const a = new Arrest()
+    let b = false
+    for (let s = 0; s < sec && !b; s += H) b = a.step(H, 2, near, who)
+    return b
+  }
+  assert.equal(step(walk, BUST_T + 0.2), true)
+  assert.equal(step(run_, 10), false)
+  assert.equal(step(roll, 10), false)
+  assert.equal(new Arrest().step(BUST_T + 1, 0, near, walk), false) // (not wanted)
+})
+
+test('traffic ahead pulls over for a unit coming up behind with its siren on', () => {
+  const sim = new Sim()
+  sim.reset('city')
+  const park = BLOCKS.find(k => k.kind === 'park')
+  sim.pos.set((park.x0 + park.x1) / 2, 0, (park.z0 + park.z1) / 2)
+  sim.syncPose()
+  const tr = new Traffic({ count: 110, radius: 300, seed: 3 })
+  tr.reset(sim.pos.x, sim.pos.z)
+  tr.call.next = Infinity // (no calls of its own)
+  const pol = new Police(tr),
+    w = new Wanted()
+  const P = player(sim.pos.x, sim.pos.z)
+  w.set(3, P.pos)
+  let pulled = 0
+  for (let t = 0; t < 40 && !pulled; t += H) {
+    tr.step(H, sim)
+    pol.step(H, { wanted: w, player: P, view: null })
+    w.update(H, P.pos, pol.seen)
+    pulled = tr.cars.filter(c => c.pull === 1 && pol.sirens.includes(c.yieldTo)).length
+  }
+  assert.ok(pulled > 0, 'a driver pulled over for one')
 })
