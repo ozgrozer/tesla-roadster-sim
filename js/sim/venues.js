@@ -5,9 +5,7 @@
 // side to the roof). Pure data, as plots.js.
 import {
   R,
-  pick,
   building,
-  tier,
   shaft,
   ring,
   ground,
@@ -18,11 +16,11 @@ import {
   prop,
   carPark,
   stalls,
-  ramp,
   sign
 } from './plots.js'
 import { billboard } from './strip.js'
 import { fence } from './works.js'
+import { multiStorey } from './garage.js'
 
 // ---------- the stadium ----------
 export function stadium (blk, lot) {
@@ -173,23 +171,17 @@ export function sportsPark (blk, lot) {
 }
 
 // ---------- parking garages ----------
-// two decks of concrete over the ground floor, open sides; a ramp up its north side to the roof
-export const GARAGE_H = 6.4
+// a multi-storey car park: the ground floor and two decks, ramps up its north and south sides
+// (garage.js)
 export function garage (blk, lot) {
   blk.base = 'asphalt'
-  const { x0, x1, z0, z1 } = lot
-  const b = building('garage', {
-    style: 'garage',
-    tint: pick([0xd9d4c9, 0xcfcac0, 0xe0dacd])
-  })
-  tier(b, x0 + 1, x1 - 1, z0 + 9, z1 - 1, 0, GARAGE_H)
-  b.garage = true
-  // the ramp along the north side, rising east to the roof's edge
-  ramp(x0 + 1, x1 - 1, z0 + 1, z0 + 9, 'x', 0, GARAGE_H)
-  solid(x0 + 1, x1 - 1, z0 + 0.6, z0 + 1, 0, GARAGE_H + 1, 'plant', 'parapet')
+  const { x1, z1 } = lot
+  R() // (the numbers the building it was drew: the rest of the city as it was)
+  R()
+  multiStorey(lot)
   sign('mall', {
     x: x1 - 3,
-    z: z1 - 1,
+    z: z1 - 0.45,
     y: 2.5,
     w: 3,
     h: 3,

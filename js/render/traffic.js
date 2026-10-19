@@ -336,7 +336,7 @@ export class TrafficView {
     // its springs about the axles' height
     // (vectors and quaternions written field by field: no numbers passed to calls)
     // (one the player drives or left in the street stands on the road, or what it was driven onto)
-    const y = car.parked && !car.jam && !car.ctl && !car.abandoned ? CURB_H : car.y || 0
+    const y = car.parked && !car.jam && !car.ctl && !car.abandoned ? car.y || CURB_H : car.y || 0
     slopeTo(_q, car.yaw, car.gp, car.gr) // (up a slope: carSlope.js)
     _p.x = car.x
     _p.y = y

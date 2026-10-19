@@ -12,7 +12,7 @@ const FILL_R = 150, // m round the player: filled
   DROP_R = 210, // and emptied again beyond this
   MAX = 70, // cars at most
   EVERY = 1 // s between looks
-const KINDS = new Set(['suburb', 'industrial', 'strip', 'corridor'])
+const KINDS = new Set(['suburb', 'industrial', 'strip', 'corridor', 'downtown']) // (downtown's: its car parks)
 let ZONE = null // the spaces in those districts, each with its fixed fullness (made on first use)
 function zone () {
   if (ZONE) return ZONE

@@ -275,6 +275,7 @@ export class Traffic {
     car.parked = true
     car.x = car.homeX = st.x
     car.z = car.homeZ = st.z
+    car.y = st.y || 0 // (up on a car park's deck: garage.js)
     this.setYaw(car, (car.homeYaw = st.yaw))
     return car
   }

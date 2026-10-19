@@ -91,9 +91,13 @@ function slope (B, r) {
   const { x0, x1, z0, z1, h0, h1 } = r
   if (r.axis === 'x') {
     const n = new THREE.Vector3(h0 - h1, x1 - x0, 0).normalize().toArray()
+    // (a car park's upper ramp is a slab, open under it: garage.js)
+    const b0 = r.open ? h0 - 0.6 : 0,
+      b1 = r.open ? h1 - 0.6 : 0
     B.quad([x0, h0, z1], [x1, h1, z1], [x1, h1, z0], [x0, h0, z0], n, [0, 0, 1, 1], ASPHALT)
-    B.quad([x0, 0, z1], [x1, 0, z1], [x1, h1, z1], [x0, h0, z1], [0, 0, 1], [0, 0, 1, 1], CONCRETE)
-    B.quad([x1, 0, z0], [x0, 0, z0], [x0, h0, z0], [x1, h1, z0], [0, 0, -1], [0, 0, 1, 1], CONCRETE)
+    B.quad([x0, b0, z1], [x1, b1, z1], [x1, h1, z1], [x0, h0, z1], [0, 0, 1], [0, 0, 1, 1], CONCRETE)
+    B.quad([x1, b1, z0], [x0, b0, z0], [x0, h0, z0], [x1, h1, z0], [0, 0, -1], [0, 0, 1, 1], CONCRETE)
+    if (r.open) B.quad([x0, b0, z0], [x1, b1, z0], [x1, b1, z1], [x0, b0, z1], [0, -1, 0], [0, 0, 1, 1], CONCRETE)
     for (const z of [z0 + 0.5, z1 - 0.5])
       B.quad([x0, h0 + 0.03, z + 0.08], [x1, h1 + 0.03, z + 0.08], [x1, h1 + 0.03, z - 0.08], [x0, h0 + 0.03, z - 0.08], n, [0, 0, 1, 1], WHITE)
   } else {
