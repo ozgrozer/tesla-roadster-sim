@@ -1,5 +1,6 @@
 // Headless checks of the city: layout, lane graph, signals, traffic and the Roadster's collisions.
 import { test } from 'node:test'
+import { DARK } from '../js/sim/signals.js'
 import { Sim } from '../js/sim/sim.js'
 import assert from 'node:assert/strict'
 import { roofAt } from '../js/sim/roofs.js'
@@ -99,8 +100,10 @@ test('buildings stand inside their blocks, clear of the sidewalks', () => {
 test('crossing roads never both have a go', () => {
   for (const n of NODES)
     for (let t = 0; t < CYCLE; t += 0.25) {
-      const ew = signal(n, 0, t) !== RED || signal(n, 2, t) !== RED
-      const ns = signal(n, 1, t) !== RED || signal(n, 3, t) !== RED
+      // (an all-way stop's flashing red, dark between flashes, is a stop both ways: trafficStop.js)
+      const go = s => s !== RED && s !== DARK
+      const ew = go(signal(n, 0, t)) || go(signal(n, 2, t))
+      const ns = go(signal(n, 1, t)) || go(signal(n, 3, t))
       assert.ok(!(ew && ns), `node ${n.i} at ${t}`)
     }
 })

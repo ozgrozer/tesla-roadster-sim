@@ -72152,7 +72152,8 @@ const SIGHT = {
       )
         return true
     }
-    return false
+    // (and the player's car, which isn't in the lanes' lists)
+    return this.meComing(node, dir)
   },
   // anyone on their way over junction i (on a turn, or straight through it)
   boxBusy (i) {
@@ -74345,9 +74346,8 @@ const DRIVE = {
       stop = this.oncoming(node, e.dir, false, car.gapT)
       // waiting at the line to turn across the oncoming traffic, a long one however short a gap
       // comes that it can't take (and moving off into a gap, committed to it)
-      // (a gap that opens before it has moved off doesn't wipe out the wait: else, gone again by the
-      // time it reacts, the turn would never get its chance to sneak through on the amber)
-      car.lw = (stop || long) && toLine < 5 ? car.lw + dt : v < 0.3 && toLine < 5 ? car.lw : 0
+      // (a left turn starved of a gap green after green goes another way in the end: trafficStuck.js)
+      car.lw = (stop || long) && toLine < 5 ? car.lw + dt : 0
       if (!stop && toLine < 1.5 && v > 1) car.go = e
     } else if (
       stop &&
@@ -83704,9 +83704,14 @@ class CityPilot {
       walker = false // what it waits for is someone on foot
     for (const o of this.traffic.cars) {
       if (o.parked && !o.loose && !o.jam) continue // (parked in a lot, not queued in the jam)
-      const dx = o.x - x,
+      let dx = o.x - x,
         dz = o.z - z
       if (Math.abs(dx) > LOOK || Math.abs(dz) > LOOK) continue
+      // (one crossing in a junction ahead counts where it will be in a second: it is moving across)
+      if (o.edge?.move && !o.loose && o.v > 0.5 && Math.abs(dz * hx - dx * hz) > CAR.halfW + 2) {
+        dx += o.hx * o.v * 1.2
+        dz += o.hz * o.v * 1.2
+      }
       const along = dx * hx + dz * hz
       if (along <= 0) continue
       // the whole of a car counts, so one turning across in front blocks the lane with its tail too
@@ -83774,7 +83779,7 @@ class CityPilot {
         let stop = st !== GREEN
         // (an all-way stop, trafficStop.js: stopped at the line and the junction clear, on it goes)
         if (node.stop) {
-          stop = !(v < 0.5 && toLine < 3 && this.traffic.stopWalk(node))
+          stop = !(v < 0.5 && toLine < 6 && this.traffic.stopWalk(node))
           if (!stop) this.go = lane
         }
         if (st === YELLOW && v * v > 2 * 8 * Math.max(0, toLine - 1)) {

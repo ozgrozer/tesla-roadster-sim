@@ -379,9 +379,8 @@ export const DRIVE = {
       stop = this.oncoming(node, e.dir, false, car.gapT)
       // waiting at the line to turn across the oncoming traffic, a long one however short a gap
       // comes that it can't take (and moving off into a gap, committed to it)
-      // (a gap that opens before it has moved off doesn't wipe out the wait: else, gone again by the
-      // time it reacts, the turn would never get its chance to sneak through on the amber)
-      car.lw = (stop || long) && toLine < 5 ? car.lw + dt : v < 0.3 && toLine < 5 ? car.lw : 0
+      // (a left turn starved of a gap green after green goes another way in the end: trafficStuck.js)
+      car.lw = (stop || long) && toLine < 5 ? car.lw + dt : 0
       if (!stop && toLine < 1.5 && v > 1) car.go = e
     } else if (
       stop &&
