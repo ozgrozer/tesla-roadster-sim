@@ -3,7 +3,7 @@
 // tiers (setbacks), each solid and landable on top; a tier may carry a hip roof instead of a flat
 // one, and a tower may be drawn round, three-sided or sail-topped (its shafts) while the sim keeps
 // to boxes that follow its plan. Pure data, as city.js.
-import { ROADS, rng } from './grid.js'
+import { ROADS, rng, BLVD_EW, BLVD_NS } from './grid.js'
 
 export const BLOCKS = []
 export const BUILDINGS = []
@@ -18,6 +18,49 @@ export const SOLIDS = []
 // signs, murals, helipads: { kind, x, z, y, w, h, face (the way it faces: 0 north, 1 east, 2
 // south, 3 west), ... }
 export const SIGNS = []
+// the new districts' kit, for the renderer (render/cityWorks.js): shipping containers, gantry cranes,
+// parked trailers and trucks, storage tanks, chimneys, water towers, loading-dock doors, basketball
+// hoops, bleachers, floodlight masts, bus shelters, bushes, the ship at the quay: { kind, x, z, ... }
+// (what is solid among them is in SOLIDS too, look 'prop', or a post)
+export const PROPS = []
+// Raised drivable surfaces: decks (flat, a slab y0 to y1: the freeway, a car park's roof) and ramps
+// (a slope from h0 at one end to h1 at the other along axis 'x' or 'z', the low end at the start,
+// x0 or z0, when rising, else at the end). The sim's colliders are boxes, so a ramp is laid as a
+// flight of thin landable treads (kind 'building', look 'ramp'), each RISE higher than the one before
+// (well under roofs.js STEP, so the car drives up them as onto the next roof): groundHeight
+// (terrain.js) gives the smooth slope they follow.
+export const DECKS = [] // { x0, x1, z0, z1, y0, y1 }
+export const RAMPS = [] // { x0, x1, z0, z1, axis, h0, h1 }
+const RISE = 0.06
+export function deck (x0, x1, z0, z1, y1, thick = 1) {
+  const d = { x0, x1, z0, z1, y0: y1 - thick, y1 }
+  DECKS.push(d)
+  solid(x0, x1, z0, z1, y1 - thick, y1, 'building', 'deck')
+  return d
+}
+export function ramp (x0, x1, z0, z1, axis, h0, h1) {
+  const r = { x0, x1, z0, z1, axis, h0, h1 }
+  RAMPS.push(r)
+  const a = axis === 'x' ? x0 : z0,
+    b = axis === 'x' ? x1 : z1
+  const n = Math.max(2, Math.ceil(Math.abs(h1 - h0) / RISE))
+  for (let i = 0; i < n; i++) {
+    const u0 = a + ((b - a) * i) / n,
+      u1 = a + ((b - a) * (i + 1)) / n
+    // (each tread at the slope's height half way along it)
+    const y = h0 + ((h1 - h0) * (i + 0.5)) / n
+    if (y < 0.03) continue
+    const box =
+      axis === 'x' ? [u0, u1, z0, z1] : [x0, x1, u0, u1]
+    solid(...box, Math.max(0, y - 0.6), y, 'building', 'ramp')
+  }
+  return r
+}
+export const prop = (kind, o) => {
+  const p = { kind, ...o }
+  PROPS.push(p)
+  return p
+}
 
 export const R = rng(1015)
 export const range = (a, b) => a + R() * (b - a)
@@ -26,9 +69,10 @@ export const chance = p => R() < p
 
 // the main streets, with shops along them and palms down them (indices into ROADS): Hollywood,
 // Sunset, Santa Monica and Wilshire Boulevards and Venice Boulevard east-west; Ocean Avenue, La
-// Cienega and Vine north-south (areas.js names them)
-const MAIN_EW = new Set([1, 2, 3, 5, 8])
-const MAIN_NS = new Set([0, 5, 8])
+// Cienega and Vine north-south (areas.js names them); and the south's and east's boulevards: the
+// boulevards with a median (grid.js)
+const MAIN_EW = BLVD_EW
+const MAIN_NS = BLVD_NS
 // the street along side s of block (bx, bz) (0 north, 1 east, 2 south, 3 west): its index in
 // ROADS, and whether it runs east-west
 export const streetOf = (bx, bz, s) =>

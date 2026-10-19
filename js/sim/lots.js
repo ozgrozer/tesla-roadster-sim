@@ -5,7 +5,7 @@
 // Century City, and that contrast is the look. Each block: { bx, bz, x0, x1, z0, z1 } inside its
 // kerb, kind ('park', 'parking' or 'city'), area (the neighbourhood's kind), base (what covers its
 // lot: plaza, grass or asphalt) and ground (lawns, drives, car parks and pools over it: plots.js).
-import { N, ROADS, ROAD_HW, WALK } from './grid.js'
+import { N, ROADS, ROAD_HW, WALK, PITCH, superOf } from './grid.js'
 import { AREAS, areaOf } from './areas.js'
 import {
   BLOCKS,
@@ -15,6 +15,9 @@ import {
   STALLS,
   SOLIDS,
   SIGNS,
+  PROPS,
+  DECKS,
+  RAMPS,
   R,
   palm,
   mark,
@@ -24,11 +27,18 @@ import { downtown, centuryCity } from './towers.js'
 import { santaMonica, hollywood } from './shops.js'
 import { midCity } from './strip.js'
 import { beverlyHills, venice } from './homes.js'
+import { industrial, port } from './works.js'
+import { suburb } from './suburbs.js'
+import { stadium, river, corridor, sportsPark, garage } from './venues.js'
+import { layFreeway, FWY, FWY_FROM, FWY_TO, RAMP_AT } from './freeway.js'
 
-export { BLOCKS, BUILDINGS, TREES, PALMS, STALLS, SOLIDS, SIGNS }
+export { BLOCKS, BUILDINGS, TREES, PALMS, STALLS, SOLIDS, SIGNS, PROPS, DECKS, RAMPS }
 
-const PARKS = new Set(['6,3', '2,7'])
-const PARKING = new Set(['7,7']) // (a big surface lot in Mid-City)
+const PARKS = new Set(['6,3', '2,7', '15,4'])
+// sports parks: basketball courts, a ball field, bleachers (venues.js)
+const SPORTS = new Set(['6,12', '10,16', '4,15', '14,12'])
+const PARKING = new Set(['7,7', '10,14']) // (big surface lots: Mid-City's, the stadium's)
+const GARAGES = new Set(['10,13', '11,4', '9,9']) // (multi-storey car parks, landable roofs)
 const BUILD = {
   downtown,
   towers: centuryCity,
@@ -36,12 +46,19 @@ const BUILD = {
   boulevard: hollywood,
   strip: midCity,
   estates: beverlyHills,
-  venice
+  venice,
+  industrial,
+  port,
+  suburb,
+  river,
+  stadium,
+  containers: port
 }
 
 for (let bz = 0; bz < N; bz++)
   for (let bx = 0; bx < N; bx++) {
     const key = `${bx},${bz}`
+    const sup = superOf(bx, bz)
     const blk = {
       bx,
       bz,
@@ -56,11 +73,45 @@ for (let bz = 0; bz < N; bz++)
     }
     BLOCKS.push(blk)
     mark()
+    // a superblock (grid.js) is built once, from its north-west block, as one lot; its four blocks
+    // each keep their kerb, the closed streets between paved over (render/cityGround.js)
+    if (sup) {
+      blk.super = sup
+      blk.kind = 'city'
+      blk.area = sup.kind === 'stadium' ? 'stadium' : 'port'
+      if (bx !== sup.bx || bz !== sup.bz) {
+        blk.base = 'asphalt'
+        continue
+      }
+      const big = {
+        x0: blk.x0 + WALK,
+        x1: blk.x1 + PITCH - WALK,
+        z0: blk.z0 + WALK,
+        z1: blk.z1 + PITCH - WALK
+      }
+      BUILD[sup.kind](blk, big)
+      continue
+    }
     const lot = {
       x0: blk.x0 + WALK,
       x1: blk.x1 - WALK,
       z0: blk.z0 + WALK,
       z1: blk.z1 - WALK
+    }
+    if (blk.area === 'corridor') {
+      const end = bx === FWY_FROM || bx === FWY_TO
+      corridor(blk, lot, FWY.z0, FWY.z1, RAMP_AT[bx] || [], end)
+      continue
+    }
+    if (SPORTS.has(key)) {
+      blk.kind = 'park'
+      blk.sports = true
+      sportsPark(blk, lot)
+      continue
+    }
+    if (GARAGES.has(key)) {
+      garage(blk, lot)
+      continue
     }
     const { x0: lx0, x1: lx1, z0: lz0, z1: lz1 } = lot
     if (blk.kind === 'park') {
@@ -100,4 +151,5 @@ for (let bz = 0; bz < N; bz++)
     }
     BUILD[blk.area](blk, lot)
   }
+layFreeway()
 parkCars(267)

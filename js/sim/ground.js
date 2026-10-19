@@ -422,6 +422,15 @@ export function stepGround (s, dt, c, main, lift) {
         s.floor = r.y1
         s.syncPose()
       }
+    } else {
+      // from the street onto the foot of a ramp (the freeway's, a car park's: its first tread is
+      // the only landable top this low, plots.js ramp), and on up it as onto the next roof
+      const r = roofAt(s.pos.x, s.pos.z, STEP)
+      if (r && r.y1 > 0) {
+        s.roof = r
+        s.floor = r.y1
+        s.syncPose()
+      }
     }
     return
   }
