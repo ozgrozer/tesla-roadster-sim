@@ -401,14 +401,14 @@ export function burst (x, z, n, speed, y = 0, size = 1) {
     )
   }
 }
-// Chips and glass off a hard knock at p (impact: m/s of speed lost), thrown on with the car (vel)
-export function debrisBurst (p, impact, vel, floor = 0) {
+// Chips and glass off a hard knock at p (impact: m/s of speed lost; share: how much is glass)
+export function debrisBurst (p, impact, vel, floor = 0, share = 0.45) {
   const n = Math.min(70, Math.floor(impact * 4))
   for (let i = 0; i < n; i++) {
     const a = Math.random() * TAU,
       out = 1.5 + Math.random() * impact * 0.5,
       up = 1 + Math.random() * (2 + impact * 0.25),
-      kind = Math.random() < 0.55 ? chips : glass
+      kind = Math.random() < share ? glass : chips
     kind.spawn(
       p.x + (Math.random() - 0.5) * 0.6,
       Math.max(floor + 0.25, p.y),

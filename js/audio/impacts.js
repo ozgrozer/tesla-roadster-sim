@@ -1,13 +1,16 @@
 // Knocks, crashes and breakages, mixed into the SoundEngine (sound.js): layers from the sample bank
 // (buffers.js), picked and scaled by how hard the hit was and what was hit. A light touch is a dull
-// knock; harder, a plastic bumper cracks over the thud; harder still the steel buckles and
-// crunches, and in a big hit the glass goes. A wall is heavier, with grit falling after it; a post
-// rings; a tree splits and thrashes its leaves. Grinding along a wall or a car is a scrape that
-// loops for as long as the contact lasts, pitched by how fast the car slides. The kerb, a manhole's
-// lid, landings (and the suspension bottoming out on a hard one), poles and trees snapping and
-// falling are here too. Everything the Roadster does is heard from the car (carBus); what happens
-// elsewhere is placed by its own pan and distance.
+// knock; harder, a plastic bumper cracks over the thud; harder still, as hard as dents the panels,
+// the steel buckles and crunches, deeper when a car is crushed into a wreck; glass bursts just when
+// some broke (sim/carDamage.js: a pane crazing or shattering, or a lamp's lens, a smaller, higher
+// tinkle). A wall is heavier, with grit falling after it; a post rings; a tree splits and thrashes
+// its leaves. Grinding along a wall or a car is a scrape that loops for as long as the contact
+// lasts, pitched by how fast the car slides. The kerb, a manhole's lid, landings (and the
+// suspension bottoming out on a hard one), poles and trees snapping and falling are here too.
+// Everything the Roadster does is heard from the car (carBus); what happens elsewhere is placed by
+// its own pan and distance.
 import { clamp } from '../sim/constants.js'
+import { BROKE, MIN_HIT } from '../sim/carDamage.js'
 
 const MAX_VOICES = 28
 const pick = list => list[Math.floor(Math.random() * list.length)]
@@ -70,8 +73,8 @@ export const IMPACTS = {
   },
   // a knock against a car, a post or a wall (what: the sim's kind for it; v: the closing speed,
   // m/s). at: somewhere else in the world ({ k: how loud from here, pan, lp }), not the Roadster
-  // side: a little left or right of the car, where it was hit
-  bump (v, what = 'car', at = null, side = 0) {
+  // side: a little left or right of the car, where it was hit; broke: what it broke (BROKE's bits)
+  bump (v, what = 'car', at = null, side = 0, broke = 0) {
     // (nothing to play before the sound has first started: and its scratch object isn't made yet)
     if (!this.playing()) return
     const k = clamp(v / 12, 0, 1.2) * (at ? at.k : 1)
@@ -101,11 +104,16 @@ export const IMPACTS = {
     )
     if (v > 1.6) this.play('plastic', 0.4 * Math.pow(k, 0.7), o(vary(0.1), 0.1))
     // (hard enough to dent the body, the steel crunches)
-    if (v > 2.5)
+    if (v > MIN_HIT)
       this.play('metal', 0.55 * k, o(1.15 - 0.3 * k, 0.25, 0, 2500 + 6000 * k))
-    if (v > 9 && Math.random() < 0.7)
-      this.play('glass', 0.45 * k, o(1, 0.3, 0.015))
-    if (v > 11) this.play('metal', 0.4 * k, o(0.75, 0.3, 0.03))
+    // the glass that broke: a pane bursting or crazing, or a lamp's lens
+    const g = Math.max(k, 0.45 * (at ? at.k : 1)),
+      burst = broke & BROKE.shatter ? 0.55 : 0.4
+    if (broke & (BROKE.craze | BROKE.shatter))
+      this.play('glass', burst * g, o(1, 0.3, 0.015))
+    else if (broke & BROKE.lamp) this.play('glass', 0.2 * g, o(1.6, 0.15, 0.01))
+    if (v > 11 || broke & BROKE.wreck)
+      this.play('metal', 0.4 * g, o(0.75, 0.3, 0.03))
     if (wall && v > 4) this.play('gravel', 0.12 * k, o(0.8, 0.2, 0.07, 4000))
     if (post) this.play('pole', 0.35 * k, o(what === 'signal' ? 0.75 : 1, 0.4))
     if (tree) {

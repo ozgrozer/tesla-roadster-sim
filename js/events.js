@@ -2,6 +2,7 @@
 // turned into GTA-style stunt titles and hints (hud.js), sounds, camera shake, a gamepad's rumble
 // and particles.
 import { HORNS, AIR_HORN } from './audio/shots.js'
+import { BROKE } from './sim/carDamage.js'
 import { burst, knockFx, sparkBurst, debrisBurst } from './render/effects.js'
 import { hearing, panOf, dullness, placeOf } from './audio/mix.js'
 
@@ -12,6 +13,18 @@ function contactAt (x, y, z) {
   CONTACT.z = z
   return CONTACT
 }
+const STILL = { x: 0, z: 0 }
+// how much of what a knock throws off is glass, by what it broke (carDamage.js BROKE's bits): a
+// pane's worth bursting, a crazed one's crumbs, a lamp's lens, or none
+const glassOf = broke =>
+  broke & BROKE.shatter
+    ? 0.6
+    : broke & BROKE.craze
+    ? 0.4
+    : broke & BROKE.lamp
+    ? 0.25
+    : 0
+const GLASSY = BROKE.lamp | BROKE.craze | BROKE.shatter
 
 // a trick from the sim: a donut (the sim counts them: '3× Donut'), or a stunt bonus (the wall, a
 // wall catch)
@@ -102,25 +115,25 @@ export function handleEvents (g) {
       if (app.auto) ap.cap[2] = `Touchdown at ${e.g.toFixed(1)} G`
     } else if (e.type === 'bump') {
       // knocks against cars, posts and walls in the city (a scrape fires every step: it keeps the
-      // scrape's loop going, and the knocks are throttled)
+      // scrape's loop going, and the knocks are throttled); what broke, on the car hit (e.broke)
+      // or on the Roadster (e.mine: damage.js), heard and seen as it went
       sound.contact(e.what, sim.vel.length())
-      if (e.impact > 1.2 && clock - app.lastBump > 0.15) {
+      const broke = (e.broke || 0) | (e.mine || 0)
+      if (e.impact > 1.2 && (clock - app.lastBump > 0.15 || broke & GLASSY)) {
         app.lastBump = clock
         // (from the side of the car it was hit on, where the sim says)
         const at = sim.mode === 'ground' ? sim.pos : sim.com
         const side =
           e.px === undefined ? 0 : panOf(e.px, e.pz) - panOf(at.x, at.z)
-        sound.bump(e.impact, e.what, null, side)
+        sound.bump(e.impact, e.what, null, side, broke)
         rig.shake(Math.min(0.3, e.impact * 0.025))
         pad?.rumble(e.impact / 12, e.impact / 8, 160)
         // (the sparks fly from where it was hit, when the sim says where, and off a car or a wall
-        // hard enough, bits of bumper and glass)
-        if (e.impact > 6) {
-          const p = e.px === undefined ? at : contactAt(e.px, at.y + 0.3, e.pz)
-          sparkBurst(p, Math.min(60, e.impact * 4), sim.floor)
-          if (e.impact > 7.5 && e.what !== 'post')
-            debrisBurst(p, e.impact, sim.vel, sim.floor)
-        }
+        // hard enough, bits of bumper, and of glass if any broke)
+        const p = e.px === undefined ? at : contactAt(e.px, at.y + 0.3, e.pz)
+        if (e.impact > 6) sparkBurst(p, Math.min(60, e.impact * 4), sim.floor)
+        if ((e.impact > 7.5 && e.what !== 'post') || broke & GLASSY)
+          debrisBurst(p, e.impact, sim.vel, sim.floor, glassOf(broke))
       }
     } else if (e.type === 'knock') {
       // a street light, signal or tree snapped off, by the Roadster or a car it sent sliding
@@ -138,10 +151,18 @@ export function handleEvents (g) {
         pad?.rumble(0.5, 0.6, 150)
       }
     } else if (e.type === 'clash') {
-      // two cars in traffic colliding (one knocked loose into another), heard where it happened
+      // two cars in traffic colliding (one knocked loose into another), or one sliding into a wall
+      // or a post, heard where it happened, and seen there if it's near: sparks, and bits of
+      // bumper and of whatever glass broke
       sound.clashed = true
-      if (hearing(e.x, e.z) > 0.04)
-        sound.bump(e.impact, 'car', placeOf(e.x, e.z))
+      const k = hearing(e.x, e.z)
+      if (k > 0.04)
+        sound.bump(e.impact, e.what || 'car', placeOf(e.x, e.z), 0, e.broke)
+      if (k > 0.25 && e.impact > 5) {
+        const p = contactAt(e.x, 0.55, e.z)
+        sparkBurst(p, Math.min(40, e.impact * 3))
+        debrisBurst(p, e.impact, STILL, 0, glassOf(e.broke))
+      }
     } else if (e.type === 'kerb') {
       // up onto the kerb or down off it (and off the promenade onto the sand)
       sound.kerb(e.v, e.up)

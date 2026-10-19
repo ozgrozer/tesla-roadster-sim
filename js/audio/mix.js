@@ -77,8 +77,8 @@ function nearCars (traffic, dt) {
   let used = 0,
     worst = 0
   for (const c of traffic.cars) {
-    // (parked cars are off, but the gridlock's are idling)
-    if (c.parked && !c.jam) continue
+    // (parked cars are off, but the gridlock's are idling; a wreck's engine is dead)
+    if ((c.parked && !c.jam) || c.dmg?.wreck) continue
     const dx = c.x - cp.x,
       dz = c.z - cp.z
     if (Math.abs(dx) > RANGE || Math.abs(dz) > RANGE) continue
