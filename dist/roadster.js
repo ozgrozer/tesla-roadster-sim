@@ -106304,9 +106304,11 @@ function inView (view, x, z, los = clear) {
 // A place on a lane off-screen between rMin and rMax m from (px, pz), facing towards it if it can:
 // { x, z, yaw, lane } or null. R: random numbers; view: the camera
 function spawnPoint (px, pz, view, R, { rMin = SPAWN_MIN, rMax = SPAWN_MAX, los = clear } = {}) {
+  // (only the lanes passing within rMax: on the big map most of the city is far off)
+  const near = LANES.filter(e => !e.closed && e.len >= 30 && segDist(e, px, pz) <= rMax)
   for (let tries = 0; tries < 90; tries++) {
-    const e = LANES[Math.floor(R() * LANES.length)]
-    if (!e || e.closed || e.len < 30) continue
+    const e = near[Math.floor(R() * near.length)]
+    if (!e) continue
     const s = 8 + R() * (e.len - 16)
     const x = e.x0 + e.dx * s,
       z = e.z0 + e.dz * s
@@ -106318,6 +106320,12 @@ function spawnPoint (px, pz, view, R, { rMin = SPAWN_MIN, rMax = SPAWN_MAX, los 
     return { x, z, yaw: Math.atan2(-e.dz, e.dx), lane: e, s }
   }
   return null
+}
+
+// how far (x, z) is from lane e's line
+function segDist (e, x, z) {
+  const s = Math.max(0, Math.min(e.len, (x - e.x0) * e.dx + (z - e.z0) * e.dz))
+  return Math.hypot(e.x0 + e.dx * s - x, e.z0 + e.dz * s - z)
 }
 
 class Police {
