@@ -19,7 +19,7 @@ import { MAKEWAY } from './makeway.js'
 import { RESPOND } from './responder.js'
 import { CALLS, newCall } from './calls.js'
 import { CONDITIONS, busy } from './conditions.js'
-import { slide, restore, collidePlayer, bumpLoose } from './wrecks.js'
+import { gone, slide, restore, collidePlayer, bumpLoose } from './wrecks.js'
 import { DRIVE, temperament } from './drivers.js'
 import { LANE_CHANGE } from './laneChange.js'
 import { rng, NODES, EDGES, LANES, STALLS, pointAt } from './city.js'
@@ -83,6 +83,7 @@ export class Traffic {
     this.frame = 0
     this.wasAir = false
     this.heard = [] // crashes in traffic since the people last looked: { x, z, r } (crowd.js)
+    this.exits = [] // and drivers climbing out of wrecks: { x, z } (wrecks.js, alight.js)
     this.ahead = null // (sight.js: the car ahead in the lane, after leader())
     this.seen = { gap: 0, vl: 0, blk: null } // (drivers.js: what is in the way)
     warm(this.seen)
@@ -109,7 +110,7 @@ export class Traffic {
     this.t = 0
     this.quiet = true
     this.wasAir = false // (a reset mid-air is no landing)
-    this.heard.length = 0
+    this.heard.length = this.exits.length = 0
     for (const n of NODES) n.hold = null // every light on its cycle
     for (const st of STALLS) if (st.taken) this.park(st)
     for (const e of JAM) this.jam(e)
@@ -204,6 +205,7 @@ export class Traffic {
       vx: 0,
       vz: 0,
       w: 0,
+      dmg: null, // its damage, from the first hit that leaves a mark (carDamage.js)
       // the driver (drivers.js temperament; parked cars keep these)
       bold: 0,
       a: 2,
@@ -433,8 +435,9 @@ export class Traffic {
     }
   }
 
-  // Drop cars that fell far behind (or were wrecked long ago, or have stood still for a minute, out
-  // of sight) and refill the streets around (x, z), as many as there are at this hour. And how
+  // Drop cars that fell far behind (or were knocked loose long ago, a wreck once out of sight a
+  // while, or have stood still for a minute, out of sight) and refill the streets around (x, z), as
+  // many as there are at this hour (each new car as good as new). And how
   // often each car is driven: every step near the Roadster or in sight (or on a call), every
   // second or fourth one further off. The weather into the drivers' ways (conditions.js).
   recycle (x, z, view) {
@@ -454,7 +457,7 @@ export class Traffic {
         (c.x - view.x) * view.fx + (c.z - view.z) * view.fz > -12
       if (
         d > this.radius + 40 ||
-        (c.loose && c.looseT > 20 && d > 40 && !seen) ||
+        (c.loose && gone(c, seen) && c.looseT > 20 && d > 40) ||
         (c.still > 60 && d > 60 && !seen)
       ) {
         this.remove(i)

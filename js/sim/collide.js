@@ -7,6 +7,7 @@ import { STEP } from './roofs.js'
 import { snap } from './breakables.js'
 import { query } from './city.js'
 import { keepIn, hillside } from './edge.js'
+import { landed } from './carDamage.js'
 import { G, CAR, clamp } from './constants.js'
 
 // The most yaw rate (rad/s) a knock adds on the ground: the tyres on the road soak up the rest, so a
@@ -220,16 +221,19 @@ export function carFrame (s, px, pz, nx, nz, out) {
   return out
 }
 const _frame = { l: new THREE.Vector3(), n: new THREE.Vector3() }
-// A knock against something, with where it landed on the car: the contact point (px, pz) and the
-// normal (nx, nz), from what was hit towards the Roadster, in the world and in the car's frame at
-// that moment (lx, ly, lz and lnx, lny, lnz: the body dents there, damage.js)
-export function bump (s, impact, what, hit) {
-  const f = carFrame(s, hit.px, hit.pz, hit.nx, hit.nz, _frame)
+// A knock against something, with where it landed on the car: the contact point (px, pz; or at,
+// { x, z }, where it really met a box: carDamage.js landed) and the normal (nx, nz), from what was
+// hit towards the Roadster, in the world and in the car's frame at that moment (lx, ly, lz and lnx,
+// lny, lnz: the body dents there, and its lamps and glass break there, damage.js)
+export function bump (s, impact, what, hit, at = null) {
+  const px = at ? at.x : hit.px,
+    pz = at ? at.z : hit.pz
+  const f = carFrame(s, px, pz, hit.nx, hit.nz, _frame)
   s.emit('bump', {
     impact,
     what,
-    px: hit.px,
-    pz: hit.pz,
+    px,
+    pz,
     nx: hit.nx,
     nz: hit.nz,
     lx: f.l.x,
@@ -255,12 +259,13 @@ export function collideCity (s) {
     const hit = c.r ? rectPost(me, c) : rectRect(me, boxRect(c))
     if (!hit) continue
     if (c.breakAt && knock(s, c, hit.nx, hit.nz)) continue
+    const at = c.r ? null : landed(me, boxRect(c))
     nudge(s, hit.nx * hit.depth, hit.nz * hit.depth)
     me.x = s.pos.x
     me.z = s.pos.z
     const impact = impulse(loadBody(s), null, hit, 0.2, 0.35)
     storeBody(s)
-    if (impact > 0.6) bump(s, impact, c.kind, hit)
+    if (impact > 0.6) bump(s, impact, c.kind, hit, at)
   }
   // the beach ends at the sea (but for the pier), and nothing gets past the walls (edge.js)
   keepIn(s)
@@ -311,12 +316,13 @@ export function collideAir (s, bottom, top, dt) {
       s.vel.z += hit.nz * G * 0.5 * dt
       continue
     }
+    const at = c.r ? null : landed(me, boxRect(c))
     nudge(s, hit.nx * hit.depth, hit.nz * hit.depth)
     const impact = impulse(loadBody(s), null, hit, 0.2, 0.35)
     storeBody(s)
     me.x = BODY.x
     me.z = BODY.z
-    if (impact > 0.6) bump(s, impact, c.kind, hit)
+    if (impact > 0.6) bump(s, impact, c.kind, hit, at)
   }
   // (the time on an edge goes on counting while it stays on one, held or let go)
   s.edgeT = onEdge ? held + dt : 0
@@ -333,12 +339,13 @@ export function bumpCars (s, solids) {
     if (c.kind !== 'car' || bottom > c.y1) continue
     const hit = rectRect(me, boxRect(c))
     if (!hit) continue
+    const at = landed(me, boxRect(c))
     nudge(s, hit.nx * hit.depth, hit.nz * hit.depth)
     const impact = impulse(loadBody(s), null, hit, 0.25, 0.3)
     storeBody(s)
     me.x = BODY.x
     me.z = BODY.z
-    if (impact > 0.6) bump(s, impact, 'car', hit)
+    if (impact > 0.6) bump(s, impact, 'car', hit, at)
   }
   s.syncPose()
 }
