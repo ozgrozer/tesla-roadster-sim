@@ -354,7 +354,7 @@ function frame (now) {
   if (app.paused)
     return (last = now) && menu.blanked() && post.render(app.sim, rig.shot, 0)
   resolution.apply() // (a step in resolution before anything is sized or drawn)
-  const dt = Math.min(0.05, (now - last) / 1000)
+  const dt = Math.max(0, Math.min(0.05, (now - last) / 1000)) // (never back: a first frame stamped before the load ended)
   last = now
   clock += dt
   input.poll()
