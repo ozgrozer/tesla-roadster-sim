@@ -3,6 +3,8 @@
 // clear of the streets and pavements: npm test
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
+import { onHillRoad } from '../js/sim/hillroad.js'
+import { onQuay } from '../js/sim/quay.js'
 import { Sim } from '../js/sim/sim.js'
 import { roofAt } from '../js/sim/roofs.js'
 import { Traffic } from '../js/sim/traffic.js'
@@ -19,12 +21,29 @@ import {
   TREES,
   LAMPS,
   WIRES,
+  SUPERS,
+  PITCH,
   query
 } from '../js/sim/city.js'
 
 const H = 1 / 120
-const blockAt = (x, z) =>
-  BLOCKS.find(b => x > b.x0 && x < b.x1 && z > b.z0 && z < b.z1)
+// (a superblock, grid.js, is one lot over its four blocks and the closed streets between: its
+// north-west block stands for it, stretched over the other three)
+const blockAt = (x, z) => {
+  const b = BLOCKS.find(b => x > b.x0 && x < b.x1 && z > b.z0 && z < b.z1)
+  if (!b) {
+    const s = SUPERS.find(s => {
+      const o = BLOCKS[s.bz * N + s.bx]
+      return x > o.x0 && x < o.x1 + PITCH && z > o.z0 && z < o.z1 + PITCH
+    })
+    return s && whole(s)
+  }
+  return b.super ? whole(b.super) : b
+}
+const whole = s => {
+  const o = BLOCKS[s.bz * N + s.bx]
+  return { ...o, x1: o.x1 + PITCH, z1: o.z1 + PITCH }
+}
 const inLot = (b, x0, x1, z0, z1, m = 1e-6) =>
   x0 >= b.x0 + WALK - m &&
   x1 <= b.x1 - WALK + m &&
@@ -140,11 +159,18 @@ test('everything built stands on its lot, clear of the streets and pavements', (
       )
   }
   for (const s of SOLIDS) {
+    // (the freeway's deck and its parapets cross the streets on purpose, up out of the way: freeway.js)
+    if (s.look === 'deck' || (s.look === 'barrier' && s.y0 > 4)) continue
+    // (nor is the hill road on a lot: it runs from the ring road up into the hills, hillroad.js)
+    if (onHillRoad((s.x0 + s.x1) / 2, (s.z0 + s.z1) / 2, 2)) continue
+    // (nor are the port's cranes, on the quay over the beach: quay.js)
+    if (onQuay((s.x0 + s.x1) / 2, (s.z0 + s.z1) / 2)) continue
     const blk = blockAt((s.x0 + s.x1) / 2, (s.z0 + s.z1) / 2)
     assert.ok(blk && inLot(blk, s.x0, s.x1, s.z0, s.z1), `a ${s.look} on a lot`)
   }
   // palms and trees: on a lot, or in the planting line along the kerb (people walk inside it)
   for (const p of [...PALMS, ...TREES]) {
+    if (p.median) continue // (down a boulevard's median: kerbside.js)
     const blk = blockAt(p.x, p.z)
     if (blk && inLot(blk, p.x, p.x, p.z, p.z)) continue
     const kerb = blk

@@ -6,6 +6,8 @@
 // route and the waypoint (gps.js); and the Roadster's arrow, pointing the way it faces.
 import { JAM_AT } from '../sim/jam.js'
 import { WALL, SHORE } from '../sim/edge.js'
+import { QUAY } from '../sim/quay.js'
+import { HILL_ROAD } from '../sim/hillroad.js'
 import { N, HALF, EDGE, PITCH, ROADS, STOP } from '../sim/city.js'
 import { drawCity, drawSurroundings } from './radarMap.js'
 import { COLOR, GLYPHS, blip, arrow, routeLine } from './blips.js'
@@ -45,8 +47,11 @@ const SIDES = {
 // small }
 const BEACH = -(EDGE + SHORE) / 2,
   [EAST, SOUTH] = LANDMARKS.freeways
+const HILL_X = HILL_ROAD.length ? HILL_ROAD[0].x0 + 60 : 0
 const REGIONS = [
-  { name: 'Pacific Ocean', x: -860, z: 220, sea: true },
+  { name: 'Pacific Ocean', x: -SHORE - 160, z: 220, sea: true },
+  { name: 'Port', x: (QUAY.x0 + QUAY.x1) / 2, z: (QUAY.z0 + QUAY.z1) / 2, up: true, small: true },
+  { name: 'Santa Fe Canyon Rd', x: HILL_X, z: -WALL - 70, small: true },
   { name: 'Santa Monica Beach', x: BEACH, z: 230, up: true, small: true },
   { name: 'Hollywood Hills', x: -150, z: -WALL - 150 },
   { name: 'Freeway', x: EAST.x0, z: 280, up: true, small: true },

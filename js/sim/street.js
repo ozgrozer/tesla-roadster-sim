@@ -19,9 +19,11 @@ import {
   ROAD_HW,
   PROMENADE,
   LANE_OFF,
+  closedAt,
   rng
 } from './city.js'
 import { onDeck } from './edge.js'
+import { onQuay } from './quay.js'
 import { ENV } from './env.js'
 import { dotsRunOver } from './botts.js'
 import { CAR } from './constants.js'
@@ -38,6 +40,8 @@ export function kerbDist (x, z) {
     cx > 0 && cz > 0 ? Math.hypot(cx, cz) - CURB_R : Math.max(cx, cz) - CURB_R
   if (Math.abs(x) > HALF) d = ROAD_HW - (Math.abs(x) - HALF)
   if (Math.abs(z) > HALF) d = ROAD_HW - (Math.abs(z) - HALF)
+  // (a superblock's closed streets are paved over at the kerb's height: grid.js)
+  if (d > 0 && closedAt(x, z)) d = -WALK
   return d
 }
 
@@ -58,12 +62,13 @@ const offEdge = (x, z) =>
   (Math.abs(x) > PROMENADE || Math.abs(z) > PROMENADE) && !onDeck(x, z)
 // the surface at (x, z) on the city's ground (roofs are concrete, like the pavement)
 export function surfaceAt (x, z) {
-  if (x < -PROMENADE) return onDeck(x, z) ? 'wood' : 'sand'
+  if (x < -PROMENADE) return onDeck(x, z) ? 'wood' : onQuay(x, z) ? 'road' : 'sand'
   if (Math.abs(x) > PROMENADE || Math.abs(z) > PROMENADE) return 'grass'
   if (kerbDist(x, z) > 0) return 'road'
   const bx = Math.floor((x + HALF) / PITCH),
     bz = Math.floor((z + HALF) / PITCH)
   const b = bx >= 0 && bz >= 0 && bx < N && bz < N ? BLOCKS[bz * N + bx] : null
+  if (b && b.super) return superSurface(x, z, b)
   if (
     !b ||
     x <= b.x0 + WALK ||
@@ -72,7 +77,7 @@ export function surfaceAt (x, z) {
     z >= b.z1 - WALK
   )
     return 'walk'
-  if (b.kind === 'park') return 'grass'
+  if (b.kind === 'park' && !b.sports) return 'grass'
   // on the block's lot: what is laid over its base (a lawn, a drive, a car park; the last laid on
   // top), or the base itself (city.js: plots.js)
   let k = b.base
@@ -87,8 +92,25 @@ export function surfaceAt (x, z) {
     }
   return LOT[k] || 'walk'
 }
+// on a superblock: its pavement round the outside, the lot laid out on its north-west block inside
+function superSurface (x, z, b) {
+  const s = b.super,
+    o = BLOCKS[s.bz * N + s.bx],
+    e = BLOCKS[(s.bz + 1) * N + s.bx + 1]
+  if (x <= o.x0 + WALK || x >= e.x1 - WALK || z <= o.z0 + WALK || z >= e.z1 - WALK)
+    return 'walk'
+  let k = o.base
+  for (let i = o.ground.length - 1; i >= 0; i--) {
+    const r = o.ground[i]
+    if (x > r.x0 && x < r.x1 && z > r.z0 && z < r.z1) {
+      k = r.k
+      break
+    }
+  }
+  return LOT[k] || 'walk'
+}
 // what a lot's ground is to the tyres: lawns grass, car parks asphalt, the rest paving
-const LOT = { grass: 'grass', asphalt: 'road' }
+const LOT = { grass: 'grass', asphalt: 'road', court: 'road', dirt: 'grass' }
 
 // ---------- the street's ironwork ----------
 const R = rng(3141)

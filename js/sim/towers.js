@@ -25,6 +25,7 @@ import {
   sign,
   isMain
 } from './plots.js'
+import { OLD } from './grid.js'
 
 // Split [a, b] into n parts of roughly equal size.
 function splits (a, b, n) {
@@ -245,7 +246,7 @@ export function mural (b, s) {
 
 // ---------- Downtown ----------
 // the skyline's middle, between the stepped cylinder and the sail tower
-const CORE = { x: 336, z: -20 }
+const CORE = { x: 336 + OLD, z: -20 + OLD } // (where it stood in the first city: grid.js OLD)
 export function downtown (blk, lot) {
   const cx = (lot.x0 + lot.x1) / 2,
     cz = (lot.z0 + lot.z1) / 2

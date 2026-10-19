@@ -13,8 +13,9 @@ import { WALL } from '../sim/edge.js'
 import { LANDMARKS } from '../sim/areas.js'
 
 const R = rng(2024)
-const FAR = 2600 // the ground runs out this far
-const BUILT = 1750 // buildings this far (past it the haze has them)
+const FAR = 3400 // the ground runs out this far
+const BUILT = 2400 // buildings this far (past it the haze has them)
+const K0 = Math.ceil(WALL / PITCH) // the first of its streets past the city's walls
 const [EAST, SOUTH] = LANDMARKS.freeways
 const near = (v, c, w) => Math.abs(v - c) < w
 // whether (x, z) is clear of the streets, the freeways and the city
@@ -105,8 +106,8 @@ export function buildSprawl (group) {
   // the buildings: a box for each, its walls the instance's colour and its roof paler
   const list = []
   const towers = [
-    { x: 1350, z: 260, r: 160 },
-    { x: 760, z: 1450, r: 140 }
+    { x: 1500, z: 260, r: 180 },
+    { x: 760, z: 1500, r: 160 }
   ]
   for (let x = WALL + 6; x < BUILT; x += 30)
     for (let z = -WALL + 6; z < BUILT; z += 30) {
@@ -194,7 +195,7 @@ export function buildSprawl (group) {
       if (R() < 0.8) palms.push({ x, z, h: 16 + R() * 12, lean: R() * 6.3 })
     }
   }
-  for (const k of [6, 7, 9]) {
+  for (const k of [K0, K0 + 1, K0 + 3]) {
     const c = k * PITCH + 9.5
     row(-PROMENADE + 10, c, BUILT, c)
     row(c, -WALL + 10, c, BUILT)
@@ -208,7 +209,7 @@ export function buildSprawl (group) {
 
   // night: the street lights along the streets, and windows lit in the buildings
   const lights = []
-  for (let k = 6; k * PITCH < BUILT; k++)
+  for (let k = K0; k * PITCH < BUILT; k++)
     for (let s = -WALL; s < BUILT; s += 32) {
       const c = k * PITCH + 7.5
       lights.push({
@@ -230,7 +231,7 @@ export function buildSprawl (group) {
         })
     }
   for (let s = -PROMENADE; s < WALL; s += 32)
-    for (let k = 6; k * PITCH < BUILT; k++)
+    for (let k = K0; k * PITCH < BUILT; k++)
       lights.push({
         x: s + R() * 4,
         y: 8,

@@ -19,6 +19,10 @@ import {
 } from '../sim/city.js'
 import { COAST, HILLS, LANDMARKS } from '../sim/areas.js'
 import { WALL, SHORE, PIER } from '../sim/edge.js'
+import { DECKS, RAMPS } from '../sim/lots.js'
+import { FWY } from '../sim/freeway.js'
+import { HILL_ROAD, HILL_HW } from '../sim/hillroad.js'
+import { QUAY } from '../sim/quay.js'
 
 export const MAP = {
   road: '#9ba1a9',
@@ -87,6 +91,12 @@ function cityLayers () {
     const c = b.h < 15 ? MAP.low : b.h < 45 ? MAP.mid : MAP.tall
     shape(3, c).rect(b.x0, b.z0, b.x1 - b.x0, b.z1 - b.z0)
   }
+  // the freeway's deck over the streets, its ramps and merge lanes, and the other decks and ramps
+  // (the hill road's landings, its bridge and the lookout), over everything
+  const fwy = shape(4, MAP.freeway)
+  if (FWY.x1 > FWY.x0) fwy.rect(FWY.x0, FWY.z0, FWY.x1 - FWY.x0, FWY.z1 - FWY.z0)
+  for (const r of [...RAMPS, ...DECKS]) fwy.rect(r.x0, r.z0, r.x1 - r.x0, r.z1 - r.z0)
+  if (FWY.x1 > FWY.x0) shape(5, MAP.lane).rect(FWY.x0, FWY.z - 0.3, FWY.x1 - FWY.x0, 0.6)
   // (a layer at a time; within one, lawns before car parks before pools, as they are laid)
   const rank = [MAP.park, MAP.lot, MAP.water]
   return layers.sort(
@@ -214,6 +224,26 @@ export function drawSurroundings (g, p, reach, px) {
   g.fillRect(-FAR, -FAR, FAR - SHORE - 140, FAR * 2)
   g.restore()
   pier(g)
+  works(g, px)
+}
+
+// the port's quay along the beach, and the hill road winding up into the hills (its tunnel dashed)
+function works (g, px) {
+  g.fillStyle = MAP.lot
+  g.fillRect(QUAY.x0, QUAY.z0, QUAY.x1 - QUAY.x0, QUAY.z1 - QUAY.z0)
+  g.lineCap = 'round'
+  for (const s of HILL_ROAD) {
+    const tunnel = s.kind === 'tunnel'
+    g.strokeStyle = tunnel ? MAP.farBlock : MAP.road
+    g.lineWidth = HILL_HW * 2
+    g.setLineDash(tunnel ? [6, 4] : [])
+    g.beginPath()
+    g.moveTo(s.x0, s.z0)
+    g.lineTo(s.x1, s.z1)
+    g.stroke()
+  }
+  g.setLineDash([])
+  g.lineCap = 'butt'
 }
 
 // the pier's deck, out from the promenade into the sea, and its big wheel

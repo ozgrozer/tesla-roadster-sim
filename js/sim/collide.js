@@ -261,6 +261,9 @@ export function collideCity (s) {
     // out of reach above (upper storeys), or under the wheels: the roof the car is on, or the next
     // one along if it is no more than a step up
     if (c.down || c.y0 > fl + 1.2 || c.y1 <= fl + STEP) continue
+    // (a ramp's treads, and the deck it runs onto, are driven up, not into: the car steps onto
+    // each in turn, ground.js)
+    if ((c.look === 'ramp' || c.look === 'deck') && c.y1 <= fl + 1.2) continue
     const hit = c.r ? rectPost(me, c) : rectRect(me, boxRect(c))
     if (!hit) continue
     if (c.breakAt && knock(s, c, hit.nx, hit.nz)) continue

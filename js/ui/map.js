@@ -9,8 +9,11 @@ import { gps } from './gps.js'
 import { drawMap } from './mapDraw.js'
 import { whereIs, LANDMARKS } from '../sim/areas.js'
 import { WALL, SHORE, onDeck } from '../sim/edge.js'
+import { onQuay } from '../sim/quay.js'
+import { onHillRoad, inTunnel } from '../sim/hillroad.js'
 
-const FIT = { x0: -560, x1: 560, z0: -770, z1: 600 } // what fits in the window to begin with
+// what fits in the window to begin with: the city from the beach to the walls, and the hill road
+const FIT = { x0: -SHORE - 40, x1: WALL + 40, z0: -WALL - 160, z1: WALL + 40 }
 const K_MAX = 8 // px a metre, zoomed right in
 const PICK = 16 // px from the waypoint that a click counts as on it
 const DRAG = 6 // px a press has to move to be a drag rather than a click
@@ -19,6 +22,8 @@ const NONE = [] // (no route: at the test site, the car isn't in the city)
 // what lies round the city under the pointer (null: in the city, where whereIs names the street)
 function around (x, z) {
   if (onDeck(x, z)) return 'Santa Monica Pier'
+  if (onQuay(x, z)) return 'Port of Los Angeles'
+  if (onHillRoad(x, z)) return inTunnel(x, z) ? 'Santa Fe Canyon Tunnel' : 'Santa Fe Canyon Rd'
   if (x < -SHORE) return 'Pacific Ocean'
   if (z < -WALL) return 'Hollywood Hills'
   if (x <= WALL && z <= WALL) return null

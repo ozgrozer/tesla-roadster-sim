@@ -7,10 +7,10 @@
 // them, for the sound and a gamepad's rumble: the drumming as the car crosses or straddles a line).
 // They are felt nowhere in the handling: an 18 mm dome under a tyre is a sound and a buzz in the
 // wheel, not a force that moves the car.
-import { N, PITCH, ROADS, STOP, LANE_W, BLOCKS } from './city.js'
+import { N, PITCH, ROADS, STOP, LANE_W, BLOCKS, segOpen } from './city.js'
 
 // the neighbourhoods whose streets have them
-export const DOT_AREAS = new Set(['strip', 'venice', 'beach', 'estates'])
+export const DOT_AREAS = new Set(['strip', 'venice', 'beach', 'estates', 'suburb'])
 // along a street between two junctions: the first group DOT_FROM m past the stop line, a group
 // every DOT_CYCLE m while one can start DOT_TO m short of the next stop line; in each, DOT_RUN
 // domes DOT_GAP m apart and the reflector DOT_SQUARE m on from the first
@@ -35,7 +35,9 @@ for (let r = 0; r <= N; r++)
     for (const alongZ of [false, true]) {
       const a = alongZ ? area(r - 1, j) : area(j, r - 1),
         b = alongZ ? area(r, j) : area(j, r)
-      DOTTED.push(DOT_AREAS.has(a) || DOT_AREAS.has(b))
+      DOTTED.push(
+        (DOT_AREAS.has(a) || DOT_AREAS.has(b)) && segOpen(r, j, alongZ)
+      )
     }
 export const dotted = (r, j, alongZ) =>
   DOTTED[(r * N + j) * 2 + (alongZ ? 1 : 0)]

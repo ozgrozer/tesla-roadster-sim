@@ -13,6 +13,7 @@ import { query, CURB_H, OUTER, PROMENADE } from './city.js'
 import { kerbDist, surfaceAt } from './street.js'
 import { WALL, onDeck, hillHeight } from './edge.js'
 import { clamp, wrapPi } from './constants.js'
+import { inTunnel } from './hillroad.js'
 
 // How a person moves: m/s walking and sprinting, how hard they get up to speed and stop (m/s²),
 // steering in the air, how fast they turn to face the way they go (rad/s), the jump's take-off
@@ -79,7 +80,8 @@ export function placePlayer (x, z, heading = 0, y = null, p = player) {
 export function groundBase (x, z) {
   const inside = Math.abs(x) <= PROMENADE && Math.abs(z) <= PROMENADE
   const kerb = inside && kerbDist(x, z) <= 0 ? CURB_H : 0
-  return Math.max(kerb, z < -WALL ? hillHeight(x, z) : 0)
+  // (in the hill road's tunnel the hill over it is no floor: its road's treads are, as solids)
+  return Math.max(kerb, z < -WALL && !inTunnel(x, z) ? hillHeight(x, z) : 0)
 }
 
 // The camera-relative move: forward and right (-1 to 1 each, a key or a stick) with the camera

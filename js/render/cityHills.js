@@ -14,6 +14,7 @@ import { buildSign } from './citySign.js'
 import { PROMENADE, rng } from '../sim/city.js'
 import { LANDMARKS } from '../sim/areas.js'
 import { WALL, hillHeight, hillNormal, noise, TERRACE } from '../sim/edge.js'
+import { HILL_ROAD, hillRoadNear } from '../sim/hillroad.js'
 
 const R = rng(1919)
 const EAST = 2600 // the hills run this far east
@@ -35,6 +36,27 @@ function steps (from, to, near, grow, until) {
   }
   return out
 }
+
+// a grid line's positions with more added either side of each stretch of the hill road that runs
+// across them (axis 0: the rows, by u back from the wall; 1: the columns, by x), sorted
+const EDGES = [-16, -11, -8, -6.6, -5, -2.5, 0, 2.5, 5, 6.6, 8, 11, 16]
+function along (vs, axis) {
+  const out = [...vs]
+  for (const r of HILL_ROAD) {
+    const flat = r.z0 === r.z1
+    if (axis === 0 && flat) for (const e of EDGES) out.push(-r.z0 - WALL + e)
+    if (axis === 1 && !flat) for (const e of EDGES) out.push(r.x0 + e)
+    // (and across its ends, where it turns)
+    if (axis === 1 && flat) for (const x of [r.x0, r.x1]) for (const e of EDGES) out.push(x + e)
+    if (axis === 0 && !flat) for (const z of [r.z0, r.z1]) for (const e of EDGES) out.push(-z - WALL + e)
+  }
+  const lo = vs[0],
+    hi = vs[vs.length - 1]
+  return [...new Set(out.map(v => Math.round(v * 10) / 10))]
+    .filter(v => v >= lo && v <= hi)
+    .sort((a, b) => a - b)
+}
+const offRoad = (x, z, m) => hillRoadNear(x, z).d > m
 
 // the chaparral's colour at (x, z): what grows there by its slope, which way it faces and how high
 function ground (x, z, h, n, out) {
@@ -72,8 +94,9 @@ function ground (x, z, h, n, out) {
 }
 
 function terrain () {
-  const xs = steps(-PROMENADE, EAST, 8, 1.14, 700),
-    us = steps(0.6, BACK, 4, 1.1, 60)
+  // (finer along the hill road, so its cuts and fills follow its edges: hillroad.js)
+  const xs = along(steps(-PROMENADE, EAST, 8, 1.14, 1000), 1),
+    us = along(steps(0.6, BACK, 4, 1.1, 130), 0)
   const nx = xs.length,
     nu = us.length
   const pos = new Float32Array(nx * nu * 3),
@@ -241,6 +264,7 @@ export function buildHills (group) {
     if (_n.y < 0.72 || Math.abs(x - PASS) < 60) continue
     if (Math.abs(x - SIGN.x) < 80 && Math.abs(z - SIGN.z) < 70) continue
     if (Math.hypot(x - OBS.x, z - OBS.z) < 80) continue
+    if (!offRoad(x, z, 20)) continue
     // (each among trees: a garden's worth round it)
     if (R() < 0.45) {
       const tx = x + (R() - 0.5) * 22,
@@ -284,7 +308,7 @@ export function buildHills (group) {
       z = -WALL - u
     const canyon =
       hillNormal(x, z, _n).z < -0.15 || noise(x / 60, z / 60) > 0.62
-    if (canyon || R() < 0.25)
+    if ((canyon || R() < 0.25) && offRoad(x, z, 9))
       trees.push({ x, z, y: hillHeight(x, z), s: 1.8 + R() * 2.2 })
   }
   // (a unit box: its roof, vertices 8 to 11, greyer and on the plain wall of the texture)

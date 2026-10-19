@@ -170,8 +170,18 @@ function setWorld (w) {
   } catch {}
 }
 // the city opens on Optimus walking up to the Roadster and getting in
+// (a debug start anywhere in the city: ?spawn=x,z or ?spawn=x,z,yaw)
+const SPAWN_AT = (() => {
+  const v = new URLSearchParams(location.search).get('spawn')
+  const [x, z, yaw = 0] = (v || '').split(',').map(Number)
+  return v && Number.isFinite(x) && Number.isFinite(z) ? { x, z, yaw } : null
+})()
 function enterCity () {
-  resetTo('city')
+  resetTo('city', SPAWN_AT)
+  if (SPAWN_AT) {
+    traffic.reset(sim.pos.x, sim.pos.z)
+    peds.reset(sim.pos.x, sim.pos.z)
+  }
   setCam('follow')
   intro.start(() => {
     traffic.walker = null
@@ -347,7 +357,7 @@ function frame (now) {
   if (app.paused)
     return (last = now) && menu.blanked() && post.render(app.sim, rig.shot, 0)
   resolution.apply() // (a step in resolution before anything is sized or drawn)
-  const dt = Math.min(0.05, (now - last) / 1000)
+  const dt = Math.max(0, Math.min(0.05, (now - last) / 1000)) // (never back: a first frame stamped before the load ended)
   last = now
   clock += dt
   input.poll()

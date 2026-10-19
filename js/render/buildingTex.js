@@ -27,7 +27,10 @@ export const INSET = {
   brick: 0.24,
   stucco: 0.17,
   stone: 0.3,
-  house: 0.16
+  house: 0.16,
+  metal: 0.06,
+  concrete: 0.12,
+  garage: 0.9
 }
 // window rectangle inside a 64 px cell, per style
 export const WIN = {
@@ -36,7 +39,11 @@ export const WIN = {
   brick: [18, 12, 28, 38],
   stucco: [16, 14, 32, 34],
   stone: [21, 8, 22, 44],
-  house: [19, 15, 26, 30]
+  house: [19, 15, 26, 30],
+  // a shed's high strip of clerestory lights, a tilt-up panel's slot window, a car park's open deck
+  metal: [4, 6, 56, 10],
+  concrete: [10, 22, 44, 14],
+  garage: [0, 26, 64, 30]
 }
 export const STYLES = Object.keys(WIN)
 
@@ -84,6 +91,34 @@ function drawWall (g, style, S) {
     g.fillRect(0, 0, S, S)
     speckle(g, 34000, S, 0.14, false)
     speckle(g, 16000, S, 0.12, true)
+  } else if (style === 'metal') {
+    // corrugated sheet: a rib every 20 cm, light on one flank and shadow on the other, streaks
+    g.fillStyle = '#d4d6d6'
+    g.fillRect(0, 0, S, S)
+    const rib = Math.max(2, Math.round((0.2 * c) / COL))
+    for (let x = 0; x < S; x += rib) {
+      g.fillStyle = 'rgba(255,255,255,0.22)'
+      g.fillRect(x, 0, Math.max(1, rib / 3), S)
+      g.fillStyle = 'rgba(0,0,0,0.16)'
+      g.fillRect(x + rib / 2, 0, Math.max(1, rib / 3), S)
+    }
+    for (let i = 0; i < 60; i++) {
+      const x = R() * S
+      const gr = g.createLinearGradient(0, 0, 0, S)
+      gr.addColorStop(0, 'rgba(90,70,50,0)')
+      gr.addColorStop(1, 'rgba(90,70,50,0.12)')
+      g.fillStyle = gr
+      g.fillRect(x, 0, 2 + R() * 6, S)
+    }
+  } else if (style === 'concrete' || style === 'garage') {
+    // tilt-up or precast panels: their joints, form-tie holes, weathering
+    g.fillStyle = '#dcd8cf'
+    g.fillRect(0, 0, S, S)
+    speckle(g, 24000, S, 0.12, false)
+    speckle(g, 10000, S, 0.1, true)
+    g.fillStyle = 'rgba(60,56,50,0.35)'
+    for (let x = 0; x < S; x += c * 2) g.fillRect(x, 0, Math.max(1, k * 1.5), S)
+    if (style === 'garage') for (let y = 0; y < S; y += c) g.fillRect(0, y, S, Math.max(1, k * 2))
   } else {
     g.fillStyle = style === 'office' ? '#d8d3ca' : '#efebe4'
     g.fillRect(0, 0, S, S)
@@ -110,6 +145,14 @@ function drawWall (g, style, S) {
         g.fillRect(x, y + c - 10 * k, c, 10 * k)
         g.fillStyle = 'rgba(40,46,52,0.9)' // the mullions between panes
         g.fillRect(x, y, 2 * k, c)
+        continue
+      }
+      if (style === 'metal' && (i + j) % 3) continue // (lights in only some bays)
+      if (style === 'garage') {
+        // an open deck: dark, the far side's light through it, a low cable rail
+        lighten(g, x + wx, y + wy, ww, wh, '#2a2b2d', '#3d3e40')
+        g.fillStyle = 'rgba(180,180,175,0.8)'
+        g.fillRect(x, y + wy + wh * 0.55, c, 1.5 * k)
         continue
       }
       if (style === 'office') {

@@ -34,6 +34,16 @@ import {
   LANE_OFF,
   DIRS,
   SPAWN,
+  OLD,
+  WILSHIRE,
+  SUPERS,
+  BLVD_EW,
+  BLVD_NS,
+  MEDIAN_HW,
+  segOpen,
+  nodeOpen,
+  superOf,
+  closedAt,
   rng
 } from './grid.js'
 // what stands on the blocks (lots.js) and along the pavements (kerbside.js)
@@ -75,6 +85,16 @@ export {
   LANE_OFF,
   DIRS,
   SPAWN,
+  OLD,
+  WILSHIRE,
+  SUPERS,
+  BLVD_EW,
+  BLVD_NS,
+  MEDIAN_HW,
+  segOpen,
+  nodeOpen,
+  superOf,
+  closedAt,
   rng,
   BLOCKS,
   BUILDINGS,
@@ -159,6 +179,11 @@ export function pointAt (e, s, out) {
   return out
 }
 
+// (the signals' offsets: the first city's junctions draw theirs first, in the order they always
+// did, so its signal plan is as it was; then the rest)
+const OFFSET = new Map()
+for (let iz = 0; iz <= 10; iz++)
+  for (let ix = 0; ix <= 10; ix++) OFFSET.set(iz * (N + 1) + ix, R() * CYCLE)
 for (let iz = 0; iz <= N; iz++)
   for (let ix = 0; ix <= N; ix++)
     NODES.push({
@@ -167,7 +192,7 @@ for (let iz = 0; iz <= N; iz++)
       iz,
       x: ROADS[ix],
       z: ROADS[iz],
-      offset: R() * CYCLE,
+      offset: OFFSET.get(iz * (N + 1) + ix) ?? R() * CYCLE,
       out: [null, null, null, null],
       inc: [null, null, null, null]
     })
@@ -176,6 +201,13 @@ for (const a of NODES)
     const [dx, dz] = DIRS[k],
       b = nodeAt(a.ix + dx, a.iz + dz)
     if (!b) continue
+    // (no lanes on a closed street: a superblock's, grid.js)
+    if (
+      dz === 0
+        ? !segOpen(a.iz, Math.min(a.ix, b.ix), false)
+        : !segOpen(a.ix, Math.min(a.iz, b.iz), true)
+    )
+      continue
     a.out[k] = []
     b.inc[k] = []
     for (let l = 0; l < 2; l++) {
@@ -349,7 +381,7 @@ export function nearestLane (x, z) {
   return best
 }
 
-// whether a point is on the street grid's asphalt
+// whether a point is on the street grid's asphalt (not a superblock's closed streets)
 export function onRoad (x, z) {
   const near = v => {
     const k = Math.round(v / PITCH + N / 2)
@@ -358,6 +390,7 @@ export function onRoad (x, z) {
   return (
     Math.abs(x) <= HALF + ROAD_HW &&
     Math.abs(z) <= HALF + ROAD_HW &&
-    (near(x) || near(z))
+    (near(x) || near(z)) &&
+    !closedAt(x, z)
   )
 }

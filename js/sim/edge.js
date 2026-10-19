@@ -6,26 +6,26 @@
 // the verges and the pier's deck), and the hills' shape: the same heights the renderer draws, so a
 // car flown into a hillside is held up by it rather than passing through. Pure data and math, like
 // city.js, so it runs headless in the tests.
-import { LANDMARKS } from './areas.js'
+import { LANDMARKS, OLD } from './areas.js'
 import { PROMENADE, OUTER, addCollider } from './city.js'
+import { WALL, WALL_H, noise, TERRACE } from './hills.js'
+import { hillHeight, hillNormal, HILL_GAP, onHillRoad, inTunnel } from './hillroad.js'
+import { QUAY, onQuay } from './quay.js'
 
-export const WALL = 505 // the walls' inner face, north, east and south: the verge runs out to it
-export const WALL_H = { north: 3.2, side: 4.8 } // the retaining wall, and the sound walls
+export { WALL, WALL_H, noise, TERRACE, hillHeight, hillNormal }
 export const SHORE = OUTER + 1 // where the beach's flat sand ends and slopes down into the sea
 export const PIER = LANDMARKS.pier
 const RAIL_FROM = PROMENADE + 14 // the pier's railings begin out here (on and off the beach before)
 const DEEP = 3 // a wall's collider runs this far back from its face, so nothing gets past it
-const sstep = (a, b, x) => {
-  const t = Math.min(1, Math.max(0, (x - a) / (b - a)))
-  return t * t * (3 - 2 * t)
-}
 const solid = (x0, x1, z0, z1, y1, kind = 'wall', y0 = 0) =>
   addCollider({ x0, x1, z0, z1, y0, y1, kind })
 
 // ---------- the walls ----------
 // the retaining wall at the foot of the hills, from the beach to the corner, and the sound walls
 // east and south; then a groyne of rocks across the beach at each end, out into the sea
-solid(-PROMENADE, WALL + DEEP, -WALL - DEEP, -WALL, WALL_H.north)
+// (with a gap where the hill road goes up the canyon: hillroad.js)
+solid(-PROMENADE, HILL_GAP[0], -WALL - DEEP, -WALL, WALL_H.north)
+solid(HILL_GAP[1], WALL + DEEP, -WALL - DEEP, -WALL, WALL_H.north)
 solid(WALL, WALL + DEEP, -WALL - DEEP, WALL + DEEP, WALL_H.side)
 solid(-PROMENADE, WALL + DEEP, WALL, WALL + DEEP, WALL_H.side)
 export const GROYNE = { x0: -SHORE - 34, x1: -PROMENADE, w: 4, h: 1.8 }
@@ -117,20 +117,20 @@ export const ARCH = { x: -PROMENADE - 6, w: 8.5 }
 // The roller coaster: its track through these points (x, y, z), a closed loop round the east of the
 // park, out of the station over the lift hill and down; a column under each.
 export const COASTER = [
-  [-572, 3, 41],
-  [-560, 3.2, 42],
-  [-550, 8.5, 42],
-  [-543, 14.5, 41],
-  [-539, 12, 36],
-  [-539, 3.5, 28],
-  [-541, 4.5, 20],
-  [-546, 9, 15],
-  [-555, 7, 13],
-  [-564, 3.5, 14],
-  [-571, 7.5, 18],
-  [-574, 9.5, 25],
-  [-574, 6, 33],
-  [-575, 3.2, 38]
+  [-572 + OLD, 3, 41 + OLD],
+  [-560 + OLD, 3.2, 42 + OLD],
+  [-550 + OLD, 8.5, 42 + OLD],
+  [-543 + OLD, 14.5, 41 + OLD],
+  [-539 + OLD, 12, 36 + OLD],
+  [-539 + OLD, 3.5, 28 + OLD],
+  [-541 + OLD, 4.5, 20 + OLD],
+  [-546 + OLD, 9, 15 + OLD],
+  [-555 + OLD, 7, 13 + OLD],
+  [-564 + OLD, 3.5, 14 + OLD],
+  [-571 + OLD, 7.5, 18 + OLD],
+  [-574 + OLD, 9.5, 25 + OLD],
+  [-574 + OLD, 6, 33 + OLD],
+  [-575 + OLD, 3.2, 38 + OLD]
 ]
 // The pier's buildings (the renderer draws each by its name): the carousel's hall on the plaza, the
 // arcade in the park, the coaster's station, the restaurant at the end and a few kiosks along it. You
@@ -148,7 +148,7 @@ export const PIER_HOUSES = [
     z1: -5.7,
     h: 3.4
   }))
-]
+].map(b => ({ ...b, x0: b.x0 + OLD, x1: b.x1 + OLD, z0: b.z0 + OLD, z1: b.z1 + OLD }))
 for (const b of PIER_HOUSES) solid(b.x0, b.x1, b.z0, b.z1, b.h, 'building')
 // the arch's posts; the wheel's base and legs, and (for a car flying into it) its rim; the coaster's
 // columns
@@ -184,107 +184,21 @@ const BACK = 2.6 // (its half length, and a little)
 export function keepIn (s) {
   const p = s.pos,
     v = s.vel
-  if (p.x < -OUTER && !onDeck(p.x, p.z)) {
-    p.x = -OUTER
+  if (p.x < -OUTER && !onDeck(p.x, p.z) && !onQuay(p.x, p.z)) {
+    p.x = onQuay(-OUTER, p.z) ? QUAY.x0 : -OUTER // (off the quay's edge: quay.js)
     if (v.x < 0) v.x = 0
   }
   if (p.x > WALL) {
     p.x = WALL - BACK
     if (v.x > 0) v.x = 0
   }
+  if (p.z < -WALL && onHillRoad(p.x, p.z, 1.5)) return // (up the hill road)
   if (Math.abs(p.z) > WALL) {
     p.z = Math.sign(p.z) * (WALL - BACK)
     if (v.z * p.z > 0) v.z = 0
   }
 }
 
-// ---------- the hills ----------
-// value noise on a unit lattice, smooth, 0 to 1 (hashed, so the hills are the same every time)
-function lattice (i, j) {
-  let h = Math.imul(i, 374761393) + Math.imul(j, 668265263) + 1013904223
-  h = Math.imul(h ^ (h >>> 13), 1274126177)
-  return ((h ^ (h >>> 16)) >>> 0) / 4294967296
-}
-export function noise (x, z) {
-  const i = Math.floor(x),
-    j = Math.floor(z)
-  let u = x - i,
-    v = z - j
-  u = u * u * (3 - 2 * u)
-  v = v * v * (3 - 2 * v)
-  const a = lattice(i, j),
-    b = lattice(i + 1, j),
-    c = lattice(i, j + 1),
-    d = lattice(i + 1, j + 1)
-  return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v
-}
-// ridges: noise folded over, sharp along its crests, a few octaves of it (0 to 1)
-function ridges (x, z) {
-  let s = 0,
-    a = 0.5
-  for (let k = 0; k < 4; k++) {
-    s += a * (1 - Math.abs(2 * noise(x, z) - 1))
-    x = x * 2.03 + 17.1
-    z = z * 2.03 - 5.3
-    a *= 0.5
-  }
-  return s / 0.9375
-}
-// canyons running back into the hills (their floors' x), opening onto the flats at the wall; the
-// pass the east freeway takes north; the peak behind the sign; the observatory's terrace
-const CANYONS = [-300, -95, 70, 310, 860, 1180]
-const PASS = LANDMARKS.freeways[0].x0
-const SIGN = LANDMARKS.sign
-const OBS = LANDMARKS.observatory
-export const TERRACE = 74 // the observatory's terrace, m up
-// The ground's height north of the wall: from the wall's top, a steep face rising to a crest a few
-// hundred metres back, down its back into the valley beyond, cut by canyons and roughed with ridges
-// and spurs; down to the beach at the west end, level with the flats past the east wall.
-export function hillHeight (x, z) {
-  const u = -z - WALL
-  if (u < 0 || x < -PROMENADE) return 0
-  const base =
-    WALL_H.north *
-    sstep(-PROMENADE, -PROMENADE + 10, x) *
-    (1 - sstep(WALL, WALL + 30, x))
-  const crest = 255 + 45 * Math.sin(x / 330 + 0.6) + 50 * noise(x / 210, 3.7)
-  let top = 140 + 70 * noise(x / 290, 9.2)
-  // (lower toward the sea in the west, and far off in the east)
-  top *=
-    (0.4 + 0.6 * sstep(-PROMENADE, -120, x)) * (1 - 0.55 * sstep(1100, 2400, x))
-  // (the slope eases in from the wall: a shelf behind it before it climbs)
-  let h =
-    (u < crest
-      ? top * (1 - Math.pow(1 - u / crest, 1.35))
-      : top - (top - 40) * sstep(crest, crest + 450, u)) *
-    (1 - Math.exp(-u / 22))
-  // the peak behind the sign
-  h +=
-    30 * Math.exp(-((x - SIGN.x + 10) ** 2 + (u - 310) ** 2) / (2 * 150 ** 2))
-  let cut = 0
-  for (const c of CANYONS) cut = Math.max(cut, Math.exp(-(((x - c) / 60) ** 2)))
-  h *= 1 - 0.5 * cut * sstep(0, 160, u)
-  h += 38 * (ridges(x / 170, u / 170) - 0.45) * sstep(0, 140, u)
-  // the pass: a broad floor, steep sides
-  h = Math.min(h, 3 + Math.max(0, Math.abs(x - PASS) - 45) * 1.1)
-  // the observatory's terrace, on its spur
-  const d = Math.hypot(x - OBS.x, z - OBS.z)
-  h += (TERRACE - h) * (1 - sstep(34, 75, d))
-  // the bluffs down to the beach
-  h *= sstep(-PROMENADE, -PROMENADE + 45, x)
-  return Math.max(base, base + h)
-}
-// the hillside's slope under (x, z): its upward normal into out
-export function hillNormal (x, z, out) {
-  const e = 1.5
-  const gx = (hillHeight(x + e, z) - hillHeight(x - e, z)) / (2 * e),
-    gz = (hillHeight(x, z + e) - hillHeight(x, z - e)) / (2 * e)
-  const l = Math.hypot(gx, 1, gz)
-  out.x = -gx / l
-  out.y = 1 / l
-  out.z = -gz / l
-  return out
-}
 
 // In the air over the hills: a car that comes down on a hillside, or flies into one, is held up by
 // it: lifted back onto the ground under it, with whatever speed it had into the slope gone, and it
@@ -292,7 +206,7 @@ export function hillNormal (x, z, out) {
 const _n = { x: 0, y: 1, z: 0 }
 export function hillside (s, bottom) {
   const p = s.com
-  if (p.z > -WALL) return
+  if (p.z > -WALL || inTunnel(p.x, p.z)) return
   const h = hillHeight(p.x, p.z)
   if (bottom >= h) return
   hillNormal(p.x, p.z, _n)

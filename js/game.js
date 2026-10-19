@@ -10,7 +10,7 @@ import { ENV } from './sim/env.js'
 import { IDX } from './sim/carTypes.js'
 import { STALLS, rng } from './sim/city.js'
 import { Wanted } from './sim/wanted.js'
-import { Police } from './sim/police.js'
+import { Police, Arrest } from './sim/police.js'
 import { Ambient } from './sim/ambient.js'
 import { witnesses } from './sim/witness.js'
 import { MissionManager } from './sim/missions/manager.js'
@@ -28,7 +28,6 @@ import { recall, remember } from './ui/prefs.js'
 // fractions of the map (missions/spots.js)
 export const HOSPITALS = [[0.18, 0.15], [0.78, 0.38], [0.35, 0.86]]
 export const STATIONS = [[0.52, 0.45], [0.12, 0.7], [0.86, 0.82]]
-export const BUST_T = 2.5 // s at a standstill with a unit beside you
 export const PENALTY = { busted: 500, wasted: 1000 }
 const DOWN_T = 3.6 // s of BUSTED / WASTED before the fade
 
@@ -49,7 +48,8 @@ export class Game {
     this.crimes = [] // crimes since the last step, to be witnessed
     this.events = [] // every game event since the last step (the missions read them)
     this.down = null // { kind: 'busted' | 'wasted', t }
-    this.bustT = 0
+    this.arrest = new Arrest()
+    this.alive = { key: 'foot', hp: 1 } // (wasted is the health running out, not getting into a wreck)
     this.targetCar = null // a car parked for a mission to steal
     this.goal = null // the GPS waypoint a mission set
     this.hinted = new Map()
@@ -162,10 +162,20 @@ export class Game {
     this.events.length = 0
     // busted: stopped with a unit beside you while wanted; wasted: the car (or you) done for
     // (on foot, walking pace is slow enough to be caught)
-    const bust = W.stars > 0 && this.police.bustable > 0 && P.speed < (P.driving ? 1.5 : 2.5)
-    this.bustT = bust ? this.bustT + h : Math.max(0, this.bustT - h * 2)
-    if (this.bustT > BUST_T) this.fall('busted')
-    else if (P.health <= 0) this.fall('wasted')
+    if (this.arrest.step(h, W.stars, this.police, P)) return this.fall('busted')
+    if (this.wasted(P)) this.fall('wasted')
+  }
+  // wasted: the health running out in the same body (on foot, or the same car); climbing into a
+  // car that is already a wreck is not, it just won't go (and says so)
+  wasted (P) {
+    const key = player.mode === 'car' ? String(P.vehicle?.id ?? 'car') : 'foot',
+      hp = P.health,
+      A = this.alive
+    const out = hp <= 0 && A.key === key && A.hp > 0
+    if (hp <= 0 && A.key !== key && key !== 'foot') this.hud?.popup?.('Wrecked', 1800, 'hint')
+    A.key = key
+    A.hp = hp
+    return out
   }
 
   // the sim's own knocks this frame (main.js passes sim.events): a hard one into the traffic is a
@@ -178,7 +188,7 @@ export class Game {
 
   fall (kind) {
     this.down = { kind, t: 0 }
-    this.bustT = 0
+    this.arrest.t = 0
     emitGame(kind, { pos: { x: playerView.pos.x, z: playerView.pos.z } })
     const pay = Math.min(this.missions.cash, PENALTY[kind])
     this.missions.cash -= pay

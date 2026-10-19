@@ -371,19 +371,23 @@ test('once there it switches off, and drives on as ordinary traffic at its own p
   tr.call.next = 3
   let car = null,
     own = 0,
-    off = null
+    off = null,
+    after = 0
+  // (driving on: moving at some point in the 15 s after, as it may first sit at a red; since the
+  // city grew, its call goes elsewhere and ends with it at a light)
   run(sim, tr, 200, () => {
     if (!car && tr.call.car) {
       car = tr.call.car
       own = tr.call.saved.v0
     }
     if (car && car.siren === 0 && off === null) off = tr.t
-    return off === null || tr.t < off + 5
+    if (off !== null && tr.t > off + 2) after = Math.max(after, car.v)
+    return off === null || tr.t < off + 15
   })
   assert.ok(off !== null, 'the run ends')
   assert.ok(tr.cars.includes(car), 'and the car is still on the road')
   assert.equal(car.siren, 0, 'lights and siren off')
   assert.ok(Math.abs(car.v0 - own) < 1e-6, 'back to its own pace')
-  assert.ok(car.v > 1, 'driving on')
+  assert.ok(after > 1, 'driving on')
   assert.equal(tr.call.car, null, 'the call over')
 })

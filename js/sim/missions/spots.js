@@ -2,9 +2,29 @@
 // corner, 1, 1 its south-east) rather than coordinates, so they keep their meaning on a bigger map
 // (the world workstream's): spot(fx, fz) is the nearest point on a street open to traffic, by the
 // kerb of its outer lane (route.js snap does the snapping). Pure: no DOM.
-import { NODES, LANES, LANE_OFF } from '../city.js'
+import { NODES, LANES, LANE_OFF, BLOCKS } from '../city.js'
 
 let B = null
+// the middle of the car park (a 'parking' block) nearest the fraction (fx, fz) of the map, facing
+// east; with none on the map, the kerbside spot there instead
+export function lotSpot (fx, fz) {
+  const b = bounds()
+  const x = b.x0 + fx * (b.x1 - b.x0),
+    z = b.z0 + fz * (b.z1 - b.z0)
+  let best = null,
+    bd = Infinity
+  for (const k of BLOCKS) {
+    if (k.kind !== 'parking') continue
+    const cx = (k.x0 + k.x1) / 2,
+      cz = (k.z0 + k.z1) / 2,
+      d = Math.hypot(cx - x, cz - z)
+    if (d < bd) {
+      bd = d
+      best = { x: cx, z: cz, yaw: 0, lane: null, s: 0, lot: true }
+    }
+  }
+  return best || spot(fx, fz)
+}
 export function bounds () {
   if (B && B.n === NODES.length) return B
   B = { x0: Infinity, x1: -Infinity, z0: Infinity, z1: -Infinity, n: NODES.length }

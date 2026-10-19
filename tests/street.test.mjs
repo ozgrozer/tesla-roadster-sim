@@ -22,7 +22,10 @@ import {
   LANE_W,
   ROAD_HW,
   LANE_OFF,
-  PROMENADE
+  PROMENADE,
+  N,
+  OLD,
+  WILSHIRE
 } from '../js/sim/city.js'
 
 const H = 1 / 120
@@ -41,7 +44,7 @@ test('the kerb runs down each street, round each corner and along the promenade'
     'so cutting the corner is still on the road'
   )
   assert.ok(
-    kerbDist(ROADS[10] + ROAD_HW + 2, ROADS[4] + 1) < 0,
+    kerbDist(ROADS[N] + ROAD_HW + 2, ROADS[4] + 1) < 0,
     'the promenade outside the ring road'
   )
 })
@@ -63,8 +66,10 @@ test("surfaces: road, pavement, a park's grass, the beach's sand, the verge and 
   assert.equal(surfaceAt(PROMENADE + 5, 0), 'grass')
   assert.equal(surfaceAt(0, -PROMENADE - 5), 'grass')
   assert.equal(surfaceAt(ROADS[7], PROMENADE + 5), 'grass')
-  assert.equal(surfaceAt(-PROMENADE - 5, 0), 'wood')
-  assert.equal(surfaceAt(-650, 3), 'wood')
+  // (the pier at the end of Wilshire, moved with the first city: grid.js OLD)
+  const W = ROADS[WILSHIRE]
+  assert.equal(surfaceAt(-PROMENADE - 5, W), 'wood')
+  assert.equal(surfaceAt(-650 + OLD, W + 3), 'wood')
   // the street's ironwork stays on the road
   for (const m of MANHOLES)
     assert.ok(kerbDist(m.x, m.z) > 0.5, 'a manhole out in a lane')
@@ -86,7 +91,11 @@ function launch (at, t) {
 
 test('the tyres grip less on sand, and the sand drags at them', () => {
   const south = -Math.PI / 2
-  const road = launch({ x: ROADS[0], z: ROADS[3] + 20, yaw: south }, 2)
+  // (in a lane: Ocean Avenue's middle is its median now, palms on it)
+  const road = launch(
+    { x: ROADS[0] + LANE_OFF[1], z: ROADS[3] + 20, yaw: south },
+    2
+  )
   const sand = launch({ x: -PROMENADE - 10, z: ROADS[3] + 20, yaw: south }, 2)
   assert.equal(sand.surface, 'sand')
   assert.equal(road.surface, 'road')

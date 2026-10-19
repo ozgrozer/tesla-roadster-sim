@@ -246,3 +246,32 @@ red tile roofs on lawns behind tall hedges, pools out the back; Venice's bungalo
 Tall, thin fan palms line the boulevards and every street in Beverly Hills, cobra-head street
 lights lean over the road, the lane lines are Botts' dots on the low-rise streets, and the street
 being crossed is named on a lit sign under every signal's arm.
+
+## The grown map (gta-world branch)
+
+The grid went from 10 to 18 blocks a side (PITCH 96 m, HALF 864 m): 960 m to 1728 m across, 3.24
+times the area. The first city keeps its blocks in the north-west (old index i at the same index,
+moved by OLD = -384 m: grid.js), so its tests only needed that offset. Around it:
+
+- **Roads**: Wilshire-style boulevards with planted medians, two-lane streets, alleys through the
+  superblocks, one-way pairs (jam.js, street.js), a raised freeway on its deck across 15 blocks with
+  four ramps and merge lanes (freeway.js), and the Santa Fe Canyon hill road out through the north
+  wall: switchbacks at 12% with cut and fill (hillroad.js), a 210 m tunnel, a bridge over a canyon and
+  a lookout 79 m up. All drivable (tests/world.test.mjs); traffic stays on the street grid.
+- **Districts** (areas.js, works.js, suburbs.js, venues.js, quay.js): Arts District lofts, Vernon
+  sheds and truck yards, the port's container yard and quay with three ship-to-shore cranes and a
+  ship, Crenshaw/Inglewood houses and strips, the stadium superblock (bowl, tiers, canopy:
+  render/cityStadium.js), the LA River channel, sports parks, garages and lots.
+- **World queries** (js/sim/world.js): `groundHeight(x, z, y)`, `groundNormal`, `districtAt`,
+  `onRoad`, `roofAt`, `parkingNear`, `pavementNear`, `pavementGraph`, `spawnPoints`, `onHillRoad`,
+  `inTunnel`, plus FWY, HILL_ROAD, LOOKOUT. On foot, player.js's floor is the same ground
+  (tests/worldFoot.test.mjs).
+- **Streaming** (render/chunks.js): districts are a 6 x 6 grid (288 m each); every district-sized
+  mesh is left out once the fog has swallowed it, and small instanced things (posts, bins, bushes)
+  past 450-650 m. The city's shadow map pass still sees everything.
+- **Maps**: the radar and pause map draw the freeway deck and ramps, the quay and the hill road (its
+  tunnel dashed); the pause map opens fitted to the whole grown city.
+
+Draw calls / triangles (headless, 1280x720, swiftshader): spawn 388 / 1.20 M (baseline before the
+growth 326 / 1.37 M; grown map before streaming 351 / 1.48 M); aerial over the city 443 / 2.06 M
+(before streaming 430-479 / 3.1-4.5 M).
