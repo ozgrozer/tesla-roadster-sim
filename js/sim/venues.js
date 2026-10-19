@@ -78,7 +78,7 @@ export function corridor (blk, lot, deckZ0, deckZ1, ramps, end) {
   if (end) ramps = [] // (the slope down to the street fills the deck's band)
   for (let x = x0 + 6; x < x1 - 2 && !end; x += 16)
     for (const z of [deckZ0 + 2.5, deckZ1 - 2.5]) {
-      post(x, z, 0.8, 7, 'column')
+      post(x, z, 0.8, 5.5, 'column') // (up to the deck's underside: freeway.js)
       prop('column', { x, z, r: 0.8 })
     }
   // car parks under the deck, either side of the columns' middle

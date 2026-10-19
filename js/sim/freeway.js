@@ -23,6 +23,7 @@ const Z0 = FWY_Z - DECK_HW,
 // a block's lot along x (inside its pavements)
 const lotX = bx => [ROADS[bx] + ROAD_HW + WALK, ROADS[bx + 1] - ROAD_HW - WALK]
 // the blocks with ramps, and on which side of the deck ('n' or 's')
+const MERGE = 36 // m of merge lane along the deck past a ramp's top
 export const RAMP_AT = {
   4: ['n', 's'],
   14: ['n', 's']
@@ -62,6 +63,16 @@ export function layFreeway () {
       r.side = side
       r.on = (side === 's') === west
       rampsAt.push(r)
+      // (and at its top a merge lane on along the deck's side, so it never ends in the air: closed
+      // off at its far end, a barrier down its outside)
+      const mx0 = rising ? b : a - MERGE,
+        mx1 = rising ? b + MERGE : a
+      deck(mx0, mx1, z0, z1, DECK_Y)
+      r.merge = [mx0, mx1]
+      const out = side === 's' ? z1 : z0
+      solid(mx0, mx1, out - 0.2, out + 0.2, DECK_Y - 1, DECK_Y + PARAPET, 'plant', 'barrier')
+      const end = rising ? mx1 : mx0
+      solid(end - 0.2, end + 0.2, z0, z1, DECK_Y - 1, DECK_Y + PARAPET, 'plant', 'barrier')
       // the barrier between ramp and deck, a step a fifth of the way, up to where the ramp is near
       // the deck's height (the last fifth is open, for the merge)
       const edge = side === 's' ? Z1 : Z0
@@ -79,7 +90,9 @@ export function layFreeway () {
     [Z0, 'n'],
     [Z1, 's']
   ]) {
-    const cuts = rampsAt.filter(r => r.side === side).map(r => [r.x0, r.x1])
+    const cuts = rampsAt
+      .filter(r => r.side === side)
+      .map(r => [Math.min(r.x0, r.merge[0]), Math.max(r.x1, r.merge[1])])
     let from = wx1
     for (const [c0, c1] of [...cuts.sort((p, q) => p[0] - q[0]), [ex0, ex0]]) {
       if (c0 - from > 1) parapet(from, c0, edge, side)
