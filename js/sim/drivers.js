@@ -103,7 +103,8 @@ export const DRIVE = {
     const me = this.me
     if (me) {
       const mv = this.mev
-      put(me.x, me.z, mv.x, mv.z, this.mhx, this.mhz, 2.22, 0.99)
+      // (the size of whatever the player drives: onFoot.js sets it for a car not the Roadster)
+      put(me.x, me.z, mv.x, mv.z, this.mhx, this.mhz, this.meHL || 2.22, this.meHW || 0.99)
       // (stopped, it is crept past like a wreck)
       this.margin = mv.x * mv.x + mv.z * mv.z < 0.25 ? Math.min(0.5, 0.15 + car.v * 0.06) : 0.5
       this.obstacle(car, OB, me)

@@ -232,7 +232,8 @@ export function bumpLoose (tr, sim) {
       continue
     Object.assign(A, carRect(a))
     for (const b of tr.cars) {
-      if (b === a || Math.abs(b.x - a.x) > 9 || Math.abs(b.z - a.z) > 9)
+      // (the player's own car meets it from its side: collidePlayer)
+      if (b === a || b.player || Math.abs(b.x - a.x) > 9 || Math.abs(b.z - a.z) > 9)
         continue
       const hit = rectRect(A, carRect(b))
       if (!hit) continue
@@ -277,7 +278,7 @@ export function collidePlayer (tr, sim) {
   const bottom = sim.mode === 'ground' ? sim.pos.y : sim.com.y - 0.9
   for (const car of tr.cars) {
     if (Math.abs(car.x - me.x) > 9 || Math.abs(car.z - me.z) > 9) continue
-    if (bottom > car.hgt) continue
+    if (bottom > car.hgt || car.player) continue // (not the car the player is in)
     const hit = rectRect(me, carRect(car))
     if (!hit) continue
     // (the normal from the car towards the Roadster, before anything else reuses the contact, and

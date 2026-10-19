@@ -236,7 +236,11 @@ export class Traffic {
       sndV: undefined,
       sndLv: undefined,
       sndAlarm: false,
-      jam: false
+      jam: false,
+      // (the player's: driven by them (drivable.js), or left where they got out of it)
+      player: false,
+      ditched: false,
+      alt: 0 // m off the ground, driven off a roof or a jump
     }
     if (!WARM) {
       warm(car)
@@ -410,7 +414,9 @@ export class Traffic {
     // the Roadster coming down on the street from the air: everyone in front of it panics
     if (this.wasAir && sim.mode === 'ground' && pl.y < 1) this.landing(pl.x, pl.z)
     this.wasAir = sim.mode === 'air'
-    this.calls(dt, sim.pos.x, sim.pos.z, view) // (a police car on a call: calls.js)
+    // (the bubble is round the player: on foot, wherever they walk to: this.focus, onFoot.js)
+    const fo = this.focus || sim.pos
+    this.calls(dt, fo.x, fo.z, view) // (a police car on a call: calls.js)
     for (const car of this.cars)
       if (car.loose) slide(this, car, dt, sim)
       else if (!car.parked) {
@@ -425,7 +431,7 @@ export class Traffic {
     this.clock += dt
     if (this.clock > 0.25) {
       this.clock = 0
-      this.recycle(sim.pos.x, sim.pos.z, view)
+      this.recycle(fo.x, fo.z, view)
     }
   }
 

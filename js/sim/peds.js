@@ -263,7 +263,8 @@ export class Peds {
     traffic.peds = this.onRoad
     if (this.clock > 0.5) {
       this.clock = 0
-      this.recycle(pl.x, pl.z, view)
+      const fo = traffic.focus || pl // (the player on foot: onFoot.js)
+      this.recycle(fo.x, fo.z, view)
     }
   }
   // (its step, p.lodT, is read from the person: a number passed in costs an allocation)
