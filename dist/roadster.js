@@ -96150,8 +96150,294 @@ function buildProps (group) {
 __export(__exports, { "Signals": () => Signals, "buildProps": () => buildProps })
 })
 
-// ---- js/render/roadSurface.js
+// ---- js/render/cityWorks.js
 __define(180, function (__exports) {
+// The new districts' working things (the sim lays them out: PROPS, DECKS, RAMPS and the SOLIDS'
+// looks): the port's container stacks and the yards' trailers, loading docks down the sheds' sides,
+// water towers on the Arts District's roofs, factory chimneys and tanks, chain-link fences, the
+// freeway's deck with its lanes painted on and its concrete barriers, the ramps up to it and up a
+// garage, bus shelters, the parks' hoops, bleachers and floodlight masts, the suburbs' bushes. All
+// of it static: merged a district at a time (chunks.js), so the view and the car's shadow camera
+// leave out what is not near; the containers and the bushes, by the thousand, are instanced.
+const THREE = __require(0)
+const { SOLIDS } = __require(30)
+const { PROPS, DECKS, RAMPS } = __require(28)
+const { FWY } = __require(27)
+const { canvasTex } = __require(59)
+const { Builder } = __require(176)
+const { district, DISTRICTS, Instances } = __require(171)
+// the boxes' colours (works.js BOXES): the shipping lines' blues, reds, greens, a rust, greys
+const BOX = [
+  0x2a5a9c, 0xb8332b, 0x2f7d4f, 0xd27a2c, 0x8f8f8a, 0xe6e2d6, 0x1d3b63,
+  0x8a4b2e, 0x3f8f95, 0xc9a227
+]
+const C = (hex, k = 1) => new THREE.Color(hex).multiplyScalar(k)
+const CONCRETE = C(0xbdb7ab),
+  ASPHALT = C(0x4b4c50),
+  STEEL = C(0x8d949a),
+  DARK = C(0x2a2b2e),
+  WOOD = C(0x7b5a3c),
+  WHITE = C(0xeeeeea),
+  YELLOW = C(0xe2b53a),
+  DOOR = C(0x8296a3),
+  GLASS = C(0x6f8794)
+const UNIT = new THREE.BoxGeometry(1, 1, 1)
+const CYL = new THREE.CylinderGeometry(1, 1, 1, 12, 1).translate(0, 0.5, 0)
+const CONE = new THREE.ConeGeometry(1, 1, 12, 1).translate(0, 0.5, 0)
+const DOME = new THREE.SphereGeometry(1, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2)
+const M = new THREE.Matrix4(),
+  Q = new THREE.Quaternion(),
+  V = new THREE.Vector3(),
+  S = new THREE.Vector3(),
+  UP = new THREE.Vector3(0, 1, 0)
+
+// geo placed with its base at (x, y, z), scaled (sx, sy, sz) and turned yaw about its middle
+function put (B, geo, x, y, z, sx, sy, sz, yaw, col) {
+  Q.setFromAxisAngle(UP, yaw)
+  M.compose(V.set(x, y, z), Q, S.set(sx, sy, sz))
+  B.add(geo, M, col)
+}
+// a box from y0 to y1, its middle at local (u, w) from (x, z) turned yaw: u along the facing, w across
+function box (B, x, z, yaw, u, w, su, sw, y0, y1, col) {
+  const c = Math.cos(yaw),
+    s = Math.sin(yaw)
+  put(B, UNIT, x + u * c + w * s, (y0 + y1) / 2, z - u * s + w * c, su, y1 - y0, sw, yaw, col)
+}
+const cyl = (B, x, y, z, r, h, col, geo = CYL) => put(B, geo, x, y, z, r, h, r, 0, col)
+
+// chain-link: wire diamonds on the clear, a rail along the top
+function chainTex () {
+  const t = canvasTex(64, (g, s) => {
+    g.clearRect(0, 0, s, s)
+    g.strokeStyle = 'rgba(170,176,180,0.95)'
+    g.lineWidth = 2
+    g.beginPath()
+    g.moveTo(0, 0)
+    g.lineTo(s, s)
+    g.moveTo(s, 0)
+    g.lineTo(0, s)
+    g.stroke()
+    g.fillStyle = '#9aa1a6'
+    g.fillRect(0, 0, s, 4)
+  })
+  return t
+}
+// a fence's mesh, one plane down its middle; posts every 3 m
+function chain (F, B, s) {
+  const along = s.x1 - s.x0 > s.z1 - s.z0,
+    m = along ? (s.z0 + s.z1) / 2 : (s.x0 + s.x1) / 2
+  const len = along ? s.x1 - s.x0 : s.z1 - s.z0,
+    h = s.y1
+  const uv = [0, 0, len / 0.6, h / 0.6]
+  if (along) F.quad([s.x0, 0, m], [s.x1, 0, m], [s.x1, h, m], [s.x0, h, m], [0, 0, 1], uv, WHITE)
+  else F.quad([m, 0, s.z1], [m, 0, s.z0], [m, h, s.z0], [m, h, s.z1], [1, 0, 0], uv, WHITE)
+  for (let u = 0; u <= len + 0.01; u += Math.max(1, len / Math.ceil(len / 3))) {
+    const x = along ? s.x0 + u : m,
+      z = along ? m : s.z0 + u
+    cyl(B, x, 0, z, 0.04, h + 0.05, STEEL)
+  }
+}
+
+// a ramp's slope and its sides down to the ground, its edges painted
+function slope (B, r) {
+  const { x0, x1, z0, z1, h0, h1 } = r
+  if (r.axis === 'x') {
+    const n = new THREE.Vector3(h0 - h1, x1 - x0, 0).normalize().toArray()
+    B.quad([x0, h0, z1], [x1, h1, z1], [x1, h1, z0], [x0, h0, z0], n, [0, 0, 1, 1], ASPHALT)
+    B.quad([x0, 0, z1], [x1, 0, z1], [x1, h1, z1], [x0, h0, z1], [0, 0, 1], [0, 0, 1, 1], CONCRETE)
+    B.quad([x1, 0, z0], [x0, 0, z0], [x0, h0, z0], [x1, h1, z0], [0, 0, -1], [0, 0, 1, 1], CONCRETE)
+    for (const z of [z0 + 0.5, z1 - 0.5])
+      B.quad([x0, h0 + 0.03, z + 0.08], [x1, h1 + 0.03, z + 0.08], [x1, h1 + 0.03, z - 0.08], [x0, h0 + 0.03, z - 0.08], n, [0, 0, 1, 1], WHITE)
+  } else {
+    const n = new THREE.Vector3(0, z1 - z0, h0 - h1).normalize().toArray()
+    B.quad([x0, h1, z1], [x1, h1, z1], [x1, h0, z0], [x0, h0, z0], n, [0, 0, 1, 1], ASPHALT)
+    B.quad([x1, 0, z1], [x1, 0, z0], [x1, h0, z0], [x1, h1, z1], [1, 0, 0], [0, 0, 1, 1], CONCRETE)
+    B.quad([x0, 0, z0], [x0, 0, z1], [x0, h1, z1], [x0, h0, z0], [-1, 0, 0], [0, 0, 1, 1], CONCRETE)
+    for (const x of [x0 + 0.5, x1 - 0.5])
+      B.quad([x - 0.08, h1 + 0.03, z1], [x + 0.08, h1 + 0.03, z1], [x + 0.08, h0 + 0.03, z0], [x - 0.08, h0 + 0.03, z0], n, [0, 0, 1, 1], WHITE)
+  }
+}
+// a deck: its slab, the asphalt on top, and on the freeway's its lanes (along x)
+function deck (B, d) {
+  B.walls(d.x0, d.x1, d.z0, d.z1, d.y0, d.y1, CONCRETE, w => [0, 0, w / 4, 1])
+  B.bottom(d.x0, d.x1, d.z0, d.z1, d.y0, CONCRETE)
+  B.top(d.x0, d.x1, d.z0, d.z1, d.y1, ASPHALT)
+  if (!FWY || Math.abs(d.y1 - FWY.y) > 0.01 || d.z0 > FWY.z || d.z1 < FWY.z) return
+  const y = d.y1 + 0.02
+  const line = (z, w, col, dash) => {
+    for (let x = d.x0; x < d.x1; x += dash ? 12 : d.x1 - d.x0) {
+      const e = Math.min(d.x1, x + (dash ? 4 : d.x1 - d.x0))
+      B.top(x, e, z - w, z + w, y, col)
+    }
+  }
+  const hw = (d.z1 - d.z0) / 2
+  for (const s of [-1, 1]) {
+    line(FWY.z + s * 0.9, 0.08, YELLOW, false)
+    line(FWY.z + s * (hw - 1.2), 0.08, WHITE, false)
+    for (const k of [1, 2]) line(FWY.z + s * (0.9 + ((hw - 2.1) * k) / 3), 0.07, WHITE, true)
+  }
+}
+
+// one of each prop kind, into the builders
+function propOf (B, p) {
+  const { x, z } = p
+  switch (p.kind) {
+    case 'trailer': {
+      const yaw = p.yaw,
+        L = p.cab ? 18.5 : 13.6,
+        col = C(BOX[p.c], 1.05)
+      const tu = p.cab ? -L / 2 + 6.8 : 0
+      box(B, x, z, yaw, tu, 0, 13.6, 2.5, 1.2, 4, col)
+      box(B, x, z, yaw, tu - 4.5, 0, 3.4, 2.2, 0.3, 1.2, DARK) // (the wheels at the back)
+      box(B, x, z, yaw, tu + 6.4, 0, 0.4, 2, 0, 1.2, STEEL) // (its legs)
+      if (p.cab) {
+        box(B, x, z, yaw, L / 2 - 2, 0, 3.4, 2.4, 0.5, 3.4, C(BOX[(p.c + 3) % 10], 1.1))
+        box(B, x, z, yaw, L / 2 - 4.6, 0, 1.6, 2.2, 0.3, 1.1, DARK)
+      }
+      break
+    }
+    case 'dock': {
+      const yaw = [Math.PI / 2, 0, -Math.PI / 2, Math.PI][p.face]
+      box(B, x, z, yaw, 0.06, 0, 0.12, p.w, 1.2, 1.2 + p.h, DOOR)
+      box(B, x, z, yaw, 0.12, 0, 0.24, p.w + 0.6, 0.9, 1.2, DARK)
+      box(B, x, z, yaw, 0.05, 0, 0.1, p.w + 0.5, 1.2 + p.h, 1.5 + p.h, STEEL)
+      break
+    }
+    case 'watertower': {
+      const { y, r, h, legs } = p
+      for (let k = 0; k < 4; k++) {
+        const a = (k * Math.PI) / 2 + Math.PI / 4
+        cyl(B, x + Math.cos(a) * r * 0.8, y, z + Math.sin(a) * r * 0.8, 0.12, legs, STEEL)
+      }
+      cyl(B, x, y + legs * 0.5, z, r * 0.85, 0.12, STEEL)
+      cyl(B, x, y + legs, z, r, h, WOOD)
+      cyl(B, x, y + legs + h, z, r * 1.05, r * 0.6, C(0x5b4a3a), CONE)
+      break
+    }
+    case 'stack': {
+      cyl(B, x, 0, z, p.r, p.h, C(0x9a5844))
+      if (p.bands) for (const k of [0.82, 0.9]) cyl(B, x, p.h * k, z, p.r + 0.03, p.h * 0.04, k > 0.85 ? WHITE : C(0xb8332b))
+      cyl(B, x, p.h, z, p.r + 0.08, 0.4, DARK)
+      break
+    }
+    case 'tank': {
+      const col = C(0xd8d6d0, 0.75 + 0.25 * p.c)
+      cyl(B, x, 0, z, p.r, p.h, col)
+      put(B, DOME, x, p.h, z, p.r, p.r * 0.35, p.r, 0, col)
+      break
+    }
+    case 'hoop': {
+      const yaw = p.yaw
+      box(B, x, z, yaw, -0.6, 0, 0.14, 0.14, 0, 3.4, STEEL)
+      box(B, x, z, yaw, -0.2, 0, 0.9, 0.1, 3.2, 3.3, STEEL)
+      box(B, x, z, yaw, 0.25, 0, 0.05, 1.8, 2.9, 3.95, WHITE)
+      box(B, x, z, yaw, 0.5, 0, 0.45, 0.45, 3.04, 3.07, C(0xd2552a))
+      break
+    }
+    case 'bleachers': {
+      const { x0, x1, z0, z1, h, face } = p
+      const rows = 5
+      for (let i = 0; i < rows; i++) {
+        const k = i / rows,
+          y = (h * (i + 1)) / rows
+        if (face === 3) B.cuboid(x0 + (x1 - x0) * k, x1, z0, z1, 0, y, i % 2 ? STEEL : C(0x9aa3a8))
+        else B.cuboid(x0, x1 - (x1 - x0) * k, z0, z1, 0, y, i % 2 ? STEEL : C(0x9aa3a8))
+      }
+      break
+    }
+    case 'mast': {
+      const r = p.big ? 0.6 : 0.25
+      cyl(B, x, 0, z, r, p.h, STEEL)
+      box(B, x, z, 0, 0, 0, p.big ? 1.2 : 0.8, p.big ? 6 : 3, p.h, p.h + (p.big ? 3.5 : 1.6), C(0xe8e6da))
+      break
+    }
+    case 'shelter': {
+      const yaw = p.yaw
+      for (const w of [-1.7, 1.7]) box(B, x, z, yaw, -0.6, w, 0.1, 0.1, 0, 2.5, STEEL)
+      box(B, x, z, yaw, -0.2, 0, 1.6, 3.8, 2.5, 2.62, STEEL)
+      box(B, x, z, yaw, -0.65, 0, 0.05, 3.4, 0.3, 2.4, GLASS)
+      box(B, x, z, yaw, -0.6, -1.68, 0.8, 0.05, 0.3, 2.4, GLASS)
+      box(B, x, z, yaw, -0.35, 0, 0.4, 2.2, 0.45, 0.5, WOOD) // (the bench)
+      box(B, x, z, yaw, -0.6, 1.9, 0.08, 1.2, 0.4, 2.4, C(0xf2efe2, 1.3)) // (its ad panel)
+      break
+    }
+  }
+}
+
+function buildWorks (group) {
+  const solid = Array.from({ length: DISTRICTS }, () => new Builder())
+  const mesh = Array.from({ length: DISTRICTS }, () => new Builder())
+  const at = (x, z) => district(x, z)
+  for (const s of SOLIDS) {
+    const d = at((s.x0 + s.x1) / 2, (s.z0 + s.z1) / 2)
+    if (s.look === 'chain') chain(mesh[d], solid[d], s)
+    else if (s.look === 'parapet' || s.look === 'barrier') {
+      solid[d].cuboid(s.x0, s.x1, s.z0, s.z1, s.y0, s.y1, CONCRETE)
+    }
+  }
+  for (const k of DECKS) deck(solid[at((k.x0 + k.x1) / 2, (k.z0 + k.z1) / 2)], k)
+  for (const r of RAMPS) slope(solid[at((r.x0 + r.x1) / 2, (r.z0 + r.z1) / 2)], r)
+  const boxes = [],
+    bushes = []
+  for (const p of PROPS) {
+    if (p.kind === 'container') {
+      for (let i = 0; i < p.n; i++) boxes.push({ ...p, i })
+    } else if (p.kind === 'bush') bushes.push(p)
+    else propOf(solid[at(p.x, p.z)], p)
+  }
+  const mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.85, metalness: 0.05 })
+  for (const b of solid) add(group, b, mat, true, 'works')
+  const chainMat = new THREE.MeshStandardMaterial({
+    map: chainTex(),
+    alphaTest: 0.4,
+    side: THREE.DoubleSide,
+    roughness: 0.6,
+    metalness: 0.3
+  })
+  for (const b of mesh) add(group, b, chainMat, false, 'chain-link')
+  // the containers: one box each, ribbed by a texture-free shade, instanced
+  const col = new THREE.Color()
+  if (boxes.length) {
+    const I = new Instances(UNIT, new THREE.MeshStandardMaterial({ roughness: 0.7, metalness: 0.2 }), boxes.length, i => boxes[i])
+    boxes.forEach((p, i) => {
+      const along = p.yaw === 0
+      Q.setFromAxisAngle(UP, 0)
+      M.compose(V.set(p.x, 1.295 + p.i * 2.59, p.z), Q, S.set(along ? p.L - 0.05 : 2.42, 2.55, along ? 2.42 : p.L - 0.05))
+      I.setMatrixAt(i, M)
+      I.setColorAt(i, col.setHex(BOX[p.c[p.i]]))
+    })
+    for (const m of I.bounds().meshes) {
+      m.name = 'containers'
+      group.add(m)
+    }
+  }
+  if (bushes.length) {
+    const geo = new THREE.IcosahedronGeometry(1, 1)
+    const I = new Instances(geo, new THREE.MeshStandardMaterial({ roughness: 0.95, flatShading: true }), bushes.length, i => bushes[i], { cast: false })
+    bushes.forEach((p, i) => {
+      M.compose(V.set(p.x, p.r * 0.6, p.z), Q.identity(), S.set(p.r, p.r * 0.8, p.r))
+      I.setMatrixAt(i, M)
+      I.setColorAt(i, col.setHSL(0.26 + ((i * 37) % 10) * 0.006, 0.38, 0.26 + ((i * 53) % 7) * 0.012))
+    })
+    for (const m of I.bounds().meshes) {
+      m.name = 'bushes'
+      group.add(m)
+    }
+  }
+}
+function add (group, b, mat, cast, name) {
+  if (b.empty) return
+  const m = new THREE.Mesh(b.geometry(), mat)
+  m.castShadow = cast
+  m.receiveShadow = true
+  m.name = name
+  group.add(m)
+}
+__export(__exports, { "buildWorks": () => buildWorks })
+})
+
+// ---- js/render/roadSurface.js
+__define(181, function (__exports) {
 // The street's asphalt, worn the way a city's is: two darker, smoother wheel tracks down every lane
 // (polished enough to catch the low sun), a line of oil drips between them, more wear on the
 // approach to each stop line, broad patches of newer and older surface, tar-sealed cracks wandering
@@ -96314,7 +96600,7 @@ __export(__exports, { "roadMaterial": () => roadMaterial })
 })
 
 // ---- js/render/cityGround.js
-__define(181, function (__exports) {
+__define(182, function (__exports) {
 // The city's ground: asphalt, kerbed blocks with sidewalks and rounded corners, lane
 // paint, stop lines and zebra crossings, parks, parking lots and the promenade round the ring road;
 // and on each block's lot what the sim laid out (lots.js): its base (paving, a lawn or asphalt) and
@@ -96322,7 +96608,7 @@ __define(181, function (__exports) {
 const THREE = __require(0)
 const { merge, marks, LAYER } = __require(61)
 const { canvasTex, speckle } = __require(59)
-const { roadMaterial } = __require(180)
+const { roadMaterial } = __require(181)
 const { wetGround } = __require(109)
 const { lampLit } = __require(135)
 const { dotted, eachMarker } = __require(38)
@@ -96706,7 +96992,7 @@ __export(__exports, { "buildGround": () => buildGround })
 })
 
 // ---- js/render/cityStreet.js
-__define(182, function (__exports) {
+__define(183, function (__exports) {
 // The street's details: cast-iron manhole lids out in the lanes, drain grates in the gutters by the
 // corners (both laid out by the sim, street.js, which feels the lids under the wheels), and the
 // arrows painted in each lane before the stop line, showing the moves the lane graph allows from it
@@ -96936,7 +97222,7 @@ __export(__exports, { "buildStreet": () => buildStreet })
 })
 
 // ---- js/render/signArt.js
-__define(183, function (__exports) {
+__define(184, function (__exports) {
 // The artwork for the signs' atlas (signTex.js): drawing helpers (lettering that fits its space,
 // gradients, a border of bulbs, a palm's silhouette), the billboards' eight designs, the made-up
 // names (hotels, films, blade signs, fast food, gas brands) and the murals. Every name and brand is
@@ -97261,7 +97547,7 @@ __export(__exports, { "SANS": () => SANS, "SERIF": () => SERIF, "text": () => te
 })
 
 // ---- js/render/signTex.js
-__define(184, function (__exports) {
+__define(185, function (__exports) {
 // The city's signs and pictures, drawn into one atlas at startup: billboards, old hotels' names for
 // their roofs, theatre marquees and blade signs, a motel's neon, fast-food and strip-mall signs on
 // poles, gas prices and a gas station's canopy fascia, murals for the walls, a helipad's H and a
@@ -97271,7 +97557,7 @@ __define(184, function (__exports) {
 const THREE = __require(0)
 const { rng } = __require(30)
 const { renderer } = __require(59)
-const { SERIF, text, grad, bulbs, BILLBOARDS, HOTELS, FILMS, BLADES, NEON, FOODS, BRANDS, mural } = __require(183)
+const { SERIF, text, grad, bulbs, BILLBOARDS, HOTELS, FILMS, BLADES, NEON, FOODS, BRANDS, mural } = __require(184)
 const R = rng(31)
 const W = 2048,
   H = 2048
@@ -97562,7 +97848,7 @@ __export(__exports, { "CELLS": () => CELLS, "signAtlas": () => signAtlas, "SIGN_
 })
 
 // ---- js/render/citySigns.js
-__define(185, function (__exports) {
+__define(186, function (__exports) {
 // The signs (the sim lays them out: SIGNS, and the solid things on the lots: SOLIDS). Billboards on
 // poles and on roofs, two-faced, with a catwalk under each and lamps over it; signs up on poles for
 // the motel, the fast-food stands, the strip malls and the gas prices; a theatre's marquee over the
@@ -97574,7 +97860,7 @@ __define(185, function (__exports) {
 const THREE = __require(0)
 const { SIGNS, SOLIDS, BUILDINGS, BLOCKS, CURB_H } = __require(30)
 const { Builder } = __require(176)
-const { CELLS, signAtlas } = __require(184)
+const { CELLS, signAtlas } = __require(185)
 const { softTex } = __require(59)
 const FACE = [
   [0, -1],
@@ -98054,7 +98340,7 @@ __export(__exports, { "buildSigns": () => buildSigns })
 })
 
 // ---- js/render/cityYards.js
-__define(186, function (__exports) {
+__define(187, function (__exports) {
 // What the houses' yards are closed off with (the sim lays them out, solid: SOLIDS): clipped hedges
 // along Beverly Hills' pavements, some as tall as the garage, in a leafy texture, each a shade of
 // its own; low stucco garden walls; white picket fences round Venice's bungalows (cut out of a
@@ -98197,7 +98483,7 @@ __export(__exports, { "buildYards": () => buildYards })
 })
 
 // ---- js/render/shopTex.js
-__define(187, function (__exports) {
+__define(188, function (__exports) {
 // The shops' signs, drawn into one atlas at startup: a name board for each kind of shop (cafés and
 // restaurants, clothes shops, convenience stores and pharmacies, salons and barbers, bars), and the
 // things stuck in the windows (a FOR LEASE board, an OPEN sign in neon, a bar's cocktail glass in
@@ -98208,7 +98494,7 @@ __define(187, function (__exports) {
 // which would lose the colour of everything that doesn't glow).
 const THREE = __require(0)
 const { renderer } = __require(59)
-const { SANS, SERIF, text } = __require(183)
+const { SANS, SERIF, text } = __require(184)
 // the kinds of shop, in the order the shader knows them (shopShader.js)
 const KINDS = ['cafe', 'clothes', 'store', 'salon', 'bar', 'empty']
 const W = 1024
@@ -98403,7 +98689,7 @@ __export(__exports, { "KINDS": () => KINDS, "W": () => W, "H": () => H, "BOARD":
 })
 
 // ---- js/render/shopRooms.js
-__define(188, function (__exports) {
+__define(189, function (__exports) {
 // The insides of the shops, traced in the shader (shopShader.js) the way facade.js traces the rooms
 // behind the windows above: the view ray goes on through the glass into a box a few metres deep (its
 // floor, ceiling, side walls and back wall), and before that it is tested against what stands in it,
@@ -98805,7 +99091,7 @@ __export(__exports, { "ROOMS_GLSL": () => ROOMS_GLSL })
 })
 
 // ---- js/render/shopShader.js
-__define(189, function (__exports) {
+__define(190, function (__exports) {
 // The shopfronts' shader. Each shop is one flat quad on its building's ground floor (shopfronts.js),
 // and everything on it is worked out per pixel from where the pixel is on the shop (x along it from
 // its left end, y up from the pavement, in metres) and the shop's own numbers: the piers either side
@@ -98825,8 +99111,8 @@ __define(189, function (__exports) {
 // few pixels high, the reveal and the room go and the glass shows the room's light on average.
 const THREE = __require(0)
 const { NIGHT } = __require(163)
-const { ROOMS_GLSL } = __require(188)
-const { W, H, BOARD, DECAL, DECAL_Y } = __require(187)
+const { ROOMS_GLSL } = __require(189)
+const { W, H, BOARD, DECAL, DECAL_Y } = __require(188)
 const INSET = 0.18 // m the glazing sits back from the piers and the fascia
 const FAR = 0.07 // m a pixel, past which the glass shows the room's light on average
 const ACROSS = 22.8 // m from a shopfront to the buildings across the street
@@ -99206,7 +99492,7 @@ __export(__exports, { "shopMaterial": () => shopMaterial, "poolMaterial": () => 
 })
 
 // ---- js/render/shopfronts.js
-__define(190, function (__exports) {
+__define(191, function (__exports) {
 // The storefronts round the ground floor of every building with shops (the sim's b.shop): each wall
 // split into shops a few metres wide (narrower on Hollywood's strip, wider in the strip malls), each
 // one flat quad carrying its own numbers for the shader (shopShader.js): its width, its kind (a café,
@@ -99219,8 +99505,8 @@ __define(190, function (__exports) {
 // their awnings), one for all their light.
 const THREE = __require(0)
 const { query, rng, CURB_H } = __require(30)
-const { BOARDS, BY_KIND, DECALS, shopSigns } = __require(187)
-const { shopMaterial, poolMaterial } = __require(189)
+const { BOARDS, BY_KIND, DECALS, shopSigns } = __require(188)
+const { shopMaterial, poolMaterial } = __require(190)
 const R = rng(4071)
 // the share of each kind (café, clothes, store, salon, bar, empty) by neighbourhood
 const MIX = {
@@ -99509,7 +99795,7 @@ __export(__exports, { "shopfronts": () => shopfronts })
 })
 
 // ---- js/render/buildingTex.js
-__define(191, function (__exports) {
+__define(192, function (__exports) {
 // The buildings' textures, drawn at startup: a facade per style (glass curtain wall, office ribbon
 // windows, brick at its real size, stucco with balconies, pale stone or terracotta with tall windows
 // between piers, a house's wall with its few windows), a flat roof's membrane, red clay tiles for hip
@@ -99806,7 +100092,7 @@ __export(__exports, { "COL": () => COL, "FLOOR": () => FLOOR, "CELLS": () => CEL
 })
 
 // ---- js/render/cityBuildings.js
-__define(192, function (__exports) {
+__define(193, function (__exports) {
 // City buildings: procedural facades (glass curtain wall, office, brick, stucco, stone and
 // terracotta, a house's wall) with windows lit for the evening, storefronts under canopies along
 // the street, setbacks, cornices, roof lips, rooftop plant and antenna beacons; houses under clay tile
@@ -99824,10 +100110,10 @@ const { district, DISTRICTS } = __require(171)
 const { BUILDINGS, rng } = __require(30)
 const { hdr } = __require(59)
 const { Builder } = __require(176)
-const { buildSigns } = __require(185)
-const { buildYards } = __require(186)
-const { shopfronts } = __require(190)
-const { COL, FLOOR, CELLS, SHOP, INSET, WIN, STYLES, facadeMap, roofTex, tileTex, crownTex } = __require(191)
+const { buildSigns } = __require(186)
+const { buildYards } = __require(187)
+const { shopfronts } = __require(191)
+const { COL, FLOOR, CELLS, SHOP, INSET, WIN, STYLES, facadeMap, roofTex, tileTex, crownTex } = __require(192)
 const R = rng(77)
 
 // how each style's windows are lit and dressed (facade.js)
@@ -100203,7 +100489,7 @@ __export(__exports, { "BEACON": () => BEACON, "buildBuildings": () => buildBuild
 })
 
 // ---- js/render/city.js
-__define(193, function (__exports) {
+__define(194, function (__exports) {
 // The city view: builds the city's meshes the first time it is visited (so the test site loads as
 // fast as ever), shows it in place of the test site, and keeps the traffic, signals, sky, sea and
 // antenna beacons moving, the light following the clock and the weather (daylight.js), and the
@@ -100225,9 +100511,10 @@ const { PedView } = __require(170)
 const { TrafficView } = __require(162)
 const { NIGHT } = __require(163)
 const { buildProps } = __require(179)
-const { buildGround } = __require(181)
-const { buildStreet } = __require(182)
-const { buildBuildings, BEACON } = __require(192)
+const { buildWorks } = __require(180)
+const { buildGround } = __require(182)
+const { buildStreet } = __require(183)
+const { buildBuildings, BEACON } = __require(193)
 const { updateTrees } = __require(175)
 const _pv = new THREE.Matrix4(),
   _view = new THREE.Frustum()
@@ -100289,6 +100576,7 @@ class CityView {
     this.edges = buildEdges(g) // (past the ring road: the sea, the hills, the freeway)
     this.buildings = buildBuildings(g)
     const props = (this.props = buildProps(g))
+    buildWorks(g) // (the new districts' docks, stacks, fences, the freeway deck and ramps)
     const top = Math.max(...BUILDINGS.map(b => b.h)) + 30 // (and the masts on top)
     const sun = new THREE.Vector3(ENV.sun.x, ENV.sun.y, ENV.sun.z)
     this.shadow = new CityShadow(scene, renderer, sun, OUTER, top)
@@ -100418,7 +100706,7 @@ __export(__exports, { "CityView": () => CityView, "clipCamera": () => clipCamera
 })
 
 // ---- js/render/skids.js
-__define(194, function (__exports) {
+__define(195, function (__exports) {
 // Skid marks: one continuous rubber ribbon per sliding tyre. The ribbon is as wide as the tyre's
 // footprint across its path (full tread width in a straight lock-up, the short contact patch when it
 // slides sideways), darkens with how hard the tyre slides and fades in and out at each end.
@@ -100577,7 +100865,7 @@ __export(__exports, { "clearSkids": () => clearSkids, "updateSkids": () => updat
 })
 
 // ---- js/render/wall.js
-__define(195, function (__exports) {
+__define(196, function (__exports) {
 // The curved wall (slab, LED edges that turn white behind the car, centre line) and its steel truss.
 const THREE = __require(0)
 const { site, MAT } = __require(59)
@@ -100832,7 +101120,7 @@ __export(__exports, { "LED_MAT": () => LED_MAT, "buildWall": () => buildWall, "b
 })
 
 // ---- js/render/freeze.js
-__define(196, function (__exports) {
+__define(197, function (__exports) {
 // Fewer draw calls for a model built from many small pieces: every mesh that never moves on its own
 // is baked into one buffer per material (and per shadow setting), in the root's frame, so the
 // Roadster, about 230 meshes as built, is drawn (and drawn again into the shadow map) in a few dozen
@@ -100925,7 +101213,7 @@ __export(__exports, { "freeze": () => freeze })
 })
 
 // ---- js/render/wheels.js
-__define(197, function (__exports) {
+__define(198, function (__exports) {
 // Wheels and wheel wells: arch openings cut into the body shell with dark well liners, tyres with
 // rounded sidewalls round the reveal car's wheels (six black twin spokes over white aero inserts),
 // Ackermann steering and free-spinning wheels in the air.
@@ -101160,7 +101448,7 @@ __export(__exports, { "ARCH_R": () => ARCH_R, "withWheelArches": () => withWheel
 })
 
 // ---- js/render/roadsterRear.js
-__define(198, function (__exports) {
+__define(199, function (__exports) {
 // The Roadster's tail, as in the rear shot from the reveal: a full-width red light bar in a smoked
 // black band under the ducktail lip, a satin panel with the plate and a camera, and the black lower
 // fascia: a louvred housing for the 4 main nozzles over a diffuser of 4 fan bays split by strakes,
@@ -101411,7 +101699,7 @@ __export(__exports, { "fanUnit": () => fanUnit, "buildTail": () => buildTail, "b
 })
 
 // ---- js/render/roadster.js
-__define(199, function (__exports) {
+__define(200, function (__exports) {
 // The Roadster model, measured off the Oct 15, 2026 reveal photos (a side-on shot at the event sets the
 // proportions, a top-down one the canopy, a rear one the tail): a wedge in satin Ano White, smooth
 // panels with crisp creases, a tall blunt nose, sloped fender facets either side of a short hood,
@@ -101421,15 +101709,15 @@ __define(199, function (__exports) {
 // (roadsterRear.js), an active rear wing, underfloor suction fan, skirts and twin-spoke aero wheels,
 // the cabin with its yoke and touchscreen (roadsterCabin.js); plus per-frame pose and animation.
 const THREE = __require(0)
-const { freeze } = __require(196)
+const { freeze } = __require(197)
 const { scene, MAT } = __require(59)
 const { CURB_H } = __require(30)
 const { CAR, clamp, AX_Z } = __require(2)
 const { buildOptimus, poseOptimus } = __require(63)
 const { DRIVER, buildCabin, updateCabin } = __require(64)
 const { loft, loftGeos, at, seam, withStations } = __require(62)
-const { buildWheels, updateWheels, withWheelArches } = __require(197)
-const { buildTail, buildWing, updateWing, fanUnit } = __require(198)
+const { buildWheels, updateWheels, withWheelArches } = __require(198)
+const { buildTail, buildWing, updateWing, fanUnit } = __require(199)
 const _a = new THREE.Vector3()
 const SEAM = new THREE.MeshStandardMaterial({
   color: 0x0b0c0e,
@@ -101892,7 +102180,7 @@ __export(__exports, { "buildRoadster": () => buildRoadster, "updateRoadster": ()
 })
 
 // ---- js/render/rain.js
-__define(200, function (__exports) {
+__define(201, function (__exports) {
 // The rain: streaks falling through a box of air round the camera, and splashes where they land.
 // Each drop has its own place in the box and falls through it on the wind, wrapping round, so the
 // rain stays put in the world as the camera moves through it (driving into it, it comes at the
@@ -102129,7 +102417,7 @@ __export(__exports, { "Rain": () => Rain })
 })
 
 // ---- js/render/beams.js
-__define(201, function (__exports) {
+__define(202, function (__exports) {
 // The Roadster's headlight beams seen in the air: in rain or fog at night the light ahead of the car
 // is caught by the water in the air, two pale cones reaching out down the road from the lamps,
 // brightest at the lamps and fading out with distance, soft at their edges. A faint trace on a
@@ -102199,7 +102487,7 @@ __export(__exports, { "Beams": () => Beams })
 })
 
 // ---- js/climate.js
-__define(202, function (__exports) {
+__define(203, function (__exports) {
 // The clock and the weather in the city, run once a frame from the main loop (main.js): the clock
 // and the weather moving on (sim/env.js), L running the clock on fast to the next time of day and O
 // bringing in the next weather, the light following them (render/daylight.js, through the city
@@ -102209,9 +102497,9 @@ __define(202, function (__exports) {
 // at night (lampLight.js), and the graphics quality (the reflection's size, how many drops, the
 // frame's pixels), remembered.
 const THREE = __require(0)
-const { Rain } = __require(200)
+const { Rain } = __require(201)
 const { hemi, renderer, scene, camera } = __require(59)
-const { Beams } = __require(201)
+const { Beams } = __require(202)
 const { Mirror } = __require(112)
 const { lampLit } = __require(135)
 const { recall, remember } = __require(7)
@@ -102388,7 +102676,7 @@ __export(__exports, { "QUALITY": () => QUALITY, "Climate": () => Climate })
 })
 
 // ---- js/render/resolution.js
-__define(203, function (__exports) {
+__define(204, function (__exports) {
 // Adaptive resolution: the frame is drawn at the screen's full pixel density (up to 2, on a Retina
 // screen) while the GPU keeps up, and at less when it doesn't, a step at a time until it does, and
 // back up once it has room again; so a slower GPU (a laptop's built-in graphics driving a sharp
@@ -102569,7 +102857,7 @@ __export(__exports, { "Resolution": () => Resolution })
 })
 
 // ---- js/render/warm.js
-__define(204, function (__exports) {
+__define(205, function (__exports) {
 // Shader warm-up. three.js compiles a material's program the first time it draws it, and again for
 // each set of lights it is drawn under, and a program takes from a few milliseconds to a tenth of a
 // second to compile (longest on Windows), so the game used to stall at each first: the first
@@ -102695,7 +102983,7 @@ __export(__exports, { "warmUp": () => warmUp })
 })
 
 // ---- js/render/damage.js
-__define(205, function (__exports) {
+__define(206, function (__exports) {
 // Body damage, GTA-style: a knock dents the Roadster's panels where it landed, deeper and wider the
 // harder the hit, the metal crumpling (each dent a little uneven, its facets catching the light)
 // rather than sinking in smooth; dents add up, to a limit, and a reset puts the car back as new.
@@ -103065,7 +103353,7 @@ __export(__exports, { "Damage": () => Damage })
 })
 
 // ---- js/main.js
-__define(206, function (__exports) {
+__define(207, function (__exports) {
 // Tesla Roadster Sim: boot, game state, sim events and the main loop.
 const THREE = __require(0)
 const { Hud } = __require(16)
@@ -103085,18 +103373,18 @@ const { ENV } = __require(3)
 const { buildLineup } = __require(108)
 const { nearestLane, standUp } = __require(30)
 const { handleEvents: simEvents } = __require(116)
-const { CityView, clipCamera } = __require(193)
+const { CityView, clipCamera } = __require(194)
 const { hearing, panOf, mixSound } = __require(115)
 const { CameraRig, CAM_NAMES } = __require(54)
-const { updateSkids, clearSkids } = __require(194)
+const { updateSkids, clearSkids } = __require(195)
 const { DEG, TAU, makeControls } = __require(2)
-const { LED_MAT, buildWall, buildTruss } = __require(195)
-const { buildRoadster, updateRoadster } = __require(199)
+const { LED_MAT, buildWall, buildTruss } = __require(196)
+const { buildRoadster, updateRoadster } = __require(200)
 const { Post } = __require(129)
-const { Climate } = __require(202)
-const { Resolution } = __require(203)
-const { warmUp } = __require(204)
-const { Damage } = __require(205)
+const { Climate } = __require(203)
+const { Resolution } = __require(204)
+const { warmUp } = __require(205)
+const { Damage } = __require(206)
 const { MAT, scene, camera, canvas } = __require(59)
 const { renderer, followKeyLight } = __require(59)
 const { fallFx, ALL_PARTICLES, updateNozzles } = __require(111)
@@ -103561,5 +103849,5 @@ window.__roadster = {
 }
 __export(__exports, {  })
 })
-__require(206)
+__require(207)
 })()

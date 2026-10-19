@@ -19,6 +19,7 @@ import { PedView } from './peds.js'
 import { TrafficView } from './traffic.js'
 import { NIGHT } from './facade.js'
 import { buildProps } from './cityProps.js'
+import { buildWorks } from './cityWorks.js'
 import { buildGround } from './cityGround.js'
 import { buildStreet } from './cityStreet.js'
 import { buildBuildings, BEACON } from './cityBuildings.js'
@@ -84,6 +85,7 @@ export class CityView {
     this.edges = buildEdges(g) // (past the ring road: the sea, the hills, the freeway)
     this.buildings = buildBuildings(g)
     const props = (this.props = buildProps(g))
+    buildWorks(g) // (the new districts' docks, stacks, fences, the freeway deck and ramps)
     const top = Math.max(...BUILDINGS.map(b => b.h)) + 30 // (and the masts on top)
     const sun = new THREE.Vector3(ENV.sun.x, ENV.sun.y, ENV.sun.z)
     this.shadow = new CityShadow(scene, renderer, sun, OUTER, top)
