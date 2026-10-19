@@ -76,7 +76,8 @@ export function hearSiren (traffic, now) {
   lastX = p.x
   lastZ = p.z
   lastT = now
-  const C = traffic.call,
+  // (the call's car, or else the nearest police car on a chase: police.js traffic.chase)
+  const C = traffic.call?.on ? traffic.call : traffic.chase,
     car = C?.on ? C.car : null
   SIREN.on = !!car
   SIREN.at = now

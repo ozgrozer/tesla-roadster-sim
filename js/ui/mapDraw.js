@@ -103,6 +103,7 @@ export function drawMap (g, v, s) {
       y = sy(s.goal.z)
     blip(g, x, y, 1.35, COLOR.waypoint, GLYPHS.waypoint)
   }
+  s.overlay?.(g, sx, sy, k) // (the police, the search, the missions: crimeMap.js)
   if (s.car) arrow(g, sx(s.car.x), sy(s.car.z), s.car.a, 1.35)
   if (s.cursor) crosshair(g, W / 2, H / 2)
 }

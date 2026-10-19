@@ -32,10 +32,9 @@ import { warmUp } from './render/warm.js'
 import { Damage } from './render/damage.js'
 import { MAT, scene, camera, canvas } from './render/scene.js'
 import { renderer, followKeyLight } from './render/scene.js'
-import { fallFx, ALL_PARTICLES, updateNozzles } from './render/effects.js'
-import { emitThrusters, emitTireSmoke } from './render/effects.js'
+import { fallFx, ALL_PARTICLES, updateNozzles, emitThrusters, emitTireSmoke, attachDiamonds } from './render/effects.js'
 import { emitTrafficSpray } from './render/spray.js'
-import { attachDiamonds } from './render/effects.js'
+import { Game } from './game.js'
 
 // ---------- world ----------
 buildWall()
@@ -87,6 +86,8 @@ const app = {
 }
 // the clock and the weather, the rain, the wet street and the graphics quality (climate.js)
 const climate = new Climate({ app, hud, RS, cityView, resolution })
+// the wanted level, the police, the missions and the street events (game.js)
+const game = new Game({ sim, traffic, peds, hud, minimap, app, damage, respawn: at => resetTo('city', at) })
 
 function setAuto (on) {
   app.auto = on
@@ -118,12 +119,7 @@ function startAutopilot () {
   if (app.world !== 'city') return startDemo()
   cityPilot.reset()
   if (!cityPilot.join()) {
-    hud.popup(
-      'Autopilot needs a street · drive onto a lane first',
-      2200,
-      'hint'
-    )
-    return
+    return hud.popup('Autopilot needs a street · drive onto a lane first', 2200, 'hint')
   }
   setCam('follow')
   setAuto(true)
@@ -330,6 +326,7 @@ function step (c, city) {
   if (city) {
     peds.step(H, sim, traffic, VIEW)
     traffic.step(H, sim, VIEW)
+    game.step(H, VIEW)
   }
   app.lastCtl = c
 }
@@ -383,6 +380,7 @@ function frame (now) {
     app.pilotHorn = ph
     setHorn(ph)
   }
+  if (city) game.simEvents(sim.events) // (a hard knock into the traffic: a crime, game.js)
   for (const e of sim.events)
     if (e.type === 'bump') damage.hit(e, sim)
     else if (e.type === 'crash') damage.crash(sim.quat, e.speed, sim.vel)
@@ -440,6 +438,7 @@ function frame (now) {
     cityView.update(simDt, clock, traffic, camera, peds)
     minimap.update(dt, sim, traffic, VIEW.heading)
   }
+  game.frame(dt, city)
   mixSound(sound, app, traffic, dt, clock, peds)
   hud.update(dt, app)
   if (city) cityView.shadows(camera, [RS.car])
@@ -483,6 +482,7 @@ window.__roadster = {
   resolution,
   post,
   menu,
+  game,
   setAuto,
   resetTo,
   setWorld,

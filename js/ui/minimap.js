@@ -113,6 +113,7 @@ export class Minimap {
     // the rest in screen pixels
     g.setTransform(1, 0, 0, 1, 0, 0)
     this.dots(g, traffic, k)
+    this.overlay?.(g, V, toRadar, k) // (the police, the search, the missions: crimeMap.js)
     // the landmarks and the gridlock, held on the rim while they are off the map
     for (const name in LANDMARKS) {
       if (LANDMARKS[name].x === undefined) continue // (the freeways)
