@@ -282,6 +282,11 @@ export class Hud {
         : `${what} · click or press N for sound · any drive key takes over`
     }
     if (app.intro) return 'Optimus is getting in · any drive key skips'
+    // (on foot, and in a car that isn't the Roadster: onFoot.js)
+    if (app.foot)
+      return 'W A S D walk · Shift run · Space jump · mouse look (click) · E get in a car'
+    if (app.vehicle && app.vehicle.kind !== 'roadster' && sim.mode !== 'crash')
+      return 'W throttle · S brake · A/D steer · Space handbrake · H horn · E get out'
     if (sim.mode === 'crash')
       return sim.up().y > 0.95
         ? 'Crashed · W to drive on · R to reset · P to watch the autopilot'
@@ -291,7 +296,7 @@ export class Hud {
     if (sim.mode === 'ramp')
       return 'W climb · S brake, then reverse down · Space hold · Shift main burn off the lip'
     return this.world === 'city'
-      ? 'W throttle · S brake · A/D steer · Space e-brake · Shift boost · F fly · H horn'
+      ? 'W throttle · S brake · A/D steer · Space e-brake · Shift boost · F fly · E get out'
       : 'W throttle · release to coast · S brake · Space e-brake · A/D steer · Shift boost · F fly'
   }
 }

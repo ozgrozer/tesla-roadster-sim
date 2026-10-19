@@ -72,6 +72,7 @@ export class Input {
   constructor ({ onDrive, onCommand, onRelease = () => {}, onPad }) {
     this.keys = new Set()
     this.stale = new Set() // held since before lift-off: they don't fly the car until pressed again
+    this.handed = new Set() // held over from on foot or from the car: they count once pressed again
     this.wasAir = false
     this.lastT = -1
     this.down = new Set() // every key held, drive or not
@@ -82,6 +83,7 @@ export class Input {
         const first = !this.keys.has(code)
         this.keys.add(code)
         this.stale.delete(code)
+        this.handed.delete(code)
         onDrive(code, first)
       } else onCommand(code)
     }
@@ -94,7 +96,10 @@ export class Input {
       this.keys.delete(code)
       if (this.down.delete(code)) onRelease(code)
     }
-    window.addEventListener('keyup', e => release(e.code))
+    window.addEventListener('keyup', e => {
+      this.handed.delete(e.code)
+      release(e.code)
+    })
     window.addEventListener('blur', () => {
       for (const code of this.down) release(code)
       this.keys.clear()
@@ -135,9 +140,17 @@ export class Input {
     return this.down.has(LOOK_BACK)
   }
 
+  // getting into or out of a car (onFoot.js): what is held now does nothing in the new mode until
+  // it is let go and pressed again (W held walking up to a car doesn't floor the throttle)
+  handoff () {
+    for (const k of this.keys) this.handed.add(k)
+  }
+  has (k) {
+    return this.keys.has(k) && !this.handed.has(k)
+  }
   // `fresh`: leave out keys still held from before lift-off
   held (a, b, fresh = false) {
-    const on = k => this.keys.has(k) && !(fresh && this.stale.has(k))
+    const on = k => this.has(k) && !(fresh && this.stale.has(k))
     return on(a) || (b !== undefined && on(b))
   }
 
@@ -173,9 +186,9 @@ export class Input {
       fanMode === 'on' ||
       (fanMode === 'auto' && (sim.mode === 'ramp' || nearWall))
     // Space is the handbrake, as in GTA; F (fly) fires the lift thrusters
-    c.ebrake = this.keys.has('Space')
+    c.ebrake = this.has('Space')
     c.main = this.held('ShiftLeft', 'ShiftRight') ? 1 : 0
-    c.lift = this.keys.has('KeyF') ? 1 : 0
+    c.lift = this.has('KeyF') ? 1 : 0
     // a key wins over the stick; the stick and triggers are analog
     const or = (key, analog) => key || analog
     if (air) {
@@ -185,7 +198,7 @@ export class Input {
       c.pitch = or((S ? 1 : 0) - (W ? 1 : 0), live ? pad.stickY : 0)
       c.roll = or((D ? 1 : 0) - (A ? 1 : 0), live ? pad.stickX : 0)
       c.yaw = or(
-        (this.keys.has('KeyQ') ? 1 : 0) - (this.keys.has('KeyE') ? 1 : 0),
+        (this.has('KeyQ') ? 1 : 0) - (this.has('KeyE') ? 1 : 0),
         -pad.lookX
       )
     } else {

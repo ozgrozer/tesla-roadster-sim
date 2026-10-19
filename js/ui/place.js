@@ -44,7 +44,7 @@ export class Place {
     this.left -= dt
     put(this.el.box, '.on', this.left > 0)
     if (this.world !== 'city' || app.intro) return
-    const { sim } = app
+    const sim = app.focus || app.sim // (the player on foot: onFoot.js)
     if (this.carDue) {
       const c = app.lastCtl
       if (!app.auto && !(sim.groundSpeed() > 0.5 || c.throttle > 0)) return

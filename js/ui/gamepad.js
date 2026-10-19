@@ -5,12 +5,14 @@
 // with the tyres near their grip and past it, the rears spinning and the ground rough (input.js).
 //
 //   RT throttle   LT brake, reverse   A e-brake   RB boost (main thrusters)   LB fly (lift thrusters)
-//   X horn   Y camera   D-pad up / down backflip / kickflip   View reset   Menu Autopilot
-//   the right stick pressed in: look behind, held (as in GTA)
+//   X horn   Y get in / out (E)   B camera   D-pad up / down backflip / kickflip   View reset
+//   Menu Autopilot   the right stick pressed in: look behind, held (as in GTA)
+// On foot (onFoot.js): the left stick walks, the right stick looks, A jumps, RB sprints, Y gets in.
 const BUTTONS = {
   0: 'Space',
+  1: 'KeyV',
   2: 'KeyH',
-  3: 'KeyV',
+  3: 'KeyE',
   4: 'KeyF',
   5: 'ShiftLeft',
   8: 'KeyR',
