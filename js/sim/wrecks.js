@@ -8,6 +8,7 @@
 // the pavement (alight.js); it is towed once it has been out of sight a while. A parked car knocked
 // out of its place is put back in it a while later, once nobody can see it go, as good as new.
 import { query } from './city.js'
+import { groundHeight } from './world.js'
 import { honk } from './manners.js'
 import { CAR } from './constants.js'
 import { kerbDist } from './street.js'
@@ -63,11 +64,15 @@ export function slide (tr, car, dt, sim) {
   car.yr = car.w
   car.odo += (car.vx * car.hx + car.vz * car.hz) * dt
   car.looseT += dt
-  // walls and posts (none new to run into at rest)
-  const r = carRect(car)
+  // (on whatever is under it: a car park's deck, down its ramp, or off the edge; the freeway's)
   const moving = sp > 1e-3 || Math.abs(car.w) > 1e-3
+  if (moving) car.y = groundHeight(car.x, car.z, (car.y || 0) + 0.6)
+  const y = car.y || 0
+  // walls and posts at its height (none new to run into at rest): not the deck it is on, nor what
+  // stands on the floor below it
+  const r = carRect(car)
   for (const c of moving ? query(car.x - 7, car.z - 7, car.x + 7, car.z + 7, near) : NONE) {
-    if (c.y0 > 1.2 || c.down) continue
+    if (c.y0 > y + 1.2 || (y > 0.5 && c.y1 <= y + 0.3) || c.down) continue
     const hit = c.r ? rectPost(r, c) : rectRect(r, boxRect(c))
     if (!hit) continue
     const e = c.breakAt && snap(car, c, hit.nx, hit.nz, car.m)

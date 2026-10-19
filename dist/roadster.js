@@ -73439,8 +73439,182 @@ const DELIVERY = {
 __export(__exports, { "DELIVERY": () => DELIVERY })
 })
 
-// ---- js/sim/wrecks.js
+// ---- js/sim/world.js
 __define(85, function (__exports) {
+// The world's queries, in one place for the other workstreams (the player on foot, traffic, people,
+// missions): the ground's height and slope anywhere (the street, the hills and the hill road cut
+// into them, the freeway's deck and its ramps, a car park's ramp), whether a point is on the road,
+// which district and street it is in, where cars may be parked and people may appear, and the
+// pavements as a graph to walk. Pure data and math over the layout (city.js, lots.js), so it runs
+// headless in the tests.
+const { BLOCKS, STALLS, BUILDINGS, onRoad, N, PITCH, HALF } = __require(35)
+const { DECKS, RAMPS } = __require(32)
+const { AREAS, areaOf, whereIs } = __require(5)
+const { WALL } = __require(29)
+const { hillHeight, onHillRoad, inTunnel, HILL_ROAD, LOOKOUT } = __require(30)
+const { FWY } = __require(28)
+const { STEP, roofAt } = __require(36)
+const { LINES, ringOf, ringAt, crossings } = __require(74)
+
+const inRect = (o, x, z) => x >= o.x0 && x <= o.x1 && z >= o.z0 && z <= o.z1
+// a ramp's height at (x, z) (plots.js: h0 at x0 or z0, h1 at the far end)
+function rampHeight (r, x, z) {
+  const t = r.axis === 'x' ? (x - r.x0) / (r.x1 - r.x0) : (z - r.z0) / (r.z1 - r.z0)
+  return r.h0 + (r.h1 - r.h0) * Math.max(0, Math.min(1, t))
+}
+
+// The height of the drivable (and walkable) ground at (x, z): the highest surface there no more than
+// a step above y (by default, whatever is on top). The street is 0; north of the wall the hills
+// (hillHeight: with the hill road cut in); then the decks and ramps over them. Pass the height of
+// whoever asks to find what is under them: under the freeway, the street; on it, the deck. Building
+// roofs are not ground (roofAt is).
+function groundHeight (x, z, y = Infinity) {
+  let h = z < -WALL ? hillHeight(x, z) : 0
+  if (inTunnel(x, z)) h = -Infinity // (the hill over the tunnel is not its floor)
+  const top = y + STEP
+  for (const d of DECKS)
+    if (d.y1 > h && d.y1 <= top && inRect(d, x, z)) h = d.y1
+  for (const r of RAMPS)
+    if (inRect(r, x, z)) {
+      const v = rampHeight(r, x, z)
+      if (v > h && v <= top) h = v
+    }
+  return h === -Infinity ? (z < -WALL ? hillHeight(x, z) : 0) : h
+}
+// the ground's upward unit normal at (x, z) (as groundHeight, at y), into out
+function groundNormal (x, z, y = Infinity, out = { x: 0, y: 1, z: 0 }) {
+  const e = 0.75,
+    h = groundHeight(x, z, y),
+    up = h + 1 // (each side read at the same surface, not one stacked over it)
+  const gx = (groundHeight(x + e, z, up) - groundHeight(x - e, z, up)) / (2 * e),
+    gz = (groundHeight(x, z + e, up) - groundHeight(x, z - e, up)) / (2 * e)
+  const l = Math.hypot(gx, 1, gz)
+  out.x = -gx / l
+  out.y = 1 / l
+  out.z = -gz / l
+  return out
+}
+
+// Which district (x, z) is in: its block, its neighbourhood's key and kind (areas.js AREAS: 'downtown',
+// 'industrial', 'port', 'suburb', ...), and the HUD's name for the place and its street
+function districtAt (x, z) {
+  const bx = Math.floor((x + HALF) / PITCH),
+    bz = Math.floor((z + HALF) / PITCH)
+  const w = whereIs(x, z, { area: '', street: '', cross: '' })
+  const inside = bx >= 0 && bx < N && bz >= 0 && bz < N
+  const key = inside ? areaOf(bx, bz) : null
+  const out = {
+    bx: inside ? bx : -1,
+    bz: inside ? bz : -1,
+    key,
+    kind: key ? AREAS[key].kind : z < -WALL ? 'hills' : 'beach',
+    name: w.area,
+    street: w.street,
+    cross: w.cross
+  }
+  if (onHillRoad(x, z)) {
+    out.name = 'Hollywood Hills'
+    out.street = inTunnel(x, z) ? 'Santa Fe Canyon Tunnel' : 'Santa Fe Canyon Rd'
+  }
+  return out
+}
+
+// The parking spaces within r of (x, z) (a car park's, a driveway's, the kerbside bays):
+// { x, z, yaw, taken }. free: only those lots.js left empty (parkCars took the rest).
+function parkingNear (x, z, r, free = true) {
+  const out = []
+  for (const s of STALLS)
+    if ((!free || !s.taken) && Math.abs(s.x - x) < r && Math.abs(s.z - z) < r && Math.hypot(s.x - x, s.z - z) < r)
+      out.push(s)
+  return out
+}
+
+// Points on the pavements within r of (x, z) where someone could appear, about every `every` m
+// round each block's middle walking line: { x, z, hx, hz } (hx, hz: the way along it)
+function pavementNear (x, z, r, every = 12) {
+  const out = [],
+    P = {}
+  for (const b of BLOCKS) {
+    if (b.x1 < x - r || b.x0 > x + r || b.z1 < z - r || b.z0 > z + r) continue
+    const g = ringOf(b, 1)
+    for (let s = 0; s < g.len; s += every) {
+      ringAt(g, s, P)
+      if (Math.hypot(P.x - x, P.z - z) < r) out.push({ x: P.x, z: P.z, hx: P.hx, hz: P.hz })
+    }
+  }
+  return out
+}
+
+// The pavements as a graph, made when first asked: a node at each block's corner (on the middle
+// walking line, pavement.js LINES[1]), joined round the block along its sides and over the street
+// to the next block's corner by each crosswalk (cross: the junction and the street's axis, for
+// waiting for the walk signal: pavement.js walkOn). nodes[i] = { x, z, block, corner },
+// edges = [{ a, b, len, cross }], adj[i] = the edges at node i.
+let GRAPH = null
+function pavementGraph () {
+  if (GRAPH) return GRAPH
+  const nodes = [],
+    edges = [],
+    adj = []
+  const id = new Map()
+  const P = {}
+  for (const b of BLOCKS) {
+    const g = ringOf(b, 1)
+    // (a corner node at the middle of its arc)
+    let s = 0
+    for (let k = 0; k < 4; k++) {
+      s += g.runs[2 * k]
+      ringAt(g, s + g.runs[2 * k + 1] / 2, P)
+      s += g.runs[2 * k + 1]
+      id.set(`${b.bx},${b.bz},${k}`, nodes.length)
+      nodes.push({ x: P.x, z: P.z, block: b, corner: k })
+      adj.push([])
+    }
+  }
+  const link = (a, b, cross = null) => {
+    const e = { a, b, len: Math.hypot(nodes[a].x - nodes[b].x, nodes[a].z - nodes[b].z), cross }
+    edges.push(e)
+    adj[a].push(e)
+    adj[b].push(e)
+  }
+  const MIRROR = [
+    [1, 0, 3, 2], // (over a street along x: north and south swap)
+    [3, 2, 1, 0] // (over one along z: east and west)
+  ]
+  for (const b of BLOCKS) {
+    for (let k = 0; k < 4; k++) {
+      const a = id.get(`${b.bx},${b.bz},${k}`)
+      link(a, id.get(`${b.bx},${b.bz},${(k + 1) % 4}`))
+      for (const c of crossings(b, k)) {
+        const o = c.block,
+          m = id.get(`${o.bx},${o.bz},${MIRROR[c.axis][k]}`)
+        // (each crossing once, from the block with the lower index)
+        if (m !== undefined && m > a) link(a, m, { node: c.node, axis: c.axis })
+      }
+    }
+  }
+  GRAPH = { nodes, edges, adj, line: LINES[1] }
+  return GRAPH
+}
+
+// Spawn points for parked cars and for people near (x, z): the free bays, and pavement points clear
+// of the buildings
+function spawnPoints (x, z, r) {
+  return {
+    cars: parkingNear(x, z, r).map(s => ({ x: s.x, z: s.z, yaw: s.yaw })),
+    people: pavementNear(x, z, r).filter(p => !inBuilding(p.x, p.z))
+  }
+}
+function inBuilding (x, z) {
+  for (const b of BUILDINGS)
+    for (const t of b.tiers) if (t.y0 === 0 && inRect(t, x, z)) return true
+  return false
+}
+__export(__exports, { "rampHeight": () => rampHeight, "groundHeight": () => groundHeight, "groundNormal": () => groundNormal, "districtAt": () => districtAt, "parkingNear": () => parkingNear, "pavementNear": () => pavementNear, "pavementGraph": () => pavementGraph, "spawnPoints": () => spawnPoints, "onRoad": () => onRoad, "roofAt": () => roofAt, "FWY": () => FWY, "HILL_ROAD": () => HILL_ROAD, "LOOKOUT": () => LOOKOUT, "onHillRoad": () => onHillRoad, "inTunnel": () => inTunnel })
+})
+
+// ---- js/sim/wrecks.js
+__define(86, function (__exports) {
 // Traffic knocked out of its lane: the Roadster's hits on cars, the slide to a stop on locked-up
 // tyres (off walls and posts, through a post it hits hard enough to snap, and into other cars, which
 // it knocks loose in turn), and what the driver does then: sits there a few seconds with the hazards
@@ -73451,6 +73625,7 @@ __define(85, function (__exports) {
 // the pavement (alight.js); it is towed once it has been out of sight a while. A parked car knocked
 // out of its place is put back in it a while later, once nobody can see it go, as good as new.
 const { query } = __require(35)
+const { groundHeight } = __require(85)
 const { honk } = __require(76)
 const { CAR } = __require(2)
 const { kerbDist } = __require(44)
@@ -73494,11 +73669,15 @@ function slide (tr, car, dt, sim) {
   car.yr = car.w
   car.odo += (car.vx * car.hx + car.vz * car.hz) * dt
   car.looseT += dt
-  // walls and posts (none new to run into at rest)
-  const r = carRect(car)
+  // (on whatever is under it: a car park's deck, down its ramp, or off the edge; the freeway's)
   const moving = sp > 1e-3 || Math.abs(car.w) > 1e-3
+  if (moving) car.y = groundHeight(car.x, car.z, (car.y || 0) + 0.6)
+  const y = car.y || 0
+  // walls and posts at its height (none new to run into at rest): not the deck it is on, nor what
+  // stands on the floor below it
+  const r = carRect(car)
   for (const c of moving ? query(car.x - 7, car.z - 7, car.x + 7, car.z + 7, near) : NONE) {
-    if (c.y0 > 1.2 || c.down) continue
+    if (c.y0 > y + 1.2 || (y > 0.5 && c.y1 <= y + 0.3) || c.down) continue
     const hit = c.r ? rectPost(r, c) : rectRect(r, boxRect(c))
     if (!hit) continue
     const e = c.breakAt && snap(car, c, hit.nx, hit.nz, car.m)
@@ -73754,7 +73933,7 @@ __export(__exports, { "TOW": () => TOW, "loosen": () => loosen, "slide": () => s
 })
 
 // ---- js/sim/drivers.js
-__define(86, function (__exports) {
+__define(87, function (__exports) {
 // The people at the wheel of the traffic, mixed into Traffic (traffic.js). Each driver is their own:
 // how fast they like to go (a few dawdle, most keep to about the limit, a fifth press on), how close
 // they follow, how hard they pull away and brake, how quickly they react, how bold they are at an
@@ -74217,7 +74396,7 @@ __export(__exports, { "temperament": () => temperament, "DRIVE": () => DRIVE })
 })
 
 // ---- js/sim/laneChange.js
-__define(87, function (__exports) {
+__define(88, function (__exports) {
 // Changing lanes, mixed into Traffic (traffic.js) with the drivers (drivers.js): moving over for a
 // turn from the other lane, to get round something stopped in this one, when the Roadster honks
 // from behind, or (a quicker driver) to get by a slow car. The indicator goes on first; then, once
@@ -74339,7 +74518,7 @@ __export(__exports, { "LANE_CHANGE": () => LANE_CHANGE })
 })
 
 // ---- js/sim/handover.js
-__define(88, function (__exports) {
+__define(89, function (__exports) {
 // The traffic's cars as entities others can take over, mixed into Traffic (traffic.js). Every car
 // keeps a stable id for as long as it is on the map (car.id); the player's workstream finds one by
 // it (carById) or by where it is (carsNear), takes it off its driver (takeOver: out of the lane
@@ -74351,7 +74530,7 @@ __define(88, function (__exports) {
 const { TYPES } = __require(58)
 const { LANES, PITCH, N } = __require(35)
 const { AREAS, areaOf } = __require(5)
-const { temperament } = __require(86)
+const { temperament } = __require(87)
 const { honk } = __require(76)
 const { kerbDist } = __require(44)
 // how busy each kind of neighbourhood's streets are, against the city's average (areas.js kinds)
@@ -74519,180 +74698,6 @@ const styleOf = car =>
 __export(__exports, { "DISTRICT": () => DISTRICT, "STYLE": () => STYLE, "HANDOVER": () => HANDOVER, "styleOf": () => styleOf })
 })
 
-// ---- js/sim/world.js
-__define(89, function (__exports) {
-// The world's queries, in one place for the other workstreams (the player on foot, traffic, people,
-// missions): the ground's height and slope anywhere (the street, the hills and the hill road cut
-// into them, the freeway's deck and its ramps, a car park's ramp), whether a point is on the road,
-// which district and street it is in, where cars may be parked and people may appear, and the
-// pavements as a graph to walk. Pure data and math over the layout (city.js, lots.js), so it runs
-// headless in the tests.
-const { BLOCKS, STALLS, BUILDINGS, onRoad, N, PITCH, HALF } = __require(35)
-const { DECKS, RAMPS } = __require(32)
-const { AREAS, areaOf, whereIs } = __require(5)
-const { WALL } = __require(29)
-const { hillHeight, onHillRoad, inTunnel, HILL_ROAD, LOOKOUT } = __require(30)
-const { FWY } = __require(28)
-const { STEP, roofAt } = __require(36)
-const { LINES, ringOf, ringAt, crossings } = __require(74)
-
-const inRect = (o, x, z) => x >= o.x0 && x <= o.x1 && z >= o.z0 && z <= o.z1
-// a ramp's height at (x, z) (plots.js: h0 at x0 or z0, h1 at the far end)
-function rampHeight (r, x, z) {
-  const t = r.axis === 'x' ? (x - r.x0) / (r.x1 - r.x0) : (z - r.z0) / (r.z1 - r.z0)
-  return r.h0 + (r.h1 - r.h0) * Math.max(0, Math.min(1, t))
-}
-
-// The height of the drivable (and walkable) ground at (x, z): the highest surface there no more than
-// a step above y (by default, whatever is on top). The street is 0; north of the wall the hills
-// (hillHeight: with the hill road cut in); then the decks and ramps over them. Pass the height of
-// whoever asks to find what is under them: under the freeway, the street; on it, the deck. Building
-// roofs are not ground (roofAt is).
-function groundHeight (x, z, y = Infinity) {
-  let h = z < -WALL ? hillHeight(x, z) : 0
-  if (inTunnel(x, z)) h = -Infinity // (the hill over the tunnel is not its floor)
-  const top = y + STEP
-  for (const d of DECKS)
-    if (d.y1 > h && d.y1 <= top && inRect(d, x, z)) h = d.y1
-  for (const r of RAMPS)
-    if (inRect(r, x, z)) {
-      const v = rampHeight(r, x, z)
-      if (v > h && v <= top) h = v
-    }
-  return h === -Infinity ? (z < -WALL ? hillHeight(x, z) : 0) : h
-}
-// the ground's upward unit normal at (x, z) (as groundHeight, at y), into out
-function groundNormal (x, z, y = Infinity, out = { x: 0, y: 1, z: 0 }) {
-  const e = 0.75,
-    h = groundHeight(x, z, y),
-    up = h + 1 // (each side read at the same surface, not one stacked over it)
-  const gx = (groundHeight(x + e, z, up) - groundHeight(x - e, z, up)) / (2 * e),
-    gz = (groundHeight(x, z + e, up) - groundHeight(x, z - e, up)) / (2 * e)
-  const l = Math.hypot(gx, 1, gz)
-  out.x = -gx / l
-  out.y = 1 / l
-  out.z = -gz / l
-  return out
-}
-
-// Which district (x, z) is in: its block, its neighbourhood's key and kind (areas.js AREAS: 'downtown',
-// 'industrial', 'port', 'suburb', ...), and the HUD's name for the place and its street
-function districtAt (x, z) {
-  const bx = Math.floor((x + HALF) / PITCH),
-    bz = Math.floor((z + HALF) / PITCH)
-  const w = whereIs(x, z, { area: '', street: '', cross: '' })
-  const inside = bx >= 0 && bx < N && bz >= 0 && bz < N
-  const key = inside ? areaOf(bx, bz) : null
-  const out = {
-    bx: inside ? bx : -1,
-    bz: inside ? bz : -1,
-    key,
-    kind: key ? AREAS[key].kind : z < -WALL ? 'hills' : 'beach',
-    name: w.area,
-    street: w.street,
-    cross: w.cross
-  }
-  if (onHillRoad(x, z)) {
-    out.name = 'Hollywood Hills'
-    out.street = inTunnel(x, z) ? 'Santa Fe Canyon Tunnel' : 'Santa Fe Canyon Rd'
-  }
-  return out
-}
-
-// The parking spaces within r of (x, z) (a car park's, a driveway's, the kerbside bays):
-// { x, z, yaw, taken }. free: only those lots.js left empty (parkCars took the rest).
-function parkingNear (x, z, r, free = true) {
-  const out = []
-  for (const s of STALLS)
-    if ((!free || !s.taken) && Math.abs(s.x - x) < r && Math.abs(s.z - z) < r && Math.hypot(s.x - x, s.z - z) < r)
-      out.push(s)
-  return out
-}
-
-// Points on the pavements within r of (x, z) where someone could appear, about every `every` m
-// round each block's middle walking line: { x, z, hx, hz } (hx, hz: the way along it)
-function pavementNear (x, z, r, every = 12) {
-  const out = [],
-    P = {}
-  for (const b of BLOCKS) {
-    if (b.x1 < x - r || b.x0 > x + r || b.z1 < z - r || b.z0 > z + r) continue
-    const g = ringOf(b, 1)
-    for (let s = 0; s < g.len; s += every) {
-      ringAt(g, s, P)
-      if (Math.hypot(P.x - x, P.z - z) < r) out.push({ x: P.x, z: P.z, hx: P.hx, hz: P.hz })
-    }
-  }
-  return out
-}
-
-// The pavements as a graph, made when first asked: a node at each block's corner (on the middle
-// walking line, pavement.js LINES[1]), joined round the block along its sides and over the street
-// to the next block's corner by each crosswalk (cross: the junction and the street's axis, for
-// waiting for the walk signal: pavement.js walkOn). nodes[i] = { x, z, block, corner },
-// edges = [{ a, b, len, cross }], adj[i] = the edges at node i.
-let GRAPH = null
-function pavementGraph () {
-  if (GRAPH) return GRAPH
-  const nodes = [],
-    edges = [],
-    adj = []
-  const id = new Map()
-  const P = {}
-  for (const b of BLOCKS) {
-    const g = ringOf(b, 1)
-    // (a corner node at the middle of its arc)
-    let s = 0
-    for (let k = 0; k < 4; k++) {
-      s += g.runs[2 * k]
-      ringAt(g, s + g.runs[2 * k + 1] / 2, P)
-      s += g.runs[2 * k + 1]
-      id.set(`${b.bx},${b.bz},${k}`, nodes.length)
-      nodes.push({ x: P.x, z: P.z, block: b, corner: k })
-      adj.push([])
-    }
-  }
-  const link = (a, b, cross = null) => {
-    const e = { a, b, len: Math.hypot(nodes[a].x - nodes[b].x, nodes[a].z - nodes[b].z), cross }
-    edges.push(e)
-    adj[a].push(e)
-    adj[b].push(e)
-  }
-  const MIRROR = [
-    [1, 0, 3, 2], // (over a street along x: north and south swap)
-    [3, 2, 1, 0] // (over one along z: east and west)
-  ]
-  for (const b of BLOCKS) {
-    for (let k = 0; k < 4; k++) {
-      const a = id.get(`${b.bx},${b.bz},${k}`)
-      link(a, id.get(`${b.bx},${b.bz},${(k + 1) % 4}`))
-      for (const c of crossings(b, k)) {
-        const o = c.block,
-          m = id.get(`${o.bx},${o.bz},${MIRROR[c.axis][k]}`)
-        // (each crossing once, from the block with the lower index)
-        if (m !== undefined && m > a) link(a, m, { node: c.node, axis: c.axis })
-      }
-    }
-  }
-  GRAPH = { nodes, edges, adj, line: LINES[1] }
-  return GRAPH
-}
-
-// Spawn points for parked cars and for people near (x, z): the free bays, and pavement points clear
-// of the buildings
-function spawnPoints (x, z, r) {
-  return {
-    cars: parkingNear(x, z, r).map(s => ({ x: s.x, z: s.z, yaw: s.yaw })),
-    people: pavementNear(x, z, r).filter(p => !inBuilding(p.x, p.z))
-  }
-}
-function inBuilding (x, z) {
-  for (const b of BUILDINGS)
-    for (const t of b.tiers) if (t.y0 === 0 && inRect(t, x, z)) return true
-  return false
-}
-__export(__exports, { "rampHeight": () => rampHeight, "groundHeight": () => groundHeight, "groundNormal": () => groundNormal, "districtAt": () => districtAt, "parkingNear": () => parkingNear, "pavementNear": () => pavementNear, "pavementGraph": () => pavementGraph, "spawnPoints": () => spawnPoints, "onRoad": () => onRoad, "roofAt": () => roofAt, "FWY": () => FWY, "HILL_ROAD": () => HILL_ROAD, "LOOKOUT": () => LOOKOUT, "onHillRoad": () => onHillRoad, "inTunnel": () => inTunnel })
-})
-
 // ---- js/sim/parkNear.js
 __define(90, function (__exports) {
 // The car parks and driveways round the player filled as full as each asks (STALLS' fill): the
@@ -74703,7 +74708,7 @@ __define(90, function (__exports) {
 // sight as the player comes, emptied again out of sight once they are gone. Own random numbers,
 // so the drivers' stay as they were. A mixin on Traffic (traffic.js).
 const { STALLS, rng } = __require(35)
-const { districtAt } = __require(89)
+const { districtAt } = __require(85)
 const FILL_R = 150, // m round the player: filled
   DROP_R = 210, // and emptied again beyond this
   MAX = 70, // cars at most
@@ -74787,7 +74792,7 @@ __define(91, function (__exports) {
 // down its slope, waiting at the end of a slip road for a gap in the street it joins, and put
 // straight onto the freeway or the hill road now and then when one is near.
 const { rng } = __require(35)
-const { groundHeight } = __require(89)
+const { groundHeight } = __require(85)
 const { HW } = __require(34)
 const TAKE = 0.35 // the share of drivers who take a way off onto the freeway
 const TAKE_HILL = 0.2 // ...and up the hill road
@@ -74913,15 +74918,15 @@ const { CALLS, newCall } = __require(81)
 const { CONDITIONS, busy } = __require(82)
 const { FLEET, streams } = __require(83)
 const { DELIVERY } = __require(84)
-const { gone, slide, restore, collidePlayer, bumpLoose } = __require(85)
-const { DRIVE, temperament } = __require(86)
-const { LANE_CHANGE } = __require(87)
+const { gone, slide, restore, collidePlayer, bumpLoose } = __require(86)
+const { DRIVE, temperament } = __require(87)
+const { LANE_CHANGE } = __require(88)
 const { rng, NODES, EDGES, LANES, STALLS, pointAt } = __require(35)
 const { TYPES, IDX } = __require(58)
-const { HANDOVER, styleOf } = __require(88)
+const { HANDOVER, styleOf } = __require(89)
 const { PARKNEAR } = __require(90)
 const { HWDRIVE } = __require(91)
-const { groundHeight } = __require(89)
+const { groundHeight } = __require(85)
 
 const BUS = IDX.bus
 const SHARES = TYPES.reduce((a, t) => a + t.share, 0)
@@ -77025,7 +77030,7 @@ const { keepIn } = __require(38)
 const { snap } = __require(37)
 const { hurt, landed, MIN_HIT } = __require(39)
 const { rectRect, rectPost, boxRect, impulse } = __require(40)
-const { loosen } = __require(85)
+const { loosen } = __require(86)
 const CRASH_AT = 11 // m/s closing speed: a crash, not a bump
 const KERB_LOSS = 0.2,
   KERB_DV = 1.4,
@@ -77198,7 +77203,7 @@ __define(103, function (__exports) {
 // ground as the ground lies: gp its nose up the slope, gr its right side down (the renderer:
 // carSlope.js), eased so a tread's step doesn't jolt it.
 const { G } = __require(2)
-const { groundHeight } = __require(89)
+const { groundHeight } = __require(85)
 const CLIMB = 0.6 // m above the body the ground is still under it (a ramp's tread is a step of 6 cm)
 const EASE = 10 // per s: how fast the body settles to the slope
 const _p = { f: 0, b: 0, l: 0, r: 0 }
@@ -105099,7 +105104,7 @@ __define(221, function (__exports) {
 // so the model is pitched and rolled to the ground under its wheels (world.js groundHeight) and set
 // on its smooth surface rather than on the tread's edge.
 const THREE = __require(0)
-const { groundHeight } = __require(89)
+const { groundHeight } = __require(85)
 const { CAR, AX_Z, AX_X } = __require(2)
 const EASE = 10,
   NEAR = 0.6 // (the treads' ground: not a roof far above or below it)
@@ -108190,7 +108195,7 @@ __define(237, function (__exports) {
 const { rng, LANES } = __require(35)
 const { IDX } = __require(58)
 const { hurt } = __require(39)
-const { loosen } = __require(85)
+const { loosen } = __require(86)
 const { stepVehicle, makeVehicleInput } = __require(104)
 const { bodyFromTraffic, writeToTraffic } = __require(105)
 const { collideTraffic } = __require(102)
@@ -111246,7 +111251,7 @@ const { emitGame } = __require(95)
 const { footProxy } = __require(105)
 const { vehicles } = __require(255)
 const { Drivable } = __require(256)
-const { collidePlayer } = __require(85)
+const { collidePlayer } = __require(86)
 const { carsMeet } = __require(257)
 const { makeControls } = __require(2)
 const { player, setMode, placePlayer, stepFoot, moveDir, knockDown, CITY_WORLD } = __require(250)

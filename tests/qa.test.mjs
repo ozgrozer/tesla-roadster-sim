@@ -48,3 +48,35 @@ test('the people round the stadium and the port stay out of the bowl and the con
     }
   }
 })
+
+test("a parked car knocked loose on a garage's deck stays on it: stopped by the parapet, not through it, and at the deck's height", async () => {
+  const { STALLS } = await import('../js/sim/city.js')
+  const { loosen } = await import('../js/sim/wrecks.js')
+  const { groundHeight } = await import('../js/sim/world.js')
+  const { rng } = await import('../js/sim/city.js')
+  const st = STALLS.find(s => Math.abs((s.y || 0) - 3.4) < 0.01)
+  assert.ok(st, 'a stall on a first deck')
+  const sim = new Sim()
+  sim.reset('city', { x: st.x + 60, z: st.z, yaw: 0 })
+  const tr = new Traffic({ seed: 3 })
+  tr.reset(st.x + 60, st.z)
+  const car = tr.park(st, rng(5), 0)
+  assert.equal(car.y, 3.4)
+  // shoved west, hard, along the deck
+  loosen(tr, car)
+  car.vx = -18
+  car.vz = 0
+  const x0 = car.x
+  const view = { x: st.x + 60, z: st.z, fx: 1, fz: 0 }
+  const c = makeControls()
+  c.brake = 1
+  const H = 1 / 60
+  for (let i = 0; i < 4 / H; i++) {
+    sim.step(H, c)
+    tr.step(H, sim, view)
+    sim.events.length = 0
+  }
+  // (still on the deck: at its height, with a deck under it)
+  assert.ok(Math.abs(car.y - groundHeight(car.x, car.z, car.y + 0.6)) < 0.05, `y ${car.y} over ground ${groundHeight(car.x, car.z, car.y + 0.6)}`)
+  assert.ok(car.y > 3, `fell off the deck: y ${car.y} after sliding from x ${x0.toFixed(1)} to ${car.x.toFixed(1)}`)
+})
