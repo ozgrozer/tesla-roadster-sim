@@ -39,7 +39,6 @@ import { OnFoot } from './onFoot.js'
 import { player } from './sim/player.js'
 import { vehicles } from './sim/vehicles.js'
 import { GAME_EVENTS, tickGame } from './sim/gameEvents.js'
-import { seatIn } from './ui/testDrive.js'
 import { Polish } from './polish.js'
 
 // ---------- world ----------
@@ -484,9 +483,7 @@ requestAnimationFrame(frame)
 window.__roadster = {
   ...{ sim, env: ENV, climate, RS, damage, intro, tween, ap, rig, sound, app, traffic, peds, hud },
   ...{ cityView, renderer, resolution, post, menu, player, vehicles, foot, events: GAME_EVENTS, game, polish },
-  setAuto,
-  resetTo,
-  seatIn: type => seatIn({ foot, traffic, sim }, type),
+  ...{ setAuto, resetTo, seatIn: type => polish.seatIn(type, { traffic, sim }) },
   setWorld,
   toggleWorld,
   // (the player's side, getting in and out and the prompt, kept up each 1/30 s)

@@ -110519,46 +110519,8 @@ class OnFoot {
 __export(__exports, { "OnFoot": () => OnFoot })
 })
 
-// ---- js/ui/testDrive.js
-__define(256, function (__exports) {
-// A developer's harness for the polish work (not a game mode): put the player straight into a city
-// car of a given traffic type (sedan, sports, suv, pickup, truck, van, bus, police, ...) a few
-// metres ahead of where they are (on the nearest lane), seated as if they had walked up and got in (onFoot.js seated),
-// so the camera, the HUD, the sounds and the effects all follow it. Used by automated smoke tests
-// through window.__roadster.seatIn(type), and by ?drive=<kind>&seat=1.
-const { IDX } = __require(56)
-const { vehicles } = __require(247)
-const { player } = __require(242)
-const { nearestLane } = __require(33)
-function seatIn (g, type = 'suv', ahead = 12) {
-  const { foot, traffic, sim } = g
-  const old = foot.alt.car
-  if (foot.alt.active) foot.alt.leave()
-  const car = traffic.make(IDX[type] ?? 0, false)
-  car.parked = true
-  // (on the lane nearest that spot, facing along it, clear of the car the player was in)
-  const yaw = player.heading
-  const at = nearestLane(player.pos.x + Math.cos(yaw) * ahead, player.pos.z - Math.sin(yaw) * ahead)
-  car.x = at.x
-  car.z = at.z
-  traffic.setYaw(car, at.yaw)
-  if (old && Math.hypot(old.x - car.x, old.z - car.z) < 14) old.x += 40
-  vehicles.sync(traffic, sim)
-  const e = vehicles.of(car)
-  // (the Roadster left standing where it was, empty)
-  if (foot.inRoadster()) {
-    foot.RS.seated = false
-    foot.RS.optimus.root.visible = false
-    vehicles.roadster.occupant = null
-  }
-  foot.seated(e, { how: 'open' })
-  return e.id
-}
-__export(__exports, { "seatIn": () => seatIn })
-})
-
 // ---- js/render/playerCar.js
-__define(257, function (__exports) {
+__define(256, function (__exports) {
 // The car the player drives when it isn't the Roadster (drivable.js): the traffic renderer keeps
 // drawing it as itself (traffic.js: its body type, paint, glass, lamps and dents), but posed here
 // from its physics body (vehicleSim.js) rather than from the traffic's own springs: the body's
@@ -110661,7 +110623,7 @@ __export(__exports, { "PlayerCar": () => PlayerCar })
 })
 
 // ---- js/audio/engine.js
-__define(258, function (__exports) {
+__define(257, function (__exports) {
 // The engine of whatever the player drives that isn't the Roadster, synthesised: its firing
 // frequency from the rpm and gear vehicleSim.js keeps (rpm / 60 x cylinders / 2), a sawtooth and a
 // half-order rumble through a low-pass that opens with the throttle and the revs, a burble of
@@ -110804,7 +110766,7 @@ __export(__exports, { "EngineVoice": () => EngineVoice })
 })
 
 // ---- js/ui/carHud.js
-__define(259, function (__exports) {
+__define(258, function (__exports) {
 // The HUD kept to whatever the player drives, or to them on foot (hud.js calls update after its
 // own): the car's name bottom right as they get in (GTA's: the class small and gold over the name,
 // 'Stolen' when it was), the speedometer's selector swapped for the gear (1 to 6, R, N) and its
@@ -110899,6 +110861,44 @@ class CarHud {
 __export(__exports, { "CAR_SLOT": () => CAR_SLOT, "CarHud": () => CarHud })
 })
 
+// ---- js/ui/testDrive.js
+__define(259, function (__exports) {
+// A developer's harness for the polish work (not a game mode): put the player straight into a city
+// car of a given traffic type (sedan, sports, suv, pickup, truck, van, bus, police, ...) a few
+// metres ahead of where they are (on the nearest lane), seated as if they had walked up and got in (onFoot.js seated),
+// so the camera, the HUD, the sounds and the effects all follow it. Used by automated smoke tests
+// through window.__roadster.seatIn(type), and by ?drive=<kind>&seat=1.
+const { IDX } = __require(56)
+const { vehicles } = __require(247)
+const { player } = __require(242)
+const { nearestLane } = __require(33)
+function seatIn (g, type = 'suv', ahead = 12) {
+  const { foot, traffic, sim } = g
+  const old = foot.alt.car
+  if (foot.alt.active) foot.alt.leave()
+  const car = traffic.make(IDX[type] ?? 0, false)
+  car.parked = true
+  // (on the lane nearest that spot, facing along it, clear of the car the player was in)
+  const yaw = player.heading
+  const at = nearestLane(player.pos.x + Math.cos(yaw) * ahead, player.pos.z - Math.sin(yaw) * ahead)
+  car.x = at.x
+  car.z = at.z
+  traffic.setYaw(car, at.yaw)
+  if (old && Math.hypot(old.x - car.x, old.z - car.z) < 14) old.x += 40
+  vehicles.sync(traffic, sim)
+  const e = vehicles.of(car)
+  // (the Roadster left standing where it was, empty)
+  if (foot.inRoadster()) {
+    foot.RS.seated = false
+    foot.RS.optimus.root.visible = false
+    vehicles.roadster.occupant = null
+  }
+  foot.seated(e, { how: 'open' })
+  return e.id
+}
+__export(__exports, { "seatIn": () => seatIn })
+})
+
 // ---- js/polish.js
 __define(260, function (__exports) {
 // The polish over whatever the player drives, kept out of main.js: each frame, the car that isn't
@@ -110909,10 +110909,11 @@ __define(260, function (__exports) {
 //   new Polish({ foot, rig, sound, hud, cityView, RS, app, game })
 //   (game: () => the Game, game.js: the player's health on foot)
 //   .frame(dt)  after the physics steps: returns the RS-like stand-in for skids.js and effects.js
-const { PlayerCar } = __require(257)
+const { PlayerCar } = __require(256)
 const { armScale, armRise } = __require(57)
-const { EngineVoice } = __require(258)
-const { CarHud } = __require(259)
+const { EngineVoice } = __require(257)
+const { CarHud } = __require(258)
+const { seatIn } = __require(259)
 // V on foot: the camera over the shoulder close, middling or far (footCam.js dist)
 const FOOT_CAMS = [
   ['Near', 3],
@@ -110945,6 +110946,10 @@ class Polish {
   }
   // V: the next camera, in a car (camera.js cycle: Follow, Far, Cockpit or Hood, Chase, Side, Free)
   // or on foot (near, middling, far over the shoulder)
+  // (a test harness: straight into a city car of a type, ui/testDrive.js)
+  seatIn (type, { traffic, sim }) {
+    return seatIn({ foot: this.foot, traffic, sim }, type)
+  }
   cycleCam (setCam) {
     const foot = this.foot
     if (!foot.onFoot()) return setCam(this.rig.cycle())
@@ -111001,7 +111006,6 @@ const { OnFoot } = __require(255)
 const { player } = __require(242)
 const { vehicles } = __require(247)
 const { GAME_EVENTS, tickGame } = __require(90)
-const { seatIn } = __require(256)
 const { Polish } = __require(260)
 // ---------- world ----------
 buildWall()
@@ -111445,9 +111449,7 @@ requestAnimationFrame(frame)
 window.__roadster = {
   ...{ sim, env: ENV, climate, RS, damage, intro, tween, ap, rig, sound, app, traffic, peds, hud },
   ...{ cityView, renderer, resolution, post, menu, player, vehicles, foot, events: GAME_EVENTS, game, polish },
-  setAuto,
-  resetTo,
-  seatIn: type => seatIn({ foot, traffic, sim }, type),
+  ...{ setAuto, resetTo, seatIn: type => polish.seatIn(type, { traffic, sim }) },
   setWorld,
   toggleWorld,
   // (the player's side, getting in and out and the prompt, kept up each 1/30 s)

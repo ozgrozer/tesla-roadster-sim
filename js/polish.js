@@ -10,6 +10,7 @@ import { PlayerCar } from './render/playerCar.js'
 import { armScale, armRise } from './render/carCam.js'
 import { EngineVoice } from './audio/engine.js'
 import { CarHud } from './ui/carHud.js'
+import { seatIn } from './ui/testDrive.js'
 
 // V on foot: the camera over the shoulder close, middling or far (footCam.js dist)
 const FOOT_CAMS = [
@@ -43,6 +44,10 @@ export class Polish {
   }
   // V: the next camera, in a car (camera.js cycle: Follow, Far, Cockpit or Hood, Chase, Side, Free)
   // or on foot (near, middling, far over the shoulder)
+  // (a test harness: straight into a city car of a type, ui/testDrive.js)
+  seatIn (type, { traffic, sim }) {
+    return seatIn({ foot: this.foot, traffic, sim }, type)
+  }
   cycleCam (setCam) {
     const foot = this.foot
     if (!foot.onFoot()) return setCam(this.rig.cycle())
