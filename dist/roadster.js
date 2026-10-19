@@ -110042,7 +110042,7 @@ class Game {
   // One physics step in the city (h s); view: the camera's ground position and heading (main.js)
   step (h, view) {
     this.t += h
-    this.footHealth = Math.min(1, this.footHealth + h * 0.03)
+    if (this.footHealth > 0) this.footHealth = Math.min(1, this.footHealth + h * 0.03) // (none left: wasted, below)
     const P = updatePlayerView()
     if (this.down) {
       this.crimes.length = 0
