@@ -36,9 +36,10 @@ export function rectOf (b, out = ME) {
 
 function damage (b, px, pz, impact, mo) {
   if (impact < MIN_HIT) return 0
-  const broke = hurt(b, px, pz, impact, mo, b.t)
+  const broke = hurt(b, px, pz, impact, mo, b.t, b.tough ?? 1)
   if (b.dmg) {
-    b.limp = b.dmg.limp ?? 1
+    // (the player's own, tough, keeps more of its power: modest, not crippling)
+    b.limp = 1 - (1 - (b.dmg.limp ?? 1)) * ((b.tough ?? 1) < 1 ? 0.6 : 1)
     if (b.dmg.wreck) b.dead = true
   }
   return broke
