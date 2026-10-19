@@ -27,6 +27,7 @@ import { recall, remember } from './ui/prefs.js'
 // where the player is put back: the nearest hospital (wasted) or police station (busted), as
 // fractions of the map: HOSPITALS, STATIONS in missions/spots.js
 export const PENALTY = { busted: 500, wasted: 1000 }
+const WRECK_HURT = 0.6 // (of footHealth: a car wrecked with you in it)
 const DOWN_T = 3.6 // s of BUSTED / WASTED before the fade
 
 export class Game {
@@ -169,8 +170,15 @@ export class Game {
     const key = player.mode === 'car' ? String(P.vehicle?.id ?? 'car') : 'foot',
       hp = P.health,
       A = this.alive
-    const out = hp <= 0 && A.key === key && A.hp > 0
+    let out = hp <= 0 && A.key === key && A.hp > 0
     if (hp <= 0 && A.key !== key && key !== 'foot') this.hud?.popup?.('Wrecked', 1800, 'hint')
+    // (a stolen car wrecked under you is a hard knock, not the end: you climb out of it; two in a row
+    // before you get your breath back is)
+    if (out && key !== 'foot' && this.foot.alt.active) {
+      this.footHealth -= WRECK_HURT
+      this.hud?.popup?.('Wrecked', 1800, 'hint')
+      out = this.footHealth <= 0
+    }
     A.key = key
     A.hp = hp
     return out
