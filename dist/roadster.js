@@ -74773,6 +74773,17 @@ const FWY_LANES = {
       if (d >= 0 && d < need + (Math.max(0, car.v - o.v) * 2 + car.v * 0.45) * k) return false
       if (d < 0 && -d < need + (Math.max(0, o.v - car.v) * 2.2 + o.v * 0.6) * k) return false
     }
+    // (and anyone still on their way out of lane t into a lane beside it: half of them is in it yet)
+    const st = SIDES.get(t.id)
+    if (st)
+      for (const u of [st.left, st.right]) {
+        if (!u || u === car.edge) continue
+        for (const o of u.cars) {
+          if (!o.lc || o.from !== t) continue
+          const d = o.s + o.lcDs - s
+          if (Math.abs(d) < (o.len + car.len) / 2 + 4 + Math.abs(car.v - o.v) * 1.5) return false
+        }
+      }
     // (at a crawl, room ahead to swing out: its nose past what it is stuck behind)
     if (car.v < 4 && car.clear < this.fwyChangeLength(car) * 0.3) return false
     // (nothing stopped in that lane that isn't traffic, near where it would pull in: the player, a
@@ -75340,6 +75351,8 @@ const HWDRIVE = {
     )
       return null
     if (e.cars.some(o => Math.abs(o.s - s) < o.len + 14)) return null
+    // (nor where a car changing lanes out of it, in the list of the lane beside, still is)
+    if (this.cars.some(o => o.lc && o.from === e && Math.abs(o.x - px) < o.len + 14 && Math.abs(o.z - pz) < o.len + 14)) return null
     const car = this.make(this.pickType())
     car.edge = e
     car.s = s

@@ -168,3 +168,23 @@ test('a car stopped in a freeway lane: the traffic behind pulls out round it, no
   const queue = tr.cars.filter(o => !o.parked && o.edge === thru && o.s < s0 && o.still > 15)
   assert.equal(queue.length, 0, 'nobody left queueing behind it')
 })
+
+test('freeway lane changes at a coarse step, several seeds: never two cars in one place', async () => {
+  const { FWY } = await import('../js/sim/world.js')
+  for (const seed of [2, 5, 8]) {
+    const tr = new Traffic({ seed })
+    tr.reset(0, FWY.z)
+    const sim = new Sim()
+    sim.reset('city', { x: 0, z: FWY.z + 200, yaw: 0 })
+    const view = { x: 0, z: FWY.z, fx: 1, fz: 0 }
+    for (let i = 0; i < 30 * 150; i++) {
+      tr.step(1 / 30, sim, view)
+      if (i % 10) continue
+      const deck = tr.cars.filter(c => c.edge?.hw && c.edge.vk >= 1)
+      for (let a = 0; a < deck.length; a++)
+        for (let b = a + 1; b < deck.length; b++)
+          assert.ok(Math.hypot(deck[a].x - deck[b].x, deck[a].z - deck[b].z) > 2.5, `seed ${seed}: two cars in one place at ${deck[a].x.toFixed(0)}, ${deck[a].z.toFixed(1)}`)
+    }
+    assert.ok(tr.fwyChanges > 40, `seed ${seed}: ${tr.fwyChanges} lane changes`)
+  }
+})
