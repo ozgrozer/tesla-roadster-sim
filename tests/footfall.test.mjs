@@ -171,7 +171,10 @@ test('in a downpour fewer come out, and some wait it out under the shop canopies
     // and on their way once it stops
     ENV.rain = 0
     run(peds, HOLLYWOOD.x, HOLLYWOOD.z, 8)
-    const still = [...under].filter(p => p.state === 'linger' && !p.gone)
+    // (off the canopy's spot: one may have stopped at a window down the street since)
+    const still = [...under].filter(
+      p => p.state === 'linger' && p.what === 3 && !p.gone
+    )
     assert.equal(still.length, 0, 'on their way once it stops')
   })
 })

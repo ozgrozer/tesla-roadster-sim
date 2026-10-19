@@ -121,7 +121,7 @@ export const CROWD = {
         p.hurry = 2.6
         continue
       }
-      if (p.state === 'dodge' || p.state === 'back') continue
+      if (p.state === 'dodge' || p.state === 'back' || p.state === 'down') continue
       if (p.state === 'kerb' || p.state === 'wait') this.join(p, p.ring.b)
       if (p.state === 'linger') this.leave(p, true) // (off on their line)
       if (p.state !== 'flee') this.scream++

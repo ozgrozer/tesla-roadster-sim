@@ -35,5 +35,13 @@ export const ALIGHT = {
     p.backS = s
     p.t = 0
     p.fright = 0.6
+    // (dragged out by the player: once on the pavement, they run: pedBrain.js)
+    if (e.jacked) {
+      p.jacked = true
+      p.fromX = e.x
+      p.fromZ = e.z
+      p.fright = 1
+    }
+    return p
   }
 }
