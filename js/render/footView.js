@@ -99,7 +99,7 @@ export class FootView {
     if (d > 0 && d < 3) this.phase += (Math.PI * 2 * d) / stride
     const want = p.grounded ? clamp(p.speed / 1.2, 0, 1) * (1 + 0.45 * run) : 0
     this.walk += (want - this.walk) * Math.min(1, dt * 10)
-    O.root.position.set(pos.x, pos.y + HIP_STAND, pos.z)
+    O.root.position.set(pos.x, pos.y + HIP_STAND + (p.lift || 0), pos.z) // (easing up a step: player.js)
     O.root.rotation.set(0, p.heading, 0)
     if (p.down > 0) {
       // flat on its back, then getting up
@@ -133,8 +133,9 @@ export class FootView {
   boarding (a, p, pos) {
     const O = this.O,
       e = a.entry
-    const side = wrapPi(e.heading - Math.PI / 2) // (facing the car, from its left)
-    const door = vehicles.toWorld(e, e.door.x, e.door.z, _w)
+    const sg = a.side || 1 // (-1: in by the other side's door, the driver's blocked: boarding.js)
+    const side = wrapPi(e.heading - (Math.PI / 2) * sg) // (facing the car, from its left)
+    const door = vehicles.toWorld(e, e.door.x, e.door.z * sg, _w)
     const dx = door.x,
       dz = door.z
     const gy = pos.y
@@ -178,21 +179,21 @@ export class FootView {
     if (a.phase === 'jimmy') {
       // at the window: worrying the lock, or a sharp blow through the glass
       const j = Math.sin(t * 18) * 0.02
-      const win = W(e.door.x + 0.15, gy + Math.min(hgt * 0.7, 1.3), -e.wid / 2 - 0.05)
-      const lock = W(e.door.x + 0.45 + j, gy + Math.min(hgt * 0.5, 1.0), -e.wid / 2 - 0.05)
+      const win = W(e.door.x + 0.15, gy + Math.min(hgt * 0.7, 1.3), (-e.wid / 2 - 0.05) * sg)
+      const lock = W(e.door.x + 0.45 + j, gy + Math.min(hgt * 0.5, 1.0), (-e.wid / 2 - 0.05) * sg)
       const blow = a.smash && t > BOARD.smashAt - 0.35 && t < BOARD.smashAt + 0.15
       hands = [
         { at: lock, w: 1 },
-        { at: blow ? win : W(e.door.x + 0.3, gy + 1.05 + j, -e.wid / 2 - 0.08), w: 1 }
+        { at: blow ? win : W(e.door.x + 0.3, gy + 1.05 + j, (-e.wid / 2 - 0.08) * sg), w: 1 }
       ]
       lean = blow ? 0.25 : 0.12
     } else if (a.phase === 'open' || (a.dir === 'out' && a.phase === 'close')) {
-      const h = W(e.door.x + 0.5, gy + Math.min(hgt * 0.55, 1.05), -e.wid / 2 - 0.1)
+      const h = W(e.door.x + 0.5, gy + Math.min(hgt * 0.55, 1.05), (-e.wid / 2 - 0.1) * sg)
       hands = [{ at: h, w: a.dir === 'in' ? 1 : 0.5 }, null]
     } else if (a.phase === 'pull') {
       // in after the driver, and hauling them out
       const s = Math.sin(Math.PI * clamp(t / BOARD.pull, 0, 1))
-      const at = W(lerp(e.door.x, e.seat.x, s), gy + e.seat.y + 0.45, lerp(e.door.z, e.seat.z, s))
+      const at = W(lerp(e.door.x, e.seat.x, s), gy + e.seat.y + 0.45, lerp(e.door.z * sg, e.seat.z, s))
       hands = [{ at, w: 1 }, { at: [at[0], at[1] + 0.1, at[2]], w: 1 }]
       lean = 0.3 * s
     }
