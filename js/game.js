@@ -23,6 +23,7 @@ import { CrimeHud } from './ui/crimeHud.js'
 import { radarOverlay, mapOverlay } from './ui/crimeMap.js'
 import { gps } from './ui/gps.js'
 import { recall, remember } from './ui/prefs.js'
+import { dropCarName } from './carName.js'
 
 // where the player is put back: the nearest hospital (wasted) or police station (busted), as
 // fractions of the map: HOSPITALS, STATIONS in missions/spots.js
@@ -202,6 +203,7 @@ export class Game {
     remember('cash', String(this.missions.cash))
     this.ui.title(kind, kind, pay ? `-$${pay}` : '', DOWN_T * 1000)
     this.ui.grey(true)
+    dropCarName(this.hud) // (no car's name left up under the title)
     if (this.missions.state === 'running') this.missions.fail(kind === 'busted' ? 'Busted' : 'Wasted')
   }
   // back on the street, by the nearest hospital or police station, with the slate clean
