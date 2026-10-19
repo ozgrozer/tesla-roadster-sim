@@ -194,6 +194,7 @@ export class Game {
 
   fall (kind) {
     this.down = { kind, t: 0 }
+    this.foot.down = true // (no getting into a car under the title)
     this.arrest.t = 0
     emitGame(kind, { pos: { x: playerView.pos.x, z: playerView.pos.z } })
     const pay = Math.min(this.missions.cash, PENALTY[kind])
@@ -224,6 +225,7 @@ export class Game {
     this.respawn?.({ x: best.x, z: best.z, yaw: best.yaw })
     this.footHealth = 1
     this.down = null
+    this.foot.down = false
     this.ui.grey(false)
   }
 

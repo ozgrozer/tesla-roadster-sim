@@ -110105,6 +110105,7 @@ class Game {
 
   fall (kind) {
     this.down = { kind, t: 0 }
+    this.foot.down = true // (no getting into a car under the title)
     this.arrest.t = 0
     emitGame(kind, { pos: { x: playerView.pos.x, z: playerView.pos.z } })
     const pay = Math.min(this.missions.cash, PENALTY[kind])
@@ -110135,6 +110136,7 @@ class Game {
     this.respawn?.({ x: best.x, z: best.z, yaw: best.yaw })
     this.footHealth = 1
     this.down = null
+    this.foot.down = false
     this.ui.grey(false)
   }
 
@@ -111480,7 +111482,7 @@ class OnFoot {
         this.hud.popup('You can get out in the city · <b>C</b> to go there', 2200, 'hint')
       return player.mode === 'car' ? false : true
     }
-    if (this.app.intro || this.app.auto) return false
+    if (this.app.intro || this.app.auto || this.down) return false
     if (player.mode === 'car') {
       const s = this.driven()
       if (s.mode !== 'ground' && s.mode !== 'crash') return false
@@ -111698,7 +111700,7 @@ class OnFoot {
   }
   // the car on offer: "E · Break in · Sedan" while the player stands by one
   offer () {
-    const o = offerFor(player, this.action)
+    const o = this.down ? { text: '' } : offerFor(player, this.action)
     this.target = o.target
     this.how = o.how
     this.prompt(o.text)
