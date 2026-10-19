@@ -126,13 +126,14 @@ test('a long run: smooth, no car through another, no red light run, no deadlock'
     const driving = tr.cars.filter(c => !c.parked && !c.loose)
     for (const c of driving) {
       const was = before.get(c)
-      // (a police car on a call goes over on red, at a crawl once the junction is clear: that is
+      // (a car on a call goes over on red, at a crawl once the junction is clear: that is
       // checked in calls.test.mjs)
       if (was?.road && c.edge !== was && c.edge.move && c.siren !== 1) {
         const node = NODES[was.to]
         if (signal(node, was.dir, tr.t) === RED && signal(node, was.dir, tr.t - 3) === RED) reds++
       }
-      const t = c.v < 0.3 ? (still.get(c) || 0) + H : 0
+      // (a box truck stopped to deliver is parked, not held up: delivery.js)
+      const t = c.v < 0.3 && !(c.drop?.k > 1) ? (still.get(c) || 0) + H : 0
       still.set(c, t)
       longest = Math.max(longest, t)
       const p = prev.get(c)

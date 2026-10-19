@@ -62,7 +62,7 @@ function overlaps (tr) {
   return n
 }
 
-test('now and then a police car answers a call: not in the first minute, never in sight', () => {
+test('now and then a police car, an ambulance or a fire engine answers a call: not in the first minute, never in sight', () => {
   const sim = parked()
   const tr = new Traffic({ count: 60, seed: 4 })
   tr.reset(sim.pos.x, sim.pos.z)
@@ -95,7 +95,10 @@ test('now and then a police car answers a call: not in the first minute, never i
     `the next ${wait.toFixed(0)} s after the run`
   )
   for (const k of calls) {
-    assert.equal(TYPES[k.car.type].name, 'police')
+    assert.ok(
+      ['police', 'ambulance', 'fire'].includes(TYPES[k.car.type].name),
+      TYPES[k.car.type].name
+    )
     assert.equal(k.siren, 1, 'lights and siren on')
     const d = Math.hypot(k.x - sim.pos.x, k.z - sim.pos.z)
     assert.ok(d > 150 && d < 290, `${d.toFixed(0)} m off`)

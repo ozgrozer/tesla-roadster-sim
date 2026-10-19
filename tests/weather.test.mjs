@@ -53,7 +53,8 @@ function pace (weather, secs = 150) {
     for (const c of tr.cars) {
       if (c.parked || c.loose) continue
       const e = c.edge
-      const free = c.clear > 70 && Math.abs(c.acc) < 0.15
+      // (a box truck slowing for its delivery stop, or stopped there, isn't cruising: delivery.js)
+      const free = c.clear > 70 && Math.abs(c.acc) < 0.15 && !c.drop?.k
       if (e.road && c.s > 15 && e.len - c.s > 35 && free) add('cruise', c.v)
       if (e.road && c.v > 6 && c.clear > 2 && c.clear < 40 && c.blk?.edge === e)
         if (Math.abs(c.acc) < 0.3) add('gap', c.clear / c.v)
@@ -97,7 +98,7 @@ test('a long run in the rain: no car through another, no red light run, nobody s
     const driving = tr.cars.filter(c => !c.parked && !c.loose)
     for (const c of driving) {
       const was = before.get(c)
-      // (a police car on a call aside: calls.test.mjs)
+      // (a car on a call aside: calls.test.mjs)
       if (was?.road && c.edge !== was && c.edge.move && c.siren !== 1) {
         const node = NODES[was.to]
         if (
@@ -106,7 +107,8 @@ test('a long run in the rain: no car through another, no red light run, nobody s
         )
           reds++
       }
-      const t = c.v < 0.3 ? (still.get(c) || 0) + H : 0
+      // (a box truck stopped to deliver is parked, not stuck: delivery.js)
+      const t = c.v < 0.3 && !(c.drop?.k > 1) ? (still.get(c) || 0) + H : 0
       still.set(c, t)
       longest = Math.max(longest, t)
     }

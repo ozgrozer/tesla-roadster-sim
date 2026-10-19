@@ -128,7 +128,9 @@ function runTraffic (secs) {
           redRuns++
       }
       moved += car.v * H
-      const t = car.v < 0.3 ? (still.get(car) || 0) + H : 0
+      // (a box truck stopped to deliver is parked, not waiting: delivery.js)
+      const t =
+        car.v < 0.3 && !(car.drop?.k > 1) ? (still.get(car) || 0) + H : 0
       still.set(car, t)
       longest = Math.max(longest, t)
     }
