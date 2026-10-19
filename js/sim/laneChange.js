@@ -16,20 +16,24 @@ export const LANE_CHANGE = {
     car.yieldT = Math.max(0, car.yieldT - dt)
     car.passT -= dt
     car.want = 0
-    // (nor while pulled over for a police car on a call: makeway.js)
-    const pulled = car.pull === 1 || car.pull === 3
+    // (nor while pulled over for a car on a call, makeway.js, or making a delivery, delivery.js)
+    const pulled = car.pull === 1 || car.pull === 3 || car.drop?.k > 0
     if (!e.road || !e.twin || car.lc || !car.next || car.panic > 0 || pulled) {
       car.sigT = 0
       return
     }
     // (on a call it cuts across from the lane it is in instead: see drive)
     const forTurn = !e.next.includes(car.next) && car.siren !== 1
-    // (behind a wreck or the Roadster, not traffic that will move on, a driver decides sooner)
-    const odd = car.blk === this.me || !!car.blk?.loose
+    // (behind a wreck, the Roadster or a box truck making a delivery, not traffic that will move
+    // on, a driver decides sooner; one seeing the truck's hazards ahead moves over before it is
+    // there)
+    const drop = car.blk?.drop?.k > 1
+    const odd = car.blk === this.me || !!car.blk?.loose || drop
     let move =
       forTurn ||
       car.stuck > (odd ? 1 : 2) + car.patience * 0.2 ||
-      (car.yieldT > 0 && e.lane === 0)
+      (car.yieldT > 0 && e.lane === 0) ||
+      (drop && car.clear < 40)
     // a slow car ahead and the other lane going better: a bold driver goes by
     if (!move && car.passT <= 0) {
       car.passT = 1 + this.R()
@@ -57,16 +61,21 @@ export const LANE_CHANGE = {
     }
   },
   // Room to pull out: moving, or (slow) far enough back from what is ahead in the lane to be clear
-  // of it by the time the nose gets there (with a lane change over changeLength).
+  // of it by the time the nose gets there (with a lane change over changeLength); from behind a box
+  // truck stopped to deliver (or slowing for its stop), far enough back from it either way (within
+  // a metre: pullOut leaves 3 more behind one).
   roomOut (car) {
+    if (car.blk?.drop?.k > 0) return car.clear > this.pullOut(car) - 1
     if (car.v > 2) return true
     if (car.len > 7 && !car.stuck) return false // (a bus doesn't change lanes at a crawl)
     return car.clear > this.pullOut(car)
   },
   // (how far back from it: far enough to be clear of it, pulling out over the shortest change; from
-  // o, a wreck, a few metres more, to have room to go on round it on the wrong side: react.js)
+  // o, a wreck, a few metres more, to have room to go on round it on the wrong side: react.js; and
+  // 3 m more behind a box truck stopping to deliver, as wide as it is: delivery.js)
   pullOut (car, o = null) {
-    return 0.57 * Math.max(9, car.len * 2.2) + (o?.dmg?.wreck ? 4 : 0)
+    const more = (o?.dmg?.wreck ? 4 : 0) + (car.blk?.drop?.k > 0 ? 3 : 0)
+    return 0.57 * Math.max(9, car.len * 2.2) + more
   },
   // worth going by the car ahead: it is slow for this driver, and the other lane is moving better
   overtake (car) {

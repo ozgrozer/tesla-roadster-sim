@@ -18,6 +18,7 @@ import {
   NODES,
   GREEN,
   YELLOW,
+  SIGNAL,
   redAge,
   signal,
   pointAt,
@@ -52,7 +53,8 @@ export function temperament (car, R, T) {
   car.patience = 3 + (1 - bold) * 8 + R() * 4 // s held up before honking or going round
   car.lead = 0.8 + (1 - bold) * 1.5 // s of indicator before moving over
   car.short0 = 0.6 + R() * 2.2 // how far short of the line they first stop, m
-  car.gapT = 4.7 - bold * 1.4 // s of gap in the oncoming traffic they take to turn across it
+  // s of gap in the oncoming traffic they take to turn across it (more in a long one: carTypes.js)
+  car.gapT = 4.7 - bold * 1.4 + (T.gap || 0)
 }
 
 export const DRIVE = {
@@ -78,12 +80,15 @@ export const DRIVE = {
       blk = this.lead, // what holds it up (for sorting out a standoff)
       mine = false, // what holds it up is the Roadster
       red = false // (and not a red light it would be waiting at anyway)
-    // changing lanes: the car ahead in the lane it is leaving is still in the way
+    // changing lanes: the car ahead in the lane it is leaving is still in the way (but a box truck
+    // stopped to deliver is seen by its body, as a wreck is: the car is steering out round it)
+    let truck = null
     if (car.lc && car.from)
       for (const o of car.from.cars)
         if (o.s > car.s) {
           const g = o.s - car.s - (o.len + car.len) / 2
-          if (g < gap && !this.besideStuck(car, o, g)) {
+          if (o.drop?.k > 1) truck = o
+          else if (g < gap && !this.besideStuck(car, o, g)) {
             gap = g
             vl = o.v
             blk = o
@@ -114,6 +119,7 @@ export const DRIVE = {
       put(p.x, p.z, 0, 0, 1, 0, 0.35, 0.35)
       this.obstacle(car, OB, p)
     }
+    if (truck) this.seeTruck(car, truck)
     // (a wreck at rest is edged round if it reaches into the lane a little, and crept past closer
     // than one still sliding)
     if (!car.panic && !car.tuck && (car.offT || this.loose.length))
@@ -136,10 +142,12 @@ export const DRIVE = {
         this.obstacle(car, OB, o)
       }
     this.margin = 0.5
-    // (a bus swings its nose wide round a corner: the cars at the lines count too)
-    if (car.big && car.next) {
+    // (a bus or anything as long swings its nose wide round a corner: the cars at the lines count too)
+    if (car.len > 7.5 && car.next) {
       const turn = e.move ? e : car.next.kind === 1 && e.len - car.s < 30 ? car.next : null
-      if (turn) this.atLines(car, NODES[turn.node], turn.next[0]?.twin)
+      // (turning left, a long one leaves out those beside it at the line: fleet.js)
+      const mine = turn?.move === 'L' && this.long(car) ? turn.dir : -1
+      if (turn) this.atLines(car, NODES[turn.node], turn.next[0]?.twin, mine)
     }
     if (car.siren === 1) this.callSees(car) // (on a call: responder.js)
     else if (car.offT < -2.5) this.wrongSees(car) // (round a wreck: react.js)
@@ -149,16 +157,32 @@ export const DRIVE = {
     car.clear = gap
     mine = W.blk === me && !!me
     // (pulling up behind something stopped mid-block that isn't traffic, the Roadster or a wreck, a
-    // driver leaves room to pull out round it)
-    const odd = vl < 0.5 && (mine || blk?.loose) && e.road && e.twin && !car.lc
-    if (odd && car.s + gap < e.len - 15 && gap > car.s0)
-      gap = Math.max(car.s0, gap - (this.pullOut(car, blk) + 0.4 - car.s0))
+    // driver leaves room to pull out round it; behind a box truck making a delivery, more of it as
+    // the truck slows for its stop: delivery.js)
+    const odd =
+      blk?.drop?.k > 0
+        ? clamp(1 - vl / 4, 0, 1)
+        : vl < 0.5 && (mine || blk?.loose)
+        ? 1
+        : 0
+    if (
+      odd > 0 &&
+      e.road &&
+      e.twin &&
+      !car.lc &&
+      car.s + gap < e.len - 15 &&
+      gap > car.s0
+    )
+      gap = Math.max(
+        car.s0,
+        gap - odd * (this.pullOut(car, blk) + 0.4 - car.s0)
+      )
     // (pulling out round a wreck on the wrong side, react.js roomRound: it creeps on as it turns)
     if (car.offT < -2.5 && blk?.loose && gap > 1)
       gap = Math.max(gap, car.s0 + 2)
     // the signal at the end of this lane (on a call, its own way over: responder.js; held up in the
-    // junction on a left turn, the oncoming traffic: sight.js), and a police car on a call to make
-    // way for (makeway.js)
+    // junction on a left turn, the oncoming traffic: sight.js), a car on a call to make way for
+    // (makeway.js), and a box truck's delivery stop (delivery.js)
     let g =
       e.move === 'L'
         ? this.turnHold(car, e)
@@ -168,6 +192,7 @@ export const DRIVE = {
         ? this.callLights(car, e, dt)
         : this.lights(car, e, dt)
     if (car.pull || this.call.on) g = Math.min(g, this.giveWay(car, dt))
+    if (car.type === this.idx.truck) g = Math.min(g, this.deliver(car, dt))
     if (g < gap) {
       gap = g
       vl = 0
@@ -332,12 +357,13 @@ export const DRIVE = {
         stop = false
       } else car.stop = e
     }
-    const left = car.next.move === 'L'
+    const left = car.next.move === 'L',
+      long = this.long(car) // (fleet.js)
     if (!stop && left && toLine < 30 && car.go !== e) {
       stop = this.oncoming(node, e.dir, false, car.gapT)
-      // waiting at the line to turn across the oncoming traffic (and moving off into a gap,
-      // committed to it)
-      car.lw = stop && toLine < 5 ? car.lw + dt : 0
+      // waiting at the line to turn across the oncoming traffic, a long one however short a gap
+      // comes that it can't take (and moving off into a gap, committed to it)
+      car.lw = (stop || long) && toLine < 5 ? car.lw + dt : 0
       if (!stop && toLine < 1.5 && v > 1) car.go = e
     } else if (
       stop &&
@@ -351,18 +377,20 @@ export const DRIVE = {
           ? amberLeft(node, e.dir, this.t)
           : -redAge(node, e.dir, this.t)
       ) &&
+      (!long || this.room(car)) &&
       !this.oncoming(node, e.dir, true)
     ) {
       // as the light changes, the oncoming traffic stops and whoever waited to turn left goes
       car.go = e
       stop = false
     }
-    // keep the junction clear: with no room beyond it, wait at the line (if it can still stop)
+    // keep the junction clear: with no room beyond it, wait at the line (if it can still stop; a
+    // long one waiting at the line to turn left, until it has room)
     if (
       !stop &&
-      toLine > 0.5 &&
+      (toLine > 0.5 || (long && left && car.go !== e)) &&
       toLine < 18 &&
-      v * v < 2 * car.b * toLine &&
+      v * v < 2 * car.b * Math.max(toLine, 0.3) &&
       !this.room(car)
     )
       stop = true
@@ -379,10 +407,12 @@ export const DRIVE = {
   },
 
   // Waiting to turn left, can it get going and into the junction before the red is a couple of
-  // seconds old? (It has to react first, and pull away from a standstill.)
+  // seconds old (a long one, before the all-red is out)? (It has to react first, and pull away
+  // from a standstill.)
   sneak (car, toLine, left) {
-    const wait = car.v < 0.1 ? Math.max(0, 0.25 - car.wake) : 0
-    return wait + Math.sqrt((2 * (toLine + car.len / 2)) / car.a) < left + 2.5
+    const wait = car.v < 0.1 ? Math.max(0, 0.25 - car.wake) : 0,
+      most = this.long(car) ? SIGNAL.clear : 2.5
+    return wait + Math.sqrt((2 * (toLine + car.len / 2)) / car.a) < left + most
   },
 
   // Off the lane's line: steered back towards offT (0, or a swerve, or room round a wreck). The

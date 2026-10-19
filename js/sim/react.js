@@ -197,12 +197,13 @@ export const REACT = {
 
   // Held up, and why: the gap is closed and the car stopped, and what stops it isn't a red light
   // (that is just waiting) nor someone on foot, but something that isn't going anywhere: a wreck, a
-  // parked car, the Roadster, or a car itself held up (or, round a ring of them, waiting on this one).
+  // parked car, a box truck making a delivery, the Roadster, or a car itself held up (or, round a
+  // ring of them, waiting on this one).
   held (car, blk, gap, red) {
     if (red || car.v > 0.5 || gap > car.s0 + 4 || !blk) return false
     if (blk === this.me) return true
     if (!blk.len) return false // a pedestrian: wait for them
-    if (blk.loose || blk.parked) return true
+    if (blk.loose || blk.parked || blk.drop?.k > 1) return true
     return (
       blk.v < 0.5 && (blk.stuck > 0 || blk.lw > 1.5 || this.ring(car) !== null)
     )

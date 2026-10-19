@@ -176,7 +176,7 @@ export const SIGHT = {
   },
   // The cars waiting at the lines into a junction (or just short of them), and those setting off
   // along the lane beside the one a turn leads into, as obstacles
-  atLines (car, node, beside) {
+  atLines (car, node, beside, mine = -1) {
     if (beside)
       for (const o of beside.cars) {
         if (o.s > 25) break
@@ -185,7 +185,7 @@ export const SIGHT = {
       }
     for (let k = 0; k < 4; k++) {
       const arm = node.inc[k]
-      if (!arm) continue
+      if (!arm || k === mine) continue
       for (let l = 0; l < arm.length; l++) {
         const L = arm[l],
           o = L.cars[L.cars.length - 1]
