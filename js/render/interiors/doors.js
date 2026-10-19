@@ -75,7 +75,8 @@ export function buildDoors (group) {
       const c = s.drive.door,
         t = { x: -s.n.z, z: s.n.x }
       const a = (c.x - s.face.x) * t.x + (c.z - s.face.z) * t.z
-      lit.push(tint(onWall(s, a - 3.2, a + 3.2, -0.02, 0.25, 0, 4.7), 0x2b2f36))
+      for (const [u0, u1, y0, y1] of [[a - 3.25, a - 3, 0, 4.7], [a + 3, a + 3.25, 0, 4.7], [a - 3.25, a + 3.25, 4.4, 4.7]])
+        lit.push(tint(onWall(s, u0, u1, -0.02, 0.26, y0, y1), 0x2b2f36))
       lit.push(tint(onWall(s, a - 3, a + 3, 0, 0.18, 0, 4.4), 0x8a9096))
       for (let yy = 0.3; yy < 4.4; yy += 0.36) lit.push(tint(onWall(s, a - 3, a + 3, 0.18, 0.22, yy, yy + 0.06), 0x6b7177))
       lit.push(tint(onWall(s, a - 3.6, a + 3.6, 0, 0.3, 4.9, 6.2), 0x1b1d22))
@@ -110,7 +111,7 @@ export function buildDoors (group) {
   group.add(mk)
   out.night = k => {
     // (the glass warm and bright at night, a soft sheen by day; the signs lit)
-    out.glassMat.color.setRGB(0.55 + 1.6 * k, 0.6 + 1.25 * k, 0.65 + 0.7 * k)
+    out.glassMat.color.setRGB(0.32 + 1.8 * k, 0.34 + 1.5 * k, 0.36 + 0.9 * k)
     out.signMat.color.setScalar(0.85 + 0.9 * k)
   }
   out.pulse = t => (out.markMat.opacity = 0.55 + 0.3 * Math.sin(t * 3))

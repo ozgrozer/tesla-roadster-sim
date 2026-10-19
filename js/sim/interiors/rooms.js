@@ -128,7 +128,7 @@ function diner () {
     b.push(box(x - 0.25, x + 0.25, 0.7, 1.1, h - 0.9, h - 0.65, 0xffe0a0, 'g'))
   for (const x of [-1, 2, 5]) b.push(box(x - 0.6, x + 0.6, 6.6, 7.4, h - 0.05, h, 0xffffff, 'g'))
   return {
-    name: 'Sunrise Diner',
+    name: 'Taqueria Sunrise',
     w,
     d,
     h,
