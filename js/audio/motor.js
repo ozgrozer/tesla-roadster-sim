@@ -202,7 +202,8 @@ export const DRIVE = {
     // the front motor takes some of the drive, none of it in Track Mode (the rears do the work)
     const share = st.track ? 0.15 : 0.45
     const here = smooth(0.2, 3, v) * (0.55 + 0.45 * Math.min(1, v / 30))
-    const k = inside ? 1.5 : 1
+    // (none of it in a car with an engine instead: engine.js, st.combustion)
+    const k = st.combustion ? 0 : inside ? 1.5 : 1
     this.unit(n.front, fF, 0, drive * share, regen, here * k)
     this.unit(
       n.rear,
@@ -241,7 +242,7 @@ export const DRIVE = {
     R(n.pwsO.frequency, (170 + v * 9) * ps, 0.1)
     R(
       n.pws.gain,
-      inside || !st.grounded
+      inside || !st.grounded || st.combustion
         ? 0
         : smooth(0.15, 0.8, v) * (1 - smooth(6.5, 8.4, v)) * 0.012,
       0.15
