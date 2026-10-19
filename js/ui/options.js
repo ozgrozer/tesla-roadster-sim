@@ -52,6 +52,9 @@ function parse (k, s) {
 // every option as it was left (call once, at the start)
 export function loadOptions () {
   for (const k of Object.keys(DEFAULTS)) OPTS[k] = parse(k, recall('opt.' + k))
+  // (reduced motion not chosen here yet: as the phys stream's motionPref.js has it, the remembered
+  // 'reducedMotion' or the browser's prefers-reduced-motion)
+  if (recall('opt.motion') === '') OPTS.motion = prefersCalm() ? 'reduced' : 'full'
   applyBody()
   for (const fn of subs) fn(null, OPTS)
   return OPTS
@@ -61,6 +64,8 @@ export function setOption (k, v) {
   if (!(k in DEFAULTS)) return
   OPTS[k] = CHOICES[k].includes(v) ? v : DEFAULTS[k]
   remember('opt.' + k, OPTS[k])
+  // (shared with render/motionPref.js, the camera's shakes: the same key it remembers)
+  if (k === 'motion') remember('reducedMotion', OPTS.motion === 'reduced' ? '1' : '0')
   applyBody()
   for (const fn of subs) fn(k, OPTS)
 }
@@ -86,6 +91,15 @@ export const shakeScale = () => (OPTS.motion === 'reduced' ? 0.25 : 1)
 // whether the speed blur and other motion effects are wanted
 export const motionFx = () => OPTS.motion !== 'reduced'
 
+function prefersCalm () {
+  const r = recall('reducedMotion')
+  if (r) return r === '1'
+  try {
+    return !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+  } catch {
+    return false
+  }
+}
 // the body's classes for the CSS: larger text, the palette, reduced motion
 function applyBody () {
   const b = typeof document !== 'undefined' && document.body

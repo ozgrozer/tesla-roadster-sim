@@ -1,6 +1,5 @@
 // Cameras: the autopilot's director shots, a GTA-style follow camera, chase, the driver's seat, side
 // and free orbit; and, held, the look behind (follow.js), as GTA's.
-import { shakeScale } from '../ui/options.js'
 import * as THREE from 'three'
 import { clamp } from '../sim/constants.js'
 import { TRACK, LINEUP_FIRST, LINEUP_LAST } from '../sim/track.js'
@@ -156,7 +155,7 @@ export class CameraRig {
     return m === 'cockpit' && this.noCockpit ? 'Hood' : CAM_NAMES[m]
   }
   shake (a) {
-    this.shakeAmt = Math.max(this.shakeAmt, a * shakeScale()) // (reduced motion: options.js)
+    this.shakeAmt = Math.max(this.shakeAmt, a)
   }
   // swing the follow camera round the car and up or down (a mouse drag, a gamepad's right stick);
   // it drifts back behind the car once it is left alone

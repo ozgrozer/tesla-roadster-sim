@@ -91,3 +91,20 @@ test('captions: thunder per strike (not too often), sirens when units are near a
   assert.equal(c.update(0.1, { env, wanted: 0, units, at: { x: 0, z: 0 } }), null)
   assert.equal(c.update(0.1, { env, wanted: 2, units, at: { x: 0, z: 0 } }), '[sirens close by]')
 })
+
+test('weather: one grip getter, 1 dry and about 0.7 soaked; the weather in a word', async () => {
+  const { ENV, setWeather, weatherGrip, weatherKind } = await import('../js/sim/env.js')
+  setWeather('clear', { now: true })
+  assert.equal(weatherGrip(), 1)
+  assert.equal(weatherKind(), 'clear')
+  setWeather('rain', { now: true })
+  assert.ok(weatherGrip() < 0.8 && weatherGrip() >= 0.7 - 1e-9)
+  assert.equal(weatherKind(), 'rain')
+  setWeather('fog', { now: true })
+  assert.equal(weatherKind(), 'fog')
+  setWeather('storm', { now: true })
+  assert.equal(weatherKind(), 'storm')
+  setWeather('clear', { now: true })
+  ENV.wet = 0
+  ENV.pool = 0
+})

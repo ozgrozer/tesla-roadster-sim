@@ -54970,6 +54970,24 @@ function setWeather (name, { now = false, quick = false } = {}) {
   light()
 }
 
+// The road's grip in the weather, one getter for every driver: 1 dry, down to 1 - WET_GRIP soaked
+// (the road's wetness, or the rain's share before it has soaked in). The Roadster's own surface
+// grip (street.js) and the police's (game.js) already take the same 30% off in the wet; the phys
+// stream's roadGrip.js is this, times its own hook.
+const WET_GRIP = 0.3
+function weatherGrip () {
+  return 1 - WET_GRIP * clamp(Math.max(ENV.wet, 0.6 * ENV.rain), 0, 1)
+}
+// the weather in a word for the HUD and the sound: 'clear', 'cloudy', 'rain', 'storm' or 'fog' (as
+// it is now, eased: overcast counts as cloudy, a shower as rain once it falls)
+function weatherKind () {
+  const e = ENV
+  if (e.storm > 0.5) return 'storm'
+  if (e.rain > 0.2) return 'rain'
+  if (e.fog > 0.5) return 'fog'
+  return e.clouds > 0.35 ? 'cloudy' : 'clear'
+}
+
 // set the clock (hour, 0 to 24)
 function setHour (h) {
   ENV.hour = ((h % 24) + 24) % 24
@@ -54982,7 +55000,7 @@ function envRandom (fn = Math.random) {
 }
 
 light()
-__export(__exports, { "WEATHERS": () => WEATHERS, "WEATHER_NAMES": () => WEATHER_NAMES, "DAY_RATE": () => DAY_RATE, "START_HOUR": () => START_HOUR, "ENV": () => ENV, "sunAt": () => sunAt, "stepEnv": () => stepEnv, "setWeather": () => setWeather, "setHour": () => setHour, "envRandom": () => envRandom })
+__export(__exports, { "WEATHERS": () => WEATHERS, "WEATHER_NAMES": () => WEATHER_NAMES, "DAY_RATE": () => DAY_RATE, "START_HOUR": () => START_HOUR, "ENV": () => ENV, "sunAt": () => sunAt, "stepEnv": () => stepEnv, "setWeather": () => setWeather, "WET_GRIP": () => WET_GRIP, "weatherGrip": () => weatherGrip, "weatherKind": () => weatherKind, "setHour": () => setHour, "envRandom": () => envRandom })
 })
 
 // ---- js/ui/clock.js
@@ -65399,112 +65417,8 @@ function worldSettings (app) {
 __export(__exports, { "RATES": () => RATES, "QUALITIES": () => QUALITIES, "worldSettings": () => worldSettings })
 })
 
-// ---- js/ui/options.js
-__define(57, function (__exports) {
-// The player's options, one object (OPTS) that the pause menu's SETTINGS tab changes and the game
-// reads: the sound's three levels (everything, the radio, the rest), the graphics (shadows, the
-// pixels to a point, how far the city is drawn), the camera (how fast the mouse turns it, the
-// vertical look inverted), and accessibility (subtitles for the missions and the sounds that matter,
-// larger text, a HUD palette for colour-blind players, reduced motion: less camera shake and no
-// speed blur). Each is remembered between visits (prefs.js) and anyone may hear a change
-// (onOption). No three.js here; the DOM only to set the body's classes, so the tests can load it.
-const { recall, remember } = __require(7)
-const DEFAULTS = {
-  master: 0.9,
-  music: 0.7,
-  sfx: 1,
-  shadows: 'on', // 'on' | 'off'
-  px: 'auto', // 'auto' (the quality's) or a number of pixels to a point
-  draw: 'far', // 'near' | 'mid' | 'far': how far the city is drawn (the fog closes in nearer)
-  sens: 1, // the mouse look's speed, times the default
-  invert: false, // the mouse's vertical look inverted
-  subtitles: true,
-  bigText: false,
-  palette: 'standard', // 'standard' | 'deutan' (red/green safe) | 'tritan' (blue/yellow safe)
-  motion: 'full' // 'full' | 'reduced'
-}
-// what each may be (the menu steps through these)
-const CHOICES = {
-  master: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1],
-  music: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1],
-  sfx: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1],
-  shadows: ['on', 'off'],
-  px: ['auto', 0.75, 1, 1.5, 2],
-  draw: ['near', 'mid', 'far'],
-  sens: [0.4, 0.6, 0.8, 1, 1.25, 1.5, 2, 2.5],
-  invert: [false, true],
-  subtitles: [true, false],
-  bigText: [false, true],
-  palette: ['standard', 'deutan', 'tritan'],
-  motion: ['full', 'reduced']
-}
-// how far each draw distance lets you see: the least fog density (scene.fog, FogExp2) it keeps
-const DRAW_FOG = { near: 0.0042, mid: 0.0024, far: 0 }
-
-const OPTS = { ...DEFAULTS }
-const subs = new Set()
-
-// a stored string back to its option's value (anything not one of its choices: the default)
-function parse (k, s) {
-  if (s === '') return DEFAULTS[k]
-  const v = CHOICES[k].find(c => String(c) === s)
-  return v === undefined ? DEFAULTS[k] : v
-}
-
-// every option as it was left (call once, at the start)
-function loadOptions () {
-  for (const k of Object.keys(DEFAULTS)) OPTS[k] = parse(k, recall('opt.' + k))
-  applyBody()
-  for (const fn of subs) fn(null, OPTS)
-  return OPTS
-}
-// one option set (and remembered), and everyone told
-function setOption (k, v) {
-  if (!(k in DEFAULTS)) return
-  OPTS[k] = CHOICES[k].includes(v) ? v : DEFAULTS[k]
-  remember('opt.' + k, OPTS[k])
-  applyBody()
-  for (const fn of subs) fn(k, OPTS)
-}
-// all of them back to their defaults
-function resetOptions () {
-  for (const k of Object.keys(DEFAULTS)) setOption(k, DEFAULTS[k])
-}
-// fn(key, OPTS) on each change (key null: all of them, as they are loaded); returns an unsubscribe
-function onOption (fn) {
-  subs.add(fn)
-  return () => subs.delete(fn)
-}
-
-// The mouse's movement as the camera should turn by it: scaled, and its vertical inverted if asked
-const _look = [0, 0]
-function look (dx, dy) {
-  _look[0] = dx * OPTS.sens
-  _look[1] = dy * OPTS.sens * (OPTS.invert ? -1 : 1)
-  return _look
-}
-// how much of a camera shake to keep (reduced motion: a quarter)
-const shakeScale = () => (OPTS.motion === 'reduced' ? 0.25 : 1)
-// whether the speed blur and other motion effects are wanted
-const motionFx = () => OPTS.motion !== 'reduced'
-
-// the body's classes for the CSS: larger text, the palette, reduced motion
-function applyBody () {
-  const b = typeof document !== 'undefined' && document.body
-  if (!b) return
-  b.classList.toggle('big-text', OPTS.bigText)
-  b.classList.toggle('pal-deutan', OPTS.palette === 'deutan')
-  b.classList.toggle('pal-tritan', OPTS.palette === 'tritan')
-  b.classList.toggle('calm', OPTS.motion === 'reduced')
-}
-
-// (loaded as the module is, so everything made after it reads the player's own from the start)
-loadOptions()
-__export(__exports, { "DEFAULTS": () => DEFAULTS, "CHOICES": () => CHOICES, "DRAW_FOG": () => DRAW_FOG, "OPTS": () => OPTS, "loadOptions": () => loadOptions, "setOption": () => setOption, "resetOptions": () => resetOptions, "onOption": () => onOption, "look": () => look, "shakeScale": () => shakeScale, "motionFx": () => motionFx })
-})
-
 // ---- js/render/follow.js
-__define(58, function (__exports) {
+__define(57, function (__exports) {
 // The follow camera, GTA-style: a spring arm close behind the car's heading (camera.js runs it).
 const THREE = __require(0)
 const { clamp, wrapPi } = __require(2)
@@ -65702,7 +65616,7 @@ __export(__exports, { "ARM": () => ARM, "follow": () => follow, "clipTraffic": (
 })
 
 // ---- js/sim/carTypes.js
-__define(59, function (__exports) {
+__define(58, function (__exports) {
 // The traffic's vehicle types (traffic.js): the nine of every day, each turning up in its share,
 // and the city's own five, which only calls.js (an ambulance, a fire engine) and fleet.js (a box
 // truck, a lowrider, a limousine) put on the road.
@@ -65734,7 +65648,7 @@ __export(__exports, { "TYPES": () => TYPES, "IDX": () => IDX })
 })
 
 // ---- js/render/carCam.js
-__define(60, function (__exports) {
+__define(59, function (__exports) {
 // The camera's side of the cars the player drives that aren't the Roadster (camera.js, follow.js):
 // how big the car is, so the follow arm sits back and up far enough to see over a van or a bus
 // (armScale, armRise), the Hood camera (the Cockpit's place in V's cycle for a car without a
@@ -65742,7 +65656,7 @@ __define(60, function (__exports) {
 // cab-forward van, bus or truck, riding the body's pitch and roll), and the walls' clip eased back
 // out rather than snapping (smoothClip: in at once, out over a moment, as the traffic's is).
 const THREE = __require(0)
-const { TYPES } = __require(59)
+const { TYPES } = __require(58)
 const { clamp } = __require(2)
 const lerpK = (k, dt) => 1 - Math.exp(-k * dt)
 // The eye, in the car's frame from its middle on the road (x forward, y up), from its shape
@@ -65832,7 +65746,7 @@ __export(__exports, { "armScale": () => armScale, "armRise": () => armRise, "hoo
 })
 
 // ---- vendor/three/addons/controls/OrbitControls.js
-__define(61, function (__exports) {
+__define(60, function (__exports) {
 const { Controls, MOUSE, Quaternion, Spherical, TOUCH, Vector2, Vector3, Plane, Ray, MathUtils } = __require(0)
 
 // OrbitControls performs orbiting, dollying (zooming), and panning.
@@ -67347,16 +67261,15 @@ __export(__exports, { "OrbitControls": () => OrbitControls })
 })
 
 // ---- js/render/camera.js
-__define(62, function (__exports) {
+__define(61, function (__exports) {
 // Cameras: the autopilot's director shots, a GTA-style follow camera, chase, the driver's seat, side
 // and free orbit; and, held, the look behind (follow.js), as GTA's.
-const { shakeScale } = __require(57)
 const THREE = __require(0)
 const { clamp } = __require(2)
 const { TRACK, LINEUP_FIRST, LINEUP_LAST } = __require(10)
-const { follow, clipTraffic, ARM } = __require(58)
-const { hoodSeat, smoothClip } = __require(60)
-const { OrbitControls } = __require(61)
+const { follow, clipTraffic, ARM } = __require(57)
+const { hoodSeat, smoothClip } = __require(59)
+const { OrbitControls } = __require(60)
 const CAM_MODES = [
   'director',
   'follow',
@@ -67505,7 +67418,7 @@ class CameraRig {
     return m === 'cockpit' && this.noCockpit ? 'Hood' : CAM_NAMES[m]
   }
   shake (a) {
-    this.shakeAmt = Math.max(this.shakeAmt, a * shakeScale()) // (reduced motion: options.js)
+    this.shakeAmt = Math.max(this.shakeAmt, a)
   }
   // swing the follow camera round the car and up or down (a mouse drag, a gamepad's right stick);
   // it drifts back behind the car once it is left alone
@@ -67814,14 +67727,132 @@ class CameraRig {
 __export(__exports, { "CAM_MODES": () => CAM_MODES, "CAM_NAMES": () => CAM_NAMES, "RIDING": () => RIDING, "CameraRig": () => CameraRig })
 })
 
+// ---- js/ui/options.js
+__define(62, function (__exports) {
+// The player's options, one object (OPTS) that the pause menu's SETTINGS tab changes and the game
+// reads: the sound's three levels (everything, the radio, the rest), the graphics (shadows, the
+// pixels to a point, how far the city is drawn), the camera (how fast the mouse turns it, the
+// vertical look inverted), and accessibility (subtitles for the missions and the sounds that matter,
+// larger text, a HUD palette for colour-blind players, reduced motion: less camera shake and no
+// speed blur). Each is remembered between visits (prefs.js) and anyone may hear a change
+// (onOption). No three.js here; the DOM only to set the body's classes, so the tests can load it.
+const { recall, remember } = __require(7)
+const DEFAULTS = {
+  master: 0.9,
+  music: 0.7,
+  sfx: 1,
+  shadows: 'on', // 'on' | 'off'
+  px: 'auto', // 'auto' (the quality's) or a number of pixels to a point
+  draw: 'far', // 'near' | 'mid' | 'far': how far the city is drawn (the fog closes in nearer)
+  sens: 1, // the mouse look's speed, times the default
+  invert: false, // the mouse's vertical look inverted
+  subtitles: true,
+  bigText: false,
+  palette: 'standard', // 'standard' | 'deutan' (red/green safe) | 'tritan' (blue/yellow safe)
+  motion: 'full' // 'full' | 'reduced'
+}
+// what each may be (the menu steps through these)
+const CHOICES = {
+  master: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1],
+  music: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1],
+  sfx: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1],
+  shadows: ['on', 'off'],
+  px: ['auto', 0.75, 1, 1.5, 2],
+  draw: ['near', 'mid', 'far'],
+  sens: [0.4, 0.6, 0.8, 1, 1.25, 1.5, 2, 2.5],
+  invert: [false, true],
+  subtitles: [true, false],
+  bigText: [false, true],
+  palette: ['standard', 'deutan', 'tritan'],
+  motion: ['full', 'reduced']
+}
+// how far each draw distance lets you see: the least fog density (scene.fog, FogExp2) it keeps
+const DRAW_FOG = { near: 0.0042, mid: 0.0024, far: 0 }
+
+const OPTS = { ...DEFAULTS }
+const subs = new Set()
+
+// a stored string back to its option's value (anything not one of its choices: the default)
+function parse (k, s) {
+  if (s === '') return DEFAULTS[k]
+  const v = CHOICES[k].find(c => String(c) === s)
+  return v === undefined ? DEFAULTS[k] : v
+}
+
+// every option as it was left (call once, at the start)
+function loadOptions () {
+  for (const k of Object.keys(DEFAULTS)) OPTS[k] = parse(k, recall('opt.' + k))
+  // (reduced motion not chosen here yet: as the phys stream's motionPref.js has it, the remembered
+  // 'reducedMotion' or the browser's prefers-reduced-motion)
+  if (recall('opt.motion') === '') OPTS.motion = prefersCalm() ? 'reduced' : 'full'
+  applyBody()
+  for (const fn of subs) fn(null, OPTS)
+  return OPTS
+}
+// one option set (and remembered), and everyone told
+function setOption (k, v) {
+  if (!(k in DEFAULTS)) return
+  OPTS[k] = CHOICES[k].includes(v) ? v : DEFAULTS[k]
+  remember('opt.' + k, OPTS[k])
+  // (shared with render/motionPref.js, the camera's shakes: the same key it remembers)
+  if (k === 'motion') remember('reducedMotion', OPTS.motion === 'reduced' ? '1' : '0')
+  applyBody()
+  for (const fn of subs) fn(k, OPTS)
+}
+// all of them back to their defaults
+function resetOptions () {
+  for (const k of Object.keys(DEFAULTS)) setOption(k, DEFAULTS[k])
+}
+// fn(key, OPTS) on each change (key null: all of them, as they are loaded); returns an unsubscribe
+function onOption (fn) {
+  subs.add(fn)
+  return () => subs.delete(fn)
+}
+
+// The mouse's movement as the camera should turn by it: scaled, and its vertical inverted if asked
+const _look = [0, 0]
+function look (dx, dy) {
+  _look[0] = dx * OPTS.sens
+  _look[1] = dy * OPTS.sens * (OPTS.invert ? -1 : 1)
+  return _look
+}
+// how much of a camera shake to keep (reduced motion: a quarter)
+const shakeScale = () => (OPTS.motion === 'reduced' ? 0.25 : 1)
+// whether the speed blur and other motion effects are wanted
+const motionFx = () => OPTS.motion !== 'reduced'
+
+function prefersCalm () {
+  const r = recall('reducedMotion')
+  if (r) return r === '1'
+  try {
+    return !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+  } catch {
+    return false
+  }
+}
+// the body's classes for the CSS: larger text, the palette, reduced motion
+function applyBody () {
+  const b = typeof document !== 'undefined' && document.body
+  if (!b) return
+  b.classList.toggle('big-text', OPTS.bigText)
+  b.classList.toggle('pal-deutan', OPTS.palette === 'deutan')
+  b.classList.toggle('pal-tritan', OPTS.palette === 'tritan')
+  b.classList.toggle('calm', OPTS.motion === 'reduced')
+}
+
+// (loaded as the module is, so everything made after it reads the player's own from the start)
+loadOptions()
+__export(__exports, { "DEFAULTS": () => DEFAULTS, "CHOICES": () => CHOICES, "DRAW_FOG": () => DRAW_FOG, "OPTS": () => OPTS, "loadOptions": () => loadOptions, "setOption": () => setOption, "resetOptions": () => resetOptions, "onOption": () => onOption, "look": () => look, "shakeScale": () => shakeScale, "motionFx": () => motionFx })
+})
+
 // ---- js/ui/settingsRows.js
 __define(63, function (__exports) {
 // The SETTINGS tab's rows, under their headings: { id, name, hint, opts: [[value, label], ...] }, a
 // slider, or (opt) one of the player's options (options.js), whose values are its CHOICES.
 const { RATES, QUALITIES } = __require(56)
 const { WEATHERS, WEATHER_NAMES } = __require(3)
-const { CAM_MODES, CAM_NAMES } = __require(62)
-const { CHOICES } = __require(57)
+const { CAM_MODES, CAM_NAMES } = __require(61)
+const { CHOICES } = __require(62)
 const RATE_NAMES = {
   0: 'Stopped',
   1: 'Real time',
@@ -67972,7 +68003,7 @@ __define(64, function (__exports) {
 // its speed, the weather and the graphics quality as the world's settings (world.js) take them.
 const { hhmm } = __require(4)
 const { ROWS } = __require(63)
-const { OPTS, setOption } = __require(57)
+const { OPTS, setOption } = __require(62)
 class Settings {
   // box: the tab's element; get[id](), set[id](value): each setting's value, and the setting of it
   constructor (box, get, set) {
@@ -72424,7 +72455,7 @@ __define(92, function (__exports) {
 const { N, PITCH } = __require(18)
 const { areaOf } = __require(5)
 const { rng } = __require(35)
-const { TYPES } = __require(59)
+const { TYPES } = __require(58)
 const TRUCKS = 0.4 // of the vans, the share that are box trucks
 // of the sedans, the share that are lowriders, and limousines, by neighbourhood (areas.js)
 // prettier-ignore
@@ -73892,7 +73923,7 @@ __define(99, function (__exports) {
 // done (handBack: left parked where it stands, or given a driver who takes it back into traffic).
 // Also the drivers' moods (an angry driver after a knock presses on, close behind, on the horn),
 // their driving style, the last-resort gridlock watchdog and how busy each district is.
-const { TYPES } = __require(59)
+const { TYPES } = __require(58)
 const { LANES, PITCH, N } = __require(35)
 const { AREAS, areaOf } = __require(5)
 const { temperament } = __require(97)
@@ -74288,7 +74319,7 @@ const { gone, slide, restore, collidePlayer, bumpLoose } = __require(96)
 const { DRIVE, temperament } = __require(97)
 const { LANE_CHANGE } = __require(98)
 const { rng, NODES, EDGES, LANES, STALLS, pointAt } = __require(35)
-const { TYPES, IDX } = __require(59)
+const { TYPES, IDX } = __require(58)
 const { HANDOVER, styleOf } = __require(99)
 const { PARKNEAR } = __require(100)
 const { HWDRIVE } = __require(101)
@@ -76607,7 +76638,7 @@ const { ENV } = __require(3)
 const { player } = __require(78)
 const { ALARM } = __require(84)
 const { setVolumes } = __require(109)
-const { OPTS, loadOptions, onOption } = __require(57)
+const { OPTS, loadOptions, onOption } = __require(62)
 const { Onboard } = __require(110)
 const { Captions } = __require(111)
 const CAPTION_S = 2.6 // s a caption stays up
@@ -81167,7 +81198,7 @@ __define(132, function (__exports) {
 // paint, damage, brake lights and all), and a stand-in for the player that the traffic and the
 // people (traffic.js, peds.js, wrecks.js) read as they read the Roadster: in a car (vehicleProxy),
 // or on foot (footProxy).
-const { TYPES } = __require(59)
+const { TYPES } = __require(58)
 const { kindOfType } = __require(128)
 const { createVehicleBody } = __require(131)
 // A body for a traffic car (one taken over: traffic.takeOver), with its id, size, mass, paint and
@@ -81318,7 +81349,7 @@ __define(133, function (__exports) {
 // ?drive=<kind>&auto=1 drives it by itself (pulls away, a handbrake flick, on again), for
 // screenshots and smoke tests.
 const { HANDLING, TYPE_KIND } = __require(128)
-const { IDX } = __require(59)
+const { IDX } = __require(58)
 const { stepVehicle, makeVehicleInput } = __require(131)
 const { bodyFromTraffic, writeToTraffic } = __require(132)
 const { collideTraffic } = __require(129)
@@ -87450,7 +87481,7 @@ __define(155, function (__exports) {
 // camera watching it go by has no reason to blur. It is drawn in the frame's last pass (post.js),
 // in a shader of its own for while it is on: SPEED_BLUR is its GLSL, sampling the frame through
 // frame(uv).
-const { RIDING } = __require(62)
+const { RIDING } = __require(61)
 const { clamp } = __require(2)
 const SPEED_BLUR = `
   uniform float uAmount;
@@ -88797,7 +88828,7 @@ __define(166, function (__exports) {
 // third, each reading and writing every pixel of a full-size frame).
 const THREE = __require(0)
 const { SPEED_BLUR, updateSpeedBlur } = __require(155)
-const { motionFx } = __require(57)
+const { motionFx } = __require(62)
 const { OutputPass } = __require(158)
 const { RenderPass } = __require(159)
 const { OutputShader } = __require(157)
@@ -90249,7 +90280,7 @@ __define(171, function (__exports) {
 // in the rain. The city's shadows are aimed again as the sun moves (a whole city's shadow map is
 // under a millisecond to draw), and the reflections' environment map drawn again as the sky
 // changes, each only when it has changed enough to see.
-const { OPTS, DRAW_FOG } = __require(57)
+const { OPTS, DRAW_FOG } = __require(62)
 const THREE = __require(0)
 const { ENV } = __require(3)
 const { SKY } = __require(154)
@@ -107594,7 +107625,7 @@ const { Beams } = __require(243)
 const { Mirror } = __require(107)
 const { lampLit } = __require(172)
 const { recall, remember } = __require(7)
-const { OPTS } = __require(57)
+const { OPTS } = __require(62)
 const { ENV, stepEnv, setHour, setWeather, WEATHERS } = __require(3)
 // L: the times of day the clock runs on to, and the s it takes to run on to the next
 const TIMES = [
@@ -109585,7 +109616,7 @@ __define(255, function (__exports) {
 // while apart, put down out of the camera's sight between NEAR and FAR m off, and cleared away once
 // it is over and out of sight. Pure: no DOM.
 const { rng, LANES } = __require(35)
-const { IDX } = __require(59)
+const { IDX } = __require(58)
 const { hurt } = __require(39)
 const { loosen } = __require(96)
 const { stepVehicle, makeVehicleInput } = __require(131)
@@ -110709,7 +110740,7 @@ __define(262, function (__exports) {
 // Debugging and screenshots: ?wanted=3 (stars from the start), ?mission=race (a mission started at
 // once), ?ambient=chase (that street event soon), ?cash=5000; window.__crime in the console.
 const { ENV } = __require(3)
-const { IDX } = __require(59)
+const { IDX } = __require(58)
 const { STALLS, rng } = __require(35)
 const { Wanted } = __require(248)
 const { Police, Arrest } = __require(253)
@@ -111021,7 +111052,7 @@ __define(263, function (__exports) {
 // parked, locked, seat { x, y, z } (the driver's hips, car frame), door { x, z } (where to stand to
 // get in, car frame), doorLen, len, wid, hgt, car (the traffic car, or null), sim (the Roadster's,
 // or null), stolen, vacant }.
-const { TYPES } = __require(59)
+const { TYPES } = __require(58)
 const { CAR } = __require(2)
 // cabs that sit over the front axle (the driver high up behind the windscreen)
 const CAB = new Set(['bus', 'van', 'truck', 'fire', 'ambulance'])
@@ -112084,7 +112115,7 @@ __define(271, function (__exports) {
 //   player (sim/player.js)      who the game follows, on foot or at the wheel
 //   vehicles (sim/vehicles.js)  everything that can be driven
 //   game events: 'car-entered', 'car-exited', 'car-stolen', 'crime' (sim/gameEvents.js)
-const { look } = __require(57)
+const { look } = __require(62)
 const THREE = __require(0)
 const { emitGame } = __require(67)
 const { footProxy } = __require(132)
@@ -112883,7 +112914,7 @@ __define(275, function (__exports) {
 // metres ahead of where they are (on the nearest lane), seated as if they had walked up and got in (onFoot.js seated),
 // so the camera, the HUD, the sounds and the effects all follow it. Used by automated smoke tests
 // through window.__roadster.seatIn(type), and by ?drive=<kind>&seat=1.
-const { IDX } = __require(59)
+const { IDX } = __require(58)
 const { vehicles } = __require(263)
 const { player } = __require(78)
 const { nearestLane } = __require(35)
@@ -112925,7 +112956,7 @@ __define(276, function (__exports) {
 //   (game: () => the Game, game.js: the player's health on foot)
 //   .frame(dt)  after the physics steps: returns the RS-like stand-in for skids.js and effects.js
 const { PlayerCar } = __require(272)
-const { armScale, armRise } = __require(60)
+const { armScale, armRise } = __require(59)
 const { EngineVoice } = __require(273)
 const { CarHud } = __require(274)
 const { seatIn } = __require(275)
@@ -113002,7 +113033,7 @@ const { nearestLane, standUp } = __require(35)
 const { handleEvents: simEvents } = __require(153)
 const { CityView, clipCamera } = __require(234)
 const { hearing, panOf, mixSound } = __require(109)
-const { CameraRig } = __require(62)
+const { CameraRig } = __require(61)
 const { updateSkids, clearSkids } = __require(235)
 const { DEG, TAU, makeControls } = __require(2)
 const { LED_MAT, buildWall, buildTruss } = __require(236)
