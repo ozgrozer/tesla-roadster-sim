@@ -2,9 +2,11 @@
 // bonnet of one whose engine is hurt, thin and quick to go, trailing behind it as it limps on, and
 // thick dark smoke rolling up off a wreck, a little steam in it, carried off on the breeze
 // (smoke.js). It comes from the engine: the gap at the front of the bonnet and the crumpled bonnet
-// itself (a bus's engine is at the back, low down). Only the cars within REACH m of the Roadster,
-// so the far ones don't fill the smoke's pool; what each car owes is kept on its damage.
+// itself (a bus's engine is at the back, low down; a fire engine's and a box truck's are under the
+// cab, at the front). Only the cars within REACH m of the Roadster, so the far ones don't fill the
+// smoke's pool; what each car owes is kept on its damage.
 import { CURB_H } from '../sim/city.js'
+import { TYPES } from '../sim/traffic.js'
 import { smoke } from './smoke.js'
 
 export const STEAM = {
@@ -47,7 +49,7 @@ export function wreckSmoke (traffic, dt, p, types) {
     D.puff += RATE[D.smoke] * dt
     if (D.puff < 1) continue
     const S = types[c.type].S,
-      bus = c.big
+      bus = TYPES[c.type].name === 'bus'
     const hx = Math.cos(c.yaw),
       hz = -Math.sin(c.yaw)
     const y0 = c.parked && !c.jam ? CURB_H : 0

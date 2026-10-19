@@ -44,6 +44,7 @@ function loosen (tr, car) {
   car.v = 0
   car.brake = false
   car.sig = 3 // hazards
+  if (car.drop) car.drop.k = 0 // (a box truck's delivery stop is off: delivery.js)
   car.shaken = 3 + tr.R() * 4
 }
 const NONE = []
