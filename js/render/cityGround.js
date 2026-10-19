@@ -23,7 +23,12 @@ import {
   BLOCKS,
   LANE_W,
   ROAD_HW,
-  PROMENADE
+  PROMENADE,
+  PITCH,
+  segOpen,
+  BLVD_EW,
+  BLVD_NS,
+  MEDIAN_HW
 } from '../sim/city.js'
 
 // ---------- textures (UVs are in metres, so each texture's repeat is 1 / its tile size) ----------
@@ -98,7 +103,21 @@ function textures () {
     }
   })
   grass.repeat.set(1 / 8, 1 / 8)
-  return { asphalt, walk, plaza, grass }
+  // a basketball court's acrylic (its lines painted on: courtLines), a ball field's dirt
+  const court = canvasTex(64, (g, S) => {
+    g.fillStyle = '#3f6f8c'
+    g.fillRect(0, 0, S, S)
+    speckle(g, 600, S, 0.08, true)
+  })
+  court.repeat.set(1 / 4, 1 / 4)
+  const dirt = canvasTex(128, (g, S) => {
+    g.fillStyle = '#a5754e'
+    g.fillRect(0, 0, S, S)
+    blotches(g, S, 14, 'rgba(90,60,30,0.25)', 'rgba(220,180,130,0.2)', 8, 30)
+    speckle(g, 4000, S, 0.2, false)
+  })
+  dirt.repeat.set(1 / 6, 1 / 6)
+  return { asphalt, walk, plaza, grass, court, dirt }
 }
 
 // rounded rectangle in shape space (x, -z), so it lies flat after rotateX(-90deg)
@@ -168,7 +187,9 @@ export function buildGround (group) {
     asphalt: over(lampLit(roadMaterial({ map: T.asphalt, roughness: 0.88 }))),
     concrete: over(mat(T.walk, 0xf2efe8)),
     plaza: over(mat(T.plaza)),
-    grass: over(mat(T.grass, 0xffffff, 0.98, 0.75, 0.7))
+    grass: over(mat(T.grass, 0xffffff, 0.98, 0.75, 0.7)),
+    court: over(mat(T.court, 0xffffff, 0.6)),
+    dirt: over(mat(T.dirt, 0xffffff, 0.98, 0.7, 0.4))
   }
   const add = (geo, m, order = LAYER.ground) => {
     const mesh = new THREE.Mesh(geo, m)
@@ -185,16 +206,25 @@ export function buildGround (group) {
   // base, and what is laid over it
   const slabs = [],
     lots = { plaza: [], grass: [], asphalt: [] },
-    tops = { plaza: [], grass: [], asphalt: [], concrete: [] }
+    tops = { plaza: [], grass: [], asphalt: [], concrete: [], court: [], dirt: [] }
   for (const b of BLOCKS) {
-    slabs.push(slab(roundRect(b.x0, b.z0, b.x1, b.z1, CURB_R), CURB_H))
-    const x0 = b.x0 + WALK,
-      x1 = b.x1 - WALK,
-      z0 = b.z0 + WALK,
-      z1 = b.z1 - WALK,
+    // (a superblock: one kerbed slab over its four blocks and the streets between, from its
+    // north-west block; the other three draw nothing of their own)
+    let { x0: bx0, x1: bx1, z0: bz0, z1: bz1 } = b
+    if (b.super) {
+      if (b.bx !== b.super.bx || b.bz !== b.super.bz) continue
+      bx1 += PITCH
+      bz1 += PITCH
+    }
+    slabs.push(slab(roundRect(bx0, bz0, bx1, bz1, CURB_R), CURB_H))
+    const x0 = bx0 + WALK,
+      x1 = bx1 - WALK,
+      z0 = bz0 + WALK,
+      z1 = bz1 - WALK,
       y = CURB_H + 0.004
-    lots[b.base].push(flat(x0, z0, x1, z1, y))
-    if (b.kind === 'park') {
+    // (the river's channel is drawn sunk into its block: cityWorks.js)
+    if (lots[b.base]) lots[b.base].push(flat(x0, z0, x1, z1, y))
+    if (b.kind === 'park' && !b.sports) {
       const cx = (x0 + x1) / 2,
         cz = (z0 + z1) / 2 // footpaths across the middle
       tops.plaza.push(flat(cx - 1.6, z0, cx + 1.6, z1, y + 0.004))
@@ -224,7 +254,7 @@ export function buildGround (group) {
   for (const k of ['plaza', 'grass', 'asphalt'])
     if (lots[k].length)
       add(merge(lots[k]), M[k], k === 'asphalt' ? LAYER.road : LAYER.ground)
-  for (const k of ['plaza', 'grass', 'asphalt', 'concrete'])
+  for (const k of ['plaza', 'grass', 'asphalt', 'concrete', 'court', 'dirt'])
     if (tops[k].length) add(merge(tops[k]), O[k], LAYER.ground)
 
   // ---------- paint ----------
@@ -233,21 +263,32 @@ export function buildGround (group) {
   // the sim feels them: botts.js)
   const white = [],
     yellow = [],
-    dots = []
+    dots = [],
+    medians = []
   for (let r = 0; r <= N; r++)
     for (let j = 0; j < N; j++) {
       const c = ROADS[r],
         a = ROADS[j] + STOP,
         b = ROADS[j + 1] - STOP
       for (const alongZ of [false, true]) {
+        if (!segOpen(r, j, alongZ)) continue // (a superblock's closed street)
         const put = (list, u, v, len, wid) =>
           list.push(
             alongZ
               ? { x: v, z: u, len, wid, yaw: Math.PI / 2 }
               : { x: u, z: v, len, wid, yaw: 0 }
           )
-        for (const off of [-0.17, 0.17])
-          put(yellow, (a + b) / 2, c + off, b - a, 0.12)
+        // a boulevard's raised median between its junctions (from just past the crossings, so the
+        // left turns swing round its nose), the double yellow on the rest
+        if ((alongZ ? BLVD_NS : BLVD_EW).has(r))
+          medians.push(
+            alongZ
+              ? [c - MEDIAN_HW, c + MEDIAN_HW, a + 1, b - 1]
+              : [a + 1, b - 1, c - MEDIAN_HW, c + MEDIAN_HW]
+          )
+        else
+          for (const off of [-0.17, 0.17])
+            put(yellow, (a + b) / 2, c + off, b - a, 0.12)
         const botts = dotted(r, j, alongZ)
         for (const off of [-LANE_W, LANE_W])
           if (botts)
@@ -290,6 +331,7 @@ export function buildGround (group) {
   // the lines either side of each parking space, along it (the way its car's nose points)
   const stalls = []
   for (const st of STALLS) {
+    if (st.drive) continue // (a car in a house's drive: no lines)
     const hx = Math.cos(st.yaw),
       hz = -Math.sin(st.yaw)
     for (const s of [-1.35, 1.35])
@@ -351,5 +393,16 @@ export function buildGround (group) {
   )
   // (on the raised lot, not the road, and over a car park laid on it)
   paint(0xdedbd2, stalls, CURB_H + 0.014, 4)
+  // the medians: a kerb round a strip of lawn, rounded off at the ends
+  const ms = [],
+    mg = []
+  for (const [x0, x1, z0, z1] of medians) {
+    ms.push(slab(roundRect(x0, z0, x1, z1, MEDIAN_HW - 0.05), 0.16))
+    mg.push(flat(x0 + 0.2, z0 + 0.2, x1 - 0.2, z1 - 0.2, 0.165))
+  }
+  if (ms.length) {
+    add(merge(ms), M.walk)
+    add(merge(mg), M.grass)
+  }
   return M
 }

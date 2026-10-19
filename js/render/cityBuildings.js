@@ -41,7 +41,10 @@ const LOOK = {
   brick: { lit: 0.28, litNight: 0.62, blinds: 0.45, tilt: 0.05 },
   stucco: { lit: 0.28, litNight: 0.62, blinds: 0.45, tilt: 0.05 },
   stone: { lit: 0.26, litNight: 0.6, blinds: 0.5, tilt: 0.04 },
-  house: { lit: 0.22, litNight: 0.55, blinds: 0.55, tilt: 0.03, fill: 0.5 }
+  house: { lit: 0.22, litNight: 0.55, blinds: 0.55, tilt: 0.03, fill: 0.5 },
+  metal: { lit: 0.1, litNight: 0.35, blinds: 0.1, tilt: 0.02 },
+  concrete: { lit: 0.2, litNight: 0.45, blinds: 0.4, tilt: 0.04 },
+  garage: { lit: 0, litNight: 0.1, blinds: 0, tilt: 0 }
 }
 // clay tiles in Beverly Hills, a bungalow's shingles in Venice
 const TILE = [0xb5543a, 0xa94b33, 0xc0603f, 0x9e4a35]
