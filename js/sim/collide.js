@@ -184,6 +184,9 @@ export function playerRect (s) {
   ME.z = p.z
   ME.fx = fx
   ME.fz = fz
+  // (whatever the player drives: the Roadster's own size unless it says otherwise, vehicleLink.js)
+  ME.hl = s.halfL || CAR.halfL
+  ME.hw = s.halfW || CAR.halfW
   return ME
 }
 export function loadBody (s) {
@@ -193,6 +196,8 @@ export function loadBody (s) {
   BODY.vx = s.vel.x
   BODY.vz = s.vel.z
   BODY.w = s.mode === 'ground' ? s.yawRate : 0
+  BODY.m = s.mass || CAR.mass
+  BODY.I = s.Iz || CAR.Iz
   return BODY
 }
 export function storeBody (s, w0 = s.yawRate) {

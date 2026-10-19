@@ -12,12 +12,14 @@ export const smooth = x => (x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x))
 // its peak at x = pi / 2 (about 12 degrees, CAR.corneringF and R), then falls away to what a sliding
 // tyre keeps (CAR.slideMu), so a tyre pushed past its limit gives less, not more.
 export const PEAK = Math.PI / 2
-export function tyreCurve (x) {
+// (slideMu: what a sliding tyre keeps; the Roadster's by default, every other car's from its
+// handling class: handling.js, vehicleSim.js)
+export function tyreCurve (x, slideMu = CAR.slideMu) {
   const a = Math.abs(x)
   const f =
     a < PEAK
       ? Math.sin(a)
-      : CAR.slideMu + (1 - CAR.slideMu) * Math.exp(-((a - PEAK) ** 2) / 1.2)
+      : slideMu + (1 - slideMu) * Math.exp(-((a - PEAK) ** 2) / 1.2)
   return Math.sign(x) * f
 }
 

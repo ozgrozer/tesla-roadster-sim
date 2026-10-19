@@ -66,6 +66,13 @@ function brakes (sound, traffic) {
 // a parked car knocked loose sets its alarm off: one at a time, heard from where it is
 export const ALARM = { on: false, k: 0, pan: 0, lp: 20000 }
 let alarmCar = null
+// a car the player breaks into sets its alarm off (onFoot.js), heard from where it is
+export function raiseAlarm (sound, car) {
+  car.sndAlarm = true
+  if (alarmCar) return
+  alarmCar = car
+  sound.alarm()
+}
 function alarms (sound, traffic) {
   for (const c of traffic.loose || NONE)
     if (c.parked && !c.jam && !c.sndAlarm) {

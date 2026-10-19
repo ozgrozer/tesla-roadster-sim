@@ -10,6 +10,7 @@ import { Intro } from './render/intro.js'
 import { Tween } from './render/tween.js'
 import { Peds } from './sim/peds.js'
 import { Traffic } from './sim/traffic.js'
+import { driveDemo } from './ui/driveDemo.js'
 import { SoundEngine } from './audio/sound.js'
 import { Autopilot } from './sim/autopilot.js'
 import { CityPilot } from './sim/cityPilot.js'
@@ -35,6 +36,10 @@ import { fallFx, ALL_PARTICLES, updateNozzles } from './render/effects.js'
 import { emitThrusters, emitTireSmoke } from './render/effects.js'
 import { emitTrafficSpray } from './render/spray.js'
 import { attachDiamonds } from './render/effects.js'
+import { OnFoot } from './onFoot.js'
+import { player } from './sim/player.js'
+import { vehicles } from './sim/vehicles.js'
+import { GAME_EVENTS, tickGame } from './sim/gameEvents.js'
 
 // ---------- world ----------
 buildWall()
@@ -55,6 +60,7 @@ rig.cockpit = { head: RS.optimus.head, body: RS.body }
 const sound = new SoundEngine()
 const hud = new Hud(RS, damage) // (the dents fill its condition bar)
 const traffic = new Traffic()
+traffic.districts = true // (busier downtown than in the estates: handover.js)
 const peds = new Peds() // people on foot
 const cityPilot = new CityPilot(sim, traffic)
 const cityView = new CityView()
@@ -99,6 +105,7 @@ function setAuto (on) {
 // the autopilot for the world the car is in: the reveal demo, or Autopilot on the city's streets
 const pilot = () => (app.world === 'city' ? cityPilot : ap)
 function startDemo () {
+  foot.reset()
   damage.repair()
   setWorld('site')
   sim.reset('start')
@@ -113,21 +120,19 @@ function startDemo () {
 // P and the mode button: the demo at the test site, Autopilot in the city
 function startAutopilot () {
   intro.finish(true)
+  if (!foot.inRoadster())
+    return hud.popup('Autopilot drives the Roadster · get back in it first', 2200, 'hint')
   if (app.world !== 'city') return startDemo()
   cityPilot.reset()
   if (!cityPilot.join()) {
-    hud.popup(
-      'Autopilot needs a street · drive onto a lane first',
-      2200,
-      'hint'
-    )
-    return
+    return hud.popup('Autopilot needs a street · drive onto a lane first', 2200, 'hint')
   }
   setCam('follow')
   setAuto(true)
 }
 function resetTo (spot, at = null) {
   intro.finish(true)
+  foot.reset()
   damage.repair()
   traffic.walker = null
   setWorld(spot === 'city' ? 'city' : 'site')
@@ -237,19 +242,11 @@ const COMMANDS = {
   Digit1: () => resetTo('start'),
   Digit2: () => {
     resetTo('top')
-    hud.popup(
-      'Hanging at 170° · hold <b>Shift</b> to fire the main thrusters',
-      2300,
-      'hint'
-    )
+    hud.popup('Hanging at 170° · hold <b>Shift</b> to fire the main thrusters', 2300, 'hint')
   },
   Digit3: () => {
     resetTo('lineup')
-    hud.popup(
-      'Build speed, then <b>F</b> to lift and <b>K</b> to kickflip',
-      2300,
-      'hint'
-    )
+    hud.popup('Build speed, then <b>F</b> to lift and <b>K</b> to kickflip', 2300, 'hint')
   },
   KeyV: () => setCam(rig.cycle()),
   KeyT: toggleSlow,
@@ -276,6 +273,9 @@ app.onQuality = q => climate.quality(q) // (the menu's graphics quality)
 const input = new Input({
   onDrive: (code, first) => {
     if (intro.active) intro.finish()
+    // E: in or out of a car (onFoot.js); on foot, Space jumps
+    if (code === 'KeyE' && first && foot.interact()) return input.handoff()
+    if (foot.onFoot()) return code === 'Space' && first && (foot.jumpQ = true)
     if (code === 'Space' && first) sound.ratchet()
     if (app.auto) setAuto(false)
   },
@@ -286,12 +286,14 @@ const input = new Input({
   onPad: () =>
     hud.popup(
       'Gamepad ready · <b>RT</b> drive · <b>LT</b> brake · <b>A</b> e-brake · ' +
-        '<b>RB</b> boost · <b>LB</b> fly',
+        '<b>RB</b> boost · <b>LB</b> fly · <b>Y</b> get in / out',
       4000,
       'hint'
     )
 })
 Object.assign(rig, { traffic, input }) // (camera.js: clear of the cars, Z to look back)
+// the player on foot, and in and out of any car (onFoot.js)
+const foot = new OnFoot({ app, sim, RS, rig, camera, canvas, input, hud, sound, traffic, peds, intro, setCam, cityView })
 // browsers only allow audio after a gesture: the first click or key turns sound on
 function unlockSound (e) {
   if (e.code === 'KeyN' || e.target?.closest?.('#btnSound')) return
@@ -305,8 +307,8 @@ window.addEventListener('pointerdown', unlockSound, true)
 window.addEventListener('keydown', unlockSound, true)
 
 // ---------- events from the sim: events.js ----------
-const handleEvents = () =>
-  simEvents({ sim, app, hud, sound, rig, cityView, ap, clock, pad: input.pad })
+const handleEvents = (s = foot.seen()) =>
+  simEvents({ sim: s, app, hud, sound, rig, cityView, ap, clock, pad: input.pad })
 // a knocked-down light, signal or tree hits the ground
 cityView.onLand = (x, z, kind) => {
   fallFx(x, z, kind)
@@ -331,14 +333,14 @@ function updateView () {
 // ---------- main loop: fixed 120 Hz physics, variable-rate rendering ----------
 const H = 1 / 120
 // one physics step of everything that moves, under controls c
+const demo = driveDemo(sim, traffic) // (?drive=van: a handling class to try, driveDemo.js)
 function step (c, city) {
-  sim.step(H, c)
-  if (city) {
-    peds.step(H, sim, traffic, VIEW)
-    traffic.step(H, sim, VIEW)
-  }
+  if (city && demo) demo.step(H, c)
+  foot.step(H, c, city, VIEW, peds, traffic)
   app.lastCtl = c
 }
+// the controls of whatever the player drives (none on foot: their keys walk them, onFoot.js)
+const controls = () => (foot.driven() ? input.controls(foot.driven(), app.fanMode) : HOLD)
 let acc = 0,
   last = performance.now(),
   clock = 0,
@@ -348,15 +350,12 @@ function frame (now) {
   // paused (the pause menu): nothing moves, and the last frame stays up behind it (drawn again if
   // a resize has blanked it)
   if (app.paused)
-    return (last = now) && menu.blanked() && post.render(sim, rig.shot, 0)
+    return (last = now) && menu.blanked() && post.render(app.sim, rig.shot, 0)
   resolution.apply() // (a step in resolution before anything is sized or drawn)
   const dt = Math.min(0.05, (now - last) / 1000)
   last = now
   clock += dt
   input.poll()
-  // the right stick looks round the car (in the air it yaws it instead)
-  if (sim.mode !== 'air' && (input.pad.lookX || input.pad.lookY))
-    rig.turn(input.pad.lookX * dt * 2.6, -input.pad.lookY * dt * 1.6)
   const P = pilot()
   const target = (app.slow ? 0.3 : 1) * (app.auto ? P.slow : 1)
   app.timeScale += (target - app.timeScale) * (1 - Math.exp(-5 * dt))
@@ -370,7 +369,8 @@ function frame (now) {
       ? P.update(H)
       : intro.active
       ? HOLD
-      : input.controls(sim, app.fanMode)
+      : controls()
+    foot.before(tween)
     tween.before(city)
     step(c, city)
     acc -= H
@@ -383,6 +383,7 @@ function frame (now) {
     }
   }
   if (steps >= 14) acc = 0
+  tickGame(simDt) // (the game events' clock: gameEvents.js)
   // Autopilot leaning on the horn, sat in a jam
   const ph = app.auto && !!P.horn
   if (ph !== app.pilotHorn) {
@@ -392,9 +393,10 @@ function frame (now) {
   for (const e of sim.events)
     if (e.type === 'bump') damage.hit(e, sim)
     else if (e.type === 'crash') damage.crash(sim.quat, e.speed, sim.vel)
+  if (foot.seen() !== sim) sim.events.length = 0 // (the Roadster left in the street: dented, quiet)
   handleEvents()
   // a wreck at rest stays put (no respawn): say how to carry on from it
-  if (!app.auto && sim.mode === 'crash' && sim.crashSettled && !app.restHint) {
+  if (!app.auto && foot.inRoadster() && sim.mode === 'crash' && sim.crashSettled && !app.restHint) {
     app.restHint = true
     hud.popup(
       sim.up().y > 0.95
@@ -415,8 +417,9 @@ function frame (now) {
   app.intro = intro.active
   // draw this frame part of the way between the last two physics steps, so nothing judders
   tween.apply(Math.min(1, acc / H), city)
-  updateRoadster(RS, sim, app.lastCtl, dt)
-  followKeyLight(sim.pos)
+  const walking = foot.frame(dt, Math.min(1, acc / H), clock)
+  updateRoadster(RS, sim, foot.inRoadster() ? app.lastCtl : HOLD, dt)
+  followKeyLight(app.focus ? app.focus.pos : app.sim.pos)
   updateSkids(RS, sim)
   updateNozzles(RS, sim)
   emitThrusters(RS, sim, simDt, clock)
@@ -427,10 +430,10 @@ function frame (now) {
   const blink = Math.sin(clock * 2.4) > 0.6 ? 1 : 0.15
   MAT.beacon.color.setRGB(4 * blink, 0.2 * blink, 0.15 * blink)
   rig.simDt = simDt // (the sim's own time this frame: slow motion slows it)
-  if (!intro.active) rig.update(dt, clock, sim, app.auto ? P.shot : null)
+  if (!intro.active && !walking) rig.update(dt, clock, foot.seen(), app.auto ? P.shot : null)
   // (from the driver's seat, the driver's head is where the camera is, and the street is heard
   // through the canopy)
-  app.inside = !intro.active && rig.shot === 'cockpit'
+  app.inside = !intro.active && foot.inRoadster() && rig.shot === 'cockpit'
   RS.optimus.head.visible = !app.inside
   // (after the camera has moved: the smoke is lit and sorted from where it now looks)
   camera.updateMatrixWorld()
@@ -444,7 +447,7 @@ function frame (now) {
   climate.update(dt, dt * app.timeScale, clock, city)
   if (city) {
     cityView.update(simDt, clock, traffic, camera, peds)
-    minimap.update(dt, sim, traffic, VIEW.heading)
+    minimap.update(dt, app.focus || app.sim, traffic, VIEW.heading)
   }
   mixSound(sound, app, traffic, dt, clock, peds)
   hud.update(dt, app)
@@ -453,7 +456,7 @@ function frame (now) {
   // (the street's reflection, while it is wet: inside the GPU's timing, so the resolution steps
   // down for it on a card it is too much for)
   climate.reflect(city)
-  post.render(sim, rig.shot, dt)
+  post.render(app.sim, rig.shot, dt)
   resolution.end()
   resolution.update(dt)
   tween.restore()
@@ -471,34 +474,19 @@ if (window.top !== window && !document.hasFocus())
 requestAnimationFrame(frame)
 // debugging hook for the console and automated checks: fast-forward the sim without rendering
 window.__roadster = {
-  sim,
-  env: ENV,
-  climate,
-  RS,
-  damage,
-  intro,
-  tween,
-  ap,
-  rig,
-  sound,
-  app,
-  traffic,
-  peds,
-  cityView,
-  renderer,
-  resolution,
-  post,
-  menu,
+  ...{ sim, env: ENV, climate, RS, damage, intro, tween, ap, rig, sound, app, traffic, peds },
+  ...{ cityView, renderer, resolution, post, menu, player, vehicles, foot, events: GAME_EVENTS },
   setAuto,
   resetTo,
   setWorld,
   toggleWorld,
+  // (the player's side, getting in and out and the prompt, kept up each 1/30 s)
   advance (sec) {
-    for (let t = 0; t < sec; t += H)
-      step(
-        app.auto ? pilot().update(H) : input.controls(sim, app.fanMode),
-        app.world === 'city'
-      )
+    for (let t = 0, n = 0; t < sec; t += H, n++) {
+      foot.before(tween)
+      step(app.auto ? pilot().update(H) : controls(), app.world === 'city')
+      if (n % 4 === 3) foot.frame(H * 4, 1, clock)
+    }
     handleEvents()
   }
 }
