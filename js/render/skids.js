@@ -71,7 +71,9 @@ scene.add(mesh)
 let head = 0
 let used = 0
 // per wheel: the last ribbon edge laid down (null when the tyre isn't sliding)
-const trail = [null, null, null, null]
+const TRAIL = [null, null, null, null]
+// (any other car the player drives keeps its own: RS.skidTrail, playerCar.js)
+const trails = new Set([TRAIL])
 const _c = new THREE.Vector3()
 const _h = new THREE.Vector3()
 const _q = new THREE.Quaternion()
@@ -93,10 +95,12 @@ function addSegment (a, b) {
 export function clearSkids () {
   head = used = 0
   geo.setDrawRange(0, 0)
-  trail.fill(null)
+  for (const t of trails) t.fill(null)
 }
 
 export function updateSkids (RS, sim) {
+  const trail = RS.skidTrail || TRAIL
+  trails.add(trail)
   RS.wheels.forEach((w, i) => {
     const amt = sim.mode === 'ground' ? (w.front ? sim.skidF : sim.skidR) : 0
     const last = trail[i]
