@@ -120,3 +120,28 @@ test('someone diving out of a car’s way by a building stops at its wall, not i
   for (let i = 0; i < 40; i++) peds.step(1 / 60, sim, tr, null)
   assert.ok(!walled(p.x, p.z, 0.2), `inside the building at ${p.x.toFixed(1)}, ${p.z.toFixed(1)}`)
 })
+
+test('the freeway’s inner lanes carry traffic too, merging back into the through lanes without running into anyone', async () => {
+  const { FWY } = await import('../js/sim/world.js')
+  const tr = new Traffic({ seed: 3 })
+  tr.reset(0, FWY.z)
+  const sim = new Sim()
+  sim.reset('city', { x: 0, z: FWY.z + 200, yaw: 0 })
+  const view = { x: 0, z: FWY.z, fx: 1, fz: 0 }
+  let inner = 0, moving = 0, all = 0
+  for (let i = 0; i < 30 * 180; i++) {
+    tr.step(1 / 30, sim, view)
+    if (i % 30) continue
+    const deck = tr.cars.filter(c => c.edge?.hw && c.edge.vk >= 1)
+    for (const c of deck) {
+      if (Math.abs(Math.abs(c.z - FWY.z) - 2.2) < 0.5) inner++
+      all++
+      if (c.v > 3) moving++
+    }
+    for (let a = 0; a < deck.length; a++)
+      for (let b = a + 1; b < deck.length; b++)
+        assert.ok(Math.hypot(deck[a].x - deck[b].x, deck[a].z - deck[b].z) > 2.5, `two cars in one place at ${deck[a].x.toFixed(0)}, ${deck[a].z.toFixed(1)}`)
+  }
+  assert.ok(inner > 50, `hardly anyone in the inner lanes (${inner})`)
+  assert.ok(moving > all * 0.8, `the deck's traffic is jammed (${moving} of ${all} moving)`)
+})

@@ -17,7 +17,8 @@ const HILL_MAX = 10 // the share of new cars put on the freeway or the hill road
 export const HWDRIVE = {
   // the way on from edge e, if the freeway's or the hill road's say (undefined: the street's own)
   hwChoose (e, car, own) {
-    if (e.hw && !e.road) return e.next[0] || null
+    // (onto the deck: the through lane or the inner one beside it, as likely)
+    if (e.hw && !e.road) return e.next[e.next.length > 1 && (this.hwR ||= rng(91733))() < 0.5 ? 1 : 0] || null
     if (own || !e.exits.length || car.siren === 1 || car.ctl) return undefined
     const R = (this.hwR ||= rng(91733))
     for (const x of e.exits) {

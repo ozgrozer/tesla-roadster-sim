@@ -178,6 +178,21 @@ function chain (list) {
   return list
 }
 
+// The inner lane beside a through lane (thru, xa to xb at z1, along x): over to it at the deck's start
+// (half the cars coming on: hwDrive.js hwChoose), and back across before the end, merging into the
+// through lane as a slip road does (joinS; drivers.js waits for a gap there)
+function inner (line, on, thru, xa, xb, z1, z0) {
+  const d = Math.sign(xb - xa),
+    a = xa + d * MERGE,
+    b = xb - 3 * d * MERGE
+  const back = mark(curve(line, b, z0, d, 0, b + d * MERGE, z1, d, 0, 14), FWY_K)
+  const list = chain([mark(curve(line, xa, z1, d, 0, a, z0, d, 0, 14), FWY_K), seg(line, a, z0, b, z0, FWY_K), back])
+  link(on, list[0])
+  back.joinS = Math.abs(b + d * MERGE - xa)
+  back.next.push(thru)
+  HW.push(list[1])
+}
+
 // ---------- the freeway ----------
 function freeway (line, nodeAt) {
   const z = FWY.z
@@ -193,9 +208,11 @@ function freeway (line, nodeAt) {
       down = south(N, r10)
     const on = up && exitTo(line, up, ends.w, z1, 1, 0)
     const off = down && joinTo(line, down, ends.e, z1, 1, 0)
-    if (on && off)
-      HW.push(chain([on, seg(line, ends.w, z1, ends.e, z1, FWY_K), off])[1])
-    else if (on) up.exits.pop()
+    if (on && off) {
+      const thru = chain([on, seg(line, ends.w, z1, ends.e, z1, FWY_K), off])[1]
+      HW.push(thru)
+      inner(line, on, thru, ends.w, ends.e, z1, lane(1, 0))
+    } else if (on) up.exits.pop()
   }
   {
     const z1 = lane(-1, 1),
@@ -203,9 +220,11 @@ function freeway (line, nodeAt) {
       down = north(FWY_FROM, r10 + 1)
     const on = up && exitTo(line, up, ends.e, z1, -1, 0)
     const off = down && joinTo(line, down, ends.w, z1, -1, 0)
-    if (on && off)
-      HW.push(chain([on, seg(line, ends.e, z1, ends.w, z1, FWY_K), off])[1])
-    else if (on) up.exits.pop()
+    if (on && off) {
+      const thru = chain([on, seg(line, ends.e, z1, ends.w, z1, FWY_K), off])[1]
+      HW.push(thru)
+      inner(line, on, thru, ends.e, ends.w, z1, lane(-1, 0))
+    } else if (on) up.exits.pop()
   }
   // the outer lanes, on at one side ramp and off at the next
   const west = FWY.ramps.filter(r => r.x1 < 0),
