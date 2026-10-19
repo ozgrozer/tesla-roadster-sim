@@ -145,3 +145,34 @@ test('the freeway’s inner lanes carry traffic too, merging back into the throu
   assert.ok(inner > 50, `hardly anyone in the inner lanes (${inner})`)
   assert.ok(moving > all * 0.8, `the deck's traffic is jammed (${moving} of ${all} moving)`)
 })
+
+test('the hill road’s turn at the lookout is a loop round the platform, not a hairpin the road’s width', async () => {
+  const { HW } = await import('../js/sim/highway.js')
+  const { LOOKOUT } = await import('../js/sim/world.js')
+  const { pointAt } = await import('../js/sim/city.js')
+  const seen = new Set(), todo = [...HW], loop = []
+  while (todo.length) {
+    const e = todo.pop()
+    if (seen.has(e)) continue
+    seen.add(e)
+    if (e.vk === 0.5) loop.push(e)
+    for (const n of e.next) if (n.hw) todo.push(n)
+  }
+  assert.ok(loop.length > 0, 'no turn at the lookout')
+  const P = {}
+  let minR = Infinity
+  for (const e of loop) {
+    let a0 = null
+    for (let i = 0; i <= 20; i++) {
+      pointAt(e, (e.len * i) / 20, P)
+      assert.ok(P.x > LOOKOUT.x0 - 60 && P.x < LOOKOUT.x1 - 2 && P.z > LOOKOUT.z0 + 2 && P.z < LOOKOUT.z1 - 2, `off the platform at ${P.x.toFixed(1)}, ${P.z.toFixed(1)}`)
+      const a = Math.atan2(P.hz, P.hx)
+      if (a0 !== null) {
+        const d = Math.abs(Math.atan2(Math.sin(a - a0), Math.cos(a - a0)))
+        if (d > 1e-4) minR = Math.min(minR, e.len / 20 / d)
+      }
+      a0 = a
+    }
+  }
+  assert.ok(minR > 8, `the turn is ${minR.toFixed(1)} m round at its tightest`)
+})

@@ -60291,7 +60291,7 @@ __define(34, function (__exports) {
 // one now and then); back onto one: a curve ending joinS m along the street lane it joins.
 const { N, ROADS, STOP } = __require(18)
 const { FWY, FWY_FROM, FWY_TO, DECK_HW } = __require(28)
-const { HILL_ROAD, HILL_HW } = __require(30)
+const { HILL_ROAD, HILL_HW, LOOKOUT } = __require(30)
 const HW = [] // the hw edges cars can be put on straight away (traffic.js spawn): long ones
 const EXITS = [] // the street lanes with a way off onto them
 const SAMPLES = 24
@@ -60637,6 +60637,31 @@ function hillLane (line, pts) {
   }
   return edges
 }
+// the turn at the lookout, from (ux, uz) heading (fx, fz) round onto the down lane's start ds: a
+// teardrop round the platform's far end (a circle r across, as wide as it has room for), not a
+// hairpin the width of the road
+function lookoutLoop (line, ux, uz, fx, fz, ds) {
+  const L = LOOKOUT,
+    lx = fz,
+    lz = -fx // (left of the way in)
+  const far = Math.max(...[[L.x0, L.z0], [L.x1, L.z0], [L.x0, L.z1], [L.x1, L.z1]].map(([x, z]) => (x - ux) * fx + (z - uz) * fz))
+  const r = 10,
+    mx = (ux + ds.x0) / 2,
+    mz = (uz + ds.z0) / 2
+  const cx = mx + fx * (far - 4 - r),
+    cz = mz + fz * (far - 4 - r)
+  const k = r * 0.5523, // (a quarter circle's cubic)
+    s = (far - 4 - 2 * r) * 0.6 // (the swing out to the circle and back)
+  const T = [cx - lx * r, cz - lz * r],
+    R = [cx + fx * r, cz + fz * r],
+    B = [cx + lx * r, cz + lz * r]
+  return [
+    curve(line, ux, uz, fx, fz, T[0], T[1], fx, fz, s),
+    curve(line, T[0], T[1], fx, fz, R[0], R[1], lx, lz, k),
+    curve(line, R[0], R[1], lx, lz, B[0], B[1], -fx, -fz, k),
+    curve(line, B[0], B[1], -fx, -fz, ds.x0, ds.z0, ds.dx, ds.dz, s)
+  ].map(e => mark(e, 0.5))
+}
 function hillRoad (line, nodeAt) {
   if (!HILL_ROAD.length) return
   const n = nodeAt(ROADS.indexOf(HILL_ROAD[0].x0), 0)
@@ -60651,11 +60676,7 @@ function hillRoad (line, nodeAt) {
     ds = down[0]
   const ux = ue.x0 + ue.dx * ue.len,
     uz = ue.z0 + ue.dz * ue.len
-  const turn = mark(
-    curve(line, ux, uz, ue.dx, ue.dz, ds.x0, ds.z0, ds.dx, ds.dz, 24),
-    0.5
-  )
-  chain([...up, turn, ...down])
+  chain([...up, ...lookoutLoop(line, ux, uz, ue.dx, ue.dz, ds), ...down])
   for (const e of [...up, ...down.slice(0, -1)])
     if (!e.kind && e.len > 25) HW.push(e)
   // the last piece down is a street lane into the junction, at its lights (dir 1: southbound)
