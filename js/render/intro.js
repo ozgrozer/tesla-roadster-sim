@@ -226,28 +226,8 @@ export class Intro {
   }
   apply () {
     const t = this.t,
-      RS = this.RS,
-      O = RS.optimus
-    O.root.rotation.set(0, 0, 0)
-    if (t < KEYS[0].t) {
-      // walking up, the stride dying away as it stops by the door
-      const k = clamp(t / T.walk, 0, 1)
-      O.root.position.set(
-        FROM[0] + (DOORSIDE[0] - FROM[0]) * k,
-        HIP_STAND,
-        FROM[1] + (DOORSIDE[1] - FROM[1]) * k
-      )
-      poseOptimus(O, {
-        walk:
-          t < T.walk ? 1 : clamp(1 - (t - T.walk) / (KEYS[0].t - T.walk), 0, 1),
-        phase: (Math.PI * 2 * Math.min(t, T.walk) * SPEED) / STRIDE
-      })
-    } else {
-      const P = keyed(t)
-      O.root.position.set(...P.hips)
-      poseOptimus(O, P)
-    }
-    RS.door = span(t, T.doorUp) - span(t, T.doorDown)
+      RS = this.RS
+    boardRoadster(RS, t)
     this.camera(t)
     if (t >= T.end) {
       this.active = false
@@ -281,4 +261,33 @@ export class Intro {
     cam.up.set(0, 1, 0)
     cam.lookAt(_l)
   }
+}
+
+// The way into the Roadster at time t of the scene (s): Optimus walking up, getting in, and the
+// driver's door, without the scene's camera. The player gets in (and, run backwards, out) this way
+// too (onFoot.js: BOARD_T, from DOORSIDE to the door shut).
+export const BOARD_T = { start: KEYS[0].t, doorDown: T.doorDown[1], end: T.end }
+export const DOOR_SPOT = DOORSIDE
+export function boardRoadster (RS, t) {
+  const O = RS.optimus
+  O.root.rotation.set(0, 0, 0)
+  if (t < KEYS[0].t) {
+    // walking up, the stride dying away as it stops by the door
+    const k = clamp(t / T.walk, 0, 1)
+    O.root.position.set(
+      FROM[0] + (DOORSIDE[0] - FROM[0]) * k,
+      HIP_STAND,
+      FROM[1] + (DOORSIDE[1] - FROM[1]) * k
+    )
+    poseOptimus(O, {
+      walk:
+        t < T.walk ? 1 : clamp(1 - (t - T.walk) / (KEYS[0].t - T.walk), 0, 1),
+      phase: (Math.PI * 2 * Math.min(t, T.walk) * SPEED) / STRIDE
+    })
+  } else {
+    const P = keyed(t)
+    O.root.position.set(...P.hips)
+    poseOptimus(O, P)
+  }
+  RS.door = span(t, T.doorUp) - span(t, T.doorDown)
 }
