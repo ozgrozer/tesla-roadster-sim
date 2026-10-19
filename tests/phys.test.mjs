@@ -257,3 +257,26 @@ test('getting in and out hard up against a wall: the free side, then any free sp
   const boxed = B.startExit(e, flat(all))
   assert.ok(boxed.spot.roof && boxed.spot.y > 1, 'on the roof')
 })
+
+test('on foot: up and down a flight of stairs at a run, grounded all the way, no floating', () => {
+  const stairs = []
+  for (let i = 0; i < 8; i++) stairs.push({ x0: 2 + i * 0.3, x1: 20, z0: -2, z1: 2, y0: 0, y1: 0.18 * (i + 1), kind: 'stair' })
+  const w = flat(stairs)
+  const p = fresh()
+  const ctl = P.moveDir(0, 1, 0)
+  ctl.run = true
+  let air = 0
+  for (let t = 0; t < 2; t += H) {
+    P.stepFoot(p, H, ctl, w)
+    if (!p.grounded) air += H
+  }
+  assert.ok(Math.abs(p.pos.y - 1.44) < 1e-6 && p.pos.x > 6, `at the top: y ${p.pos.y.toFixed(2)} x ${p.pos.x.toFixed(1)}`)
+  assert.ok(air === 0, 'never left the ground')
+  const back = P.moveDir(Math.PI, 1, 0)
+  back.run = true
+  for (let t = 0; t < 3; t += H) {
+    P.stepFoot(p, H, back, w)
+    if (!p.grounded) air += H
+  }
+  assert.ok(p.pos.y === 0 && p.pos.x < 2 && air < 0.05, `down again: y ${p.pos.y} air ${air.toFixed(2)}`)
+})
