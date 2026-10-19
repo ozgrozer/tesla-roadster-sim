@@ -56905,6 +56905,7 @@ class Hud {
     this.vitals(sim)
     this.captions(app)
     this.keysLine(dt, app)
+    this.carHud?.update(dt, app) // (whatever the player drives, or on foot: carHud.js)
   }
 
   // under the radar: the car's condition (its dents) and the thrusters' air
@@ -63729,22 +63730,19 @@ const { TYPES } = __require(49)
 const { clamp } = __require(2)
 const lerpK = (k, dt) => 1 - Math.exp(-k * dt)
 // The eye, in the car's frame from its middle on the road (x forward, y up), from its shape
-// (carSpecs.js: ws, the windscreen's foot, and top, the centre line over the top): just over the
+// (carBody.js: ws, the windscreen's foot, and top(x), the centre line's height over the top): just over the
 // bonnet ahead of the windscreen; on a cab-forward van, bus or truck, at the windscreen, at the
 // driver's height. Kept per shape.
 const EYES = new WeakMap()
 function eyeOf (S) {
   let e = EYES.get(S)
   if (e) return e
-  const t = S.top
-  let y = t[0][1],
-    roof = 0
-  for (let i = 1; i < t.length; i++) {
-    roof = Math.max(roof, t[i][1])
-    if (t[i - 1][0] < S.ws && t[i][0] >= S.ws)
-      y = t[i - 1][1] + ((t[i][1] - t[i - 1][1]) * (S.ws - t[i - 1][0])) / (t[i][0] - t[i - 1][0])
-  }
-  const cab = t[t.length - 1][0] - S.ws < 0.9
+  // (S.top: the centre line's height at x, carBody.js; S.L: half the length)
+  const y = S.top(S.ws),
+    nose = S.L ?? 2.3
+  let roof = 0
+  for (let x = -nose; x <= nose; x += 0.25) roof = Math.max(roof, S.top(x))
+  const cab = nose - S.ws < 0.9
   e = cab ? [S.ws - 0.5, Math.max(y + 0.4, 0.6 * roof)] : [S.ws + 0.12, y + 0.3]
   EYES.set(S, e)
   return e
@@ -76933,7 +76931,8 @@ const DRIVE = {
     // the front motor takes some of the drive, none of it in Track Mode (the rears do the work)
     const share = st.track ? 0.15 : 0.45
     const here = smooth(0.2, 3, v) * (0.55 + 0.45 * Math.min(1, v / 30))
-    const k = inside ? 1.5 : 1
+    // (none of it in a car with an engine instead: engine.js, st.combustion)
+    const k = st.combustion ? 0 : inside ? 1.5 : 1
     this.unit(n.front, fF, 0, drive * share, regen, here * k)
     this.unit(
       n.rear,
@@ -76972,7 +76971,7 @@ const DRIVE = {
     R(n.pwsO.frequency, (170 + v * 9) * ps, 0.1)
     R(
       n.pws.gain,
-      inside || !st.grounded
+      inside || !st.grounded || st.combustion
         ? 0
         : smooth(0.15, 0.8, v) * (1 - smooth(6.5, 8.4, v)) * 0.012,
       0.15
@@ -82827,7 +82826,8 @@ function nearCars (traffic, dt) {
     worst = 0
   for (const c of traffic.cars) {
     // (parked cars are off, but the gridlock's are idling; a wreck's engine is dead)
-    if ((c.parked && !c.jam) || c.dmg?.wreck) continue
+    // (nor the player's own: its engine is engine.js's)
+    if ((c.parked && !c.jam) || c.dmg?.wreck || c.player) continue
     const dx = c.x - cp.x,
       dz = c.z - cp.z
     if (Math.abs(dx) > RANGE || Math.abs(dz) > RANGE) continue
@@ -83104,6 +83104,7 @@ function mixSound (sound, app, traffic, dt, clock, peds) {
   st.suction = sim.suction
   st.city = city
   st.inside = !!app.inside // the camera in the driver's seat
+  st.combustion = !!app.engine // (a car with an engine, not the Roadster's motors: engine.js)
   st.carDist = cp.distanceTo(_cp)
   st.cut = cut
   st.carPan = panOf(_cp.x, _cp.z)
@@ -83323,6 +83324,11 @@ function handleEvents (g) {
         sparkBurst(p, Math.min(40, e.impact * 3))
         debrisBurst(p, e.impact, STILL, 0, glassOf(e.broke))
       }
+    } else if (e.type === 'smash') {
+      // another car the player drives, hit hard (drivable.js): the crunch, a heavier jolt
+      sound.thump(Math.min(3, e.impact / 6))
+      rig.shake(Math.min(0.35, e.impact * 0.02))
+      pad?.rumble(0.9, 0.9, 300)
     } else if (e.type === 'kerb') {
       // up onto the kerb or down off it (and off the promenade onto the sand)
       sound.kerb(e.v, e.up)
@@ -107145,6 +107151,8 @@ class Drivable {
     for (const e of list)
       if (e.type === 'bump' || e.type === 'clash')
         this.sim.events.push({ type: 'bump', impact: e.impact, what: e.what || 'car', px: e.x ?? e.px, pz: e.z ?? e.pz, broke: e.broke || 0 })
+      // (a hit hard enough to wreck a traffic car: the heavy crunch on top, events.js 'smash')
+      else if (e.type === 'crash') this.sim.events.push({ type: 'smash', impact: e.impact, px: e.x, pz: e.z })
   }
   // out of it: left where it stands, parked, its door unlocked (handBack)
   leave () {
@@ -107939,7 +107947,7 @@ const { carsMeet } = __require(236)
 const { makeControls } = __require(2)
 const { player, setMode, placePlayer, stepFoot, moveDir, knockDown, CITY_WORLD } = __require(229)
 const { startEnter, startExit, stepBoard, cancellable, BOARD } = __require(237)
-const { offerFor, TITLE } = __require(238)
+const { offerFor } = __require(238)
 const { FootView } = __require(239)
 const { FootCam } = __require(240)
 const { clipCamera } = __require(199)
@@ -108218,9 +108226,7 @@ class OnFoot {
       emitGame('car-stolen', { vehicle: e.id, kind: e.kind, model: e.type, pos, how: a.how, alarm: !!a.alarm })
     }
     emitGame('car-entered', { vehicle: e.id, kind: e.kind, model: e.type, pos, stolen: e.stolen })
-    const name = TITLE[e.type] || e.type
-    if (e.kind !== 'roadster')
-      this.hud.popup(`${name} · <b>E</b> to get out · no thrusters in this one`, 2600, 'hint')
+    this.hud.carHud?.entered(e) // (its name bottom right, its hints: ui/carHud.js)
   }
   outOf (e, a) {
     const s = a.spot
@@ -108237,6 +108243,7 @@ class OnFoot {
       e.vacant = true
     }
     this.input.handoff()
+    this.hud.carHud?.exited()
     emitGame('car-exited', { vehicle: e.id, kind: e.kind, model: e.type, pos: { x: s.x, z: s.z } })
   }
   // the follow camera eased in from the camera on foot, or the camera on foot from the car's
@@ -108378,21 +108385,26 @@ __export(__exports, { "OnFoot": () => OnFoot })
 __define(243, function (__exports) {
 // A developer's harness for the polish work (not a game mode): put the player straight into a city
 // car of a given traffic type (sedan, sports, suv, pickup, truck, van, bus, police, ...) a few
-// metres ahead of where they are, seated as if they had walked up and got in (onFoot.js seated),
+// metres ahead of where they are (on the nearest lane), seated as if they had walked up and got in (onFoot.js seated),
 // so the camera, the HUD, the sounds and the effects all follow it. Used by automated smoke tests
 // through window.__roadster.seatIn(type), and by ?drive=<kind>&seat=1.
 const { IDX } = __require(49)
 const { vehicles } = __require(234)
 const { player } = __require(229)
+const { nearestLane } = __require(26)
 function seatIn (g, type = 'suv', ahead = 12) {
   const { foot, traffic, sim } = g
+  const old = foot.alt.car
   if (foot.alt.active) foot.alt.leave()
   const car = traffic.make(IDX[type] ?? 0, false)
   car.parked = true
+  // (on the lane nearest that spot, facing along it, clear of the car the player was in)
   const yaw = player.heading
-  car.x = player.pos.x + Math.cos(yaw) * ahead
-  car.z = player.pos.z - Math.sin(yaw) * ahead
-  traffic.setYaw(car, yaw)
+  const at = nearestLane(player.pos.x + Math.cos(yaw) * ahead, player.pos.z - Math.sin(yaw) * ahead)
+  car.x = at.x
+  car.z = at.z
+  traffic.setYaw(car, at.yaw)
+  if (old && Math.hypot(old.x - car.x, old.z - car.z) < 14) old.x += 40
   vehicles.sync(traffic, sim)
   const e = vehicles.of(car)
   // (the Roadster left standing where it was, empty)
@@ -108510,17 +108522,261 @@ class PlayerCar {
 __export(__exports, { "PlayerCar": () => PlayerCar })
 })
 
-// ---- js/polish.js
+// ---- js/audio/engine.js
 __define(245, function (__exports) {
+// The engine of whatever the player drives that isn't the Roadster, synthesised: its firing
+// frequency from the rpm and gear vehicleSim.js keeps (rpm / 60 x cylinders / 2), a sawtooth and a
+// half-order rumble through a low-pass that opens with the throttle and the revs, a burble of
+// filtered noise for the exhaust (a diesel's clatter on a truck or a bus), the note dipping and
+// the drive cut through each gear change (body.shiftT), the limiter's stutter at the red line and
+// a whine from a sports car's gearbox; heard where the car is (the SoundEngine's carBus, so the
+// camera's distance and the walls' echo apply). And each class's own horn: the SoundEngine's horn
+// retuned (a pair of disc horns, a deeper pair on an SUV or a pickup, an air horn on a bus or a
+// truck).
+//
+//   new EngineVoice(sound)  .update(body | null, dt)   .hornFor(kind)
+const { HORNS, AIR_HORN } = __require(104)
+const { clamp } = __require(2)
+// per handling class: cylinders, the note's level, the low-pass's floor and its reach (Hz), the
+// exhaust's noise, a diesel's clatter, a gearbox whine
+// prettier-ignore
+const VOICE = {
+  sedan: { cyl: 4, k: 0.9, lp: 380, open: 1700, burble: 0.25, diesel: 0, whine: 0 },
+  sports: { cyl: 8, k: 1.15, lp: 420, open: 2600, burble: 0.55, diesel: 0, whine: 0.25 },
+  suv: { cyl: 6, k: 1, lp: 340, open: 1500, burble: 0.3, diesel: 0, whine: 0 },
+  pickup: { cyl: 8, k: 1.1, lp: 300, open: 1400, burble: 0.5, diesel: 0, whine: 0 },
+  van: { cyl: 6, k: 0.95, lp: 300, open: 1200, burble: 0.25, diesel: 0.3, whine: 0 },
+  truck: { cyl: 6, k: 1.2, lp: 220, open: 900, burble: 0.35, diesel: 1, whine: 0 },
+  bus: { cyl: 6, k: 1.2, lp: 200, open: 850, burble: 0.3, diesel: 1, whine: 0 },
+  police: { cyl: 8, k: 1.1, lp: 380, open: 2100, burble: 0.45, diesel: 0, whine: 0.1 }
+}
+// and its horn: [frequencies, air horn]
+const HORN = {
+  sedan: [HORNS[0], false],
+  sports: [HORNS[4], false],
+  suv: [HORNS[1], false],
+  pickup: [HORNS[3], false],
+  van: [HORNS[3], false],
+  truck: [AIR_HORN, true],
+  bus: [AIR_HORN, true],
+  police: [HORNS[2], false],
+  roadster: [HORNS[0], false]
+}
+
+class EngineVoice {
+  constructor (sound) {
+    this.sound = sound
+    this.n = null
+    this.gear = 0
+    this.dip = 0 // the note's dip through a gear change (0 to 1)
+    this.horn = 'roadster'
+  }
+  build () {
+    const s = this.sound,
+      { gain, filt, osc } = s
+    const n = (this.n = {})
+    n.out = gain(0)
+    n.lp = filt('lowpass', 400, 1.2)
+    n.saw = osc('sawtooth', 40)
+    n.sub = osc('triangle', 20)
+    n.sq = osc('square', 80)
+    n.sawG = gain(0.5)
+    n.subG = gain(0.7)
+    n.sqG = gain(0.12)
+    n.saw.connect(n.sawG).connect(n.lp)
+    n.sub.connect(n.subG).connect(n.lp)
+    n.sq.connect(n.sqG).connect(n.lp)
+    // the exhaust's burble: brown noise through a band at the firing frequency, pulsed by it
+    n.bur = gain(0)
+    n.burBP = filt('bandpass', 120, 1.4)
+    n.pulse = gain(0.5)
+    n.saw.connect(gain(0.5)).connect(n.pulse.gain)
+    s.src.brown.connect(n.burBP).connect(n.pulse).connect(n.bur)
+    // a diesel's clatter: white noise high up, pulsed the same way
+    n.clat = gain(0)
+    n.clatBP = filt('bandpass', 2400, 2)
+    const cp = gain(0.4)
+    n.sq.connect(gain(0.4)).connect(cp.gain)
+    s.src.white.connect(n.clatBP).connect(cp).connect(n.clat)
+    // a straight-cut gearbox's whine
+    n.whine = gain(0)
+    n.whO = osc('sine', 600)
+    n.whO.connect(n.whine)
+    for (const g of [n.lp, n.bur, n.clat, n.whine]) g.connect(n.out)
+    s.lane([n.out.gain], n.out, s.carBus)
+  }
+
+  // each frame: the body the player drives (vehicleSim.js; null: none, the engine falls silent)
+  update (b, dt) {
+    const s = this.sound
+    if (!s.ctx || !s.enabled) return
+    if (!this.n) this.build()
+    const n = this.n,
+      R = s.R
+    if (!b || b.dead || !VOICE[b.kind]) {
+      R(n.out.gain, 0, 0.15)
+      this.gear = 0
+      return
+    }
+    const V = VOICE[b.kind],
+      S = b.spec,
+      ps = s.ps || 1
+    // the gear change: the note dips and comes back as the clutch takes up
+    if (b.gear !== this.gear && this.gear > 0 && b.gear > this.gear) this.dip = 1
+    this.gear = b.gear
+    this.dip = Math.max(0, this.dip - dt / 0.28)
+    const rpm = b.rpm || S.rpmIdle,
+      red = rpm > 0.98 * S.rpmRed
+    // (the limiter cutting in and out at the red line)
+    const cut = red && Math.sin(s.now * 70) > 0 ? 0.35 : 1
+    const fire = ((rpm / 60) * V.cyl) / 2
+    const load = clamp(b.load, 0, 1),
+      dip = 1 - 0.45 * this.dip
+    R(n.saw.frequency, fire * ps, 0.03)
+    R(n.sub.frequency, fire * 0.5 * ps, 0.03)
+    R(n.sq.frequency, fire * 2 * ps, 0.03)
+    R(n.lp.frequency, (V.lp + V.open * (0.25 * b.rpmN + 0.75 * load * b.rpmN)) * dip, 0.04)
+    R(n.burBP.frequency, fire * 1.5 * ps, 0.05)
+    const lvl = 0.05 * V.k * (0.45 + 0.55 * load) * (0.7 + 0.5 * b.rpmN) * dip * cut
+    R(n.out.gain, 1, 0.1)
+    R(n.lp.Q, 1 + 3 * load * b.rpmN, 0.1)
+    R(n.sawG.gain, lvl * 6, 0.03)
+    R(n.subG.gain, lvl * 9, 0.03)
+    R(n.sqG.gain, lvl * 1.5, 0.03)
+    R(n.bur.gain, lvl * V.burble * (0.4 + (1 - load) * 0.8) * 3, 0.05)
+    R(n.clat.gain, lvl * V.diesel * 0.9, 0.05)
+    const whine = V.whine * clamp(Math.abs(b.u) / 30, 0, 1) * 0.012
+    R(n.whine.gain, whine, 0.1)
+    if (whine > 0) R(n.whO.frequency, (Math.abs(b.u) * 38 + 200) * ps, 0.05)
+  }
+
+  // the SoundEngine's horn retuned to a class's (handling kind; 'roadster' its own), before H
+  hornFor (kind) {
+    const s = this.sound
+    if (kind === this.horn || !s.ctx || !s.n?.hornO) return
+    this.horn = kind
+    const [f, air] = HORN[kind] || HORN.sedan
+    s.n.hornO.forEach((o, i) => {
+      o.frequency.value = f[i]
+      o.setPeriodicWave(air ? s.airHornWave : s.hornWave)
+    })
+  }
+}
+__export(__exports, { "EngineVoice": () => EngineVoice })
+})
+
+// ---- js/ui/carHud.js
+__define(246, function (__exports) {
+// The HUD kept to whatever the player drives, or to them on foot (hud.js calls update after its
+// own): the car's name bottom right as they get in (GTA's: the class small and gold over the name,
+// 'Stolen' when it was), the speedometer's selector swapped for the gear (1 to 6, R, N) and its
+// power meter for a rev counter that reddens at the red line and flashes at each shift in a car
+// with an engine, the green bar under the radar the player's health (the Roadster's dents, another
+// car's harm, or the knocks taken on foot: game.js footHealth), and the car's hints in their own
+// slot of the help box, dropped once the player is out (no 'E to get out' lingering on foot).
+//
+//   new CarHud(hud, foot, game)  .entered(entry), .exited(), .update(dt, app)
+//   (foot: onFoot.js; game: () => the Game, game.js, made after the HUD)
+const { $, put } = __require(1)
+const { TITLE } = __require(238)
+// the class over the name, for each traffic type
+const CLASS = {
+  sedan: 'Sedans',
+  hatch: 'Compacts',
+  taxi: 'Service',
+  suv: 'SUVs',
+  pickup: 'Off-road',
+  van: 'Vans',
+  bus: 'Service',
+  police: 'Emergency',
+  sports: 'Sports',
+  ambulance: 'Emergency',
+  fire: 'Emergency',
+  truck: 'Commercial',
+  lowrider: 'Muscle',
+  limo: 'Sedans'
+}
+const CAR_SLOT = 'car'
+
+class CarHud {
+  constructor (hud, foot, game) {
+    this.hud = hud
+    this.foot = foot
+    this.game = game
+    // the gear, beside the unit in place of P R N D (shown in a car with an engine: body.ice)
+    const side = $('spGear')?.parentElement
+    this.gearEl = document.createElement('span')
+    this.gearEl.className = 'sp-num'
+    this.gearEl.setAttribute('aria-label', 'Gear')
+    side?.appendChild(this.gearEl)
+    this.powBox = $('spPow')?.parentElement
+    this.gear = 0
+    this.flash = 0
+  }
+
+  // in a car (a vehicles.js entry): its name bottom right a few seconds, as GTA says it
+  entered (e) {
+    const place = this.hud.place
+    place.carDue = false
+    if (e.kind === 'roadster') place.say('Tesla', 'Roadster', 3.2, true)
+    else place.say(e.stolen ? `Stolen · ${CLASS[e.type] || ''}` : CLASS[e.type] || '', TITLE[e.type] || e.type, 3.2, true)
+    if (e.kind !== 'roadster')
+      this.hud.helpbox.push('<b>E</b> get out · <b>H</b> horn · <b>V</b> camera', 2600, CAR_SLOT)
+  }
+  // out of it: the car's hints still waiting are dropped
+  exited () {
+    const hb = this.hud.helpbox
+    hb.queue = hb.queue.filter(h => h.slot !== CAR_SLOT)
+    if (hb.cur?.slot === CAR_SLOT) hb.cur.left = 0
+  }
+
+  update (dt, app) {
+    const game = this.game?.(),
+      alt = this.foot?.alt,
+      ice = !!alt?.active && !app.foot
+    put(document.body, '.ice', ice)
+    // (the Roadster's name is the Roadster's: not said as another car drives off, place.js)
+    if (app.vehicle && app.vehicle.kind !== 'roadster') this.hud.place.carDue = false
+    if (ice) this.engine(dt, alt.body)
+    // health under the radar
+    const cond = this.hud.el.cond
+    let h = null
+    if (app.foot) h = game?.footHealth ?? 1
+    else if (alt?.active) h = 1 - Math.min(1, alt.body.dmg?.harm || 0)
+    if (h !== null) {
+      put(cond, 'transform', `scaleX(${Math.max(0, h).toFixed(3)})`)
+      put(this.hud.el.condBox, '.low', h < 0.3)
+    }
+  }
+  // the gear and the rev counter
+  engine (dt, b) {
+    const g = b.dead ? '–' : b.gear === -1 ? 'R' : Math.abs(b.u) < 0.3 && b.load === 0 ? 'N' : String(b.gear)
+    if (b.gear > this.gear && this.gear > 0) this.flash = 0.25
+    this.gear = b.gear
+    this.flash -= dt
+    put(this.gearEl, 'text', g)
+    put($('spPow'), 'transform', `scaleX(${(b.rpmN || 0).toFixed(3)})`)
+    put(this.powBox, '.red', (b.rpmN || 0) > 0.9)
+    put(this.gearEl, '.shift', this.flash > 0)
+  }
+}
+__export(__exports, { "CAR_SLOT": () => CAR_SLOT, "CarHud": () => CarHud })
+})
+
+// ---- js/polish.js
+__define(247, function (__exports) {
 // The polish over whatever the player drives, kept out of main.js: each frame, the car that isn't
 // the Roadster posed from its body with its skids and smoke (render/playerCar.js), the camera told
 // what it is following (render/carCam.js), its engine, tyres and horn heard (audio/engine.js) and
 // the HUD's speedometer, condition bar and car name kept to it (ui/carHud.js).
 //
-//   new Polish({ foot, rig, sound, hud, cityView, RS })
+//   new Polish({ foot, rig, sound, hud, cityView, RS, app, game })
+//   (game: () => the Game, game.js: the player's health on foot)
 //   .frame(dt)  after the physics steps: returns the RS-like stand-in for skids.js and effects.js
 const { PlayerCar } = __require(244)
 const { armScale, armRise } = __require(50)
+const { EngineVoice } = __require(245)
+const { CarHud } = __require(246)
 // V on foot: the camera over the shoulder close, middling or far (footCam.js dist)
 const FOOT_CAMS = [
   ['Near', 3],
@@ -108532,6 +108788,8 @@ class Polish {
   constructor (g) {
     Object.assign(this, g)
     this.car = new PlayerCar(g.cityView)
+    this.engine = new EngineVoice(g.sound)
+    g.hud.carHud = new CarHud(g.hud, g.foot, g.game)
   }
   frame (dt) {
     const alt = this.foot.alt
@@ -108543,6 +108801,10 @@ class Polish {
     rig.hoodS = car ? this.cityView.cars.types[car.type].S : null
     rig.armK = car ? armScale(car.type) : 1
     rig.armUp = car ? armRise(car.type) : 0
+    // its engine, its horn (engine.js), and the Roadster's motors quiet meanwhile (mix.js)
+    this.app.engine = !!car
+    this.engine.update(car ? alt.body : null, dt)
+    this.engine.hornFor(car ? alt.body.kind : 'roadster')
     return fx || this.RS
   }
   // V: the next camera, in a car (camera.js cycle: Follow, Far, Cockpit or Hood, Chase, Side, Free)
@@ -108561,7 +108823,7 @@ __export(__exports, { "Polish": () => Polish })
 })
 
 // ---- js/main.js
-__define(246, function (__exports) {
+__define(248, function (__exports) {
 // Tesla Roadster Sim: boot, game state, sim events and the main loop.
 const THREE = __require(0)
 const { Hud } = __require(16)
@@ -108604,7 +108866,7 @@ const { player } = __require(229)
 const { vehicles } = __require(234)
 const { GAME_EVENTS, tickGame } = __require(83)
 const { seatIn } = __require(243)
-const { Polish } = __require(245)
+const { Polish } = __require(247)
 // ---------- world ----------
 buildWall()
 buildTruss()
@@ -108848,7 +109110,7 @@ const input = new Input({
 Object.assign(rig, { traffic, input }) // (camera.js: clear of the cars, Z to look back)
 // the player on foot, and in and out of any car (onFoot.js)
 const foot = new OnFoot({ app, sim, RS, rig, camera, canvas, input, hud, sound, traffic, peds, intro, setCam, cityView })
-const polish = new Polish({ foot, rig, sound, hud, cityView, RS })
+const polish = new Polish({ foot, rig, sound, hud, cityView, RS, app, game: () => game })
 // the wanted level, the police, the missions and the street events (game.js)
 const game = new Game({ sim, foot, traffic, peds, hud, minimap, app, damage, respawn: at => resetTo('city', at) })
 // browsers only allow audio after a gesture: the first click or key turns sound on
@@ -109035,7 +109297,7 @@ if (window.top !== window && !document.hasFocus())
 requestAnimationFrame(frame)
 // debugging hook for the console and automated checks: fast-forward the sim without rendering
 window.__roadster = {
-  ...{ sim, env: ENV, climate, RS, damage, intro, tween, ap, rig, sound, app, traffic, peds },
+  ...{ sim, env: ENV, climate, RS, damage, intro, tween, ap, rig, sound, app, traffic, peds, hud },
   ...{ cityView, renderer, resolution, post, menu, player, vehicles, foot, events: GAME_EVENTS, game, polish },
   setAuto,
   resetTo,
@@ -109054,5 +109316,5 @@ window.__roadster = {
 }
 __export(__exports, {  })
 })
-__require(246)
+__require(248)
 })()
