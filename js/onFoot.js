@@ -32,6 +32,7 @@ import {
   BOARD
 } from './sim/boarding.js'
 import { offerFor } from './ui/prompt.js'
+import { interactableFor } from './sim/hooks.js'
 import { FootView } from './render/footView.js'
 import { FootCam } from './render/footCam.js'
 import { clipCamera } from './render/city.js'
@@ -70,6 +71,7 @@ export class OnFoot {
     this.focus = new Focus()
     this.action = null // getting in or out (boarding.js)
     this.target = null // the car the prompt is for
+    this.thing = null // or the door, the shop, the garage (sim/hooks.js)
     this.how = null
     this.jumpQ = false
     this.prev = { x: 0, y: 0, z: 0 } // the feet a step ago (drawn between steps)
@@ -211,6 +213,11 @@ export class OnFoot {
       return player.mode === 'car' ? false : true
     }
     if (this.app.intro || this.app.auto || this.down) return false
+    if (this.thing && (player.mode === 'foot' || player.mode === 'car')) {
+      this.thing.act(player)
+      this.thing = null
+      return true
+    }
     if (player.mode === 'car') {
       const s = this.driven()
       if (s.mode !== 'ground' && s.mode !== 'crash') return false
@@ -431,6 +438,14 @@ export class OnFoot {
     const o = this.down ? { text: '' } : offerFor(player, this.action)
     this.target = o.target
     this.how = o.how
+    // or a door, a shop, a garage... (sim/hooks.js), when nearer than the car on offer
+    const t = this.down || this.action || this.app.intro ? null : interactableFor(player)
+    const car = o.target && Math.hypot(o.target.pos.x - player.pos.x, o.target.pos.z - player.pos.z)
+    this.thing = t && (!o.target || t.d < car) ? t.it : null
+    if (this.thing) {
+      this.target = this.how = null
+      return this.prompt(`<kbd>E</kbd> ${this.thing.label(player)}`)
+    }
     this.prompt(o.text)
   }
   prompt (html) {

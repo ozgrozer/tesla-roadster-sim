@@ -8,7 +8,7 @@ export const GAME_EVENTS = { queue: [], subs: new Map(), t: 0 }
 
 // emitGame('ped-hit', { pos: { x, z }, speed, by }) -> the event, { type, t, ...data }
 export function emitGame (type, data = {}) {
-  const e = { type, t: GAME_EVENTS.t, ...data }
+  const e = { type, t: GAME_EVENTS.t, ...data, event: type } // (data.type wins over type: a crime's kind)
   const q = GAME_EVENTS.queue
   if (q.length >= MAX) q.shift()
   q.push(e)

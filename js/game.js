@@ -23,6 +23,9 @@ import { CrimeHud } from './ui/crimeHud.js'
 import { radarOverlay, mapOverlay } from './ui/crimeMap.js'
 import { gps } from './ui/gps.js'
 import { recall, remember } from './ui/prefs.js'
+import { HOOKS } from './sim/hooks.js'
+import { saveGame, loadGame, saveSection } from './sim/save.js'
+import { FEATURES } from './features.js'
 
 // where the player is put back: the nearest hospital (wasted) or police station (busted), as
 // fractions of the map: HOSPITALS, STATIONS in missions/spots.js
@@ -56,8 +59,14 @@ export class Game {
     this.t = 0
     this.missions.cash = Number(recall('cash')) || 0
     this.map = { units: [], heli: null, search: null, markers: this.markers, event: null, t: 0 }
-    deps.minimap.overlay = (g, V, toRadar, k) => radarOverlay(g, V, toRadar, k, this.map)
-    deps.app.mapOverlay = (g, sx, sy, k) => mapOverlay(g, sx, sy, k, this.map)
+    deps.minimap.overlay = (g, V, toRadar, k) => {
+      radarOverlay(g, V, toRadar, k, this.map)
+      for (const f of HOOKS.radar) f(g, V, toRadar, k)
+    }
+    deps.app.mapOverlay = (g, sx, sy, k) => {
+      mapOverlay(g, sx, sy, k, this.map)
+      for (const f of HOOKS.map) f(g, sx, sy, k)
+    }
     onGame('*', e => this.events.length < 64 && this.events.push(e))
     onGame('crime', e => this.crimes.push(e))
     // a parked car broken into quietly is a crime too (a carjacking and an alarm are reported as
@@ -67,6 +76,18 @@ export class Game {
     })
     onGame('player-hit', e => (this.footHealth -= Math.min(1, (e.speed || 0) / 24)))
     this.hooks()
+    // the add-on systems (features.js), then the save game over them (?fresh: start clean)
+    this.features = FEATURES
+    for (const f of FEATURES) f.init?.(this)
+    saveSection('missions', {
+      save: () => ({ cash: this.missions.cash, passed: [...this.missions.passed] }),
+      load: d => {
+        if (Number.isFinite(d.cash)) this.missions.cash = d.cash
+        for (const id of d.passed || []) this.missions.passed.add(id)
+      }
+    })
+    this.saveT = 0
+    if (!/[?&]fresh\b/.test(globalThis.location?.search || '')) loadGame()
     this.debug()
     window.addEventListener('keydown', e => {
       if (e.code === 'KeyJ' && !e.repeat && this.missions.state === 'running') this.missions.abort()
@@ -85,6 +106,7 @@ export class Game {
     }
     M.on.end = (d, passed) => {
       remember('cash', String(M.cash))
+      saveGame()
       if (this.goal && gps.goal === this.goal) gps.clear()
       this.goal = null
       const c = this.targetCar
@@ -159,6 +181,12 @@ export class Game {
     this.ambient.step(h, P, view, W.stars > 0 || this.missions.state === 'running')
     this.missions.update(h, { player: P, wanted: W, events: this.events })
     this.events.length = 0
+    for (const f of this.features) f.step?.(h, this)
+    // kept every half a minute (and at a mission's end: hooks)
+    if ((this.saveT += h) > 30) {
+      this.saveT = 0
+      saveGame()
+    }
     // busted: stopped with a unit beside you while wanted; wasted: the car (or you) done for
     // (on foot, walking pace is slow enough to be caught)
     if (this.arrest.step(h, W.stars, this.police, P)) return this.fall('busted')
@@ -232,6 +260,7 @@ export class Game {
   // Each frame (dt real s) in the city
   frame (dt, inCity) {
     this.view.show(inCity)
+    for (const f of this.features) f.frame?.(dt, this, inCity)
     if (!inCity) return this.ui.update(dt, { stars: 0, searching: false, cash: this.missions.cash, status: null, show: false })
     if (this.down && (this.down.t += dt) > DOWN_T && !this.down.fading) {
       this.down.fading = true

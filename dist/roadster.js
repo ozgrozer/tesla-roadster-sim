@@ -75691,7 +75691,7 @@ const GAME_EVENTS = { queue: [], subs: new Map(), t: 0 }
 
 // emitGame('ped-hit', { pos: { x, z }, speed, by }) -> the event, { type, t, ...data }
 function emitGame (type, data = {}) {
-  const e = { type, t: GAME_EVENTS.t, ...data }
+  const e = { type, t: GAME_EVENTS.t, ...data, event: type } // (data.type wins over type: a crime's kind)
   const q = GAME_EVENTS.queue
   if (q.length >= MAX) q.shift()
   q.push(e)
@@ -109908,8 +109908,162 @@ function mapOverlay (g, sx, sy, k, s) {
 __export(__exports, { "radarOverlay": () => radarOverlay, "mapOverlay": () => mapOverlay })
 })
 
-// ---- js/game.js
+// ---- js/sim/hooks.js
 __define(254, function (__exports) {
+// The game's extension points, so a new system plugs in with one line in js/features.js instead of
+// edits to the hub files (main.js, onFoot.js, game.js): things the player can use with E on foot or
+// in a car (a shop's door, a garage, a pump), marks of their own on the radar and the pause map,
+// and sections of the save game (sim/save.js). Pure data and functions: no DOM, nothing drawn.
+//
+//   addInteractable({ id, x, z, r, y?, modes?, label(p) -> html | null, act(p) -> void })
+//     -> remove(). Offered when the player is within r m (and, with y, within 3 m of its height)
+//     in one of its modes ('foot' by default, 'car' for one used from the driver's seat, where
+//     it takes E before getting out does); label is what follows the key in the prompt
+//     ("Enter · 24/7 Store"), null while it has nothing to offer.
+//   interactableFor(p) -> { it, d } | null: the nearest one on offer to the player p (sim/player.js)
+//   addRadarOverlay(fn(g, V, toRadar, k)), addMapOverlay(fn(g, sx, sy, k)) -> remove(): drawn after
+//     the police's and the missions' marks (ui/crimeMap.js), on the radar and the pause map
+const HOOKS = { interactables: [], radar: [], map: [] }
+
+function adder (list) {
+  return x => {
+    list.push(x)
+    return () => {
+      const i = list.indexOf(x)
+      if (i >= 0) list.splice(i, 1)
+    }
+  }
+}
+const addInteractable = adder(HOOKS.interactables)
+const addRadarOverlay = adder(HOOKS.radar)
+const addMapOverlay = adder(HOOKS.map)
+
+function interactableFor (p) {
+  let best = null,
+    bd = Infinity
+  const mode = p.mode === 'car' ? 'car' : p.mode === 'foot' ? 'foot' : null
+  if (!mode) return null
+  for (const it of HOOKS.interactables) {
+    if (!(it.modes || ['foot']).includes(mode)) continue
+    const d = Math.hypot(p.pos.x - it.x, p.pos.z - it.z)
+    if (d > (it.r ?? 2) || d >= bd) continue
+    if (it.y != null && Math.abs((p.pos.y ?? 0) - it.y) > 3) continue
+    if (!it.label(p)) continue
+    best = it
+    bd = d
+  }
+  return best ? { it: best, d: bd } : null
+}
+__export(__exports, { "HOOKS": () => HOOKS, "addInteractable": () => addInteractable, "addRadarOverlay": () => addRadarOverlay, "addMapOverlay": () => addMapOverlay, "interactableFor": () => interactableFor })
+})
+
+// ---- js/sim/save.js
+__define(255, function (__exports) {
+// The save game: each system that has something to keep across sessions (the cash, the missions
+// passed, the cars in the garage, the stats, the places found) registers a section with what to
+// write and how to read it back, and the whole lot goes into the browser's storage as one record
+// under one key, versioned. Pure but for the storage, which is STORE (localStorage in a browser,
+// a Map in Node, so tests can save and load too).
+//
+//   saveSection(name, { save: () => data, load: data => void }) -> remove()
+//   saveGame() -> true when written; loadGame() -> true when a save was read (every registered
+//   section that is in it is given its data; one that throws is skipped, not the rest)
+//   hasSave(), clearSave(), savedAt() (ms since the epoch, or 0)
+const SAVE_KEY = 'roadster-save-v1'
+const SECTIONS = new Map()
+const MEM = new Map()
+
+const STORE = {
+  get (k) {
+    try {
+      const ls = globalThis.localStorage
+      return ls ? ls.getItem(k) : MEM.get(k) ?? null
+    } catch {
+      return MEM.get(k) ?? null
+    }
+  },
+  set (k, v) {
+    try {
+      const ls = globalThis.localStorage
+      if (ls) ls.setItem(k, v)
+      else MEM.set(k, v)
+      return true
+    } catch {
+      return false
+    }
+  },
+  remove (k) {
+    try {
+      globalThis.localStorage?.removeItem(k)
+    } catch {}
+    MEM.delete(k)
+  }
+}
+
+function saveSection (name, s) {
+  SECTIONS.set(name, s)
+  return () => SECTIONS.get(name) === s && SECTIONS.delete(name)
+}
+
+function saveGame () {
+  const sections = {}
+  for (const [name, s] of SECTIONS) {
+    try {
+      const d = s.save()
+      if (d !== undefined) sections[name] = d
+    } catch {}
+  }
+  return STORE.set(SAVE_KEY, JSON.stringify({ v: 1, at: Date.now(), sections }))
+}
+
+function read () {
+  const raw = STORE.get(SAVE_KEY)
+  if (!raw) return null
+  try {
+    const r = JSON.parse(raw)
+    return r && r.v === 1 && r.sections ? r : null
+  } catch {
+    return null
+  }
+}
+
+function loadGame () {
+  const r = read()
+  if (!r) return false
+  for (const [name, s] of SECTIONS) {
+    if (!(name in r.sections)) continue
+    try {
+      s.load(r.sections[name])
+    } catch {}
+  }
+  return true
+}
+
+const hasSave = () => !!read()
+const savedAt = () => read()?.at || 0
+const clearSave = () => STORE.remove(SAVE_KEY)
+__export(__exports, { "SAVE_KEY": () => SAVE_KEY, "STORE": () => STORE, "saveSection": () => saveSection, "saveGame": () => saveGame, "loadGame": () => loadGame, "hasSave": () => hasSave, "savedAt": () => savedAt, "clearSave": () => clearSave })
+})
+
+// ---- js/features.js
+__define(256, function (__exports) {
+// The game's add-on systems, one line each: every feature module exports an object
+//   FEATURE = { name, init?(game), step?(h, game), frame?(dt, game, inCity), reset?() }
+// which Game (game.js) inits once it has built the wanted level, the police and the missions,
+// steps each physics step in the city (after the missions; not while busted or wasted), and
+// frames each frame (inCity false at the test site, to hide what it shows). game carries every
+// dependency: sim, foot (onFoot.js), traffic, peds, hud, minimap, app, damage, wanted, police,
+// missions, ambient, sound (when main.js passes it). Put gameplay in step (the headless playtest
+// only runs steps: window.__roadster.advance) and drawing and DOM in frame. Use sim/hooks.js for
+// E interactions and map marks, sim/save.js for what to keep, ui/widgets.js for HUD elements and
+// sim/gameEvents.js to talk to the rest. Keep each its own seeded rng (city.js rng), never
+// traffic.R or peds.R, which the tests pin.
+const FEATURES = []
+__export(__exports, { "FEATURES": () => FEATURES })
+})
+
+// ---- js/game.js
+__define(257, function (__exports) {
 // The game on top of the drive: the wanted level and the police (sim/wanted.js, police.js), the
 // missions (sim/missions/) and the street events (sim/ambient.js), their marks in the world
 // (render/crimeView.js), on the HUD (ui/crimeHud.js) and on the maps (ui/crimeMap.js), and busted
@@ -109935,6 +110089,9 @@ const { CrimeHud } = __require(252)
 const { radarOverlay, mapOverlay } = __require(253)
 const { gps } = __require(50)
 const { recall, remember } = __require(7)
+const { HOOKS } = __require(254)
+const { saveGame, loadGame, saveSection } = __require(255)
+const { FEATURES } = __require(256)
 // where the player is put back: the nearest hospital (wasted) or police station (busted), as
 // fractions of the map: HOSPITALS, STATIONS in missions/spots.js
 const PENALTY = { busted: 500, wasted: 1000 }
@@ -109967,8 +110124,14 @@ class Game {
     this.t = 0
     this.missions.cash = Number(recall('cash')) || 0
     this.map = { units: [], heli: null, search: null, markers: this.markers, event: null, t: 0 }
-    deps.minimap.overlay = (g, V, toRadar, k) => radarOverlay(g, V, toRadar, k, this.map)
-    deps.app.mapOverlay = (g, sx, sy, k) => mapOverlay(g, sx, sy, k, this.map)
+    deps.minimap.overlay = (g, V, toRadar, k) => {
+      radarOverlay(g, V, toRadar, k, this.map)
+      for (const f of HOOKS.radar) f(g, V, toRadar, k)
+    }
+    deps.app.mapOverlay = (g, sx, sy, k) => {
+      mapOverlay(g, sx, sy, k, this.map)
+      for (const f of HOOKS.map) f(g, sx, sy, k)
+    }
     onGame('*', e => this.events.length < 64 && this.events.push(e))
     onGame('crime', e => this.crimes.push(e))
     // a parked car broken into quietly is a crime too (a carjacking and an alarm are reported as
@@ -109978,6 +110141,18 @@ class Game {
     })
     onGame('player-hit', e => (this.footHealth -= Math.min(1, (e.speed || 0) / 24)))
     this.hooks()
+    // the add-on systems (features.js), then the save game over them (?fresh: start clean)
+    this.features = FEATURES
+    for (const f of FEATURES) f.init?.(this)
+    saveSection('missions', {
+      save: () => ({ cash: this.missions.cash, passed: [...this.missions.passed] }),
+      load: d => {
+        if (Number.isFinite(d.cash)) this.missions.cash = d.cash
+        for (const id of d.passed || []) this.missions.passed.add(id)
+      }
+    })
+    this.saveT = 0
+    if (!/[?&]fresh\b/.test(globalThis.location?.search || '')) loadGame()
     this.debug()
     window.addEventListener('keydown', e => {
       if (e.code === 'KeyJ' && !e.repeat && this.missions.state === 'running') this.missions.abort()
@@ -109996,6 +110171,7 @@ class Game {
     }
     M.on.end = (d, passed) => {
       remember('cash', String(M.cash))
+      saveGame()
       if (this.goal && gps.goal === this.goal) gps.clear()
       this.goal = null
       const c = this.targetCar
@@ -110070,6 +110246,12 @@ class Game {
     this.ambient.step(h, P, view, W.stars > 0 || this.missions.state === 'running')
     this.missions.update(h, { player: P, wanted: W, events: this.events })
     this.events.length = 0
+    for (const f of this.features) f.step?.(h, this)
+    // kept every half a minute (and at a mission's end: hooks)
+    if ((this.saveT += h) > 30) {
+      this.saveT = 0
+      saveGame()
+    }
     // busted: stopped with a unit beside you while wanted; wasted: the car (or you) done for
     // (on foot, walking pace is slow enough to be caught)
     if (this.arrest.step(h, W.stars, this.police, P)) return this.fall('busted')
@@ -110143,6 +110325,7 @@ class Game {
   // Each frame (dt real s) in the city
   frame (dt, inCity) {
     this.view.show(inCity)
+    for (const f of this.features) f.frame?.(dt, this, inCity)
     if (!inCity) return this.ui.update(dt, { stars: 0, searching: false, cash: this.missions.cash, status: null, show: false })
     if (this.down && (this.down.t += dt) > DOWN_T && !this.down.fading) {
       this.down.fading = true
@@ -110213,7 +110396,7 @@ __export(__exports, { "PENALTY": () => PENALTY, "Game": () => Game })
 })
 
 // ---- js/sim/vehicles.js
-__define(255, function (__exports) {
+__define(258, function (__exports) {
 // Every car the player can get into, in one registry: the Roadster, the traffic's cars on the road
 // and the cars parked in the lots (and the jammed street's). Pure (no DOM), so it is tested in Node.
 // Each entry is stable for as long as its car exists (a WeakMap keeps it), so what is learnt about a
@@ -110417,7 +110600,7 @@ __export(__exports, { "layoutFor": () => layoutFor, "vehicles": () => vehicles }
 })
 
 // ---- js/sim/drivable.js
-__define(256, function (__exports) {
+__define(259, function (__exports) {
 // Any car the player drives that isn't the Roadster, on the drive workstream's stack: the traffic
 // car is taken off its driver (traffic.takeOver: handover.js), given a body of its handling class
 // (vehicleLink.js bodyFromTraffic, vehicleSim.js stepVehicle, handling.js), knocks the city and the
@@ -110526,7 +110709,7 @@ __export(__exports, { "carInput": () => carInput, "Drivable": () => Drivable })
 })
 
 // ---- js/sim/carsMeet.js
-__define(257, function (__exports) {
+__define(260, function (__exports) {
 // Two of the player's sims meeting: the car the player drives (drivable.js: a, its spec sp)
 // against the Roadster left in the street (b). Pushed apart by mass, momentum traded, a 'bump' for
 // each (heard, and the Roadster dented). Pure, for the Node tests.
@@ -110597,7 +110780,7 @@ __export(__exports, { "carsMeet": () => carsMeet })
 })
 
 // ---- js/sim/boarding.js
-__define(258, function (__exports) {
+__define(261, function (__exports) {
 // Getting into a car and out of it, as timed phases (pure: the render poses the body and the door
 // from them, onFoot.js runs them). Into a car: walk round to the driver's door (the car's other
 // side, its nose or tail in the way, walked round), then
@@ -110608,7 +110791,7 @@ __define(258, function (__exports) {
 //   a car with a driver: the door opens, the driver is pulled out (and runs), slide in
 // Out of one: the door opens, slide out onto a free spot beside it, the door shuts.
 const { stepFoot, freeSpot, FOOT } = __require(250)
-const { vehicles } = __require(255)
+const { vehicles } = __require(258)
 const { wrapPi } = __require(2)
 const BOARD = {
   walkV: 2.6, // m/s walking up to the door
@@ -110832,11 +111015,11 @@ __export(__exports, { "BOARD": () => BOARD, "howToEnter": () => howToEnter, "sta
 })
 
 // ---- js/ui/prompt.js
-__define(259, function (__exports) {
+__define(262, function (__exports) {
 // The prompt by a car the player can get into, GTA's: the key, what it does and the car ("E Break
 // in · Sedan"), and what is happening while they get in (onFoot.js shows it in #prompt).
-const { vehicles } = __require(255)
-const { howToEnter } = __require(258)
+const { vehicles } = __require(258)
+const { howToEnter } = __require(261)
 const PROMPT_R = 2.4 // m from a car's body that it offers to be got into
 const TITLE = {
   roadster: 'Roadster',
@@ -110881,7 +111064,7 @@ __export(__exports, { "PROMPT_R": () => PROMPT_R, "TITLE": () => TITLE, "VERB": 
 })
 
 // ---- js/render/footView.js
-__define(260, function (__exports) {
+__define(263, function (__exports) {
 // The player on foot, drawn: Optimus (optimus.js), out of the Roadster and walking the city, its
 // legs and arms swinging with its pace (a longer, quicker stride and a lean running), legs tucked in
 // a jump, flat on its back knocked over; and getting into a car and out of it (boarding.js): at the
@@ -110892,8 +111075,8 @@ __define(260, function (__exports) {
 const THREE = __require(0)
 const { buildOptimus, poseOptimus, HIP_STAND } = __require(70)
 const { boardRoadster, BOARD_T } = __require(72)
-const { doorOf, seatShare, BOARD } = __require(258)
-const { vehicles } = __require(255)
+const { doorOf, seatShare, BOARD } = __require(261)
+const { vehicles } = __require(258)
 const { clamp, wrapPi } = __require(2)
 const STRIDE = { walk: 1.45, run: 2.4 } // m per pair of steps
 const ease = t => t * t * (3 - 2 * t)
@@ -111118,7 +111301,7 @@ __export(__exports, { "FootView": () => FootView })
 })
 
 // ---- js/render/footCam.js
-__define(261, function (__exports) {
+__define(264, function (__exports) {
 // The camera on foot: GTA's third-person orbit over the player's shoulder. The mouse (the pointer
 // locked to the picture: a click) or a gamepad's right stick swings it round and up and down; the
 // wheel brings it in or lets it out. It follows the player smoothly, keeps out of buildings
@@ -111215,7 +111398,7 @@ __export(__exports, { "FootCam": () => FootCam })
 })
 
 // ---- js/audio/steps.js
-__define(262, function (__exports) {
+__define(265, function (__exports) {
 // The player's footsteps on foot (onFoot.js): Optimus's tread from the sample bank (buffers.js), its
 // colour by what is underfoot (a hard heel on the road and the pavement, a hollow knock on the
 // pier's planks, a soft swish through grass, a crunch in the sand, a ring off a roof's metal), heavier
@@ -111284,7 +111467,7 @@ __export(__exports, { "footstep": () => footstep, "landing": () => landing, "sma
 })
 
 // ---- js/onFoot.js
-__define(263, function (__exports) {
+__define(266, function (__exports) {
 // The player out of the car: getting out (E), walking the city as Optimus (WASD, Shift to run,
 // Space to jump, the mouse or the right stick looking round), getting into the Roadster or any other
 // car (E by it: in at once if it is open, broken into if it is parked and locked, taken from its
@@ -111297,21 +111480,22 @@ __define(263, function (__exports) {
 const THREE = __require(0)
 const { emitGame } = __require(95)
 const { footProxy } = __require(105)
-const { vehicles } = __require(255)
-const { Drivable } = __require(256)
+const { vehicles } = __require(258)
+const { Drivable } = __require(259)
 const { collidePlayer } = __require(86)
-const { carsMeet } = __require(257)
+const { carsMeet } = __require(260)
 const { makeControls } = __require(2)
 const { player, setMode, placePlayer, stepFoot, moveDir, knockDown, CITY_WORLD } = __require(250)
-const { startEnter, startExit, stepBoard, cancellable, BOARD } = __require(258)
-const { offerFor } = __require(259)
-const { FootView } = __require(260)
-const { FootCam } = __require(261)
+const { startEnter, startExit, stepBoard, cancellable, BOARD } = __require(261)
+const { offerFor } = __require(262)
+const { interactableFor } = __require(254)
+const { FootView } = __require(263)
+const { FootCam } = __require(264)
 const { clipCamera } = __require(216)
 const { scene } = __require(66)
 const { raiseAlarm } = __require(133)
 const { hearing, panOf, placeOf } = __require(134)
-const { footstep, landing, smashWindow, forceLock, doorSound } = __require(262)
+const { footstep, landing, smashWindow, forceLock, doorSound } = __require(265)
 const HOLD = { ...makeControls(), brake: 1, fan: false }
 // what the radar, the GPS and the place name follow while the player walks: the feet, as a car
 class Focus {
@@ -111342,6 +111526,7 @@ class OnFoot {
     this.focus = new Focus()
     this.action = null // getting in or out (boarding.js)
     this.target = null // the car the prompt is for
+    this.thing = null // or the door, the shop, the garage (sim/hooks.js)
     this.how = null
     this.jumpQ = false
     this.prev = { x: 0, y: 0, z: 0 } // the feet a step ago (drawn between steps)
@@ -111483,6 +111668,11 @@ class OnFoot {
       return player.mode === 'car' ? false : true
     }
     if (this.app.intro || this.app.auto || this.down) return false
+    if (this.thing && (player.mode === 'foot' || player.mode === 'car')) {
+      this.thing.act(player)
+      this.thing = null
+      return true
+    }
     if (player.mode === 'car') {
       const s = this.driven()
       if (s.mode !== 'ground' && s.mode !== 'crash') return false
@@ -111703,6 +111893,14 @@ class OnFoot {
     const o = this.down ? { text: '' } : offerFor(player, this.action)
     this.target = o.target
     this.how = o.how
+    // or a door, a shop, a garage... (sim/hooks.js), when nearer than the car on offer
+    const t = this.down || this.action || this.app.intro ? null : interactableFor(player)
+    const car = o.target && Math.hypot(o.target.pos.x - player.pos.x, o.target.pos.z - player.pos.z)
+    this.thing = t && (!o.target || t.d < car) ? t.it : null
+    if (this.thing) {
+      this.target = this.how = null
+      return this.prompt(`<kbd>E</kbd> ${this.thing.label(player)}`)
+    }
     this.prompt(o.text)
   }
   prompt (html) {
@@ -111739,7 +111937,7 @@ __export(__exports, { "OnFoot": () => OnFoot })
 })
 
 // ---- js/render/playerCar.js
-__define(264, function (__exports) {
+__define(267, function (__exports) {
 // The car the player drives when it isn't the Roadster (drivable.js): the traffic renderer keeps
 // drawing it as itself (traffic.js: its body type, paint, glass, lamps and dents), but posed here
 // from its physics body (vehicleSim.js) rather than from the traffic's own springs: the body's
@@ -111846,7 +112044,7 @@ __export(__exports, { "PlayerCar": () => PlayerCar })
 })
 
 // ---- js/audio/engine.js
-__define(265, function (__exports) {
+__define(268, function (__exports) {
 // The engine of whatever the player drives that isn't the Roadster, synthesised: its firing
 // frequency from the rpm and gear vehicleSim.js keeps (rpm / 60 x cylinders / 2), a sawtooth and a
 // half-order rumble through a low-pass that opens with the throttle and the revs, a burble of
@@ -111989,7 +112187,7 @@ __export(__exports, { "EngineVoice": () => EngineVoice })
 })
 
 // ---- js/ui/carHud.js
-__define(266, function (__exports) {
+__define(269, function (__exports) {
 // The HUD kept to whatever the player drives, or to them on foot (hud.js calls update after its
 // own): the car's name bottom right as they get in (GTA's: the class small and gold over the name,
 // 'Stolen' when it was), the speedometer's selector swapped for the gear (1 to 6, R, N) and its
@@ -112001,7 +112199,7 @@ __define(266, function (__exports) {
 //   new CarHud(hud, foot, game)  .entered(entry), .exited(), .update(dt, app)
 //   (foot: onFoot.js; game: () => the Game, game.js, made after the HUD)
 const { $, put } = __require(1)
-const { TITLE } = __require(259)
+const { TITLE } = __require(262)
 // the class over the name, for each traffic type
 const CLASS = {
   sedan: 'Sedans',
@@ -112085,14 +112283,14 @@ __export(__exports, { "CAR_SLOT": () => CAR_SLOT, "CarHud": () => CarHud })
 })
 
 // ---- js/ui/testDrive.js
-__define(267, function (__exports) {
+__define(270, function (__exports) {
 // A developer's harness for the polish work (not a game mode): put the player straight into a city
 // car of a given traffic type (sedan, sports, suv, pickup, truck, van, bus, police, ...) a few
 // metres ahead of where they are (on the nearest lane), seated as if they had walked up and got in (onFoot.js seated),
 // so the camera, the HUD, the sounds and the effects all follow it. Used by automated smoke tests
 // through window.__roadster.seatIn(type), and by ?drive=<kind>&seat=1.
 const { IDX } = __require(58)
-const { vehicles } = __require(255)
+const { vehicles } = __require(258)
 const { player } = __require(250)
 const { nearestLane } = __require(35)
 function seatIn (g, type = 'suv', ahead = 12) {
@@ -112123,7 +112321,7 @@ __export(__exports, { "seatIn": () => seatIn })
 })
 
 // ---- js/polish.js
-__define(268, function (__exports) {
+__define(271, function (__exports) {
 // The polish over whatever the player drives, kept out of main.js: each frame, the car that isn't
 // the Roadster posed from its body with its skids and smoke (render/playerCar.js), the camera told
 // what it is following (render/carCam.js), its engine, tyres and horn heard (audio/engine.js) and
@@ -112132,11 +112330,11 @@ __define(268, function (__exports) {
 //   new Polish({ foot, rig, sound, hud, cityView, RS, app, game })
 //   (game: () => the Game, game.js: the player's health on foot)
 //   .frame(dt)  after the physics steps: returns the RS-like stand-in for skids.js and effects.js
-const { PlayerCar } = __require(264)
+const { PlayerCar } = __require(267)
 const { armScale, armRise } = __require(59)
-const { EngineVoice } = __require(265)
-const { CarHud } = __require(266)
-const { seatIn } = __require(267)
+const { EngineVoice } = __require(268)
+const { CarHud } = __require(269)
+const { seatIn } = __require(270)
 // V on foot: the camera over the shoulder close, middling or far (footCam.js dist)
 const FOOT_CAMS = [
   ['Near', 3],
@@ -112187,7 +112385,7 @@ __export(__exports, { "Polish": () => Polish })
 })
 
 // ---- js/main.js
-__define(269, function (__exports) {
+__define(272, function (__exports) {
 // Tesla Roadster Sim: boot, game state, sim events and the main loop.
 const THREE = __require(0)
 const { Hud } = __require(16)
@@ -112224,12 +112422,12 @@ const { MAT, scene, camera, canvas } = __require(66)
 const { renderer, followKeyLight } = __require(66)
 const { fallFx, ALL_PARTICLES, updateNozzles, emitThrusters, emitTireSmoke, attachDiamonds } = __require(130)
 const { emitTrafficSpray } = __require(129)
-const { Game } = __require(254)
-const { OnFoot } = __require(263)
+const { Game } = __require(257)
+const { OnFoot } = __require(266)
 const { player } = __require(250)
-const { vehicles } = __require(255)
+const { vehicles } = __require(258)
 const { GAME_EVENTS, tickGame } = __require(95)
-const { Polish } = __require(268)
+const { Polish } = __require(271)
 // ---------- world ----------
 buildWall()
 buildTruss()
@@ -112687,5 +112885,5 @@ window.__roadster = {
 }
 __export(__exports, {  })
 })
-__require(269)
+__require(272)
 })()
