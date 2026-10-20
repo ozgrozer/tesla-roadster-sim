@@ -25,3 +25,12 @@ playwright-core at `/opt/node-tools/node_modules/playwright-core`; browser runs 
 
 Five read-only audits were run in parallel (architecture, gameplay systems, world, traffic and
 pedestrian AI, rendering/audio/UI/performance) to rank the weaknesses before any code changed.
+
+## Cycle 1: foundation fixes and the first wave (20 Oct 2026)
+
+Added the extension points every new system uses (`features.js`, `sim/hooks.js`, `sim/save.js`,
+`ui/widgets.js`; see ARCHITECTURE.md), wired into game.js and onFoot.js; 252 tests pass.
+
+Eight streams then started in parallel, each on its own worktree branch with the files it owns
+(BACKLOG.md names them): player, police, world-fix, progress, interiors, variety, traffic, peds.
+The rendering/audio/UI/performance audit was still running; its tasks join the next wave.
