@@ -65,13 +65,18 @@ Status: `[x]` done, `[~]` in progress (stream named), `[ ]` to do.
 
 ## Cycle E: immersion
 
-- [ ] E1 (M) Rendering quality fixes from the audit.
-- [ ] E2 (M) Audio fixes and missing sounds (interiors, footsteps on surfaces).
-- [ ] E3 (M) UI and accessibility: onboarding, settings, key remapping, readable text.
+- [~] E1 (M) *render*: anti-aliasing (MSAA or FXAA by quality), fog coloured by view direction,
+  traffic cars lit by the street lights, shade on reflections, the lamp texture under 4096 wide.
+- [~] E2 (M) *audio*: the police helicopter heard, sirens by loudness with voices, the radio and
+  horn stay with the car on foot, cover (no rain in the tunnel, garage and tunnel reverb),
+  pedestrians' steps by surface and shoes.
+- [ ] E3 (M) UI and accessibility: touch E button, pad opens the menu, device glyphs in prompts,
+  volume sliders, sensitivity and invert, reduced motion, colour-blind blips, key remapping.
 
 ## Cycle F: optimisation
 
-- [ ] F1 (M) Performance baseline and the two largest bottlenecks fixed.
+- [~] F1 (M) *render*: perf flow with p50/p95/p99 and scenarios; the shadow-refresh hitch; distance
+  LOD that engages on clear days; parked cars culled and simplified far off.
 - [ ] F2 (M) Load time (the city build) brought down.
 
 ## Cycle G: quality pass
