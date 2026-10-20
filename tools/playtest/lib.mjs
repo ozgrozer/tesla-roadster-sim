@@ -72,7 +72,7 @@ export class Game {
   }
   async goto (query = '') {
     if (this.step === 'load') this.step = 'load ' + query
-    await this.page.goto(this.base + 'index.html' + query)
+    await this.page.goto(this.base + 'index.html' + query, { waitUntil: 'commit', timeout: 120000 })
     await this.page.waitForFunction(() => window.__roadster && window.__roadster.app.world, null, { timeout: 120000 })
     await this.wait(1500)
     // drawing off between screenshots: a software GL takes a second or more a frame, the game's
