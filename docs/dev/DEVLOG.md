@@ -245,3 +245,20 @@ W3, explorables (72150f3, 8dd285f, aab6f35):
   the token counter after a real pickup (◆ 1/30, "the end of the pier"), The Marlowe entered by its
   door (y -40), an all-way stop junction, a 3-star chase with the roadblock across Wilshire, the
   crown at 22:00 from ~890 m (daylight `envWas = null; envT = 0` after the hour change), the map.
+
+## gta-v3-drive: driving feel (on top of gta-v2 4634939)
+
+- Measured first: tools/drive/metrics.mjs drives every class (Roadster + the 8 traffic kinds)
+  through the real keyboard mapping on open ground and tables 0-100, 100-0, dive, steering in/out,
+  lateral g, roll, turning circle, handbrake 180, J-turn, stop→reverse, power slide, lane change,
+  handbrake drift and a handbrake pull at 100 km/h, dry and wet (grip 0.7). Full before/after in
+  docs/dev/HANDLING.md.
+- GTA handbrake for the cars: rears keep `hbGrip`, the tail swings at the class's `hbRate` and
+  comes round in ~1.4 s keeping ~35 km/h (it used to stop the car dead); at speed it is a slide
+  (rears' grip rises past 18 m/s); J-turns backing up (sedan 202°, was 27°; Roadster 171°, was 38°);
+  spins damped once well sideways; power drifts held to ~35° of slip.
+- Brakes 12-17 % shorter, quicker racks, more dive and roll (sedan 5.3° dive / 5.8° roll),
+  brake key bites in 0.15 s; S at a standstill holds the brakes 0.3 s then reverses (traffic
+  classes used to go straight into reverse); chase cam FOV widens with speed.
+- tests/driveFeel.test.mjs (7 tests; 5 failed on gta-v2), tests/input.test.mjs updated for the
+  quicker brake. Screenshots: tools/drive/shots.mjs → shots/v3/drive/d1-d4.
