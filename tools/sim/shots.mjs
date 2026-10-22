@@ -47,18 +47,27 @@ async function run (page, sec) {
   for (let t = 0; t < sec; t += 0.5) await page.evaluate(s => window.__roadster.advance(s), 0.5)
   if (process.env.VERBOSE) console.log('ran', sec, 's in', Date.now() - t0, 'ms')
 }
-// the camera free, `up` m over the player and `back` m off along (bx, bz), looking at (lx, lz)
+// the camera held still, `up` m over (lx, lz) (the player's place by default) and (bx, bz) m off,
+// looking at it (the rig's own update held off till release())
 async function aerial (page, { up = 60, bx = 0, bz = 40, lx = null, lz = null } = {}) {
   await page.evaluate(({ up, bx, bz, lx, lz }) => {
     const R = window.__roadster
-    R.rig.setMode('free')
     const p = R.sim.pos
     const tx = lx ?? p.x,
       tz = lz ?? p.z
-    R.rig.controls.target.set(tx, 0, tz)
-    R.rig.camera.position.set(tx + bx, up, tz + bz)
-    R.rig.controls.update()
+    if (!R.rig.__upd) R.rig.__upd = R.rig.update
+    R.rig.update = () => {
+      R.rig.camera.position.set(tx + bx, up, tz + bz)
+      R.rig.camera.lookAt(tx, 1, tz)
+    }
   }, { up, bx, bz, lx, lz })
+}
+async function release (page) {
+  await page.evaluate(() => {
+    const R = window.__roadster
+    if (R.rig.__upd) R.rig.update = R.rig.__upd
+    R.rig.__upd = null
+  })
 }
 async function shot (page, name, lines) {
   await page.evaluate(lines => {
@@ -150,7 +159,7 @@ SCENES.peds = () => play('?spawn=100,96,0', async page => {
       return { lp: lp ? { x: lp.x, z: lp.z } : null, living: typeof P.living, n: P.list.length, mix, perf: q ? { x: q.x, z: q.z } : null, watching: poi ? poi.slots.filter(s => s.who).length : 0, gathered: P.gathered || 0, unstuck: P.unstuckN || 0 }
     })
   }
-  if (r.perf) await aerial(page, { up: 13, bx: 9, bz: -11, lx: r.perf.x, lz: r.perf.z })
+  if (r.perf) await aerial(page, { up: 11, bx: 8, bz: -10, lx: r.perf.x, lz: r.perf.z })
   r.shot = await shot(page, 's2-performer-watchers.png', [
     'S2 a street performer downtown (48, 86): watching now ' + r.watching + ', stopped to watch so far ' + r.gathered,
     'people about ' + r.n + ': ' + JSON.stringify(r.mix)
@@ -187,16 +196,21 @@ SCENES.witness = () => play('?spawn=-96,-250,1.5708', async page => {
 
 // S3: a carjack seen by passers-by (no stars until one rings it in), three stars: the pursuit and a
 // roadblock; then away out of sight: the search circle on the radar, the stars going one at a time
-SCENES.police = () => play('?spawn=0,-250,1.5708', async page => {
+SCENES.police = () => play('?spawn=-480,430,1.5708', async page => {
   await page.evaluate(() => { window.__roadster.env.hour = 13 })
   await run(page, 6)
-  const ev = types => page.evaluate(types => window.__roadster.events.queue.filter(e => types.includes(e.type)).map(e => ({ type: e.type, t: +e.t.toFixed(1), by: e.by, radius: e.radius, peds: e.peds })), types)
   const r = await page.evaluate(() => {
     const R = window.__roadster
+    window.__heard = []
+    const S = R.events.subs
+    for (const k of ['crime-witnessed', 'crime-called', 'crime-reported', 'police-search', 'police-description-lost']) {
+      if (!S.has(k)) S.set(k, new Set())
+      S.get(k).add(e => window.__heard.push({ type: e.type, t: +e.t.toFixed(1), by: e.by, radius: e.radius, peds: e.peds, after: e.after }))
+    }
     const pos = { x: R.sim.pos.x, z: R.sim.pos.z }
     R.game.crimes.push({ type: 'carjack', pos, severity: 2 })
     R.advance(0.1)
-    return { pos, starsAtOnce: R.game.wanted.stars, pending: R.game.reports.pending.length }
+    return { pos, starsAtOnce: R.game.wanted.stars, pending: R.game.reports.pending.length, made0: R.game.reports.made }
   })
   let t = 0
   for (; t < 30; t++) {
@@ -205,42 +219,61 @@ SCENES.police = () => play('?spawn=0,-250,1.5708', async page => {
   }
   r.reportedAfter = t
   r.starsAfter = await page.evaluate(() => window.__roadster.game.wanted.stars)
-  r.reportEvents = await ev(['crime-witnessed', 'crime-called', 'crime-reported'])
-  // three stars, and the chase on (driving off down the street)
-  await page.evaluate(() => { const R = window.__roadster; R.game.wanted.set(3, R.sim.pos); R.setAuto(true) })
-  await run(page, 14)
+  r.calls = await page.evaluate(() => ({ calls: window.__roadster.peds.calls || 0, made: window.__roadster.game.reports.made, lost: window.__roadster.game.reports.lost }))
+  // three stars: the units come for them
+  await page.evaluate(() => { const R = window.__roadster; R.game.wanted.set(3, R.sim.pos) })
   const pol = () => page.evaluate(() => {
     const G = window.__roadster.game, P = G.police
     return { down: G.down?.kind || null, stars: G.wanted.stars, searching: G.wanted.searching, seen: G.wanted.seen, units: P.units.length, pursuing: P.pursuing, blocks: P.units.filter(u => u.role === 'block').length, nearest: Math.round(P.nearest), described: G.wanted.described }
   })
-  r.chase = await pol()
-  await aerial(page, { up: 70, bx: -40, bz: 50 })
+  for (let k = 0; k < 40; k++) {
+    await run(page, 1)
+    r.chase = await pol()
+    if (r.chase.nearest < 40 || r.chase.down) break
+  }
+  await aerial(page, { up: 38, bx: -30, bz: 34 })
   r.shot1 = await shot(page, 's3-pursuit.png', [
-    `S3 a carjack seen by ${r.reportEvents.find(e => e.type === 'crime-witnessed')?.peds ?? '?'} people: stars at once ${r.starsAtOnce}, after the call (${r.reportedAfter} s) ${r.starsAfter}`,
-    `then three stars: units ${r.chase.units} (pursuing ${r.chase.pursuing}, roadblock cars ${r.chase.blocks}), nearest ${r.chase.nearest} m, in sight ${r.chase.seen}`
+    `S3 a carjack seen by passers-by: stars at once ${r.starsAtOnce}, after a call (${r.reportedAfter} s) ${r.starsAfter}`,
+    `then three stars: units ${r.chase.units} (pursuing ${r.chase.pursuing}), nearest ${r.chase.nearest} m, in sight ${r.chase.seen}`
   ])
-  // far off, out of their sight: the search
+  await release(page)
+  // away round the corner, out of their sight: the search, the circle on the radar
   await page.evaluate(() => {
     const R = window.__roadster
-    R.setAuto(false)
-    R.resetTo('city', { x: -480, z: 430, yaw: 0 })
-    R.rig.setMode('follow')
+    R.game.wanted.set(3)
+    R.game.wanted.spotted(R.sim.pos)
+    R.resetTo('city', { x: -288, z: 400, yaw: 0 })
   })
-  await run(page, 5)
+  await run(page, 4)
   r.search = await pol()
-  r.searchEvents = (await ev(['police-search'])).slice(-3)
   r.shot2 = await shot(page, 's3-search.png', [
-    `S3 out of sight: searching ${r.search.searching}, stars ${r.search.stars} flashing; the search circle (radar) from 'police-search'`,
-    'police-search heard: ' + JSON.stringify(r.searchEvents.map(e => e.radius))
+    `S3 out of sight: searching ${r.search.searching}, stars ${r.search.stars} (flashing), police units ${r.search.units}`,
+    'the search circle on the radar, from the police-search event'
   ])
+  // (and the radar alone, larger)
+  const box = await page.evaluate(() => {
+    const c = [...document.querySelectorAll('canvas')].map(e => e.getBoundingClientRect()).find(b => b.left < 60 && b.bottom > innerHeight - 300 && b.width < 400 && b.width > 80)
+    return c ? { x: c.left, y: c.top, width: c.width, height: c.height } : null
+  })
+  if (box) {
+    await page.evaluate(() => { window.__draw = true })
+    r.shot3 = path.join(OUT, 's3-search-radar.png')
+    await page.screenshot({ path: r.shot3, clip: box, timeout: 180000 })
+    await page.evaluate(() => { window.__draw = false })
+  }
   const decay = [r.search.stars]
+  const t0 = Date.now()
+  let gt = 0
   for (let k = 0; k < 40 && decay[decay.length - 1] > 0; k++) {
     await run(page, 3)
+    gt += 3
     const s = await page.evaluate(() => window.__roadster.game.wanted.stars)
     if (s !== decay[decay.length - 1]) decay.push(s)
   }
   r.decay = decay
-  r.searchEnd = (await ev(['police-search'])).slice(-1)
+  r.searchEvents = await page.evaluate(() => window.__heard.filter(e => e.type === 'police-search').map(e => [e.t, e.radius]))
+  r.decayGameSecs = gt
+  r.wallMs = Date.now() - t0
   return r
 })
 

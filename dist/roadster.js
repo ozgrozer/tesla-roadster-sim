@@ -81891,7 +81891,7 @@ const PED_LIFE = {
         const dx = p.x - poi.x,
           dz = p.z - poi.z
         if (dx * dx + dz * dz > 196) continue
-        if (drawOf(p, 21 + poi.shows * 3 + poi.served) > 0.3 * TRAITS[L.prof].linger) continue
+        if (drawOf(p, 21 + poi.shows * 3 + poi.served) > 0.5 * TRAITS[L.prof].linger) continue
         const sl = slotFor(poi, p.x, p.z)
         if (!sl) break
         this.watchAt(p, poi, sl)
