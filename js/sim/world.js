@@ -20,6 +20,7 @@ import { STEP, roofAt } from './roofs.js'
 import { LINES, ringOf, ringAt, crossings } from './pavement.js'
 import { ROOFTOPS, LANDMARKS_V2 } from './variety.js'
 import { ALLEYS, EXTRAS } from './extras.js'
+import { SIGN, SIGNS, LEGENDS } from './stopSigns.js'
 
 export {
   onRoad,
@@ -32,7 +33,10 @@ export {
   ROOFTOPS,
   LANDMARKS_V2,
   ALLEYS,
-  EXTRAS
+  EXTRAS,
+  SIGN,
+  SIGNS,
+  LEGENDS
 }
 
 const inRect = (o, x, z) => x >= o.x0 && x <= o.x1 && z >= o.z0 && z <= o.z1

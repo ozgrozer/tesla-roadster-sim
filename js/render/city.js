@@ -29,6 +29,7 @@ import { updateTrees } from './cityTrees.js'
 import { streamed, stream, streamAll, streamBack } from './chunks.js'
 import { buildExtras } from './cityExtras.js'
 import { buildTokens } from './cityTokens.js'
+import { buildStopSigns } from './cityStopSigns.js'
 import { InteriorView } from './interiors/view.js'
 
 const _pv = new THREE.Matrix4(),
@@ -111,6 +112,7 @@ export class CityView {
     buildPort(g) // (the quay, its cranes and the ship alongside)
     buildStadium(g) // (the stadium's pitch, stands and canopy)
     this.extras = buildExtras(g) // (the alleys' dressing, street furniture, benches: cityExtras.js)
+    this.stopSigns = buildStopSigns(g) // (the all-way stops' signs and legends: cityStopSigns.js)
     this.tokens = buildTokens(g) // (the hidden tokens, turning: cityTokens.js)
     streamCity(g)
     this.interiors = new InteriorView(g) // (the rooms under the city, the doors: interiors/)
@@ -224,6 +226,7 @@ export class CityView {
     if (this.falling && !falling) this.shadow.refresh()
     this.falling = falling
     this.tokens.update(dt)
+    this.stopSigns.update()
     updateTrees(dt, camera) // (the palms' and trees' sway, and detail near)
     this.interiors.update(dt)
     this.buildings.update(dt) // (the Meridian's rings, the lighthouse's beam)
