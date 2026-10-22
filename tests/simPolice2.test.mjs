@@ -232,3 +232,27 @@ test('the bundle has no bare export left over (an `export { x }` list broke the 
   const src = fs.readFileSync(new URL('../dist/roadster.js', import.meta.url), 'utf8')
   assert.equal(/^export\s/m.test(src), false)
 })
+
+test('on foot and standing still: a unit comes all the way and the arrest is made (no stopping short of a route point)', () => {
+  const x = -476.2,
+    z = -384.7
+  for (const seed of [1, 2]) {
+    const tr = new Traffic({ count: 60 })
+    tr.reset(x, z)
+    const pol = new Police(tr, { seed })
+    const W = new Wanted()
+    W.set(2, { x, z })
+    const P = { pos: { x, y: 0, z }, vel: { x: 0, z: 0 }, heading: 0, speed: 0, driving: false, mode: 'foot' }
+    const me = { mode: 'foot', pos: P.pos, vel: { x: 0, y: 0, z: 0 }, yaw: 0, com: P.pos, events: [], emit () {}, syncPose () {} }
+    let held = 0,
+      t = 0
+    for (; t < 45 && held < 2.5; t += H) {
+      tr.t += H
+      tr.step(H, me)
+      pol.step(H, { wanted: W, player: P, view: null })
+      W.update(H, P.pos, pol.seen)
+      held = pol.bustable > 0 ? held + H : Math.max(0, held - 2 * H)
+    }
+    assert.ok(held >= 2.5, `seed ${seed}: not arrested in 45 s (nearest ${pol.nearest.toFixed(0)} m)`)
+  }
+})

@@ -112020,6 +112020,12 @@ function makeUnit (traffic, at, R, role = 'pursuit') {
     stuckT: 0,
     revT: 0,
     revSteer: 0,
+    progT: 0, // (s without getting anywhere it wants to go: progress below)
+    progX: at.x,
+    progZ: at.z,
+    progD: Infinity,
+    wedged: 0,
+    roundT: 0, // (s left going round by the roads, not straight at them)
     age: 0,
     leaveT: 0,
     wpt: null,
@@ -112067,6 +112073,7 @@ function think (u, ctx, dt) {
   const b = u.body,
     inp = u.inp
   u.age += dt
+  u.roundT -= dt
   if (u.role === 'block' || u.role === 'scene') {
     inp.throttle = inp.steer = 0
     inp.brake = 1
@@ -112106,7 +112113,8 @@ function think (u, ctx, dt) {
     // (on foot: every car pulls up beside them, an officer out to make the arrest)
     const role = P.driving === false ? 'tail' : roleFor(ctx.stars, u.slot)
     const a = aimAt(u, P.pos, P.vel, P.heading, role, u.slot)
-    direct = a.d < DIRECT && u.sees
+    // (straight at them, unless that just wedged it: across a boulevard's median, say)
+    direct = a.d < DIRECT && u.sees && !(u.roundT > 0)
     tx = a.x
     tz = a.z
     // (to a standstill beside a player who has stopped: the bust; ramming at four stars)
@@ -112117,6 +112125,14 @@ function think (u, ctx, dt) {
     if (!direct) {
       v = CHASE_V
       ;({ tx, tz } = route(u, ctx.plan(P.pos.x, P.pos.z), dt, tx, tz))
+      // (the stop beside them is for the player, not for a point on the way: stopping short of
+      // the route's own look-ahead left a unit crawling to a halt 20 m off a player on foot)
+      // (the same easing in as before, but never below a crawl that gets it on round)
+      if (_t.vmax < Infinity && stopAt > 0) {
+        const d = Math.hypot(tx - b.x, tz - b.z)
+        v = Math.min(v, Math.max(ROUTE_CRAWL, Math.sqrt(10 * Math.max(0, d - stopAt))))
+        stopAt = 0
+      }
     }
   } else {
     // the search: one point after another inside the circle round the last known position
@@ -112155,7 +112171,37 @@ function think (u, ctx, dt) {
     }
   }
   steerTo(b, inp, tx, tz, v, { stopAt })
+  progress(u, b, tx, tz, stopAt, dt, u.state === 'chase' && u.role === 'pursuit' ? P.pos : null)
 }
+// Getting nowhere though it wants to go: wedged against cars stopped for its siren, creeping and
+// braking by turns (which unstick's count of throttle held at a standstill never sees), or across a
+// boulevard's median from the player, back and forth and never nearer (a unit stood 20 m off a
+// player on foot, never close enough to arrest them). Chasing: no nearer the player by 2 m in
+// WEDGED s; otherwise: not 2 m from where it was. Then: back out, and round by the lanes a while.
+const WEDGED = 4
+const ROUTE_CRAWL = 6 // m/s: the least a unit on its way to a stopped player drives at
+function progress (u, b, tx, tz, stopAt, dt, goal) {
+  const gx = goal ? goal.x : tx,
+    gz = goal ? goal.z : tz
+  const d = Math.hypot(gx - b.x, gz - b.z)
+  const far = d > (goal ? 9 : stopAt + 4)
+  const on = goal ? d < u.progD - 2 : Math.hypot(b.x - u.progX, b.z - u.progZ) > 2
+  if (!far || on) {
+    u.progT = 0
+    u.progX = b.x
+    u.progZ = b.z
+    u.progD = d
+    return
+  }
+  if ((u.progT += dt) < WEDGED) return
+  u.progT = 0
+  u.progD = d
+  u.revT = 1.5
+  u.revSteer = -Math.sign(u.inp.steer || 1)
+  u.wedged++
+  u.roundT = ROUND_T
+}
+const ROUND_T = 12 // s a wedged unit goes round by the lanes
 function idle (inp) {
   inp.throttle = inp.steer = 0
   inp.brake = 1
@@ -112177,7 +112223,7 @@ function route (u, plan, dt, fx, fz) {
   }
   return _t
 }
-__export(__exports, { "CHASE_V": () => CHASE_V, "SEARCH_V": () => SEARCH_V, "DIRECT": () => DIRECT, "ROLES": () => ROLES, "makeUnit": () => makeUnit, "roleFor": () => roleFor, "aimAt": () => aimAt, "think": () => think })
+__export(__exports, { "CHASE_V": () => CHASE_V, "SEARCH_V": () => SEARCH_V, "DIRECT": () => DIRECT, "ROLES": () => ROLES, "makeUnit": () => makeUnit, "roleFor": () => roleFor, "aimAt": () => aimAt, "think": () => think, "WEDGED": () => WEDGED })
 })
 
 // ---- js/sim/policeAir.js
