@@ -117699,6 +117699,7 @@ const { startEnter, startExit, stepBoard, cancellable, BOARD } = __require(296)
 const { offerFor } = __require(297)
 const { InteriorGlue } = __require(300)
 const { FootView } = __require(301)
+const { boardRoadster, BOARD_T } = __require(132)
 const { FootCam } = __require(302)
 const { clipCamera } = __require(262)
 const { scene } = __require(82)
@@ -118027,6 +118028,7 @@ class OnFoot {
     this.RS.seated = true
     this.RS.door = 0
     this.RS.optimus.root.visible = true
+    boardRoadster(this.RS, BOARD_T.end) // (sat in: not left stood at the door as it got out)
     this.rig.noCockpit = false
     this.view.hide()
     this.prompt('')

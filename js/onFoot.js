@@ -37,6 +37,7 @@ import {
 import { offerFor } from './ui/prompt.js'
 import { InteriorGlue } from './render/interiors/glue.js'
 import { FootView } from './render/footView.js'
+import { boardRoadster, BOARD_T } from './render/intro.js'
 import { FootCam } from './render/footCam.js'
 import { clipCamera } from './render/city.js'
 import { scene } from './render/scene.js'
@@ -365,6 +366,7 @@ export class OnFoot {
     this.RS.seated = true
     this.RS.door = 0
     this.RS.optimus.root.visible = true
+    boardRoadster(this.RS, BOARD_T.end) // (sat in: not left stood at the door as it got out)
     this.rig.noCockpit = false
     this.view.hide()
     this.prompt('')
