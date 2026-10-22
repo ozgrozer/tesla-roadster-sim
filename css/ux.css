@@ -240,3 +240,28 @@
   grid-template-columns: auto auto;
   column-gap: 14px;
 }
+
+/* the hidden tokens' counter (ui/tokens.js): over the radar's clock, up for a moment on each find */
+.tokens {
+  position: fixed;
+  left: 108px;
+  bottom: 148px;
+  z-index: 20;
+  padding: 2px 9px;
+  border-radius: 10px;
+  background: rgba(10, 14, 22, 0.72);
+  color: #e8f4ff;
+  font: 600 14px/20px var(--font, system-ui, sans-serif);
+  letter-spacing: 0.04em;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.25s, transform 0.25s;
+}
+.tokens.on {
+  opacity: 1;
+  transform: none;
+}
+.tokens.done {
+  color: #ffd166;
+}
