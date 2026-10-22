@@ -103,8 +103,8 @@ export class Rig {
   get slip () { return this.s ? this.s.slipR : this.b.slip }
   get steerAng () { return this.s ? this.s.steerAng : this.b.steerAng }
   // the body's pitch (rad, + nose down) and roll (rad): the Roadster's as roadster.js draws it
-  get pitch () { return this.s ? -Math.max(-0.05, Math.min(0.05, this.s.accLong * 0.0034)) : this.b.pitch }
-  get roll () { return this.s ? Math.max(-0.08, Math.min(0.08, this.s.latAcc * 0.0058)) : this.b.roll }
+  get pitch () { return this.s ? -Math.max(-0.06, Math.min(0.06, this.s.accLong * 0.0042)) : this.b.pitch }
+  get roll () { return this.s ? Math.max(-0.09, Math.min(0.09, this.s.latAcc * 0.0068)) : this.b.roll }
   // put it at speed v going straight, as if cruised there
   at (v) {
     if (this.s) {

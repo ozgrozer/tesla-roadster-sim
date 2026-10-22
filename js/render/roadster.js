@@ -444,10 +444,11 @@ export function updateRoadster (RS, sim, ctl, dt) {
   // (a little more than a stiff supercar's, as GTA's cars do, so the weight is seen moving: about
   // 2.5 degrees nose down under full braking and up as it launches, 4 of roll at the tyres' limit; a
   // burnout squats the tail. The body's +x is its nose, so a positive pitch lifts it.)
+  // (v3 drive: a little more again, about 3 degrees of dive and 5 of roll, so the weight reads)
   const pitchT = onGround
-    ? clamp(sim.accLong * 0.0034, -0.05, 0.05) + (sim.burning ? 0.018 : 0)
+    ? clamp(sim.accLong * 0.0042, -0.06, 0.06) + (sim.burning ? 0.018 : 0)
     : 0
-  const rollT = onGround ? clamp(sim.latAcc * 0.0058, -0.08, 0.08) : 0
+  const rollT = onGround ? clamp(sim.latAcc * 0.0068, -0.09, 0.09) : 0
   const L = RS.lean,
     h = Math.min(dt, 1 / 30)
   // (the springs settle with a touch of overshoot: a rock back after a stop, a sway out of a bend)

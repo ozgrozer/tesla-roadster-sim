@@ -44,6 +44,8 @@ const SPIN_K = 7 // N m per kg per rad/s of that, at most SPIN_MAX N m per kg
 const SPIN_MAX = 6
 const HB_RATE = 1.6 // rad/s: the most the handbrake's swing turns the car at (a class's hbRate)
 const RECOVER = 1.6 // rad/s^2 per rad the nose is off the way the car is going
+const SPUN = 1.2, // rad: the way the car is going this far off its nose, it is spinning, and
+  SPIN_DAMP = 2.5 // its yaw rate is damped at this rate (1/s)
 const PULL = 0.12 // rad of steering pull per m a front corner is crumpled further than the other
 const _g = [0, 0]
 
@@ -369,7 +371,7 @@ function move (b, inp, dt, world) {
     const fade =
       b.hbDir > 0
         ? 1 - smooth((off - (S.hbFade ?? 0.6)) / 0.5)
-        : smooth((off - 0.45) / 0.6)
+        : smooth((off - 0.9) / 0.6)
     Mz +=
       b.hbDir *
       inp.steer *
@@ -399,6 +401,10 @@ function move (b, inp, dt, world) {
     if (u > 2 && Math.abs(off) < 1.7)
       Mz += S.stab * b.I * (RECOVER * off * (1 - (S.slideHold ?? 0.5) * thr) - 0.2 * r * smooth(Math.abs(off) / 0.3))
   }
+  // (and a car going well sideways or backwards, off the handbrake, stops spinning, GTA-style: a
+  // handbrake 180 on a wet road ends facing back, not in a pirouette)
+  if (!hb && spd > 1 && off > SPUN)
+    Mz -= S.stab * b.I * SPIN_DAMP * r * smooth((off - SPUN) / 0.4)
   b.drifting = !locked && Math.abs(beta) > 0.18 && au > 6
   // rolling resistance and drag
   const Fres = S.rollRes * N * Math.min(1, spd / 0.5) + S.drag * spd * spd

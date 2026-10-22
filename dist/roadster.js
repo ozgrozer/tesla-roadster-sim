@@ -65542,6 +65542,11 @@ const ARM = 6.3,
   RISE = 1.15,
   AIM = 0.85,
   AHEAD = 2.4
+// the field of view's widening with speed (degrees, all of it by FOV_AT m/s), and how far the arm
+// falls back pulling away and closes in braking (m per m/s^2): the weight of the car, seen
+const FOV_SPEED = 11,
+  FOV_AT = 55,
+  SURGE = 0.07
 const _f = new THREE.Vector3(),
   _u = new THREE.Vector3()
 
@@ -65615,7 +65620,7 @@ function follow (rig, dt, sim, P) {
   f.ahead += (Math.min(AHEAD, fwdSpeed * 0.06) - f.ahead) * lerpK(1.2, dt)
   // it falls back as the car launches and closes in under hard braking
   const acc = sim.mode === 'ground' ? clamp(sim.accLong, -14, 16) : 0
-  f.surge += (acc * 0.05 - f.surge) * lerpK(2.5, dt)
+  f.surge += (acc * SURGE - f.surge) * lerpK(2.5, dt)
   // (a van's or a bus's arm further out and higher: carCam.js armScale, set by polish.js; V's Far
   // camera lets it out further still)
   f.size = (f.size ?? 1) + ((rig.armK || 1) - (f.size ?? 1)) * lerpK(2, dt)
@@ -65654,9 +65659,11 @@ function follow (rig, dt, sim, P) {
     f.target.y + (AIM + 0.6 * f.up) * f.elev,
     f.target.z - sh * ah - ch * f.lead
   )
-  // wider with speed, and a kick wider still while the main thrusters fire
+  // wider with speed (GTA's sense of pace: about 9 degrees more by 110 km/h, FOV_SPEED by 200),
+  // and a kick wider still while the main thrusters fire
   f.kick += (sim.thrMain - f.kick) * lerpK(4, dt)
-  return 55 + Math.min(11, speed * 0.1) + 7 * f.kick
+  const sp = Math.min(1, speed / FOV_AT)
+  return 55 + FOV_SPEED * sp * (2 - sp) + 7 * f.kick
 }
 
 // The camera kept out of the traffic, as the city's clip keeps it out of the buildings: a car on
@@ -83840,6 +83847,8 @@ const SPIN_K = 7 // N m per kg per rad/s of that, at most SPIN_MAX N m per kg
 const SPIN_MAX = 6
 const HB_RATE = 1.6 // rad/s: the most the handbrake's swing turns the car at (a class's hbRate)
 const RECOVER = 1.6 // rad/s^2 per rad the nose is off the way the car is going
+const SPUN = 1.2, // rad: the way the car is going this far off its nose, it is spinning, and
+  SPIN_DAMP = 2.5 // its yaw rate is damped at this rate (1/s)
 const PULL = 0.12 // rad of steering pull per m a front corner is crumpled further than the other
 const _g = [0, 0]
 
@@ -84165,7 +84174,7 @@ function move (b, inp, dt, world) {
     const fade =
       b.hbDir > 0
         ? 1 - smooth((off - (S.hbFade ?? 0.6)) / 0.5)
-        : smooth((off - 0.45) / 0.6)
+        : smooth((off - 0.9) / 0.6)
     Mz +=
       b.hbDir *
       inp.steer *
@@ -84195,6 +84204,10 @@ function move (b, inp, dt, world) {
     if (u > 2 && Math.abs(off) < 1.7)
       Mz += S.stab * b.I * (RECOVER * off * (1 - (S.slideHold ?? 0.5) * thr) - 0.2 * r * smooth(Math.abs(off) / 0.3))
   }
+  // (and a car going well sideways or backwards, off the handbrake, stops spinning, GTA-style: a
+  // handbrake 180 on a wet road ends facing back, not in a pirouette)
+  if (!hb && spd > 1 && off > SPUN)
+    Mz -= S.stab * b.I * SPIN_DAMP * r * smooth((off - SPUN) / 0.4)
   b.drifting = !locked && Math.abs(beta) > 0.18 && au > 6
   // rolling resistance and drag
   const Fres = S.rollRes * N * Math.min(1, spd / 0.5) + S.drag * spd * spd
@@ -112249,10 +112262,11 @@ function updateRoadster (RS, sim, ctl, dt) {
   // (a little more than a stiff supercar's, as GTA's cars do, so the weight is seen moving: about
   // 2.5 degrees nose down under full braking and up as it launches, 4 of roll at the tyres' limit; a
   // burnout squats the tail. The body's +x is its nose, so a positive pitch lifts it.)
+  // (v3 drive: a little more again, about 3 degrees of dive and 5 of roll, so the weight reads)
   const pitchT = onGround
-    ? clamp(sim.accLong * 0.0034, -0.05, 0.05) + (sim.burning ? 0.018 : 0)
+    ? clamp(sim.accLong * 0.0042, -0.06, 0.06) + (sim.burning ? 0.018 : 0)
     : 0
-  const rollT = onGround ? clamp(sim.latAcc * 0.0058, -0.08, 0.08) : 0
+  const rollT = onGround ? clamp(sim.latAcc * 0.0068, -0.09, 0.09) : 0
   const L = RS.lean,
     h = Math.min(dt, 1 / 30)
   // (the springs settle with a touch of overshoot: a rock back after a stop, a sway out of a bend)
