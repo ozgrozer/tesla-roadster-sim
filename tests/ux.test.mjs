@@ -142,3 +142,13 @@ test("the police stream's search area wins while fresh, and its absence is fine"
   emitGame('police-search', { pos: null, radius: 0 })
   assert.equal(searchOf({ search: own, units: [{ x: 0, z: 0 }] }), null)
 })
+
+test("an interior's floor (under the city) is not 'fallen out of the world' for the foot rescue", async () => {
+  const { outOfWorld } = await import('../js/sim/footRescue.js')
+  const { SITES, POCKET } = await import('../js/sim/interiors/sites.js')
+  const { roomWorld } = await import('../js/sim/interiors/state.js')
+  const s = SITES[0]
+  const p = { pos: { x: s.inner.x, y: POCKET, z: s.inner.z } }
+  assert.equal(outOfWorld(p, roomWorld(s)), false)
+  assert.equal(outOfWorld(p), true) // (in the street's world, that deep is fallen through)
+})

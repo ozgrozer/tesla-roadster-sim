@@ -63,11 +63,13 @@ export function nearestPavement (x, z, world = CITY_WORLD) {
   }
   return null
 }
-// out of the world: a position gone bad, fallen through the ground, or off the map's edges
-export function outOfWorld (p) {
+// out of the world: a position gone bad, fallen through the ground, or off the map's edges. The
+// ground is the world's own (an interior's floor is under the city: sim/interiors/ roomWorld)
+export function outOfWorld (p, world = CITY_WORLD) {
   const { x, y, z } = p.pos
   if (!Number.isFinite(x + y + z)) return true
-  if (y < groundBase(x, z) - RESCUE.below) return true
+  const base = world?.base ? world.base(x, z) : groundBase(x, z)
+  if (y < base - RESCUE.below) return true
   return Math.abs(z) > WALL + 30 || x > WALL + 30 || x < -OUTER - 400
 }
 
@@ -80,7 +82,7 @@ export class FootRescue {
   }
   // one step: p the player on foot; wantMove: they are asking to go somewhere
   step (p, dt, wantMove, world = CITY_WORLD) {
-    if (outOfWorld(p)) return this.toPavement(p, world)
+    if (outOfWorld(p, world)) return this.toPavement(p, world)
     const { x, y, z } = p.pos
     const blocked = p.grounded && blockedAt(x, z, y, world, FOOT.radius * 0.8)
     this.inside = blocked ? this.inside + dt : 0
