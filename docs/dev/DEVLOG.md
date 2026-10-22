@@ -101,3 +101,17 @@ Tests: tests/phys.test.mjs (12). Shots: /workspace/shots/v2/phys/ (tools/phys/sh
   damage.test took a street performer (sim's living/pedLife.js spawns them even with count 0) for the wreck's driver.
   ux.test's shop count now counts on top of the interiors' own shops.
 - npm test 291/291; playtest career and roam: no problems. Shots: /workspace/shots/v2/qa/integrated-*.png.
+
+## sim (gta-v2-sim) · S1 traffic, S2 pedestrians, S3 police
+- S1: freeway lane changes (laneChangeFwy.js: overtake, keep right, merge, exit lane, make way, pull
+  round stopped cars, signals, gap checks, letting cars in); all-way stops at 21 quiet junctions
+  (trafficStop.js, flashing red); stuck watchdog (trafficStuck.js: reroute, edge out, despawn unseen).
+- S2 (js/sim/living/): profiles by district/hour (commuter, jogger, tourist, phone, loiterer,
+  worker); crime witnesses run/cower/watch and one phones the police (call cut if they go down or
+  the player comes at them); street performers with a capped, timed audience (none on empty streets,
+  the integrator's note); near-miss startles; stuck recovery.
+- S3: wantedReports.js (police see it: at once; else a ped's call or a driver's after 7 s; none if
+  the caller is stopped); stars decay one at a time; 'police-search' {pos, radius, stars} (radius 0
+  at the end); description lost when changing car unseen (sight 0.4x, cooldown 1.6x faster);
+  ramming from 4 stars; roadblocks never placed in view. Pinned police/wanted tests updated deliberately.
+- Tests: tests/simTraffic2, simPeds2, simPolice2. Shots: /workspace/shots/v2/sim/ (tools/sim/shots.mjs).
