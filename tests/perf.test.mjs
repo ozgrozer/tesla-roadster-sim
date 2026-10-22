@@ -63,3 +63,28 @@ test("the city's shadow refresh draws only its shadow maps, not the scene", () =
   cs.update(new THREE.PerspectiveCamera(), [])
   assert.deepEqual(calls, { shadow: 2, scene: 0 })
 })
+
+test('an empty instanced mesh is not drawn at all, and casts only while some of it casts', async () => {
+  const { shown } = await import('../js/render/drawnOnly.js')
+  const m = new THREE.InstancedMesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial(), 8)
+  m.castShadow = true
+  shown(m, 0)
+  assert.equal(m.visible, false, 'no instances: no draw call, in the frame or the shadow maps')
+  shown(m, 3, 0)
+  assert.deepEqual([m.visible, m.count, m.castShadow], [true, 3, false], 'none near enough to cast')
+  shown(m, 3, 2)
+  assert.equal(m.castShadow, true)
+  // (one that never casts stays out of the shadow maps whatever its count)
+  const w = new THREE.InstancedMesh(new THREE.BoxGeometry(), new THREE.MeshBasicMaterial(), 8)
+  w.castShadow = false
+  shown(w, 5)
+  assert.deepEqual([w.visible, w.castShadow], [true, false])
+  // the scene's own traversal (what three.js draws and compiles: renderer.compile walks the visible
+  // objects) leaves the empty one out
+  const sc = new THREE.Scene()
+  sc.add(m, w)
+  shown(m, 0)
+  const seen = []
+  sc.traverseVisible(o => o.isInstancedMesh && seen.push(o))
+  assert.deepEqual(seen, [w])
+})

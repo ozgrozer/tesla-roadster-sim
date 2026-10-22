@@ -22,6 +22,7 @@ import { DogView } from './dogs.js'
 import { lampOn } from './pedLight.js'
 import { figure } from './pedFigure.js'
 import { posed } from './pedShader.js'
+import { shown } from './drawnOnly.js'
 
 const _sp = new THREE.Sphere()
 const _m = new THREE.Matrix4(),
@@ -114,7 +115,7 @@ export class PedView {
       }
       if (pass === 0) this.near = i
     }
-    this.mesh.count = i
+    shown(this.mesh, i, this.near) // (nobody there: not drawn at all)
     this.dogs.update(peds.dogs || [], view, me, on)
     // (only the people drawn go up to the GPU, not the whole buffer)
     if (!i) return
