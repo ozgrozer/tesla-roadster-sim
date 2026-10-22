@@ -118,13 +118,14 @@ test('map places: gas stations, car parks, hospitals, police stations, and added
   assert.equal(kinds('hospital'), 3)
   assert.equal(kinds('police'), 3)
   for (const p of pois()) assert.ok(Number.isFinite(p.x) && Number.isFinite(p.z), p.id)
+  const shops = kinds('shop') // (the shops among the interiors: interiors/sites.js)
   addPoi({ id: 'shop1', kind: 'shop', x: 1, z: 2, name: 'Corner shop' })
   addPoi({ id: 'door1', kind: 'weird', x: 1, z: 2 })
-  assert.equal(kinds('shop'), 1)
+  assert.equal(kinds('shop'), shops + 1)
   assert.equal(pois().find(p => p.id === 'door1').kind, 'interior')
   removePoi('shop1')
   removePoi('door1')
-  assert.equal(kinds('shop'), 0)
+  assert.equal(kinds('shop'), shops)
 })
 
 test("the police stream's search area wins while fresh, and its absence is fine", async () => {
