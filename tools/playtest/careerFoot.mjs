@@ -11,13 +11,17 @@ const stars = () => window.__roadster.game.wanted.stars
 const mode = () => window.__roadster.player.mode
 // out of whatever car, on foot, with no stars and nobody after the player
 async function onFootClean (g) {
-  if (await g.ev(mode) !== 'foot') {
+  for (let k = 0; k < 4 && await g.ev(mode) !== 'foot'; k++) {
     await g.ev(() => { const R = window.__roadster, b = R.foot.alt.body; if (b) Object.assign(b, { u: 0, vx: 0, vz: 0, w: 0, lat: 0 }) })
+    await g.hold('Space', 1.2)
     await g.press('KeyE', 0)
-    await g.until(() => window.__roadster.player.mode === 'foot' && !window.__roadster.foot.action, 10)
+    await g.until(() => window.__roadster.player.mode === 'foot' && !window.__roadster.foot.action, 8)
   }
-  await g.ev(() => { const R = window.__roadster; R.game.wanted.set(0, R.player.pos); R.game.police.clear?.() })
+  const why = await g.ev(() => { const R = window.__roadster, s = R.foot.driven?.(); return { mode: R.player.mode, drive: s?.mode, v: s?.groundSpeed?.(), down: !!R.foot.down } })
+  g.expect(why.mode === 'foot', 'could not get out on foot', why)
+  await g.ev(() => { const R = window.__roadster; R.game.wanted.set(0, R.player.pos) })
   await g.run(0.5)
+  return why.mode === 'foot'
 }
 // the nearest person standing about, stood still with the player 1.5 m in front of them
 const victim = () => {
@@ -35,7 +39,7 @@ const victim = () => {
 
 export const CAREER_FOOT = [
   ['punch-ped', async g => {
-    await onFootClean(g)
+    if (!await onFootClean(g)) return
     await g.ev(events)
     const id = await g.ev(victim)
     if (!g.expect(id !== null, 'nobody about to punch')) return
@@ -86,8 +90,9 @@ export const CAREER_FOOT = [
     await g.shot('f2-run-over.png')
   }],
   ['every-car-door', async g => {
-    await onFootClean(g)
-    const fails = []
+    if (!await onFootClean(g)) return
+    const fails = [],
+      done = []
     for (let k = 0; k < TYPES.length; k++) {
       const P = await g.ev(() => ({ ...window.__roadster.player.pos }))
       const l = nearestLane(P.x + 8, P.z)
@@ -114,7 +119,7 @@ export const CAREER_FOOT = [
       if (!r) { fails.push(`${name}: not parked`); continue }
       await g.run(0.3)
       await g.press('KeyE', 0)
-      const opened = await g.until(() => window.__roadster.foot.action?.phase === 'open', 4)
+      const opened = await g.until(() => ['open', 'in'].includes(window.__roadster.foot.action?.phase), 4)
       const shown = opened && await g.ev(() => !!window.__roadster.foot.view.doors.cur)
       const inCar = await g.until(() => window.__roadster.player.mode === 'car', 8)
       const kind = await g.ev(() => window.__roadster.player.vehicle?.type)
@@ -127,10 +132,12 @@ export const CAREER_FOOT = [
         const l = R.vehicles.toLocal(e, R.player.pos.x, R.player.pos.z)
         return l.z * sd > 0
       }, [r.id, r.side])
+      done.push(`${name}:${opened && shown && inCar && out && side ? 'ok' : 'FAIL'}`)
       if (!opened || !shown || !inCar || !out || side === false) fails.push(`${name}: open ${opened} door ${shown} in ${inCar} (${kind}) out ${out} side ${side}`)
       await g.run(0.3)
     }
-    g.expect(!fails.length, 'getting in and out by the door failed', fails)
+    g.notes = (g.notes || []).concat(`every-car-door: ${done.join(' ')}`)
+    g.expect(done.length === TYPES.length && !fails.length, 'getting in and out by the door failed', fails)
     await g.ev(() => { const R = window.__roadster; for (let i = R.traffic.cars.length - 1; i >= 0; i--) if (R.traffic.cars[i].doorTest) R.traffic.remove(i) })
     // on with a car for the rest of the career, and no stars from here
     await g.ev(() => { const R = window.__roadster; R.game.wanted.set(0, R.player.pos) })
