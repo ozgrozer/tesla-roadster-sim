@@ -12,8 +12,9 @@ import { hillHeight, onHillRoad, inTunnel, HILL_ROAD, LOOKOUT } from './hillroad
 import { FWY } from './freeway.js'
 import { STEP, roofAt } from './roofs.js'
 import { LINES, ringOf, ringAt, crossings } from './pavement.js'
+import { ROOFTOPS, LANDMARKS_V2 } from './variety.js'
 
-export { onRoad, roofAt, FWY, HILL_ROAD, LOOKOUT, onHillRoad, inTunnel }
+export { onRoad, roofAt, FWY, HILL_ROAD, LOOKOUT, onHillRoad, inTunnel, ROOFTOPS, LANDMARKS_V2 }
 
 const inRect = (o, x, z) => x >= o.x0 && x <= o.x1 && z >= o.z0 && z <= o.z1
 // a ramp's height at (x, z) (plots.js: h0 at x0 or z0, h1 at the far end)

@@ -56,6 +56,7 @@ export class Game {
     this.markers = []
     this.t = 0
     this.missions.cash = Number(recall('cash')) || 0
+    deps.foot.interiors?.attach({ wallet: this.missions, damage: deps.damage }) // (the body shop)
     this.map = { units: [], heli: null, search: null, markers: this.markers, event: null, t: 0 }
     deps.minimap.overlay = (g, V, toRadar, k) => radarOverlay(g, V, toRadar, k, this.map)
     deps.app.mapOverlay = (g, sx, sy, k) => mapOverlay(g, sx, sy, k, this.map)
