@@ -31,3 +31,17 @@ test('two bodies (the player against a driven car) collide, not pass through', (
   }
   assert.ok(bodyCrash('sedan', 'sedan', 15, { dz: 1.2 }).spinMax > 1, 'offset: the struck body spins')
 })
+
+test('progressive damage: gentle knocks, each too soft to break anything, add up to a lost lamp and crazed glass', async () => {
+  const { hurt, LAMPS, PANE, paneOf } = await import('../js/sim/carDamage.js')
+  const car = { x: 0, z: 0, hx: 1, hz: 0, len: 4.6, wid: 1.9, m: 1500 }
+  const seen = []
+  for (let i = 0; i < 8; i++) {
+    hurt(car, 2.3, -0.9, 4.5, 1500, i * 2) // (nose, left corner, 16 km/h: below a lamp's own break)
+    seen.push([car.dmg.lamps, paneOf(car.dmg, PANE.front)])
+  }
+  assert.equal(seen[0][0], 0, 'the first knock: lamp whole')
+  assert.ok(seen.findIndex(s => s[0] & LAMPS.FL) > 0, 'a few knocks on: the left headlight gone')
+  assert.ok(seen[7][1] >= 2, 'the nose crumpled in: the windscreen crazed')
+  assert.ok(!car.dmg.wreck, 'and still a car')
+})
