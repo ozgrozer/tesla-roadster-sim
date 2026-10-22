@@ -12,6 +12,7 @@
 // third, each reading and writing every pixel of a full-size frame).
 import * as THREE from 'three'
 import { SPEED_BLUR, updateSpeedBlur } from './speedBlur.js'
+import { motionFx } from '../ui/options.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
 import { OutputShader } from 'three/addons/shaders/OutputShader.js'
@@ -159,7 +160,8 @@ export class Post {
   }
   // draw the frame (shot: the camera's shot, for the speed blur)
   render (sim, shot, dt) {
-    this.final.uniforms.uAmount.value = updateSpeedBlur(this.blur, sim, shot, dt)
+    const blur = updateSpeedBlur(this.blur, sim, shot, dt)
+    this.final.uniforms.uAmount.value = motionFx() ? blur : 0 // (none with reduced motion)
     this.composer.render()
   }
 }

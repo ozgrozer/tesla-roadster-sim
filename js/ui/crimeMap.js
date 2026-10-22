@@ -4,6 +4,25 @@
 // colours (each start a lettered blip held on the rim while it is off the radar; an objective's
 // place as GTA's yellow) and the street event going on (a small blue dot).
 import { blip } from './blips.js'
+import { drawPois } from './poiMap.js'
+import { onGame, GAME_EVENTS } from '../sim/gameEvents.js'
+
+// The search area as the police stream says it ('police-search' { pos, radius }, radius 0 or no pos
+// to end it): it wins over the one game.js works out from the wanted level while it is fresh (its
+// ttl, s, or SEARCH_TTL), and either may be missing.
+const SEARCH_TTL = 20
+let heard = null
+onGame('police-search', e => {
+  const p = e.pos
+  heard = p && e.radius > 0 ? { x: p.x, z: p.z, r: e.radius, until: e.t + (e.ttl || SEARCH_TTL) } : { none: true, until: e.t + 2 }
+})
+// the search circle to draw: the stream's while fresh (on the game events' clock), else game.js's
+export function searchOf (s) {
+  if (heard && GAME_EVENTS.t > heard.until) heard = null
+  if (heard && !s.units?.length && !s.search) heard = null // (the stars are gone)
+  if (heard) return heard.none ? null : heard
+  return s.search
+}
 
 const TAU = Math.PI * 2
 // a mission's glyph: its initial letter
@@ -48,9 +67,10 @@ function police (g, at, s, k, big = 1) {
   }
 }
 function circle (g, at, s, scale) {
-  if (!s.search) return
-  const c = at(s.search.x, s.search.z, false, true)
-  const r = s.search.r * scale
+  const sr = searchOf(s)
+  if (!sr) return
+  const c = at(sr.x, sr.z, false, true)
+  const r = sr.r * scale
   const pulse = 0.5 + 0.5 * Math.sin(s.t * 3)
   g.beginPath()
   g.arc(c.x, c.y, r, 0, TAU)
@@ -99,6 +119,7 @@ export function radarOverlay (g, V, toRadar, k, s) {
     }
     return px < 0 || py < 0 || px > V.W || py > V.H ? null : { x: px, y: py }
   }
+  drawPois(g, (x, z) => at(x, z, false), 0.7 * k) // (only those in view, small)
   circle(g, at, s, zoom)
   police(g, at, s, k)
   missions(g, at, s, k)
@@ -107,6 +128,7 @@ export function radarOverlay (g, V, toRadar, k, s) {
 // The pause map: sx, sy world to CSS px, k CSS px a metre
 export function mapOverlay (g, sx, sy, k, s) {
   const at = (x, z) => ({ x: sx(x), y: sy(z) })
+  drawPois(g, at, 1)
   circle(g, at, s, k)
   police(g, at, s, 1, 1.2)
   missions(g, at, s, 1, 1.25)

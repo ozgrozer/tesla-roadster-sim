@@ -100,7 +100,12 @@ export const SPACE = {
     lim.attack.value = 0.002
     lim.release.value = 0.18
     this.mixIn.connect(this.master).connect(hp).connect(lim)
-    lim.connect(ctx.destination)
+    // the player's levels (options.js, set by mix.js setVolumes): mixIn's gain is the effects', the
+    // radio has its own bus past it into the master, and outVol is everything's
+    this.musicBus = gain(1)
+    this.musicBus.connect(this.master)
+    this.outVol = gain(1)
+    lim.connect(this.outVol).connect(ctx.destination)
     // outside the car: the world, the reverb and the echoes. From the driver's seat they are heard
     // through the canopy, muffled and quieter.
     // (a lowpass wide open still costs its work: each is switched out while it is wide open)

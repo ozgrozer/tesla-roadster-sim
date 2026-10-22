@@ -7,6 +7,7 @@
 //   player (sim/player.js)      who the game follows, on foot or at the wheel
 //   vehicles (sim/vehicles.js)  everything that can be driven
 //   game events: 'car-entered', 'car-exited', 'car-stolen', 'crime' (sim/gameEvents.js)
+import { look } from './ui/options.js'
 import * as THREE from 'three'
 import { emitGame } from './sim/gameEvents.js'
 import { dropCarName } from './carName.js'
@@ -456,8 +457,9 @@ export class OnFoot {
     })
     window.addEventListener('mousemove', e => {
       if (document.pointerLockElement !== cv) return
-      if (this.onFoot()) this.cam.turn(e.movementX, e.movementY)
-      else this.rig.turn(e.movementX * 0.0026, e.movementY * 0.002)
+      const [mx, my] = look(e.movementX, e.movementY) // (sensitivity, invert: ui/options.js)
+      if (this.onFoot()) this.cam.turn(mx, my)
+      else this.rig.turn(mx * 0.0026, my * 0.002)
     })
     cv.addEventListener(
       'wheel',

@@ -40,7 +40,7 @@ const PARKS = new Set(['6,3', '2,7', '15,4'])
 // sports parks: basketball courts, a ball field, bleachers (venues.js)
 const SPORTS = new Set(['6,12', '10,16', '4,15', '14,12'])
 const PARKING = new Set(['7,7', '10,14']) // (big surface lots: Mid-City's, the stadium's)
-const GARAGES = new Set(['10,13', '11,4', '9,9']) // (multi-storey car parks, landable roofs)
+export const GARAGES = new Set(['10,13', '11,4', '9,9']) // (multi-storey car parks, landable roofs)
 const BUILD = {
   downtown,
   towers: centuryCity,

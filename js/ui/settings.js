@@ -5,73 +5,8 @@
 // menu's (menu.js): the speed units, the sound and the camera as U, N and V set them, the clock,
 // its speed, the weather and the graphics quality as the world's settings (world.js) take them.
 import { hhmm } from './clock.js'
-import { RATES, QUALITIES } from './world.js'
-import { WEATHERS, WEATHER_NAMES } from '../sim/env.js'
-import { CAM_MODES, CAM_NAMES } from '../render/camera.js'
-
-const RATE_NAMES = {
-  0: 'Stopped',
-  1: 'Real time',
-  30: 'GTA · 30×',
-  120: 'Fast · 120×'
-}
-const cap = s => s[0].toUpperCase() + s.slice(1)
-// the rows, under their headings: { id, name, hint, opts: [[value, label], ...] } or a slider
-const ROWS = [
-  { head: 'Display' },
-  {
-    id: 'units',
-    name: 'Speed units',
-    hint: 'The speedometer in kilometres or miles an hour (U)',
-    opts: [
-      ['kmh', 'km/h'],
-      ['mph', 'mph']
-    ]
-  },
-  { head: 'Sound' },
-  {
-    id: 'sound',
-    name: 'Sound',
-    hint: 'The car, the street and the radio (N)',
-    opts: [
-      [true, 'On'],
-      [false, 'Off']
-    ]
-  },
-  { head: 'Camera' },
-  {
-    id: 'cam',
-    name: 'Camera',
-    hint: 'Follow sits behind the car, Director cuts between shots (V)',
-    opts: CAM_MODES.map(m => [m, CAM_NAMES[m]])
-  },
-  { head: 'World' },
-  {
-    id: 'hour',
-    name: 'Time of day',
-    hint: 'The time in the city, a quarter of an hour a step',
-    slider: true
-  },
-  {
-    id: 'rate',
-    name: 'Time speed',
-    hint: 'How fast the clock runs: GTA runs a minute every two seconds',
-    opts: RATES.map(r => [r, RATE_NAMES[r]])
-  },
-  {
-    id: 'weather',
-    name: 'Weather',
-    hint: 'Auto: it changes by itself, as the weather in Los Angeles does',
-    opts: [['auto', 'Auto'], ...WEATHER_NAMES.map(n => [n, WEATHERS[n].name])]
-  },
-  { head: 'Graphics' },
-  {
-    id: 'quality',
-    name: 'Quality',
-    hint: 'How much of the city is drawn, and how finely',
-    opts: QUALITIES.map(q => [q, cap(q)])
-  }
-]
+import { ROWS } from './settingsRows.js'
+import { OPTS, setOption } from './options.js'
 
 export class Settings {
   // box: the tab's element; get[id](), set[id](value): each setting's value, and the setting of it
@@ -136,16 +71,22 @@ export class Settings {
   // the next (step 1) or the one before (-1) of what a row can be
   step (row, step) {
     if (!row.opts) return
-    const now = this.get[row.id](),
+    const now = this.value(row),
       i = row.opts.findIndex(o => o[0] === now),
       n = row.opts.length
-    this.set[row.id](row.opts[(i + step + n) % n][0])
+    const v = row.opts[(i + step + n) % n][0]
+    if (row.opt) setOption(row.opt, v)
+    else this.set[row.id](v)
     this.show(row)
     this.onChange?.()
   }
+  // a row's value now (one of the player's options, or the menu's)
+  value (row) {
+    return row.opt ? OPTS[row.opt] : this.get[row.id]()
+  }
   // what a row says now
   show (row) {
-    const v = this.get[row.id]()
+    const v = this.value(row)
     if (row.range) {
       if (document.activeElement !== row.range) row.range.value = v
       row.out.textContent = hhmm(v)
