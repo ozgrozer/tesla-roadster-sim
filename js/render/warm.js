@@ -20,11 +20,25 @@ const tiny = new THREE.WebGLRenderTarget(1, 1)
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms))
 // compile o's materials under target's lights: in the background where the browser can (where it
 // can't, the compiling is queued for the graphics process all the same)
+// (the instanced meshes hidden while they are empty, drawnOnly.js, are compiled all the same: they
+// are shown while their programs are set up, which compileAsync does before it waits)
 function compile (o, target) {
-  if (renderer.extensions.has('KHR_parallel_shader_compile'))
-    return renderer.compileAsync(o, camera, target)
-  renderer.compile(o, camera, target)
-  return Promise.resolve()
+  const back = showEmpty(o)
+  const out = renderer.extensions.has('KHR_parallel_shader_compile')
+    ? renderer.compileAsync(o, camera, target)
+    : (renderer.compile(o, camera, target), Promise.resolve())
+  for (const m of back) m.visible = false
+  return out
+}
+function showEmpty (o) {
+  const back = []
+  o.traverse(m => {
+    if (m.casts === undefined || m.visible) return
+    m.visible = true
+    m.castShadow = m.casts
+    back.push(m)
+  })
+  return back
 }
 
 // cityView, RS: the city and the Roadster (main.js); post: post.js's Post. Returns a promise that
@@ -113,9 +127,11 @@ function shadows () {
   })
   cam.updateProjectionMatrix()
   const target = renderer.getRenderTarget()
+  const back = showEmpty(scene)
   renderer.setRenderTarget(tiny)
   renderer.render(scene, camera)
   renderer.setRenderTarget(target)
+  for (const m of back) m.visible = false
   for (const k of ['left', 'right', 'top', 'bottom', 'near', 'far'])
     cam[k] = was[k]
   cam.updateProjectionMatrix()

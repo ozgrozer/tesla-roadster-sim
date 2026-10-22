@@ -25,6 +25,7 @@ import { clamp } from '../sim/constants.js'
 import { TYPES } from '../sim/traffic.js'
 import { ride, RIDE_DT } from './carRide.js'
 import { wreckSmoke } from './wreckSmoke.js'
+import { shown, dirty } from './drawnOnly.js' // (an empty type isn't drawn at all)
 import { carShape, bodyMaterial } from './carShapes.js'
 import { dentsFor, putDents, headlightsLeft } from './carDents.js'
 import { lampMaterial, LAMP_T, LAMP_DARK, BARS } from './carLamps.js'
@@ -72,13 +73,6 @@ const switchAt = car => 0.06 + 0.5 * ((car.paint * 13.71) % 1)
 const step = (a, x) => clamp((x - a) / 0.08, 0, 1)
 const _c = new THREE.Color()
 
-// Only the instances drawn this frame go up to the GPU, not the whole buffer (nothing, if none are)
-function dirty (a, count) {
-  if (!count) return
-  a.clearUpdateRanges()
-  a.addUpdateRange(0, count * a.itemSize)
-  a.needsUpdate = true
-}
 // a per-instance attribute on g, sized for n
 function perCar (g, name, n, size) {
   const a = new THREE.InstancedBufferAttribute(new Float32Array(n * size), size)
@@ -290,7 +284,9 @@ export class TrafficView {
     for (let k = 0; k < this.types.length; k++) {
       const ty = this.types[k],
         c = counts[k]
-      ty.body.count = ty.trim.count = ty.glass.count = c
+      shown(ty.body, c, near[k])
+      shown(ty.trim, c, near[k])
+      shown(ty.glass, c, near[k])
       dirty(ty.body.instanceMatrix, c)
       dirty(ty.trim.instanceMatrix, c)
       dirty(ty.glass.instanceMatrix, c)
@@ -300,12 +296,12 @@ export class TrafficView {
       dirty(ty.dent, c)
       dirty(ty.hurt, c)
     }
-    this.tyres.count = n.tyre
-    this.rims.count = n.rim
-    this.farWheels.count = n.far
-    this.under.count = n.under
-    this.beams.count = n.beam
-    this.glow.count = n.glow
+    shown(this.tyres, n.tyre)
+    shown(this.rims, n.rim)
+    shown(this.farWheels, n.far)
+    shown(this.under, n.under)
+    shown(this.beams, n.beam)
+    shown(this.glow, n.glow)
     for (const m of this.dynamic) dirty(m.instanceMatrix, m.count)
     dirty(this.rims.instanceColor, n.rim)
     dirty(this.rimKind, n.rim)

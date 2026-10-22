@@ -11,6 +11,7 @@ import { CURB_H } from '../sim/city.js'
 import { kerbDist } from '../sim/street.js'
 import { DOG, HIPS, COLLAR, dogFigure } from './dogFigure.js'
 import { lampOn, LAMP_VERTEX, LAMP_FRAGMENT } from './pedLight.js'
+import { shown } from './drawnOnly.js'
 
 const HASH = `
   float dogHash (float k, float m) { return fract(sin(k * 78.233 + m * 12.9898) * 43758.5453); }
@@ -224,7 +225,7 @@ export class DogView {
       }
       if (pass === 0) this.near = i
     }
-    this.mesh.count = i
+    shown(this.mesh, i, this.near) // (nobody there: not drawn at all)
     if (!i) return
     const m = this.mesh.instanceMatrix
     m.clearUpdateRanges()
