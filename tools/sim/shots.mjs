@@ -159,7 +159,7 @@ SCENES.peds = () => play('?spawn=100,96,0', async page => {
       return { lp: lp ? { x: lp.x, z: lp.z } : null, living: typeof P.living, n: P.list.length, mix, perf: q ? { x: q.x, z: q.z } : null, watching: poi ? poi.slots.filter(s => s.who).length : 0, gathered: P.gathered || 0, unstuck: P.unstuckN || 0 }
     })
   }
-  if (r.perf) await aerial(page, { up: 11, bx: 8, bz: -10, lx: r.perf.x, lz: r.perf.z })
+  if (r.perf) await aerial(page, { up: 9, bx: 4, bz: 13, lx: r.perf.x, lz: r.perf.z })
   r.shot = await shot(page, 's2-performer-watchers.png', [
     'S2 a street performer downtown (48, 86): watching now ' + r.watching + ', stopped to watch so far ' + r.gathered,
     'people about ' + r.n + ': ' + JSON.stringify(r.mix)
@@ -240,9 +240,12 @@ SCENES.police = () => play('?spawn=-480,430,1.5708', async page => {
   // away round the corner, out of their sight: the search, the circle on the radar
   await page.evaluate(() => {
     const R = window.__roadster
-    R.game.wanted.set(3)
-    R.game.wanted.spotted(R.sim.pos)
-    R.resetTo('city', { x: -288, z: 400, yaw: 0 })
+    const G = R.game
+    G.police.clearAll()
+    G.wanted.set(3)
+    G.wanted.spotted(R.sim.pos)
+    G.wanted.seen = false
+    R.resetTo('city', { x: -288, z: 288, yaw: 0 })
   })
   await run(page, 4)
   r.search = await pol()
