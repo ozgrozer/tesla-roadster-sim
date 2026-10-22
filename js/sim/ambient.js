@@ -15,6 +15,7 @@ import { collideTraffic } from './vehicleHit.js'
 import { Planner, Follower, steerTo, blocker, unstick, cornerV } from './aiDriver.js'
 import { spawnPoint, inView } from './police.js'
 import { bounds } from './missions/spots.js'
+import { weatherGrip } from './env.js'
 
 export const KINDS = ['crash', 'chase', 'race', 'fight']
 export const GAP = [50, 100] // s between one event and the next
@@ -262,7 +263,7 @@ export class Ambient {
       if (Math.hypot(d.goal.x - b.x, d.goal.z - b.z) < 30) v = 0
       steerTo(b, inp, tx, tz, v)
     }
-    stepVehicle(b, inp, dt, { city: true, t: tr.t })
+    stepVehicle(b, inp, dt, { city: true, t: tr.t, grip: weatherGrip() }) // (the rain's grip, as the police's)
     collideTraffic(b, tr, d.car)
     writeToTraffic(b, d.car)
   }

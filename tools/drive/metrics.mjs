@@ -8,6 +8,7 @@ import { HANDLING, KINDS } from '../../js/sim/handling.js'
 import { Sim } from '../../js/sim/sim.js'
 import { createVehicleBody, stepVehicle } from '../../js/sim/vehicleSim.js'
 import { carInput } from '../../js/sim/drivable.js'
+import { GRIP } from '../../js/sim/roadGrip.js'
 
 globalThis.navigator ??= {}
 const on = {}
@@ -78,7 +79,11 @@ export class Rig {
     this.t += H
     const c = (this.c = this.input.controls(this.view, 'off'))
     if (this.s) {
+      // (the Roadster's wet: the grip hook, which its tyres read off the city's streets and the
+      // open ground alike: roadGrip.js)
+      GRIP.scale = this.grip
       this.s.step(H, c)
+      GRIP.scale = 1
     } else {
       this.view.time += H
       stepVehicle(this.b, carInput(c), H, this.world)

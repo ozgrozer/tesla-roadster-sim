@@ -6,7 +6,7 @@
 // off it, and each manhole a wheel runs over (s.suspV kicks the visual suspension; 'kerb' and
 // 'manhole' events carry it to the sound), and the Botts' dots each wheel runs onto (botts.js:
 // 'dot' events, heard and felt in a gamepad's rumble only), and its tyres grip less on the pier's
-// planks and grass and less still on sand; and less on all of them in the wet (ENV.wet, env.js),
+// planks and grass and less still on sand; and less on all of them in the wet (roadGrip.js wetness),
 // most on the planks.
 import {
   N,
@@ -24,7 +24,8 @@ import {
 } from './city.js'
 import { onDeck } from './edge.js'
 import { onQuay } from './quay.js'
-import { ENV } from './env.js'
+import { WET_GRIP } from './env.js'
+import { GRIP, surfaceGrip } from './roadGrip.js'
 import { dotsRunOver } from './botts.js'
 import { CAR } from './constants.js'
 
@@ -47,10 +48,10 @@ export function kerbDist (x, z) {
 
 // grip (a share of the tyres' own) and extra rolling drag, by surface (the pier's weathered planks
 // a little slippier than the road, and their joints dragging a little)
-// and wet: the share of its grip each loses soaked through (asphalt about a quarter, as a good
+// and wet: the share of its grip each loses soaked through (asphalt about a third, as roadGrip.js, as a good
 // tyre's does on a wet road; wet planks are slippery; wet sand packs firm, so it loses none)
 export const SURFACES = {
-  road: { grip: 1, drag: 0, wet: 0.24 },
+  road: { grip: 1, drag: 0, wet: WET_GRIP }, // (as roadGrip.js gives the other cars)
   walk: { grip: 1, drag: 0, wet: 0.22 },
   wood: { grip: 0.88, drag: 0.02, wet: 0.32 },
   grass: { grip: 0.84, drag: 0.05, wet: 0.2 },
@@ -163,7 +164,7 @@ export function feel (s) {
     on = s.floor > 0 ? 'walk' : surfaceAt(x, z)
   const f = SURFACES[on]
   s.surface = on
-  s.grip = f.grip * (1 - f.wet * ENV.wet)
+  s.grip = surfaceGrip(f) // (the weather's and the hook's share: roadGrip.js)
   s.rollDrag = f.drag
   const v = Math.abs(s.speed)
   // a jump of more than a few metres in a step is a reset, not a drive over the kerb
@@ -230,5 +231,6 @@ export function feel (s) {
 }
 
 // grip and extra rolling drag for the car's surface (1 and 0 off the city's ground)
-export const gripOf = s => (s.world === 'city' && s.grip) || 1
+// (off the city's streets, the test site's track: dry, but the grip hook still holds)
+export const gripOf = s => (s.world === 'city' && s.grip) || GRIP.scale
 export const dragOf = s => (s.world === 'city' && s.rollDrag) || 0
