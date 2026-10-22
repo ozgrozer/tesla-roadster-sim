@@ -36,6 +36,8 @@ const SPIN_UP = 12
 // tyre keeps only slideMu of its grip). Turned, the rears lock and slide for a handbrake turn.
 const EB_ON = 0.06,
   EB_STRAIGHT = 0.1
+// the share of their grip the handbrake's locked rears keep backing up (a J-turn)
+const HB_GRIP_BACK = 0.4
 // Stability control under braking and regen, as a Tesla's does: the rears, light as the weight goes
 // onto the nose, are let off their share of the brakes and regen as their slip nears its peak (from
 // ESC_CUT of the way there, all of it ESC_CUT_W further on), so that slowing in a corner at the
@@ -150,7 +152,13 @@ export function stepGround (s, dt, c, main, lift) {
     : 0
   const locked = s.ebLock >= 1 && straight < 0.5
   s.rearLocked = locked
-  s.rearGrip = locked ? CAR.slideMu : Math.min(1, s.rearGrip + dt * SPIN_UP)
+  // (backing up, a J-turn, they keep less again, so the tail swings round without scrubbing the
+  // speed away)
+  s.rearGrip = locked
+    ? s.hbDir < 0
+      ? HB_GRIP_BACK
+      : CAR.slideMu
+    : Math.min(1, s.rearGrip + dt * SPIN_UP)
   // How far the car is sliding: the rear axle's slip (rolling round a tight bend, the car's middle
   // runs at an angle to its nose, but the rear axle runs straight: only a slide moves it sideways)
   const beta = Math.atan2(w - b * r, Math.max(Math.abs(u), 2))

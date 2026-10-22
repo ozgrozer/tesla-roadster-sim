@@ -24,7 +24,8 @@ const TRACK_IN = 5,
 // than waiting for the fronts to drag the car round. The yaw moment it adds (N m at full lock, from
 // a jog upwards, fading out as the car comes round past HB_FADE rad so it doesn't spin on its own)
 const HB_YAW = 7000,
-  HB_FADE = 0.9
+  HB_FADE = 0.9,
+  J_TURN = 2.8 // (backing up, the J-turn's swing: times HB_YAW)
 // Catching a spin, as a driver's hands and GTA's forgiving cars do: off the handbrake, a car turning
 // faster than its tyres could carry it round (its grip over its speed, or what the wheel asks for,
 // and SPIN_OK rad/s to spare) is eased back, SPIN_K N m per rad/s too fast, at most SPIN_MAX, so a
@@ -206,8 +207,20 @@ export function driftMoment (
       s.ebLock *
       smooth((u - 2) / 8) *
       (1 - smooth((Math.abs(Math.atan2(w, u)) - HB_FADE) / 0.6))
-  // and the spin catch, off the handbrake
+  // backing up, the J-turn (its way latched as the handbrake is pulled: s.hbDir): the swing takes
+  // the nose on round until the car is going forwards again, nose first
   const spd = Math.hypot(u, w)
+  if (!c.ebrake) s.hbDir = 0
+  else if (!s.hbDir) s.hbDir = u > 0.5 ? 1 : u < -0.5 ? -1 : 0
+  if (c.ebrake && c.steer !== 0 && s.hbDir < 0 && spd > 2)
+    Mz -=
+      c.steer *
+      HB_YAW *
+      J_TURN *
+      s.ebLock *
+      smooth((spd - 2) / 5) *
+      smooth((Math.abs(Math.atan2(w, u)) - 0.45) / 0.6)
+  // and the spin catch, off the handbrake
   if (!c.ebrake && !burn && spd > 4) {
     const rOk =
       Math.max(

@@ -21,7 +21,9 @@ export const PLAYER_TOUGH = 0.35
 
 export function carInput (c, out = makeVehicleInput()) {
   out.throttle = c ? c.throttle : 0
-  out.brake = c ? Math.max(c.brake, c.reverse || 0) : 1
+  // (the brake and reverse kept apart: the keys hold the car a moment at a stop before backing up)
+  out.brake = c ? c.brake : 1
+  out.reverse = c ? c.reverse || 0 : 0
   out.steer = c ? c.steer : 0
   out.handbrake = !!c?.ebrake
   return out
@@ -90,7 +92,9 @@ export class Drivable {
     s.yawRate = b.w
     s.speed = b.u
     s.steerAng = b.steerAng
+    s.slipR = b.slip // (the keys steer quicker in a slide: input.js)
     s.accLong = b.accLong
+    s.latAcc = b.latAcc
     s.air = 0
     s.syncPose()
   }

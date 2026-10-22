@@ -94,6 +94,7 @@ export class Sim {
     this.lastFyr = 0
     this.rearGrip = 1
     this.ebLock = 0 // how hard the e-brake bites, 0 to 1 (ground.js)
+    this.hbDir = 0 // the way the car was going as the handbrake was pulled (drift.js: the J-turn)
     this.rearLocked = false // the rear wheels locked by the handbrake (a turn: ground.js)
     this.abs = 0 // how hard the ABS is working, 0 to 1 (ground.js)
     this.push = 0 // how much of the power the understeer control is holding back, 0 to 1
