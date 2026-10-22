@@ -246,7 +246,7 @@
   position: fixed;
   left: 108px;
   bottom: 148px;
-  z-index: 20;
+  z-index: 6; /* under the pause menu (menu.css 8) */
   padding: 2px 9px;
   border-radius: 10px;
   background: rgba(10, 14, 22, 0.72);
