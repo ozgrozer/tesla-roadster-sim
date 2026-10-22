@@ -195,11 +195,12 @@ test('a wreck stays where it stops, smoking, its driver gets out, and traffic go
   car.z = e.z0 + e.dz * 60
   car.vx = car.vz = car.w = 0
   tr.setYaw(car, Math.atan2(-e.dz, e.dx) + 0.3)
-  // (nobody else is out on foot: anyone who turns up is its driver, and where)
+  // (nobody else is out on foot but a street performer at their spot (living/pedLife.js gather):
+  // anyone else who turns up is its driver, and where)
   let out = null,
     door = null
   const look = () => {
-    out ||= peds.list[0]
+    out ||= peds.list.find(p => !p.liv?.perf)
     door ||= out && Math.hypot(out.x - car.x, out.z - car.z)
   }
   for (let i = 0; i < 4 / H; i++) {
