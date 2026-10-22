@@ -112254,17 +112254,20 @@ function roadblockSpot (player, view, R, { min = 110, max = 200 } = {}) {
     if (along < min || along > max) continue
     const lat = Math.abs(dx * vz - dz * vx)
     if (lat > 14) continue
-    // (nearer the line beats further off it; a little chance)
     // (never put down in the camera's sight: the player would see it appear)
     if (inView(view, x, z)) continue
+    // (nearer the line beats further off it; a little chance)
     const score = lat + R() * 4
     if (score < bs) {
       bs = score
       best = { e, s }
     }
   }
+  // (all of it in sight, down a long straight: further on, past what the camera sees)
+  if (!best && view && min < FAR_BLOCK) return roadblockSpot(player, view, R, { min: FAR_BLOCK, max: FAR_BLOCK + 80 })
   return best
 }
+const FAR_BLOCK = 312 // m ahead: beyond inView's reach
 __export(__exports, { "HELI_Y": () => HELI_Y, "HELI_V": () => HELI_V, "HELI_SEE": () => HELI_SEE, "Heli": () => Heli, "inView": () => inView, "roadblockSpot": () => roadblockSpot })
 })
 
