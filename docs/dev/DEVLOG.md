@@ -220,3 +220,28 @@ W3, explorables (72150f3, 8dd285f, aab6f35):
 - Progressive damage (carDamage.js `worn`): crumples that build up from knocks too soft to break
   anything on their own now take out the lamp at that corner (6 cm in; 10 cm in the middle takes
   the pair) and craze the glass over a face pushed in 16 cm, more as it goes deeper.
+
+## Q1 integration (gta-v2: sim + world + ux + phys + qa on top of 6a2fefc)
+
+- Merged in that order. Conflicts: DEVLOG (every stream's section kept), dist/roadster.js (rebuilt
+  from the merged sources), js/sim/roadGrip.js (comment only: HEAD's "the weather's share" kept).
+  vehicleLink.js `car.body = b` was added by both sim and phys, identical: kept once. footRescue.js
+  (a phys file ux fixed) merged on its own.
+- Playtest made deterministic (e56a5ed): hit-ped clears the traffic round the person and waits for a
+  `ped-hit` *by the player* (a car of the traffic hitting them first made it "no crime"); drive-stolen
+  starts from the lane beside the car with the traffic ahead cleared.
+- Fixed in the integrated game:
+  - Roadblocks never stood on a straight (23e12e1): policeAir.js puts a block 312-392 m on when all
+    the nearer road is in the camera's sight (FAR_BLOCK, sim 8f73047), but police.js `retire` took
+    any block over 260 m off away the very step it went down. Blocks now go past 460 m.
+    tests/q1Integration.test.mjs (failed before, passes after).
+  - Interior "camera in the wall" (ff9f0d2): footCam's never-under-the-ground clamp used the street's
+    ground (y 0) in a room 40 m under the city, lifting the camera out through the ceiling (y 0.43
+    over a player at -40). The clamp now only holds when the player is not under the street; the
+    room's own clip (interiors/view.js) keeps the camera in. Camera now at -38.1, inside the box.
+  - Optimus left standing at the Roadster's door (5e96cff): `foot.reset()` (any resetTo after getting
+    out on foot) showed the model again in the pose the way out left it; now posed sat in.
+- tools/playtest/q1shots.mjs: the integrated tour with checks, shots in shots/v2/qa/q1-*.png: on foot,
+  the token counter after a real pickup (◆ 1/30, "the end of the pier"), The Marlowe entered by its
+  door (y -40), an all-way stop junction, a 3-star chase with the roadblock across Wilshire, the
+  crown at 22:00 from ~890 m (daylight `envWas = null; envT = 0` after the hour change), the map.

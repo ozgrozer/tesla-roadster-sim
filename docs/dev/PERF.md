@@ -154,3 +154,11 @@ show double counts.
 The Roadster is ~80 main + ~38 shadow submissions after freeze.js: wheels, doors, wing and fans
 stay separate. Next come the per-chunk layers (roofs, palms, trees, masts, lights: 12-18 each
 downtown). Merging those per layer across the streamed chunks would be the next real cut.
+
+## Q1: the integrated build
+
+The integrated gta-v2 carries every P3 change unchanged (sunShadow shadow-only redraws, chunk
+DETAIL_FAR, MARKER_FAR, streamAll/streamBack, drawnOnly). No new counts were taken in Q1: the box
+ran 3x career + roam playtests and the q1shots tour throughout, and the 2-Chrome contention there
+(K20) would make the numbers meaningless. Re-run `tools/playtest/spawn.mjs` on a quiet box to
+record the integrated numbers against the P3 table above.
