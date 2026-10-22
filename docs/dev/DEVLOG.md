@@ -88,3 +88,16 @@ On foot:
   else onto its roof.
 
 Tests: tests/phys.test.mjs (12). Shots: /workspace/shots/v2/phys/ (tools/phys/shots.mjs, port 8094).
+
+## Integration 1 (qa): gta-v2 = qa + sim + world + ux + phys
+
+- Merge conflicts: dist/roadster.js (rebuilt), js/render/city.js imports (kept qa's streamed/stream/streamAll/streamBack
+  and world's InteriorView), docs/dev/DEVLOG.md (add/add: both sections kept). The hubs merged cleanly.
+- Integration edits: interiors on the maps (sim/poi.js from interiors/sites.js); the reduced-motion option switched live
+  (ui/ux.js -> motionPref.js); main.js back under 500 lines.
+- Breakage fixed: the page did not boot, because tools/build.mjs left `import { STEP } from './roofs.js' // ...`
+  (world's sim/variety.js) unbundled. The bundler now takes a trailing comment, and any import it leaves over fails the
+  build (tests/build.test.mjs).
+  damage.test took a street performer (sim's living/pedLife.js spawns them even with count 0) for the wreck's driver.
+  ux.test's shop count now counts on top of the interiors' own shops.
+- npm test 291/291; playtest career and roam: no problems. Shots: /workspace/shots/v2/qa/integrated-*.png.
