@@ -285,6 +285,21 @@ export function powerSlide (k, o) {
   }
   return slip * DEG
 }
+// out of a power slide on full throttle with the wheel let go: W 2.5 s, W+A 1.6 s, then W alone: s
+// until the slip is under 3 deg and the yaw rate under 0.1 rad/s (NaN: still sliding after 4 s)
+export function slideOut (k, o) {
+  const r = new Rig(k, o)
+  r.keys('KeyW')
+  r.run(2.5)
+  r.keys('KeyW', 'KeyA')
+  r.run(1.6)
+  r.keys('KeyW')
+  for (let t = 0; t < 4; t += H) {
+    r.step()
+    if (Math.abs(r.slip) < 0.05 && Math.abs(r.w) < 0.1) return t
+  }
+  return NaN
+}
 
 // a lane change at 120 km/h (or the class's top speed): A 0.35 s, D 0.35 s, then hands off: the
 // most the rear slides (deg) and s until the yaw rate settles under 0.03 rad/s (twitch or sway)
@@ -377,6 +392,7 @@ export function row (k, o) {
     rev: sl.tRev,
     t10: sl.t10,
     pslide: powerSlide(k, o),
+    slideOut: slideOut(k, o),
     ...(() => {
       const l = laneChange(k, o),
         d = hbDrift(k, o),
@@ -403,6 +419,7 @@ export const COLS = [
   ['rev', 'stop→rev s', 2],
   ['t10', '0-10 s', 2],
   ['pslide', 'W+A slip°', 1],
+  ['slideOut', 'W, let go s', 2],
   ['lcSlip', 'LC slip°', 1],
   ['lcSettle', 'LC settle s', 2],
   ['drift', 'drift°', 0],

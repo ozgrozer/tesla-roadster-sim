@@ -48,7 +48,8 @@ const HB_RATE = 1.6 // rad/s: the most the handbrake's swing turns the car at (a
 const RECOVER = 1.6 // rad/s^2 per rad the nose is off the way the car is going
 // the recovery that much stronger with the wheel let go: on the power with hands off, a slide
 // straightens, GTA-style, rather than running on down a straight in the wet
-const HANDS_OFF = 1
+const HANDS_OFF = 1,
+  HANDS_DAMP = 3 // 1/s: the yaw rate eased away with the wheel let go, the same way
 const DRIFT_MAX = 0.6, // rad of slip a drift on the power is held to, DRIFT_K rad/s^2 per rad past it
   DRIFT_K = 5
 const SPUN = 1.2, // rad: the way the car is going this far off its nose, it is spinning, and
@@ -321,8 +322,12 @@ function move (b, inp, dt, world) {
   }
   // (and stability control takes the power away in a slide, so the rears can grip again)
   // (the rears' share only: pulling front wheels straighten the car)
+  // (all of it, and sooner, with the wheel let go, by the class's handsOff: the power alone
+  // doesn't hold a slide the driver isn't steering)
+  const free = (S.handsOff ?? 0) * (1 - Math.min(1, Math.abs(inp.steer) / 0.5)),
+    tc = (S.tc ?? 1) + (1 - (S.tc ?? 1)) * free
   if (Fdrive > 0)
-    Fdrive *= 1 - (1 - S.front) * (S.tc ?? 1) * smooth((Math.abs(beta) - 0.07) / 0.18)
+    Fdrive *= 1 - (1 - S.front) * tc * smooth((Math.abs(beta) - 0.07 + 0.04 * free) / (0.18 - 0.08 * free))
   b.shiftT = Math.max(0, b.shiftT - dt)
   b.rpmN = clamp(b.rpm / (S.rpmRed || 1), 0, 1)
   b.load = thr || rev
@@ -341,6 +346,8 @@ function move (b, inp, dt, world) {
     b.spin = clamp(Math.abs(Fxr) / Math.max(FmaxR, 1) - 0.95, 0, 1) * (1 - (S.tc ?? 1))
   Fxf = clamp(Fxf, -FmaxF, FmaxF)
   Fxr = clamp(Fxr, -FmaxR, FmaxR)
+  // (sliding with the wheel let go, the drive leaves the rears grip to come back in line with)
+  if (free > 0 && Fxr > 0) Fxr = Math.min(Fxr, FmaxR * (1 - 0.4 * free * smooth(Math.abs(beta) / 0.06)))
   if (hb) Fxr = -su * Math.max(Math.abs(Fxr), b.ebLock * FmaxR)
 
   // front tyres, in the steered wheels' frame
@@ -415,11 +422,12 @@ function move (b, inp, dt, world) {
     // straightens, as GTA's do, rather than sliding on down a straight in the wet)
     // (with the wheel let go, by the class's handsOff: a sports car holds a drift on the power
     // whatever the wheel does, a pickup's slide straightens)
-    const free = (S.handsOff ?? 0) * (1 - Math.min(1, Math.abs(inp.steer) / 0.5)),
-      off = beta,
+    const off = beta,
       rec = RECOVER * (1 + HANDS_OFF * free) * (1 - (S.slideHold ?? 0.5) * thr * (1 - free))
     if (u > 2 && Math.abs(off) < 1.7)
       Mz += S.stab * b.I * (rec * off - 0.2 * r * smooth(Math.abs(off) / 0.3))
+    // (and the turn itself eased out with the wheel let go: no circling on the power alone)
+    if (free > 0) Mz -= S.stab * b.I * HANDS_DAMP * free * r
     // (a drift held on the power is held to DRIFT_MAX of slip, whatever the throttle: past it the
     // car is brought back towards it, so it drives on round sideways rather than bogging down
     // broadside)

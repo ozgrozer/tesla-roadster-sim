@@ -4,7 +4,7 @@
 // roll, a steady lane change at speed, and the rain costing grip. npm test
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { handbrake180, jTurn, slow, steerResponse, brake100, maxLat, laneChange, hbDrift, powerSlide, turningCircle } from '../tools/drive/metrics.mjs'
+import { handbrake180, jTurn, slow, steerResponse, brake100, maxLat, laneChange, hbDrift, powerSlide, turningCircle, slideOut } from '../tools/drive/metrics.mjs'
 
 const CARS = ['sedan', 'sports', 'police', 'suv', 'pickup']
 const f = (x, n = 2) => x.toFixed(n)
@@ -82,6 +82,11 @@ test('in the wet, a slide on the power straightens once the wheel is let go (no 
   for (const k of ['pickup', 'sports', 'sedan', 'van']) {
     const { tOut } = steerResponse(k, 20, wet)
     assert.ok(tOut < 1.8, `${k} wet centre ${tOut.toFixed(2)} s`)
+  }
+  // and on full throttle too (2.5 s and never, the pickup and the sports car, on gta-v2)
+  for (const k of ['pickup', 'sports', 'police', 'van']) {
+    const t = slideOut(k, wet)
+    assert.ok(t < 1.5, `${k} wet, W held, wheel let go: straight after ${t} s`)
   }
   // and the Roadster's brakes feel the rain too (K16)
   assert.ok(brake100('roadster', wet).d > 1.2 * brake100('roadster').d)
