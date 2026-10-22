@@ -22,9 +22,10 @@ const KEY_T = 0.1,
 // go, they are off in BRAKE_OFF s. Held through a stop, it keeps the car on its brakes for STOP_HOLD
 // s, as a driver stops and then selects reverse, before it backs up (pressed afresh at a standstill
 // it backs up at once), the motor's pull easing in over BRAKE_T s.
-const BRAKE_T = 0.3,
-  BRAKE_OFF = 0.1,
-  STOP_HOLD = 0.5
+// (GTA-quick: the bite is there in BRAKE_T s, and a stop held turns into reversing STOP_HOLD s on)
+const BRAKE_T = 0.15,
+  BRAKE_OFF = 0.08,
+  STOP_HOLD = 0.3
 // The throttle key presses the pedal down over GAS_T s, as a foot does (and the motors' torque
 // builds), rather than all at once: a tap creeps the car forward, holding it is full power a moment
 // later; let go, it is up in GAS_OFF s.

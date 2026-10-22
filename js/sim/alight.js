@@ -41,7 +41,40 @@ export const ALIGHT = {
       p.fromX = e.x
       p.fromZ = e.z
       p.fright = 1
+      if (e.sx !== undefined) haul(p, e)
     }
     return p
   }
+}
+
+// The pull-out staged (a carjacking, onFoot.js pullOut): the driver comes out of the seat by the
+// door, thrown out and back along the car, falling on their back as they go (the 'down' state's
+// slide, pedBrain.js lie: an ease-out from the throw's speed), lies there a moment, gets up and
+// hurries off to the pavement and runs. Nothing jumps: no shove from the player at the door
+// (keepFrom leaves the 'down' alone) and no car's edge to be pushed out of (sx, sz: just clear).
+export const HAUL = {
+  dist: 1.6, // m the throw carries them (the slide's v0 / 4: lie's damping)
+  back: 0.45, // of it along the car towards its tail, the rest out from its side
+  fall: 0.3, // how far over they already are as they come out (lie tips them the rest in 0.14 s)
+  down: 1.1 // s on the ground before they get up
+}
+export function haul (p, e) {
+  const bx = -e.hx * HAUL.back + e.ox * (1 - HAUL.back),
+    bz = -e.hz * HAUL.back + e.oz * (1 - HAUL.back)
+  const l = Math.hypot(bx, bz) || 1,
+    v0 = HAUL.dist * 4
+  p.x = e.sx
+  p.z = e.sz
+  p.state = 'down'
+  p.t = 0
+  p.vx = (bx / l) * v0
+  p.vz = (bz / l) * v0
+  // (facing whoever pulls them out, so they go over backwards: render/peds.js tips them that way)
+  p.yaw = Math.atan2(bz / l, -bx / l)
+  p.fall = HAUL.fall
+  p.gait = 0
+  p.hop = 0
+  p.dead = false
+  p.downT = HAUL.down
+  p.hauled = true
 }

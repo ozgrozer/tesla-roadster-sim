@@ -161,7 +161,7 @@ export class Radio {
       .connect(this.speaker)
       .connect(this.level)
     // (a lane: switched off, nothing of the radio is worked out at all: sound.js)
-    this.eng.lane([this.level.gain], this.level, this.eng.mixIn)
+    this.eng.lane([this.level.gain], this.level, this.eng.musicBus || this.eng.mixIn)
     // (a record's surface, for lo-fi)
     this.crackle = gain(0)
     const cr = ctx.createBufferSource()

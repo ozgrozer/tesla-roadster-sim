@@ -275,11 +275,11 @@ const input = new Input({
     if (intro.active) intro.finish()
     // E: in or out of a car (onFoot.js); on foot, Space jumps
     if (code === 'KeyE' && first && foot.interact()) return input.handoff()
-    if (foot.onFoot()) return code === 'Space' && first && (foot.jumpQ = true)
+    if (foot.onFoot()) return foot.fight.press(code, first) // (Space jumps, F punches: footFight.js)
     if (code === 'Space' && first) sound.ratchet()
     if (app.auto) setAuto(false)
   },
-  onCommand: code => COMMANDS[code]?.(),
+  onCommand: code => foot.fight.command(code) || COMMANDS[code]?.(),
   onRelease: code => {
     if (code === 'KeyH') setHorn(false)
   },
@@ -295,8 +295,8 @@ Object.assign(rig, { traffic, input }) // (camera.js: clear of the cars, Z to lo
 // the player on foot, and in and out of any car (onFoot.js)
 const foot = new OnFoot({ app, sim, RS, rig, camera, canvas, input, hud, sound, traffic, peds, intro, setCam, cityView })
 const polish = new Polish({ foot, rig, sound, hud, cityView, RS, app, game: () => game })
-// the wanted level, the police, the missions and the street events (game.js)
 const game = new Game({ sim, foot, traffic, peds, hud, minimap, app, damage, respawn: at => resetTo('city', at) })
+menu.game = game // (the stats tab, the hints: ui/ux.js)
 // browsers only allow audio after a gesture: the first click or key turns sound on
 function unlockSound (e) {
   if (e.code === 'KeyN' || e.target?.closest?.('#btnSound')) return
@@ -458,6 +458,7 @@ function frame (now) {
   game.frame(dt, city)
   mixSound(sound, app, traffic, dt, clock, peds)
   hud.update(dt, app)
+  menu.frame(dt, city) // (hints, captions, stats: ui/ux.js)
   if (city) cityView.shadows(camera, [RS.car])
   resolution.begin()
   // (the street's reflection, while it is wet: inside the GPU's timing, so the resolution steps

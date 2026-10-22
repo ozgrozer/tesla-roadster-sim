@@ -15,8 +15,12 @@ import { Settings } from './settings.js'
 import { worldSettings } from './world.js'
 import { whereIs } from '../sim/areas.js'
 import { ENV, WEATHERS } from '../sim/env.js'
+import { KeyCard, installRemap } from './remap.js'
+import { Stats } from './stats.js'
+import { UxFrame } from './ux.js'
+import { poiIcon } from './poiMap.js'
 
-const TABS = ['map', 'settings', 'controls']
+const TABS = ['map', 'settings', 'controls', 'stats']
 // the top bar's buttons and the keys they press (the mode button: M or P, menu.bar)
 const BAR = {
   btnWorld: 'KeyC',
@@ -40,7 +44,8 @@ const PROMPTS = {
     ['↑ ↓', 'Choose'],
     ['← →', 'Change']
   ],
-  controls: []
+  controls: [['Click', 'Change a key']],
+  stats: []
 }
 // the legend's marks, each a 16 x 16 drawing, as the map draws them (blips.js)
 const icon = body => `<svg viewBox="0 0 16 16" aria-hidden="true">${body}</svg>`
@@ -56,6 +61,13 @@ const LEGEND = [
   [icon(LINE), 'GPS route'],
   [icon(disc(COLOR.jam) + JUMP), 'Gridlock'],
   [icon(disc('#f2f2f2')), 'Landmark'],
+  [icon('<circle cx="8" cy="8" r="6" fill="#f0c24b" stroke="#0a0c12" stroke-width="1.4"/><text x="8" y="11" font-size="8" font-weight="800" text-anchor="middle" fill="#111">M</text>'), 'Mission'],
+  [icon('<circle cx="5.5" cy="8" r="3.4" fill="#ff3b3b"/><circle cx="10.5" cy="8" r="3.4" fill="#3b7bff"/>'), 'Police'],
+  [icon('<circle cx="8" cy="8" r="6.5" fill="rgba(255,60,60,0.3)" stroke="rgba(255,255,255,0.5)"/>'), 'Search area'],
+  [poiIcon('gas'), 'Gas station'],
+  [poiIcon('garage'), 'Car park'],
+  [poiIcon('hospital'), 'Hospital'],
+  [poiIcon('police'), 'Police station'],
   ['<i class="lg-sw park"></i>', 'Park'],
   ['<i class="lg-sw sand"></i>', 'Beach']
 ]
@@ -76,6 +88,7 @@ const MARKUP = `
     <button type="button" role="tab" id="mnTabMap" aria-controls="mnMap">Map</button>
     <button type="button" role="tab" id="mnTabSettings" aria-controls="mnSettings">Settings</button>
     <button type="button" role="tab" id="mnTabControls" aria-controls="mnControls">Controls</button>
+    <button type="button" role="tab" id="mnTabStats" aria-controls="mnStats">Stats</button>
   </nav>
   <section class="mn-panel mn-map" id="mnMap" role="tabpanel" aria-labelledby="mnTabMap">
     <canvas tabindex="0" aria-label="Map of the city: arrows pan, plus and minus zoom,
@@ -98,6 +111,8 @@ const MARKUP = `
     aria-labelledby="mnTabSettings" hidden></section>
   <section class="mn-panel mn-controls" id="mnControls" role="tabpanel"
     aria-labelledby="mnTabControls" tabindex="0" hidden><div class="mn-keys"></div></section>
+  <section class="mn-panel mn-stats" id="mnStats" role="tabpanel"
+    aria-labelledby="mnTabStats" tabindex="0" hidden></section>
   <footer class="mn-foot" aria-hidden="true"></footer>
 </div>`
 // the CONTROLS tab's own column: the menu's keys, the map's and a gamepad's
@@ -119,16 +134,6 @@ const MORE =
     row(kbd(['C']), 'find the car'),
     row(kbd(['P']), 'Autopilot drives there, once resumed')
   ]) +
-  list('Gamepad', [
-    row('RT · LT', 'throttle · brake, reverse'),
-    row('left stick', 'steer · pitch, roll'),
-    row('right stick', 'look round · yaw'),
-    row('right stick in', 'look behind (hold)'),
-    row('A · X · Y', 'e-brake · horn · camera'),
-    row('RB · LB', 'boost · fly'),
-    row('D-pad', 'backflip · kickflip'),
-    row('View · Menu', 'reset · Autopilot')
-  ]) +
   '</section>'
 
 export class Menu {
@@ -138,6 +143,10 @@ export class Menu {
   constructor (keys, { app, hud, sound, rig, cityPilot, setCam, world }) {
     Object.assign(this, { keys, app, hud, sound, gps }) // (gps: for the console)
     const w = (this.world = world || worldSettings(app))
+    // (the remapped keys passed on as the game's own while the menu is shut: ahead of every other
+    // listener, the menu's own too)
+    installRemap(() => !this.open)
+    this.ux = new UxFrame({ app, hud, sound })
     this.open = false
     this.tab = 'map'
     this.goalWas = null // the waypoint as the menu opened
@@ -156,7 +165,8 @@ export class Menu {
       panels: {
         map: q('#mnMap'),
         settings: q('#mnSettings'),
-        controls: q('#mnControls')
+        controls: q('#mnControls'),
+        stats: q('#mnStats')
       },
       sub: q('.mn-sub'),
       wx: q('.mn-wx'),
@@ -191,6 +201,7 @@ export class Menu {
     )
     this.settings.onChange = () => this.status()
     this.keysCard(q('.mn-keys'))
+    this.stats = this.ux.stats = new Stats(q('#mnStats'))
     this.el.tabs.forEach((b, i) =>
       b.addEventListener('click', () => this.select(TABS[i]))
     )
@@ -291,6 +302,8 @@ export class Menu {
       this.el.panels[t].hidden = !on
     })
     this.map.show(tab === 'map')
+    if (tab === 'stats') this.ux.showStats(this.game, this.hud.speedo.unit === 'mph')
+    if (tab === 'controls') this.card.refresh()
     const keys = [...PROMPTS.all, ...PROMPTS[tab]]
     put(
       this.el.foot,
@@ -331,13 +344,14 @@ export class Menu {
 
   // the CONTROLS tab: the keys card's two columns (index.html), and its own third
   keysCard (box) {
-    for (const s of document.querySelectorAll('#help .help-cols > section'))
-      box.appendChild(s.cloneNode(true))
+    const card = document.createElement('div')
+    box.appendChild(card)
+    this.card = new KeyCard(card)
     box.insertAdjacentHTML('beforeend', MORE)
-    // (the card's row for I: here, it is not this card that I hides)
-    for (const li of box.querySelectorAll('li'))
-      if (/hide this card/.test(li.textContent))
-        li.lastChild.textContent = 'the keys card'
+  }
+  // each frame (main.js): the hints, captions and stats (ux.js)
+  frame (dt, city) {
+    this.ux.frame(dt, city, this.game)
   }
 
   // Every key while the menu is open is the menu's, and none reaches the game (main.js makes the
@@ -352,6 +366,7 @@ export class Menu {
       return this.show()
     }
     e.stopImmediatePropagation()
+    if (this.tab === 'controls' && this.card.key(e)) return e.preventDefault()
     const c = e.code,
       onTabs = this.el.tabs.includes(document.activeElement),
       side = c === 'ArrowLeft' ? -1 : c === 'ArrowRight' ? 1 : 0

@@ -24,6 +24,8 @@ async function ensureCar (g, maxHarm = 0.6) {
   await g.ev(() => window.__roadster.seatIn('sedan'))
   await g.run(1.5)
 }
+// where the boost and the flight start: Wilshire, a long straight west of Downtown (city.js ROADS)
+const BOOST_AT = { x: -420, z: -389 }
 const nearOf = (list, p) => Math.min(...list.map(([fx, fz]) => { const s = spot(fx, fz, { kerb: false }); return Math.hypot(s.x - p.x, s.z - p.z) }))
 
 export const CAREER2 = [
@@ -159,9 +161,14 @@ export const CAREER2 = [
     }
     const ok = await g.until(() => window.__roadster.player.mode === 'car' && window.__roadster.player.vehicle?.kind === 'roadster', 10)
     if (!g.expect(ok, 'could not get back into the Roadster', await g.ev(st))) return
-    // (facing the middle of the city: flown north over the wall it comes down on the hills, where
-    // it can't land, only slide, and F takes it off again: flight.js, edge.js hillside)
-    await g.ev(() => { const s = window.__roadster.sim; s.yaw = Math.atan2(s.pos.z, -s.pos.x); s.syncPose() })
+    // (from a known clear start, not wherever the Roadster was left, where it could run into a
+    // queue at the lights before it boosts: a lane of Wilshire in Mid-City, the moving traffic
+    // round it cleared, as ?spawn does it: main.js resetTo)
+    const at = lane(BOOST_AT.x, BOOST_AT.z)
+    await g.ev(a => { const R = window.__roadster; R.resetTo('city', a); R.traffic.clearAround(a.x, a.z, 250) }, at)
+    await g.run(0.5)
+    const clear = await g.ev(a => window.__roadster.traffic.cars.filter(c => !c.parked && Math.hypot(c.x - a.x, c.z - a.z) < 120).length, at)
+    g.expect(clear === 0, 'the boost straight was not clear of traffic', clear)
     await g.hold('KeyW', 1.5)
     const v0 = await g.ev(() => window.__roadster.sim.speed)
     let boost = 0

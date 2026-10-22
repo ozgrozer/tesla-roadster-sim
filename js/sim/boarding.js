@@ -7,7 +7,12 @@
 //                        then the window goes, and now and then the alarm), then as above
 //   a car with a driver: the door opens, the driver is pulled out (and runs), slide in
 // Out of one: the door opens, slide out onto a free spot beside it, the door shuts.
-import { stepFoot, freeSpot, FOOT } from './player.js'
+// In a tight spot (parked hard up against a wall or another car): in by the other side's door if
+// the driver's is blocked, and out onto the first free spot round the car (the door, along that
+// side, the far side, either end, then anywhere free a few metres round), or up onto its roof if
+// it is boxed in on every side.
+import { stepFoot, freeSpot, blockedAt, floorAt, FOOT } from './player.js'
+import { nearFree } from './footRescue.js'
 import { vehicles } from './vehicles.js'
 import { wrapPi } from './constants.js'
 
@@ -19,12 +24,12 @@ export const BOARD = {
   smashAt: 0.7, // (and when, into that, a window goes)
   smash: 0.5, // the share of break-ins through the window rather than the lock
   alarm: 0.45, // the share that set the alarm off
-  open: 0.45, // s for the door to open
+  open: 0.6, // s for the door to open (eased in and out: render/carDoor.js)
   pull: 1.3, // s pulling a driver out (out at pullAt)
   pullAt: 0.55,
-  slide: 0.9, // s sliding into the seat
-  close: 0.4, // s for the door to shut
-  outSlide: 0.75, // s out of the seat
+  slide: 1.15, // s stepping into the opening, sitting and swinging the legs in
+  close: 0.45, // s for the door to shut
+  outSlide: 1.0, // s out of the seat: legs out, up and out of the opening
   roadIn: 3.2, // s of the Roadster's own way in (its keys, sped up: intro.js)
   roadOut: 2.6, // and out
   jackV: 3, // m/s: a car slower than this can be taken from its driver
@@ -40,32 +45,49 @@ export function howToEnter (e) {
   return e.locked ? 'theft' : 'open'
 }
 
+// the side of the car the door in use is on (-1 left, 1 right): its own (a bus's on the kerb side),
+// or the other if sg is -1 (the driver's blocked)
+export const sideOf = (e, sg = 1) => (e.doorSide || -1) * sg
 // the way round to the door, in the car's frame, from where the player is (car frame)
-function route (e, l) {
+function route (e, l, sg = 1) {
   const hw = e.wid / 2,
     hl = e.len / 2,
     out = []
+  const sd = sideOf(e, sg)
   const A = (l.x >= 0 ? 1 : -1) * (hl + 0.8)
-  const side = -(hw + 0.6)
-  if (l.z > -hw + 0.05) {
+  if (l.z * sd < hw - 0.05) {
     // (on the far side or off an end: round the nearer end)
-    if (Math.abs(l.x) <= hl + 0.4) out.push({ x: A, z: hw + 0.8 })
-    out.push({ x: A, z: side })
+    if (Math.abs(l.x) <= hl + 0.4) out.push({ x: A, z: -(hw + 0.8) * sd })
+    out.push({ x: A, z: (hw + 0.6) * sd })
   }
-  out.push({ x: e.door.x, z: e.door.z })
+  out.push({ x: e.door.x, z: e.door.z * sg })
   return out
+}
+// whether someone could stand at (lx, lz) in e's frame (the car itself aside)
+function clear (e, lx, lz, world) {
+  const w = vehicles.toWorld(e, lx, lz)
+  const base = world.base(w.x, w.z)
+  const y = floorAt(w.x, w.z, base + FOOT.stepUp, world)
+  return y - base < 0.6 && !blockedAt(w.x, w.z, y, world)
 }
 
 // A walk up to e's door to get in by `how`; rng: Math.random-like (the break-in's luck)
-export function startEnter (e, how, p, rng = Math.random) {
+export function startEnter (e, how, p, rng = Math.random, world = null) {
   const l = vehicles.toLocal(e, p.pos.x, p.pos.z)
+  // (the driver's door against a wall, the other side's free: in that way, over the seats; the
+  // Roadster's own way in is its own)
+  const sg =
+    world && e.kind !== 'roadster' && !clear(e, e.door.x, e.door.z, world) && clear(e, e.door.x, -e.door.z, world)
+      ? -1
+      : 1
   return {
+    side: sg,
     dir: 'in',
     entry: e,
     how,
     phase: 'walk',
     t: 0,
-    path: route(e, l),
+    path: route(e, l, sg),
     best: Infinity,
     stuckT: 0,
     smash: how === 'theft' && rng() < BOARD.smash,
@@ -84,14 +106,24 @@ export function startExit (e, world) {
     [e.door.x - 1, e.door.z - 0.4],
     [e.door.x + 1, e.door.z - 0.4],
     [e.door.x, hw + 0.6],
+    [e.door.x - 1, hw + 0.6],
+    [e.door.x + 1, hw + 0.6],
     [-hl - 0.9, 0],
-    [hl + 0.9, 0]
+    [hl + 0.9, 0],
+    [-hl - 0.8, -hw - 0.5],
+    [-hl - 0.8, hw + 0.5],
+    [hl + 0.8, -hw - 0.5],
+    [hl + 0.8, hw + 0.5]
   ])
     spots.push(vehicles.toWorld(e, x, z))
-  const spot = freeSpot(spots, world) || {
-    ...vehicles.toWorld(e, e.door.x, e.door.z),
-    y: null
-  }
+  const door = vehicles.toWorld(e, e.door.x, e.door.z)
+  // (boxed in round the doors: anywhere free a few metres round; on every side: up on the roof)
+  const spot = freeSpot(spots, world) ||
+    nearFree(door.x, door.z, world, 4.4, true) || {
+      ...vehicles.toWorld(e, 0, 0),
+      y: (e.pos.y || 0) + (e.hgt || 1.4),
+      roof: true
+    }
   return {
     dir: 'out',
     entry: e,
@@ -185,7 +217,7 @@ export function stepBoard (a, dt, p, world) {
         a.stuckT = 0
       } else if ((a.stuckT += dt) > BOARD.stuck) {
         // (held up by something: step to the door)
-        const door = vehicles.toWorld(e, e.door.x, e.door.z)
+        const door = vehicles.toWorld(e, e.door.x, e.door.z * (a.side || 1))
         p.pos.x = door.x
         p.pos.z = door.z
         a.path.length = 0
@@ -201,7 +233,7 @@ export function stepBoard (a, dt, p, world) {
   }
   // at the door: facing the car, side on to it (the Roadster's way in faces along it)
   if (a.dir === 'in' && a.phase !== 'roadster')
-    p.heading = wrapPi(e.heading - Math.PI / 2)
+    p.heading = wrapPi(e.heading + (Math.PI / 2) * sideOf(e, a.side || 1))
   const t0 = a.t
   a.t += dt
   if (a.phase === 'jimmy') {

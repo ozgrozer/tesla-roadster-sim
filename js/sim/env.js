@@ -274,6 +274,24 @@ export function setWeather (name, { now = false, quick = false } = {}) {
   light()
 }
 
+// The road's grip in the weather, one getter for every driver: 1 dry, down to 1 - WET_GRIP soaked
+// (the road's wetness, or the rain's share before it has soaked in). The Roadster's own surface
+// grip (street.js) and the police's (game.js) already take the same 30% off in the wet; the phys
+// stream's roadGrip.js is this, times its own hook.
+export const WET_GRIP = 0.3
+export function weatherGrip () {
+  return 1 - WET_GRIP * clamp(Math.max(ENV.wet, 0.6 * ENV.rain), 0, 1)
+}
+// the weather in a word for the HUD and the sound: 'clear', 'cloudy', 'rain', 'storm' or 'fog' (as
+// it is now, eased: overcast counts as cloudy, a shower as rain once it falls)
+export function weatherKind () {
+  const e = ENV
+  if (e.storm > 0.5) return 'storm'
+  if (e.rain > 0.2) return 'rain'
+  if (e.fog > 0.5) return 'fog'
+  return e.clouds > 0.35 ? 'cloudy' : 'clear'
+}
+
 // set the clock (hour, 0 to 24)
 export function setHour (h) {
   ENV.hour = ((h % 24) + 24) % 24

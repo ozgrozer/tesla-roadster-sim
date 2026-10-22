@@ -5,9 +5,14 @@
 // materials (cheap, nothing for the lights to recompile); the police cars themselves are the
 // traffic's, drawn by render/traffic.js with their light bars going.
 import * as THREE from 'three'
-import { scene, canvasTex } from './scene.js'
+import { scene, camera, canvasTex } from './scene.js'
 
 const MAX_MARKERS = 12
+// m from the camera a marker is drawn within (three draws each: past this they are a few pixels,
+// and the radar and the map show them anyway)
+export const MARKER_FAR = 450
+const _up = new THREE.Vector3(0, -1, 0),
+  _way = new THREE.Vector3()
 // a soft fade from the bottom up: the cylinder's glow
 const fadeTex = canvasTex(
   64,
@@ -121,8 +126,9 @@ export class CrimeView {
     for (let i = 0; i < MAX_MARKERS; i++) {
       const m = this.markers[i],
         k = markers[i]
-      m.visible = !!k
-      if (!k) continue
+      const cp = camera.position
+      m.visible = !!k && Math.abs(k.x - cp.x) < MARKER_FAR && Math.abs(k.z - cp.z) < MARKER_FAR && Math.hypot(k.x - cp.x, k.z - cp.z) < MARKER_FAR
+      if (!m.visible) continue
       const { tube, base, pool } = m.userData
       const r = k.kind === 'start' ? 2.6 : k.kind === 'next' ? 3.2 : 4.2
       const h = k.kind === 'start' ? 4.6 : k.kind === 'next' ? 4 : 7
@@ -157,7 +163,7 @@ export class CrimeView {
     const r = 6 + 2 * Math.sin(t * 0.8)
     u.cone.position.set(heli.x, heli.y - 1, heli.z)
     u.cone.scale.set(r, len, r)
-    u.cone.quaternion.setFromUnitVectors(new THREE.Vector3(0, -1, 0), new THREE.Vector3(dx / len, dy / len, dz / len))
+    u.cone.quaternion.setFromUnitVectors(_up, _way.set(dx / len, dy / len, dz / len))
     u.cone.material.opacity = 0.05 + 0.18 * dark
     u.pool.position.set(sx, 0.12, sz)
     u.pool.scale.setScalar(r * 1.15)

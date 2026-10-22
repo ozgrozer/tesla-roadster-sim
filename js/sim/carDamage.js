@@ -185,8 +185,9 @@ const bite = v => ((Math.max(v, MIN_HIT) - MIN_HIT) / 14) ** 1.3
 
 // A hit on a traffic car at (px, pz) in the world, closing at impact m/s, from something of mass
 // mo (null for a wall or a post), at time t (s: the traffic's clock). What it broke comes back
-// (BROKE's bits; 0 for nothing).
-export function hurt (car, px, pz, impact, mo, t) {
+// (BROKE's bits; 0 for nothing). tough: the share of the harm it takes (the player's own car is
+// built to take a beating: vehicleHit.js), the dents and the glass as anyone's.
+export function hurt (car, px, pz, impact, mo, t, tough = 1) {
   if (!(impact > MIN_HIT)) return 0
   const D = car.dmg || (car.dmg = fresh())
   const from = onset(D, impact, t)
@@ -201,8 +202,8 @@ export function hurt (car, px, pz, impact, mo, t) {
   const depth = Math.min(MAX_DEPTH, (impact - from) * DEPTH * k)
   crumple(D.dents, lx, lz, hl, hw, depth)
   const again = from > MIN_HIT
-  let broke = BROKE.dent | breakage(D, lx / hl, lz / hw, impact, true, again)
-  D.harm += k * (bite(impact) - bite(from))
+  let broke = BROKE.dent | breakage(D, lx / hl, lz / hw, impact, true, again) | worn(D)
+  D.harm += tough * k * (bite(impact) - bite(from))
   D.limp = 1 - 0.5 * Math.min(1, D.harm)
   if (D.harm >= WRECK && !D.wreck) {
     D.wreck = true
@@ -212,6 +213,37 @@ export function hurt (car, px, pz, impact, mo, t) {
   const smoke = D.wreck ? 2 : D.harm >= STEAM || nose >= STEAM_NOSE ? 1 : 0
   if (smoke === 1 && D.smoke === 0) broke |= BROKE.steam
   D.smoke = Math.max(D.smoke, smoke)
+  return broke
+}
+
+// What the crumples have broken by now, however gently they built up: a corner pushed LAMP_DENT in
+// has lost its lamp (the nose's or the tail's middle, its pair), and a face crumpled CRAZE_DENT in
+// has crazed the glass over it, more as it goes deeper (side and rear glass toughened, so never
+// out from this alone). BROKE's bits for what is new.
+const LAMP_DENT = 0.06,
+  CRAZE_DENT = 0.16
+// prettier-ignore
+const CORNER_LAMPS = [[0, LAMPS.FL], [2, LAMPS.FR], [6, LAMPS.RR], [8, LAMPS.RL],
+  [1, LAMPS.FL | LAMPS.FR], [7, LAMPS.RL | LAMPS.RR]]
+// prettier-ignore
+const FACE_PANES = [[FACES[0], PANE.front], [FACES[1], PANE.right], [FACES[2], PANE.rear], [FACES[3], PANE.left]]
+function worn (D) {
+  let broke = 0
+  for (const [z, bits] of CORNER_LAMPS)
+    if (D.dents[z] >= LAMP_DENT * (bits === 3 || bits === 12 ? 1.6 : 1) && bits & ~D.lamps) {
+      D.lamps |= bits
+      broke |= BROKE.lamp
+    }
+  for (const [F, p] of FACE_PANES) {
+    let d = 0
+    for (const z of F.zones) d = Math.max(d, D.dents[z])
+    if (d < CRAZE_DENT) continue
+    const was = paneOf(D, p),
+      lv = Math.min(5, 1 + Math.floor((d - CRAZE_DENT) / 0.06))
+    if (was === GONE || lv <= was) continue
+    D.glass += (lv - was) * p
+    broke |= BROKE.craze
+  }
   return broke
 }
 

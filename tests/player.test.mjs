@@ -39,17 +39,24 @@ test('moveDir is camera relative', () => {
   assert.equal(P.moveDir(0, 1, 1).mag, 1, 'diagonals no faster')
 })
 
-test('walking accelerates smoothly, sprinting is faster, and it stops', () => {
+test('walking accelerates smoothly, jogging by default, sprinting is faster, and it stops', () => {
   const p = fresh(),
     w = flat()
-  const ctl = { x: 0, z: 1, mag: 1, run: false, jump: false }
+  const ctl = { x: 0, z: 1, mag: 1, run: false, walk: true, jump: false }
   P.stepFoot(p, H, ctl, w)
   assert.ok(p.speed > 0 && p.speed < P.FOOT.walk, 'eases up to speed')
   for (let i = 0; i < 120; i++) P.stepFoot(p, H, ctl, w)
   assert.ok(Math.abs(p.speed - P.FOOT.walk) < 0.05, 'walking pace')
+  assert.ok(p.run < 0.05, 'a walking gait')
+  ctl.walk = false
+  for (let i = 0; i < 60; i++) P.stepFoot(p, H, ctl, w)
+  assert.ok(Math.abs(p.speed - P.FOOT.jog) < 0.05, 'jogging pace by default')
+  assert.ok(Math.abs(p.run - 0.5) < 0.08, 'a jogging gait')
   ctl.run = true
   for (let i = 0; i < 120; i++) P.stepFoot(p, H, ctl, w)
   assert.ok(Math.abs(p.speed - P.FOOT.run) < 0.1, 'sprinting pace')
+  assert.ok(p.run > 0.9, 'a sprinting gait')
+  assert.ok(P.FOOT.walk >= 1.9 && P.FOOT.jog >= 4.3 && P.FOOT.run >= 6.8, 'GTA-like paces')
   assert.ok(Math.abs(p.heading + Math.PI / 2) < 0.05, 'faces the way it goes')
   for (let i = 0; i < 120; i++) P.stepFoot(p, H, null, w)
   assert.ok(p.speed < 0.01, 'stops when let go')
@@ -131,7 +138,7 @@ test('the registry covers the Roadster, parked cars and traffic, with seats', ()
     const d = vehicles.toWorld(e, e.door.x, e.door.z)
     assert.ok(vehicles.gap(e, d.x, d.z) > 0.3, `${e.type} door outside`)
     const l = vehicles.toLocal(e, d.x, d.z)
-    assert.ok(Math.abs(l.x - e.door.x) < 1e-9 && l.z < 0, 'round trip, left side')
+    assert.ok(Math.abs(l.x - e.door.x) < 1e-9 && l.z * e.doorSide > 0, 'round trip, the door\'s side (a bus\'s the kerb\'s)')
   }
   const near = vehicles.nearest(parked.pos, 0.5)
   assert.equal(near, parked, 'nearest finds the car it is on')

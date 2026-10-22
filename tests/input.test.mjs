@@ -2,6 +2,9 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 
+// (Node 20 has no navigator: the gamepad tests hang a getGamepads on one, as a browser has)
+globalThis.navigator ??= {}
+
 const on = {}
 globalThis.window = { addEventListener: (type, fn) => (on[type] = fn) }
 globalThis.document = { querySelectorAll: () => [] }
@@ -234,21 +237,22 @@ function brakeKey (from, to, secs) {
 }
 
 test('the brake key squeezes the pedal: a tap slows the car a little, holding it is a full stop', () => {
-  // a tenth of a second's tap at 100 km/h: a light brake, a few km/h off, not a stamp on the pedal
+  // a tenth of a second's tap at 100 km/h: a part brake, a few km/h off, not a stamp on the pedal
+  // (v3 drive: GTA-quick, the full bite in 0.15 s, so a tap is two thirds of it)
   const tap = brakeKey(0.1, 0.2, 1)
   const coast = brakeKey(9, 9, 1) // (the same second without it: regen slows the car too)
   const lost = (coast.sim.speed - tap.sim.speed) * 3.6
   assert.ok(
-    Math.max(...tap.log.map(l => l.brake)) < 0.5,
+    Math.max(...tap.log.map(l => l.brake)) < 0.75,
     'a tap is a light brake'
   )
-  assert.ok(lost < 4, `a tap takes ${lost.toFixed(1)} km/h off`)
-  // held, the brakes are fully on within a third of a second, and the car stops from 100 km/h in
+  assert.ok(lost < 6, `a tap takes ${lost.toFixed(1)} km/h off`)
+  // held, the brakes are fully on within a fifth of a second, and the car stops from 100 km/h in
   // about what a good car's tyres allow (a hard stop's bite building as the pedal goes down)
   const held = brakeKey(0.1, 9, 4)
   const full = held.log.find(l => l.brake === 1)
   assert.ok(
-    full && full.t < 0.42,
+    full && full.t < 0.27,
     `full braking after ${(full?.t - 0.1).toFixed(2)} s`
   )
   const stop = held.log.find(l => l.v <= 0)
@@ -263,7 +267,7 @@ test('S held through a stop holds the car before it backs up, and pressed at a s
   const stop = r.log.find(l => l.v <= 0)
   const back = r.log.find(l => l.reverse > 0)
   assert.ok(
-    back.t - stop.t > 0.45,
+    back.t - stop.t > 0.25 && back.t - stop.t < 0.45,
     `held ${(back.t - stop.t).toFixed(2)} s at a standstill before reversing`
   )
   // (and the reverse eases in from there)

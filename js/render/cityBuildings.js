@@ -18,6 +18,7 @@ import { Builder } from './builder.js'
 import { buildSigns } from './citySigns.js'
 import { buildYards } from './cityYards.js'
 import { shopfronts } from './shopfronts.js'
+import { buildVariety, variedTint, awningFor } from './cityVariety.js'
 import {
   COL,
   FLOOR,
@@ -76,13 +77,13 @@ export function buildBuildings (group) {
       d = district((t0.x0 + t0.x1) / 2, (t0.z0 + t0.z1) / 2),
       roofs = roofsBy[d],
       ledges = ledgesBy[d]
-    col.setHex(b.tint).multiplyScalar(0.94 + R() * 0.12)
+    col.setHex(variedTint(b)).multiplyScalar(0.94 + R() * 0.12)
     const c = col.clone()
     // a pale membrane on some roofs, grey on the rest
     const roofCol = new THREE.Color().setScalar(
       R() < 0.35 ? 1.05 + R() * 0.15 : 0.55 + R() * 0.3
     )
-    const awning = new THREE.Color().setScalar(0.16 + R() * 0.08)
+    const awning = awningFor(b, new THREE.Color().setScalar(0.16 + R() * 0.08))
     const tileCol = tone(
       b.roofs === 'shingle'
         ? SHINGLE[Math.floor(R() * 5)]
@@ -269,6 +270,7 @@ export function buildBuildings (group) {
     roughness: 0.2,
     metalness: 0.3
   })
+  const variety = buildVariety(group, { beacons, crowns }) // (roofs, balconies, landmarks)
   add(crowns, crownMat, 'crowns')
   add(beacons, BEACON, 'beacons', false)
   const signs = buildSigns(group)
@@ -280,6 +282,10 @@ export function buildBuildings (group) {
       shopLight.night(k)
       crownMat.emissiveIntensity = 0.35 + 2.4 * k
       signs.night(k)
+      variety.night(k)
+    },
+    update (dt) {
+      variety.update(dt)
     }
   }
 }

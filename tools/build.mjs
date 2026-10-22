@@ -16,7 +16,7 @@ export const OUT = resolve(ROOT, 'dist/roadster.js')
 const THREE = resolve(ROOT, 'vendor/three/three.module.js')
 const ADDONS = resolve(ROOT, 'vendor/three/addons')
 
-const IMPORT_RE = /^import\s+([\s\S]*?)\s+from\s+['"]([^'"]+)['"]\s*;?[ \t]*$/gm
+const IMPORT_RE = /^import\s+([\s\S]*?)\s+from\s+['"]([^'"]+)['"][ \t]*;?[ \t]*(?:\/\/[^\n]*)?$/gm
 const DECL_RE = /^export\s+((?:async\s+)?function\*?|class|const|let|var)\s+([A-Za-z_$][\w$]*)/gm
 const LIST_RE = /^export\s*\{([^}]*)\}\s*;?[ \t]*$/gm
 
@@ -68,6 +68,9 @@ function transform (file, src, ids) {
     }
     throw new Error(`${name}: unsupported import clause "${clause}"`)
   })
+  // (an import left over, a form the pattern missed, would only fail in the browser)
+  const left = code.match(/^[ \t]*import\s[^\n]*/m)
+  if (left) throw new Error(`${name}: unsupported import "${left[0].trim()}"`)
   code = code.replace(DECL_RE, (_, kind, local) => {
     exported.push([local, local])
     return `${kind} ${local}`

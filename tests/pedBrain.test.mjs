@@ -82,7 +82,7 @@ test('a car too fast to dodge knocks someone down: ped-hit and a crime; they lie
   const off = onGame('crime', e => got.push(e))
   const p = peds.list.find(q => q.state === 'walk')
   const th = peds.me
-  Object.assign(th, { x: p.x, z: p.z, vx: 14, vz: 0, hx: 1, hz: 0 })
+  Object.assign(th, { x: p.x, z: p.z, vx: 7.6, vz: 0, hx: 1, hz: 0 }) // (under MAYBE_V: they live)
   peds.dodge(p, th)
   off()
   assert.equal(p.state, 'down')

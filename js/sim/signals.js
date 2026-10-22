@@ -5,10 +5,12 @@
 export const RED = 0
 export const YELLOW = 1
 export const GREEN = 2
+export const DARK = 3 // (an all-way stop's flashing red, between flashes: trafficStop.js)
 export const SIGNAL = { green: 13, yellow: 3, clear: 1.2 }
 export const CYCLE = 2 * (SIGNAL.green + SIGNAL.yellow + SIGNAL.clear)
 // State of the light for traffic travelling `dir` into `node` at time t (held, or on its cycle).
 export function signal (node, dir, t) {
+  if (node.stop) return ((t % 1.2) + 1.2) % 1.2 < 0.7 ? RED : DARK
   const h = node.hold
   if (h)
     return (dir & 1) === h.axis

@@ -16,6 +16,11 @@ export const ARM = 6.3,
   RISE = 1.15,
   AIM = 0.85,
   AHEAD = 2.4
+// the field of view's widening with speed (degrees, all of it by FOV_AT m/s), and how far the arm
+// falls back pulling away and closes in braking (m per m/s^2): the weight of the car, seen
+const FOV_SPEED = 11,
+  FOV_AT = 55,
+  SURGE = 0.07
 const _f = new THREE.Vector3(),
   _u = new THREE.Vector3()
 
@@ -89,7 +94,7 @@ export function follow (rig, dt, sim, P) {
   f.ahead += (Math.min(AHEAD, fwdSpeed * 0.06) - f.ahead) * lerpK(1.2, dt)
   // it falls back as the car launches and closes in under hard braking
   const acc = sim.mode === 'ground' ? clamp(sim.accLong, -14, 16) : 0
-  f.surge += (acc * 0.05 - f.surge) * lerpK(2.5, dt)
+  f.surge += (acc * SURGE - f.surge) * lerpK(2.5, dt)
   // (a van's or a bus's arm further out and higher: carCam.js armScale, set by polish.js; V's Far
   // camera lets it out further still)
   f.size = (f.size ?? 1) + ((rig.armK || 1) - (f.size ?? 1)) * lerpK(2, dt)
@@ -128,9 +133,11 @@ export function follow (rig, dt, sim, P) {
     f.target.y + (AIM + 0.6 * f.up) * f.elev,
     f.target.z - sh * ah - ch * f.lead
   )
-  // wider with speed, and a kick wider still while the main thrusters fire
+  // wider with speed (GTA's sense of pace: about 9 degrees more by 110 km/h, FOV_SPEED by 200),
+  // and a kick wider still while the main thrusters fire
   f.kick += (sim.thrMain - f.kick) * lerpK(4, dt)
-  return 55 + Math.min(11, speed * 0.1) + 7 * f.kick
+  const sp = Math.min(1, speed / FOV_AT)
+  return 55 + FOV_SPEED * sp * (2 - sp) + 7 * f.kick
 }
 
 // The camera kept out of the traffic, as the city's clip keeps it out of the buildings: a car on

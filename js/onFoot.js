@@ -7,13 +7,16 @@
 //   player (sim/player.js)      who the game follows, on foot or at the wheel
 //   vehicles (sim/vehicles.js)  everything that can be driven
 //   game events: 'car-entered', 'car-exited', 'car-stolen', 'crime' (sim/gameEvents.js)
+import { look } from './ui/options.js'
 import * as THREE from 'three'
 import { emitGame } from './sim/gameEvents.js'
+import { dropCarName } from './carName.js'
 import { footProxy } from './sim/vehicleLink.js'
 import { vehicles } from './sim/vehicles.js'
 import { Drivable } from './sim/drivable.js'
 import { collidePlayer } from './sim/wrecks.js'
 import { carsMeet } from './sim/carsMeet.js'
+import { FootRescue } from './sim/footRescue.js'
 import { makeControls } from './sim/constants.js'
 import {
   player,
@@ -32,7 +35,10 @@ import {
   BOARD
 } from './sim/boarding.js'
 import { offerFor } from './ui/prompt.js'
+import { FootFight } from './footFight.js'
+import { InteriorGlue } from './render/interiors/glue.js'
 import { FootView } from './render/footView.js'
+import { boardRoadster, BOARD_T } from './render/intro.js'
 import { FootCam } from './render/footCam.js'
 import { clipCamera } from './render/city.js'
 import { scene } from './render/scene.js'
@@ -65,13 +71,17 @@ export class OnFoot {
     // g: { app, sim, RS, rig, camera, canvas, input, hud, sound, traffic, peds, intro, setCam, cityView }
     Object.assign(this, g)
     this.alt = new Drivable() // a car that isn't the Roadster, while the player has it
-    this.view = new FootView(scene, g.RS, g.cityView.cars)
+    this.rescue = new FootRescue() // stuck or out of the world: put back somewhere safe
+    this.view = new FootView(scene, g.RS, g.cityView)
     this.cam = new FootCam(g.camera, clipCamera)
     this.focus = new Focus()
+    this.fight = new FootFight(this) // (fists: F, the left mouse button)
+    this.view.melee = this.fight.melee
     this.action = null // getting in or out (boarding.js)
     this.target = null // the car the prompt is for
     this.how = null
     this.jumpQ = false
+    this.walkOn = false // (Caps Lock: walking, not jogging)
     this.prev = { x: 0, y: 0, z: 0 } // the feet a step ago (drawn between steps)
     this.stepD = 0
     this.lastDist = 0
@@ -81,6 +91,7 @@ export class OnFoot {
     this.promptText = ''
     vehicles.sync(null, g.sim)
     setMode('car', vehicles.roadster)
+    this.interiors = new InteriorGlue(this) // (the doors into the shops: render/interiors/)
     this.pointer()
   }
 
@@ -105,6 +116,7 @@ export class OnFoot {
   // ---------- the fixed step ----------
   // one physics step of the cars and the city, c the player's controls for what they drive
   step (H, c, city, view, peds, traffic) {
+    const held = this.interiors.step(H) // (going through a door: the feet held under the fade)
     const ds = this.driven(),
       sim = this.sim
     sim.step(H, ds === sim ? c : HOLD)
@@ -132,7 +144,7 @@ export class OnFoot {
       peds.step(H, sim, traffic, view)
       traffic.step(H, sim, view)
     }
-    if (this.onFoot()) this.stepPlayer(H)
+    if (this.onFoot() && !held) this.stepPlayer(H)
   }
 
   // the player's feet, one step: walking under the keys, or getting in or out of a car
@@ -151,11 +163,14 @@ export class OnFoot {
     }
     if (a) this.board(H) // (the door shutting behind the player, as they walk off)
     const k = this.moveKeys()
-    const ctl = moveDir(this.cam.yaw, k.f, k.r)
+    let ctl = moveDir(this.cam.yaw, k.f, k.r)
     ctl.run = this.input.held('ShiftLeft', 'ShiftRight')
+    ctl.walk = this.walkOn // (Caps Lock: a walk, else a jog, as GTA's)
     ctl.jump = this.jumpQ
     this.jumpQ = false
+    ctl = this.fight.step(H, ctl) // (a punch thrown: stood still, or lunging: footFight.js)
     const out = stepFoot(p, H, ctl, this.world)
+    this.rescue.step(p, H, ctl.mag > 0.3, this.world) // (footRescue.js)
     if (out.landed > 3) landing(this.sound, p.surface, out.landed, 0)
     this.hitByCars()
   }
@@ -211,6 +226,7 @@ export class OnFoot {
       return player.mode === 'car' ? false : true
     }
     if (this.app.intro || this.app.auto || this.down) return false
+    if (this.interiors.interact()) return true
     if (player.mode === 'car') {
       const s = this.driven()
       if (s.mode !== 'ground' && s.mode !== 'crash') return false
@@ -233,7 +249,7 @@ export class OnFoot {
   }
   enter (e, how) {
     if (how === 'jack') this.freeze(e.car)
-    this.action = startEnter(e, how, player)
+    this.action = startEnter(e, how, player, Math.random, this.world) // (the free side's door)
     setMode('entering', e)
   }
   // a car with a driver, about to be taken: it stops where it is, its driver at the wheel
@@ -247,6 +263,7 @@ export class OnFoot {
     this.nearCars()
     this.action = startExit(e, this.world)
     setMode('exiting', e)
+    dropCarName(this.hud) // (its name doesn't stay up after the player: carName.js)
     if (e.kind === 'roadster') this.RS.seated = false
     else doorSound(this.sound, false, 0)
     this.camToFoot()
@@ -284,7 +301,7 @@ export class OnFoot {
   // the driver hauled out of their car: on foot, and running
   pullOut (e, w) {
     // (out of the driver's door, the left: they run off, and the people round about see it)
-    this.traffic.ejectDriver(e.car, { side: 1, jacked: true })
+    this.traffic.ejectDriver(e.car, { side: 1, jacked: true, along: e.seat.x - 0.35 }) // (staged: alight.js haul)
     this.peds.threat?.(w.x, w.z, 14, 2, 2)
     e.vacant = true
     this.sound.honk?.([300, 380], 0.05 * hearing(w.x, w.z), panOf(w.x, w.z))
@@ -349,12 +366,14 @@ export class OnFoot {
   reset () {
     if (this.alt.active) this.alt.leave()
     this.action = null
+    this.fight.reset()
     vehicles.sync(null, this.sim)
     setMode('car', vehicles.roadster)
     vehicles.roadster.occupant = 'player'
     this.RS.seated = true
     this.RS.door = 0
     this.RS.optimus.root.visible = true
+    boardRoadster(this.RS, BOARD_T.end) // (sat in: not left stood at the door as it got out)
     this.rig.noCockpit = false
     this.view.hide()
     this.prompt('')
@@ -420,15 +439,15 @@ export class OnFoot {
     if (p.mode !== 'foot' || !p.grounded) return
     this.stepD += p.speed > 0.2 ? Math.min(0.2, Math.abs(p.dist - this.lastDist)) : 0
     this.lastDist = p.dist
-    const half = p.run > 0.5 ? 1.15 : 0.72
+    const half = p.speed > 5 ? 1.8 : p.speed > 3 ? 1.45 : 0.8 // (half the stride: optimusGait.js)
     if (this.stepD > half) {
       this.stepD = 0
-      footstep(this.sound, p.surface, 0.55 + 0.45 * p.run, 0, p.run > 0.5)
+      footstep(this.sound, p.surface, 0.55 + 0.45 * p.run, 0, p.run > 0.4)
     }
   }
   // the car on offer: "E · Break in · Sedan" while the player stands by one
   offer () {
-    const o = this.down ? { text: '' } : offerFor(player, this.action)
+    const o = this.down ? { text: '' } : this.interiors.offer(offerFor(player, this.action))
     this.target = o.target
     this.how = o.how
     this.prompt(o.text)
@@ -450,8 +469,12 @@ export class OnFoot {
     })
     window.addEventListener('mousemove', e => {
       if (document.pointerLockElement !== cv) return
-      if (this.onFoot()) this.cam.turn(e.movementX, e.movementY)
-      else this.rig.turn(e.movementX * 0.0026, e.movementY * 0.002)
+      const [mx, my] = look(e.movementX, e.movementY) // (sensitivity, invert: ui/options.js)
+      if (this.onFoot()) this.cam.turn(mx, my)
+      else this.rig.turn(mx * 0.0026, my * 0.002)
+    })
+    cv.addEventListener('mousedown', e => {
+      if (e.button === 0 && document.pointerLockElement === cv && this.onFoot()) this.fight.punch()
     })
     cv.addEventListener(
       'wheel',

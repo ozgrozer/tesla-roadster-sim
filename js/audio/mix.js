@@ -15,6 +15,7 @@ import { ENV } from '../sim/env.js'
 import { WATER } from '../render/spray.js'
 import { AIR } from '../render/aircraft.js'
 import { watch, forget, ALARM } from './watch.js'
+import { inside as indoors } from '../sim/interiors/state.js'
 import { hearing, panOf, blocked, dullness, placeOf, ray } from './ears.js'
 
 export { hearing, panOf, dullness, placeOf }
@@ -356,6 +357,8 @@ export function mixSound (sound, app, traffic, dt, clock, peds) {
   st.suction = sim.suction
   st.city = city
   st.inside = !!app.inside // the camera in the driver's seat
+  // (in a shop or a lobby, sim/interiors/: the street, the rain and the thunder through its walls)
+  st.indoor = city && indoors()
   st.combustion = !!app.engine // (a car with an engine, not the Roadster's motors: engine.js)
   st.carDist = cp.distanceTo(_cp)
   st.cut = cut
@@ -405,4 +408,18 @@ export function mixSound (sound, app, traffic, dt, clock, peds) {
   st.t = clock
   sound.update(st)
   if (world) worldDt = 0
+}
+
+// The player's three levels (options.js: 0 to 1 each) onto the engine's buses, on a gentle curve
+// (half way is about a third as loud), eased over a few hundredths of a second so a change never
+// clicks. Nothing until the engine has its context (main.js calls this again once it has).
+const curve = v => Math.pow(Math.max(0, Math.min(1, v)), 1.6)
+export function setVolumes (sound, { master = 1, music = 1, sfx = 1 }) {
+  const ctx = sound?.ctx
+  if (!ctx || !sound.outVol) return false
+  const t = ctx.currentTime
+  sound.outVol.gain.setTargetAtTime(curve(master), t, 0.03)
+  sound.musicBus.gain.setTargetAtTime(curve(music), t, 0.03)
+  sound.mixIn.gain.setTargetAtTime(curve(sfx), t, 0.03)
+  return true
 }

@@ -5,12 +5,9 @@
 // honks at them from behind, brake and swerve when it comes at them (react.js), and stop for anyone
 // on foot in the road (peds.js). Nobody honks until the Roadster has sounded its own horn at the
 // gridlock: the first horn in the city is the Roadster's.
-// Traffic lives in a bubble round the player: cars far behind are recycled into the streets ahead.
-// Cars far off are driven less often (a longer step every second or fourth one), and a car that has
-// not moved for a long while out of sight is taken off the road. Now and then an emergency vehicle
-// answers a call, and everyone makes way for it (calls.js, responder.js, makeway.js); the weather
-// slows the drivers and the hour decides how many are out (conditions.js); box trucks stop to
-// deliver (delivery.js), and lowriders and limousines come by where they belong (fleet.js).
+// Traffic lives in a bubble round the player (far off: driven less often; stuck: trafficStuck.js).
+// Freeway lanes: laneChangeFwy.js; all-way stops: trafficStop.js; sirens: calls.js, responder.js,
+// makeway.js; weather and hour: conditions.js; deliveries, lowriders: delivery.js, fleet.js.
 import { ENV } from './env.js'
 import { JAM, atJam } from './jam.js'
 import { REACT } from './react.js'
@@ -25,6 +22,9 @@ import { DELIVERY } from './delivery.js'
 import { gone, slide, restore, collidePlayer, bumpLoose } from './wrecks.js'
 import { DRIVE, temperament } from './drivers.js'
 import { LANE_CHANGE } from './laneChange.js'
+import { FWY_LANES } from './laneChangeFwy.js'
+import { STOP_SIGN } from './trafficStop.js'
+import { TRAFFIC_STUCK } from './trafficStuck.js'
 import { rng, NODES, EDGES, LANES, STALLS, pointAt } from './city.js'
 import { TYPES, IDX } from './carTypes.js'
 import { HANDOVER, styleOf } from './handover.js'
@@ -39,12 +39,9 @@ const SHARES = TYPES.reduce((a, t) => a + t.share, 0)
 const P = { x: 0, z: 0, hx: 1, hz: 0 }
 const TURNS = [] // (choose's scratch list)
 
-// Every field of the first car is set once to what it may later hold and back: a numeric one to a
-// fraction, any other to numbers and objects of more than one kind. V8 keeps one shape for all the
-// cars made from the same literal; with each field ready from the start for whatever it will hold,
-// that shape never has to change when a car first stores something new in one (which throws away
-// the optimised code driving them all, and while it is away every number the drivers work out
-// costs an allocation).
+// Every field of the first car is set once to what it may later hold and back (a numeric one to a
+// fraction, any other to numbers and objects of more than one kind), so V8's one shape for all the
+// cars never has to change when a car first stores something new (which deopts the drivers).
 let WARM = false
 const KINDS = [{ a: 1 }, { b: 1 }, [0]]
 export function warm (o) {
@@ -91,6 +88,8 @@ export class Traffic {
     this.extra = [] // (and the cars parked in the lots by those who aren't)
     this.used = new Set()
     this.wxR = rng(seed * 131 + 17)
+    this.fwyChanges = 0 // (lane changes on the freeway so far: laneChangeFwy.js)
+    this.stuckN = { reroute: 0, squeeze: 0, drop: 0 } // (trafficStuck.js)
   }
 
   // the lane graph is shared, so whichever traffic was there before is cleared off it too
@@ -157,6 +156,9 @@ export class Traffic {
       lcLen: 30, // m of road it takes
       lat0: 0, // sideways offset from the new lane when the change began
       from: null, // (and the lane it is leaving)
+      lcDs: 0, // (and how much further along that lane it was: laneChangeFwy.js)
+      fwyDir: 0, // (on the freeway: the way it means to move over, 1 left, 2 right; letIn: easing
+      letIn: 0, // off to the speed to let someone in from beside: laneChangeFwy.js)
       off: 0, // steered off the lane's line, m to the right
       psi: 0, // and heading off its line, to the right
       offT: 0, // the offset it steers for
@@ -172,6 +174,7 @@ export class Traffic {
       boxT: 0, // when it came into the junction it is in
       wake: 0, // s since it could have moved off, standing
       idle: 0, // s stopped at the line
+      arrive: 0, // when it stopped at an all-way stop's line (trafficStop.js)
       short: 0, // how far short of the line it stops (it creeps up)
       lw: 0, // s spent at the line waiting to turn left across the oncoming traffic
       want: 0, // waiting to move over: 1 left, 2 right
@@ -245,8 +248,8 @@ export class Traffic {
       sndLv: undefined,
       sndAlarm: false,
       jam: false,
-      // (handover.js: who has taken it over, left parked by them, its driver's mood, style)
-      ctl: null,
+      ctl: null, // (handover.js: who has taken it over, left parked by them, its driver's mood, style)
+      body: null, // (and the body driving it: vehicleLink.js)
       abandoned: false, // (and taken off, gridlocked: jammed)
       jammed: false,
       angry: 0,
@@ -477,7 +480,7 @@ export class Traffic {
       if (
         d > this.radius + 40 ||
         (c.loose && gone(c, seen) && c.looseT > 20 && d > 40) ||
-        (c.still > 60 && d > 60 && !seen) ||
+        this.unstuck(c, d, seen) || // (stood still too long: trafficStuck.js)
         this.gridlock(c, d, seen)
       ) {
         this.remove(i)
@@ -493,3 +496,4 @@ export class Traffic {
 }
 Object.assign(Traffic.prototype, SIGHT, DRIVE, LANE_CHANGE, REACT, CALLS, RESPOND, MAKEWAY)
 Object.assign(Traffic.prototype, CONDITIONS, FLEET, DELIVERY, HANDOVER, HWDRIVE, PARKNEAR)
+Object.assign(Traffic.prototype, FWY_LANES, STOP_SIGN, TRAFFIC_STUCK)

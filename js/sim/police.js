@@ -15,7 +15,7 @@ import { rectRect, impulse, playerRect, loadBody, storeBody, nudge, BODY } from 
 import { Planner } from './aiDriver.js'
 import { clear, policeSight } from './witness.js'
 import { makeUnit, think } from './policeUnit.js'
-import { Heli, roadblockSpot } from './policeAir.js'
+import { Heli, roadblockSpot, inView as seenBy } from './policeAir.js'
 
 export const UNITS = [0, 2, 3, 4, 5, 6] // pursuing units for 0 to 5 stars
 export const SPAWN_MIN = 110
@@ -27,17 +27,7 @@ const LOOK_GAP = 0.2 // s between a unit's looks for the player
 const BUST_R = 7.5 // m: a unit this close to a player at a standstill is arresting them
 const _a = { x: 0, z: 0, fx: 1, fz: 0, hl: 1, hw: 1 }
 
-// is (x, z) in the camera's sight? view: { x, z, fx, fz }
-export function inView (view, x, z, los = clear) {
-  if (!view) return false
-  const dx = x - view.x,
-    dz = z - view.z,
-    d = Math.hypot(dx, dz)
-  if (d > 300) return false
-  if (d < 25) return true
-  if ((dx * view.fx + dz * view.fz) / d < 0.25) return false
-  return los(view.x, view.z, x, z, 3, 1)
-}
+export const inView = seenBy // (is (x, z) in the camera's sight: policeAir.js)
 
 // A place on a lane off-screen between rMin and rMax m from (px, pz), facing towards it if it can:
 // { x, z, yaw, lane } or null. R: random numbers; view: the camera
@@ -153,7 +143,7 @@ export class Police {
       if (u.seeT <= 0) {
         u.seeT = LOOK_GAP
         const d = Math.hypot(player.pos.x - b.x, player.pos.z - b.z)
-        u.sees = stars > 0 && d < policeSight(stars) && clear(b.x, b.z, player.pos.x, player.pos.z, 1.3)
+        u.sees = stars > 0 && d < policeSight(stars) * (wanted.sight ?? 1) && clear(b.x, b.z, player.pos.x, player.pos.z, 1.3)
       }
       if (u.sees && u.role !== 'npc') seen = true
       think(u, think_, dt)
@@ -251,7 +241,8 @@ export class Police {
         go = (d > 120 || u.gone > 30) && !seen
       }
       else if (u.role === 'pursuit') go = d > 420 && !seen
-      else if (u.role === 'block') go = (u.age > 50 || stars < ROADBLOCK_STARS || d > 260) && !seen && d > 60
+      // (left behind: further than the furthest a block goes down, policeAir.js FAR_BLOCK + 80)
+      else if (u.role === 'block') go = (u.age > 50 || stars < ROADBLOCK_STARS || d > 460) && !seen && d > 60
       if (u.role === 'pursuit' && u.state !== 'leave' && this.pursuing > UNITS[stars] + 1 && d > 160 && !seen) go = true
       if (go) this.remove(u)
     }
@@ -278,15 +269,17 @@ export class Police {
 
 // two bodies against each other (two units, or a unit and a car the player drives); returns the
 // closing speed (0: apart)
-function bodies (a, b) {
+export function bodies (a, b) {
   if (Math.abs(a.x - b.x) > 8 || Math.abs(a.z - b.z) > 8) return 0
   const A = { ...rectOf(a) }
   const hit = rectRect(A, rectOf(b, _a))
   if (!hit) return 0
-  a.x += hit.nx * hit.depth * 0.5
-  a.z += hit.nz * hit.depth * 0.5
-  b.x -= hit.nx * hit.depth * 0.5
-  b.z -= hit.nz * hit.depth * 0.5
+  // (the overlap shared by mass: the lighter is pushed the further)
+  const k = (b.m || 1) / ((a.m || 1) + (b.m || 1))
+  a.x += hit.nx * hit.depth * k
+  a.z += hit.nz * hit.depth * k
+  b.x -= hit.nx * hit.depth * (1 - k)
+  b.z -= hit.nz * hit.depth * (1 - k)
   const w0 = a.w,
     w1 = b.w
   const impact = impulse(a, b, hit, 0.2, 0.3)

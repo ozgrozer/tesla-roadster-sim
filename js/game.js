@@ -7,12 +7,14 @@
 // Debugging and screenshots: ?wanted=3 (stars from the start), ?mission=race (a mission started at
 // once), ?ambient=chase (that street event soon), ?cash=5000; window.__crime in the console.
 import { ENV } from './sim/env.js'
+import { roadGrip } from './sim/roadGrip.js'
 import { IDX } from './sim/carTypes.js'
 import { STALLS, rng } from './sim/city.js'
 import { Wanted } from './sim/wanted.js'
 import { Police, Arrest } from './sim/police.js'
 import { Ambient } from './sim/ambient.js'
 import { witnesses } from './sim/witness.js'
+import { Reports } from './sim/wantedReports.js'
 import { MissionManager } from './sim/missions/manager.js'
 import { spot, nearestKerb, HOSPITALS, STATIONS } from './sim/missions/spots.js'
 import { emitGame, onGame } from './sim/gameEvents.js'
@@ -23,6 +25,7 @@ import { CrimeHud } from './ui/crimeHud.js'
 import { radarOverlay, mapOverlay } from './ui/crimeMap.js'
 import { gps } from './ui/gps.js'
 import { recall, remember } from './ui/prefs.js'
+import { dropCarName } from './carName.js'
 
 // where the player is put back: the nearest hospital (wasted) or police station (busted), as
 // fractions of the map: HOSPITALS, STATIONS in missions/spots.js
@@ -45,6 +48,7 @@ export class Game {
     this.view = new CrimeView()
     this.ui = new CrimeHud()
     this.crimes = [] // crimes since the last step, to be witnessed
+    this.reports = new Reports() // and rung in to the police (wantedReports.js)
     this.events = [] // every game event since the last step (the missions read them)
     this.down = null // { kind: 'busted' | 'wasted', t }
     this.arrest = new Arrest()
@@ -55,11 +59,14 @@ export class Game {
     this.markers = []
     this.t = 0
     this.missions.cash = Number(recall('cash')) || 0
+    deps.foot.interiors?.attach({ wallet: this.missions, damage: deps.damage }) // (the body shop)
     this.map = { units: [], heli: null, search: null, markers: this.markers, event: null, t: 0 }
     deps.minimap.overlay = (g, V, toRadar, k) => radarOverlay(g, V, toRadar, k, this.map)
     deps.app.mapOverlay = (g, sx, sy, k) => mapOverlay(g, sx, sy, k, this.map)
     onGame('*', e => this.events.length < 64 && this.events.push(e))
     onGame('crime', e => this.crimes.push(e))
+    // (another car, or out of one, unseen: the police lose the description, wanted.js)
+    for (const k of ['car-entered', 'car-exited']) onGame(k, () => this.wanted.changeVehicle(this.police.seen))
     // a parked car broken into quietly is a crime too (a carjacking and an alarm are reported as
     // crimes of their own by onFoot.js)
     onGame('car-stolen', e => {
@@ -125,7 +132,7 @@ export class Game {
   health () {
     const f = this.foot
     if (player.mode !== 'car') return this.footHealth
-    if (f.alt.active) return f.alt.body.dead ? 0 : 1
+    if (f.alt.active) return f.alt.body.dead ? 0 : Math.max(0.05, 1 - (f.alt.body.dmg?.harm || 0))
     return Math.max(0, 1 - (this.damage?.amount || 0))
   }
   // One physics step in the city (h s); view: the camera's ground position and heading (main.js)
@@ -135,6 +142,7 @@ export class Game {
     const P = updatePlayerView()
     if (this.down) {
       this.crimes.length = 0
+      this.reports.clear()
       return
     }
     const W = this.wanted
@@ -142,10 +150,11 @@ export class Game {
     for (const c of this.crimes) {
       if (!c.pos) c.pos = { x: P.pos.x, z: P.pos.z }
       const w = witnesses(c.pos, { peds: this.peds.list, cars: this.traffic.cars, police: this.police.units, stars: W.stars })
-      W.report(c, w)
+      this.reports.add(c, w, this.peds.witnessCrime?.(c) || null, W) // (the people's reactions: living/pedLife.js)
     }
     this.crimes.length = 0
-    const grip = 1 - 0.3 * Math.max(ENV.wet, 0.6 * ENV.rain)
+    this.reports.step(h, W)
+    const grip = roadGrip() // (the same wet grip and grip hook as the player's cars: roadGrip.js)
     const f = this.foot,
       inCar = player.mode === 'car'
     const sim = inCar && f.inRoadster() ? this.sim : null,
@@ -202,6 +211,7 @@ export class Game {
     remember('cash', String(this.missions.cash))
     this.ui.title(kind, kind, pay ? `-$${pay}` : '', DOWN_T * 1000)
     this.ui.grey(true)
+    dropCarName(this.hud) // (no car's name left up under the title)
     if (this.missions.state === 'running') this.missions.fail(kind === 'busted' ? 'Busted' : 'Wasted')
   }
   // back on the street, by the nearest hospital or police station, with the slate clean

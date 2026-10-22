@@ -250,9 +250,14 @@ export class CityPilot {
       walker = false // what it waits for is someone on foot
     for (const o of this.traffic.cars) {
       if (o.parked && !o.loose && !o.jam) continue // (parked in a lot, not queued in the jam)
-      const dx = o.x - x,
+      let dx = o.x - x,
         dz = o.z - z
       if (Math.abs(dx) > LOOK || Math.abs(dz) > LOOK) continue
+      // (one crossing in a junction ahead counts where it will be in a second: it is moving across)
+      if (o.edge?.move && !o.loose && o.v > 0.5 && Math.abs(dz * hx - dx * hz) > CAR.halfW + 2) {
+        dx += o.hx * o.v * 1.2
+        dz += o.hz * o.v * 1.2
+      }
       const along = dx * hx + dz * hz
       if (along <= 0) continue
       // the whole of a car counts, so one turning across in front blocks the lane with its tail too
@@ -318,6 +323,11 @@ export class CityPilot {
         const node = NODES[lane.to],
           st = signal(node, lane.dir, this.traffic.t)
         let stop = st !== GREEN
+        // (an all-way stop, trafficStop.js: stopped at the line and the junction clear, on it goes)
+        if (node.stop) {
+          stop = !(v < 0.5 && toLine < 6 && this.traffic.stopWalk(node))
+          if (!stop) this.go = lane
+        }
         if (st === YELLOW && v * v > 2 * 8 * Math.max(0, toLine - 1)) {
           this.go = lane // too close to stop: carry on through
           stop = false

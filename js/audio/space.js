@@ -100,7 +100,12 @@ export const SPACE = {
     lim.attack.value = 0.002
     lim.release.value = 0.18
     this.mixIn.connect(this.master).connect(hp).connect(lim)
-    lim.connect(ctx.destination)
+    // the player's levels (options.js, set by mix.js setVolumes): mixIn's gain is the effects', the
+    // radio has its own bus past it into the master, and outVol is everything's
+    this.musicBus = gain(1)
+    this.musicBus.connect(this.master)
+    this.outVol = gain(1)
+    lim.connect(this.outVol).connect(ctx.destination)
     // outside the car: the world, the reverb and the echoes. From the driver's seat they are heard
     // through the canopy, muffled and quieter.
     // (a lowpass wide open still costs its work: each is switched out while it is wide open)
@@ -189,10 +194,11 @@ export const SPACE = {
   updateSpace (st) {
     const { n, R } = this
     const inside = st.inside,
+      indoor = !inside && st.indoor, // (in a room off the street: interiors/)
       d = inside ? 0 : st.carDist
-    R(this.cabin.frequency, inside ? 950 : 20000, 0.1)
-    this.through(this.cabinSw, inside || this.cabin.frequency.value < 19000)
-    R(this.outside.gain, inside ? 0.5 : 1, 0.1)
+    R(this.cabin.frequency, inside ? 950 : indoor ? 520 : 20000, 0.1)
+    this.through(this.cabinSw, inside || indoor || this.cabin.frequency.value < 19000)
+    R(this.outside.gain, inside ? 0.5 : indoor ? 0.28 : 1, 0.1)
     // the car's own sound a little forward at city speeds, as a game mixes it (a real car's
     // tyres and wind are some 20 dB quieter at 40 km/h than at 150), easing back by 100 km/h
     const v = Math.max(st.wheelSpeed, st.airspeed),

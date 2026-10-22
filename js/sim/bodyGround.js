@@ -5,14 +5,22 @@
 // carSlope.js), eased so a tread's step doesn't jolt it.
 import { G } from './constants.js'
 import { groundHeight } from './world.js'
+import { groundBase } from './player.js'
 
 const CLIMB = 0.6 // m above the body the ground is still under it (a ramp's tread is a step of 6 cm)
 const EASE = 10 // per s: how fast the body settles to the slope
 const _p = { f: 0, b: 0, l: 0, r: 0 }
+// the ground at (x, z) for a body at up to top: groundHeight's, and at the street's own level the
+// pavement a kerb up from the road (player.js groundBase), so a car up on it sits on it, tilted
+// while only one end or one side is
+function under (x, z, top) {
+  const h = groundHeight(x, z, top)
+  return h < 0.05 ? Math.max(h, groundBase(x, z)) : h
+}
 
 export function settle (b, dt) {
   const top = b.y + CLIMB
-  const g = groundHeight(b.x, b.z, top)
+  const g = under(b.x, b.z, top)
   if (g >= b.y - 0.05) {
     b.y = g
     b.vy = 0
@@ -28,10 +36,10 @@ export function settle (b, dt) {
     up = b.y + CLIMB
   const fx = b.hx,
     fz = b.hz
-  _p.f = groundHeight(b.x + fx * hl, b.z + fz * hl, up)
-  _p.b = groundHeight(b.x - fx * hl, b.z - fz * hl, up)
-  _p.r = groundHeight(b.x - fz * hw, b.z + fx * hw, up)
-  _p.l = groundHeight(b.x + fz * hw, b.z - fx * hw, up)
+  _p.f = under(b.x + fx * hl, b.z + fz * hl, up)
+  _p.b = under(b.x - fx * hl, b.z - fz * hl, up)
+  _p.r = under(b.x - fz * hw, b.z + fx * hw, up)
+  _p.l = under(b.x + fz * hw, b.z - fx * hw, up)
   const air = b.vy < -0.5
   const gp = air ? b.gp || 0 : Math.atan2(_p.f - _p.b, 2 * hl),
     gr = air ? b.gr || 0 : Math.atan2(_p.l - _p.r, 2 * hw)

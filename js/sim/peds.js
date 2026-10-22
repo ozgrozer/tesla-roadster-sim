@@ -20,6 +20,7 @@ import { PEDBRAIN } from './pedBrain.js'
 import { LINGER } from './linger.js'
 import { SHELTER } from './shelter.js'
 import { FOOTFALL } from './footfall.js'
+import { PED_LIFE } from './living/pedLife.js'
 import { warm } from './traffic.js'
 import { CAR, clamp } from './constants.js'
 import { rng, BLOCKS } from './city.js'
@@ -172,7 +173,8 @@ export class Peds {
       leg: 0,
       lingerT: 0,
       sit: 0,
-      dog: null // (dogs.js)
+      dog: null, // (dogs.js)
+      liv: null // who they are, and what they are up to beyond the walk (living/)
     }
     if (!WARM) {
       warm(p) // (see traffic.js)
@@ -180,6 +182,7 @@ export class Peds {
       WARM = true
     }
     this.character(p)
+    this.profile(p)
     this.outfit(p)
     p.piece = this.place(p)
     this.list.push(p)
@@ -282,6 +285,7 @@ export class Peds {
       this.clock = 0
       this.recycle(pl.x, pl.z, view)
     }
+    this.living(dt, sim, view)
   }
   // (its step, p.lodT, is read from the person: a number passed in costs an allocation)
   move (p, t) {
@@ -321,12 +325,12 @@ export class Peds {
           p.cross = { ...pick, j: (R() - 0.5) * 1.6 }
           p.state = 'kerb'
         }
-      } else if (!paired && R() < dt * 0.006) this.jaywalk(p)
-      else if (!paired && !p.jog && R() < dt * 0.004) {
+      } else if (!paired && R() < dt * 0.006 * this.traits(p).jay) this.jaywalk(p)
+      else if (!paired && !p.jog && R() < dt * 0.004 * this.traits(p).idle) {
         // stopping a moment: a call, a message, a look in a window
         p.state = 'idle'
-        p.act = R() < 0.6 ? 1 : 0
-        p.idleT = 3 + R() * 12
+        p.act = R() < this.traits(p).phone * 0.75 ? 1 : 0
+        p.idleT = (3 + R() * 12) * this.traits(p).idleLen
       }
       p.piece = piece
       if (p.state === 'walk' && !paired) this.whim(p)
@@ -348,8 +352,9 @@ export class Peds {
       // over on the walk (not in its last half second), once nothing is on the crossing or right
       // at it (nor a police car on a call coming over the junction: traffic.urgent, calls.js)
       if (
-        walkOn(p.cross.node, p.cross.axis, t) &&
-        walkOn(p.cross.node, p.cross.axis, t + 0.5) &&
+        (p.cross.node.stop
+          ? this.traffic.stopWalk(p.cross.node) // (an all-way stop: trafficStop.js)
+          : walkOn(p.cross.node, p.cross.axis, t) && walkOn(p.cross.node, p.cross.axis, t + 0.5)) &&
         this.clearOver(p.cross) &&
         !this.traffic.urgent(p.cross.node)
       ) {
@@ -490,4 +495,4 @@ export class Peds {
     this.strays()
   }
 }
-Object.assign(Peds.prototype, CROWD, SHELTER, LINGER, DOGS, FOOTFALL, ALIGHT, PEDBRAIN)
+Object.assign(Peds.prototype, CROWD, SHELTER, LINGER, DOGS, FOOTFALL, ALIGHT, PEDBRAIN, PED_LIFE)

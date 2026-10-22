@@ -4,8 +4,11 @@
 // heat, and the heat sets the stars (STAR_HEAT). While the police (or the helicopter) have the
 // player in sight, the last known position follows them; a long chase in sight escalates a star.
 // Out of sight, the stars flash and the police search a circle round where they last saw them
-// (bigger the more stars); leave it and stay unseen for the cooldown and the stars clear (slowly
-// inside the circle). Pure logic: no DOM.
+// (bigger the more stars); leave it and stay unseen for the cooldown and a star goes, and so on down
+// to none (slowly inside the circle). The search is told to the maps ('police-search' { pos, radius },
+// radius 0 when it ends). Change cars (or get out) unseen and the police lose the description: they
+// must come much closer to know the player again, and the stars go quicker. Pure logic: no DOM.
+import { emitGame } from './gameEvents.js'
 
 // heat for 1 to 5 stars
 export const STAR_HEAT = [0, 1, 3, 6, 10, 16]
@@ -29,6 +32,10 @@ export const cooldownFor = stars => 6 + 3.5 * stars // s unseen, outside the cir
 export const IN_CIRCLE = 0.25 // the cooldown's rate inside the circle
 export const ESCALATE = 45 // s of a chase in sight that adds a star (up to ESCALATE_MAX)
 export const ESCALATE_MAX = 4
+export const LOST_SIGHT = 0.4 // the police's reach for a player whose description they lost
+export const LOST_COOL = 1.6 // and how much quicker the stars go
+export const REACQUIRE = 1.5 // s in sight, once the search is on, before it is over (a glimpse is not enough)
+export const SEARCH_EVERY = 8 // s between 'police-search' reminders (the maps' ttl is 20)
 
 export const starsFor = heat => {
   let s = 0
@@ -52,6 +59,23 @@ export class Wanted {
     this.max = 0 // most stars since the last clear (missions read it)
     this.log = [] // the last few crimes reported: { type, heat, by }
     this.changed = false // the stars changed in the last update / report
+    this.described = true // the police know what the player is in (changeVehicle)
+    this.told = 0 // the search radius last told the maps (0: none)
+    this.sightT = 0 // s in sight during a search (REACQUIRE)
+    this.tellT = 0
+  }
+  // the police's sight reach factor (police.js): less, without a description
+  get sight () {
+    return this.described ? 1 : LOST_SIGHT
+  }
+  // into another car, or out on foot: unseen by the police just now (seen: police.seen), and wanted,
+  // the description they had is no good
+  changeVehicle (seen) {
+    if (!this.stars || seen || this.seen) return false
+    if (!this.described) return false
+    this.described = false
+    emitGame('police-description-lost', { stars: this.stars, pos: { x: this.last.x, z: this.last.z } })
+    return true
   }
   get radius () {
     return searchRadius(this.stars)
@@ -66,6 +90,7 @@ export class Wanted {
     const sev = crime.severity ?? 1
     const by = w.police > 0 ? 'police' : w.peds + w.cars > 0 ? 'public' : null
     if (!by) return 0
+    this.described = true // (they say what the player is in now)
     const heat = base * sev * (by === 'police' ? POLICE_WITNESS : 1)
     this.heat += heat
     this.log.push({ type: crime.type, heat, by })
@@ -102,6 +127,7 @@ export class Wanted {
   }
   clear () {
     const max = this.max
+    this.described = true
     this.stars = 0
     this.heat = 0
     this.seen = this.searching = false
@@ -112,6 +138,7 @@ export class Wanted {
   }
   spotted (pos) {
     this.seen = true
+    this.described = true
     this.last.x = pos.x
     this.last.z = pos.z
     this.unseenT = 0
@@ -122,12 +149,18 @@ export class Wanted {
   // them in sight (police.js)
   update (dt, pos, seen) {
     this.changed = false
+    this.tell(dt)
     if (!this.stars) {
       this.seen = this.searching = false
       this.heat = Math.max(0, this.heat - dt * 0.05) // (unreported scraps fade)
       return
     }
+    // (searching: a glimpse is not enough to call it off; seen for REACQUIRE s, it is; meanwhile the
+    // cooldown holds)
+    if (seen && this.searching && (this.sightT += dt) < REACQUIRE) return
+    if (!seen) this.sightT = 0
     if (seen) {
+      this.sightT = 0
       this.spotted(pos)
       this.chaseT += dt
       if (this.chaseT > ESCALATE && this.stars < ESCALATE_MAX) {
@@ -140,8 +173,27 @@ export class Wanted {
     this.searching = this.unseenT > GRACE
     if (!this.searching) return
     const inside = this.inside(pos)
-    this.evade += dt * (inside ? IN_CIRCLE : 1)
-    if (this.evade >= this.cooldown) this.set(0)
+    this.evade += dt * (inside ? IN_CIRCLE : 1) * (this.described ? 1 : LOST_COOL)
+    if (this.evade < this.cooldown) return
+    // a star goes (the heat with it, so the next crime starts from here); the search goes on
+    const down = this.stars - 1
+    if (!down) return this.set(0)
+    this.stars = down
+    this.heat = STAR_HEAT[down]
+    this.evade = 0
+    this.chaseT = 0
+    this.changed = true
+    this.decays = (this.decays || 0) + 1
+  }
+  // the search circle, as the maps hear it: on its start, as it shrinks, every SEARCH_EVERY s while
+  // it lasts, and its end
+  tell (dt) {
+    const r = this.stars && this.searching ? this.radius : 0
+    this.tellT -= dt
+    if (r === this.told && (!r || this.tellT > 0)) return
+    this.told = r
+    this.tellT = SEARCH_EVERY
+    emitGame('police-search', r ? { pos: { x: this.last.x, z: this.last.z }, radius: r, stars: this.stars } : { pos: null, radius: 0 })
   }
   inside (pos) {
     return Math.hypot(pos.x - this.last.x, pos.z - this.last.z) < this.radius

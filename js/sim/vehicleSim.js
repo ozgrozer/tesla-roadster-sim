@@ -13,7 +13,7 @@
 // The body has the traffic car's shape where they overlap (x, z, hx, hz, len, wid, hgt, m, I, vx,
 // vz, w, dmg), so collide.js's impulses and carDamage.js's dents work on it unchanged.
 import { G, clamp, wrapPi, makeControls } from './constants.js'
-import { tyreCurve, smooth } from './tyres.js'
+import { tyreCurve, smooth, PEAK } from './tyres.js'
 import { Sim } from './sim.js'
 import {
   handlingFor,
@@ -24,20 +24,38 @@ import {
 } from './handling.js'
 import { collideWorld, kerbs } from './vehicleHit.js'
 import { settle } from './bodyGround.js'
+import { springs, slopeForce } from './vehicleBody.js'
 
 const MAX_DT = 1 / 120
 const TRANSFER = 0.12 // s the weight's shift onto an axle lags the acceleration
 const EB_ON = 0.06 // s for the handbrake to lock the rears
 const SPIN_UP = 1.6 // per s: how fast locked rears get their grip back once it is let go
+// GTA's handbrake: the rears locked keep HB_GRIP of their grip (a class's hbGrip), sideways and
+// along, so the tail steps out and the car pivots round its fronts carrying its speed rather than
+// stopping on its rears (a sliding tyre's slideMu kept it planted and scrubbed the speed away)
+const HB_GRIP = 0.5
+const HB_FAST = 18 // m/s: past this the handbrake's swing rate is held lower, as HB_FAST / speed
+const HB_HOLD = 20 // 1/s: how hard the swing is held to its rate (a stiff yaw-rate limiter)
+const J_TURN = 2.6 // the swing backing up (a J-turn), times the class's hbYaw going forwards
 const SHIFT_T = 0.22 // s a gear change cuts the drive
-const REV_MAX = 7 // m/s backing up
+const REV_MAX = 7 // m/s backing up (a class's revMax: the player's cars back up GTA-quick)
 const EFF = 0.88 // the drivetrain's efficiency
 const SENS = 0.35 // load sensitivity: a loaded tyre grips less per newton
 const SPIN_OK = 0.35 // rad/s a car may turn faster than its grip carries it before it is caught
 const SPIN_K = 7 // N m per kg per rad/s of that, at most SPIN_MAX N m per kg
 const SPIN_MAX = 6
-const HB_RATE = 1.6 // rad/s: the most the handbrake's swing turns the car at
-const RECOVER = 1.2 // rad/s^2 per rad the nose is off the way the car is going
+const HB_RATE = 1.6 // rad/s: the most the handbrake's swing turns the car at (a class's hbRate)
+const RECOVER = 1.6 // rad/s^2 per rad the nose is off the way the car is going
+// the recovery that much stronger with the wheel let go: on the power with hands off, a slide
+// straightens, GTA-style, rather than running on down a straight in the wet
+const HANDS_OFF = 1,
+  HANDS_DAMP = 3 // 1/s: the yaw rate eased away with the wheel let go, the same way
+const DRIFT_MAX = 0.6, // rad of slip a drift on the power is held to, DRIFT_K rad/s^2 per rad past it
+  DRIFT_K = 5
+const SPUN = 1.2, // rad: the way the car is going this far off its nose, it is spinning, and
+  SPIN_DAMP = 2.5 // its yaw rate is damped at this rate (1/s)
+const PULL = 0.12 // rad of steering pull per m a front corner is crumpled further than the other
+const _g = [0, 0]
 
 let IDS = 0
 // A body for a car of handling class kind (handling.js), at (x, z) facing yaw, standing still.
@@ -76,6 +94,7 @@ export function createVehicleBody (kind, opts = {}) {
     accLong: 0,
     latAcc: 0,
     ebLock: 0,
+    hbDir: 0, // the way the car was going as the handbrake was pulled (1, -1; 0 off)
     rearGrip: 1,
     spin: 0, // how much the driven wheels spin past the road (0 to 1)
     skid: 0, // how much the tyres slide (0 to 1), for marks, smoke and squeal
@@ -87,8 +106,7 @@ export function createVehicleBody (kind, opts = {}) {
     rollV: 0,
     heave: 0,
     heaveV: 0,
-    kerbF: false, // (each axle up on a kerb a step ago)
-    kerbR: false,
+    kerbW: null, // (each wheel up on a kerb a step ago: vehicleHit.js kerbs)
     lights: { brake: false, reverse: false, indicator: 0, head: true },
     dmg: null, // damage, as a traffic car's (carDamage.js)
     limp: 1, // the share of its power the damage leaves it
@@ -161,10 +179,11 @@ export function stepVehicle (b, inp, dt, world = null) {
       if (world.city !== false) kerbs(b)
       collideWorld(b, world)
     }
+    springs(b, h) // (the body on its springs: vehicleBody.js)
   }
   if (world && world.city !== false) settle(b, dt) // (up the ramps and the hills: bodyGround.js)
-  body(b, dt)
-  b.lights.brake = !b.dead && inp.brake > 0.05 && b.gear > 0 && b.u > 0.2
+  // (held on the brakes at a standstill they stay lit, as a car waiting to back up does)
+  b.lights.brake = !b.dead && inp.brake > 0.05 && b.gear > 0 && (b.u > 0.2 || inp.reverse !== undefined)
   b.lights.reverse = b.gear === -1
 }
 
@@ -198,7 +217,13 @@ function move (b, inp, dt, world) {
   const hb = !!inp.handbrake && !b.dead
   b.ebLock = hb ? Math.min(1, b.ebLock + dt / EB_ON) : 0
   const locked = b.ebLock >= 1 && Math.abs(u) > 1
-  b.rearGrip = locked ? S.slideMu : Math.min(1, b.rearGrip + dt * SPIN_UP)
+  // (at speed they keep more, up to a sliding tyre's grip by HB_FAST + 14 m/s: a flick at 100
+  // km/h slides the tail out to catch, rather than spinning the car)
+  const hbG = S.hbGrip ?? HB_GRIP,
+    spd0 = Math.hypot(u, w)
+  b.rearGrip = locked
+    ? hbG + (S.slideMu - hbG) * smooth((spd0 - HB_FAST) / 14)
+    : Math.min(1, b.rearGrip + dt * SPIN_UP)
   const FmaxF = mu * S.gripF * Math.max(0, Nf) * kLat,
     FmaxR = mu * S.gripR * Math.max(0, Nr) * kLat * b.rearGrip
   const au = Math.abs(u),
@@ -209,9 +234,17 @@ function move (b, inp, dt, world) {
   // the steering: speed-sensitive lock, the rack at the speed of hands, and the hands catching a
   // slide (the fronts follow it on their caster, as the Roadster's do: tyres.js steer)
   let target = inp.steer * lockAt(S, au)
+  // (a front corner crumpled in pulls the wheel its way: damage you can feel, not fight)
+  if (b.dmg) target += clamp((b.dmg.dents[0] - b.dmg.dents[2]) * PULL, -0.03, 0.03)
   const slide = smooth((Math.abs(beta) - 0.1) / 0.15)
   if (u > 3 && !hb) {
     const aKin = Math.atan2(w + a * r, au)
+    // the driver's feel for the limit, as the Roadster's (tyres.js steer): the fronts turned no
+    // further past the way the car is going than the slip they grip hardest at (the class's feel
+    // of it: a sports car's driver right to the peak, a truck's well short), so full lock on the
+    // keys at speed corners on the tyres' peak instead of scrubbing wide on their sliding grip
+    const aLim = (S.feel ?? 0.9) * (PEAK * FmaxF) / Math.max(S.cornF, 1)
+    target = clamp(target, aKin - aLim, aKin + aLim) * (1 - slide) + target * slide
     target += (aKin + inp.steer * 0.5 * S.lock - target) * slide * S.assist
   }
   target = clamp(target, -S.lock, S.lock)
@@ -225,7 +258,23 @@ function move (b, inp, dt, world) {
   let thr = b.dead ? 0 : clamp(inp.throttle, 0, 1)
   let brk = clamp(inp.brake, 0, 1)
   let rev = 0
-  if (b.gear === -1 && thr > 0 && u < 0.5) {
+  if (inp.reverse !== undefined) {
+    // (the player's keys say when to back up: input.js holds the car on its brakes a moment after
+    // braking it to a stop, then hands the pedal over to reverse)
+    rev = b.dead ? 0 : clamp(inp.reverse, 0, 1)
+    if (b.gear === -1 && thr > 0 && u < 0.5) {
+      brk = Math.max(brk, thr)
+      thr = 0
+      if (u > -0.3) b.gear = 1
+    } else if (rev > 0 && thr === 0) {
+      if (u < 0.6) b.gear = -1
+      else {
+        brk = Math.max(brk, rev)
+        rev = 0
+      }
+    } else if (b.gear === -1 && u > -0.2 && thr === 0) b.gear = 1
+    if (b.gear !== -1) rev = 0
+  } else if (b.gear === -1 && thr > 0 && u < 0.5) {
     // (backing up, the throttle is the brake)
     brk = Math.max(brk, thr)
     thr = 0
@@ -266,12 +315,19 @@ function move (b, inp, dt, world) {
     if (b.shiftT > 0) Fdrive *= 0.25
   } else if (b.gear === -1) {
     b.rpm = rpmAt(S, au, 0)
-    Fdrive = -rev * m * 3.5 * clamp((REV_MAX + u) / 1.5, 0, 1) * b.limp
+    // (the player's keys back up GTA-quick, at the class's pace; the AI's drivers at the old one)
+    const mine = inp.reverse !== undefined,
+      vr = mine ? S.revMax ?? REV_MAX : REV_MAX
+    Fdrive = -rev * m * (mine ? S.revAcc ?? 3.5 : 3.5) * clamp((vr + u) / 1.5, 0, 1) * b.limp
   }
   // (and stability control takes the power away in a slide, so the rears can grip again)
   // (the rears' share only: pulling front wheels straighten the car)
+  // (all of it, and sooner, with the wheel let go, by the class's handsOff: the power alone
+  // doesn't hold a slide the driver isn't steering)
+  const free = (S.handsOff ?? 0) * (1 - Math.min(1, Math.abs(inp.steer) / 0.5)),
+    tc = (S.tc ?? 1) + (1 - (S.tc ?? 1)) * free
   if (Fdrive > 0)
-    Fdrive *= 1 - (1 - S.front) * (S.tc ?? 1) * smooth((Math.abs(beta) - 0.12) / 0.25)
+    Fdrive *= 1 - (1 - S.front) * tc * smooth((Math.abs(beta) - 0.07 + 0.04 * free) / (0.18 - 0.08 * free))
   b.shiftT = Math.max(0, b.shiftT - dt)
   b.rpmN = clamp(b.rpm / (S.rpmRed || 1), 0, 1)
   b.load = thr || rev
@@ -290,6 +346,8 @@ function move (b, inp, dt, world) {
     b.spin = clamp(Math.abs(Fxr) / Math.max(FmaxR, 1) - 0.95, 0, 1) * (1 - (S.tc ?? 1))
   Fxf = clamp(Fxf, -FmaxF, FmaxF)
   Fxr = clamp(Fxr, -FmaxR, FmaxR)
+  // (sliding with the wheel let go, the drive leaves the rears grip to come back in line with)
+  if (free > 0 && Fxr > 0) Fxr = Math.min(Fxr, FmaxR * (1 - 0.4 * free * smooth(Math.abs(beta) / 0.06)))
   if (hb) Fxr = -su * Math.max(Math.abs(Fxr), b.ebLock * FmaxR)
 
   // front tyres, in the steered wheels' frame
@@ -322,33 +380,78 @@ function move (b, inp, dt, world) {
   Mz -= bb * Fyr
   // the handbrake's swing (going forwards, fading as the car comes round), and catching the slide
   // once it is let go: a car turning faster than its tyres could carry it round is eased back
-  if (hb && inp.steer !== 0 && u > 2)
+  // Going forwards it fades once the car is hbFade rad off the way it is going (momentum carries it
+  // on round); pulled backing up (the J-turn, its way latched as it is pulled: b.hbDir) it swings
+  // the nose on round until the car is going forwards again, nose first
+  if (hb && b.hbDir === 0) b.hbDir = su
+  else if (!hb) b.hbDir = 0
+  const spdHb = Math.hypot(u, w),
+    off = Math.abs(Math.atan2(w, u)) // (0 going forwards, pi backing straight)
+  if (hb && inp.steer !== 0 && spdHb > 2 && b.hbDir !== 0) {
+    const fade =
+      b.hbDir > 0
+        ? 1 - smooth((off - (S.hbFade ?? 0.6)) / 0.5)
+        : smooth((off - 0.9) / 0.6)
     Mz +=
+      b.hbDir *
       inp.steer *
       S.hbYaw *
+      (b.hbDir < 0 ? J_TURN : 1) *
       (m / 1000) *
       b.ebLock *
-      smooth((u - 2) / 8) *
-      (1 - smooth((Math.abs(Math.atan2(w, u)) - 0.6) / 0.5))
+      smooth((spdHb - 2) / 6) *
+      fade
+  }
   // (the swing held to a rate a driver can catch)
-  if (hb && Math.abs(r) > HB_RATE) Mz -= Math.sign(r) * 3 * m * (Math.abs(r) - HB_RATE)
+  // (and lower at speed: a flick at 100 km/h is a slide to catch, not a pirouette)
+  const hbRate = (S.hbRate ?? HB_RATE) * clamp(HB_FAST / Math.max(spdHb, 1), 0.5, 1)
+  if (hb && Math.abs(r) > hbRate) Mz -= Math.sign(r) * HB_HOLD * b.I * (Math.abs(r) - hbRate)
   const spd = Math.hypot(u, w)
   if (!hb && spd > 4) {
-    const rOk = Math.max(Math.abs(u * Math.tan(b.steerAng)) / S.wb, (mu * G) / spd)
+    // (the rate the wheel asks for counts only the way the car is turning: opposite lock asks
+    // for less, not more, so it can't excuse a spin)
+    const rKin = Math.max(0, (Math.sign(r) * u * Math.tan(b.steerAng)) / S.wb)
+    const rOk = Math.max(rKin, (mu * G) / spd)
     const over = Math.abs(r) - rOk - SPIN_OK
     if (over > 0) Mz -= Math.sign(r) * Math.min(SPIN_K * m * over, SPIN_MAX * m) * S.stab
     // (and the nose brought back round to where the car is going, as a driver's hands and the
     // power do coming out of a slide: the recovery, less the more the throttle is held)
-    const off = Math.atan2(w, u)
+    // (off: the rear axle's slip, not the middle's: going round a tight turn the middle of a car
+    // always moves a little across its nose, and pulling the nose round to that spun it out)
+    // (held only while the wheel is held too: on the power with the wheel let go, the car
+    // straightens, as GTA's do, rather than sliding on down a straight in the wet)
+    // (with the wheel let go, by the class's handsOff: a sports car holds a drift on the power
+    // whatever the wheel does, a pickup's slide straightens)
+    const off = beta,
+      rec = RECOVER * (1 + HANDS_OFF * free) * (1 - (S.slideHold ?? 0.5) * thr * (1 - free))
     if (u > 2 && Math.abs(off) < 1.7)
-      Mz += S.stab * b.I * (RECOVER * off * (1 - 0.5 * thr) - 0.2 * r * smooth(Math.abs(off) / 0.3))
+      Mz += S.stab * b.I * (rec * off - 0.2 * r * smooth(Math.abs(off) / 0.3))
+    // (and the turn itself eased out with the wheel let go: no circling on the power alone)
+    if (free > 0) Mz -= S.stab * b.I * HANDS_DAMP * free * r
+    // (a drift held on the power is held to DRIFT_MAX of slip, whatever the throttle: past it the
+    // car is brought back towards it, so it drives on round sideways rather than bogging down
+    // broadside)
+    const past = Math.abs(off) - DRIFT_MAX
+    if (u > 2 && past > 0 && Math.abs(off) < 1.7) Mz += Math.sign(off) * S.stab * b.I * DRIFT_K * past
   }
+  // (and a car going well sideways or backwards, off the handbrake, stops spinning, GTA-style: a
+  // handbrake 180 on a wet road ends facing back, not in a pirouette)
+  if (!hb && spd > 1 && off > SPUN)
+    Mz -= S.stab * b.I * SPIN_DAMP * r * smooth((off - SPUN) / 0.4)
   b.drifting = !locked && Math.abs(beta) > 0.18 && au > 6
   // rolling resistance and drag
   const Fres = S.rollRes * N * Math.min(1, spd / 0.5) + S.drag * spd * spd
   if (spd > 1e-4) {
     Fu -= (Fres * u) / spd
     Fw -= (Fres * w) / spd
+  }
+  // (a slope's gravity: slower up a hill, faster down it, drifting to the low side across one)
+  const FuT = Fu,
+    FwT = Fw // (the tyres' pull: what the springs and the weight's shift feel)
+  if (b.gp || b.gr) {
+    slopeForce(b, _g)
+    Fu += _g[0]
+    Fw += _g[1]
   }
   b.vx += ((Fu * fx + Fw * lx) / m) * dt
   b.vz += ((Fu * fz + Fw * lz) / m) * dt
@@ -368,8 +471,8 @@ function move (b, inp, dt, world) {
     b.vx = b.vz = b.w = 0
     uN = 0
   }
-  b.accLong = clamp(Fu / m, -20, 20)
-  b.latAcc = clamp(Fw / m, -20, 20)
+  b.accLong = clamp(FuT / m, -20, 20)
+  b.latAcc = clamp(FwT / m, -20, 20)
   b.u = uN
   b.lat = b.vx * b.hz - b.vz * b.hx
   b.x += b.vx * dt
@@ -380,22 +483,6 @@ function move (b, inp, dt, world) {
     ? clamp(Math.hypot(u, wr) / 3, 0, 1)
     : clamp(((S.cornR * Math.abs(beta)) / Math.max(FmaxR, 1) - 1.2) / 0.8, 0, 1)
   b.skid = Math.max(sF, sR, b.spin) * clamp(spd / 3, 0, 1)
-}
-
-// the body on its springs: pitching under braking and acceleration, rolling in corners, bouncing
-// over kerbs, each a damped spring at the class's bounce frequency, within its travel
-function body (b, dt) {
-  const S = b.spec,
-    k = (2 * Math.PI * S.suspHz) ** 2,
-    c = 2 * S.damp * 2 * Math.PI * S.suspHz
-  const pT = clamp((-b.accLong / G) * S.pitchK, -0.12, 0.12),
-    rT = clamp((b.latAcc / G) * S.rollK, -0.15, 0.15)
-  b.pitchV += (-k * (b.pitch - pT) - c * b.pitchV) * dt
-  b.pitch += b.pitchV * dt
-  b.rollV += (-k * (b.roll - rT) - c * b.rollV) * dt
-  b.roll += b.rollV * dt
-  b.heaveV += (-k * b.heave - c * b.heaveV) * dt
-  b.heave = clamp(b.heave + b.heaveV * dt, -S.travel, S.travel)
 }
 
 // the speed along and across the car, and its pose, for anyone drawing it

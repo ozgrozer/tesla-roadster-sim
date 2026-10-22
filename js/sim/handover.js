@@ -28,6 +28,7 @@ export const STYLE = { cautious: 0, normal: 1, aggressive: 2 }
 const GRID_SQUEEZE = 14, // s held up by something that will not move: edge past it at a crawl
   GRID_DROP = 22 // s: still held up, out of sight, it is taken off the road (and refilled elsewhere)
 const ANGRY = 18 // s a driver stays angry after a knock
+const JACK_OUT = 0.4 // m out of its side a jacked driver is first seen (clear of crowd.js clear's 0.35)
 
 export const HANDOVER = {
   carById (id) {
@@ -68,6 +69,7 @@ export const HANDOVER = {
   handBack (car, { rejoin = false } = {}) {
     if (!car?.ctl) return false
     car.ctl = null
+    car.body = null
     car.v = 0
     car.homeX = car.x
     car.homeZ = car.z
@@ -99,8 +101,9 @@ export const HANDOVER = {
   },
   // The driver put out of car on its side nearer the pavement (or side: 1 left, -1 right), as
   // someone on foot (peds.js picks them up from traffic.exits: alight.js); jacked: dragged out, so
-  // they run off (and the people round about see it). Returns the door they leave by.
-  ejectDriver (car, { side = 0, jacked = true } = {}) {
+  // they run off (and the people round about see it); along: where the seat is, m ahead of the
+  // car's middle (vehicles.js seat.x). Returns the door they leave by.
+  ejectDriver (car, { side = 0, jacked = true, along = 0 } = {}) {
     const lx = car.hz,
       lz = -car.hx // (the car's left)
     let sg = side
@@ -117,6 +120,10 @@ export const HANDOVER = {
       z: car.z + lz * sg * (car.wid / 2 + 0.5),
       ox: lx * sg,
       oz: lz * sg,
+      hx: car.hx, // (the car's way: a jacked driver is thrown out towards its tail, alight.js)
+      hz: car.hz,
+      sx: car.x + car.hx * along + lx * sg * (car.wid / 2 + JACK_OUT),
+      sz: car.z + car.hz * along + lz * sg * (car.wid / 2 + JACK_OUT),
       jacked,
       car: car.id
     }
