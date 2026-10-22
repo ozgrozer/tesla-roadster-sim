@@ -41,14 +41,24 @@ export const CAREER_FOOT = [
   ['punch-ped', async g => {
     if (!await onFootClean(g)) return
     await g.ev(events)
-    const id = await g.ev(victim)
-    if (!g.expect(id !== null, 'nobody about to punch')) return
-    for (let k = 0; k < 3; k++) {
-      await g.press('KeyF', 0)
-      await g.until(() => !window.__roadster.foot.fight.melee.busy, 2)
+    let ev = [],
+      diag = null
+    // (someone else, if the first got away: up to three tries)
+    for (let k = 0; k < 3 && !has(ev, 'ped-punched'); k++) {
+      const id = await g.ev(victim)
+      if (!g.expect(id !== null, 'nobody about to punch')) return
+      await g.run(0.1)
+      for (let n = 0; n < 3; n++) {
+        await g.press('KeyF', 0)
+        await g.until(() => !window.__roadster.foot.fight.melee.busy, 2)
+      }
+      ev = ev.concat(await g.ev(events))
+      diag = await g.ev(id => {
+        const R = window.__roadster, q = R.peds.list.find(o => o.i === id), P = R.player
+        return { id, mode: P.mode, action: R.foot.action?.phase || null, down: P.down, q: q && { state: q.state, d: Math.hypot(q.x - P.pos.x, q.z - P.pos.z).toFixed(2) }, hits: R.foot.fight.melee.hits, landed: R.foot.fight.landed }
+      }, id)
     }
-    const ev = await g.ev(events)
-    g.expect(has(ev, 'ped-punched'), 'no punch landed', ev.slice(-10))
+    g.expect(has(ev, 'ped-punched'), 'no punch landed', { diag, ev: ev.slice(-10) })
     g.expect(has(ev, 'crime', e => e.what === 'assault'), 'punching someone was no assault', ev.slice(-10))
     await g.shot('f1-punch.png')
     const up = await g.until(() => window.__roadster.game.wanted.stars >= 1, 25)
