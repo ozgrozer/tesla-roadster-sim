@@ -50,7 +50,7 @@ const look = (yaw, pitch = 0) => g.ev(([y, p]) => {
   rig.f.idle = -1e9 // (not drifting back behind the car)
 }, [yaw, pitch])
 // the car the player is in put back at START, standing, and the traffic and the police cleared
-const clear = () => g.ev(S => {
+const clear = (at = START) => g.ev(S => {
   const R = window.__roadster, b = R.foot.alt.body
   if (b) Object.assign(b, { x: S.x, z: S.z, yaw: S.yaw, hx: Math.cos(S.yaw), hz: -Math.sin(S.yaw), vx: 0, vz: 0, u: 0, w: 0, lat: 0 })
   else R.resetTo('city', S)
@@ -63,7 +63,7 @@ const clear = () => g.ev(S => {
   }
   R.game.wanted.clear()
   R.rig.cut?.()
-}, START)
+}, at)
 const seat = async k => {
   await g.ev(k => window.__roadster.seatIn(k), k)
   await g.run(0.5)
@@ -118,6 +118,84 @@ try {
     await drive(['Space', 'KeyA'], 0.5)
     await shot('d4-roadster-handbrake-turn.png')
     await drive([], 1)
+  }
+  if (want('skids')) {
+    // a handbrake turn mid-block, on the plain dark asphalt, and the marks seen from above
+    await seat('sports')
+    await drive('KeyW', 1.1)
+    await drive(['Space', 'KeyA'], 0.35)
+    await drive(['KeyW', 'KeyA'], 0.5)
+    await drive(['KeyW', 'KeyD'], 0.3)
+    await drive('KeyS', 1.2)
+    await drive([], 2)
+    await look(Math.PI * 0.85, 0.8)
+    await shot('d5-skid-marks-asphalt.png')
+    await look(0, 0)
+  }
+  if (want('wet')) {
+    // K16 in game: the same stop from 60 km/h dry and in the rain, the sedan and the Roadster; then
+    // the pickup's power slide in the rain, and how soon it straightens with the wheel let go
+    // (the Roadster's run 80 m on from the sedan's, so neither stops in the other's way)
+    const AHEAD = { ...START, x: START.x + 80 }
+    const stop = async (from = START) => {
+      await clear(from)
+      await g.run(0.3)
+      for (let i = 0; i < 40; i++) {
+        await drive('KeyW', 0.15)
+        const v = await g.ev(() => { const R = window.__roadster, b = R.foot.alt.body; return b ? b.u : R.sim.speed })
+        if (v > 60 / 3.6) break
+      }
+      const at = () => g.ev(() => { const R = window.__roadster, b = R.foot.alt.body; return b ? { x: b.x, z: b.z, v: b.u } : { x: R.sim.pos.x, z: R.sim.pos.z, v: R.sim.speed } })
+      const p0 = await at()
+      let p = p0
+      await g.hold('KeyS', async () => {
+        for (let i = 0; i < 400 && p.v > 0.3; i++) {
+          await g.wait(15)
+          p = await at()
+        }
+      })
+      const grip = await g.ev(() => { const R = window.__roadster; return R.foot.alt.body ? R.foot.alt.world.grip : R.sim.grip })
+      return { from: Math.round(p0.v * 36) / 10, m: Math.round(Math.hypot(p.x - p0.x, p.z - p0.z) * 10) / 10, grip: Math.round(grip * 1000) / 1000 }
+    }
+    const weather = w => g.ev(w => window.__roadster.climate.setWeather(w, { now: true }), w)
+    const res = {}
+    for (const w of ['clear', 'rain']) {
+      await weather(w)
+      await g.run(0.5)
+      await seat('sedan')
+      res['sedan ' + w] = await stop()
+      await g.ev(S => window.__roadster.resetTo('city', S), AHEAD)
+      await g.run(1)
+      res['roadster ' + w] = await stop(AHEAD)
+    }
+    log.wetStops = res
+    console.log('stops from 60 km/h:', JSON.stringify(res))
+    // (rain still falling) the pickup on the power round a bend, then the wheel let go
+    await seat('pickup')
+    await drive('KeyW', 2.5)
+    await drive(['KeyW', 'KeyA'], 0.9)
+    await look(0.5, 0.1)
+    await shot('d6-pickup-rain-power-slide.png')
+    // (the slide picked up again after the shot's pause, then the wheel let go at once)
+    await drive(['KeyW', 'KeyA'], 0.7)
+    const t0 = await clock()
+    let tStraight = null
+    await g.hold('KeyW', async () => {
+      for (let i = 0; i < 400; i++) {
+        await g.wait(15)
+        const st = await g.ev(() => { const b = window.__roadster.foot.alt.body; return { t: window.__roadster.foot.driven().time, slip: b.slip, w: b.w } })
+        if (st.t === t0) continue
+        if (log.slideAtLetGo === undefined) log.slideAtLetGo = st.slip * 57.3
+        if (Math.abs(st.slip) < 0.05 && Math.abs(st.w) < 0.1) { tStraight = st.t - t0; break }
+        if (st.t - t0 > 4) break
+      }
+    })
+    log.pickupStraightens = tStraight
+    console.log('pickup in the rain, wheel let go on the power at', log.slideAtLetGo, 'deg: straight after', tStraight, 's')
+    await shot('d6-pickup-rain-straightened.png')
+    await look(0, 0)
+    await drive('KeyS', 2)
+    await weather('clear')
   }
 } catch (e) {
   console.error(e)
