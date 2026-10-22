@@ -8,18 +8,38 @@ import { BLOCKS, STALLS, BUILDINGS, onRoad, N, PITCH, HALF } from './city.js'
 import { DECKS, RAMPS } from './lots.js'
 import { AREAS, areaOf, whereIs } from './areas.js'
 import { WALL } from './hills.js'
-import { hillHeight, onHillRoad, inTunnel, HILL_ROAD, LOOKOUT } from './hillroad.js'
+import {
+  hillHeight,
+  onHillRoad,
+  inTunnel,
+  HILL_ROAD,
+  LOOKOUT
+} from './hillroad.js'
 import { FWY } from './freeway.js'
 import { STEP, roofAt } from './roofs.js'
 import { LINES, ringOf, ringAt, crossings } from './pavement.js'
 import { ROOFTOPS, LANDMARKS_V2 } from './variety.js'
+import { ALLEYS, EXTRAS } from './extras.js'
 
-export { onRoad, roofAt, FWY, HILL_ROAD, LOOKOUT, onHillRoad, inTunnel, ROOFTOPS, LANDMARKS_V2 }
+export {
+  onRoad,
+  roofAt,
+  FWY,
+  HILL_ROAD,
+  LOOKOUT,
+  onHillRoad,
+  inTunnel,
+  ROOFTOPS,
+  LANDMARKS_V2,
+  ALLEYS,
+  EXTRAS
+}
 
 const inRect = (o, x, z) => x >= o.x0 && x <= o.x1 && z >= o.z0 && z <= o.z1
 // a ramp's height at (x, z) (plots.js: h0 at x0 or z0, h1 at the far end)
 export function rampHeight (r, x, z) {
-  const t = r.axis === 'x' ? (x - r.x0) / (r.x1 - r.x0) : (z - r.z0) / (r.z1 - r.z0)
+  const t =
+    r.axis === 'x' ? (x - r.x0) / (r.x1 - r.x0) : (z - r.z0) / (r.z1 - r.z0)
   return r.h0 + (r.h1 - r.h0) * Math.max(0, Math.min(1, t))
 }
 
@@ -46,7 +66,8 @@ export function groundNormal (x, z, y = Infinity, out = { x: 0, y: 1, z: 0 }) {
   const e = 0.75,
     h = groundHeight(x, z, y),
     up = h + 1 // (each side read at the same surface, not one stacked over it)
-  const gx = (groundHeight(x + e, z, up) - groundHeight(x - e, z, up)) / (2 * e),
+  const gx =
+      (groundHeight(x + e, z, up) - groundHeight(x - e, z, up)) / (2 * e),
     gz = (groundHeight(x, z + e, up) - groundHeight(x, z - e, up)) / (2 * e)
   const l = Math.hypot(gx, 1, gz)
   out.x = -gx / l
@@ -74,7 +95,9 @@ export function districtAt (x, z) {
   }
   if (onHillRoad(x, z)) {
     out.name = 'Hollywood Hills'
-    out.street = inTunnel(x, z) ? 'Santa Fe Canyon Tunnel' : 'Santa Fe Canyon Rd'
+    out.street = inTunnel(x, z)
+      ? 'Santa Fe Canyon Tunnel'
+      : 'Santa Fe Canyon Rd'
   }
   return out
 }
@@ -84,7 +107,12 @@ export function districtAt (x, z) {
 export function parkingNear (x, z, r, free = true) {
   const out = []
   for (const s of STALLS)
-    if ((!free || !s.taken) && Math.abs(s.x - x) < r && Math.abs(s.z - z) < r && Math.hypot(s.x - x, s.z - z) < r)
+    if (
+      (!free || !s.taken) &&
+      Math.abs(s.x - x) < r &&
+      Math.abs(s.z - z) < r &&
+      Math.hypot(s.x - x, s.z - z) < r
+    )
       out.push(s)
   return out
 }
@@ -99,7 +127,8 @@ export function pavementNear (x, z, r, every = 12) {
     const g = ringOf(b, 1)
     for (let s = 0; s < g.len; s += every) {
       ringAt(g, s, P)
-      if (Math.hypot(P.x - x, P.z - z) < r) out.push({ x: P.x, z: P.z, hx: P.hx, hz: P.hz })
+      if (Math.hypot(P.x - x, P.z - z) < r)
+        out.push({ x: P.x, z: P.z, hx: P.hx, hz: P.hz })
     }
   }
   return out
@@ -132,7 +161,12 @@ export function pavementGraph () {
     }
   }
   const link = (a, b, cross = null) => {
-    const e = { a, b, len: Math.hypot(nodes[a].x - nodes[b].x, nodes[a].z - nodes[b].z), cross }
+    const e = {
+      a,
+      b,
+      len: Math.hypot(nodes[a].x - nodes[b].x, nodes[a].z - nodes[b].z),
+      cross
+    }
     edges.push(e)
     adj[a].push(e)
     adj[b].push(e)
