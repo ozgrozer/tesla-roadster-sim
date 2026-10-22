@@ -34,6 +34,7 @@ export const ESCALATE = 45 // s of a chase in sight that adds a star (up to ESCA
 export const ESCALATE_MAX = 4
 export const LOST_SIGHT = 0.4 // the police's reach for a player whose description they lost
 export const LOST_COOL = 1.6 // and how much quicker the stars go
+export const REACQUIRE = 1.5 // s in sight, once the search is on, before it is over (a glimpse is not enough)
 export const SEARCH_EVERY = 8 // s between 'police-search' reminders (the maps' ttl is 20)
 
 export const starsFor = heat => {
@@ -60,6 +61,7 @@ export class Wanted {
     this.changed = false // the stars changed in the last update / report
     this.described = true // the police know what the player is in (changeVehicle)
     this.told = 0 // the search radius last told the maps (0: none)
+    this.sightT = 0 // s in sight during a search (REACQUIRE)
     this.tellT = 0
   }
   // the police's sight reach factor (police.js): less, without a description
@@ -153,7 +155,12 @@ export class Wanted {
       this.heat = Math.max(0, this.heat - dt * 0.05) // (unreported scraps fade)
       return
     }
+    // (searching: a glimpse is not enough to call it off; seen for REACQUIRE s, it is; meanwhile the
+    // cooldown holds)
+    if (seen && this.searching && (this.sightT += dt) < REACQUIRE) return
+    if (!seen) this.sightT = 0
     if (seen) {
+      this.sightT = 0
       this.spotted(pos)
       this.chaseT += dt
       if (this.chaseT > ESCALATE && this.stars < ESCALATE_MAX) {

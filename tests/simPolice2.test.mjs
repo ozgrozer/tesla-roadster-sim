@@ -10,7 +10,7 @@ import { Peds } from '../js/sim/peds.js'
 import { Sim } from '../js/sim/sim.js'
 import { LANES, SPAWN, ROADS, WILSHIRE, ROAD_HW, rng } from '../js/sim/city.js'
 import { makeControls } from '../js/sim/constants.js'
-import { Wanted, cooldownFor, searchRadius, LOST_SIGHT, GRACE } from '../js/sim/wanted.js'
+import { Wanted, cooldownFor, searchRadius, LOST_SIGHT, GRACE, REACQUIRE } from '../js/sim/wanted.js'
 import { Reports, DRIVER_CALL } from '../js/sim/wantedReports.js'
 import { Police, UNITS, ROADBLOCK_STARS, inView } from '../js/sim/police.js'
 import { roadblockSpot } from '../js/sim/policeAir.js'
@@ -145,8 +145,8 @@ test('changing cars unseen: the description is lost (shorter sight, quicker cool
   while (A.stars && ta < 60) (A.update(0.1, { x: 500, z: 0 }, false), (ta += 0.1))
   while (B.stars && tb < 60) (B.update(0.1, { x: 500, z: 0 }, false), (tb += 0.1))
   assert.ok(tb < ta * 0.8, `lost description cleared in ${tb.toFixed(1)} s, not ${ta.toFixed(1)}`)
-  // spotted again: they know them
-  W.update(0.1, { x: 0, z: 0 }, true)
+  // spotted again (in sight long enough to call the search off): they know them
+  for (let s = 0; s < REACQUIRE + 0.2; s += 0.1) W.update(0.1, { x: 0, z: 0 }, true)
   assert.equal(W.sight, 1)
 })
 
@@ -255,4 +255,35 @@ test('on foot and standing still: a unit comes all the way and the arrest is mad
     }
     assert.ok(held >= 2.5, `seed ${seed}: not arrested in 45 s (nearest ${pol.nearest.toFixed(0)} m)`)
   }
+})
+
+test('a search is not called off by a glimpse: brief sightings neither end it nor flicker the maps; sustained sight does', () => {
+  const heard = []
+  const off = onGame('police-search', e => heard.push(e.radius))
+  const W = new Wanted()
+  W.set(2, { x: 0, z: 0 })
+  W.update(0.1, { x: 0, z: 0 }, true)
+  const far = { x: 600, z: 0 }
+  // lying low, glimpsed for 0.5 s every 3 s: the stars still go, one at a time
+  let t = 0
+  while (W.stars && t < 120) {
+    const glimpse = t > GRACE + 1 && t % 3 < 0.5
+    W.update(0.1, far, glimpse)
+    t += 0.1
+  }
+  assert.equal(W.stars, 0, `cleared despite the glimpses (${t.toFixed(0)} s)`)
+  W.update(0.1, far, false) // (the end told on the next update)
+  const ends = heard.filter(r => r === 0).length
+  assert.equal(ends, 1, `the search told ended once only (${JSON.stringify(heard)})`)
+  // sustained sight ends a search
+  W.set(2, { x: 0, z: 0 })
+  W.update(0.1, { x: 0, z: 0 }, true)
+  for (let k = 0; k < 30; k++) W.update(0.1, far, false)
+  assert.equal(W.searching, true)
+  for (let s = 0; s < REACQUIRE - 0.3; s += 0.1) W.update(0.1, far, true)
+  assert.equal(W.searching, true, 'still searching after a short look')
+  for (let s = 0; s < 0.6; s += 0.1) W.update(0.1, far, true)
+  assert.equal(W.searching, false, 'found again')
+  assert.equal(W.seen, true)
+  off()
 })

@@ -111623,6 +111623,7 @@ const ESCALATE = 45 // s of a chase in sight that adds a star (up to ESCALATE_MA
 const ESCALATE_MAX = 4
 const LOST_SIGHT = 0.4 // the police's reach for a player whose description they lost
 const LOST_COOL = 1.6 // and how much quicker the stars go
+const REACQUIRE = 1.5 // s in sight, once the search is on, before it is over (a glimpse is not enough)
 const SEARCH_EVERY = 8 // s between 'police-search' reminders (the maps' ttl is 20)
 
 const starsFor = heat => {
@@ -111649,6 +111650,7 @@ class Wanted {
     this.changed = false // the stars changed in the last update / report
     this.described = true // the police know what the player is in (changeVehicle)
     this.told = 0 // the search radius last told the maps (0: none)
+    this.sightT = 0 // s in sight during a search (REACQUIRE)
     this.tellT = 0
   }
   // the police's sight reach factor (police.js): less, without a description
@@ -111742,7 +111744,12 @@ class Wanted {
       this.heat = Math.max(0, this.heat - dt * 0.05) // (unreported scraps fade)
       return
     }
+    // (searching: a glimpse is not enough to call it off; seen for REACQUIRE s, it is; meanwhile the
+    // cooldown holds)
+    if (seen && this.searching && (this.sightT += dt) < REACQUIRE) return
+    if (!seen) this.sightT = 0
     if (seen) {
+      this.sightT = 0
       this.spotted(pos)
       this.chaseT += dt
       if (this.chaseT > ESCALATE && this.stars < ESCALATE_MAX) {
@@ -111785,7 +111792,7 @@ class Wanted {
     return this.stars ? Math.min(1, this.evade / this.cooldown) : 0
   }
 }
-__export(__exports, { "STAR_HEAT": () => STAR_HEAT, "CRIMES": () => CRIMES, "POLICE_WITNESS": () => POLICE_WITNESS, "GRACE": () => GRACE, "searchRadius": () => searchRadius, "cooldownFor": () => cooldownFor, "IN_CIRCLE": () => IN_CIRCLE, "ESCALATE": () => ESCALATE, "ESCALATE_MAX": () => ESCALATE_MAX, "LOST_SIGHT": () => LOST_SIGHT, "LOST_COOL": () => LOST_COOL, "SEARCH_EVERY": () => SEARCH_EVERY, "starsFor": () => starsFor, "Wanted": () => Wanted })
+__export(__exports, { "STAR_HEAT": () => STAR_HEAT, "CRIMES": () => CRIMES, "POLICE_WITNESS": () => POLICE_WITNESS, "GRACE": () => GRACE, "searchRadius": () => searchRadius, "cooldownFor": () => cooldownFor, "IN_CIRCLE": () => IN_CIRCLE, "ESCALATE": () => ESCALATE, "ESCALATE_MAX": () => ESCALATE_MAX, "LOST_SIGHT": () => LOST_SIGHT, "LOST_COOL": () => LOST_COOL, "REACQUIRE": () => REACQUIRE, "SEARCH_EVERY": () => SEARCH_EVERY, "starsFor": () => starsFor, "Wanted": () => Wanted })
 })
 
 // ---- js/sim/aiDriver.js
