@@ -34,6 +34,8 @@ const SPIN_UP = 1.6 // per s: how fast locked rears get their grip back once it 
 // along, so the tail steps out and the car pivots round its fronts carrying its speed rather than
 // stopping on its rears (a sliding tyre's slideMu kept it planted and scrubbed the speed away)
 const HB_GRIP = 0.5
+const HB_FAST = 18 // m/s: past this the handbrake's swing rate is held lower, as HB_FAST / speed
+const HB_HOLD = 20 // 1/s: how hard the swing is held to its rate (a stiff yaw-rate limiter)
 const J_TURN = 2.6 // the swing backing up (a J-turn), times the class's hbYaw going forwards
 const SHIFT_T = 0.22 // s a gear change cuts the drive
 const REV_MAX = 7 // m/s backing up (a class's revMax: the player's cars back up GTA-quick)
@@ -209,7 +211,13 @@ function move (b, inp, dt, world) {
   const hb = !!inp.handbrake && !b.dead
   b.ebLock = hb ? Math.min(1, b.ebLock + dt / EB_ON) : 0
   const locked = b.ebLock >= 1 && Math.abs(u) > 1
-  b.rearGrip = locked ? S.hbGrip ?? HB_GRIP : Math.min(1, b.rearGrip + dt * SPIN_UP)
+  // (at speed they keep more, up to a sliding tyre's grip by HB_FAST + 14 m/s: a flick at 100
+  // km/h slides the tail out to catch, rather than spinning the car)
+  const hbG = S.hbGrip ?? HB_GRIP,
+    spd0 = Math.hypot(u, w)
+  b.rearGrip = locked
+    ? hbG + (S.slideMu - hbG) * smooth((spd0 - HB_FAST) / 14)
+    : Math.min(1, b.rearGrip + dt * SPIN_UP)
   const FmaxF = mu * S.gripF * Math.max(0, Nf) * kLat,
     FmaxR = mu * S.gripR * Math.max(0, Nr) * kLat * b.rearGrip
   const au = Math.abs(u),
@@ -383,8 +391,9 @@ function move (b, inp, dt, world) {
       fade
   }
   // (the swing held to a rate a driver can catch)
-  const hbRate = S.hbRate ?? HB_RATE
-  if (hb && Math.abs(r) > hbRate) Mz -= Math.sign(r) * 3 * m * (Math.abs(r) - hbRate)
+  // (and lower at speed: a flick at 100 km/h is a slide to catch, not a pirouette)
+  const hbRate = (S.hbRate ?? HB_RATE) * clamp(HB_FAST / Math.max(spdHb, 1), 0.5, 1)
+  if (hb && Math.abs(r) > hbRate) Mz -= Math.sign(r) * HB_HOLD * b.I * (Math.abs(r) - hbRate)
   const spd = Math.hypot(u, w)
   if (!hb && spd > 4) {
     // (the rate the wheel asks for counts only the way the car is turning: opposite lock asks

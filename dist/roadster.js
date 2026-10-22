@@ -83293,7 +83293,7 @@ const HANDLING = {
     mu: 1.08, gripF: 1.0, gripR: 1.02, slideMu: 0.78, cornF: 85000, cornR: 95000,
     suspHz: 1.4, travel: 0.12, damp: 0.35, rollK: 0.11, pitchK: 0.065,
     hbYaw: 3000, stab: 1, assist: 0.6, feel: 0.85, drag: 0.42, rollRes: 0.013,
-    hbGrip: 0.45, hbRate: 2.6, slideHold: 0.55, revMax: 10, revAcc: 5
+    hbGrip: 0.45, hbRate: 2.9, slideHold: 0.55, revMax: 10, revAcc: 5
   },
   sports: {
     mass: 1450, len: 4.5, wid: 1.9, hgt: 1.28, wb: 2.6, wf: 0.47, comH: 0.45, wheelR: 0.34, track: 1.62,
@@ -83311,7 +83311,7 @@ const HANDLING = {
     mu: 1.0, gripF: 0.98, gripR: 1.0, slideMu: 0.75, cornF: 95000, cornR: 110000,
     suspHz: 1.2, travel: 0.18, damp: 0.32, rollK: 0.13, pitchK: 0.07,
     hbYaw: 2600, stab: 1.2, assist: 0.5, feel: 0.82, drag: 0.55, rollRes: 0.015,
-    hbGrip: 0.5, hbRate: 2.3, slideHold: 0.55, revMax: 9, revAcc: 4.5
+    hbGrip: 0.5, hbRate: 2.6, slideHold: 0.55, revMax: 9, revAcc: 4.5
   },
   pickup: {
     mass: 2300, len: 5.4, wid: 2.0, hgt: 1.85, wb: 3.4, wf: 0.6, comH: 0.75, wheelR: 0.38, track: 1.7,
@@ -83320,7 +83320,7 @@ const HANDLING = {
     mu: 0.98, gripF: 1.0, gripR: 1.0, slideMu: 0.72, cornF: 95000, cornR: 95000,
     suspHz: 1.3, travel: 0.2, damp: 0.3, rollK: 0.14, pitchK: 0.075,
     hbYaw: 2700, tc: 0.8, stab: 1, assist: 0.5, feel: 0.88, drag: 0.6, rollRes: 0.016,
-    hbGrip: 0.48, hbRate: 2.4, slideHold: 0.55, revMax: 9, revAcc: 4.5
+    hbGrip: 0.48, hbRate: 2.6, slideHold: 0.55, revMax: 9, revAcc: 4.5
   },
   truck: {
     mass: 9500, len: 9.9, wid: 2.55, hgt: 3.8, wb: 5.6, wf: 0.45, comH: 1.3, wheelR: 0.5, track: 2.0,
@@ -83356,7 +83356,7 @@ const HANDLING = {
     mu: 1.15, gripF: 1.0, gripR: 1.02, slideMu: 0.8, cornF: 110000, cornR: 125000,
     suspHz: 1.7, travel: 0.11, damp: 0.4, rollK: 0.085, pitchK: 0.055,
     hbYaw: 3300, tc: 0.8, stab: 1, assist: 0.65, feel: 0.95, drag: 0.45, rollRes: 0.013,
-    hbGrip: 0.45, hbRate: 2.8, slideHold: 0.7, revMax: 10.5, revAcc: 5
+    hbGrip: 0.45, hbRate: 3.0, slideHold: 0.7, revMax: 10.5, revAcc: 5
   },
   // the Roadster: its own physics, untouched (sim.js); these are its spec-sheet figures
   roadster: {
@@ -83837,6 +83837,8 @@ const SPIN_UP = 1.6 // per s: how fast locked rears get their grip back once it 
 // along, so the tail steps out and the car pivots round its fronts carrying its speed rather than
 // stopping on its rears (a sliding tyre's slideMu kept it planted and scrubbed the speed away)
 const HB_GRIP = 0.5
+const HB_FAST = 18 // m/s: past this the handbrake's swing rate is held lower, as HB_FAST / speed
+const HB_HOLD = 20 // 1/s: how hard the swing is held to its rate (a stiff yaw-rate limiter)
 const J_TURN = 2.6 // the swing backing up (a J-turn), times the class's hbYaw going forwards
 const SHIFT_T = 0.22 // s a gear change cuts the drive
 const REV_MAX = 7 // m/s backing up (a class's revMax: the player's cars back up GTA-quick)
@@ -84012,7 +84014,13 @@ function move (b, inp, dt, world) {
   const hb = !!inp.handbrake && !b.dead
   b.ebLock = hb ? Math.min(1, b.ebLock + dt / EB_ON) : 0
   const locked = b.ebLock >= 1 && Math.abs(u) > 1
-  b.rearGrip = locked ? S.hbGrip ?? HB_GRIP : Math.min(1, b.rearGrip + dt * SPIN_UP)
+  // (at speed they keep more, up to a sliding tyre's grip by HB_FAST + 14 m/s: a flick at 100
+  // km/h slides the tail out to catch, rather than spinning the car)
+  const hbG = S.hbGrip ?? HB_GRIP,
+    spd0 = Math.hypot(u, w)
+  b.rearGrip = locked
+    ? hbG + (S.slideMu - hbG) * smooth((spd0 - HB_FAST) / 14)
+    : Math.min(1, b.rearGrip + dt * SPIN_UP)
   const FmaxF = mu * S.gripF * Math.max(0, Nf) * kLat,
     FmaxR = mu * S.gripR * Math.max(0, Nr) * kLat * b.rearGrip
   const au = Math.abs(u),
@@ -84186,8 +84194,9 @@ function move (b, inp, dt, world) {
       fade
   }
   // (the swing held to a rate a driver can catch)
-  const hbRate = S.hbRate ?? HB_RATE
-  if (hb && Math.abs(r) > hbRate) Mz -= Math.sign(r) * 3 * m * (Math.abs(r) - hbRate)
+  // (and lower at speed: a flick at 100 km/h is a slide to catch, not a pirouette)
+  const hbRate = (S.hbRate ?? HB_RATE) * clamp(HB_FAST / Math.max(spdHb, 1), 0.5, 1)
+  if (hb && Math.abs(r) > hbRate) Mz -= Math.sign(r) * HB_HOLD * b.I * (Math.abs(r) - hbRate)
   const spd = Math.hypot(u, w)
   if (!hb && spd > 4) {
     // (the rate the wheel asks for counts only the way the car is turning: opposite lock asks

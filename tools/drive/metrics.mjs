@@ -327,6 +327,25 @@ export function hbDrift (k, o) {
   return { angle: (sum / n) * DEG, turned: Math.abs(turned) * DEG, v: r.v * 3.6 }
 }
 
+// a handbrake flick at 100 km/h: A and Space 0.5 s, then W and A 0.35 s, then W 1.5 s: the most
+// the car came round (deg off the way it was going) and the speed it ends at (km/h) - a slide, not
+// a spin
+export function hbFast (k, o) {
+  const r = new Rig(k, o)
+  const v = Math.min(27.8, (HANDLING[k].vMax || 40) * 0.9)
+  r.at(v)
+  r.cruise(v, 0.3)
+  let most = 0
+  const off = () => (most = Math.max(most, Math.abs(Math.atan2(r.s ? r.s.vel.z * Math.cos(r.yaw) + r.s.vel.x * Math.sin(r.yaw) : r.b.vz * Math.cos(r.yaw) + r.b.vx * Math.sin(r.yaw), r.u))))
+  r.keys('KeyA', 'Space')
+  for (let t = 0; t < 0.5; t += H) r.step(), off()
+  r.keys('KeyA', 'KeyW')
+  for (let t = 0; t < 0.35; t += H) r.step(), off()
+  r.keys('KeyW')
+  for (let t = 0; t < 1.5; t += H) r.step(), off()
+  return { most: most * DEG, kmh: r.u * 3.6 }
+}
+
 export function row (k, o) {
   const b = brake100(k, o),
     s20 = steerResponse(k, 20, o),
@@ -355,8 +374,9 @@ export function row (k, o) {
     pslide: powerSlide(k, o),
     ...(() => {
       const l = laneChange(k, o),
-        d = hbDrift(k, o)
-      return { lcSlip: l.slip, lcSettle: l.settle, drift: d.angle, driftTurn: d.turned, driftV: d.v }
+        d = hbDrift(k, o),
+        f = hbFast(k, o)
+      return { lcSlip: l.slip, lcSettle: l.settle, drift: d.angle, driftTurn: d.turned, driftV: d.v, fastOff: f.most, fastV: f.kmh }
     })()
   }
 }
@@ -382,7 +402,9 @@ export const COLS = [
   ['lcSettle', 'LC settle s', 2],
   ['drift', 'drift°', 0],
   ['driftTurn', 'drift turn°', 0],
-  ['driftV', 'drift km/h', 0]
+  ['driftV', 'drift km/h', 0],
+  ['fastOff', 'HB@100 off°', 0],
+  ['fastV', 'HB@100 km/h', 0]
 ]
 export function table (o) {
   return CLASSES.map(k => row(k, o))
