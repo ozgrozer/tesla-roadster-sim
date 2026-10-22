@@ -117587,9 +117587,10 @@ class FootCam {
       else this.reach += (got - this.reach) * lerpK(OUT_K, dt)
       if (this.reach < 0.999) this.pos.lerpVectors(this.look, this.pos, Math.max(0.05, this.reach))
     }
-    // (never under the ground: a hill rising behind)
+    // (never under the ground: a hill rising behind; not in a room under the city, where the
+    // street's ground would lift it out through the ceiling: the room's own clip keeps it in)
     const gy = groundBase(this.pos.x, this.pos.z) + 0.35
-    if (this.pos.y < gy) this.pos.y = gy
+    if (this.pos.y < gy && focus.y > gy - 10) this.pos.y = gy
     this.blend = Math.min(1, this.blend + dt / BLEND)
     const e = this.blend * this.blend * (3 - 2 * this.blend)
     cam.position.lerpVectors(this.from, this.pos, e)
