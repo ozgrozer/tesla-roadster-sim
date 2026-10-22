@@ -101,6 +101,56 @@ real gains.
 The allocation rate went up from ~1.2 to ~3.2 MB/s in the after run, which had 190 peds instead of
 144. None of the P3 changes allocate per frame, so this is the next thing to profile (below).
 
-## Integrated build (gta-v2 @ 6a2fefc, P3 part 2)
+## P3 part 2: the integrated build (gta-v2 @ 6a2fefc)
 
-See the section below for what the integrated build costs with every stream's work in it.
+New tools:
+- `perfx.mjs --query=?spawn=x,z --cpu=1` adds a CDP CPU profile, folded by function (self and total).
+- `tools/bench/sim.mjs` times the traffic and the people at 120 Hz in Node round a moving player
+  stand-in downtown (53, -353). It reports mean, p99 and worst time per system, plus the heap
+  allocated per step (`--sites=1` adds the sampled allocation sites).
+
+### Where the time goes
+
+- **The AI is cheap.** Downtown, on foot, there are 395 cars and 240 people. Back-to-back runs give
+  traffic 0.11-0.16 ms and peds 0.11-0.16 ms per 1/120 s step (p99 0.4-2 ms). That is ~0.6 ms of a
+  16.7 ms frame. `drivers.js drive` is 40 % of it (self, its callees inlined). It is already free of
+  literals and early-outs per obstacle.
+- **Worst steps of 10-20 ms are the box, not the AI.** The same steps' wall time is 0.1-0.4 ms;
+  the process CPU counted V8's compiler and GC threads (load average 12-28).
+- **Allocation is ~60-75 KB per step (7-9 MB/s).** The browser's 250 ms heap reads (perfx) missed
+  it: scavenges clear it in between. In the browser it is ~0.8 % of the main thread in GC, with no
+  spikes seen. The sources are mostly numbers boxed on store in sim-owned code (KNOWN_ISSUES K17).
+  Pooling the crowd grid's lists (pedBrain.js spread) measured no change, so it was reverted.
+- **A drawn frame's JS is ~17.6 ms on this box.** `WebGLRenderer.render` is ~12.5 ms of that:
+  ~25 us per object submitted (setProgram, uniforms). The sim is ~2.6 ms. **Draw submissions are the
+  lever.**
+
+### Fix: empty instanced meshes are not drawn (render/drawnOnly.js)
+
+Every traffic type has its body, glass and trim as InstancedMeshes, and the people and dogs have
+one each. With nobody of that type in sight, three.js still submitted each one: program, uniforms
+and a draw of 0 instances (skipped in the GL, so `info.render.calls` never showed it). It did the
+same again in the shadow pass. Now they are hidden while empty, and kept out of the shadow pass
+while none of their instances are near enough to cast. The shader warm-up (warm.js) still
+compiles them.
+
+Submissions per frame (renderBufferDirect, the CPU cost), steady state:
+
+| | before | after |
+|---|---|---|
+| downtown (53, -353): main + shadow | 342 + 138 = **480** | 320 + 95 = **415** (-14 %) |
+| downtown, frame with a sun-shadow refresh | 342 + 533 = 875 | 320 + 490 = 810 |
+| the normal start: main + shadow | 406 + 130 = **536** | 389 + 96 = **485** (-10 %) |
+
+GL draw calls (`info.render.calls`) and triangles are unchanged (414 downtown, 484 at the start).
+Data: `/workspace/shots/v2/qa/perf2/spawn-*.json`.
+
+Pitfall for whoever measures next: in the first ~10 s after the intro, warm.js still compiles. It
+draws the whole scene into a 1x1 target and asks for sun-shadow refreshes, so frames sampled then
+show double counts.
+
+### Next
+
+The Roadster is ~80 main + ~38 shadow submissions after freeze.js: wheels, doors, wing and fans
+stay separate. Next come the per-chunk layers (roofs, palms, trees, masts, lights: 12-18 each
+downtown). Merging those per layer across the streamed chunks would be the next real cut.
