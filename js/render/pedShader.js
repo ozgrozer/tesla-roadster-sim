@@ -114,7 +114,9 @@ const POSE = `
     if (w > 0.5) p = pedShape(p, part, style);
     float ph = aPose.x, gait = aPose.y, fright = aPose.z;
     float A = 0.42 * gait, run = clamp((gait - 1.2) * 2.5, 0.0, 1.0);
-    float phone = aAct.y * (1.0 - fright), talk = aAct.z * (1.0 - fright);
+    float phone = max(aAct.y, 0.0) * (1.0 - fright), talk = aAct.z * (1.0 - fright);
+    // fists up, fighting (aAct.y -1), the right one thrown out (to -2: sim/brawl.js)
+    float guard = aAct.y < -0.5 ? 1.0 : 0.0, jab = clamp(-aAct.y - 1.0, 0.0, 1.0);
     // an umbrella (the arm up first, then it opens), hunched with a hoodie's hood up, sat down
     float umb = aGear.x, hunch = aGear.y, sit = aGear.z;
     float hold = smoothstep(0.0, 0.35, umb);
@@ -170,6 +172,9 @@ const POSE = `
         swing = 0.2 + 0.25 * swing;
         elbow = 0.55;
       }
+      // fists up in front of the face; the right thrown straight out
+      swing = mix(swing, left ? 1.05 : mix(1.0, 1.55, jab), guard);
+      elbow = mix(elbow, left ? 2.1 : mix(2.0, 0.15, jab), guard);
       if (!left) {
         // the phone held up in front of them; an umbrella held up over their head
         swing = mix(mix(swing, 0.4, phone), 0.12, hold);

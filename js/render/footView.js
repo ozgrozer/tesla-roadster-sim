@@ -7,12 +7,14 @@
 // that swings open on its front hinge.
 import * as THREE from 'three'
 import { buildOptimus, poseOptimus, HIP_STAND } from './optimus.js'
+import { poseGait, ampFor, strideFor } from './optimusGait.js'
+import { poseFists } from './optimusFists.js'
+import { punchPose } from '../sim/melee.js'
 import { boardRoadster, BOARD_T } from './intro.js'
 import { doorOf, seatShare, BOARD } from '../sim/boarding.js'
 import { vehicles } from '../sim/vehicles.js'
 import { clamp, wrapPi } from '../sim/constants.js'
 
-const STRIDE = { walk: 1.45, run: 2.4 } // m per pair of steps
 const ease = t => t * t * (3 - 2 * t)
 const lerp = (a, b, k) => a + (b - a) * k
 const _w = { x: 0, z: 0 }
@@ -92,13 +94,13 @@ export class FootView {
   onFoot (dt, p, pos) {
     const O = this.O
     const run = p.run
-    // the stride's phase with the distance walked, its swing with the pace
+    // the swing with the pace, the stride's phase with the distance walked at that swing's stride
+    // (optimusGait.js: the planted foot keeps its place on the ground)
     const d = p.dist - this.lastDist
     this.lastDist = p.dist
-    const stride = lerp(STRIDE.walk, STRIDE.run, run)
-    if (d > 0 && d < 3) this.phase += (Math.PI * 2 * d) / stride
-    const want = p.grounded ? clamp(p.speed / 1.2, 0, 1) * (1 + 0.45 * run) : 0
-    this.walk += (want - this.walk) * Math.min(1, dt * 10)
+    const want = p.grounded ? ampFor(p.speed) : 0
+    this.walk += (want - this.walk) * Math.min(1, dt * 12)
+    if (d > 0 && d < 3) this.phase += (Math.PI * 2 * d) / strideFor(this.walk)
     O.root.position.set(pos.x, pos.y + HIP_STAND + (p.lift || 0), pos.z) // (easing up a step: player.js)
     O.root.rotation.set(0, p.heading, 0)
     if (p.down > 0) {
@@ -126,7 +128,11 @@ export class FootView {
       poseOptimus(O, { feet, lean: 0.1 * tuck, walk: 0.3, phase: 1.2 })
       return
     }
-    poseOptimus(O, { walk: this.walk, phase: this.phase, lean: 0.14 * run * this.walk })
+    // fists: a punch being thrown, or up in guard a moment after (optimusFists.js)
+    const m = this.melee,
+      pp = m ? punchPose(m) : null
+    if (pp || (m && m.since < 1.1)) return poseFists(O, p, pos, pp, this.walk, this.phase)
+    poseGait(O, this.walk, this.phase, run)
   }
 
   // at the door, and sliding in or out (pos: the feet at the door, or where it gets out)

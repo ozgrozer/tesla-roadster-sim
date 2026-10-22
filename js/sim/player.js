@@ -15,18 +15,20 @@ import { WALL, onDeck, hillHeight } from './edge.js'
 import { clamp, wrapPi } from './constants.js'
 import { inTunnel } from './hillroad.js'
 
-// How a person moves: m/s walking and sprinting, how hard they get up to speed and stop (m/s²),
+// How a person moves: m/s walking (Caps Lock, or the stick part way), jogging (the default, as
+// GTA's) and sprinting (Shift), how hard they get up to speed and stop (m/s²),
 // steering in the air, how fast they turn to face the way they go (rad/s), the jump's take-off
 // speed and the game's gravity (stronger than the world's, as games' are, for a snappy jump), the
 // body's radius and height, the most it steps up (a kerb, a low step) without a jump and how far
 // down it keeps to the ground walking off one, and how long a knock down lasts.
 export const FOOT = {
-  walk: 1.8,
-  run: 5.8,
-  accel: 14,
-  decel: 18,
+  walk: 2.0,
+  jog: 4.5,
+  run: 7.0, // (the sprint)
+  accel: 22,
+  decel: 26,
   airAccel: 3,
-  turn: 10,
+  turn: 14,
   jumpV: 4.6,
   gravity: 16,
   radius: 0.32,
@@ -45,7 +47,7 @@ export const player = {
   wanted: 0,
   grounded: true,
   speed: 0, // m/s over the ground
-  run: 0, // 0 walking to 1 sprinting, eased (the animation's gait)
+  run: 0, // 0 walking, 0.5 jogging, 1 sprinting, eased (the animation's gait)
   dist: 0, // m walked on the ground (footsteps, the stride's phase)
   surface: 'walk',
   floor: 0, // the height of what the feet stand on
@@ -279,8 +281,26 @@ function keepOnMap (pos, v) {
   }
 }
 
-// One step of walking: ctl { x, z, mag } the way to go (moveDir), run (sprint held), jump (pressed
-// this step). Returns what happened worth a sound or a camera's notice: { landed (the speed coming
+// The pace asked for: ctl.walk (walking held or toggled, or the stick only part way over), ctl.run
+// (sprinting), else a jog; mag scales it within its gait. Returns m/s.
+export function paceOf (ctl) {
+  const mag = ctl ? ctl.mag : 0
+  if (mag <= 0.02) return 0
+  if (ctl.pace != null) return mag * ctl.pace // (a pace of its own: a lunge at someone, melee.js)
+  if (ctl.run) return mag * FOOT.run
+  if (ctl.walk || mag < 0.55) return Math.min(1, mag / 0.55) * FOOT.walk
+  return FOOT.walk + ((mag - 0.55) / 0.45) * (FOOT.jog - FOOT.walk)
+}
+// the gait's share (0 walk, 0.5 jog, 1 sprint) for a speed over the ground
+export const gaitOf = v =>
+  v <= FOOT.walk
+    ? 0
+    : v <= FOOT.jog
+      ? (0.5 * (v - FOOT.walk)) / (FOOT.jog - FOOT.walk)
+      : Math.min(1, 0.5 + (0.5 * (v - FOOT.jog)) / (FOOT.run - FOOT.jog))
+
+// One step of walking: ctl { x, z, mag } the way to go (moveDir), walk (walk held), run (sprint
+// held), jump (pressed this step). Returns what happened worth a sound or a camera's notice: { landed (the speed coming
 // down, m/s, or 0), jumped, stepped (m stepped up) }.
 // A long step (a dt spike) is taken as short ones, so nothing is walked through.
 const _out = { landed: 0, jumped: false, stepped: 0 }
@@ -323,8 +343,10 @@ function footStep (p, dt, ctl, world, out) {
     ctl = null // (lying in the road: no say over it for a moment)
   }
   const mag = ctl ? ctl.mag : 0
-  p.run += ((ctl?.run && mag > 0.1 ? 1 : 0) - p.run) * Math.min(1, dt * 4)
-  const pace = mag * (FOOT.walk + (FOOT.run - FOOT.walk) * (ctl?.run ? 1 : 0))
+  const pace = paceOf(ctl)
+  // (the gait eased to the pace actually made over the ground: no running on the spot at a wall)
+  const ground = Math.min(pace, Math.hypot(v.x, v.z) + 0.5)
+  p.run += (gaitOf(ground) - p.run) * Math.min(1, dt * 6)
   const tx = mag > 0.02 ? ctl.x * pace : 0,
     tz = mag > 0.02 ? ctl.z * pace : 0
   // up to speed and to a stop, on the ground; only a little steering in the air

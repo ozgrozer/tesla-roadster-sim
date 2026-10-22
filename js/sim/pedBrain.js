@@ -12,11 +12,14 @@ import { query } from './city.js'
 import { kerbDist } from './street.js'
 import { emitGame } from './gameEvents.js'
 import { LINES, nearestOn, blockNear } from './pavement.js'
+import { BRAWL_MIXIN } from './brawl.js'
 
-export const STATES = ['walk', 'kerb', 'wait', 'cross', 'idle', 'linger', 'flee', 'dodge', 'back', 'down']
+export const STATES = ['walk', 'kerb', 'wait', 'cross', 'idle', 'linger', 'flee', 'dodge', 'back', 'down', 'brawl']
 export const ACT = { look: 0, phone: 1, talk: 2 }
 export const HIT_V = 3.5 // m/s: a car faster than this knocks someone down; slower, it nudges them
-export const KILL_V = 17 // m/s: and faster than this, they don't get up
+export const KILL_V = 12 // m/s (43 km/h): and faster than this, they don't get up
+export const MAYBE_V = 8 // m/s: from this up to KILL_V, the more likely they don't
+export const GRAVITY = 16 // m/s²: thrown up over the bonnet, how fast they come down
 const ROAD_MAX = 4 // s anyone stands about in the road (not crossing, diving or down) before going back
 const CELL = 1.5 // m: the grid people keep their distance on
 const GAP = 0.6 // m between two people's middles
@@ -25,6 +28,7 @@ const grid = new Map()
 const near = []
 
 export const PEDBRAIN = {
+  ...BRAWL_MIXIN, // (fists: brawl.js)
   // A threat at (x, z) for ttl s: level 1, people within r look at it and keep their distance;
   // level 2 or more (a weapon, a fight, gunfire), they run from it. Returns the threat.
   threat (x, z, r = 12, level = 2, ttl = 0.5) {
@@ -42,6 +46,8 @@ export const PEDBRAIN = {
   // driver's flight, and the road
   think (dt, sim, traffic, me) {
     const ext = this.ext
+    // (the fights first: the staggered, those fighting back, the dead taken away: brawl.js)
+    this.brawlStep(dt, sim.mode === 'foot' ? sim.pos : null, sim.pos)
     for (let i = ext.length - 1; i >= 0; i--) {
       const t = ext[i]
       if ((t.ttl -= dt) < 0) {
@@ -140,28 +146,51 @@ export const PEDBRAIN = {
     const side = (p.z - th.z) * th.hx - (p.x - th.x) * th.hz >= 0 ? 1 : -1
     p.state = 'down'
     p.t = 0
-    p.vx = th.vx * 0.75 - th.hz * side * 1.5
-    p.vz = th.vz * 0.75 + th.hx * side * 1.5
+    p.vx = th.vx * 0.85 - th.hz * side * 1.5
+    p.vz = th.vz * 0.85 + th.hx * side * 1.5
+    // (thrown up over the bonnet the faster it was, turning over in the air: lie() flies them)
+    p.air = 0.05
+    p.airV = sp > 5 ? Math.min(7.5, 0.36 * sp) : 0.8
+    p.spin = 0
     p.hop = Math.min(1, sp / 12)
     p.fright = 1
     p.gait = 0
     p.fall = 0
     p.cross = p.aside = p.lead = null
     p.act = 0
-    p.dead = sp > KILL_V
+    // (each their own luck between MAYBE_V and KILL_V: no draw from the people's random numbers)
+    const luck = (p.look * 7.77 + p.i * 0.618034 + 0.71) % 1
+    p.dead = sp >= KILL_V || (sp > MAYBE_V && luck < (sp - MAYBE_V) / (KILL_V - MAYBE_V))
     p.downT = 3 + this.R() * 3 + sp * 0.2
-    const severity = p.dead ? 3 : sp > 9 ? 2 : 1
+    const severity = p.dead ? 3 : sp > 7 ? 2 : 1
     const pos = { x: p.x, z: p.z }
-    emitGame('ped-hit', { pos, speed: sp, severity, by, id: p.i, dead: p.dead })
+    emitGame('ped-hit', { pos, speed: sp, severity, by, id: p.i, dead: p.dead, how: 'car' })
     if (by === 'player')
-      emitGame('crime', { type: p.dead ? 'ped-killed' : 'ped-hit', pos, severity })
+      emitGame('crime', { type: p.dead ? 'ped-killed' : 'ped-hit', pos, severity: p.dead ? 1.5 : 1 })
+    if (p.dead) this.killed = (this.killed || 0) + 1
     this.scare(p.x, p.z, 18)
   },
   // down: sliding to a stop, lying there, then up and away to the pavement (and running)
   lie (p, dt) {
     p.x += p.vx * dt
     p.z += p.vz * dt
-    const k = Math.exp(-dt * 4)
+    // in the air (thrown by a car), tumbling, a bounce on landing; then sliding to a stop
+    const up = p.air > 0
+    if (up) {
+      p.air += p.airV * dt
+      p.airV -= GRAVITY * dt
+      p.spin += dt * Math.min(9, Math.hypot(p.vx, p.vz) * 0.7)
+      if (p.air <= 0) {
+        p.air = 0
+        if (p.airV < -3.5) {
+          p.air = 1e-3
+          p.airV = -p.airV * 0.28
+          p.vx *= 0.6
+          p.vz *= 0.6
+        }
+      }
+    }
+    const k = Math.exp(-dt * (up ? 0.25 : 4))
     p.vx *= k
     p.vz *= k
     p.fall = Math.min(1, p.fall + dt * 5)

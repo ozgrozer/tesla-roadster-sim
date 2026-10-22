@@ -150,12 +150,14 @@ export class PedView {
     _q._y = Math.sin(d.ry / 2)
     _q._w = Math.cos(d.ry / 2)
     // knocked down (sim/pedBrain.js): tipped over backwards onto the road, lying there
-    if (fall > 0) {
-      _fall.setFromAxisAngle(_side, (fall * Math.PI) / 2.1)
+    // (thrown by a car: up in the air and turning over, sim/pedBrain.js lie)
+    const air = d.air > 0 ? d.air : 0
+    if (fall > 0 || air > 0) {
+      _fall.setFromAxisAngle(_side, (fall * Math.PI) / 2.1 + (air > 0 ? d.spin : 0))
       _q.multiply(_fall)
     }
     _p.x = d.x
-    _p.y = h + (fall > 0 ? 0.12 * fall : 0)
+    _p.y = h + (fall > 0 ? 0.12 * fall : 0) + air + (air > 0 ? 0.6 : 0)
     _p.z = d.z
     _s.x = _s.y = d.tall
     _s.z = d.wide
@@ -171,7 +173,8 @@ export class PedView {
     P[j + 2] = d.fright
     P[j + 3] = d.hop
     A[j] = d.head
-    A[j + 1] = d.act === 1 ? 1 : 0
+    // (on the phone; or fists up, fighting, the punch's reach past 3: sim/brawl.js, -1 - punch)
+    A[j + 1] = d.act === 1 ? 1 : d.act >= 3 ? -1 - (d.act - 3) : 0
     A[j + 2] = d.act === 2 ? 1 : 0
     A[j + 3] = d.phase
     this.look.array[i] = d.look
