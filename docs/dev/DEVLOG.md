@@ -245,3 +245,39 @@ W3, explorables (72150f3, 8dd285f, aab6f35):
   the token counter after a real pickup (◆ 1/30, "the end of the pier"), The Marlowe entered by its
   door (y -40), an all-way stop junction, a 3-star chase with the roadblock across Wilshire, the
   crown at 22:00 from ~890 m (daylight `envWas = null; envT = 0` after the hour change), the map.
+
+## V3 on foot (gta-v3-foot, from gta-v2 @4634939): doors, paces, fists, run-overs
+
+- **Doors on every city car** (`render/carDoor.js`, `render/boardPose.js`, `sim/vehicles.js` DOORS,
+  `sim/boarding.js` sideOf): the driver's door is its own panel lofted from the body's own sections
+  (carBody.sectionAt: sill to belt in the body's paint material with its livery/dents attributes,
+  belt to rail glass, a dark door card inside, a dark aperture where it was), hinged at the
+  A-pillar, swung out eased (cubic in-out, 66° cars, 72° vans/trucks/fire/ambulance, 83° bus) and
+  drawn on the car's own instance matrix (traffic.js `doorCar`/`doorMat`, 4 lines). DOORS gives each
+  of the 14 kinds its door span; the bus's door is on its right (DOOR_SIDE). Optimus stands behind
+  the door's back edge, hand on the handle riding the swing, steps into the opening turning to face
+  ahead, ducks and sits sideways (inner foot in first, the outer leg swung over the sill), hands to
+  the wheel, reaches to the door card to pull it shut; out is the reverse, and a hand pushes the door
+  to if he's beside it. He stays visible until seated (the old box door and the vanish at 72% are
+  gone). The Roadster keeps its own up-swinging door (intro.js).
+- **Paces** (`sim/player.js` FOOT, paceOf/gaitOf; `render/optimusGait.js`): jog by default 4.5 m/s,
+  Shift sprint 7, Caps Lock walk 2.0, accel 22 / decel 26 / turn 14 rad/s; strides matched to the
+  swing (1.92 m per amplitude: no foot slide), knees and elbows pumping at a run.
+- **Fists** (`sim/melee.js`, `sim/brawl.js`, `footFight.js`, `render/optimusFists.js`, ped shader
+  guard/jab, `audio/fists.js`): F or left click (pointer locked). Jab, cross, hook combo (0.4 s
+  chain window; a whiff resets), soft-lock within 4.2 m in a 1 rad cone, lunge up to 4.5 m/s (the
+  swing waits up to 0.4 s for it), stomp on someone down. People stagger, get knocked down (hook or
+  hp ≤ 0.3), die beaten; afterwards fight back (by profile), cower or run. Crime 'assault' (sev 1,
+  once per 10 s per victim) → 1 star once rung in; a beating death is 'ped-killed' sev 1.5.
+- **Run-overs** (`sim/pedBrain.js` knockDown/lie): above 12 m/s dead (8-12 a per-person chance),
+  thrown up over the bonnet (up to 7.5 m/s up), tumbling, bouncing; 'ped-killed' sev 1.5 when dead
+  (else 'ped-hit'). Bodies lie there, and are cleared after 45 s once the player is 35 m off.
+  A thud and plastic crack on the hit.
+- Help line, keys card, keymap labels, README on-foot table updated.
+- Tests: `tests/fists.test.mjs` (combo, soft-aim, lunge; assault → 1 star through Reports; beaten
+  death; run over dead/alive, thrown, body stays then cleared; every kind's door layout).
+  Playtest `tools/playtest/careerFoot.mjs` (between career and career2): punch-ped, run-over-kill,
+  every-car-door. Shots: `tools/playtest/footShots.mjs [doors|fists|runover|all] [--kinds=]`
+  → /workspace/shots/v3/foot.
+- Not touched: handling / vehicle physics (v3-drive's stream). Hub edits: main.js 2 lines (F/Space
+  on foot to FootFight, Caps Lock command), onFoot.js (fight hookup, FootView gets cityView).
