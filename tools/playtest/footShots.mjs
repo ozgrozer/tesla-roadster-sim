@@ -113,16 +113,19 @@ if (which === 'fists' || which === 'all') {
   const id = await victim()
   log('fists: victim', id)
   await g.run(0.1)
+  // the combo: each press made as the last punch lands (chained), a shot just after each hit
   const swing = async (name, at) => {
     await g.press('KeyF', 0)
     await until(m => { const c = window.__roadster.foot.fight.melee.cur; return c && c.t >= c.move.hit + m }, 2, at)
-    await aimFoot(0.9)
+    await aimFoot(1.2)
     if (name) await g.shot(name)
-    await until(() => !window.__roadster.foot.fight.melee.cur, 2)
   }
   await swing('punch-jab.png', 0.02)
+  await until(() => !window.__roadster.foot.fight.melee.cur, 2)
   await swing(null, 0)
+  await until(() => !window.__roadster.foot.fight.melee.cur, 2)
   await swing('punch-landing.png', 0.03)
+  await until(() => !window.__roadster.foot.fight.melee.cur, 2)
   await g.run(0.6)
   await aimFoot(0.9)
   await g.shot('ped-knocked-down.png')
@@ -135,31 +138,25 @@ if (which === 'fists' || which === 'all') {
 
 if (which === 'runover' || which === 'all') {
   await g.ev(() => window.__roadster.game.wanted.set(0, window.__roadster.player.pos))
-  if (await g.ev(() => window.__roadster.player.mode === 'foot')) {
-    // back to the Roadster where it was left
-    await g.ev(() => { const R = window.__roadster; const w = R.vehicles.toWorld(R.vehicles.roadster, -0.2, -1.6); R.player.pos.x = R.foot.prev.x = w.x; R.player.pos.z = R.foot.prev.z = w.z })
-    await g.press('KeyE', 0)
-    await until(() => window.__roadster.player.mode === 'car', 10)
-  }
+  // in a city car (the harness's way: polish.js seatIn), at speed, someone just ahead
+  await g.ev(() => window.__roadster.seatIn('sedan'))
+  await g.run(1.5)
   log('runover: in', await g.ev(() => window.__roadster.player.mode))
-  let hit = false
-  await g.hold('KeyW', async () => {
-    for (let i = 0; i < 40 && !hit; i++) {
-      await g.run(0.25)
-      hit = await g.ev(() => {
-        const R = window.__roadster, S = R.sim, sp = Math.hypot(S.vel.x, S.vel.z)
-        if (sp < 15) return false
-        const q = R.peds.list.find(o => !o.dead && !o.gone && o.state !== 'down' && Math.hypot(o.x - S.pos.x, o.z - S.pos.z) < 60)
-        if (!q) return false
-        const hx = S.vel.x / sp, hz = S.vel.z / sp
-        q.x = S.pos.x + hx * 2.6
-        q.z = S.pos.z + hz * 2.6
-        q.state = 'idle'
-        window.__victim = q
-        return true
-      })
+  const hit = await g.ev(() => {
+    const R = window.__roadster, b = R.foot.alt.body, P = R.player.pos
+    let p = null, bd = Infinity
+    for (const q of R.peds.list) {
+      const d = Math.hypot(q.x - P.x, q.z - P.z)
+      if (!q.dead && q.state !== 'down' && !q.hidden && d < bd) { bd = d; p = q }
     }
+    if (!p) return false
+    R.traffic.clearAround(p.x, p.z, 40)
+    const yaw = b.yaw, hx = Math.cos(yaw), hz = -Math.sin(yaw), d = 5
+    window.__victim = p
+    Object.assign(b, { x: p.x - hx * d, z: p.z - hz * d, hx, hz, u: 18, vx: hx * 18, vz: hz * 18, w: 0, lat: 0 })
+    return true
   })
+  await g.hold('KeyW', 0.35)
   await g.run(0.15)
   log('runover: hit', hit, await g.ev(() => { const q = window.__victim; return q && { state: q.state, dead: q.dead, air: q.air } }))
   await g.shot('runover-hit.png')
@@ -173,6 +170,10 @@ if (which === 'runover' || which === 'all') {
   await g.run(0.3)
   log('runover: body', await g.ev(() => {
     const R = window.__roadster, q = window.__victim, P = R.player.pos, c = R.foot.cam
+    // (walked back to them: stood 3.5 m off, on the road side)
+    const ox = P.x - q.x, oz = P.z - q.z, od = Math.hypot(ox, oz) || 1
+    P.x = R.foot.prev.x = q.x + ox / od * 3.5
+    P.z = R.foot.prev.z = q.z + oz / od * 3.5
     c.yaw = Math.atan2(-(q.z - P.z), q.x - P.x) + 0.25
     c.pitch = 0.3
     c.dist = 5

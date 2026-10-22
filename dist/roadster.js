@@ -78401,8 +78401,8 @@ const HINTS = [
     id: 'foot',
     when: s => s.city && s.mode === 'foot' && s.t > 4,
     text: () =>
-      `On foot · ${k('KeyW')}${k('KeyA')}${k('KeyS')}${k('KeyD')} walk · ${k('ShiftLeft')} run · ` +
-      `${k('Space')} jump · ${k('KeyE')} by a car gets in (or steals it)`
+      `On foot · ${k('KeyW')}${k('KeyA')}${k('KeyS')}${k('KeyD')} jog · ${k('ShiftLeft')} sprint · ` +
+      `${k('KeyF')} punch · ${k('Space')} jump · ${k('KeyE')} by a car gets in (or steals it)`
   },
   {
     id: 'car',
