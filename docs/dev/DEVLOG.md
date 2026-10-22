@@ -101,3 +101,24 @@ Tests: tests/phys.test.mjs (12). Shots: /workspace/shots/v2/phys/ (tools/phys/sh
   damage.test took a street performer (sim's living/pedLife.js spawns them even with count 0) for the wreck's driver.
   ux.test's shop count now counts on top of the interiors' own shops.
 - npm test 291/291; playtest career and roam: no problems. Shots: /workspace/shots/v2/qa/integrated-*.png.
+
+## sim (gta-v2-sim) · S1 traffic, S2 pedestrians, S3 police
+- S1: freeway lane changes (laneChangeFwy.js: overtake, keep right, merge, exit lane, make way, pull
+  round stopped cars, signals, gap checks, letting cars in); all-way stops at 21 quiet junctions
+  (trafficStop.js, flashing red); stuck watchdog (trafficStuck.js: reroute, edge out, despawn unseen).
+- S2 (js/sim/living/): profiles by district/hour (commuter, jogger, tourist, phone, loiterer,
+  worker); crime witnesses run/cower/watch and one phones the police (call cut if they go down or
+  the player comes at them); street performers with a capped, timed audience (none on empty streets,
+  the integrator's note); near-miss startles; stuck recovery.
+- S3: wantedReports.js (police see it: at once; else a ped's call or a driver's after 7 s; none if
+  the caller is stopped); stars decay one at a time; 'police-search' {pos, radius, stars} (radius 0
+  at the end); description lost when changing car unseen (sight 0.4x, cooldown 1.6x faster);
+  ramming from 4 stars; roadblocks never placed in view. Pinned police/wanted tests updated deliberately.
+- Tests: tests/simTraffic2, simPeds2, simPolice2. Shots: /workspace/shots/v2/sim/ (tools/sim/shots.mjs).
+
+### sim follow-ups (gta-v2-sim)
+
+- The Roadster now meets a traffic car that another body drives (`car.body`, as phys ff1206d) and shares the overlap and impulse by mass (wrecks.js `clashBody`); police cars part by mass too (police.js `bodies`). tests/simContact.test.mjs.
+- busted-on-foot flake, root cause: a unit not driving direct applied its arrest stop distance to its own route look-ahead, so it braked short of it and stalled (~20 m off); now it eases with a 6 m/s floor. A unit that gets no nearer in 4 s backs off and goes round by the lanes for 12 s (the Wilshire median).
+- 'police-search' no longer flickers: once searching, 1.5 s of sustained sight (`REACQUIRE`) ends it; glimpses don't. Stars decay 3→2→1→0 headlessly.
+- roadster-boost-fly is a position flake in the playtest itself: it drives 1.5 s blind toward the city centre from wherever the Roadster was left; from (-274.5, 590.5) it runs into a queue of ordinary traffic and stops, on gta-v2 6a2fefc as well.

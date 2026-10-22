@@ -13,6 +13,7 @@ import { Wanted } from './sim/wanted.js'
 import { Police, Arrest } from './sim/police.js'
 import { Ambient } from './sim/ambient.js'
 import { witnesses } from './sim/witness.js'
+import { Reports } from './sim/wantedReports.js'
 import { MissionManager } from './sim/missions/manager.js'
 import { spot, nearestKerb, HOSPITALS, STATIONS } from './sim/missions/spots.js'
 import { emitGame, onGame } from './sim/gameEvents.js'
@@ -46,6 +47,7 @@ export class Game {
     this.view = new CrimeView()
     this.ui = new CrimeHud()
     this.crimes = [] // crimes since the last step, to be witnessed
+    this.reports = new Reports() // and rung in to the police (wantedReports.js)
     this.events = [] // every game event since the last step (the missions read them)
     this.down = null // { kind: 'busted' | 'wasted', t }
     this.arrest = new Arrest()
@@ -62,6 +64,8 @@ export class Game {
     deps.app.mapOverlay = (g, sx, sy, k) => mapOverlay(g, sx, sy, k, this.map)
     onGame('*', e => this.events.length < 64 && this.events.push(e))
     onGame('crime', e => this.crimes.push(e))
+    // (another car, or out of one, unseen: the police lose the description, wanted.js)
+    for (const k of ['car-entered', 'car-exited']) onGame(k, () => this.wanted.changeVehicle(this.police.seen))
     // a parked car broken into quietly is a crime too (a carjacking and an alarm are reported as
     // crimes of their own by onFoot.js)
     onGame('car-stolen', e => {
@@ -137,6 +141,7 @@ export class Game {
     const P = updatePlayerView()
     if (this.down) {
       this.crimes.length = 0
+      this.reports.clear()
       return
     }
     const W = this.wanted
@@ -144,9 +149,10 @@ export class Game {
     for (const c of this.crimes) {
       if (!c.pos) c.pos = { x: P.pos.x, z: P.pos.z }
       const w = witnesses(c.pos, { peds: this.peds.list, cars: this.traffic.cars, police: this.police.units, stars: W.stars })
-      W.report(c, w)
+      this.reports.add(c, w, this.peds.witnessCrime?.(c) || null, W) // (the people's reactions: living/pedLife.js)
     }
     this.crimes.length = 0
+    this.reports.step(h, W)
     const grip = 1 - 0.3 * Math.max(ENV.wet, 0.6 * ENV.rain)
     const f = this.foot,
       inCar = player.mode === 'car'

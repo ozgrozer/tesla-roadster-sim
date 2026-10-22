@@ -29,6 +29,7 @@ export function bodyFromTraffic (car) {
   b.vz = car.vz || car.hz * car.v
   b.w = car.w || 0
   b.dmg = car.dmg
+  car.body = b // (so another body that runs into this car meets the body: vehicleHit.js)
   if (b.dmg) {
     b.limp = b.dmg.limp ?? 1
     b.dead = !!b.dmg.wreck
