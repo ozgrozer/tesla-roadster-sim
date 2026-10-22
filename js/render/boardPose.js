@@ -77,8 +77,8 @@ export function poseBoard (O, a, p, pos, doors, base = 0) {
     // the feet: on the road outside, the inner one in first, then the outer swung in over the sill
     const fl = base + way.floor + ANKLE_UP
     const inX = way.S.x + 0.5
-    const zi = sd * (Math.abs(way.S.z) - 0.14),
-      zo = sd * (Math.abs(way.S.z) + 0.14)
+    const zi = way.S.z - sd * 0.14,
+      zo = way.S.z + sd * 0.14
     const outIn = W(lerp(x + 0.05, inX, s2), lerp(gy + ANKLE_UP, fl, s2) + 0.25 * Math.sin(Math.PI * s2), lerp(sd * (Math.abs(z) - 0.12), zi, s2 + s3 * 0))
     const gx = lerp(x + 0.05, way.B.x + 0.1, s2)
     const outO = s3 > 0

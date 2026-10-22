@@ -22,7 +22,8 @@ export const MELEE = {
   stompR: 1.7, // m: someone down this close, with nobody standing to hit, is stamped on
   chain: 0.4, // s after a punch's end a press still carries on the combo
   turn: 16, // rad/s turning to face the target
-  lunge: 4.5 // m/s closing in on them
+  lunge: 4.5, // m/s closing in on them
+  hold: 0.4 // s at most a swing waits on the lunge to bring them into reach
 }
 
 const standing = q => !q.gone && !q.dead && q.state !== 'down'
@@ -114,6 +115,11 @@ export class Melee {
         const left = Math.max(dt, m.hit - c.t)
         const v = Math.min(MELEE.lunge, (d - reach) / left)
         out.ctl = { x: dx / d, z: dz / d, mag: 1, pace: v }
+        // (still out of reach: the swing held back while they close in, a moment at most)
+        if (c.t >= m.hit - dt && d > reach + MELEE.slack && (c.hold || 0) < MELEE.hold) {
+          c.hold = (c.hold || 0) + dt
+          c.t = t0
+        }
       }
       if (t0 < m.hit && c.t >= m.hit) {
         const ahead = Math.abs(wrapPi(want - p.heading)) < 1.3

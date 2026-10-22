@@ -117271,7 +117271,8 @@ const MELEE = {
   stompR: 1.7, // m: someone down this close, with nobody standing to hit, is stamped on
   chain: 0.4, // s after a punch's end a press still carries on the combo
   turn: 16, // rad/s turning to face the target
-  lunge: 4.5 // m/s closing in on them
+  lunge: 4.5, // m/s closing in on them
+  hold: 0.4 // s at most a swing waits on the lunge to bring them into reach
 }
 
 const standing = q => !q.gone && !q.dead && q.state !== 'down'
@@ -117363,6 +117364,11 @@ class Melee {
         const left = Math.max(dt, m.hit - c.t)
         const v = Math.min(MELEE.lunge, (d - reach) / left)
         out.ctl = { x: dx / d, z: dz / d, mag: 1, pace: v }
+        // (still out of reach: the swing held back while they close in, a moment at most)
+        if (c.t >= m.hit - dt && d > reach + MELEE.slack && (c.hold || 0) < MELEE.hold) {
+          c.hold = (c.hold || 0) + dt
+          c.t = t0
+        }
       }
       if (t0 < m.hit && c.t >= m.hit) {
         const ahead = Math.abs(wrapPi(want - p.heading)) < 1.3
@@ -118221,8 +118227,8 @@ function poseBoard (O, a, p, pos, doors, base = 0) {
     // the feet: on the road outside, the inner one in first, then the outer swung in over the sill
     const fl = base + way.floor + ANKLE_UP
     const inX = way.S.x + 0.5
-    const zi = sd * (Math.abs(way.S.z) - 0.14),
-      zo = sd * (Math.abs(way.S.z) + 0.14)
+    const zi = way.S.z - sd * 0.14,
+      zo = way.S.z + sd * 0.14
     const outIn = W(lerp(x + 0.05, inX, s2), lerp(gy + ANKLE_UP, fl, s2) + 0.25 * Math.sin(Math.PI * s2), lerp(sd * (Math.abs(z) - 0.12), zi, s2 + s3 * 0))
     const gx = lerp(x + 0.05, way.B.x + 0.1, s2)
     const outO = s3 > 0
