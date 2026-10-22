@@ -220,7 +220,7 @@ if (
   await g.shot('q1-chase-roadblock.png')
 }
 
-// 6) night: the skyline and the Meridian's crown from ~630 m south, the free camera low behind the car
+// 6) night: the skyline and the Meridian's crown from ~890 m south, the free camera low behind the car
 g.step = 'crown'
 const c = LANDMARKS_V2.crown
 await g.ev(() => {
@@ -228,7 +228,7 @@ await g.ev(() => {
   R.game.police.clearAll?.()
   R.game.wanted.set(0)
 })
-const look = { x: 48, z: 197 } // (due south, ~630 m: the crown ~22° up, inside the 25° half fov)
+const look = { x: 91, z: 463 } // (south, ~890 m: the spire's tip, 304 m up, ~19° up inside the 25° half fov)
 const yaw = Math.atan2(-(c.spire.z - look.z), c.spire.x - look.x)
 await g.ev(a => window.__roadster.resetTo('city', a), { ...look, yaw })
 await hour(g, 22)
