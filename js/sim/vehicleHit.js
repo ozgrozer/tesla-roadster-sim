@@ -7,8 +7,8 @@
 //   { type: 'bump', impact, what, x, z }, { type: 'crash', impact, x, z } (hard), { type: 'kerb' },
 //   { type: 'knock', ... } (a post down), { type: 'clash', impact, x, z, car } (a traffic car).
 import { clamp } from './constants.js'
-import { query } from './city.js'
-import { kerbDist } from './street.js'
+import { kerbDist, manholesNear, MANHOLE_R } from './street.js'
+import { query, PROMENADE } from './city.js'
 import { keepIn } from './edge.js'
 import { snap } from './breakables.js'
 import { hurt, landed, MIN_HIT } from './carDamage.js'
@@ -97,29 +97,55 @@ export function collideWorld (b, world) {
 // An axle climbing a kerb at speed: the wheels climb its edge, the car loses some of its speed
 // into it at that axle, the springs are jolted, and a kerb clipped at an angle knocks the nose (or
 // the tail) away from it. Coming down off one only jolts the springs.
+// each wheel: [along (+ front axle), across (+ left)]
+const WHEELS = [
+  [1, 1],
+  [1, -1],
+  [-1, 1],
+  [-1, -1]
+]
+const TRACK = 0.8 // m from the middle to a wheel, across: a share of the width
+const _under = new Set()
 export function kerbs (b) {
-  const S = b.spec
-  for (const sg of [1, -1]) {
-    const ax = b.x + b.hx * (S.wb / 2) * sg,
-      az = b.z + b.hz * (S.wb / 2) * sg
-    const up = kerbDist(ax, az) < 0 // (on the pavement side of the kerb line)
-    const was = sg > 0 ? b.kerbF : b.kerbR
-    if (sg > 0) b.kerbF = up
-    else b.kerbR = up
-    if (up === was) continue
-    const sp = Math.hypot(b.vx, b.vz)
-    b.heaveV += (up ? 1 : -0.6) * Math.min(1.2, sp * 0.08)
-    b.pitchV += sg * (up ? -1 : 0.5) * Math.min(0.6, sp * 0.03)
+  const S = b.spec,
+    sp = Math.hypot(b.vx, b.vz)
+  const fx = b.hx,
+    fz = b.hz,
+    lx = fz,
+    lz = -fx
+  const tw = (b.wid / 2) * TRACK
+  // (the city's own kerbs: not up on a deck or the hill road)
+  const street = (b.y || 0) < 0.3 && Math.abs(b.x) <= PROMENADE && Math.abs(b.z) <= PROMENADE
+  const was = b.kerbW || (b.kerbW = [null, null, null, null])
+  let told = false
+  for (let i = 0; i < 4; i++) {
+    const [sa, ss] = WHEELS[i]
+    const wx = b.x + fx * (S.wb / 2) * sa + lx * tw * ss,
+      wz = b.z + fz * (S.wb / 2) * sa + lz * tw * ss
+    const up = street && kerbDist(wx, wz) < 0 // (on the pavement side of the kerb line)
+    const before = was[i]
+    was[i] = up
+    // (a body new here, taken over up on the pavement, say, feels no kerb it never crossed)
+    if (before === null || up === before || sp < 0.5) continue
+    // the wheel's corner of the body kicked up (or dropped): heave, and pitch and roll by where
+    // that wheel is, so one wheel at a time over an angled kerb rocks it corner to corner
+    const k = Math.min(1, sp * 0.07)
+    b.heaveV += (up ? 0.6 : -0.4) * k
+    b.pitchV += sa * (up ? -0.35 : 0.2) * k
+    b.rollV += ss * (up ? 0.5 : -0.3) * k
+    if (!told) b.events.push({ type: 'kerb', impact: sp, v: sp, up, x: wx, z: wz })
+    told = true
     if (!up || sp < 2) continue
+    // and climbing it costs that wheel some speed, square to the kerb: an angled one turns the car
     const e = 0.05,
-      gx = kerbDist(ax + e, az) - kerbDist(ax - e, az),
-      gz = kerbDist(ax, az + e) - kerbDist(ax, az - e),
+      gx = kerbDist(wx + e, wz) - kerbDist(wx - e, wz),
+      gz = kerbDist(wx, wz + e) - kerbDist(wx, wz - e),
       l = Math.hypot(gx, gz)
     if (l < 1e-6) continue
     let nx = gx / l,
       nz = gz / l
-    const rx = ax - b.x,
-      rz = az - b.z
+    const rx = wx - b.x,
+      rz = wz - b.z
     const vx = b.vx + b.w * rz,
       vz = b.vz - b.w * rx
     let vn = vx * nx + vz * nz
@@ -129,13 +155,64 @@ export function kerbs (b) {
       vn = -vn
     }
     const cr = rz * nx - rx * nz,
-      k = 1 / b.m + (cr * cr) / b.I,
-      j = Math.min(-vn * KERB_LOSS, KERB_DV) / k
+      kk = 1 / b.m + (cr * cr) / b.I,
+      j = Math.min(-vn * KERB_LOSS, KERB_DV) / 2 / kk
     b.vx += (nx * j) / b.m
     b.vz += (nz * j) / b.m
-    b.w += clamp((rz * nx * j - rx * nz * j) / b.I, -KERB_SPIN, KERB_SPIN)
-    b.events.push({ type: 'kerb', impact: -vn, x: ax, z: az })
+    b.w += clamp((rz * nx * j - rx * nz * j) / b.I, -KERB_SPIN / 2, KERB_SPIN / 2)
   }
+  // a wheel dropping into a manhole's lid in the road: a knock up through that corner
+  if (!street || sp < 2) return
+  _under.clear()
+  for (const m of manholesNear(b.x, b.z, 4))
+    for (const [sa, ss] of WHEELS) {
+      const wx = b.x + fx * (S.wb / 2) * sa + lx * tw * ss,
+        wz = b.z + fz * (S.wb / 2) * sa + lz * tw * ss
+      if (Math.hypot(wx - m.x, wz - m.z) < MANHOLE_R && !b.holes?.has(m)) {
+        const k = Math.min(1, sp * 0.05)
+        b.heaveV -= 0.18 * k
+        b.rollV -= ss * 0.12 * k
+        b.pitchV += sa * 0.08 * k
+        b.events.push({ type: 'manhole', v: sp })
+      }
+      if (Math.hypot(wx - m.x, wz - m.z) < MANHOLE_R) _under.add(m)
+    }
+  if (_under.size || b.holes?.size) b.holes = new Set(_under)
+}
+
+// Two bodies (two cars each driven by a body, vehicleLink.js: the player's and a getaway's, say):
+// the overlap shared by mass, momentum traded at the corner that landed (so one struck off its
+// middle spins), each dented by the other's mass and told on its own events
+const OTHER = { x: 0, z: 0, fx: 1, fz: 0, hl: 1, hw: 1 }
+function clash (b, o, tr) {
+  if (Math.abs(o.x - b.x) > 14 || Math.abs(o.z - b.z) > 14) return 0
+  if ((b.y || 0) > (o.y || 0) + o.hgt || (b.y || 0) + b.hgt < (o.y || 0)) return 0
+  const me = rectOf(b),
+    B = rectOf(o, OTHER)
+  const hit = rectRect(me, B)
+  if (!hit) return 0
+  const at = landed(me, B)
+  const px = at ? at.x : hit.px,
+    pz = at ? at.z : hit.pz
+  const { nx, nz, depth } = hit
+  const share = o.m / (o.m + b.m)
+  b.x += nx * depth * share
+  b.z += nz * depth * share
+  o.x -= nx * depth * (1 - share)
+  o.z -= nz * depth * (1 - share)
+  const w0 = b.w,
+    w1 = o.w
+  const impact = impulse(b, o, { nx, nz, depth, px, pz }, 0.25, 0.3)
+  b.w = w0 + clamp(b.w - w0, -2.5, 2.5)
+  o.w = w1 + clamp(o.w - w1, -2.5, 2.5)
+  if (impact < 0.6) return impact
+  const broke = damage(b, px, pz, impact, o.m),
+    hurtO = damage(o, px, pz, impact, b.m)
+  b.events.push({ type: 'clash', impact, x: px, z: pz, car: o.id, broke, nx, nz })
+  o.events?.push({ type: 'clash', impact, x: px, z: pz, car: b.id, broke: hurtO, nx: -nx, nz: -nz })
+  if (impact > CRASH_AT) b.events.push({ type: 'crash', impact, x: px, z: pz, car: o.id })
+  if (impact > 5) tr.hear?.(px, pz, 22)
+  return impact
 }
 
 // The traffic (traffic.js) against body b: overlap shared out by mass, momentum traded, the car
@@ -144,7 +221,14 @@ export function kerbs (b) {
 export function collideTraffic (b, tr, skip = null) {
   const me = rectOf(b)
   for (const car of tr.cars) {
-    if (car === skip || car.ctl) continue
+    if (car === skip) continue
+    if (car.ctl) {
+      // (one driven by a body of its own, the player's or a workstream's: body against body)
+      // (and only while that body is what's drawn there: not one left behind when it changed hands)
+      const o = car.body
+      if (o && o !== b && Math.abs(o.x - car.x) + Math.abs(o.z - car.z) < 1.5) clash(b, o, tr)
+      continue
+    }
     if (Math.abs(car.x - b.x) > 14 || Math.abs(car.z - b.z) > 14) continue
     if (b.y > (car.y || 0) + car.hgt || b.y + b.hgt < (car.y || 0)) continue // (one on a deck above)
     const B = { x: car.x, z: car.z, fx: car.hx, fz: car.hz, hl: car.len / 2, hw: car.wid / 2 }

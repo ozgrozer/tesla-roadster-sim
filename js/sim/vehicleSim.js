@@ -90,8 +90,7 @@ export function createVehicleBody (kind, opts = {}) {
     rollV: 0,
     heave: 0,
     heaveV: 0,
-    kerbF: false, // (each axle up on a kerb a step ago)
-    kerbR: false,
+    kerbW: null, // (each wheel up on a kerb a step ago: vehicleHit.js kerbs)
     lights: { brake: false, reverse: false, indicator: 0, head: true },
     dmg: null, // damage, as a traffic car's (carDamage.js)
     limp: 1, // the share of its power the damage leaves it

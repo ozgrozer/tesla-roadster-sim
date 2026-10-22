@@ -201,3 +201,22 @@ W3, explorables (72150f3, 8dd285f, aab6f35):
   all are found), under the pause menu; the hunt's n is the truth (never counts down); remembered as prefs
   'tokenCount'. The STATS tab has a "Hidden tokens n of 30" row. Test in tests/ux.test.mjs. Shots:
   /workspace/shots/v2/ux/x-token-hud.png, x-token-stats.png (events fed in by hand: the hunt is not on this branch).
+
+## Phys round 2, part 2 (gta-v2-phys on top of integrated 6a2fefc)
+
+- Body against body (vehicleHit.js `clash`, vehicleLink.js `car.body`): two cars each driven by a
+  body (the player's against an ambient getaway driver's, say) used to pass straight through each
+  other (overlap up to 3.2 m, no impact); now they collide by mass at the patch that landed, both
+  dented, both told (`clash` on each body's events). A body left behind when a car changes hands is
+  ignored (it must sit where its car is drawn). tests/physCrash.mjs (probe), physContact.test.mjs.
+- Kerbs by the wheel (vehicleHit.js `kerbs`): each wheel up or down the kerb kicks heave, pitch and
+  roll at its own corner (an angled kerb rocks the car corner by corner), climbing costs that wheel
+  speed square to the kerb, and every one is heard: drivable.js now forwards the body's
+  kerb/manhole events to the sim's (sound, rumble, the small shake; they were silent before).
+  Manhole lids knock through the wheel that drops in. A car taken over up on the pavement no
+  longer feels a phantom kerb on its first step.
+- Up on the pavement (bodyGround.js `under`): a body sits a kerb up (player.js groundBase) instead
+  of sinking its wheels into the slab, tilted while half on. tests/physKerb.mjs, physKerb.test.mjs.
+- Progressive damage (carDamage.js `worn`): crumples that build up from knocks too soft to break
+  anything on their own now take out the lamp at that corner (6 cm in; 10 cm in the middle takes
+  the pair) and craze the glass over a face pushed in 16 cm, more as it goes deeper.
