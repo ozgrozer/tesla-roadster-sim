@@ -25,6 +25,14 @@ const aim = (a = 0.6, pitch = 0.32, dist = 5.2) => g.ev(([a, pitch, dist]) => {
   c.dist = dist
   c.idle = 0
 }, [a, pitch, dist])
+// on foot: the camera looking along the player's facing turned by a (from their right, a > 0)
+const aimFoot = (a = 0.9, pitch = 0.25, dist = 4.2) => g.ev(([a, pitch, dist]) => {
+  const R = window.__roadster, c = R.foot.cam
+  c.yaw = R.player.heading + a
+  c.pitch = pitch
+  c.dist = dist
+  c.idle = 0
+}, [a, pitch, dist])
 const until = (f, sec, arg) => g.until(f, sec, arg, 0.05)
 
 if (which === 'doors' || which === 'all') {
@@ -50,7 +58,7 @@ if (which === 'doors' || which === 'all') {
       R.vehicles.sync(R.traffic, R.sim)
       const e = R.vehicles.of(c)
       e.stolen = true // (open: no break-in, for the door)
-      const w = R.vehicles.toWorld(e, e.door.x - 1.2, e.door.z - 0.7)
+      const w = R.vehicles.toWorld(e, e.door.x - 1.2, e.door.z + Math.sign(e.door.z) * 0.7)
       const p = R.player
       p.pos.x = R.foot.prev.x = w.x
       p.pos.z = R.foot.prev.z = w.z
@@ -66,18 +74,113 @@ if (which === 'doors' || which === 'all') {
     await aim(-0.7, 0.3, 6)
     await g.shot(`door-${name}-open.png`)
     await until(() => { const a = window.__roadster.foot.action; return a && a.phase === 'in' && a.t > 0.45 }, 4)
-    await aim(0.75)
+    await aim(-0.7, 0.3, 6)
     await g.shot(`door-${name}-in.png`)
     const seated = await until(() => window.__roadster.player.mode === 'car', 6)
     log(name, 'seated', seated)
     await g.run(0.5)
     await g.press('KeyE', 0)
     await until(() => { const a = window.__roadster.foot.action; return a && a.dir === 'out' && a.phase === 'out' && a.t > 0.35 }, 5)
-    await aim(0.75)
+    await aim(-0.6, 0.3, 6.5)
     await g.shot(`door-${name}-out.png`)
     await until(() => window.__roadster.player.mode === 'foot' && !window.__roadster.foot.action, 6)
     await g.run(0.4)
   }
 }
+const stars = () => g.ev(() => window.__roadster.game.wanted.stars)
+// someone nearby on the pavement, stood still in front of the player (on foot), facing them
+const victim = (dist = 1.6) => g.ev(d => {
+  const R = window.__roadster, P = R.player
+  const q = R.peds.list.filter(o => !o.dead && !o.gone && (o.state === 'walk' || o.state === 'idle'))
+    .sort((a, b) => Math.hypot(a.x - P.pos.x, a.z - P.pos.z) - Math.hypot(b.x - P.pos.x, b.z - P.pos.z))[0]
+  if (!q) return null
+  q.state = 'idle'
+  q.t = 0
+  q.v = 0
+  P.pos.x = R.foot.prev.x = q.x - d * Math.cos(P.heading)
+  P.pos.z = R.foot.prev.z = q.z + d * Math.sin(P.heading)
+  P.vel.x = P.vel.z = 0
+  return q.i
+}, dist)
+
+if (which === 'fists' || which === 'all') {
+  if (await g.ev(() => window.__roadster.player.mode !== 'foot')) {
+    await g.press('KeyE', 0)
+    await until(() => window.__roadster.player.mode === 'foot' && !window.__roadster.foot.action, 8)
+    await g.run(0.6)
+  }
+  await g.ev(() => window.__roadster.game.wanted.set(0, window.__roadster.player.pos))
+  const id = await victim()
+  log('fists: victim', id)
+  await g.run(0.1)
+  const swing = async (name, at) => {
+    await g.press('KeyF', 0)
+    await until(m => { const c = window.__roadster.foot.fight.melee.cur; return c && c.t >= c.move.hit + m }, 2, at)
+    await aimFoot(0.9)
+    if (name) await g.shot(name)
+    await until(() => !window.__roadster.foot.fight.melee.cur, 2)
+  }
+  await swing('punch-jab.png', 0.02)
+  await swing(null, 0)
+  await swing('punch-landing.png', 0.03)
+  await g.run(0.6)
+  await aimFoot(0.9)
+  await g.shot('ped-knocked-down.png')
+  log('fists:', await g.ev(() => { const F = window.__roadster.foot.fight; return { landed: F.landed, taken: F.taken } }))
+  const up = await until(() => window.__roadster.game.wanted.stars > 0, 20)
+  log('fists: wanted', up, await stars())
+  await aimFoot(0.9, 0.35, 6)
+  await g.shot('punch-wanted.png')
+}
+
+if (which === 'runover' || which === 'all') {
+  await g.ev(() => window.__roadster.game.wanted.set(0, window.__roadster.player.pos))
+  if (await g.ev(() => window.__roadster.player.mode === 'foot')) {
+    // back to the Roadster where it was left
+    await g.ev(() => { const R = window.__roadster; const w = R.vehicles.toWorld(R.vehicles.roadster, -0.2, -1.6); R.player.pos.x = R.foot.prev.x = w.x; R.player.pos.z = R.foot.prev.z = w.z })
+    await g.press('KeyE', 0)
+    await until(() => window.__roadster.player.mode === 'car', 10)
+  }
+  log('runover: in', await g.ev(() => window.__roadster.player.mode))
+  let hit = false
+  await g.hold('KeyW', async () => {
+    for (let i = 0; i < 40 && !hit; i++) {
+      await g.run(0.25)
+      hit = await g.ev(() => {
+        const R = window.__roadster, S = R.sim, sp = Math.hypot(S.vel.x, S.vel.z)
+        if (sp < 15) return false
+        const q = R.peds.list.find(o => !o.dead && !o.gone && o.state !== 'down' && Math.hypot(o.x - S.pos.x, o.z - S.pos.z) < 60)
+        if (!q) return false
+        const hx = S.vel.x / sp, hz = S.vel.z / sp
+        q.x = S.pos.x + hx * 2.6
+        q.z = S.pos.z + hz * 2.6
+        q.state = 'idle'
+        window.__victim = q
+        return true
+      })
+    }
+  })
+  await g.run(0.15)
+  log('runover: hit', hit, await g.ev(() => { const q = window.__victim; return q && { state: q.state, dead: q.dead, air: q.air } }))
+  await g.shot('runover-hit.png')
+  await g.hold('Space', 2.5)
+  await g.run(1)
+  const up = await until(() => window.__roadster.game.wanted.stars > 0, 20)
+  log('runover: wanted', up, await stars())
+  // out, and a look back at them lying there, the stars up
+  await g.press('KeyE', 0)
+  await until(() => window.__roadster.player.mode === 'foot' && !window.__roadster.foot.action, 8)
+  await g.run(0.3)
+  log('runover: body', await g.ev(() => {
+    const R = window.__roadster, q = window.__victim, P = R.player.pos, c = R.foot.cam
+    c.yaw = Math.atan2(-(q.z - P.z), q.x - P.x) + 0.25
+    c.pitch = 0.3
+    c.dist = 5
+    c.idle = 0
+    return { dead: q.dead, state: q.state, d: Math.hypot(q.x - P.x, q.z - P.z).toFixed(1), stars: R.game.wanted.stars }
+  }))
+  await g.shot('runover-aftermath.png')
+}
+
 await g.close()
 log('console', g.console.filter(c => !/GL Driver|GPU stall|swiftshader/i.test(c.text)).slice(0, 10))

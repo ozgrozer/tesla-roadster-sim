@@ -117434,10 +117434,10 @@ __define(301, function (__exports) {
 // of anyone fighting back landing on the player (a shove, health off: game.js 'player-hit'), and
 // the sounds. onFoot.js makes one and runs it each step on foot.
 const { Melee } = __require(299)
-const { emitGame } = __require(68)
+const { emitGame, onGame } = __require(68)
 const { player } = __require(79)
 const { panOf } = __require(119)
-const { swingSound, punchSound } = __require(300)
+const { swingSound, punchSound, bodySound } = __require(300)
 
 const STILL = { x: 0, z: 0, mag: 0, run: false, walk: false, jump: false }
 
@@ -117449,6 +117449,10 @@ class FootFight {
     this.landed = 0 // blows landed (the playtest reads it)
     this.taken = 0 // and taken
     this.last = null // what the last blow did ('stagger', 'down', 'dead')
+    // (someone run over by the player: the thud of the body on the car)
+    onGame('ped-hit', e => {
+      if (e.how === 'car' && e.by === 'player') bodySound(this.foot.sound, e.speed || 0)
+    })
   }
   // a drive key pressed on foot (main.js): Space jumps, F punches. True if it was taken
   press (code, first) {

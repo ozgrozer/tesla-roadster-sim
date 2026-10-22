@@ -4,10 +4,10 @@
 // of anyone fighting back landing on the player (a shove, health off: game.js 'player-hit'), and
 // the sounds. onFoot.js makes one and runs it each step on foot.
 import { Melee } from './sim/melee.js'
-import { emitGame } from './sim/gameEvents.js'
+import { emitGame, onGame } from './sim/gameEvents.js'
 import { player } from './sim/player.js'
 import { panOf } from './audio/mix.js'
-import { swingSound, punchSound } from './audio/fists.js'
+import { swingSound, punchSound, bodySound } from './audio/fists.js'
 
 const STILL = { x: 0, z: 0, mag: 0, run: false, walk: false, jump: false }
 
@@ -19,6 +19,10 @@ export class FootFight {
     this.landed = 0 // blows landed (the playtest reads it)
     this.taken = 0 // and taken
     this.last = null // what the last blow did ('stagger', 'down', 'dead')
+    // (someone run over by the player: the thud of the body on the car)
+    onGame('ped-hit', e => {
+      if (e.how === 'car' && e.by === 'player') bodySound(this.foot.sound, e.speed || 0)
+    })
   }
   // a drive key pressed on foot (main.js): Space jumps, F punches. True if it was taken
   press (code, first) {
