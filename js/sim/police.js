@@ -241,7 +241,8 @@ export class Police {
         go = (d > 120 || u.gone > 30) && !seen
       }
       else if (u.role === 'pursuit') go = d > 420 && !seen
-      else if (u.role === 'block') go = (u.age > 50 || stars < ROADBLOCK_STARS || d > 260) && !seen && d > 60
+      // (left behind: further than the furthest a block goes down, policeAir.js FAR_BLOCK + 80)
+      else if (u.role === 'block') go = (u.age > 50 || stars < ROADBLOCK_STARS || d > 460) && !seen && d > 60
       if (u.role === 'pursuit' && u.state !== 'leave' && this.pursuing > UNITS[stars] + 1 && d > 160 && !seen) go = true
       if (go) this.remove(u)
     }
