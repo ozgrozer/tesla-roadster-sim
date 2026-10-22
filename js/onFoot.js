@@ -16,6 +16,7 @@ import { vehicles } from './sim/vehicles.js'
 import { Drivable } from './sim/drivable.js'
 import { collidePlayer } from './sim/wrecks.js'
 import { carsMeet } from './sim/carsMeet.js'
+import { FootRescue } from './sim/footRescue.js'
 import { makeControls } from './sim/constants.js'
 import {
   player,
@@ -68,6 +69,7 @@ export class OnFoot {
     // g: { app, sim, RS, rig, camera, canvas, input, hud, sound, traffic, peds, intro, setCam, cityView }
     Object.assign(this, g)
     this.alt = new Drivable() // a car that isn't the Roadster, while the player has it
+    this.rescue = new FootRescue() // stuck or out of the world: put back somewhere safe
     this.view = new FootView(scene, g.RS, g.cityView.cars)
     this.cam = new FootCam(g.camera, clipCamera)
     this.focus = new Focus()
@@ -161,6 +163,7 @@ export class OnFoot {
     ctl.jump = this.jumpQ
     this.jumpQ = false
     const out = stepFoot(p, H, ctl, this.world)
+    this.rescue.step(p, H, ctl.mag > 0.3, this.world) // (footRescue.js)
     if (out.landed > 3) landing(this.sound, p.surface, out.landed, 0)
     this.hitByCars()
   }
@@ -239,7 +242,7 @@ export class OnFoot {
   }
   enter (e, how) {
     if (how === 'jack') this.freeze(e.car)
-    this.action = startEnter(e, how, player)
+    this.action = startEnter(e, how, player, Math.random, this.world) // (the free side's door)
     setMode('entering', e)
   }
   // a car with a driver, about to be taken: it stops where it is, its driver at the wheel

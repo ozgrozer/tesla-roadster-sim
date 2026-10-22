@@ -2,14 +2,46 @@
 // locked to the picture: a click) or a gamepad's right stick swings it round and up and down; the
 // wheel brings it in or lets it out. It follows the player smoothly, keeps out of buildings
 // (clip: render/city.js clipCamera) and, taking over from the car's camera, eases from wherever that
-// left it rather than cutting.
+// left it rather than cutting. The walls' clip is a fat ray (the middle and four round it, the
+// width of the picture's near corners), so a wall alongside can't slice into the view; it pulls
+// the camera in at once and lets it back out over a moment, and the camera never goes under the
+// ground (the hills) beneath it.
 import * as THREE from 'three'
 import { clamp } from '../sim/constants.js'
+import { groundBase } from '../sim/player.js'
 
 const HEAD = 1.55 // m: what it looks at, over the feet
 const BLEND = 0.9 // s easing over from the previous camera
 const _f = new THREE.Vector3()
 const lerpK = (k, dt) => 1 - Math.exp(-k * dt)
+const FAT = 0.28 // m: how far round the middle ray the others run
+const OUT_K = 2.5 // per s: how fast the camera eases back out once a wall is out of the way
+const _a = new THREE.Vector3(),
+  _p = new THREE.Vector3(),
+  _r = new THREE.Vector3(),
+  _u = new THREE.Vector3()
+// how far from aim towards pos (a share, 0 to 1) the walls let the camera be: the shortest of
+// five rays, clip(a, p) pulling each p in front of the first wall (render/city.js clipCamera)
+export function clipShare (clip, aim, pos) {
+  const full = aim.distanceTo(pos)
+  if (full < 0.3) return 1
+  _r.subVectors(pos, aim).normalize()
+  _u.set(-_r.z, 0, _r.x).normalize() // (across the view, level)
+  let best = 1
+  for (let k = 0; k < 5; k++) {
+    const sx = k === 1 ? 1 : k === 2 ? -1 : 0,
+      sy = k === 3 ? 1 : k === 4 ? -1 : 0
+    _a.copy(aim)
+    _p.copy(pos)
+    _p.addScaledVector(_u, sx * FAT)
+    _p.y += sy * FAT * 0.7
+    _a.addScaledVector(_u, sx * FAT * 0.3)
+    const len = _a.distanceTo(_p)
+    clip(_a, _p)
+    best = Math.min(best, _a.distanceTo(_p) / len)
+  }
+  return best
+}
 
 export class FootCam {
   constructor (camera, clip = null) {
@@ -26,6 +58,7 @@ export class FootCam {
     this.blend = 1
     this.init = false
     this.idle = 0
+    this.reach = 1 // the share of the arm the walls let it have, eased back out
   }
   // a mouse's movement (px) or a stick's (scaled the same)
   turn (dx, dy) {
@@ -80,7 +113,16 @@ export class FootCam {
     this.pos.x += sx
     this.pos.z += sz
     if (this.pos.y < focus.y + 0.3) this.pos.y = focus.y + 0.3
-    if (this.clip) this.clip(this.look, this.pos)
+    if (this.clip) {
+      // (in at once, back out over a moment)
+      const got = clipShare(this.clip, this.look, this.pos)
+      if (got < this.reach) this.reach = got
+      else this.reach += (got - this.reach) * lerpK(OUT_K, dt)
+      if (this.reach < 0.999) this.pos.lerpVectors(this.look, this.pos, Math.max(0.05, this.reach))
+    }
+    // (never under the ground: a hill rising behind)
+    const gy = groundBase(this.pos.x, this.pos.z) + 0.35
+    if (this.pos.y < gy) this.pos.y = gy
     this.blend = Math.min(1, this.blend + dt / BLEND)
     const e = this.blend * this.blend * (3 - 2 * this.blend)
     cam.position.lerpVectors(this.from, this.pos, e)

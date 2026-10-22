@@ -13,6 +13,11 @@ import { Sim } from './sim.js'
 import { stepVehicle, makeVehicleInput } from './vehicleSim.js'
 import { bodyFromTraffic, writeToTraffic, vehicleProxy, syncProxy, pullProxy } from './vehicleLink.js'
 import { collideTraffic } from './vehicleHit.js'
+import { roadGrip } from './roadGrip.js'
+
+// the share of a hit's harm the player's car takes (a traffic car's is 1): GTA-tough, so it
+// takes a few hard crashes to wreck, dented and smoking well before
+export const PLAYER_TOUGH = 0.35
 
 export function carInput (c, out = makeVehicleInput()) {
   out.throttle = c ? c.throttle : 0
@@ -26,6 +31,7 @@ export class Drivable {
   constructor () {
     this.sim = new Sim()
     this.inp = makeVehicleInput()
+    this.world = { city: true, t: 0, grip: 1 }
     this.entry = this.car = this.body = this.proxy = this.tr = null
   }
   get active () {
@@ -41,6 +47,7 @@ export class Drivable {
     this.car = car
     this.tr = traffic
     this.body = bodyFromTraffic(car)
+    this.body.tough = PLAYER_TOUGH // (the hero's car takes a beating: vehicleHit.js)
     this.proxy = vehicleProxy(this.body)
     this.sim.reset('city', { x: car.x, z: car.z, yaw: car.yaw })
     this.sim.air = 0 // (no thrusters, no tank)
@@ -50,7 +57,10 @@ export class Drivable {
   step (dt, c) {
     if (!this.car) return
     const b = this.body
-    stepVehicle(b, carInput(c, this.inp), dt, { city: true, t: this.tr.t })
+    const W = this.world
+    W.t = this.tr.t
+    W.grip = roadGrip() // (wet or dry, and the grip hook: roadGrip.js)
+    stepVehicle(b, carInput(c, this.inp), dt, W)
     collideTraffic(b, this.tr, this.car)
     writeToTraffic(b, this.car)
     this.sim.time += dt // (the keys ease in on the Sim's clock: input.js)

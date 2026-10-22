@@ -127,7 +127,7 @@ export class Game {
   health () {
     const f = this.foot
     if (player.mode !== 'car') return this.footHealth
-    if (f.alt.active) return f.alt.body.dead ? 0 : 1
+    if (f.alt.active) return f.alt.body.dead ? 0 : Math.max(0.05, 1 - (f.alt.body.dmg?.harm || 0))
     return Math.max(0, 1 - (this.damage?.amount || 0))
   }
   // One physics step in the city (h s); view: the camera's ground position and heading (main.js)

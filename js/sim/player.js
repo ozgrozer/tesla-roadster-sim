@@ -50,7 +50,8 @@ export const player = {
   surface: 'walk',
   floor: 0, // the height of what the feet stand on
   down: 0, // s left lying down after being knocked over
-  airT: 0 // s since the feet left the ground
+  airT: 0, // s since the feet left the ground
+  lift: 0 // m the drawn body is still below the feet after a step up (eased away: footView.js)
 }
 
 export const isOnFoot = (p = player) => p.mode === 'foot'
@@ -71,7 +72,7 @@ export function placePlayer (x, z, heading = 0, y = null, p = player) {
   p.vel.x = p.vel.y = p.vel.z = 0
   p.heading = heading
   p.grounded = true
-  p.speed = p.run = p.airT = p.down = 0
+  p.speed = p.run = p.airT = p.down = p.lift = 0
   p.floor = p.pos.y
 }
 
@@ -281,9 +282,37 @@ function keepOnMap (pos, v) {
 // One step of walking: ctl { x, z, mag } the way to go (moveDir), run (sprint held), jump (pressed
 // this step). Returns what happened worth a sound or a camera's notice: { landed (the speed coming
 // down, m/s, or 0), jumped, stepped (m stepped up) }.
+// A long step (a dt spike) is taken as short ones, so nothing is walked through.
 const _out = { landed: 0, jumped: false, stepped: 0 }
+const MAX_STEP = 1 / 60
+const LIFT_EASE = 14 // per s: how fast the drawn body catches up a step it went up
 export function stepFoot (p, dt, ctl, world = CITY_WORLD) {
   const out = _out
+  out.landed = 0
+  out.jumped = false
+  out.stepped = 0
+  if (!(dt > 0)) return out
+  const n = Math.min(30, Math.max(1, Math.ceil(dt / MAX_STEP - 1e-9))),
+    h = dt / n
+  let landed = 0,
+    jumped = false,
+    stepped = 0
+  for (let i = 0; i < n; i++) {
+    footStep(p, h, ctl, world, out)
+    landed = Math.max(landed, out.landed)
+    jumped = jumped || out.jumped
+    if (out.stepped > 0.04) stepped += out.stepped // (a step, not a slope's rise)
+    if (out.jumped && ctl) ctl = { ...ctl, jump: false } // (one jump per press)
+  }
+  out.landed = landed
+  out.jumped = jumped
+  out.stepped = stepped
+  // (the body drawn easing up a step rather than popping up it)
+  p.lift = Math.max(-FOOT.stepUp, (p.lift || 0) - stepped) * Math.exp(-LIFT_EASE * dt)
+  if (Math.abs(p.lift) < 1e-3) p.lift = 0
+  return out
+}
+function footStep (p, dt, ctl, world, out) {
   out.landed = 0
   out.jumped = false
   out.stepped = 0

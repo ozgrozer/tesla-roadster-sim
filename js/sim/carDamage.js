@@ -185,8 +185,9 @@ const bite = v => ((Math.max(v, MIN_HIT) - MIN_HIT) / 14) ** 1.3
 
 // A hit on a traffic car at (px, pz) in the world, closing at impact m/s, from something of mass
 // mo (null for a wall or a post), at time t (s: the traffic's clock). What it broke comes back
-// (BROKE's bits; 0 for nothing).
-export function hurt (car, px, pz, impact, mo, t) {
+// (BROKE's bits; 0 for nothing). tough: the share of the harm it takes (the player's own car is
+// built to take a beating: vehicleHit.js), the dents and the glass as anyone's.
+export function hurt (car, px, pz, impact, mo, t, tough = 1) {
   if (!(impact > MIN_HIT)) return 0
   const D = car.dmg || (car.dmg = fresh())
   const from = onset(D, impact, t)
@@ -202,7 +203,7 @@ export function hurt (car, px, pz, impact, mo, t) {
   crumple(D.dents, lx, lz, hl, hw, depth)
   const again = from > MIN_HIT
   let broke = BROKE.dent | breakage(D, lx / hl, lz / hw, impact, true, again)
-  D.harm += k * (bite(impact) - bite(from))
+  D.harm += tough * k * (bite(impact) - bite(from))
   D.limp = 1 - 0.5 * Math.min(1, D.harm)
   if (D.harm >= WRECK && !D.wreck) {
     D.wreck = true

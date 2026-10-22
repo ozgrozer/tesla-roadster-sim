@@ -13,7 +13,7 @@
 // The body has the traffic car's shape where they overlap (x, z, hx, hz, len, wid, hgt, m, I, vx,
 // vz, w, dmg), so collide.js's impulses and carDamage.js's dents work on it unchanged.
 import { G, clamp, wrapPi, makeControls } from './constants.js'
-import { tyreCurve, smooth } from './tyres.js'
+import { tyreCurve, smooth, PEAK } from './tyres.js'
 import { Sim } from './sim.js'
 import {
   handlingFor,
@@ -24,6 +24,7 @@ import {
 } from './handling.js'
 import { collideWorld, kerbs } from './vehicleHit.js'
 import { settle } from './bodyGround.js'
+import { springs, slopeForce } from './vehicleBody.js'
 
 const MAX_DT = 1 / 120
 const TRANSFER = 0.12 // s the weight's shift onto an axle lags the acceleration
@@ -37,7 +38,9 @@ const SPIN_OK = 0.35 // rad/s a car may turn faster than its grip carries it bef
 const SPIN_K = 7 // N m per kg per rad/s of that, at most SPIN_MAX N m per kg
 const SPIN_MAX = 6
 const HB_RATE = 1.6 // rad/s: the most the handbrake's swing turns the car at
-const RECOVER = 1.2 // rad/s^2 per rad the nose is off the way the car is going
+const RECOVER = 1.6 // rad/s^2 per rad the nose is off the way the car is going
+const PULL = 0.12 // rad of steering pull per m a front corner is crumpled further than the other
+const _g = [0, 0]
 
 let IDS = 0
 // A body for a car of handling class kind (handling.js), at (x, z) facing yaw, standing still.
@@ -161,9 +164,9 @@ export function stepVehicle (b, inp, dt, world = null) {
       if (world.city !== false) kerbs(b)
       collideWorld(b, world)
     }
+    springs(b, h) // (the body on its springs: vehicleBody.js)
   }
   if (world && world.city !== false) settle(b, dt) // (up the ramps and the hills: bodyGround.js)
-  body(b, dt)
   b.lights.brake = !b.dead && inp.brake > 0.05 && b.gear > 0 && b.u > 0.2
   b.lights.reverse = b.gear === -1
 }
@@ -209,9 +212,17 @@ function move (b, inp, dt, world) {
   // the steering: speed-sensitive lock, the rack at the speed of hands, and the hands catching a
   // slide (the fronts follow it on their caster, as the Roadster's do: tyres.js steer)
   let target = inp.steer * lockAt(S, au)
+  // (a front corner crumpled in pulls the wheel its way: damage you can feel, not fight)
+  if (b.dmg) target += clamp((b.dmg.dents[0] - b.dmg.dents[2]) * PULL, -0.03, 0.03)
   const slide = smooth((Math.abs(beta) - 0.1) / 0.15)
   if (u > 3 && !hb) {
     const aKin = Math.atan2(w + a * r, au)
+    // the driver's feel for the limit, as the Roadster's (tyres.js steer): the fronts turned no
+    // further past the way the car is going than the slip they grip hardest at (the class's feel
+    // of it: a sports car's driver right to the peak, a truck's well short), so full lock on the
+    // keys at speed corners on the tyres' peak instead of scrubbing wide on their sliding grip
+    const aLim = (S.feel ?? 0.9) * (PEAK * FmaxF) / Math.max(S.cornF, 1)
+    target = clamp(target, aKin - aLim, aKin + aLim) * (1 - slide) + target * slide
     target += (aKin + inp.steer * 0.5 * S.lock - target) * slide * S.assist
   }
   target = clamp(target, -S.lock, S.lock)
@@ -271,7 +282,7 @@ function move (b, inp, dt, world) {
   // (and stability control takes the power away in a slide, so the rears can grip again)
   // (the rears' share only: pulling front wheels straighten the car)
   if (Fdrive > 0)
-    Fdrive *= 1 - (1 - S.front) * (S.tc ?? 1) * smooth((Math.abs(beta) - 0.12) / 0.25)
+    Fdrive *= 1 - (1 - S.front) * (S.tc ?? 1) * smooth((Math.abs(beta) - 0.07) / 0.18)
   b.shiftT = Math.max(0, b.shiftT - dt)
   b.rpmN = clamp(b.rpm / (S.rpmRed || 1), 0, 1)
   b.load = thr || rev
@@ -334,12 +345,17 @@ function move (b, inp, dt, world) {
   if (hb && Math.abs(r) > HB_RATE) Mz -= Math.sign(r) * 3 * m * (Math.abs(r) - HB_RATE)
   const spd = Math.hypot(u, w)
   if (!hb && spd > 4) {
-    const rOk = Math.max(Math.abs(u * Math.tan(b.steerAng)) / S.wb, (mu * G) / spd)
+    // (the rate the wheel asks for counts only the way the car is turning: opposite lock asks
+    // for less, not more, so it can't excuse a spin)
+    const rKin = Math.max(0, (Math.sign(r) * u * Math.tan(b.steerAng)) / S.wb)
+    const rOk = Math.max(rKin, (mu * G) / spd)
     const over = Math.abs(r) - rOk - SPIN_OK
     if (over > 0) Mz -= Math.sign(r) * Math.min(SPIN_K * m * over, SPIN_MAX * m) * S.stab
     // (and the nose brought back round to where the car is going, as a driver's hands and the
     // power do coming out of a slide: the recovery, less the more the throttle is held)
-    const off = Math.atan2(w, u)
+    // (off: the rear axle's slip, not the middle's: going round a tight turn the middle of a car
+    // always moves a little across its nose, and pulling the nose round to that spun it out)
+    const off = beta
     if (u > 2 && Math.abs(off) < 1.7)
       Mz += S.stab * b.I * (RECOVER * off * (1 - 0.5 * thr) - 0.2 * r * smooth(Math.abs(off) / 0.3))
   }
@@ -349,6 +365,14 @@ function move (b, inp, dt, world) {
   if (spd > 1e-4) {
     Fu -= (Fres * u) / spd
     Fw -= (Fres * w) / spd
+  }
+  // (a slope's gravity: slower up a hill, faster down it, drifting to the low side across one)
+  const FuT = Fu,
+    FwT = Fw // (the tyres' pull: what the springs and the weight's shift feel)
+  if (b.gp || b.gr) {
+    slopeForce(b, _g)
+    Fu += _g[0]
+    Fw += _g[1]
   }
   b.vx += ((Fu * fx + Fw * lx) / m) * dt
   b.vz += ((Fu * fz + Fw * lz) / m) * dt
@@ -368,8 +392,8 @@ function move (b, inp, dt, world) {
     b.vx = b.vz = b.w = 0
     uN = 0
   }
-  b.accLong = clamp(Fu / m, -20, 20)
-  b.latAcc = clamp(Fw / m, -20, 20)
+  b.accLong = clamp(FuT / m, -20, 20)
+  b.latAcc = clamp(FwT / m, -20, 20)
   b.u = uN
   b.lat = b.vx * b.hz - b.vz * b.hx
   b.x += b.vx * dt
@@ -380,22 +404,6 @@ function move (b, inp, dt, world) {
     ? clamp(Math.hypot(u, wr) / 3, 0, 1)
     : clamp(((S.cornR * Math.abs(beta)) / Math.max(FmaxR, 1) - 1.2) / 0.8, 0, 1)
   b.skid = Math.max(sF, sR, b.spin) * clamp(spd / 3, 0, 1)
-}
-
-// the body on its springs: pitching under braking and acceleration, rolling in corners, bouncing
-// over kerbs, each a damped spring at the class's bounce frequency, within its travel
-function body (b, dt) {
-  const S = b.spec,
-    k = (2 * Math.PI * S.suspHz) ** 2,
-    c = 2 * S.damp * 2 * Math.PI * S.suspHz
-  const pT = clamp((-b.accLong / G) * S.pitchK, -0.12, 0.12),
-    rT = clamp((b.latAcc / G) * S.rollK, -0.15, 0.15)
-  b.pitchV += (-k * (b.pitch - pT) - c * b.pitchV) * dt
-  b.pitch += b.pitchV * dt
-  b.rollV += (-k * (b.roll - rT) - c * b.rollV) * dt
-  b.roll += b.rollV * dt
-  b.heaveV += (-k * b.heave - c * b.heaveV) * dt
-  b.heave = clamp(b.heave + b.heaveV * dt, -S.travel, S.travel)
 }
 
 // the speed along and across the car, and its pose, for anyone drawing it
