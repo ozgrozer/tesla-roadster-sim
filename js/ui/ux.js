@@ -9,6 +9,7 @@ import { setVolumes } from '../audio/mix.js'
 import { OPTS, loadOptions, onOption } from './options.js'
 import { Onboard } from './onboard.js'
 import { Captions } from './captions.js'
+import { setReducedMotion } from '../render/motionPref.js'
 
 const CAPTION_S = 2.6 // s a caption stays up
 
@@ -29,6 +30,7 @@ export class UxFrame {
       if (!k || k === 'master' || k === 'music' || k === 'sfx') setVolumes(sound, OPTS)
       if (k === 'px') app.onQuality?.(app.quality)
       if (k === 'subtitles' && !OPTS.subtitles) this.caption(null)
+      if (k === 'motion') setReducedMotion(OPTS.motion === 'reduced') // (live: camera shake, render/motionPref.js)
     })
     loadOptions()
   }

@@ -295,7 +295,6 @@ Object.assign(rig, { traffic, input }) // (camera.js: clear of the cars, Z to lo
 // the player on foot, and in and out of any car (onFoot.js)
 const foot = new OnFoot({ app, sim, RS, rig, camera, canvas, input, hud, sound, traffic, peds, intro, setCam, cityView })
 const polish = new Polish({ foot, rig, sound, hud, cityView, RS, app, game: () => game })
-// the wanted level, the police, the missions and the street events (game.js)
 const game = new Game({ sim, foot, traffic, peds, hud, minimap, app, damage, respawn: at => resetTo('city', at) })
 menu.game = game // (the stats tab, the hints: ui/ux.js)
 // browsers only allow audio after a gesture: the first click or key turns sound on

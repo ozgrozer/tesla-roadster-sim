@@ -6,6 +6,7 @@
 import { BLOCKS, SOLIDS } from './plots.js'
 import { GARAGES } from './lots.js'
 import { spot, HOSPITALS, STATIONS } from './missions/spots.js'
+import { SITES } from './interiors/sites.js'
 
 export const POI_KINDS = {
   gas: { name: 'Gas station', color: '#f0a12a' },
@@ -51,6 +52,9 @@ export function pois () {
     const s = spot(fx, fz, { kerb: false })
     out.push({ id: `police${i}`, kind: 'police', x: s.x, z: s.z, name: 'Police station' })
   })
+  // (the doors into the interiors: interiors/sites.js; the shops and the diner as shops)
+  for (const st of SITES)
+    out.push({ id: `in-${st.id}`, kind: st.kind === 'lobby' ? 'interior' : 'shop', x: st.door.x, z: st.door.z, name: st.name })
   built = out.concat(ADDED)
   return built
 }
