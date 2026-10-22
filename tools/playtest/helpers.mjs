@@ -44,18 +44,20 @@ export const findCar = ({ kind, r = 150, skip = 0, not = [] }) => {
   })
   return best
 }
-// the player put by the driver's door of traffic car i (vehicles.js: the door on its left)
+// the player put by the driver's door of traffic car i (vehicles.js: the door on its left, or the bus's right)
 export const toDoor = i => {
   const R = window.__roadster,
     c = R.traffic.cars[i]
   R.vehicles.sync(R.traffic, R.sim)
   const e = R.vehicles.of(c)
-  const w = R.vehicles.toWorld(e, e.door.x, e.door.z - 0.6)
+  // (out from the door's side: the left for most, the bus's on its right)
+  const sd = Math.sign(e.door.z) || -1
+  const w = R.vehicles.toWorld(e, e.door.x, e.door.z + sd * 0.6)
   const P = R.player
   P.pos.x = w.x
   P.pos.z = w.z
   P.vel.x = P.vel.z = 0
-  P.heading = c.yaw - Math.PI / 2
+  P.heading = c.yaw + (Math.PI / 2) * sd
   if (R.foot.prev) {
     R.foot.prev.x = w.x
     R.foot.prev.z = w.z

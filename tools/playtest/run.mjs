@@ -7,6 +7,7 @@ import { Game, SHOTS } from './lib.mjs'
 import { snapshot, check, insideBuildings } from './probe.mjs'
 import { CAREER } from './career.mjs'
 import { CAREER2 } from './career2.mjs'
+import { CAREER_FOOT } from './careerFoot.mjs'
 import { PLACES, roam } from './roam.mjs'
 import { profile } from './perf.mjs'
 
@@ -46,7 +47,7 @@ export async function play (g, steps, label) {
 const report = { at: new Date().toISOString(), runs: [] }
 if (which === 'career' || which === 'all') {
   const g = await Game.open()
-  const log = await play(g, [...CAREER, ...CAREER2], 'career')
+  const log = await play(g, [...CAREER, ...CAREER_FOOT, ...CAREER2], 'career')
   report.runs.push({ name: 'career', log, issues: g.issues, console: g.console, notes: g.notes })
   await g.close()
 }

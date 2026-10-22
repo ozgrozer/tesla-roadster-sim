@@ -285,7 +285,7 @@ export class Hud {
     if (app.intro) return 'Optimus is getting in · any drive key skips'
     // (on foot, and in a car that isn't the Roadster: onFoot.js)
     if (app.foot)
-      return 'W A S D walk · Shift run · Space jump · mouse look (click) · E get in a car'
+      return 'W A S D jog · Shift sprint · Caps walk · F or click punch · Space jump · E get in a car'
     if (app.vehicle && app.vehicle.kind !== 'roadster' && sim.mode !== 'crash')
       return 'W throttle · S brake · A/D steer · Space handbrake · H horn · E get out'
     if (sim.mode === 'crash')

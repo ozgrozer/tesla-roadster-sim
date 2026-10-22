@@ -369,6 +369,10 @@ export class TrafficView {
       e[15] = 1
       _b.multiply(_t)
     }
+    if (car === this.doorCar) {
+      this.doorFor = car // (carDoor.js: the door rides the body as drawn)
+      this.doorMat = (this.doorMat || new THREE.Matrix4()).copy(_b)
+    }
     ty.body.setMatrixAt(i, _b)
     ty.trim.setMatrixAt(i, _b)
     ty.glass.setMatrixAt(i, _b)

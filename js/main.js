@@ -275,11 +275,11 @@ const input = new Input({
     if (intro.active) intro.finish()
     // E: in or out of a car (onFoot.js); on foot, Space jumps
     if (code === 'KeyE' && first && foot.interact()) return input.handoff()
-    if (foot.onFoot()) return code === 'Space' && first && (foot.jumpQ = true)
+    if (foot.onFoot()) return foot.fight.press(code, first) // (Space jumps, F punches: footFight.js)
     if (code === 'Space' && first) sound.ratchet()
     if (app.auto) setAuto(false)
   },
-  onCommand: code => COMMANDS[code]?.(),
+  onCommand: code => foot.fight.command(code) || COMMANDS[code]?.(),
   onRelease: code => {
     if (code === 'KeyH') setHorn(false)
   },
