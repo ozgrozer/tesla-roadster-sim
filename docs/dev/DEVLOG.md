@@ -101,3 +101,32 @@ Tests: tests/phys.test.mjs (12). Shots: /workspace/shots/v2/phys/ (tools/phys/sh
   damage.test took a street performer (sim's living/pedLife.js spawns them even with count 0) for the wreck's driver.
   ux.test's shop count now counts on top of the interiors' own shops.
 - npm test 291/291; playtest career and roam: no problems. Shots: /workspace/shots/v2/qa/integrated-*.png.
+
+## World W2 + W3 (gta-v2-world)
+
+W2, visual variety (241cb14, sim/variety.js + render/cityVariety.js, rng 20261020): district palettes and awnings,
+balconies, rooftop tanks/terraces/solar/saw-tooth/gardens, and three landmarks seen from across the city: The Meridian
+(Downtown's tallest, a stepped crown whose rings change colour after dark), the radio masts on the highest peak (red and
+white, blinking), and the lighthouse on the north groyne (its beam turning at night). About 5 extra draws.
+
+W3, explorables (72150f3, 8dd285f, aab6f35):
+- sim/extras.js (rng 20261022): 75 alleys found in the existing gaps between buildings (2.6-8 m wide, open to the pavement,
+  away from interior doors), so the seeded layout does not move. They hold dumpsters/bins, crates, trash bags, a lamp over
+  a back door, fire escapes with solid landings, and lights strung across. Street furniture goes between the kerb lamps
+  (newspaper boxes, parking meters, mailboxes), and the lookout and promenade get benches and coin telescopes. Every
+  solid is drawn and goes in through city.js addCollider.
+- sim/tokens.js (rng 20261023): 30 hidden tokens. There is one in each interior, plus the lookout, the pier's end, the
+  beach, the lighthouse, the masts, the observatory, the tunnel, under the freeway, the roofs of the three multi-storey
+  car parks (they already existed, so no new structure), the parks, the far ends of alleys and two low roofs. Picked up on
+  foot (1.4 m) or in the car (3.2 m). render/interiors/hunt.js pays $100 each and a $2500 bonus for all 30, pops up
+  "Hidden token n/30", emits 'token-collected' { id, n, total, where, pos } for the HUD and 'tokens-complete', and
+  remembers the finds in localStorage ('tokens').
+- render/cityExtras.js: merged per 576 m cell and streamed as the district meshes are, plus one glow mesh.
+  render/cityTokens.js: two instanced meshes.
+- tests/extras.test.mjs (6): mouths of the alleys open, nothing on the road or on the 3 pavement walking lines, interior
+  doors clear, every solid drawn, all 30 tokens clear to reach, pick-up/save/load. npm test 297/297.
+- Draw calls (whole composer frame, same cameras), before variety / after variety / integrated head 6a2fefc / W3:
+  santamonica 444/451/428/442, hollywood 393/395/393/409, midcity 487/481/469/482, downtown 463/469/461/474,
+  arts 365/379/368/387, skyline 629/710/543/562, hills 364/367/-/379. W3 adds about 13-19 over head.
+- Shots: /workspace/shots/v2/world/shot-w2-*.png (landmarks from a distance), shot-w3-*.png (alleys, furniture,
+  lookout, token).
