@@ -194,10 +194,11 @@ export const SPACE = {
   updateSpace (st) {
     const { n, R } = this
     const inside = st.inside,
+      indoor = !inside && st.indoor, // (in a room off the street: interiors/)
       d = inside ? 0 : st.carDist
-    R(this.cabin.frequency, inside ? 950 : 20000, 0.1)
-    this.through(this.cabinSw, inside || this.cabin.frequency.value < 19000)
-    R(this.outside.gain, inside ? 0.5 : 1, 0.1)
+    R(this.cabin.frequency, inside ? 950 : indoor ? 520 : 20000, 0.1)
+    this.through(this.cabinSw, inside || indoor || this.cabin.frequency.value < 19000)
+    R(this.outside.gain, inside ? 0.5 : indoor ? 0.28 : 1, 0.1)
     // the car's own sound a little forward at city speeds, as a game mixes it (a real car's
     // tyres and wind are some 20 dB quieter at 40 km/h than at 150), easing back by 100 km/h
     const v = Math.max(st.wheelSpeed, st.airspeed),

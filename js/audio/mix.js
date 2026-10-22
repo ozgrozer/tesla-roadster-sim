@@ -15,6 +15,7 @@ import { ENV } from '../sim/env.js'
 import { WATER } from '../render/spray.js'
 import { AIR } from '../render/aircraft.js'
 import { watch, forget, ALARM } from './watch.js'
+import { inside as indoors } from '../sim/interiors/state.js'
 import { hearing, panOf, blocked, dullness, placeOf, ray } from './ears.js'
 
 export { hearing, panOf, dullness, placeOf }
@@ -356,6 +357,8 @@ export function mixSound (sound, app, traffic, dt, clock, peds) {
   st.suction = sim.suction
   st.city = city
   st.inside = !!app.inside // the camera in the driver's seat
+  // (in a shop or a lobby, sim/interiors/: the street, the rain and the thunder through its walls)
+  st.indoor = city && indoors()
   st.combustion = !!app.engine // (a car with an engine, not the Roadster's motors: engine.js)
   st.carDist = cp.distanceTo(_cp)
   st.cut = cut

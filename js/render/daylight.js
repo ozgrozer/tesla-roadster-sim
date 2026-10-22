@@ -13,7 +13,7 @@
 // in the rain. The city's shadows are aimed again as the sun moves (a whole city's shadow map is
 // under a millisecond to draw), and the reflections' environment map drawn again as the sky
 // changes, each only when it has changed enough to see.
-import { OPTS, DRAW_FOG } from '../ui/options.js'
+import { OPTS, DRAW_FOG, motionFx } from '../ui/options.js'
 import * as THREE from 'three'
 import { ENV } from '../sim/env.js'
 import { SKY } from './citySky.js'
@@ -233,7 +233,9 @@ export class Daylight {
     SKY.uClouds.value = e.clouds
     SKY.uRain.value = rain
     SKY.uFog.value = fog
-    SKY.uFlash.value = e.flash
+    // (a lightning flash a third as bright with reduced motion: no full-screen strobe: options.js)
+    const flash = e.flash * (motionFx() ? 1 : 0.3)
+    SKY.uFlash.value = flash
     SKY.uTime.value = clock
     // (the clouds drift with the wind, and the palms and trees sway in it: treeWind.js)
     const drift = SKY.uDrift.value,
@@ -285,9 +287,9 @@ export class Daylight {
     hemi.color.lerp(_grey.setRGB(0.78, 0.8, 0.84), o * 0.8)
     hk *= 1 + 0.55 * o * day
     hk *= 1 - 0.35 * rain * day
-    hk += e.flash * 2.4
+    hk += flash * 2.4
     hemi.intensity = hk
-    if (e.flash > 0) hemi.color.lerp(_c.setRGB(0.75, 0.8, 1), e.flash)
+    if (flash > 0) hemi.color.lerp(_c.setRGB(0.75, 0.8, 1), flash)
     set(hemi.groundColor, BOUNCE, a).multiplyScalar(1 - 0.35 * o * day)
     SKY.uAmb.value.copy(hemi.color).multiplyScalar(hk)
     // ---- the fog, the exposure, the reflections' strength
