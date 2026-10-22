@@ -20,7 +20,7 @@ const aim = (a = 0.6, pitch = 0.32, dist = 5.2) => g.ev(([a, pitch, dist]) => {
   const R = window.__roadster, e = R.foot.action?.entry || R.player.vehicle
   if (!e) return
   const c = R.foot.cam
-  c.yaw = e.heading - Math.PI / 2 * (R.foot.action?.side || 1) + a
+  c.yaw = e.heading + Math.PI / 2 * (e.doorSide || -1) * (R.foot.action?.side || 1) - a * (e.doorSide || -1)
   c.pitch = pitch
   c.dist = dist
   c.idle = 0
