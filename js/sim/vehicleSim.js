@@ -46,6 +46,8 @@ const SPIN_K = 7 // N m per kg per rad/s of that, at most SPIN_MAX N m per kg
 const SPIN_MAX = 6
 const HB_RATE = 1.6 // rad/s: the most the handbrake's swing turns the car at (a class's hbRate)
 const RECOVER = 1.6 // rad/s^2 per rad the nose is off the way the car is going
+const DRIFT_MAX = 0.6, // rad of slip a drift on the power is held to, DRIFT_K rad/s^2 per rad past it
+  DRIFT_K = 5
 const SPUN = 1.2, // rad: the way the car is going this far off its nose, it is spinning, and
   SPIN_DAMP = 2.5 // its yaw rate is damped at this rate (1/s)
 const PULL = 0.12 // rad of steering pull per m a front corner is crumpled further than the other
@@ -409,6 +411,11 @@ function move (b, inp, dt, world) {
     const off = beta
     if (u > 2 && Math.abs(off) < 1.7)
       Mz += S.stab * b.I * (RECOVER * off * (1 - (S.slideHold ?? 0.5) * thr) - 0.2 * r * smooth(Math.abs(off) / 0.3))
+    // (a drift held on the power is held to DRIFT_MAX of slip, whatever the throttle: past it the
+    // car is brought back towards it, so it drives on round sideways rather than bogging down
+    // broadside)
+    const past = Math.abs(off) - DRIFT_MAX
+    if (u > 2 && past > 0 && Math.abs(off) < 1.7) Mz += Math.sign(off) * S.stab * b.I * DRIFT_K * past
   }
   // (and a car going well sideways or backwards, off the handbrake, stops spinning, GTA-style: a
   // handbrake 180 on a wet road ends facing back, not in a pirouette)

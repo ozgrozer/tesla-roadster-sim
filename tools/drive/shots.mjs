@@ -29,7 +29,7 @@ const shot = async name => {
   console.log(name, JSON.stringify(log[name]))
 }
 // the game's clock on in small steps, so the frame loop (skid marks, smoke) keeps up
-const drive = (keys, sec) => g.hold(keys, () => g.run(sec, 0.05, 30))
+const drive = (keys, sec) => g.hold(keys, () => g.run(sec, 0.05, 0))
 // the follow camera turned round the car (rad: 0 behind, pi/2 its left side, pi ahead), held there
 const look = (yaw, pitch = 0) => g.ev(([y, p]) => {
   const rig = window.__roadster.rig
@@ -50,9 +50,9 @@ try {
     await g.ev(() => window.__roadster.seatIn('sports'))
     await g.run(1)
     await clear()
-    await drive('KeyW', 2.6)
-    await drive(['Space', 'KeyA'], 0.5)
-    await drive(['KeyW', 'KeyA'], 0.35)
+    await drive('KeyW', 1.7)
+    await drive(['Space', 'KeyA'], 0.35)
+    await drive(['KeyW', 'KeyA'], 0.12)
     await shot('d1-sports-handbrake-drift.png')
     await drive(['KeyW'], 0.3)
     await look(0.9, 0.25)

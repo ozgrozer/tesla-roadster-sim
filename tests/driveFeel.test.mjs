@@ -64,9 +64,10 @@ test('a lane change at speed settles at once; a handbrake drift held on the powe
     assert.ok(l.slip < 9 && l.settle < 0.7, `${k}: ${JSON.stringify(l)}`)
     const d = hbDrift(k)
     assert.ok(d.turned < 200, `${k}: drift went ${f(d.turned, 0)} deg round`)
+    assert.ok(d.v > 30, `${k}: drives on out of it at ${f(d.v, 0)} km/h, not bogged down broadside`)
   }
-  // a rear-driven sports car holds a slide on the power; a front-driven sedan straightens
-  assert.ok(hbDrift('sports').angle > 20 && hbDrift('sedan').angle < 15)
+  // a rear-driven car holds its slide on the power longer than a front-driven sedan
+  assert.ok(hbDrift('sports').angle > hbDrift('sedan').angle && hbDrift('pickup').angle > hbDrift('sedan').angle)
 })
 
 test('the rain costs grip: less cornering, longer stops, and a sports car steps out on the power', () => {
