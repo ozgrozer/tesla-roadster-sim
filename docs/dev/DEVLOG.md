@@ -262,3 +262,9 @@ W3, explorables (72150f3, 8dd285f, aab6f35):
   classes used to go straight into reverse); chase cam FOV widens with speed.
 - tests/driveFeel.test.mjs (7 tests; 5 failed on gta-v2), tests/input.test.mjs updated for the
   quicker brake. Screenshots: tools/drive/shots.mjs → shots/v3/drive/d1-d4.
+- Follow-ups: rain grip reaches every player car (K16 fixed): the Roadster through roadGrip.js
+  `surfaceGrip` (stops 13.8 m → 19.3 m from 60 km/h in game in the rain; harness 100-0 31.0 → 41.9 m),
+  the ambient events' cars through `weatherGrip()`. Hands off on the power (`handsOff`): the wet
+  pickup straightens in 0.26 s at full throttle (never before; 0.35 s in game). Skid marks near
+  black, fading after 45 s, read on dark asphalt; sedan dive drawn 2.1×. tests/wetGrip.test.mjs,
+  driveFeel `slideOut`. Shots d5 (skid marks on asphalt), d6 (pickup rain power slide, straightened).
