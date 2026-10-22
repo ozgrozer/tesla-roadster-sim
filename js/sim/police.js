@@ -15,7 +15,7 @@ import { rectRect, impulse, playerRect, loadBody, storeBody, nudge, BODY } from 
 import { Planner } from './aiDriver.js'
 import { clear, policeSight } from './witness.js'
 import { makeUnit, think } from './policeUnit.js'
-import { Heli, roadblockSpot, inView } from './policeAir.js'
+import { Heli, roadblockSpot, inView as seenBy } from './policeAir.js'
 
 export const UNITS = [0, 2, 3, 4, 5, 6] // pursuing units for 0 to 5 stars
 export const SPAWN_MIN = 110
@@ -27,7 +27,7 @@ const LOOK_GAP = 0.2 // s between a unit's looks for the player
 const BUST_R = 7.5 // m: a unit this close to a player at a standstill is arresting them
 const _a = { x: 0, z: 0, fx: 1, fz: 0, hl: 1, hw: 1 }
 
-export { inView } // (is (x, z) in the camera's sight: policeAir.js)
+export const inView = seenBy // (is (x, z) in the camera's sight: policeAir.js)
 
 // A place on a lane off-screen between rMin and rMax m from (px, pz), facing towards it if it can:
 // { x, z, yaw, lane } or null. R: random numbers; view: the camera

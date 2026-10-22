@@ -21,7 +21,7 @@ async function open (query) {
   const errors = []
   page.on('pageerror', e => errors.push(String(e.stack || e.message).slice(0, 400)))
   page.on('console', m => m.type() === 'error' && errors.push(m.text().slice(0, 300)))
-  await page.goto(BASE + 'index.html' + query)
+  await page.goto(BASE + 'index.html' + query, { timeout: 180000 })
   await page.waitForFunction(() => window.__roadster && window.__roadster.app.world, null, { timeout: 180000 })
   await page.waitForTimeout(1500)
   await page.evaluate(() => {
@@ -132,6 +132,117 @@ const SCENES = {
     return r
   })
 }
+
+// S2: who is about (the profiles), a street performer downtown and the passers-by stopping to watch
+SCENES.peds = () => play('?spawn=100,96,0', async page => {
+  await page.evaluate(() => { window.__roadster.env.hour = 14 })
+  let r = null
+  for (let k = 0; k < 18 && !(r && r.watching >= 2); k++) {
+    await run(page, 10)
+    r = await page.evaluate(() => {
+      const P = window.__roadster.peds
+      const names = ['commuter', 'jogger', 'tourist', 'phone', 'loiterer', 'worker']
+      const mix = {}
+      for (const p of P.list) if (p.liv) mix[names[p.liv.prof]] = (mix[names[p.liv.prof]] || 0) + 1
+      const q = P.list.find(p => p.liv?.perf)
+      const poi = q?.liv.perf
+      const lp = P.list.find(p => p.liv?.poi)?.liv.poi
+      return { lp: lp ? { x: lp.x, z: lp.z } : null, living: typeof P.living, n: P.list.length, mix, perf: q ? { x: q.x, z: q.z } : null, watching: poi ? poi.slots.filter(s => s.who).length : 0, gathered: P.gathered || 0, unstuck: P.unstuckN || 0 }
+    })
+  }
+  if (r.perf) await aerial(page, { up: 13, bx: 9, bz: -11, lx: r.perf.x, lz: r.perf.z })
+  r.shot = await shot(page, 's2-performer-watchers.png', [
+    'S2 a street performer downtown (48, 86): watching now ' + r.watching + ', stopped to watch so far ' + r.gathered,
+    'people about ' + r.n + ': ' + JSON.stringify(r.mix)
+  ])
+  return r
+})
+// S2: a carjack seen on a busy pavement: people run, freeze or stop to watch; one gets on the phone
+SCENES.witness = () => play('?spawn=-96,-250,1.5708', async page => {
+  await page.evaluate(() => { window.__roadster.env.hour = 13 })
+  await run(page, 8)
+  const r = await page.evaluate(() => {
+    const R = window.__roadster
+    const pos = { x: R.sim.pos.x + 9, z: R.sim.pos.z }
+    window.__call = R.peds.witnessCrime({ type: 'carjack', pos, severity: 2 })
+    window.__pos = pos
+    return { pos, caller: window.__call?.who ?? null }
+  })
+  await run(page, 2)
+  const look = () => page.evaluate(() => {
+    const P = window.__roadster.peds,
+      c = window.__call
+    return { fleeing: P.list.filter(p => p.state === 'flee').length, cowering: P.list.filter(p => p.liv?.cowerT > 0).length, onPhone: P.list.filter(p => p.liv?.call).length, call: c ? c.state : 'none' }
+  })
+  Object.assign(r, await look())
+  await aerial(page, { up: 30, bx: 22, bz: 26, lx: r.pos.x, lz: r.pos.z })
+  r.shot = await shot(page, 's2-crime-witnessed.png', [
+    'S2 a carjack seen (middle of the picture): 2 s after',
+    `running ${r.fleeing}, cowering ${r.cowering}, the caller's call: ${r.call}`
+  ])
+  await run(page, 8)
+  r.after = await look()
+  return r
+})
+
+// S3: a carjack seen by passers-by (no stars until one rings it in), three stars: the pursuit and a
+// roadblock; then away out of sight: the search circle on the radar, the stars going one at a time
+SCENES.police = () => play('?spawn=0,-250,1.5708', async page => {
+  await page.evaluate(() => { window.__roadster.env.hour = 13 })
+  await run(page, 6)
+  const ev = types => page.evaluate(types => window.__roadster.events.queue.filter(e => types.includes(e.type)).map(e => ({ type: e.type, t: +e.t.toFixed(1), by: e.by, radius: e.radius, peds: e.peds })), types)
+  const r = await page.evaluate(() => {
+    const R = window.__roadster
+    const pos = { x: R.sim.pos.x, z: R.sim.pos.z }
+    R.game.crimes.push({ type: 'carjack', pos, severity: 2 })
+    R.advance(0.1)
+    return { pos, starsAtOnce: R.game.wanted.stars, pending: R.game.reports.pending.length }
+  })
+  let t = 0
+  for (; t < 30; t++) {
+    if (await page.evaluate(() => window.__roadster.game.wanted.stars)) break
+    await run(page, 1)
+  }
+  r.reportedAfter = t
+  r.starsAfter = await page.evaluate(() => window.__roadster.game.wanted.stars)
+  r.reportEvents = await ev(['crime-witnessed', 'crime-called', 'crime-reported'])
+  // three stars, and the chase on (driving off down the street)
+  await page.evaluate(() => { const R = window.__roadster; R.game.wanted.set(3, R.sim.pos); R.setAuto(true) })
+  await run(page, 14)
+  const pol = () => page.evaluate(() => {
+    const G = window.__roadster.game, P = G.police
+    return { down: G.down?.kind || null, stars: G.wanted.stars, searching: G.wanted.searching, seen: G.wanted.seen, units: P.units.length, pursuing: P.pursuing, blocks: P.units.filter(u => u.role === 'block').length, nearest: Math.round(P.nearest), described: G.wanted.described }
+  })
+  r.chase = await pol()
+  await aerial(page, { up: 70, bx: -40, bz: 50 })
+  r.shot1 = await shot(page, 's3-pursuit.png', [
+    `S3 a carjack seen by ${r.reportEvents.find(e => e.type === 'crime-witnessed')?.peds ?? '?'} people: stars at once ${r.starsAtOnce}, after the call (${r.reportedAfter} s) ${r.starsAfter}`,
+    `then three stars: units ${r.chase.units} (pursuing ${r.chase.pursuing}, roadblock cars ${r.chase.blocks}), nearest ${r.chase.nearest} m, in sight ${r.chase.seen}`
+  ])
+  // far off, out of their sight: the search
+  await page.evaluate(() => {
+    const R = window.__roadster
+    R.setAuto(false)
+    R.resetTo('city', { x: -480, z: 430, yaw: 0 })
+    R.rig.setMode('follow')
+  })
+  await run(page, 5)
+  r.search = await pol()
+  r.searchEvents = (await ev(['police-search'])).slice(-3)
+  r.shot2 = await shot(page, 's3-search.png', [
+    `S3 out of sight: searching ${r.search.searching}, stars ${r.search.stars} flashing; the search circle (radar) from 'police-search'`,
+    'police-search heard: ' + JSON.stringify(r.searchEvents.map(e => e.radius))
+  ])
+  const decay = [r.search.stars]
+  for (let k = 0; k < 40 && decay[decay.length - 1] > 0; k++) {
+    await run(page, 3)
+    const s = await page.evaluate(() => window.__roadster.game.wanted.stars)
+    if (s !== decay[decay.length - 1]) decay.push(s)
+  }
+  r.decay = decay
+  r.searchEnd = (await ev(['police-search'])).slice(-1)
+  return r
+})
 
 const want = process.argv.slice(2)
 const report = {}

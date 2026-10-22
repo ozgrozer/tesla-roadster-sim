@@ -226,3 +226,9 @@ test('units: on the lane graph, out of view, driven by their own physics', () =>
   assert.ok(moved >= 3, `${moved} drove`)
   for (const u of pol.units) assert.ok(Number.isFinite(u.body.u) && 'w' in u.body, 'a vehicle body')
 })
+
+test('the bundle has no bare export left over (an `export { x }` list broke the page once)', async () => {
+  const fs = await import('node:fs')
+  const src = fs.readFileSync(new URL('../dist/roadster.js', import.meta.url), 'utf8')
+  assert.equal(/^export\s/m.test(src), false)
+})
