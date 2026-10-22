@@ -68778,7 +68778,8 @@ class Stats {
     remember('stats', JSON.stringify({ ...this.s, passed: [...this.passed] }))
   }
   // the tab drawn afresh (as it opens): mph, whether to show miles; cash
-  render (mph, cash = 0, running = null) {
+  // tokens: the hidden tokens' counter (tokens.js { n, total })
+  render (mph, cash = 0, running = null, tokens = null) {
     const s = this.s,
       dist = m => (mph ? `${(m / 1609).toFixed(1)} mi` : `${(m / 1000).toFixed(1)} km`),
       h = Math.floor(s.time / 3600),
@@ -68795,6 +68796,7 @@ class Stats {
       ['Busted · wasted', `${s.busted} · ${s.wasted}`],
       ['Cash', `$${cash.toLocaleString('en-US')}`]
     ]
+    if (tokens) rows.splice(rows.length - 1, 0, ['Hidden tokens', `${tokens.n} of ${tokens.total}`])
     const done = MISSIONS.filter(m => this.passed.has(m.id)).length
     const missions = MISSIONS.map(m => {
       const state = running === m.id ? 'running' : this.passed.has(m.id) ? 'passed' : ''
@@ -73133,959 +73135,8 @@ for (const b of BUILDINGS) {
 __export(__exports, { "ROOFTOPS": () => ROOFTOPS, "LANDMARKS_V2": () => LANDMARKS_V2 })
 })
 
-// ---- js/sim/interiors/rooms.js
-__define(97, function (__exports) {
-// The interiors' templates: each room a box w wide (x, across the door's wall: -w/2 to w/2) by d
-// deep (z, in from the door's wall: 0 to d) by h high, its door at x = door on the wall z = 0, and
-// what stands in it as boxes in that frame: [x0, x1, z0, z1, y0, y1, colour, what]. what: 's'
-// solid (the feet keep out of it, landable on top if low), 'x' solid but not drawn (the outline
-// of something drawn in parts), 'd' only to look at, 'g' a light (lit,
-// drawn glowing), 'w' a window (the sky's light through it), 'gs' a light that is solid too. lamps:
-// where the light comes from ([x, z, strength]: a ceiling light, baked into the walls and the floor
-// when the room is built: render/interiors). Pure data: the sim's colliders (sites.js) and the
-// renderer read the same boxes, so what is drawn is what is solid.
-const box = (x0, x1, z0, z1, y0, y1, c, what = 's') => [x0, x1, z0, z1, y0, y1, c, what]
-
-// a shelf unit running back from the window: its frame and rows of bright packets each side
-function shelves (x, z0, z1, out) {
-  out.push(box(x - 0.45, x + 0.45, z0, z1, 0, 1.65, 0xe9e6dd))
-  const PACKS = [0xe0473a, 0xf2c14e, 0x3d8fd6, 0x58b368, 0xf08a3c, 0xb35ad1, 0xf4f1ea]
-  let k = Math.round(x * 7 + z0 * 3) & 255
-  for (let y = 0.25; y < 1.6; y += 0.42)
-    for (let z = z0 + 0.1; z < z1 - 0.3; z += 0.62) {
-      const c = PACKS[k++ % PACKS.length]
-      out.push(box(x - 0.52, x - 0.45, z, z + 0.5, y, y + 0.28, c, 'd'))
-      out.push(box(x + 0.45, x + 0.52, z, z + 0.5, y, y + 0.28, PACKS[k++ % PACKS.length], 'd'))
-    }
-}
-// a person stood still (the clerk, the cook, the mechanic): legs, body, head, as boxes
-function figure (x, z, shirt, out) {
-  out.push(box(x - 0.2, x + 0.2, z - 0.13, z + 0.13, 0, 0.85, 0x2c3140, 'd'))
-  out.push(box(x - 0.24, x + 0.24, z - 0.15, z + 0.15, 0.85, 1.45, shirt, 'd'))
-  out.push(box(x - 0.11, x + 0.11, z - 0.11, z + 0.11, 1.48, 1.72, 0xc89a7a, 'd'))
-}
-
-// ---------- the convenience store at a gas station ----------
-function store () {
-  const w = 12,
-    d = 9,
-    h = 3.4,
-    b = []
-  // the till: a counter along the right, its till and the cigarettes behind it
-  b.push(box(2.6, 3.4, 1.4, 5.6, 0, 1.0, 0x8a4b2a))
-  b.push(box(2.55, 3.45, 1.35, 5.65, 1.0, 1.06, 0xd9d4c8, 'd'))
-  b.push(box(2.75, 3.15, 2.2, 2.7, 1.06, 1.4, 0x2b2f36, 'd'))
-  b.push(box(2.8, 3.1, 2.25, 2.65, 1.25, 1.38, 0x6fe0a0, 'g'))
-  b.push(box(5.5, 6, 1.2, 5.8, 0.9, 2.4, 0x3a3f48))
-  for (let z = 1.3; z < 5.6; z += 0.45)
-    for (let y = 1.0; y < 2.3; y += 0.32)
-      b.push(box(5.42, 5.5, z, z + 0.36, y, y + 0.22, (z * 13 + y * 7) % 2 > 1 ? 0xe8e2d0 : 0xc0392b, 'd'))
-  figure(4.5, 3.5, 0xd8402f, b)
-  // the aisles
-  shelves(-3.6, 2.4, 6.6, b)
-  shelves(-1.2, 2.4, 6.6, b)
-  shelves(1.2, 2.4, 6.6, b)
-  // the fridges glowing along the back
-  b.push(box(-6, 4.4, 8.25, 9, 0, 2.25, 0x9aa3ad))
-  for (let x = -5.8; x < 4.2; x += 1.25) b.push(box(x, x + 1.1, 8.2, 8.26, 0.15, 2.1, 0xd8f4ff, 'g'))
-  // a slush machine and the coffee by the door, an ATM
-  b.push(box(-6, -5.2, 0.4, 1.6, 0, 0.95, 0x6b6f78))
-  b.push(box(-5.9, -5.3, 0.6, 1.4, 0.95, 1.6, 0x3fb5e8, 'g'))
-  b.push(box(-6, -5.3, 3.0, 3.8, 0, 1.75, 0x2f5f9e))
-  b.push(box(-5.32, -5.28, 3.15, 3.65, 1.0, 1.4, 0x9ce2ff, 'g'))
-  // the windows either side of the door, posters on the walls
-  b.push(box(-5.6, -3.4, -0.02, 0.04, 0.8, 2.6, 0, 'w'))
-  b.push(box(-1.6, 2.2, -0.02, 0.04, 0.8, 2.6, 0, 'w'))
-  b.push(box(-6, -5.96, 5.0, 6.6, 1.2, 2.3, 0xf2c14e, 'd'))
-  b.push(box(5.96, 6, 6.4, 7.8, 1.2, 2.2, 0x3d8fd6, 'd'))
-  // the ceiling's lights
-  for (const x of [-3.6, -1.2, 1.2, 4])
-    for (const z of [2.5, 6]) b.push(box(x - 0.3, x + 0.3, z - 1.1, z + 1.1, h - 0.05, h, 0xffffff, 'g'))
-  return {
-    name: 'Night Owl Mart',
-    w,
-    d,
-    h,
-    door: -2.5,
-    floor: [0xdedad2, 0xc9c4ba], // tiles
-    wall: 0xf1ede4,
-    ceil: 0xe9e9e6,
-    trim: 0xd8402f,
-    boxes: b,
-    lamps: [[-2.4, 2.5, 1], [2.4, 2.5, 1], [-2.4, 6, 1], [2.4, 6, 1]]
-  }
-}
-
-// ---------- the diner ----------
-function diner () {
-  const w = 14,
-    d = 10,
-    h = 3.6,
-    b = []
-  // the counter across the back, its stools, the kitchen's pass and the menu over it
-  b.push(box(-2.5, 6.6, 6.6, 7.4, 0, 1.05, 0xf2f2f2))
-  b.push(box(-2.55, 6.65, 6.55, 7.45, 1.05, 1.12, 0xd2232a, 'd'))
-  b.push(box(-2.5, 6.6, 6.58, 6.62, 0.1, 0.25, 0xc0c4c8, 'd'))
-  for (let x = -1.8; x < 6.2; x += 1.1) {
-    b.push(box(x - 0.08, x + 0.08, 5.82, 5.98, 0, 0.7, 0xc0c4c8, 'd'))
-    b.push(box(x - 0.24, x + 0.24, 5.66, 6.14, 0.7, 0.8, 0xd2232a))
-  }
-  b.push(box(-2.5, 6.6, 9.6, 10, 0, 2.2, 0xb8bcc2))
-  b.push(box(-1.5, 5.6, 9.5, 9.6, 2.3, 3.1, 0x1c1c1c, 'd'))
-  b.push(box(-1.3, 5.4, 9.46, 9.5, 2.4, 3.0, 0xfff0c0, 'g'))
-  b.push(box(-2.2, 2.2, 8.4, 9.4, 0.9, 1.0, 0xc0c4c8, 'd'))
-  figure(1, 8.4, 0xffffff, b)
-  figure(4.5, 7.9, 0xf2a6b8, b)
-  // booths along the window: a table between two red benches, their backs high
-  for (const x of [1.4, 3.9]) {
-    b.push(box(x - 1.1, x - 0.6, 0.15, 1.9, 0, 0.45, 0xc0202a))
-    b.push(box(x - 1.1, x - 0.95, 0.15, 1.9, 0.45, 1.15, 0xc0202a))
-    b.push(box(x + 0.6, x + 1.1, 0.15, 1.9, 0, 0.45, 0xc0202a))
-    b.push(box(x + 0.95, x + 1.1, 0.15, 1.9, 0.45, 1.15, 0xc0202a))
-    b.push(box(x - 0.45, x + 0.45, 0.25, 1.5, 0.72, 0.78, 0xeae4d4))
-    b.push(box(x - 0.05, x + 0.05, 0.8, 0.9, 0, 0.72, 0x9aa0a6, 'd'))
-  }
-  // and down the left wall
-  for (const z of [3.2, 5.6, 8]) {
-    b.push(box(-7, -5.2, z - 1.1, z - 0.6, 0, 0.45, 0xc0202a))
-    b.push(box(-7, -5.2, z - 1.1, z - 0.95, 0.45, 1.15, 0xc0202a))
-    b.push(box(-7, -5.2, z + 0.6, z + 1.1, 0, 0.45, 0xc0202a))
-    b.push(box(-7, -5.2, z + 0.95, z + 1.1, 0.45, 1.15, 0xc0202a))
-    b.push(box(-6.9, -5.4, z - 0.45, z + 0.45, 0.72, 0.78, 0xeae4d4))
-    b.push(box(-6.3, -6.2, z - 0.05, z + 0.05, 0, 0.72, 0x9aa0a6, 'd'))
-    b.push(box(-6.3, -6.1, z - 0.1, z + 0.1, h - 0.9, h - 0.6, 0xffe0a0, 'g'))
-  }
-  // the jukebox, glowing, in the corner; the windows; a neon sign in one
-  b.push(box(5.9, 6.9, 0.3, 1.2, 0, 1.6, 0x7a2a8a))
-  b.push(box(5.88, 5.92, 0.45, 1.05, 0.5, 1.4, 0xffb347, 'g'))
-  b.push(box(-6.6, -4.6, -0.02, 0.04, 0.9, 2.7, 0, 'w'))
-  b.push(box(-1.6, 6.6, -0.02, 0.04, 0.9, 2.7, 0, 'w'))
-  b.push(box(3, 5, 0.06, 0.1, 1.9, 2.5, 0xff3a6a, 'g'))
-  for (const x of [1.4, 3.9])
-    b.push(box(x - 0.25, x + 0.25, 0.7, 1.1, h - 0.9, h - 0.65, 0xffe0a0, 'g'))
-  for (const x of [-1, 2, 5]) b.push(box(x - 0.6, x + 0.6, 6.6, 7.4, h - 0.05, h, 0xffffff, 'g'))
-  return {
-    name: 'Taqueria Sunrise',
-    w,
-    d,
-    h,
-    door: -3.6,
-    floor: [0xf4f1ea, 0x202022], // the black and white check
-    wall: 0xf3e2b8,
-    ceil: 0xf0ebe0,
-    trim: 0xd2232a,
-    boxes: b,
-    lamps: [[-6, 3, 0.6], [-6, 6.5, 0.6], [2.5, 1.2, 0.8], [2, 7, 1], [-2, 4.5, 0.6]]
-  }
-}
-
-// ---------- the body shop's workshop ----------
-function workshop () {
-  const w = 18,
-    d = 14,
-    h = 6,
-    b = []
-  // the roller door, shut, across the front left; a car up on the lift
-  b.push(box(-8.6, -2.6, -0.02, 0.06, 0, 4.4, 0x8a9096, 'd'))
-  for (let y = 0.3; y < 4.4; y += 0.35) b.push(box(-8.6, -2.6, 0.06, 0.09, y, y + 0.05, 0x6b7177, 'd'))
-  for (const x of [-7.6, -3.6]) b.push(box(x - 0.2, x + 0.2, 4.5, 4.9, 0, 3.4, 0xd2232a))
-  b.push(box(-7.4, -3.8, 4.4, 9.4, 1.55, 1.7, 0x3a3f48, 'd'))
-  b.push(box(-6.5, -4.7, 4.6, 9.2, 1.75, 2.35, 0x1f6fb2, 'd'))
-  b.push(box(-6.3, -4.9, 5.8, 8.0, 2.35, 2.9, 0x1f6fb2, 'd'))
-  b.push(box(-6.25, -4.95, 5.9, 7.9, 2.4, 2.85, 0x223040, 'd'))
-  for (const x of [-6.5, -4.7]) for (const z of [5.4, 8.4]) b.push(box(x - 0.12, x + 0.12, z - 0.35, z + 0.35, 1.6, 2.2, 0x111111, 'd'))
-  // the second bay: a car waiting, its bonnet up
-  b.push(box(-1.6, 0.4, 5, 9.6, 0.25, 0.95, 0xe8e2d0, 'd'))
-  b.push(box(-1.5, 0.3, 6.4, 8.6, 0.95, 1.45, 0xe8e2d0, 'd'))
-  b.push(box(-1.45, 0.25, 6.5, 8.5, 1.0, 1.4, 0x223040, 'd'))
-  b.push(box(-1.5, 0.3, 4.6, 5.8, 1.4, 1.5, 0xe8e2d0, 'd'))
-  for (const x of [-1.6, 0.3]) for (const z of [5.6, 8.9]) b.push(box(x - 0.12, x + 0.12, z - 0.35, z + 0.35, 0, 0.7, 0x111111, 'd'))
-  b.push(box(-1.8, 0.6, 4.4, 9.8, 0, 0.9, 0, 'x')) // (the car's body as one solid)
-  // workbenches and the tool boards down the right wall, tyres stacked by them
-  b.push(box(7.9, 9, 3, 9, 0, 0.95, 0x5a4632))
-  b.push(box(8.9, 9, 3, 9, 1.2, 2.6, 0x9a8a6a, 'd'))
-  for (let z = 3.3; z < 8.8; z += 0.55) b.push(box(8.84, 8.9, z, z + 0.35, 1.4 + (z % 1) * 0.6, 1.6 + (z % 1) * 0.6, 0xd2232a, 'd'))
-  b.push(box(8.2, 8.6, 3.4, 4.0, 0.95, 1.3, 0xd2232a, 'd'))
-  for (const [x, z, n] of [[8.2, 10.8, 5], [7, 11.4, 3], [8.2, 1.5, 4]]) {
-    b.push(box(x - 0.36, x + 0.36, z - 0.36, z + 0.36, 0, n * 0.24, 0x1a1a1a))
-    for (let k = 0; k < n; k++) b.push(box(x - 0.2, x + 0.2, z - 0.37, z + 0.37, k * 0.24 + 0.07, k * 0.24 + 0.17, 0x55595e, 'd'))
-  }
-  // the paint booth in the back left corner: glass walls round a car being sprayed, lit inside
-  b.push(box(-9, -2.2, 10.6, 10.75, 0, 3.6, 0x9fb8c8, 'd'))
-  b.push(box(-2.35, -2.2, 10.6, 14, 0, 3.6, 0x9fb8c8, 'd'))
-  b.push(box(-9, -2.2, 10.6, 14, 0, 3.6, 0, 'x'))
-  b.push(box(-8.6, -2.6, 13.9, 14, 0.4, 3.4, 0xf4fbff, 'g'))
-  b.push(box(-8.6, -2.6, 10.8, 13.8, 3.55, 3.6, 0xf4fbff, 'g'))
-  b.push(box(-6.6, -4.6, 11, 13.6, 0.25, 1.25, 0xff7a1a, 'd'))
-  // oil drums, a compressor, the office in the back right with its window lit
-  for (const [x, z, c] of [[2, 12.8, 0x2f6fb5], [2.8, 12.9, 0xd2232a], [2.4, 13.5, 0x2a8a4a]]) b.push(box(x - 0.3, x + 0.3, z - 0.3, z + 0.3, 0, 0.9, c))
-  b.push(box(4.4, 5.4, 12.6, 13.6, 0, 1.1, 0x9a2a2a))
-  b.push(box(5.6, 9, 10.4, 10.6, 0, 3, 0xc8c2b4))
-  b.push(box(5.6, 5.8, 10.4, 14, 0, 3, 0xc8c2b4))
-  b.push(box(6.2, 8.4, 10.36, 10.4, 1.1, 2.3, 0xffe8b0, 'g'))
-  b.push(box(5.6, 9, 10.4, 14, 0, 3, 0, 'x'))
-  figure(6, 6.5, 0x2f4f8a, b)
-  // the side door's window, the strip lights
-  b.push(box(6.3, 7.7, -0.02, 0.04, 2.6, 3.4, 0, 'w'))
-  for (const x of [-6, 0, 6]) for (const z of [3.5, 8.5]) b.push(box(x - 1.4, x + 1.4, z - 0.12, z + 0.12, h - 0.4, h - 0.3, 0xffffff, 'g'))
-  return {
-    name: 'Redline Body & Paint',
-    w,
-    d,
-    h,
-    door: 7,
-    floor: [0x8d8f91, 0x86888a], // concrete
-    lines: 0xf2c14e, // the bays' painted lines
-    wall: 0xb9b2a4,
-    ceil: 0x6f7378,
-    trim: 0xd2232a,
-    boxes: b,
-    lamps: [[-6, 3.5, 1], [0, 3.5, 1], [6, 3.5, 1], [-6, 8.5, 1], [0, 8.5, 1], [6, 8.5, 1], [-5.6, 12.3, 0.7]]
-  }
-}
-
-// ---------- an apartment block's lobby ----------
-function lobby () {
-  const w = 10,
-    d = 9,
-    h = 4.2,
-    b = []
-  // the front desk, the doorman, the mailboxes, the lifts and the stairs
-  b.push(box(1.5, 4.5, 3.2, 4.0, 0, 1.1, 0x5a3a24))
-  b.push(box(1.45, 4.55, 3.15, 4.05, 1.1, 1.16, 0xe8e0d0, 'd'))
-  figure(3, 4.7, 0x223a5a, b)
-  b.push(box(4.85, 5, 1.2, 3.0, 0.8, 2.0, 0xb8a070, 'd'))
-  for (const x of [-2.5, -0.5]) {
-    b.push(box(x - 0.8, x + 0.8, 8.9, 9, 0, 2.3, 0xb0b4b8, 'd'))
-    b.push(box(x - 0.02, x + 0.02, 8.86, 8.9, 0, 2.3, 0x50555a, 'd'))
-    b.push(box(x - 0.15, x + 0.15, 8.86, 8.9, 2.45, 2.6, 0xffb347, 'g'))
-  }
-  b.push(box(-5, -3.6, 5.2, 9, 0, 0.9, 0x8a8278))
-  b.push(box(-5, -3.6, 6.6, 9, 0.9, 1.8, 0x8a8278))
-  // a couch and a low table on a rug, a plant in a pot either side of the door
-  b.push(box(-3.6, -0.4, 2.0, 2.3, 0, 0.12, 0x7a2a3a, 'd'))
-  b.push(box(-3.4, -0.6, 3.6, 4.4, 0, 0.45, 0x2f4f6a))
-  b.push(box(-3.4, -0.6, 4.2, 4.4, 0.45, 0.9, 0x2f4f6a))
-  b.push(box(-2.6, -1.4, 2.4, 3.0, 0, 0.4, 0x5a3a24))
-  for (const x of [-1.6, 1.6]) {
-    b.push(box(x - 0.3, x + 0.3, 0.4, 1.0, 0, 0.55, 0xc8b89a))
-    b.push(box(x - 0.45, x + 0.45, 0.25, 1.15, 0.55, 1.5, 0x3f7a3a, 'd'))
-  }
-  // windows, a chandelier
-  b.push(box(-4.6, -1.4, -0.02, 0.04, 0.9, 3.3, 0, 'w'))
-  b.push(box(1.0, 4.4, -0.02, 0.04, 0.9, 3.3, 0, 'w'))
-  b.push(box(-0.6, 0.6, 4, 5.2, h - 0.6, h - 0.4, 0xffe8b0, 'g'))
-  b.push(box(-3.6, -2.6, 7.6, 8.6, h - 0.05, h, 0xffffff, 'g'))
-  return {
-    name: 'The Marlowe',
-    w,
-    d,
-    h,
-    door: 0,
-    floor: [0xe8e2d6, 0xcfc6b6], // marble
-    wall: 0xe8dcc4,
-    ceil: 0xf2eee6,
-    trim: 0x5a3a24,
-    boxes: b,
-    lamps: [[0, 4.6, 1.2], [-3, 8, 0.6], [3, 3, 0.6]]
-  }
-}
-
-const ROOMS = { store: store(), diner: diner(), workshop: workshop(), lobby: lobby() }
-__export(__exports, { "ROOMS": () => ROOMS })
-})
-
-// ---- js/sim/interiors/sites.js
-__define(98, function (__exports) {
-// Where the interiors are: each on a building the city already has (lots.js, found by its
-// footprint, so nothing in the layout or its random numbers moves), its door on one of the
-// building's walls, the way out of it n (one of the four directions), and the room it opens into
-// (rooms.js). The room itself is a pocket under the city, POCKET m down beneath the door, so the
-// player inside is still where the map, the radar, the district names and the missions think they
-// are (the shop's own spot). Each site's colliders are its own, never in the city's grid (city.js
-// query), so nothing on the street ever bumps into a room under it.
-//
-//   SITES[i] = { id, kind, name, room, door: { x, z }, n: { x, z }, f, r, box: { x0..z1 },
-//                inner: { x, z }, solids: [...], drive (the body shop's bay out front, or null) }
-const { BUILDINGS } = __require(35)
-const { ROOMS } = __require(97)
-
-const POCKET = -40 // m: the rooms' floor, under the city
-const WALL_T = 0.3 // the rooms' walls, m thick
-
-// The sites: the building (its footprint, found within a metre), the wall the door is in (N, E,
-// S or W: the way out), where along it (u: m from the wall's west or north end) and the room.
-const PLAN = [
-  { id: 'nightowl', kind: 'store', at: [-352.6, -339.6, -426.4, -416.4], wall: 'S', u: 9 },
-  { id: 'sunrise', kind: 'diner', at: [-321.0, -307.0, -415.0, -403.0], wall: 'S', u: 6 },
-  { id: 'redline', kind: 'workshop', at: [-34.1, -11.4, -157.0, -131.3], wall: 'E', u: 6, drive: 17 },
-  { id: 'marlowe', kind: 'lobby', at: [-800.7, -779.4, -417.3, -395.4], wall: 'S', u: 10 }
-]
-const NORMAL = { N: [0, -1], E: [1, 0], S: [0, 1], W: [-1, 0] }
-
-function find (at) {
-  const [x0, x1, z0, z1] = at
-  return BUILDINGS.find(
-    b =>
-      Math.abs(b.x0 - x0) < 1 &&
-      Math.abs(b.x1 - x1) < 1 &&
-      Math.abs(b.z0 - z0) < 1 &&
-      Math.abs(b.z1 - z1) < 1
-  )
-}
-
-// a point of the room's frame (x across, z in from the door) in the world
-function toWorld (s, x, z) {
-  return { x: s.door.x + s.r.x * x + s.f.x * z, z: s.door.z + s.r.z * x + s.f.z * z }
-}
-// a box of the room's frame as a box in the world (the frame is square to the world's axes)
-function boxToWorld (s, x0, x1, z0, z1) {
-  const a = toWorld(s, x0, z0),
-    b = toWorld(s, x1, z1)
-  return {
-    x0: Math.min(a.x, b.x),
-    x1: Math.max(a.x, b.x),
-    z0: Math.min(a.z, b.z),
-    z1: Math.max(a.z, b.z)
-  }
-}
-
-function site (p) {
-  const b = find(p.at)
-  if (!b) return null
-  const room = ROOMS[p.kind]
-  const [nx, nz] = NORMAL[p.wall]
-  // the door on the wall's outside face, u along it from its west or north end
-  const door =
-    p.wall === 'N' || p.wall === 'S'
-      ? { x: b.x0 + p.u, z: p.wall === 'N' ? b.z0 : b.z1 }
-      : { x: p.wall === 'W' ? b.x0 : b.x1, z: b.z0 + p.u }
-  // the room's frame: f into the room (against n), r to the right looking in (the feet's
-  // convention: right of (fx, fz) is (-fz, fx)); the door at x = room.door in it
-  const f = { x: -nx, z: -nz },
-    r = { x: -f.z, z: f.x }
-  const s = {
-    id: p.id,
-    kind: p.kind,
-    name: room.name,
-    room,
-    building: b,
-    n: { x: nx, z: nz },
-    f,
-    r,
-    door: { x: door.x - r.x * room.door, z: door.z - r.z * room.door }, // (the frame's origin)
-    out: { x: door.x + nx * 0.9, z: door.z + nz * 0.9 }, // where the player stands to go in
-    face: { x: door.x, z: door.z }, // the doorway on the outside wall
-    yawOut: Math.atan2(-nz, nx), // facing out (the game's heading: (cos h, -sin h))
-    yawIn: Math.atan2(nz, -nx),
-    drive: null,
-    solids: []
-  }
-  s.inner = toWorld(s, room.door, 0.9) // (stood just inside the door)
-  s.box = boxToWorld(s, -room.w / 2, room.w / 2, 0, room.d)
-  // the walls round the room, and whatever in it is solid
-  const W = WALL_T,
-    { w, d, h } = room
-  const wall = (x0, x1, z0, z1) =>
-    s.solids.push({ ...boxToWorld(s, x0, x1, z0, z1), y0: POCKET - 1, y1: POCKET + h, kind: 'building', look: 'room' })
-  wall(-w / 2 - W, w / 2 + W, -W, 0)
-  wall(-w / 2 - W, w / 2 + W, d, d + W)
-  wall(-w / 2 - W, -w / 2, 0, d)
-  wall(w / 2, w / 2 + W, 0, d)
-  for (const [x0, x1, z0, z1, y0, y1, , what] of room.boxes)
-    if (what === 's' || what === 'gs' || what === 'x')
-      s.solids.push({ ...boxToWorld(s, x0, x1, z0, z1), y0: POCKET + y0, y1: POCKET + y1, kind: 'plant', look: 'room' })
-  // the body shop's bay: the street in front of its roller door, where a car stops to be seen to
-  if (p.drive) {
-    const c =
-      p.wall === 'N' || p.wall === 'S'
-        ? { x: b.x0 + p.drive, z: door.z }
-        : { x: door.x, z: b.z0 + p.drive }
-    const along = p.wall === 'N' || p.wall === 'S'
-    const hw = along ? 4 : 0.5,
-      hd = along ? 0.5 : 4
-    // (from the wall out over the pavement and the kerb lane: 11 m out, 8 m wide)
-    const x0 = nx ? Math.min(c.x, c.x + nx * 11) : c.x - 4,
-      x1 = nx ? Math.max(c.x, c.x + nx * 11) : c.x + 4,
-      z0 = nz ? Math.min(c.z, c.z + nz * 11) : c.z - 4,
-      z1 = nz ? Math.max(c.z, c.z + nz * 11) : c.z + 4
-    s.drive = { x0, x1, z0, z1, door: c, hw, hd }
-  }
-  return s
-}
-
-const SITES = PLAN.map(site).filter(Boolean)
-const siteById = id => SITES.find(s => s.id === id) || null
-__export(__exports, { "POCKET": () => POCKET, "WALL_T": () => WALL_T, "toWorld": () => toWorld, "SITES": () => SITES, "siteById": () => siteById })
-})
-
-// ---- js/sim/extras.js
-__define(99, function (__exports) {
-// What there is to find off the streets, laid out after everything else on its own random numbers
-// (rng 20261022: the layout, the parked cars and the traffic's dealing stay as they were): the
-// alleys (the gaps the blocks already leave between their buildings, where one opens onto a
-// street: dumpsters, bins, crates, a lamp over a back door, fire escapes up the taller walls, lights
-// strung across some), the street furniture (newspaper boxes and parking meters along the shopping
-// streets, mailboxes in the strips and the suburbs, between the street lights at the kerb's edge,
-// outside the people's walking lines), and the lookout's and the beach promenade's benches and coin
-// telescopes. Everything solid is a collider and is drawn (render/cityExtras.js): nothing in the
-// way that can't be seen, nothing seen that can be driven through but the trash on the ground.
-//
-//   ALLEYS[i]  = { x0, x1, z0, z1, axis ('x' | 'z': the way it runs), open (the end on the street:
-//                 -1 the low end, 1 the high), area, deep (its far end, { x, z }) }
-//   EXTRAS[i]  = { kind, x, z, y, w, d, h, yaw, ... } what is drawn ('dumpster', 'bin', 'crate',
-//                 'bags', 'lamp', 'escape', 'string', 'news', 'meter', 'mailbox', 'bench', 'scope')
-const { BLOCKS, BUILDINGS, LAMPS, WALK, PROMENADE, rng, query, addCollider } = __require(35)
-const { LOOKOUT } = __require(30)
-const { SITES } = __require(98)
-const { PIER } = __require(38)
-
-const R = rng(20261022)
-const ALLEYS = []
-const EXTRAS = []
-
-const hits = []
-// nothing at body height in [x0, x1] x [z0, z1] (m: a margin round it)
-function open (x0, x1, z0, z1, m = 0.2, y = 0) {
-  for (const c of query(x0 - m, z0 - m, x1 + m, z1 + m, hits))
-    if (!c.down && c.y0 < y + 2 && c.y1 > y + 0.3) return false
-  return true
-}
-const solid = (x0, x1, z0, z1, y0, y1, look) =>
-  addCollider({ x0, x1, z0, z1, y0, y1, kind: 'plant', look })
-const post = (x, z, r, y0, y1, look) =>
-  addCollider({
-    x0: x - r,
-    x1: x + r,
-    z0: z - r,
-    z1: z + r,
-    y0,
-    y1,
-    x,
-    z,
-    r,
-    kind: 'mast',
-    look
-  })
-// a box standing on the ground at (x, z), w along x, d along z: solid and drawn
-function thing (kind, x, z, w, d, h, extra = {}, y = 0) {
-  if (!open(x - w / 2, x + w / 2, z - d / 2, z + d / 2, 0.05, y)) return null
-  solid(x - w / 2, x + w / 2, z - d / 2, z + d / 2, y, y + h, kind)
-  const e = { kind, x, z, y, w, d, h, ...extra }
-  EXTRAS.push(e)
-  return e
-}
-const nearDoor = (x0, x1, z0, z1) =>
-  SITES.some(
-    s =>
-      s.out.x > x0 - 3 &&
-      s.out.x < x1 + 3 &&
-      s.out.z > z0 - 3 &&
-      s.out.z < z1 + 3
-  )
-
-// ---------- the alleys ----------
-const ALLEY_AREAS = new Set([
-  'downtown',
-  'industrial',
-  'beach',
-  'boulevard',
-  'strip'
-])
-function findAlleys () {
-  const found = []
-  for (const blk of BLOCKS) {
-    if (!ALLEY_AREAS.has(blk.area) || blk.kind !== 'city' || blk.super) continue
-    const lx0 = blk.x0 + WALK,
-      lx1 = blk.x1 - WALK,
-      lz0 = blk.z0 + WALK,
-      lz1 = blk.z1 - WALK
-    const bs = BUILDINGS.filter(
-      b =>
-        b.h > 5 &&
-        b.x0 >= lx0 - 1 &&
-        b.x1 <= lx1 + 1 &&
-        b.z0 >= lz0 - 1 &&
-        b.z1 <= lz1 + 1
-    )
-    for (const a of bs)
-      for (const b of bs) {
-        if (a === b) continue
-        for (const axis of ['z', 'x']) {
-          // (along z: a west of b, the gap between them running north-south)
-          const g = axis === 'z' ? b.x0 - a.x1 : b.z0 - a.z1
-          if (g < 2.6 || g > 8) continue
-          const r =
-            axis === 'z'
-              ? {
-                  x0: a.x1,
-                  x1: b.x0,
-                  z0: Math.max(a.z0, b.z0),
-                  z1: Math.min(a.z1, b.z1)
-                }
-              : {
-                  x0: Math.max(a.x0, b.x0),
-                  x1: Math.min(a.x1, b.x1),
-                  z0: a.z1,
-                  z1: b.z0
-                }
-          const len = axis === 'z' ? r.z1 - r.z0 : r.x1 - r.x0
-          if (len < 12) continue
-          // one end on the pavement
-          const lo = axis === 'z' ? r.z0 - lz0 : r.x0 - lx0,
-            hi = axis === 'z' ? lz1 - r.z1 : lx1 - r.x1
-          const end = lo < 1.2 ? -1 : hi < 1.2 ? 1 : 0
-          if (
-            !end ||
-            !open(r.x0 + 0.15, r.x1 - 0.15, r.z0 + 0.15, r.z1 - 0.15, 0) ||
-            nearDoor(r.x0, r.x1, r.z0, r.z1)
-          )
-            continue
-          found.push({
-            ...r,
-            axis,
-            open: end,
-            area: blk.area,
-            wall: Math.min(a.h, b.h),
-            shop: [!!a.shop, !!b.shop], // (a shop's canopy runs round it: no fire escape under that)
-            len
-          })
-        }
-      }
-  }
-  return found
-}
-// dress one alley: what stands along its walls, from its far end back towards the street
-function dress (al) {
-  const along = al.axis === 'z'
-  const w = along ? al.x1 - al.x0 : al.z1 - al.z0
-  // u: m along it from the street; v: m across from its first wall
-  const P = (u, v) => {
-    const t = al.open < 0 ? u : al.len - u
-    return along
-      ? { x: al.x0 + v, z: al.z0 + t }
-      : { x: al.x0 + t, z: al.z0 + v }
-  }
-  const side = R() < 0.5 ? 0 : 1
-  const vAt = d => (side ? w - d / 2 - 0.1 : d / 2 + 0.1)
-  al.deep = P(al.len - 1.5, w / 2)
-  let u = al.len - 2.2
-  // a dumpster or two where there is room to pass it, else wheelie bins
-  const big = w >= 3.8
-  for (let k = 0; k < (big ? 1 + (R() < 0.5 ? 1 : 0) : 2); k++) {
-    if (u < 4) break
-    const [lw, ld, h] = big ? [2.0, 1.15, 1.35] : [0.62, 0.7, 1.05]
-    const p = P(u - lw / 2, vAt(ld))
-    thing(
-      big ? 'dumpster' : 'bin',
-      p.x,
-      p.z,
-      along ? ld : lw,
-      along ? lw : ld,
-      h,
-      { tint: Math.floor(R() * 4), along }
-    )
-    u -= lw + 0.4 + R() * 1.2
-  }
-  // crates stacked, bags of trash by them (to look at only)
-  if (u > 5 && R() < 0.7) {
-    const p = P(u - 0.6, vAt(1))
-    thing('crate', p.x, p.z, 1, 1, 0.9 + (R() < 0.5 ? 0.9 : 0), { along })
-    u -= 1.8
-  }
-  if (u > 4) {
-    const p = P(u - 0.5, vAt(0.8))
-    EXTRAS.push({
-      kind: 'bags',
-      x: p.x,
-      z: p.z,
-      y: 0,
-      w: 0.9,
-      d: 0.9,
-      h: 0.5,
-      n: 2 + Math.floor(R() * 3),
-      seed: R()
-    })
-  }
-  // a lamp over a back door on the other wall
-  const lp = P(al.len * (0.35 + R() * 0.4), side ? 0.05 : w - 0.05)
-  EXTRAS.push({
-    kind: 'lamp',
-    x: lp.x,
-    z: lp.z,
-    y: 3.1,
-    along,
-    side: side ? -1 : 1
-  })
-  // a fire escape up the taller walls (its landings solid)
-  // (on the wall across from the bins, or this one if that is a shop's, whose canopy would hide it)
-  const wallSide = al.shop[side ? 0 : 1] ? 1 - side : side
-  // (the draws as they always were, so the alleys picked after this one stay where they are)
-  const tall = al.wall > 10 && R() < 0.65
-  const u0 = tall ? 2.5 + R() * Math.min(4, Math.max(0, al.len - 11)) : 0 // (near the mouth, to be seen)
-  if (tall && !al.shop[wallSide ? 0 : 1]) {
-    const a = P(u0, 0),
-      b = P(u0 + 4.5, 0)
-    const v = wallSide ? 0 : w
-    const deep = Math.min(1.1, w * 0.3)
-    const levels = []
-    for (let y = 3.4; y < al.wall - 1.2; y += 3.3) levels.push(y)
-    if (levels.length) {
-      const sgn = wallSide ? 1 : -1 // (out from the wall it hangs on, into the alley)
-      const q0 = along
-        ? { x: al.x0 + v, z: Math.min(a.z, b.z) }
-        : { x: Math.min(a.x, b.x), z: al.z0 + v }
-      for (const y of levels) {
-        if (along)
-          solid(
-            Math.min(q0.x, q0.x + sgn * deep),
-            Math.max(q0.x, q0.x + sgn * deep),
-            q0.z,
-            q0.z + 4.5,
-            y - 0.12,
-            y,
-            'escape'
-          )
-        else
-          solid(
-            q0.x,
-            q0.x + 4.5,
-            Math.min(q0.z, q0.z + sgn * deep),
-            Math.max(q0.z, q0.z + sgn * deep),
-            y - 0.12,
-            y,
-            'escape'
-          )
-      }
-      EXTRAS.push({
-        kind: 'escape',
-        x: q0.x,
-        z: q0.z,
-        along,
-        sgn,
-        deep,
-        len: 4.5,
-        levels
-      })
-    }
-  }
-  // lights strung across, now and then
-  if (R() < 0.35) {
-    const n = Math.floor(al.len / 6)
-    for (let k = 1; k <= n; k++) {
-      const a = P(k * 6 - 3, 0.05),
-        b = P(k * 6 - 1, w - 0.05)
-      EXTRAS.push({
-        kind: 'string',
-        ax: a.x,
-        az: a.z,
-        bx: b.x,
-        bz: b.z,
-        y: Math.min(5.5, al.wall - 1)
-      })
-    }
-  }
-}
-{
-  const all = findAlleys()
-  // a share of them, spread round the districts
-  for (const al of all) {
-    if (
-      R() >
-      (al.area === 'downtown' ? 0.35 : al.area === 'industrial' ? 0.5 : 0.3)
-    )
-      continue
-    if (
-      ALLEYS.some(
-        o =>
-          o.x0 < al.x1 + 2 &&
-          o.x1 > al.x0 - 2 &&
-          o.z0 < al.z1 + 2 &&
-          o.z1 > al.z0 - 2
-      )
-    )
-      continue
-    ALLEYS.push(al)
-    dress(al)
-  }
-}
-
-// ---------- the street furniture, between the street lights at the kerb's edge ----------
-const SHOPS = new Set(['beach', 'boulevard', 'downtown', 'towers', 'venice'])
-const MAIL = new Set(['strip', 'suburb', 'estates'])
-const lampAt = new Map(
-  LAMPS.map(l => [`${Math.round(l.x)},${Math.round(l.z)}`, l])
-)
-function districtOfPoint (x, z) {
-  for (const b of BLOCKS)
-    if (x > b.x0 - 6 && x < b.x1 + 6 && z > b.z0 - 6 && z < b.z1 + 6)
-      return b.area
-  return null
-}
-for (const l of LAMPS) {
-  // the way along the kerb (t up), and the next light along it 24 m on: only between two lights
-  const tx = l.ax ? 0 : 1,
-    tz = l.ax ? 1 : 0
-  if (!lampAt.has(`${Math.round(l.x + tx * 24)},${Math.round(l.z + tz * 24)}`))
-    continue
-  const area = districtOfPoint(l.x, l.z)
-  const r = R()
-  const at = (t, inward) => ({
-    x: l.x + tx * t - l.ax * inward,
-    z: l.z + tz * t - l.az * inward
-  })
-  const yaw = Math.atan2(-l.az, l.ax) // (facing the road)
-  if (SHOPS.has(area)) {
-    if (r < 0.45) {
-      // newspaper boxes, two or three side by side
-      const n = 2 + (R() < 0.4 ? 1 : 0)
-      for (let k = 0; k < n; k++) {
-        const p = at(9 + k * 0.62, -0.15)
-        if (open(p.x - 0.3, p.x + 0.3, p.z - 0.3, p.z + 0.3, 0.05)) {
-          solid(p.x - 0.27, p.x + 0.27, p.z - 0.25, p.z + 0.25, 0, 1.05, 'news')
-          EXTRAS.push({
-            kind: 'news',
-            ...p,
-            y: 0,
-            yaw,
-            tint: Math.floor(R() * 5)
-          })
-        }
-      }
-    }
-    if (r > 0.55) {
-      // parking meters, every 6 m along the kerb
-      for (const t of [6, 18]) {
-        const p = at(t, -0.1)
-        if (!open(p.x - 0.1, p.x + 0.1, p.z - 0.1, p.z + 0.1, 0.05)) continue
-        post(p.x, p.z, 0.07, 0, 1.3, 'meter')
-        EXTRAS.push({ kind: 'meter', ...p, y: 0, yaw })
-      }
-    }
-  } else if (MAIL.has(area) && r < 0.12) {
-    const p = at(10, -0.2)
-    if (open(p.x - 0.35, p.x + 0.35, p.z - 0.35, p.z + 0.35, 0.05)) {
-      solid(p.x - 0.3, p.x + 0.3, p.z - 0.3, p.z + 0.3, 0, 1.2, 'mailbox')
-      EXTRAS.push({ kind: 'mailbox', ...p, y: 0, yaw })
-    }
-  }
-}
-
-// ---------- the lookout and the beach promenade: benches and coin telescopes facing the view ----
-{
-  const L = LOOKOUT
-  // (the city to the south: along the railing on the lookout's south side)
-  for (let x = L.x0 + 4; x < L.x1 - 3; x += 7) {
-    post(x, L.z1 - 1.0, 0.16, L.y, L.y + 1.35, 'scope')
-    EXTRAS.push({ kind: 'scope', x, z: L.z1 - 1.0, y: L.y, yaw: -Math.PI / 2 })
-    const bx = x + 3.2
-    if (bx < L.x1 - 2) {
-      solid(
-        bx - 0.9,
-        bx + 0.9,
-        L.z1 - 3.1,
-        L.z1 - 2.5,
-        L.y,
-        L.y + 0.46,
-        'bench'
-      )
-      EXTRAS.push({
-        kind: 'bench',
-        x: bx,
-        z: L.z1 - 2.8,
-        y: L.y,
-        yaw: -Math.PI / 2
-      })
-    }
-  }
-  // the promenade along the beach (the sea to the west), clear of the pier's end
-  for (let z = -780; z < 780; z += 64) {
-    if (Math.abs(z - PIER.z) < 30) continue
-    const x = -PROMENADE - 1.2
-    if (open(x - 1, x + 1, z - 1.5, z + 3, 0.1)) {
-      post(x, z, 0.16, 0, 1.35, 'scope')
-      EXTRAS.push({ kind: 'scope', x, z, y: 0, yaw: Math.PI })
-      solid(x - 0.3, x + 0.3, z + 1.6, z + 3.4, 0, 0.46, 'bench')
-      EXTRAS.push({ kind: 'bench', x, z: z + 2.5, y: 0, yaw: Math.PI / 2 })
-    }
-  }
-}
-__export(__exports, { "ALLEYS": () => ALLEYS, "EXTRAS": () => EXTRAS })
-})
-
-// ---- js/sim/trafficStop.js
-__define(100, function (__exports) {
-// All-way stops at the quiet junctions, mixed into Traffic (traffic.js). Where two minor streets
-// cross in the suburbs, the estates or Venice (neither of them a boulevard, nor the ring road),
-// there are no lights to wait for: the signal heads flash red (signals.js) and every driver comes
-// to a stop at the line, then goes in the order they got there, once the junction is clear of
-// crossing traffic, of anyone on foot in the road and of the player. A bold driver's stop is a
-// rolling one, and quicker off; a careful one waits a moment longer. People on foot cross there
-// whenever no car is moving through (peds.js). Pure: no DOM.
-const { N, BLVD_EW, BLVD_NS, nodeOpen } = __require(18)
-const { NODES } = __require(35)
-const { areaOf, AREAS } = __require(5)
-const { JAM } = __require(52)
-const { LOOK } = __require(88)
-
-const QUIET = new Set(['estates', 'suburb', 'venice'])
-const STOPS = [] // the junctions with an all-way stop
-
-// Mark them: every node gets `stop` (true at an all-way stop) so they all keep one shape
-function markStops (nodes) {
-  STOPS.length = 0
-  const jam = new Set()
-  for (const e of JAM) jam.add(e.from).add(e.to)
-  for (const n of nodes) {
-    n.stop = false
-    if (n.ix <= 0 || n.iz <= 0 || n.ix >= N || n.iz >= N) continue
-    if (BLVD_EW.has(n.iz) || BLVD_NS.has(n.ix) || !nodeOpen(n.ix, n.iz) || jam.has(n.i)) continue
-    if (!n.inc.some(Boolean)) continue
-    let quiet = 0
-    for (let j = -1; j <= 0; j++)
-      for (let i = -1; i <= 0; i++)
-        if (QUIET.has(AREAS[areaOf(n.ix + i, n.iz + j)]?.kind)) quiet++
-    if (quiet < 3) continue
-    n.stop = true
-    STOPS.push(n)
-  }
-  return STOPS
-}
-
-const STOP_SIGN = {
-  // The stop at the end of lane e (an all-way stop at NODES[e.to]): the gap to the line until the
-  // driver has stopped there, waited their moment and it is their turn; then Infinity (car.go)
-  stopSign (car, e, dt) {
-    if (car.go === e) return Infinity
-    const toLine = e.len - car.s - car.len / 2
-    if (toLine > LOOK || toLine < -car.len / 2) return Infinity
-    const node = NODES[e.to]
-    // (stopped at the line: a bold driver calls a crawl a stop)
-    const halt = car.style === 2 ? 1.3 : 0.3
-    if (car.v < halt && toLine < 2.5) {
-      if (!car.arrive) car.arrive = this.t
-      const wait = car.style === 2 ? 0.25 : 0.7 + car.react * (car.style === 0 ? 1 : 0.5)
-      if (this.t - car.arrive > wait && this.stopClear(node, car, e)) {
-        car.go = e
-        car.arrive = 0
-        return Infinity
-      }
-    }
-    return Math.max(0, toLine - 0.3) + car.s0
-  },
-  // nothing crossing, nobody there first, nobody on foot in the road, the player not coming through
-  // it, and room on the far side
-  stopClear (node, car, e) {
-    for (let k = 0; k < 4; k++) {
-      const inc = node.inc[k]
-      if (!inc) continue
-      for (const L of inc) {
-        if (!L) continue
-        // (anyone moving through the junction from another way)
-        for (const c of L.next)
-          if (c.move && c.dir !== e.dir)
-            for (const o of c.cars) if (o !== car && o.s < c.len - 1) return false
-        // (anyone who stopped at their line before this car did; level, the lower id first)
-        if (k === e.dir) continue
-        const o = L.cars[L.cars.length - 1]
-        if (o && o.go === L) return false // (its turn now: on its way in)
-        if (o && o.arrive && (o.arrive < car.arrive - 0.05 || (o.arrive <= car.arrive + 0.05 && o.id < car.id))) return false
-      }
-    }
-    for (const p of this.peds) if ((p.x - node.x) ** 2 + (p.z - node.z) ** 2 < 256) return false
-    const me = this.me || this.foot
-    if (me && (me.x - node.x) ** 2 + (me.z - node.z) ** 2 < 196) return false
-    return !car.next?.next?.[0] || this.room(car)
-  },
-  // can someone on foot cross at an all-way stop now: no car moving into or through it
-  stopWalk (node) {
-    for (const c of this.cars) {
-      if (c.parked || c.v < 1.5) continue
-      const dx = c.x - node.x,
-        dz = c.z - node.z
-      if (dx * dx + dz * dz > 400) continue
-      // (coming in, or in it)
-      if (dx * c.hx + dz * c.hz < 4) return false
-    }
-    return true
-  }
-}
-markStops(NODES)
-__export(__exports, { "STOPS": () => STOPS, "markStops": () => markStops, "STOP_SIGN": () => STOP_SIGN })
-})
-
-// ---- js/sim/stopSigns.js
-__define(101, function (__exports) {
-// The all-way stops' signs (the junctions trafficStop.js marks): an octagonal STOP sign on its post
-// at the near-right corner of every approach, a metre and a half before the stop line and just in
-// from the kerb, facing the drivers coming up to it; and "STOP" painted in each lane before the
-// line. Each post is a breakaway one (breakables.js): a knock at a jogging pace or more flattens it
-// (render/cityStopSigns.js stops drawing it) until the city stands up again.
-const { NODES, addCollider, query } = __require(35)
-const { DIRS, ROAD_HW, STOP, LANE_OFF } = __require(18)
-const { STOPS } = __require(100)
-
-const SIGN = {
-  back: STOP + 1.9,
-  out: ROAD_HW + 0.75,
-  h: 2.6,
-  r: 0.07,
-  face: 0.38
-}
-const SIGNS = [] // { node, dir, x, z, fx, fz (the way its face looks: at the drivers), c (its collider) }
-const LEGENDS = [] // "STOP" in a lane: { x, z, dx, dz (the way the lane goes) }
-
-const hits = []
-const clear = (x, z) =>
-  !query(x - 0.35, z - 0.35, x + 0.35, z + 0.35, hits).some(
-    c => c.y1 > 0.3 && c.y0 < 2
-  )
-for (const n of STOPS)
-  for (let k = 0; k < 4; k++) {
-    if (!n.inc[k]) continue
-    const [dx, dz] = DIRS[k]
-    // (right of the way they come: (-dz, dx), as the lanes' offsets and the signal masts)
-    let back = SIGN.back
-    let x = n.x - dx * back - dz * SIGN.out,
-      z = n.z - dz * back + dx * SIGN.out
-    for (let tries = 0; tries < 6 && !clear(x, z); tries++) {
-      back += 0.7
-      x = n.x - dx * back - dz * SIGN.out
-      z = n.z - dz * back + dx * SIGN.out
-    }
-    const c = addCollider({
-      x0: x - SIGN.r,
-      x1: x + SIGN.r,
-      z0: z - SIGN.r,
-      z1: z + SIGN.r,
-      y0: 0,
-      y1: SIGN.h,
-      x,
-      z,
-      r: SIGN.r,
-      kind: 'stop',
-      i: SIGNS.length,
-      breakAt: 4,
-      mass: 25
-    })
-    // (its face towards them: they come along +dir, so it looks back along -dir)
-    SIGNS.push({ node: n.i, dir: k, x, z, fx: -dx, fz: -dz, c })
-    for (const o of LANE_OFF) {
-      const d = STOP + 3.2
-      LEGENDS.push({
-        x: n.x - dx * d - dz * o,
-        z: n.z - dz * d + dx * o,
-        dx,
-        dz
-      })
-    }
-  }
-const nodeCount = STOPS.length
-__export(__exports, { "SIGN": () => SIGN, "SIGNS": () => SIGNS, "LEGENDS": () => LEGENDS, "nodeCount": () => nodeCount })
-})
-
 // ---- js/sim/world.js
-__define(102, function (__exports) {
+__define(97, function (__exports) {
 // The world's queries, in one place for the other workstreams (the player on foot, traffic, people,
 // missions): the ground's height and slope anywhere (the street, the hills and the hill road cut
 // into them, the freeway's deck and its ramps, a car park's ramp), whether a point is on the road,
@@ -74101,15 +73152,12 @@ const { FWY } = __require(28)
 const { STEP, roofAt } = __require(36)
 const { LINES, ringOf, ringAt, crossings } = __require(95)
 const { ROOFTOPS, LANDMARKS_V2 } = __require(96)
-const { ALLEYS, EXTRAS } = __require(99)
-const { SIGN, SIGNS, LEGENDS } = __require(101)
 
 
 const inRect = (o, x, z) => x >= o.x0 && x <= o.x1 && z >= o.z0 && z <= o.z1
 // a ramp's height at (x, z) (plots.js: h0 at x0 or z0, h1 at the far end)
 function rampHeight (r, x, z) {
-  const t =
-    r.axis === 'x' ? (x - r.x0) / (r.x1 - r.x0) : (z - r.z0) / (r.z1 - r.z0)
+  const t = r.axis === 'x' ? (x - r.x0) / (r.x1 - r.x0) : (z - r.z0) / (r.z1 - r.z0)
   return r.h0 + (r.h1 - r.h0) * Math.max(0, Math.min(1, t))
 }
 
@@ -74136,8 +73184,7 @@ function groundNormal (x, z, y = Infinity, out = { x: 0, y: 1, z: 0 }) {
   const e = 0.75,
     h = groundHeight(x, z, y),
     up = h + 1 // (each side read at the same surface, not one stacked over it)
-  const gx =
-      (groundHeight(x + e, z, up) - groundHeight(x - e, z, up)) / (2 * e),
+  const gx = (groundHeight(x + e, z, up) - groundHeight(x - e, z, up)) / (2 * e),
     gz = (groundHeight(x, z + e, up) - groundHeight(x, z - e, up)) / (2 * e)
   const l = Math.hypot(gx, 1, gz)
   out.x = -gx / l
@@ -74165,9 +73212,7 @@ function districtAt (x, z) {
   }
   if (onHillRoad(x, z)) {
     out.name = 'Hollywood Hills'
-    out.street = inTunnel(x, z)
-      ? 'Santa Fe Canyon Tunnel'
-      : 'Santa Fe Canyon Rd'
+    out.street = inTunnel(x, z) ? 'Santa Fe Canyon Tunnel' : 'Santa Fe Canyon Rd'
   }
   return out
 }
@@ -74177,12 +73222,7 @@ function districtAt (x, z) {
 function parkingNear (x, z, r, free = true) {
   const out = []
   for (const s of STALLS)
-    if (
-      (!free || !s.taken) &&
-      Math.abs(s.x - x) < r &&
-      Math.abs(s.z - z) < r &&
-      Math.hypot(s.x - x, s.z - z) < r
-    )
+    if ((!free || !s.taken) && Math.abs(s.x - x) < r && Math.abs(s.z - z) < r && Math.hypot(s.x - x, s.z - z) < r)
       out.push(s)
   return out
 }
@@ -74197,8 +73237,7 @@ function pavementNear (x, z, r, every = 12) {
     const g = ringOf(b, 1)
     for (let s = 0; s < g.len; s += every) {
       ringAt(g, s, P)
-      if (Math.hypot(P.x - x, P.z - z) < r)
-        out.push({ x: P.x, z: P.z, hx: P.hx, hz: P.hz })
+      if (Math.hypot(P.x - x, P.z - z) < r) out.push({ x: P.x, z: P.z, hx: P.hx, hz: P.hz })
     }
   }
   return out
@@ -74231,12 +73270,7 @@ function pavementGraph () {
     }
   }
   const link = (a, b, cross = null) => {
-    const e = {
-      a,
-      b,
-      len: Math.hypot(nodes[a].x - nodes[b].x, nodes[a].z - nodes[b].z),
-      cross
-    }
+    const e = { a, b, len: Math.hypot(nodes[a].x - nodes[b].x, nodes[a].z - nodes[b].z), cross }
     edges.push(e)
     adj[a].push(e)
     adj[b].push(e)
@@ -74274,11 +73308,11 @@ function inBuilding (x, z) {
     for (const t of b.tiers) if (t.y0 === 0 && inRect(t, x, z)) return true
   return false
 }
-__export(__exports, { "rampHeight": () => rampHeight, "groundHeight": () => groundHeight, "groundNormal": () => groundNormal, "districtAt": () => districtAt, "parkingNear": () => parkingNear, "pavementNear": () => pavementNear, "pavementGraph": () => pavementGraph, "spawnPoints": () => spawnPoints, "onRoad": () => onRoad, "roofAt": () => roofAt, "FWY": () => FWY, "HILL_ROAD": () => HILL_ROAD, "LOOKOUT": () => LOOKOUT, "onHillRoad": () => onHillRoad, "inTunnel": () => inTunnel, "ROOFTOPS": () => ROOFTOPS, "LANDMARKS_V2": () => LANDMARKS_V2, "ALLEYS": () => ALLEYS, "EXTRAS": () => EXTRAS, "SIGN": () => SIGN, "SIGNS": () => SIGNS, "LEGENDS": () => LEGENDS })
+__export(__exports, { "rampHeight": () => rampHeight, "groundHeight": () => groundHeight, "groundNormal": () => groundNormal, "districtAt": () => districtAt, "parkingNear": () => parkingNear, "pavementNear": () => pavementNear, "pavementGraph": () => pavementGraph, "spawnPoints": () => spawnPoints, "onRoad": () => onRoad, "roofAt": () => roofAt, "FWY": () => FWY, "HILL_ROAD": () => HILL_ROAD, "LOOKOUT": () => LOOKOUT, "onHillRoad": () => onHillRoad, "inTunnel": () => inTunnel, "ROOFTOPS": () => ROOFTOPS, "LANDMARKS_V2": () => LANDMARKS_V2 })
 })
 
 // ---- js/sim/wrecks.js
-__define(103, function (__exports) {
+__define(98, function (__exports) {
 // Traffic knocked out of its lane: the Roadster's hits on cars, the slide to a stop on locked-up
 // tyres (off walls and posts, through a post it hits hard enough to snap, and into other cars, which
 // it knocks loose in turn), and what the driver does then: sits there a few seconds with the hazards
@@ -74289,7 +73323,7 @@ __define(103, function (__exports) {
 // the pavement (alight.js); it is towed once it has been out of sight a while. A parked car knocked
 // out of its place is put back in it a while later, once nobody can see it go, as good as new.
 const { query } = __require(35)
-const { groundHeight } = __require(102)
+const { groundHeight } = __require(97)
 const { honk } = __require(86)
 const { CAR } = __require(2)
 const { kerbDist } = __require(44)
@@ -74598,7 +73632,7 @@ __export(__exports, { "TOW": () => TOW, "loosen": () => loosen, "slide": () => s
 })
 
 // ---- js/sim/drivers.js
-__define(104, function (__exports) {
+__define(99, function (__exports) {
 // The people at the wheel of the traffic, mixed into Traffic (traffic.js). Each driver is their own:
 // how fast they like to go (a few dawdle, most keep to about the limit, a fifth press on), how close
 // they follow, how hard they pull away and brake, how quickly they react, how bold they are at an
@@ -75067,7 +74101,7 @@ __export(__exports, { "temperament": () => temperament, "DRIVE": () => DRIVE })
 })
 
 // ---- js/sim/laneChange.js
-__define(105, function (__exports) {
+__define(100, function (__exports) {
 // Changing lanes, mixed into Traffic (traffic.js) with the drivers (drivers.js): moving over for a
 // turn from the other lane, to get round something stopped in this one, when the Roadster honks
 // from behind, or (a quicker driver) to get by a slow car. The indicator goes on first; then, once
@@ -75198,7 +74232,7 @@ __export(__exports, { "LANE_CHANGE": () => LANE_CHANGE })
 })
 
 // ---- js/sim/laneChangeFwy.js
-__define(106, function (__exports) {
+__define(101, function (__exports) {
 // Lane changes on the freeway, mixed into Traffic (traffic.js) beside laneChange.js. The deck's
 // lanes are separate edges (highway.js: the through lane, the inner lane beside it and the outer
 // lane between the side ramps), each with its own start, so the city's twin-lane change can't be
@@ -75469,8 +74503,109 @@ const FWY_LANES = {
 __export(__exports, { "SIDES": () => SIDES, "RANK": () => RANK, "laySides": () => laySides, "FWY_LANES": () => FWY_LANES })
 })
 
+// ---- js/sim/trafficStop.js
+__define(102, function (__exports) {
+// All-way stops at the quiet junctions, mixed into Traffic (traffic.js). Where two minor streets
+// cross in the suburbs, the estates or Venice (neither of them a boulevard, nor the ring road),
+// there are no lights to wait for: the signal heads flash red (signals.js) and every driver comes
+// to a stop at the line, then goes in the order they got there, once the junction is clear of
+// crossing traffic, of anyone on foot in the road and of the player. A bold driver's stop is a
+// rolling one, and quicker off; a careful one waits a moment longer. People on foot cross there
+// whenever no car is moving through (peds.js). Pure: no DOM.
+const { N, BLVD_EW, BLVD_NS, nodeOpen } = __require(18)
+const { NODES } = __require(35)
+const { areaOf, AREAS } = __require(5)
+const { JAM } = __require(52)
+const { LOOK } = __require(88)
+
+const QUIET = new Set(['estates', 'suburb', 'venice'])
+const STOPS = [] // the junctions with an all-way stop
+
+// Mark them: every node gets `stop` (true at an all-way stop) so they all keep one shape
+function markStops (nodes) {
+  STOPS.length = 0
+  const jam = new Set()
+  for (const e of JAM) jam.add(e.from).add(e.to)
+  for (const n of nodes) {
+    n.stop = false
+    if (n.ix <= 0 || n.iz <= 0 || n.ix >= N || n.iz >= N) continue
+    if (BLVD_EW.has(n.iz) || BLVD_NS.has(n.ix) || !nodeOpen(n.ix, n.iz) || jam.has(n.i)) continue
+    if (!n.inc.some(Boolean)) continue
+    let quiet = 0
+    for (let j = -1; j <= 0; j++)
+      for (let i = -1; i <= 0; i++)
+        if (QUIET.has(AREAS[areaOf(n.ix + i, n.iz + j)]?.kind)) quiet++
+    if (quiet < 3) continue
+    n.stop = true
+    STOPS.push(n)
+  }
+  return STOPS
+}
+
+const STOP_SIGN = {
+  // The stop at the end of lane e (an all-way stop at NODES[e.to]): the gap to the line until the
+  // driver has stopped there, waited their moment and it is their turn; then Infinity (car.go)
+  stopSign (car, e, dt) {
+    if (car.go === e) return Infinity
+    const toLine = e.len - car.s - car.len / 2
+    if (toLine > LOOK || toLine < -car.len / 2) return Infinity
+    const node = NODES[e.to]
+    // (stopped at the line: a bold driver calls a crawl a stop)
+    const halt = car.style === 2 ? 1.3 : 0.3
+    if (car.v < halt && toLine < 2.5) {
+      if (!car.arrive) car.arrive = this.t
+      const wait = car.style === 2 ? 0.25 : 0.7 + car.react * (car.style === 0 ? 1 : 0.5)
+      if (this.t - car.arrive > wait && this.stopClear(node, car, e)) {
+        car.go = e
+        car.arrive = 0
+        return Infinity
+      }
+    }
+    return Math.max(0, toLine - 0.3) + car.s0
+  },
+  // nothing crossing, nobody there first, nobody on foot in the road, the player not coming through
+  // it, and room on the far side
+  stopClear (node, car, e) {
+    for (let k = 0; k < 4; k++) {
+      const inc = node.inc[k]
+      if (!inc) continue
+      for (const L of inc) {
+        if (!L) continue
+        // (anyone moving through the junction from another way)
+        for (const c of L.next)
+          if (c.move && c.dir !== e.dir)
+            for (const o of c.cars) if (o !== car && o.s < c.len - 1) return false
+        // (anyone who stopped at their line before this car did; level, the lower id first)
+        if (k === e.dir) continue
+        const o = L.cars[L.cars.length - 1]
+        if (o && o.go === L) return false // (its turn now: on its way in)
+        if (o && o.arrive && (o.arrive < car.arrive - 0.05 || (o.arrive <= car.arrive + 0.05 && o.id < car.id))) return false
+      }
+    }
+    for (const p of this.peds) if ((p.x - node.x) ** 2 + (p.z - node.z) ** 2 < 256) return false
+    const me = this.me || this.foot
+    if (me && (me.x - node.x) ** 2 + (me.z - node.z) ** 2 < 196) return false
+    return !car.next?.next?.[0] || this.room(car)
+  },
+  // can someone on foot cross at an all-way stop now: no car moving into or through it
+  stopWalk (node) {
+    for (const c of this.cars) {
+      if (c.parked || c.v < 1.5) continue
+      const dx = c.x - node.x,
+        dz = c.z - node.z
+      if (dx * dx + dz * dz > 400) continue
+      // (coming in, or in it)
+      if (dx * c.hx + dz * c.hz < 4) return false
+    }
+    return true
+  }
+}
+markStops(NODES)
+__export(__exports, { "STOPS": () => STOPS, "markStops": () => markStops, "STOP_SIGN": () => STOP_SIGN })
+})
+
 // ---- js/sim/trafficStuck.js
-__define(107, function (__exports) {
+__define(103, function (__exports) {
 // The watchdog for cars that have stopped going anywhere, mixed into Traffic (traffic.js), on top
 // of the standoffs react.js sorts out and the last-resort gridlock rule (handover.js). Called for
 // each car a few times a second (recycle). A car stood still for STUCK_LINE s at the end of its lane
@@ -75516,7 +74651,7 @@ __export(__exports, { "STUCK_LINE": () => STUCK_LINE, "STUCK_BOX": () => STUCK_B
 })
 
 // ---- js/sim/handover.js
-__define(108, function (__exports) {
+__define(104, function (__exports) {
 // The traffic's cars as entities others can take over, mixed into Traffic (traffic.js). Every car
 // keeps a stable id for as long as it is on the map (car.id); the player's workstream finds one by
 // it (carById) or by where it is (carsNear), takes it off its driver (takeOver: out of the lane
@@ -75528,7 +74663,7 @@ __define(108, function (__exports) {
 const { TYPES } = __require(58)
 const { LANES, PITCH, N } = __require(35)
 const { AREAS, areaOf } = __require(5)
-const { temperament } = __require(104)
+const { temperament } = __require(99)
 const { honk } = __require(86)
 const { kerbDist } = __require(44)
 
@@ -75704,7 +74839,7 @@ __export(__exports, { "DISTRICT": () => DISTRICT, "STYLE": () => STYLE, "HANDOVE
 })
 
 // ---- js/sim/parkNear.js
-__define(109, function (__exports) {
+__define(105, function (__exports) {
 // The car parks and driveways round the player filled as full as each asks (STALLS' fill): the
 // suburbs' driveways, the industrial staff lots, the strip malls' and the freeway corridor's car
 // parks. The 267 parked cars the city deals at the start (plots.js parkCars) are spread over all of
@@ -75713,7 +74848,7 @@ __define(109, function (__exports) {
 // sight as the player comes, emptied again out of sight once they are gone. Own random numbers,
 // so the drivers' stay as they were. A mixin on Traffic (traffic.js).
 const { STALLS, rng } = __require(35)
-const { districtAt } = __require(102)
+const { districtAt } = __require(97)
 
 const FILL_R = 150, // m round the player: filled
   DROP_R = 210, // and emptied again beyond this
@@ -75791,14 +74926,14 @@ __export(__exports, { "PARKNEAR": () => PARKNEAR })
 })
 
 // ---- js/sim/hwDrive.js
-__define(110, function (__exports) {
+__define(106, function (__exports) {
 // The traffic on the freeway and the hill road (highway.js lays their lanes), mixed into Traffic
 // (traffic.js): which way on (a street lane's way off taken now and then, by numbers of its own so
 // the streets' traffic draws as it did), standing on whatever is under it there and pitched up or
 // down its slope, waiting at the end of a slip road for a gap in the street it joins, and put
 // straight onto the freeway or the hill road now and then when one is near.
 const { rng } = __require(35)
-const { groundHeight } = __require(102)
+const { groundHeight } = __require(97)
 const { HW } = __require(34)
 
 const TAKE = 0.35 // the share of drivers who take a way off onto the freeway
@@ -75903,7 +75038,7 @@ __export(__exports, { "HWDRIVE": () => HWDRIVE })
 })
 
 // ---- js/sim/traffic.js
-__define(111, function (__exports) {
+__define(107, function (__exports) {
 // City traffic: each driver their own (drivers.js), following the lane graph, keeping their
 // distance (intelligent driver model, eased on the pedals), stopping for red lights, slowing for
 // corners and for the Roadster, and knocked loose when it hits them (wrecks.js). They signal before
@@ -75925,18 +75060,18 @@ const { CALLS, newCall } = __require(91)
 const { CONDITIONS, busy } = __require(92)
 const { FLEET, streams } = __require(93)
 const { DELIVERY } = __require(94)
-const { gone, slide, restore, collidePlayer, bumpLoose } = __require(103)
-const { DRIVE, temperament } = __require(104)
-const { LANE_CHANGE } = __require(105)
-const { FWY_LANES } = __require(106)
-const { STOP_SIGN } = __require(100)
-const { TRAFFIC_STUCK } = __require(107)
+const { gone, slide, restore, collidePlayer, bumpLoose } = __require(98)
+const { DRIVE, temperament } = __require(99)
+const { LANE_CHANGE } = __require(100)
+const { FWY_LANES } = __require(101)
+const { STOP_SIGN } = __require(102)
+const { TRAFFIC_STUCK } = __require(103)
 const { rng, NODES, EDGES, LANES, STALLS, pointAt } = __require(35)
 const { TYPES, IDX } = __require(58)
-const { HANDOVER, styleOf } = __require(108)
-const { PARKNEAR } = __require(109)
-const { HWDRIVE } = __require(110)
-const { groundHeight } = __require(102)
+const { HANDOVER, styleOf } = __require(104)
+const { PARKNEAR } = __require(105)
+const { HWDRIVE } = __require(106)
+const { groundHeight } = __require(97)
 
 const BUS = IDX.bus
 const SHARES = TYPES.reduce((a, t) => a + t.share, 0)
@@ -76406,7 +75541,7 @@ __export(__exports, { "warm": () => warm, "Traffic": () => Traffic, "TYPES": () 
 })
 
 // ---- js/render/wet.js
-__define(112, function (__exports) {
+__define(108, function (__exports) {
 // The city's ground in the rain. As the road soaks (ENV.wet) the asphalt goes dark and smooth, its
 // polished wheel tracks smoothest of all, and it mirrors the street: the buildings, the signs, the
 // lamps and the headlights stretched long down it (a reflection of the scene from below the road,
@@ -76541,7 +75676,7 @@ __export(__exports, { "WET": () => WET, "puddleAt": () => puddleAt, "PUDDLE_GLSL
 })
 
 // ---- js/render/smoke.js
-__define(113, function (__exports) {
+__define(109, function (__exports) {
 // Smoke, vapor and dust. Each puff is carried by the air rather than flung: it relaxes towards the air
 // around it, which is a light breeze, a swirl that changes from place to place (so a cloud billows and
 // curls instead of drifting off in one piece) and the wake the car drags along behind it. Hot tyre
@@ -77024,16 +76159,16 @@ __export(__exports, { "VAPOR": () => VAPOR, "TYRE": () => TYRE, "DUST": () => DU
 })
 
 // ---- js/render/spray.js
-__define(114, function (__exports) {
+__define(110, function (__exports) {
 // Spray off a wet road (ENV.wet, sim/env.js): each of the Roadster's tyres throws up a fine mist on
 // a wet road, more the faster it turns, and a sheet of water through a puddle (wet.js's puddleAt,
 // the same water the road's shader draws); and the traffic near the camera throws it up behind
 // it. All of it is smoke.js's, a kind of its own: light, quick, hanging a moment in the air.
 const THREE = __require(0)
 const { ENV } = __require(3)
-const { TYPES } = __require(111)
-const { puddleAt } = __require(112)
-const { smoke, DUST } = __require(113)
+const { TYPES } = __require(107)
+const { puddleAt } = __require(108)
+const { smoke, DUST } = __require(109)
 
 // spray off a wet road: a fine mist thrown up and back off the tyres, hanging for a moment
 const SPRAY = {
@@ -77127,7 +76262,7 @@ __export(__exports, { "WATER": () => WATER, "emitSpray": () => emitSpray, "emitT
 })
 
 // ---- js/render/geo.js
-__define(115, function (__exports) {
+__define(111, function (__exports) {
 // Geometry helpers for the city: merging thousands of small pieces into a handful of buffers (so a
 // whole district draws in a few calls), vertex tints, and instanced flat marks for road paint.
 const THREE = __require(0)
@@ -77212,7 +76347,7 @@ __export(__exports, { "LAYER": () => LAYER, "merge": () => merge, "tint": () => 
 })
 
 // ---- js/render/mirror.js
-__define(116, function (__exports) {
+__define(112, function (__exports) {
 // The street's reflection in the wet. While the road is wet the scene is drawn a second time, before
 // the frame, from a camera mirrored below the road, into a target half the frame's size: what a
 // mirror laid on the street would show (the buildings and their lit windows, the signs, the street
@@ -77223,7 +76358,7 @@ __define(116, function (__exports) {
 // layer of its own (GROUND), as is anything the camera has told it to leave out, and the shadow maps
 // aren't drawn again for it. Dry, it costs nothing at all.
 const THREE = __require(0)
-const { WET } = __require(112)
+const { WET } = __require(108)
 
 const GROUND = 1 // the layer the ground is on: drawn by the camera, not in the reflection
 const Y = 0.0 // the road's level, which the mirror lies on
@@ -77334,7 +76469,7 @@ __export(__exports, { "GROUND": () => GROUND, "Mirror": () => Mirror })
 })
 
 // ---- js/render/aircraft.js
-__define(117, function (__exports) {
+__define(113, function (__exports) {
 // What flies over the city: an airliner every minute or two, high up on its way down to LAX (to
 // the south-west), its wingtips' red and green and its white strobes blinking at night; and a
 // helicopter, a police one or a news one, circling low over some part of town for a while, then
@@ -77343,8 +76478,8 @@ __define(117, function (__exports) {
 // Low-poly, a few meshes each, nothing on the ground's shaders: the searchlight's spot is a soft
 // disc of light laid on the street. AIR says where they are, for the sound (audio/air.js).
 const THREE = __require(0)
-const { merge, box, tint } = __require(115)
-const { GROUND } = __require(116)
+const { merge, box, tint } = __require(111)
+const { GROUND } = __require(112)
 const { softTex } = __require(82)
 const { HALF, BUILDINGS } = __require(35)
 
@@ -77703,8 +76838,540 @@ class Aircraft {
 __export(__exports, { "AIR": () => AIR, "Aircraft": () => Aircraft })
 })
 
+// ---- js/sim/interiors/rooms.js
+__define(114, function (__exports) {
+// The interiors' templates: each room a box w wide (x, across the door's wall: -w/2 to w/2) by d
+// deep (z, in from the door's wall: 0 to d) by h high, its door at x = door on the wall z = 0, and
+// what stands in it as boxes in that frame: [x0, x1, z0, z1, y0, y1, colour, what]. what: 's'
+// solid (the feet keep out of it, landable on top if low), 'x' solid but not drawn (the outline
+// of something drawn in parts), 'd' only to look at, 'g' a light (lit,
+// drawn glowing), 'w' a window (the sky's light through it), 'gs' a light that is solid too. lamps:
+// where the light comes from ([x, z, strength]: a ceiling light, baked into the walls and the floor
+// when the room is built: render/interiors). Pure data: the sim's colliders (sites.js) and the
+// renderer read the same boxes, so what is drawn is what is solid.
+const box = (x0, x1, z0, z1, y0, y1, c, what = 's') => [x0, x1, z0, z1, y0, y1, c, what]
+
+// a shelf unit running back from the window: its frame and rows of bright packets each side
+function shelves (x, z0, z1, out) {
+  out.push(box(x - 0.45, x + 0.45, z0, z1, 0, 1.65, 0xe9e6dd))
+  const PACKS = [0xe0473a, 0xf2c14e, 0x3d8fd6, 0x58b368, 0xf08a3c, 0xb35ad1, 0xf4f1ea]
+  let k = Math.round(x * 7 + z0 * 3) & 255
+  for (let y = 0.25; y < 1.6; y += 0.42)
+    for (let z = z0 + 0.1; z < z1 - 0.3; z += 0.62) {
+      const c = PACKS[k++ % PACKS.length]
+      out.push(box(x - 0.52, x - 0.45, z, z + 0.5, y, y + 0.28, c, 'd'))
+      out.push(box(x + 0.45, x + 0.52, z, z + 0.5, y, y + 0.28, PACKS[k++ % PACKS.length], 'd'))
+    }
+}
+// a person stood still (the clerk, the cook, the mechanic): legs, body, head, as boxes
+function figure (x, z, shirt, out) {
+  out.push(box(x - 0.2, x + 0.2, z - 0.13, z + 0.13, 0, 0.85, 0x2c3140, 'd'))
+  out.push(box(x - 0.24, x + 0.24, z - 0.15, z + 0.15, 0.85, 1.45, shirt, 'd'))
+  out.push(box(x - 0.11, x + 0.11, z - 0.11, z + 0.11, 1.48, 1.72, 0xc89a7a, 'd'))
+}
+
+// ---------- the convenience store at a gas station ----------
+function store () {
+  const w = 12,
+    d = 9,
+    h = 3.4,
+    b = []
+  // the till: a counter along the right, its till and the cigarettes behind it
+  b.push(box(2.6, 3.4, 1.4, 5.6, 0, 1.0, 0x8a4b2a))
+  b.push(box(2.55, 3.45, 1.35, 5.65, 1.0, 1.06, 0xd9d4c8, 'd'))
+  b.push(box(2.75, 3.15, 2.2, 2.7, 1.06, 1.4, 0x2b2f36, 'd'))
+  b.push(box(2.8, 3.1, 2.25, 2.65, 1.25, 1.38, 0x6fe0a0, 'g'))
+  b.push(box(5.5, 6, 1.2, 5.8, 0.9, 2.4, 0x3a3f48))
+  for (let z = 1.3; z < 5.6; z += 0.45)
+    for (let y = 1.0; y < 2.3; y += 0.32)
+      b.push(box(5.42, 5.5, z, z + 0.36, y, y + 0.22, (z * 13 + y * 7) % 2 > 1 ? 0xe8e2d0 : 0xc0392b, 'd'))
+  figure(4.5, 3.5, 0xd8402f, b)
+  // the aisles
+  shelves(-3.6, 2.4, 6.6, b)
+  shelves(-1.2, 2.4, 6.6, b)
+  shelves(1.2, 2.4, 6.6, b)
+  // the fridges glowing along the back
+  b.push(box(-6, 4.4, 8.25, 9, 0, 2.25, 0x9aa3ad))
+  for (let x = -5.8; x < 4.2; x += 1.25) b.push(box(x, x + 1.1, 8.2, 8.26, 0.15, 2.1, 0xd8f4ff, 'g'))
+  // a slush machine and the coffee by the door, an ATM
+  b.push(box(-6, -5.2, 0.4, 1.6, 0, 0.95, 0x6b6f78))
+  b.push(box(-5.9, -5.3, 0.6, 1.4, 0.95, 1.6, 0x3fb5e8, 'g'))
+  b.push(box(-6, -5.3, 3.0, 3.8, 0, 1.75, 0x2f5f9e))
+  b.push(box(-5.32, -5.28, 3.15, 3.65, 1.0, 1.4, 0x9ce2ff, 'g'))
+  // the windows either side of the door, posters on the walls
+  b.push(box(-5.6, -3.4, -0.02, 0.04, 0.8, 2.6, 0, 'w'))
+  b.push(box(-1.6, 2.2, -0.02, 0.04, 0.8, 2.6, 0, 'w'))
+  b.push(box(-6, -5.96, 5.0, 6.6, 1.2, 2.3, 0xf2c14e, 'd'))
+  b.push(box(5.96, 6, 6.4, 7.8, 1.2, 2.2, 0x3d8fd6, 'd'))
+  // the ceiling's lights
+  for (const x of [-3.6, -1.2, 1.2, 4])
+    for (const z of [2.5, 6]) b.push(box(x - 0.3, x + 0.3, z - 1.1, z + 1.1, h - 0.05, h, 0xffffff, 'g'))
+  return {
+    name: 'Night Owl Mart',
+    w,
+    d,
+    h,
+    door: -2.5,
+    floor: [0xdedad2, 0xc9c4ba], // tiles
+    wall: 0xf1ede4,
+    ceil: 0xe9e9e6,
+    trim: 0xd8402f,
+    boxes: b,
+    lamps: [[-2.4, 2.5, 1], [2.4, 2.5, 1], [-2.4, 6, 1], [2.4, 6, 1]]
+  }
+}
+
+// ---------- the diner ----------
+function diner () {
+  const w = 14,
+    d = 10,
+    h = 3.6,
+    b = []
+  // the counter across the back, its stools, the kitchen's pass and the menu over it
+  b.push(box(-2.5, 6.6, 6.6, 7.4, 0, 1.05, 0xf2f2f2))
+  b.push(box(-2.55, 6.65, 6.55, 7.45, 1.05, 1.12, 0xd2232a, 'd'))
+  b.push(box(-2.5, 6.6, 6.58, 6.62, 0.1, 0.25, 0xc0c4c8, 'd'))
+  for (let x = -1.8; x < 6.2; x += 1.1) {
+    b.push(box(x - 0.08, x + 0.08, 5.82, 5.98, 0, 0.7, 0xc0c4c8, 'd'))
+    b.push(box(x - 0.24, x + 0.24, 5.66, 6.14, 0.7, 0.8, 0xd2232a))
+  }
+  b.push(box(-2.5, 6.6, 9.6, 10, 0, 2.2, 0xb8bcc2))
+  b.push(box(-1.5, 5.6, 9.5, 9.6, 2.3, 3.1, 0x1c1c1c, 'd'))
+  b.push(box(-1.3, 5.4, 9.46, 9.5, 2.4, 3.0, 0xfff0c0, 'g'))
+  b.push(box(-2.2, 2.2, 8.4, 9.4, 0.9, 1.0, 0xc0c4c8, 'd'))
+  figure(1, 8.4, 0xffffff, b)
+  figure(4.5, 7.9, 0xf2a6b8, b)
+  // booths along the window: a table between two red benches, their backs high
+  for (const x of [1.4, 3.9]) {
+    b.push(box(x - 1.1, x - 0.6, 0.15, 1.9, 0, 0.45, 0xc0202a))
+    b.push(box(x - 1.1, x - 0.95, 0.15, 1.9, 0.45, 1.15, 0xc0202a))
+    b.push(box(x + 0.6, x + 1.1, 0.15, 1.9, 0, 0.45, 0xc0202a))
+    b.push(box(x + 0.95, x + 1.1, 0.15, 1.9, 0.45, 1.15, 0xc0202a))
+    b.push(box(x - 0.45, x + 0.45, 0.25, 1.5, 0.72, 0.78, 0xeae4d4))
+    b.push(box(x - 0.05, x + 0.05, 0.8, 0.9, 0, 0.72, 0x9aa0a6, 'd'))
+  }
+  // and down the left wall
+  for (const z of [3.2, 5.6, 8]) {
+    b.push(box(-7, -5.2, z - 1.1, z - 0.6, 0, 0.45, 0xc0202a))
+    b.push(box(-7, -5.2, z - 1.1, z - 0.95, 0.45, 1.15, 0xc0202a))
+    b.push(box(-7, -5.2, z + 0.6, z + 1.1, 0, 0.45, 0xc0202a))
+    b.push(box(-7, -5.2, z + 0.95, z + 1.1, 0.45, 1.15, 0xc0202a))
+    b.push(box(-6.9, -5.4, z - 0.45, z + 0.45, 0.72, 0.78, 0xeae4d4))
+    b.push(box(-6.3, -6.2, z - 0.05, z + 0.05, 0, 0.72, 0x9aa0a6, 'd'))
+    b.push(box(-6.3, -6.1, z - 0.1, z + 0.1, h - 0.9, h - 0.6, 0xffe0a0, 'g'))
+  }
+  // the jukebox, glowing, in the corner; the windows; a neon sign in one
+  b.push(box(5.9, 6.9, 0.3, 1.2, 0, 1.6, 0x7a2a8a))
+  b.push(box(5.88, 5.92, 0.45, 1.05, 0.5, 1.4, 0xffb347, 'g'))
+  b.push(box(-6.6, -4.6, -0.02, 0.04, 0.9, 2.7, 0, 'w'))
+  b.push(box(-1.6, 6.6, -0.02, 0.04, 0.9, 2.7, 0, 'w'))
+  b.push(box(3, 5, 0.06, 0.1, 1.9, 2.5, 0xff3a6a, 'g'))
+  for (const x of [1.4, 3.9])
+    b.push(box(x - 0.25, x + 0.25, 0.7, 1.1, h - 0.9, h - 0.65, 0xffe0a0, 'g'))
+  for (const x of [-1, 2, 5]) b.push(box(x - 0.6, x + 0.6, 6.6, 7.4, h - 0.05, h, 0xffffff, 'g'))
+  return {
+    name: 'Taqueria Sunrise',
+    w,
+    d,
+    h,
+    door: -3.6,
+    floor: [0xf4f1ea, 0x202022], // the black and white check
+    wall: 0xf3e2b8,
+    ceil: 0xf0ebe0,
+    trim: 0xd2232a,
+    boxes: b,
+    lamps: [[-6, 3, 0.6], [-6, 6.5, 0.6], [2.5, 1.2, 0.8], [2, 7, 1], [-2, 4.5, 0.6]]
+  }
+}
+
+// ---------- the body shop's workshop ----------
+function workshop () {
+  const w = 18,
+    d = 14,
+    h = 6,
+    b = []
+  // the roller door, shut, across the front left; a car up on the lift
+  b.push(box(-8.6, -2.6, -0.02, 0.06, 0, 4.4, 0x8a9096, 'd'))
+  for (let y = 0.3; y < 4.4; y += 0.35) b.push(box(-8.6, -2.6, 0.06, 0.09, y, y + 0.05, 0x6b7177, 'd'))
+  for (const x of [-7.6, -3.6]) b.push(box(x - 0.2, x + 0.2, 4.5, 4.9, 0, 3.4, 0xd2232a))
+  b.push(box(-7.4, -3.8, 4.4, 9.4, 1.55, 1.7, 0x3a3f48, 'd'))
+  b.push(box(-6.5, -4.7, 4.6, 9.2, 1.75, 2.35, 0x1f6fb2, 'd'))
+  b.push(box(-6.3, -4.9, 5.8, 8.0, 2.35, 2.9, 0x1f6fb2, 'd'))
+  b.push(box(-6.25, -4.95, 5.9, 7.9, 2.4, 2.85, 0x223040, 'd'))
+  for (const x of [-6.5, -4.7]) for (const z of [5.4, 8.4]) b.push(box(x - 0.12, x + 0.12, z - 0.35, z + 0.35, 1.6, 2.2, 0x111111, 'd'))
+  // the second bay: a car waiting, its bonnet up
+  b.push(box(-1.6, 0.4, 5, 9.6, 0.25, 0.95, 0xe8e2d0, 'd'))
+  b.push(box(-1.5, 0.3, 6.4, 8.6, 0.95, 1.45, 0xe8e2d0, 'd'))
+  b.push(box(-1.45, 0.25, 6.5, 8.5, 1.0, 1.4, 0x223040, 'd'))
+  b.push(box(-1.5, 0.3, 4.6, 5.8, 1.4, 1.5, 0xe8e2d0, 'd'))
+  for (const x of [-1.6, 0.3]) for (const z of [5.6, 8.9]) b.push(box(x - 0.12, x + 0.12, z - 0.35, z + 0.35, 0, 0.7, 0x111111, 'd'))
+  b.push(box(-1.8, 0.6, 4.4, 9.8, 0, 0.9, 0, 'x')) // (the car's body as one solid)
+  // workbenches and the tool boards down the right wall, tyres stacked by them
+  b.push(box(7.9, 9, 3, 9, 0, 0.95, 0x5a4632))
+  b.push(box(8.9, 9, 3, 9, 1.2, 2.6, 0x9a8a6a, 'd'))
+  for (let z = 3.3; z < 8.8; z += 0.55) b.push(box(8.84, 8.9, z, z + 0.35, 1.4 + (z % 1) * 0.6, 1.6 + (z % 1) * 0.6, 0xd2232a, 'd'))
+  b.push(box(8.2, 8.6, 3.4, 4.0, 0.95, 1.3, 0xd2232a, 'd'))
+  for (const [x, z, n] of [[8.2, 10.8, 5], [7, 11.4, 3], [8.2, 1.5, 4]]) {
+    b.push(box(x - 0.36, x + 0.36, z - 0.36, z + 0.36, 0, n * 0.24, 0x1a1a1a))
+    for (let k = 0; k < n; k++) b.push(box(x - 0.2, x + 0.2, z - 0.37, z + 0.37, k * 0.24 + 0.07, k * 0.24 + 0.17, 0x55595e, 'd'))
+  }
+  // the paint booth in the back left corner: glass walls round a car being sprayed, lit inside
+  b.push(box(-9, -2.2, 10.6, 10.75, 0, 3.6, 0x9fb8c8, 'd'))
+  b.push(box(-2.35, -2.2, 10.6, 14, 0, 3.6, 0x9fb8c8, 'd'))
+  b.push(box(-9, -2.2, 10.6, 14, 0, 3.6, 0, 'x'))
+  b.push(box(-8.6, -2.6, 13.9, 14, 0.4, 3.4, 0xf4fbff, 'g'))
+  b.push(box(-8.6, -2.6, 10.8, 13.8, 3.55, 3.6, 0xf4fbff, 'g'))
+  b.push(box(-6.6, -4.6, 11, 13.6, 0.25, 1.25, 0xff7a1a, 'd'))
+  // oil drums, a compressor, the office in the back right with its window lit
+  for (const [x, z, c] of [[2, 12.8, 0x2f6fb5], [2.8, 12.9, 0xd2232a], [2.4, 13.5, 0x2a8a4a]]) b.push(box(x - 0.3, x + 0.3, z - 0.3, z + 0.3, 0, 0.9, c))
+  b.push(box(4.4, 5.4, 12.6, 13.6, 0, 1.1, 0x9a2a2a))
+  b.push(box(5.6, 9, 10.4, 10.6, 0, 3, 0xc8c2b4))
+  b.push(box(5.6, 5.8, 10.4, 14, 0, 3, 0xc8c2b4))
+  b.push(box(6.2, 8.4, 10.36, 10.4, 1.1, 2.3, 0xffe8b0, 'g'))
+  b.push(box(5.6, 9, 10.4, 14, 0, 3, 0, 'x'))
+  figure(6, 6.5, 0x2f4f8a, b)
+  // the side door's window, the strip lights
+  b.push(box(6.3, 7.7, -0.02, 0.04, 2.6, 3.4, 0, 'w'))
+  for (const x of [-6, 0, 6]) for (const z of [3.5, 8.5]) b.push(box(x - 1.4, x + 1.4, z - 0.12, z + 0.12, h - 0.4, h - 0.3, 0xffffff, 'g'))
+  return {
+    name: 'Redline Body & Paint',
+    w,
+    d,
+    h,
+    door: 7,
+    floor: [0x8d8f91, 0x86888a], // concrete
+    lines: 0xf2c14e, // the bays' painted lines
+    wall: 0xb9b2a4,
+    ceil: 0x6f7378,
+    trim: 0xd2232a,
+    boxes: b,
+    lamps: [[-6, 3.5, 1], [0, 3.5, 1], [6, 3.5, 1], [-6, 8.5, 1], [0, 8.5, 1], [6, 8.5, 1], [-5.6, 12.3, 0.7]]
+  }
+}
+
+// ---------- an apartment block's lobby ----------
+function lobby () {
+  const w = 10,
+    d = 9,
+    h = 4.2,
+    b = []
+  // the front desk, the doorman, the mailboxes, the lifts and the stairs
+  b.push(box(1.5, 4.5, 3.2, 4.0, 0, 1.1, 0x5a3a24))
+  b.push(box(1.45, 4.55, 3.15, 4.05, 1.1, 1.16, 0xe8e0d0, 'd'))
+  figure(3, 4.7, 0x223a5a, b)
+  b.push(box(4.85, 5, 1.2, 3.0, 0.8, 2.0, 0xb8a070, 'd'))
+  for (const x of [-2.5, -0.5]) {
+    b.push(box(x - 0.8, x + 0.8, 8.9, 9, 0, 2.3, 0xb0b4b8, 'd'))
+    b.push(box(x - 0.02, x + 0.02, 8.86, 8.9, 0, 2.3, 0x50555a, 'd'))
+    b.push(box(x - 0.15, x + 0.15, 8.86, 8.9, 2.45, 2.6, 0xffb347, 'g'))
+  }
+  b.push(box(-5, -3.6, 5.2, 9, 0, 0.9, 0x8a8278))
+  b.push(box(-5, -3.6, 6.6, 9, 0.9, 1.8, 0x8a8278))
+  // a couch and a low table on a rug, a plant in a pot either side of the door
+  b.push(box(-3.6, -0.4, 2.0, 2.3, 0, 0.12, 0x7a2a3a, 'd'))
+  b.push(box(-3.4, -0.6, 3.6, 4.4, 0, 0.45, 0x2f4f6a))
+  b.push(box(-3.4, -0.6, 4.2, 4.4, 0.45, 0.9, 0x2f4f6a))
+  b.push(box(-2.6, -1.4, 2.4, 3.0, 0, 0.4, 0x5a3a24))
+  for (const x of [-1.6, 1.6]) {
+    b.push(box(x - 0.3, x + 0.3, 0.4, 1.0, 0, 0.55, 0xc8b89a))
+    b.push(box(x - 0.45, x + 0.45, 0.25, 1.15, 0.55, 1.5, 0x3f7a3a, 'd'))
+  }
+  // windows, a chandelier
+  b.push(box(-4.6, -1.4, -0.02, 0.04, 0.9, 3.3, 0, 'w'))
+  b.push(box(1.0, 4.4, -0.02, 0.04, 0.9, 3.3, 0, 'w'))
+  b.push(box(-0.6, 0.6, 4, 5.2, h - 0.6, h - 0.4, 0xffe8b0, 'g'))
+  b.push(box(-3.6, -2.6, 7.6, 8.6, h - 0.05, h, 0xffffff, 'g'))
+  return {
+    name: 'The Marlowe',
+    w,
+    d,
+    h,
+    door: 0,
+    floor: [0xe8e2d6, 0xcfc6b6], // marble
+    wall: 0xe8dcc4,
+    ceil: 0xf2eee6,
+    trim: 0x5a3a24,
+    boxes: b,
+    lamps: [[0, 4.6, 1.2], [-3, 8, 0.6], [3, 3, 0.6]]
+  }
+}
+
+const ROOMS = { store: store(), diner: diner(), workshop: workshop(), lobby: lobby() }
+__export(__exports, { "ROOMS": () => ROOMS })
+})
+
+// ---- js/sim/interiors/sites.js
+__define(115, function (__exports) {
+// Where the interiors are: each on a building the city already has (lots.js, found by its
+// footprint, so nothing in the layout or its random numbers moves), its door on one of the
+// building's walls, the way out of it n (one of the four directions), and the room it opens into
+// (rooms.js). The room itself is a pocket under the city, POCKET m down beneath the door, so the
+// player inside is still where the map, the radar, the district names and the missions think they
+// are (the shop's own spot). Each site's colliders are its own, never in the city's grid (city.js
+// query), so nothing on the street ever bumps into a room under it.
+//
+//   SITES[i] = { id, kind, name, room, door: { x, z }, n: { x, z }, f, r, box: { x0..z1 },
+//                inner: { x, z }, solids: [...], drive (the body shop's bay out front, or null) }
+const { BUILDINGS } = __require(35)
+const { ROOMS } = __require(114)
+
+const POCKET = -40 // m: the rooms' floor, under the city
+const WALL_T = 0.3 // the rooms' walls, m thick
+
+// The sites: the building (its footprint, found within a metre), the wall the door is in (N, E,
+// S or W: the way out), where along it (u: m from the wall's west or north end) and the room.
+const PLAN = [
+  { id: 'nightowl', kind: 'store', at: [-352.6, -339.6, -426.4, -416.4], wall: 'S', u: 9 },
+  { id: 'sunrise', kind: 'diner', at: [-321.0, -307.0, -415.0, -403.0], wall: 'S', u: 6 },
+  { id: 'redline', kind: 'workshop', at: [-34.1, -11.4, -157.0, -131.3], wall: 'E', u: 6, drive: 17 },
+  { id: 'marlowe', kind: 'lobby', at: [-800.7, -779.4, -417.3, -395.4], wall: 'S', u: 10 }
+]
+const NORMAL = { N: [0, -1], E: [1, 0], S: [0, 1], W: [-1, 0] }
+
+function find (at) {
+  const [x0, x1, z0, z1] = at
+  return BUILDINGS.find(
+    b =>
+      Math.abs(b.x0 - x0) < 1 &&
+      Math.abs(b.x1 - x1) < 1 &&
+      Math.abs(b.z0 - z0) < 1 &&
+      Math.abs(b.z1 - z1) < 1
+  )
+}
+
+// a point of the room's frame (x across, z in from the door) in the world
+function toWorld (s, x, z) {
+  return { x: s.door.x + s.r.x * x + s.f.x * z, z: s.door.z + s.r.z * x + s.f.z * z }
+}
+// a box of the room's frame as a box in the world (the frame is square to the world's axes)
+function boxToWorld (s, x0, x1, z0, z1) {
+  const a = toWorld(s, x0, z0),
+    b = toWorld(s, x1, z1)
+  return {
+    x0: Math.min(a.x, b.x),
+    x1: Math.max(a.x, b.x),
+    z0: Math.min(a.z, b.z),
+    z1: Math.max(a.z, b.z)
+  }
+}
+
+function site (p) {
+  const b = find(p.at)
+  if (!b) return null
+  const room = ROOMS[p.kind]
+  const [nx, nz] = NORMAL[p.wall]
+  // the door on the wall's outside face, u along it from its west or north end
+  const door =
+    p.wall === 'N' || p.wall === 'S'
+      ? { x: b.x0 + p.u, z: p.wall === 'N' ? b.z0 : b.z1 }
+      : { x: p.wall === 'W' ? b.x0 : b.x1, z: b.z0 + p.u }
+  // the room's frame: f into the room (against n), r to the right looking in (the feet's
+  // convention: right of (fx, fz) is (-fz, fx)); the door at x = room.door in it
+  const f = { x: -nx, z: -nz },
+    r = { x: -f.z, z: f.x }
+  const s = {
+    id: p.id,
+    kind: p.kind,
+    name: room.name,
+    room,
+    building: b,
+    n: { x: nx, z: nz },
+    f,
+    r,
+    door: { x: door.x - r.x * room.door, z: door.z - r.z * room.door }, // (the frame's origin)
+    out: { x: door.x + nx * 0.9, z: door.z + nz * 0.9 }, // where the player stands to go in
+    face: { x: door.x, z: door.z }, // the doorway on the outside wall
+    yawOut: Math.atan2(-nz, nx), // facing out (the game's heading: (cos h, -sin h))
+    yawIn: Math.atan2(nz, -nx),
+    drive: null,
+    solids: []
+  }
+  s.inner = toWorld(s, room.door, 0.9) // (stood just inside the door)
+  s.box = boxToWorld(s, -room.w / 2, room.w / 2, 0, room.d)
+  // the walls round the room, and whatever in it is solid
+  const W = WALL_T,
+    { w, d, h } = room
+  const wall = (x0, x1, z0, z1) =>
+    s.solids.push({ ...boxToWorld(s, x0, x1, z0, z1), y0: POCKET - 1, y1: POCKET + h, kind: 'building', look: 'room' })
+  wall(-w / 2 - W, w / 2 + W, -W, 0)
+  wall(-w / 2 - W, w / 2 + W, d, d + W)
+  wall(-w / 2 - W, -w / 2, 0, d)
+  wall(w / 2, w / 2 + W, 0, d)
+  for (const [x0, x1, z0, z1, y0, y1, , what] of room.boxes)
+    if (what === 's' || what === 'gs' || what === 'x')
+      s.solids.push({ ...boxToWorld(s, x0, x1, z0, z1), y0: POCKET + y0, y1: POCKET + y1, kind: 'plant', look: 'room' })
+  // the body shop's bay: the street in front of its roller door, where a car stops to be seen to
+  if (p.drive) {
+    const c =
+      p.wall === 'N' || p.wall === 'S'
+        ? { x: b.x0 + p.drive, z: door.z }
+        : { x: door.x, z: b.z0 + p.drive }
+    const along = p.wall === 'N' || p.wall === 'S'
+    const hw = along ? 4 : 0.5,
+      hd = along ? 0.5 : 4
+    // (from the wall out over the pavement and the kerb lane: 11 m out, 8 m wide)
+    const x0 = nx ? Math.min(c.x, c.x + nx * 11) : c.x - 4,
+      x1 = nx ? Math.max(c.x, c.x + nx * 11) : c.x + 4,
+      z0 = nz ? Math.min(c.z, c.z + nz * 11) : c.z - 4,
+      z1 = nz ? Math.max(c.z, c.z + nz * 11) : c.z + 4
+    s.drive = { x0, x1, z0, z1, door: c, hw, hd }
+  }
+  return s
+}
+
+const SITES = PLAN.map(site).filter(Boolean)
+const siteById = id => SITES.find(s => s.id === id) || null
+__export(__exports, { "POCKET": () => POCKET, "WALL_T": () => WALL_T, "toWorld": () => toWorld, "SITES": () => SITES, "siteById": () => siteById })
+})
+
+// ---- js/sim/interiors/state.js
+__define(116, function (__exports) {
+// Going in and out of the interiors, as a little state machine with no DOM in it (the tests drive
+// it in Node; render/interiors/glue.js drives it in the game): the door on offer to the player, the
+// fade to black and back (the swap happens while the screen is black), the room's own world for the
+// feet (its walls and furniture, its floor, no cars), and the body shop's service for a car stopped
+// in its bay. The player is only ever moved by placePlayer, between frames, under the black.
+//
+//   INTERIOR.site   the site the player is inside (sites.js), or null out in the city
+//   INTERIOR.phase  'none', 'out' (fading to black), 'hold' (black, the work being done), 'in'
+//   INTERIOR.fade   0 (clear) to 1 (black), for the renderer
+const { SITES, POCKET } = __require(115)
+const { placePlayer } = __require(79)
+
+const FADE = 0.35 // s to black, and back
+const HOLD = { enter: 0.15, exit: 0.15, service: 1.1 } // s held black
+const DOOR_R = 1.5 // m from the spot in front of a door that it offers to be gone through
+const SERVICE_V = 1.2 // m/s: a car slower than this in the bay may be seen to
+const INTERIOR = { site: null, phase: 'none', t: 0, fade: 0, act: null, target: null }
+
+const inside = () => INTERIOR.site !== null
+const busy = () => INTERIOR.phase !== 'none'
+
+const near = (x, z, p, r) => (p.x - x) ** 2 + (p.z - z) ** 2 < r * r
+const inRect = (b, x, z) => x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1
+
+// What the player can do here, if anything: { act: 'enter' | 'exit' | 'service', site, why }
+// (why: the reason it can't be done now, shown instead). p: the player (sim/player.js); speed:
+// the car's over the ground, at the wheel.
+function offerAt (p, speed = 0) {
+  if (busy()) return null
+  const s = INTERIOR.site
+  if (s) {
+    if (p.mode === 'foot' && near(s.inner.x, s.inner.z, p.pos, DOOR_R)) return { act: 'exit', site: s }
+    return null
+  }
+  if (p.mode === 'foot') {
+    for (const t of SITES)
+      if (near(t.out.x, t.out.z, p.pos, DOOR_R) && p.pos.y > POCKET + 10) {
+        if (p.wanted > 0) return { act: 'enter', site: t, why: 'Lose the cops first' }
+        return { act: 'enter', site: t }
+      }
+    return null
+  }
+  if (p.mode === 'car')
+    for (const t of SITES)
+      if (t.drive && inRect(t.drive, p.pos.x, p.pos.z)) {
+        if (speed > SERVICE_V) return { act: 'service', site: t, why: 'Stop in the bay' }
+        return { act: 'service', site: t }
+      }
+  return null
+}
+
+// Start going through (o: an offer from offerAt with no why): the fade begins. true if it did.
+function begin (o) {
+  if (!o || o.why || busy()) return false
+  INTERIOR.phase = 'out'
+  INTERIOR.t = 0
+  INTERIOR.act = o.act
+  INTERIOR.target = o.site
+  return true
+}
+
+// One step of the transition (dt: game s). Returns 'swap' the step the screen goes black (do the
+// move then: swapIn/swapOut, or the service), 'done' when it has cleared, else null.
+function stepTransition (dt) {
+  const I = INTERIOR
+  if (I.phase === 'none') return null
+  I.t += dt
+  if (I.phase === 'out') {
+    I.fade = Math.min(1, I.t / FADE)
+    if (I.t >= FADE) {
+      I.phase = 'hold'
+      I.t = 0
+      I.fade = 1
+      return 'swap'
+    }
+  } else if (I.phase === 'hold') {
+    if (I.t >= HOLD[I.act]) {
+      I.phase = 'in'
+      I.t = 0
+    }
+  } else if (I.phase === 'in') {
+    I.fade = Math.max(0, 1 - I.t / FADE)
+    if (I.t >= FADE) {
+      I.phase = 'none'
+      I.fade = 0
+      I.act = I.target = null
+      return 'done'
+    }
+  }
+  return null
+}
+
+// The player into site s's room (just inside its door, facing in), or back out of it onto the
+// street in front of the door, facing away from it
+function swapIn (s, p) {
+  placePlayer(s.inner.x + s.f.x * 0.5, s.inner.z + s.f.z * 0.5, s.yawIn, POCKET, p)
+  INTERIOR.site = s
+}
+function swapOut (p) {
+  const s = INTERIOR.site
+  INTERIOR.site = null
+  if (!s) return
+  placePlayer(s.out.x, s.out.z, s.yawOut, null, p)
+}
+// Out of it at once, with no fade (a reset, being put somewhere else): the state cleared
+function clearInterior () {
+  INTERIOR.site = null
+  INTERIOR.phase = 'none'
+  INTERIOR.fade = 0
+  INTERIOR.t = 0
+  INTERIOR.act = INTERIOR.target = null
+}
+// Whether the player has left the room by some other way than its door (put back in a car, taken
+// somewhere by a reset or a mission): then the interior lets go of them
+function strayed (p) {
+  const s = INTERIOR.site
+  if (!s || busy()) return false
+  if (p.mode === 'car' || p.pos.y > POCKET + 8) return true
+  const b = s.box
+  return p.pos.x < b.x0 - 2 || p.pos.x > b.x1 + 2 || p.pos.z < b.z0 - 2 || p.pos.z > b.z1 + 2
+}
+
+// The room's world for the feet (player.js stepFoot): its own walls and furniture, its floor at
+// POCKET, and no cars (the ones in the street over it are not in the room)
+const NONE = []
+function roomWorld (s) {
+  const hits = []
+  return {
+    site: s,
+    solids (x0, z0, x1, z1) {
+      hits.length = 0
+      for (const c of s.solids) if (c.x1 > x0 && c.x0 < x1 && c.z1 > z0 && c.z0 < z1) hits.push(c)
+      return hits
+    },
+    base: () => POCKET,
+    get cars () {
+      NONE.length = 0
+      return NONE
+    }
+  }
+}
+__export(__exports, { "FADE": () => FADE, "HOLD": () => HOLD, "DOOR_R": () => DOOR_R, "SERVICE_V": () => SERVICE_V, "INTERIOR": () => INTERIOR, "inside": () => inside, "busy": () => busy, "offerAt": () => offerAt, "begin": () => begin, "stepTransition": () => stepTransition, "swapIn": () => swapIn, "swapOut": () => swapOut, "clearInterior": () => clearInterior, "strayed": () => strayed, "roomWorld": () => roomWorld })
+})
+
 // ---- js/audio/mix.js
-__define(118, function (__exports) {
+__define(117, function (__exports) {
 // What the sound engine hears each frame, from where the camera is: the Roadster's drive state (the
 // motors' force, worked out from the power the sim reports, its wheels and tyres), where the car is
 // from the camera, the cars nearest the camera with their doppler and whether a building stands in
@@ -77714,14 +77381,15 @@ __define(118, function (__exports) {
 // Everything is written into objects kept from frame to frame, so a frame allocates nothing.
 const THREE = __require(0)
 const { OUTER } = __require(35)
-const { TYPES } = __require(111)
+const { TYPES } = __require(107)
 const { LANDMARKS } = __require(5)
 const { camera } = __require(82)
 const { clamp } = __require(2)
 const { ENV } = __require(3)
-const { WATER } = __require(114)
-const { AIR } = __require(117)
+const { WATER } = __require(110)
+const { AIR } = __require(113)
 const { watch, forget, ALARM } = __require(85)
+const { inside: indoors } = __require(116)
 const { hearing, panOf, blocked, dullness, placeOf, ray } = __require(83)
 
 
@@ -78062,6 +77730,8 @@ function mixSound (sound, app, traffic, dt, clock, peds) {
   st.suction = sim.suction
   st.city = city
   st.inside = !!app.inside // the camera in the driver's seat
+  // (in a shop or a lobby, sim/interiors/: the street, the rain and the thunder through its walls)
+  st.indoor = city && indoors()
   st.combustion = !!app.engine // (a car with an engine, not the Roadster's motors: engine.js)
   st.carDist = cp.distanceTo(_cp)
   st.cut = cut
@@ -78130,7 +77800,7 @@ __export(__exports, { "mixSound": () => mixSound, "setVolumes": () => setVolumes
 })
 
 // ---- js/ui/onboard.js
-__define(119, function (__exports) {
+__define(118, function (__exports) {
 // A new player's first steps: a short hint the first time they are on foot in the city, the first
 // time they drive a car that isn't the Roadster, the first time they have stars, the first time
 // they are in the rain, and once to say Esc pauses. Each is told once (remembered: prefs.js), only
@@ -78208,7 +77878,7 @@ __export(__exports, { "HINTS": () => HINTS, "Onboard": () => Onboard })
 })
 
 // ---- js/ui/captions.js
-__define(120, function (__exports) {
+__define(119, function (__exports) {
 // Subtitles for the sounds that matter, for players who can't hear them (options.js subtitles):
 // thunder (a strike: ENV.strikes), the rain coming on, sirens closing in (a police unit within
 // earshot while you are wanted) and a car alarm going off near you. Each says itself in a small line
@@ -78253,19 +77923,95 @@ class Captions {
 __export(__exports, { "Captions": () => Captions })
 })
 
+// ---- js/ui/tokens.js
+__define(120, function (__exports) {
+// The hidden tokens' counter (the world's hunt: render/interiors/hunt.js says 'token-collected'
+// { id, n, total, where, pos } and, at the last, 'tokens-complete'): a small "◆ 7/30" by the radar
+// shown for a few seconds on each find (longer, gold, when all are found) and the count for the
+// pause menu's STATS tab. The count is remembered between visits (prefs 'tokenCount'). The state is
+// pure (update returns whether it shows); the element is optional.
+const { onGame } = __require(68)
+const { recall, remember } = __require(7)
+
+const SHOW_S = 4 // s the counter stays up after a find
+const DONE_S = 8 // s after the last one
+const DEFAULT_TOTAL = 30
+
+class TokenCounter {
+  constructor (el = null) {
+    this.el = el
+    const [n, total] = String(recall('tokenCount', '') || '').split('/').map(Number)
+    this.total = total > 0 ? total : DEFAULT_TOTAL
+    this.n = n >= 0 ? Math.min(n, this.total) : 0
+    this.where = ''
+    this.t = 0 // s left on screen
+    this.shown = false
+    this.offs = [
+      onGame('token-collected', d => this.found(d)),
+      onGame('tokens-complete', d => this.complete(d))
+    ]
+    this.draw()
+  }
+  get done () {
+    return this.n >= this.total
+  }
+  found (d = {}) {
+    if (d.total > 0) this.total = d.total
+    // (the hunt's own count is the truth; a stray repeat never counts down)
+    this.n = Math.min(this.total, Number.isFinite(d.n) ? Math.max(this.n, d.n) : this.n + 1)
+    this.where = d.where || ''
+    this.t = this.done ? DONE_S : SHOW_S
+    remember('tokenCount', `${this.n}/${this.total}`)
+    this.draw()
+  }
+  complete (d = {}) {
+    if (d.total > 0) this.total = d.total
+    this.n = this.total
+    this.t = DONE_S
+    remember('tokenCount', `${this.n}/${this.total}`)
+    this.draw()
+  }
+  // each frame: whether the counter is up
+  update (dt) {
+    if (this.t > 0) this.t = Math.max(0, this.t - dt)
+    const on = this.t > 0
+    if (on !== this.shown) {
+      this.shown = on
+      this.el?.classList.toggle('on', on)
+    }
+    return on
+  }
+  text () {
+    return `◆ ${this.n}/${this.total}`
+  }
+  draw () {
+    if (!this.el) return
+    this.el.textContent = this.text()
+    this.el.classList.toggle('done', this.done)
+    this.el.title = this.where ? `Hidden tokens · last found ${this.where}` : 'Hidden tokens'
+  }
+  dispose () {
+    for (const off of this.offs) if (typeof off === 'function') off()
+  }
+}
+__export(__exports, { "SHOW_S": () => SHOW_S, "DONE_S": () => DONE_S, "DEFAULT_TOTAL": () => DEFAULT_TOTAL, "TokenCounter": () => TokenCounter })
+})
+
 // ---- js/ui/ux.js
 __define(121, function (__exports) {
 // The menu's work each frame (menu.frame, from main.js's loop): the player's options applied where
 // a frame is needed for it (the sound's levels once its context exists), a new player's hints
 // (onboard.js) when the help box is free, the captions for the sounds that matter (captions.js,
-// with subtitles on), the stats' tracking (stats.js), and busted or wasted counted.
+// with subtitles on), the stats' tracking (stats.js), busted or wasted counted, and the hidden
+// tokens' counter (tokens.js).
 const { ENV } = __require(3)
 const { player } = __require(79)
 const { ALARM } = __require(85)
-const { setVolumes } = __require(118)
+const { setVolumes } = __require(117)
 const { OPTS, loadOptions, onOption } = __require(63)
-const { Onboard } = __require(119)
-const { Captions } = __require(120)
+const { Onboard } = __require(118)
+const { Captions } = __require(119)
+const { TokenCounter } = __require(120)
 const { setReducedMotion } = __require(61)
 
 const CAPTION_S = 2.6 // s a caption stays up
@@ -78283,6 +78029,12 @@ class UxFrame {
     el.className = 'captions'
     el.setAttribute('aria-live', 'polite')
     document.body.appendChild(el)
+    // the hidden tokens' count, up for a moment on each find (tokens.js)
+    const tk = document.createElement('div')
+    tk.className = 'tokens'
+    tk.setAttribute('aria-live', 'polite')
+    document.body.appendChild(tk)
+    this.tokens = new TokenCounter(tk)
     onOption(k => {
       if (!k || k === 'master' || k === 'music' || k === 'sfx') setVolumes(sound, OPTS)
       if (k === 'px') app.onQuality?.(app.quality)
@@ -78296,6 +78048,7 @@ class UxFrame {
     // (the engine builds its context at the first key or click: the levels then)
     if (sound.ctx && sound.ctx !== this.ctx && setVolumes(sound, OPTS)) this.ctx = sound.ctx
     if (this.app.paused || !(dt > 0)) return
+    this.tokens.update(dt)
     const W = game?.wanted,
       stars = W?.stars || 0
     if (city) this.stats?.track(dt, player, stars, game?.missions)
@@ -78337,7 +78090,7 @@ class UxFrame {
   // the STATS tab, drawn as it opens
   showStats (game, mph) {
     const M = game?.missions
-    this.stats?.render(mph, M?.cash || 0, M?.state === 'running' ? M.active?.id : null)
+    this.stats?.render(mph, M?.cash || 0, M?.state === 'running' ? M.active?.id : null, this.tokens)
   }
 }
 __export(__exports, { "UxFrame": () => UxFrame })
@@ -78438,7 +78191,7 @@ __define(123, function (__exports) {
 const { BLOCKS, SOLIDS } = __require(19)
 const { GARAGES } = __require(32)
 const { spot, HOSPITALS, STATIONS } = __require(122)
-const { SITES } = __require(98)
+const { SITES } = __require(115)
 
 const POI_KINDS = {
   gas: { name: 'Gas station', color: '#f0a12a' },
@@ -79343,7 +79096,7 @@ __define(128, function (__exports) {
 // of joints (facing +x, up +y, hips at the root), each joint's parts merged into one mesh per
 // material, and posed by a walk cycle or by reaching its feet and hands for given points.
 const THREE = __require(0)
-const { merge } = __require(115)
+const { merge } = __require(111)
 const { creaseNormals } = __require(127)
 
 const WHITE = new THREE.MeshPhysicalMaterial({
@@ -80880,7 +80633,7 @@ __define(133, function (__exports) {
 // (traffic.peds), and it steps round a car stopped on the crossing as its owner does.
 const { kerbDist } = __require(44)
 const { ringOf } = __require(95)
-const { warm } = __require(111)
+const { warm } = __require(107)
 
 let WARM = false
 const DOGS = {
@@ -82433,7 +82186,7 @@ const { LINGER } = __require(136)
 const { SHELTER } = __require(137)
 const { FOOTFALL } = __require(138)
 const { PED_LIFE } = __require(142)
-const { warm } = __require(111)
+const { warm } = __require(107)
 const { CAR, clamp } = __require(2)
 const { rng, BLOCKS } = __require(35)
 const { LINES, ringOf, ringAt, walkOn, crossings, nearestOn, standBack } = __require(95)
@@ -83081,7 +82834,7 @@ const { keepIn } = __require(38)
 const { snap } = __require(37)
 const { hurt, landed, MIN_HIT } = __require(39)
 const { rectRect, rectPost, boxRect, impulse } = __require(40)
-const { loosen } = __require(103)
+const { loosen } = __require(98)
 
 const CRASH_AT = 11 // m/s closing speed: a crash, not a bump
 const KERB_LOSS = 0.2,
@@ -83256,7 +83009,7 @@ __define(146, function (__exports) {
 // ground as the ground lies: gp its nose up the slope, gr its right side down (the renderer:
 // carSlope.js), eased so a tread's step doesn't jolt it.
 const { G } = __require(2)
-const { groundHeight } = __require(102)
+const { groundHeight } = __require(97)
 
 const CLIMB = 0.6 // m above the body the ground is still under it (a ramp's tread is a step of 6 cm)
 const EASE = 10 // per s: how fast the body settles to the slope
@@ -84662,10 +84415,11 @@ const SPACE = {
   updateSpace (st) {
     const { n, R } = this
     const inside = st.inside,
+      indoor = !inside && st.indoor, // (in a room off the street: interiors/)
       d = inside ? 0 : st.carDist
-    R(this.cabin.frequency, inside ? 950 : 20000, 0.1)
-    this.through(this.cabinSw, inside || this.cabin.frequency.value < 19000)
-    R(this.outside.gain, inside ? 0.5 : 1, 0.1)
+    R(this.cabin.frequency, inside ? 950 : indoor ? 520 : 20000, 0.1)
+    this.through(this.cabinSw, inside || indoor || this.cabin.frequency.value < 19000)
+    R(this.outside.gain, inside ? 0.5 : indoor ? 0.28 : 1, 0.1)
     // the car's own sound a little forward at city speeds, as a game mixes it (a real car's
     // tyres and wind are some 20 dB quieter at 40 km/h than at 150), easing back by 100 km/h
     const v = Math.max(st.wheelSpeed, st.airspeed),
@@ -89020,8 +88774,8 @@ const THREE = __require(0)
 const { scene, softTex } = __require(82)
 const { TAU, clamp01 } = __require(2)
 const { PALMS, TREES } = __require(35)
-const { smoke, VAPOR, TYRE, DUST } = __require(113)
-const { emitSpray, WATER } = __require(114)
+const { smoke, VAPOR, TYRE, DUST } = __require(109)
+const { emitSpray, WATER } = __require(110)
 
 class Particles {
   // splash: whether it skips off the ground (sparks, leaves) or is gone when it gets there (jet cores)
@@ -89524,7 +89278,7 @@ __define(170, function (__exports) {
 const { HORNS, AIR_HORN } = __require(160)
 const { BROKE } = __require(39)
 const { burst, knockFx, sparkBurst, debrisBurst } = __require(169)
-const { hearing, panOf, dullness, placeOf } = __require(118)
+const { hearing, panOf, dullness, placeOf } = __require(117)
 
 const CONTACT = { x: 0, y: 0, z: 0 }
 function contactAt (x, y, z) {
@@ -89752,7 +89506,7 @@ __define(171, function (__exports) {
 // open sea west. A matching environment map for reflections, drawn again as the sky changes; and
 // the switch between the night test site and the city's light.
 const THREE = __require(0)
-const { LAYER } = __require(115)
+const { LAYER } = __require(111)
 const { rng } = __require(35)
 const { scene, pmrem, renderer, hemi, key, keyOffset } = __require(82)
 
@@ -92888,12 +92642,12 @@ __define(188, function (__exports) {
 // in the rain. The city's shadows are aimed again as the sun moves (a whole city's shadow map is
 // under a millisecond to draw), and the reflections' environment map drawn again as the sky
 // changes, each only when it has changed enough to see.
-const { OPTS, DRAW_FOG } = __require(63)
+const { OPTS, DRAW_FOG, motionFx } = __require(63)
 const THREE = __require(0)
 const { ENV } = __require(3)
 const { SKY } = __require(171)
 const { GRADE } = __require(183)
-const { WET } = __require(112)
+const { WET } = __require(108)
 const { WIND } = __require(187)
 const { scene, renderer, hemi, key, keyOffset } = __require(82)
 
@@ -93108,7 +92862,9 @@ class Daylight {
     SKY.uClouds.value = e.clouds
     SKY.uRain.value = rain
     SKY.uFog.value = fog
-    SKY.uFlash.value = e.flash
+    // (a lightning flash a third as bright with reduced motion: no full-screen strobe: options.js)
+    const flash = e.flash * (motionFx() ? 1 : 0.3)
+    SKY.uFlash.value = flash
     SKY.uTime.value = clock
     // (the clouds drift with the wind, and the palms and trees sway in it: treeWind.js)
     const drift = SKY.uDrift.value,
@@ -93160,9 +92916,9 @@ class Daylight {
     hemi.color.lerp(_grey.setRGB(0.78, 0.8, 0.84), o * 0.8)
     hk *= 1 + 0.55 * o * day
     hk *= 1 - 0.35 * rain * day
-    hk += e.flash * 2.4
+    hk += flash * 2.4
     hemi.intensity = hk
-    if (e.flash > 0) hemi.color.lerp(_c.setRGB(0.75, 0.8, 1), e.flash)
+    if (flash > 0) hemi.color.lerp(_c.setRGB(0.75, 0.8, 1), flash)
     set(hemi.groundColor, BOUNCE, a).multiplyScalar(1 - 0.35 * o * day)
     SKY.uAmb.value.copy(hemi.color).multiplyScalar(hk)
     // ---- the fog, the exposure, the reflections' strength
@@ -93421,7 +93177,7 @@ __define(190, function (__exports) {
 // at night the Ferris wheel's lights shimmering in it. Lifeguard towers stand along the beach, and a
 // groyne of rocks runs out into the sea at each end of it.
 const THREE = __require(0)
-const { LAYER, merge, box, tint } = __require(115)
+const { LAYER, merge, box, tint } = __require(111)
 const { canvasTex, speckle } = __require(82)
 const { SKY, SKY_GLSL } = __require(171)
 const { PROMENADE, rng } = __require(35)
@@ -93780,7 +93536,7 @@ __define(192, function (__exports) {
 // trees, the canvas textures of grass and concrete, and instancing split into chunks across the land,
 // so the camera and the shadow maps leave out the chunks they can't see.
 const THREE = __require(0)
-const { merge, tint } = __require(115)
+const { merge, tint } = __require(111)
 const { canvasTex, speckle } = __require(82)
 const { rng } = __require(35)
 
@@ -94080,7 +93836,7 @@ __define(193, function (__exports) {
 // are solid (sim/edge.js). The planting is merged a stretch at a time, so the car's shadow map draws
 // only the stretch it is beside.
 const THREE = __require(0)
-const { merge } = __require(115)
+const { merge } = __require(111)
 const { PROMENADE, rng } = __require(35)
 const { WALL, WALL_H } = __require(38)
 const { HILL_GAP } = __require(30)
@@ -94226,7 +93982,7 @@ __define(194, function (__exports) {
 // towers far off, palms standing over the roofs, all fading into the haze. At night the streets glow
 // sodium orange off to the horizon, street lights and windows twinkling along them.
 const THREE = __require(0)
-const { LAYER, merge, box, tint } = __require(115)
+const { LAYER, merge, box, tint } = __require(111)
 const { glowMaterial, glowPoints } = __require(191)
 const { SKY } = __require(171)
 const { palmsAt } = __require(192)
@@ -94500,7 +94256,7 @@ __define(195, function (__exports) {
 // it, the evening rush crawling out of town on one side and flowing in on the other, and at night
 // streams of white headlights and red tail lights, glowing over the barriers.
 const THREE = __require(0)
-const { merge, box, tint } = __require(115)
+const { merge, box, tint } = __require(111)
 const { canvasTex, speckle } = __require(82)
 const { glowMaterial } = __require(191)
 const { SKY } = __require(171)
@@ -94930,7 +94686,7 @@ __define(196, function (__exports) {
 // little out of true with its neighbours, held up from behind by a steel frame dug into the hill; lit
 // by floodlights at night. The letters are drawn here (no fonts): a tall, plain sans.
 const THREE = __require(0)
-const { merge, box, tint } = __require(115)
+const { merge, box, tint } = __require(111)
 const { glowMaterial, glowPoints } = __require(191)
 const { LANDMARKS } = __require(5)
 const { hillHeight } = __require(38)
@@ -95197,7 +94953,7 @@ __define(197, function (__exports) {
 // sim's own (sim/edge.js hillHeight), so a car flown into it is held up where it is drawn. At night
 // the houses' windows and the observatory are lit. (The sign is in citySign.js.)
 const THREE = __require(0)
-const { LAYER, merge, box, tint } = __require(115)
+const { LAYER, merge, box, tint } = __require(111)
 const { canvasTex, speckle } = __require(82)
 const { glowMaterial, glowPoints } = __require(191)
 const { PLANT, lump, scatter, pose } = __require(192)
@@ -95613,7 +95369,7 @@ __define(198, function (__exports) {
 // roller coaster looping round the park on its columns (sim/edge.js COASTER), a train running round it,
 // hauled slowly up the lift hill and racing down.
 const THREE = __require(0)
-const { merge, box, tint } = __require(115)
+const { merge, box, tint } = __require(111)
 const { glowMaterial, glowPoints } = __require(191)
 const { CURB_H } = __require(35)
 const { WHEEL, COASTER } = __require(38)
@@ -95891,7 +95647,7 @@ __define(199, function (__exports) {
 // kiosks along the way out and a restaurant at the end. You drive on it (sim/edge.js keeps you to it).
 // At night the lamps light the deck in pools, and the arch's name glows.
 const THREE = __require(0)
-const { merge, box, tint } = __require(115)
+const { merge, box, tint } = __require(111)
 const { canvasTex, speckle, softTex, hdr } = __require(82)
 const { glowMaterial, glowPoints } = __require(191)
 const { buildRides } = __require(198)
@@ -96623,8 +96379,8 @@ __define(204, function (__exports) {
 // cab, at the front). Only the cars within REACH m of the Roadster, so the far ones don't fill the
 // smoke's pool; what each car owes is kept on its damage.
 const { CURB_H } = __require(35)
-const { TYPES } = __require(111)
-const { smoke } = __require(113)
+const { TYPES } = __require(107)
+const { smoke } = __require(109)
 
 const STEAM = {
   col: [0.9, 0.91, 0.93],
@@ -98833,7 +98589,7 @@ __define(214, function (__exports) {
 // its type and a seed), the same pair read by all of a type's meshes, so a damaged car costs no
 // draw call more than a whole one, and a whole one skips it all.
 const THREE = __require(0)
-const { TYPES } = __require(111)
+const { TYPES } = __require(107)
 const { DENT_MAX } = __require(39)
 
 // each type's measurements for the shader: (half length, half width, height, the beltline at the
@@ -99202,7 +98958,7 @@ __define(215, function (__exports) {
 // chosen per instance (aRim) and sized to its tyre (carPaint.js RIMS), in its own finish (silver,
 // graphite or black). Radius 1 and width 1 along z, scaled per type.
 const THREE = __require(0)
-const { merge } = __require(115)
+const { merge } = __require(111)
 
 // tyre cross-section (radius, axial), revolved: bead, sidewall, shoulder, tread
 // prettier-ignore
@@ -99702,7 +99458,7 @@ const { slopeTo } = __require(202)
 const { ENV } = __require(3)
 const { CURB_H } = __require(35)
 const { clamp } = __require(2)
-const { TYPES } = __require(111)
+const { TYPES } = __require(107)
 const { ride, RIDE_DT } = __require(203)
 const { wreckSmoke } = __require(204)
 const { carShape, bodyMaterial } = __require(213)
@@ -103382,7 +103138,7 @@ __define(234, function (__exports) {
 const THREE = __require(0)
 const { hdr, softTex } = __require(82)
 const { Instances } = __require(226)
-const { merge, box, tint } = __require(115)
+const { merge, box, tint } = __require(111)
 const { Fallers, pose, instanced, one, subset } = __require(227)
 const { greenery } = __require(230)
 const { Wires, buildDecor } = __require(232)
@@ -104209,7 +103965,7 @@ __define(238, function (__exports) {
 // the rain (wet.js) it soaks dark and smooth and mirrors the street, puddles fill its dips and run
 // along its gutters, and the rain rings the water in them.
 const THREE = __require(0)
-const { WET, PUDDLE_GLSL } = __require(112)
+const { WET, PUDDLE_GLSL } = __require(108)
 const { N, HALF, STOP, PITCH, CURB_R, LANE_OFF, ROAD_HW } = __require(35)
 
 const GUTTER = 0.42 // m of concrete along the kerb
@@ -104370,10 +104126,10 @@ __define(239, function (__exports) {
 // and on each block's lot what the sim laid out (lots.js): its base (paving, a lawn or asphalt) and
 // over it lawns and planters, drives and forecourts, car parks with their spaces marked out.
 const THREE = __require(0)
-const { merge, marks, LAYER } = __require(115)
+const { merge, marks, LAYER } = __require(111)
 const { canvasTex, speckle } = __require(82)
 const { roadMaterial } = __require(238)
-const { wetGround } = __require(112)
+const { wetGround } = __require(108)
 const { lampLit } = __require(189)
 const { dotted, eachMarker } = __require(43)
 const { N, DIRS, WALK, STOP, HALF, ROADS, NODES, STALLS, CURB_H, CURB_R, BLOCKS, LANE_W, ROAD_HW, PROMENADE, PITCH, segOpen, BLVD_EW, BLVD_NS, MEDIAN_HW } = __require(35)
@@ -104765,7 +104521,7 @@ __define(240, function (__exports) {
 // is left at the city's corners); and the stars set in Hollywood Boulevard's pavements. Paint, iron
 // and terrazzo are flat instanced quads with alpha-cut textures.
 const THREE = __require(0)
-const { marks } = __require(115)
+const { marks } = __require(111)
 const { LANES, ROADS, ROAD_HW, CURB_H, BLOCKS, N, rng } = __require(35)
 const { MANHOLES, DRAINS, MANHOLE_R } = __require(44)
 
@@ -107876,7 +107632,7 @@ __define(250, function (__exports) {
 // pieces, the crown rings, what glows, the beacons (cityBuildings.js's, blinking) and the beam.
 const THREE = __require(0)
 const { Builder } = __require(231)
-const { ROOFTOPS, LANDMARKS_V2 } = __require(102)
+const { ROOFTOPS, LANDMARKS_V2 } = __require(97)
 const { BUILDINGS, ROADS } = __require(35)
 const { FLOOR, SHOP } = __require(249)
 
@@ -107892,22 +107648,14 @@ const PAL = {
   brick: [0xffffff, 0xf0c8b4, 0xd8cfc8, 0xfff0d6, 0xc9ae9c, 0xe4d2c8],
   'beach:stucco': [0xf6efe2, 0xf3d9c4, 0xdcebe3, 0xf4dfe0, 0xe8eef4, 0xf2e6c4],
   'strip:stucco': [0xf0d6b0, 0xe9b89a, 0xdcd2a4, 0xc9d6b8, 0xf2e1c8, 0xe4c2a6],
-  'boulevard:stucco': [
-    0xf4ead4,
-    0xd6eadf,
-    0xf2d0d6,
-    0xe0d6ee,
-    0xf6f2ea,
-    0xefd9b4
-  ],
+  'boulevard:stucco': [0xf4ead4, 0xd6eadf, 0xf2d0d6, 0xe0d6ee, 0xf6f2ea, 0xefd9b4],
   'suburb:stucco': [0xeee0c8, 0xe2c4a4, 0xd8d0b0, 0xf2e8d0, 0xd6c0b0, 0xe8dcc0],
   'downtown:glass': [0x8fb8d0, 0x7fa8b4, 0xb49a78, 0x9cc4bf, 0x8a96b0],
   'towers:glass': [0xa3b8c9, 0xc4ab88, 0x9aa8b8, 0xb8c4cc],
   'industrial:concrete': [0xd8d4cc, 0xc8c0b0, 0xb8bcc0, 0xd0c4b0]
 }
 function variedTint (b) {
-  const p =
-    PAL[`${b.area}:${b.style}`] || (b.style === 'brick' ? PAL.brick : null)
+  const p = PAL[`${b.area}:${b.style}`] || (b.style === 'brick' ? PAL.brick : null)
   if (!p || hash(b) < 0.3) return b.tint
   return p[Math.floor(hash(b, 1) * p.length)]
 }
@@ -107921,9 +107669,7 @@ const AWN = {
 function awningFor (b, grey) {
   const p = AWN[b.area]
   if (!p || hash(b, 2) < 0.25) return grey
-  return new THREE.Color(p[Math.floor(hash(b, 3) * p.length)]).multiplyScalar(
-    0.8
-  )
+  return new THREE.Color(p[Math.floor(hash(b, 3) * p.length)]).multiplyScalar(0.8)
 }
 
 const _m = new THREE.Matrix4(),
@@ -107932,8 +107678,7 @@ const _m = new THREE.Matrix4(),
   _s = new THREE.Vector3(1, 1, 1),
   _p = new THREE.Vector3()
 const C = hex => new THREE.Color(hex)
-const at = (x, y, z, rx = 0, ry = 0, rz = 0) =>
-  _m.compose(_p.set(x, y, z), _q.setFromEuler(_e.set(rx, ry, rz)), _s)
+const at = (x, y, z, rx = 0, ry = 0, rz = 0) => _m.compose(_p.set(x, y, z), _q.setFromEuler(_e.set(rx, ry, rz)), _s)
 const CYL = new THREE.CylinderGeometry(1, 1, 1, 12, 1),
   CONE = new THREE.ConeGeometry(1, 1, 12, 1),
   CONE8 = new THREE.ConeGeometry(1, 1, 8, 1),
@@ -107960,25 +107705,10 @@ function tank (B, r) {
   const x = (r.x0 + r.x1) / 2,
     z = (r.z0 + r.z1) / 2,
     y = r.y
-  for (const [dx, dz] of [
-    [-1, -1],
-    [1, -1],
-    [1, 1],
-    [-1, 1]
-  ])
-    B.cuboid(
-      x + dx * 1.3 - 0.12,
-      x + dx * 1.3 + 0.12,
-      z + dz * 1.3 - 0.12,
-      z + dz * 1.3 + 0.12,
-      y,
-      y + 3.4,
-      STEEL
-    )
+  for (const [dx, dz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) B.cuboid(x + dx * 1.3 - 0.12, x + dx * 1.3 + 0.12, z + dz * 1.3 - 0.12, z + dz * 1.3 + 0.12, y, y + 3.4, STEEL)
   B.cuboid(x - 1.9, x + 1.9, z - 1.9, z + 1.9, y + 3.2, y + 3.4, DARK)
   put(B, CYL, WOOD, x, y + 5.2, z, r.r, 3.6, r.r)
-  for (const h of [4, 5.2, 6.4])
-    put(B, CYL, DARK, x, y + h, z, r.r + 0.04, 0.12, r.r + 0.04)
+  for (const h of [4, 5.2, 6.4]) put(B, CYL, DARK, x, y + h, z, r.r + 0.04, 0.12, r.r + 0.04)
   put(B, CONE, DARK, x, y + 7.7, z, r.r + 0.2, 1.4, r.r + 0.2)
 }
 function terrace (B, r) {
@@ -107987,11 +107717,8 @@ function terrace (B, r) {
   // the pergola along the north side, its slats
   const p0 = x0 + 0.4,
     p1 = x1 - 0.4
-  for (const x of [p0, p1])
-    for (const z of [z0 + 0.4, z0 + 2.6])
-      B.cuboid(x - 0.1, x + 0.1, z - 0.1, z + 0.1, y, y + 2.6, WHITE)
-  for (let x = p0; x <= p1; x += 0.6)
-    B.cuboid(x - 0.05, x + 0.05, z0 + 0.3, z0 + 2.7, y + 2.6, y + 2.7, WHITE)
+  for (const x of [p0, p1]) for (const z of [z0 + 0.4, z0 + 2.6]) B.cuboid(x - 0.1, x + 0.1, z - 0.1, z + 0.1, y, y + 2.6, WHITE)
+  for (let x = p0; x <= p1; x += 0.6) B.cuboid(x - 0.05, x + 0.05, z0 + 0.3, z0 + 2.7, y + 2.6, y + 2.7, WHITE)
   // umbrellas and loungers out in the open
   const hues = [0xd94f3a, 0x2a8ab8, 0xf2c14e, 0x3d9a6a]
   const n = Math.max(1, Math.floor((x1 - x0) / 4))
@@ -108000,37 +107727,13 @@ function terrace (B, r) {
       z = (z0 + 2.7 + z1) / 2 + 0.6
     if (x > x1 - 1.5) break
     B.cuboid(x - 0.04, x + 0.04, z - 0.04, z + 0.04, y, y + 2.2, STEEL)
-    put(
-      B,
-      CONE8,
-      C(hues[Math.floor(r.hue * 4 + i) % 4]),
-      x,
-      y + 2.35,
-      z,
-      1.3,
-      0.5,
-      1.3
-    )
+    put(B, CONE8, C(hues[Math.floor(r.hue * 4 + i) % 4]), x, y + 2.35, z, 1.3, 0.5, 1.3)
     B.cuboid(x + 0.6, x + 1.2, z - 0.9, z + 0.9, y + 0.12, y + 0.42, WHITE)
   }
 }
 function solar (B, r) {
   const { x0, x1, z0, z1, y } = r
-  for (let z = z0 + 0.2; z + 1.4 <= z1; z += 1.9)
-    put(
-      B,
-      BOX,
-      PANEL,
-      (x0 + x1) / 2,
-      y + 0.38,
-      z + 0.7,
-      x1 - x0 - 0.2,
-      0.06,
-      1.4,
-      -0.32,
-      0,
-      0
-    )
+  for (let z = z0 + 0.2; z + 1.4 <= z1; z += 1.9) put(B, BOX, PANEL, (x0 + x1) / 2, y + 0.38, z + 0.7, x1 - x0 - 0.2, 0.06, 1.4, -0.32, 0, 0)
   B.cuboid(x0, x1, z0, z1, y, y + 0.12, STEEL)
 }
 function saw (B, r) {
@@ -108039,50 +107742,16 @@ function saw (B, r) {
     // a slope up over 4.6 m to the glazing standing at the high side
     const [lo, hi] = r.flip ? [z + 4.6, z] : [z, z + 4.6]
     const n = r.flip ? [0, 0.97, -0.26] : [0, 0.97, 0.26]
-    B.quad(
-      [x0, y, lo],
-      [x1, y, lo],
-      [x1, y + 1.2, hi],
-      [x0, y + 1.2, hi],
-      n,
-      [0, 0, 1, 1],
-      SAW
-    )
-    B.quad(
-      [x1, y, hi],
-      [x0, y, hi],
-      [x0, y + 1.2, hi],
-      [x1, y + 1.2, hi],
-      [0, 0, r.flip ? -1 : 1],
-      [0, 0, 1, 1],
-      GLAZE
-    )
-    B.quad(
-      [x0, y + 1.2, hi],
-      [x1, y + 1.2, hi],
-      [x1, y, hi],
-      [x0, y, hi],
-      [0, 0, r.flip ? 1 : -1],
-      [0, 0, 1, 1],
-      GLAZE
-    )
-    for (const x of [x0, x1])
-      B.tri(
-        [x, y, lo],
-        [x, y, hi],
-        [x, y + 1.2, hi],
-        [x === x0 ? -1 : 1, 0, 0],
-        [0, 0, 1, 0, 1, 1],
-        SAW
-      )
+    B.quad([x0, y, lo], [x1, y, lo], [x1, y + 1.2, hi], [x0, y + 1.2, hi], n, [0, 0, 1, 1], SAW)
+    B.quad([x1, y, hi], [x0, y, hi], [x0, y + 1.2, hi], [x1, y + 1.2, hi], [0, 0, r.flip ? -1 : 1], [0, 0, 1, 1], GLAZE)
+    B.quad([x0, y + 1.2, hi], [x1, y + 1.2, hi], [x1, y, hi], [x0, y, hi], [0, 0, r.flip ? 1 : -1], [0, 0, 1, 1], GLAZE)
+    for (const x of [x0, x1]) B.tri([x, y, lo], [x, y, hi], [x, y + 1.2, hi], [x === x0 ? -1 : 1, 0, 0], [0, 0, 1, 0, 1, 1], SAW)
   }
 }
 function garden (B, r) {
   const { x0, x1, z0, z1, y } = r
   B.cuboid(x0, x1, z0, z1, y, y + 0.35, GREEN)
-  for (let x = x0 + 1; x < x1 - 0.5; x += 2.6)
-    for (let z = z0 + 1; z < z1 - 0.5; z += 2.6)
-      put(B, BUSH, C(0x3f6a2f), x, y + 0.8, z, 0.7, 0.6, 0.7)
+  for (let x = x0 + 1; x < x1 - 0.5; x += 2.6) for (let z = z0 + 1; z < z1 - 0.5; z += 2.6) put(B, BUSH, C(0x3f6a2f), x, y + 0.8, z, 0.7, 0.6, 0.7)
 }
 
 // ---------- balconies ----------
@@ -108092,13 +107761,7 @@ const HOMES = new Set(['beach', 'strip', 'boulevard', 'venice', 'suburb'])
 function balconies (B) {
   let n = 0
   for (const b of BUILDINGS) {
-    if (
-      !HOMES.has(b.area) ||
-      b.style !== 'stucco' ||
-      b.form === 'shaft' ||
-      b.tiers.length !== 1
-    )
-      continue
+    if (!HOMES.has(b.area) || b.style !== 'stucco' || b.form === 'shaft' || b.tiers.length !== 1) continue
     if (b.h < 6.5 || b.h > 30 || hash(b, 4) < 0.5) continue
     const t = b.tiers[0]
     // the wall nearest a street: 0 north, 1 east, 2 south, 3 west
@@ -108117,24 +107780,8 @@ function balconies (B) {
       for (let a = a0 + 1.6; a + 2.4 < a1 - 1; a += 6) {
         const box = (u0, u1, o0, o1, h0, h1, c) =>
           along
-            ? B.cuboid(
-                u0,
-                u1,
-                Math.min(face + out * o0, face + out * o1),
-                Math.max(face + out * o0, face + out * o1),
-                h0,
-                h1,
-                c
-              )
-            : B.cuboid(
-                Math.min(face + out * o0, face + out * o1),
-                Math.max(face + out * o0, face + out * o1),
-                u0,
-                u1,
-                h0,
-                h1,
-                c
-              )
+            ? B.cuboid(u0, u1, Math.min(face + out * o0, face + out * o1), Math.max(face + out * o0, face + out * o1), h0, h1, c)
+            : B.cuboid(Math.min(face + out * o0, face + out * o1), Math.max(face + out * o0, face + out * o1), u0, u1, h0, h1, c)
         box(a, a + 2.4, 0, 1.1, y - 0.15, y, slab)
         box(a, a + 2.4, 1.04, 1.1, y, y + 1, rail)
         n++
@@ -108149,54 +107796,14 @@ function crown (B, rings, beacons, crowns) {
   if (!L) return
   const white = new THREE.Color(1, 1, 1)
   for (const s of L.steps) {
-    crowns.walls(s.x0, s.x1, s.z0, s.z1, s.y0, s.y1 - 0.6, white, w => [
-      0,
-      0,
-      w / 6,
-      (s.y1 - s.y0) / 7
-    ])
-    B.cuboid(
-      s.x0 - 0.2,
-      s.x1 + 0.2,
-      s.z0 - 0.2,
-      s.z1 + 0.2,
-      s.y1 - 0.6,
-      s.y1,
-      STEEL
-    )
-    // (a broad band most of the way up each step, to read from across the city)
-    rings.band(s.x0, s.x1, s.z0, s.z1, 0.45, s.y0 + 1.2, s.y1 - 0.6, white)
+    crowns.walls(s.x0, s.x1, s.z0, s.z1, s.y0, s.y1 - 0.6, white, w => [0, 0, w / 6, (s.y1 - s.y0) / 7])
+    B.cuboid(s.x0 - 0.2, s.x1 + 0.2, s.z0 - 0.2, s.z1 + 0.2, s.y1 - 0.6, s.y1, STEEL)
+    rings.band(s.x0, s.x1, s.z0, s.z1, 0.35, s.y1 - 0.9, s.y1 - 0.6, white)
   }
-  // and light fins up the top step's corners
-  const t = L.steps[L.steps.length - 1]
-  for (const [x, z] of [
-    [t.x0, t.z0],
-    [t.x1, t.z0],
-    [t.x1, t.z1],
-    [t.x0, t.z1]
-  ])
-    rings.cuboid(x - 0.5, x + 0.5, z - 0.5, z + 0.5, t.y0, t.y1 - 0.6, white)
   const p = L.spire
   put(B, CONE, STEEL, p.x, p.y + p.h / 2, p.z, 0.9, p.h, 0.9)
-  for (let k = 1; k <= 3; k++)
-    rings.cuboid(
-      p.x - 1.2 + k * 0.2,
-      p.x + 1.2 - k * 0.2,
-      p.z - 1.2 + k * 0.2,
-      p.z + 1.2 - k * 0.2,
-      p.y + k * 7,
-      p.y + k * 7 + 0.4,
-      white
-    )
-  beacons.cuboid(
-    p.x - 0.4,
-    p.x + 0.4,
-    p.z - 0.4,
-    p.z + 0.4,
-    p.y + p.h,
-    p.y + p.h + 0.8,
-    white
-  )
+  for (let k = 1; k <= 3; k++) rings.cuboid(p.x - 1.2 + k * 0.2, p.x + 1.2 - k * 0.2, p.z - 1.2 + k * 0.2, p.z + 1.2 - k * 0.2, p.y + k * 7, p.y + k * 7 + 0.4, white)
+  beacons.cuboid(p.x - 0.4, p.x + 0.4, p.z - 0.4, p.z + 0.4, p.y + p.h, p.y + p.h + 0.8, white)
 }
 function masts (B, beacons) {
   const RED = C(0xc0302a)
@@ -108207,33 +107814,11 @@ function masts (B, beacons) {
         y0 = y + k * 10,
         y1 = Math.min(y + h, y0 + 10)
       const r = 1.3 * (1 - (k * 10) / h) + 0.35
-      for (const [dx, dz] of [
-        [1, 0],
-        [-0.5, 0.87],
-        [-0.5, -0.87]
-      ])
-        B.cuboid(
-          x + dx * r - 0.1,
-          x + dx * r + 0.1,
-          z + dz * r - 0.1,
-          z + dz * r + 0.1,
-          y0,
-          y1,
-          c
-        )
+      for (const [dx, dz] of [[1, 0], [-0.5, 0.87], [-0.5, -0.87]]) B.cuboid(x + dx * r - 0.1, x + dx * r + 0.1, z + dz * r - 0.1, z + dz * r + 0.1, y0, y1, c)
       B.cuboid(x - r, x + r, z - r, z + r, y1 - 0.2, y1, c)
     }
-    for (let yy = y + 30; yy < y + h; yy += 30)
-      beacons.cuboid(x - 0.5, x + 0.5, z - 0.5, z + 0.5, yy, yy + 0.8, WHITE)
-    beacons.cuboid(
-      x - 0.7,
-      x + 0.7,
-      z - 0.7,
-      z + 0.7,
-      y + h,
-      y + h + 1.2,
-      WHITE
-    )
+    for (let yy = y + 30; yy < y + h; yy += 30) beacons.cuboid(x - 0.5, x + 0.5, z - 0.5, z + 0.5, yy, yy + 0.8, WHITE)
+    beacons.cuboid(x - 0.7, x + 0.7, z - 0.7, z + 0.7, y + h, y + h + 1.2, WHITE)
   }
 }
 function lighthouse (B, glow) {
@@ -108241,36 +107826,12 @@ function lighthouse (B, glow) {
   if (!L) return
   const { x, z, y, h } = L
   const RED = C(0xb02a26)
-  B.add(
-    new THREE.CylinderGeometry(1.9, 2.6, h * 0.5, 16),
-    at(x, y + h * 0.25, z),
-    WHITE
-  )
-  B.add(
-    new THREE.CylinderGeometry(1.5, 1.9, h * 0.25, 16),
-    at(x, y + h * 0.625, z),
-    RED
-  )
-  B.add(
-    new THREE.CylinderGeometry(1.3, 1.5, h * 0.17, 16),
-    at(x, y + h * 0.835, z),
-    WHITE
-  )
-  B.add(
-    new THREE.CylinderGeometry(2.2, 2.2, 0.3, 16),
-    at(x, y + h * 0.92, z),
-    DARK
-  )
-  glow.add(
-    new THREE.CylinderGeometry(1.1, 1.1, 2, 12),
-    at(x, y + h * 0.92 + 1.15, z),
-    C(0xfff2c8)
-  )
-  B.add(
-    new THREE.ConeGeometry(1.5, 1.6, 12),
-    at(x, y + h * 0.92 + 2.95, z),
-    RED
-  )
+  B.add(new THREE.CylinderGeometry(1.9, 2.6, h * 0.5, 16), at(x, y + h * 0.25, z), WHITE)
+  B.add(new THREE.CylinderGeometry(1.5, 1.9, h * 0.25, 16), at(x, y + h * 0.625, z), RED)
+  B.add(new THREE.CylinderGeometry(1.3, 1.5, h * 0.17, 16), at(x, y + h * 0.835, z), WHITE)
+  B.add(new THREE.CylinderGeometry(2.2, 2.2, 0.3, 16), at(x, y + h * 0.92, z), DARK)
+  glow.add(new THREE.CylinderGeometry(1.1, 1.1, 2, 12), at(x, y + h * 0.92 + 1.15, z), C(0xfff2c8))
+  B.add(new THREE.ConeGeometry(1.5, 1.6, 12), at(x, y + h * 0.92 + 2.95, z), RED)
 }
 
 function buildVariety (group, { beacons, crowns }) {
@@ -108283,24 +107844,15 @@ function buildVariety (group, { beacons, crowns }) {
   crown(B, rings, beacons, crowns)
   masts(B, beacons)
   lighthouse(B, glow)
-  const lit = new THREE.Mesh(
-    B.geometry(),
-    new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.8 })
-  )
+  const lit = new THREE.Mesh(B.geometry(), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.8 }))
   lit.castShadow = lit.receiveShadow = true
   lit.name = 'variety'
   group.add(lit)
-  const ringMat = new THREE.MeshBasicMaterial({
-    vertexColors: true,
-    color: new THREE.Color(1, 1, 1)
-  })
+  const ringMat = new THREE.MeshBasicMaterial({ vertexColors: true, color: new THREE.Color(1, 1, 1) })
   const rm = new THREE.Mesh(rings.geometry(), ringMat)
   rm.name = 'crown rings'
   group.add(rm)
-  const glowMat = new THREE.MeshBasicMaterial({
-    vertexColors: true,
-    color: new THREE.Color(1, 1, 1)
-  })
+  const glowMat = new THREE.MeshBasicMaterial({ vertexColors: true, color: new THREE.Color(1, 1, 1) })
   const gm = new THREE.Mesh(glow.geometry(), glowMat)
   group.add(gm)
   // the lighthouse's beam: two long fading blades crossed, turning round the lantern
@@ -108316,14 +107868,7 @@ function buildVariety (group, { beacons, crowns }) {
   const blade = beamGeo.clone().rotateX(Math.PI / 2)
   const beam = new THREE.Mesh(
     new THREE.BufferGeometry().copy(beamGeo),
-    new THREE.MeshBasicMaterial({
-      vertexColors: true,
-      transparent: true,
-      opacity: 0.35,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending,
-      side: THREE.DoubleSide
-    })
+    new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.35, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide })
   )
   beam.add(new THREE.Mesh(blade, beam.material))
   beam.position.set(L.x, L.y + L.h * 0.92 + 1.15, L.z)
@@ -108342,12 +107887,8 @@ function buildVariety (group, { beacons, crowns }) {
     update (dt) {
       t += dt
       // the crown's rings: a soft white by day, slowly round the colours after dark
-      // (fully saturated and not so bright that the tone mapping washes it out to white)
-      hue.setHSL((t * 0.02) % 1, 1, 0.5)
-      ringMat.color
-        .setRGB(1, 1, 1)
-        .lerp(hue, dark)
-        .multiplyScalar(0.9 + 0.9 * dark)
+      hue.setHSL((t * 0.02) % 1, 0.85, 0.55)
+      ringMat.color.setRGB(1, 1, 1).lerp(hue, dark).multiplyScalar(0.9 + 2.6 * dark)
       if (beam.visible) beam.rotation.y = -t * 0.9
     }
   }
@@ -108759,1016 +108300,8 @@ const beacon = (beacons, x, y, z, r) =>
 __export(__exports, { "BEACON": () => BEACON, "buildBuildings": () => buildBuildings })
 })
 
-// ---- js/render/cityExtras.js
-__define(252, function (__exports) {
-// What there is to find off the streets, drawn (sim/extras.js lays it out): the alleys' dumpsters,
-// bins, crates and trash bags, the lamps over their back doors, their fire escapes and the lights
-// strung across them; the street furniture (newspaper boxes, parking meters, mailboxes); the
-// lookout's and the promenade's benches and coin telescopes. Merged by where it stands, in a grid
-// of 576 m squares (each streamed out with the fog, chunks.js, as the districts' meshes), lit
-// pieces in one mesh a square and what glows in one mesh for the city.
-const THREE = __require(0)
-const { Builder } = __require(231)
-const { EXTRAS } = __require(102)
-
-const C = hex => new THREE.Color(hex)
-const _m = new THREE.Matrix4(),
-  _q = new THREE.Quaternion(),
-  _e = new THREE.Euler(),
-  _s = new THREE.Vector3(1, 1, 1),
-  _p = new THREE.Vector3()
-const at = (x, y, z, ry = 0, sx = 1, sy = 1, sz = 1, rx = 0, rz = 0) =>
-  _m.compose(
-    _p.set(x, y, z),
-    _q.setFromEuler(_e.set(rx, ry, rz, 'YXZ')),
-    _s.set(sx, sy, sz)
-  )
-const BOX = new THREE.BoxGeometry(1, 1, 1),
-  CYL = new THREE.CylinderGeometry(1, 1, 1, 10, 1),
-  BAG = new THREE.IcosahedronGeometry(1, 0)
-// a box of w (along the yaw's x), h, d centred at (x, y0 + h / 2, z), turned by yaw
-const boxAt = (B, x, y0, z, w, h, d, yaw, col) =>
-  B.add(BOX, at(x, y0 + h / 2, z, yaw, w, h, d), col)
-
-const STEEL = C(0x4a4e54),
-  DARK = C(0x23262b),
-  WOOD = C(0x9a7448),
-  GREY = C(0x8c9096),
-  BLUE = C(0x1f4f9a),
-  BAGS = C(0x15171a)
-const SKIP = [0x2f6b3a, 0x2a4f8a, 0x6b4a2a, 0x3a5a5a].map(C)
-const IRON = C(0x1c1e21),
-  LIT = C(0x7a6444) // (a lit room behind, not a lamp: dim in the glow mesh)
-const NEWS = [0xc8302a, 0x2a5aa8, 0xe8c02a, 0x3a8a4a, 0xe8e4da].map(C)
-
-function dumpster (B, e) {
-  const c = SKIP[e.tint % 4]
-  B.cuboid(
-    e.x - e.w / 2,
-    e.x + e.w / 2,
-    e.z - e.d / 2,
-    e.z + e.d / 2,
-    0.12,
-    e.h - 0.08,
-    c
-  )
-  B.cuboid(
-    e.x - e.w / 2 - 0.05,
-    e.x + e.w / 2 + 0.05,
-    e.z - e.d / 2 - 0.05,
-    e.z + e.d / 2 + 0.05,
-    e.h - 0.08,
-    e.h,
-    DARK
-  )
-  for (const sx of [-1, 1])
-    for (const sz of [-1, 1])
-      boxAt(
-        B,
-        e.x + sx * (e.w / 2 - 0.15),
-        0,
-        e.z + sz * (e.d / 2 - 0.15),
-        0.12,
-        0.14,
-        0.12,
-        0,
-        DARK
-      )
-}
-function bin (B, e) {
-  B.cuboid(
-    e.x - e.w / 2 + 0.03,
-    e.x + e.w / 2 - 0.03,
-    e.z - e.d / 2 + 0.03,
-    e.z + e.d / 2 - 0.03,
-    0,
-    e.h - 0.06,
-    SKIP[e.tint % 4]
-  )
-  B.cuboid(
-    e.x - e.w / 2,
-    e.x + e.w / 2,
-    e.z - e.d / 2,
-    e.z + e.d / 2,
-    e.h - 0.06,
-    e.h,
-    DARK
-  )
-}
-function crate (B, e) {
-  const n = e.h > 1 ? 2 : 1
-  for (let k = 0; k < n; k++) {
-    const y = k * 0.9,
-      s = k ? 0.85 : 1
-    B.cuboid(
-      e.x - (e.w * s) / 2,
-      e.x + (e.w * s) / 2,
-      e.z - (e.d * s) / 2,
-      e.z + (e.d * s) / 2,
-      y,
-      y + 0.9,
-      k ? C(0xb08a5a) : WOOD
-    )
-  }
-}
-function bags (B, e) {
-  for (let k = 0; k < e.n; k++) {
-    const a = (e.seed * 7 + k * 2.1) % (Math.PI * 2),
-      r = 0.25 + ((e.seed * 13 + k) % 1) * 0.2
-    B.add(
-      BAG,
-      at(
-        e.x + Math.cos(a) * r,
-        0.24,
-        e.z + Math.sin(a) * r,
-        a,
-        0.32,
-        0.26,
-        0.3
-      ),
-      BAGS
-    )
-  }
-}
-function lamp (B, G, e) {
-  // (a bracket out from the wall and its lamp, glowing)
-  const ox = e.along ? e.side * 0.25 : 0,
-    oz = e.along ? 0 : e.side * 0.25
-  boxAt(
-    B,
-    e.x + ox / 2,
-    e.y + 0.2,
-    e.z + oz / 2,
-    e.along ? 0.5 : 0.08,
-    0.08,
-    e.along ? 0.08 : 0.5,
-    0,
-    DARK
-  )
-  boxAt(B, e.x + ox, e.y, e.z + oz, 0.32, 0.18, 0.32, 0, DARK)
-  boxAt(G, e.x + ox, e.y - 0.06, e.z + oz, 0.24, 0.08, 0.24, 0, C(0xffc878))
-  // and the back door under it
-  boxAt(
-    B,
-    e.x + ox * 0.12,
-    0,
-    e.z + oz * 0.12,
-    e.along ? 0.06 : 1.1,
-    2.2,
-    e.along ? 1.1 : 0.06,
-    0,
-    C(0x5a3a2a)
-  )
-}
-function escape (B, G, e) {
-  const L = e.len,
-    D = e.deep * e.sgn
-  // the landings (as the colliders), their railings, and a flight of steps between each pair
-  const box = (u0, u1, v0, v1, y0, y1, col, T = B) =>
-    e.along
-      ? T.cuboid(
-          Math.min(e.x + v0, e.x + v1),
-          Math.max(e.x + v0, e.x + v1),
-          e.z + u0,
-          e.z + u1,
-          y0,
-          y1,
-          col
-        )
-      : T.cuboid(
-          e.x + u0,
-          e.x + u1,
-          Math.min(e.z + v0, e.z + v1),
-          Math.max(e.z + v0, e.z + v1),
-          y0,
-          y1,
-          col
-        )
-  e.levels.forEach((y, i) => {
-    box(0, L, 0, D, y - 0.12, y, STEEL)
-    // the railing: top and middle rails, and bars down to the landing, open to see through
-    const s = e.sgn
-    for (const r of [0.5, 1.0]) {
-      box(0, L, D - 0.05 * s, D, y + r - 0.05, y + r, IRON)
-      box(0, 0.05, 0, D, y + r - 0.05, y + r, IRON)
-      box(L - 0.05, L, 0, D, y + r - 0.05, y + r, IRON)
-    }
-    for (let u = 0; u <= L + 0.01; u += 0.45)
-      box(u, u + 0.04, D - 0.04 * s, D, y, y + 1.0, IRON)
-    // its brackets under it, back to the wall
-    for (const u of [0.1, L - 0.1])
-      box(u - 0.04, u + 0.04, 0, D, y - 0.5, y - 0.12, IRON)
-    // the window it serves, lit at night (a hand's width out from the wall)
-    box(L * 0.55, L * 0.55 + 1.1, 0, 0.06 * s, y + 0.2, y + 1.7, C(0x2a2622))
-    box(
-      L * 0.55 + 0.1,
-      L * 0.55 + 1.0,
-      0.06 * s,
-      0.08 * s,
-      y + 0.3,
-      y + 1.6,
-      LIT,
-      G
-    )
-    const next = e.levels[i + 1]
-    if (next !== undefined) {
-      // the steps: a slab sloping up along it
-      const h = next - y,
-        run = L - 1,
-        slope = Math.atan2(h, run),
-        len = Math.hypot(h, run)
-      const u = (i % 2 ? 0.5 : 0.5) + run / 2,
-        v = D / 2
-      const cx = e.along ? e.x + v : e.x + u,
-        cz = e.along ? e.z + u : e.z + v
-      const sgn = i % 2 ? -1 : 1
-      if (e.along)
-        B.add(
-          BOX,
-          at(
-            cx,
-            y + h / 2,
-            cz,
-            0,
-            Math.abs(D) * 0.7,
-            0.08,
-            len,
-            sgn * slope,
-            0
-          ),
-          STEEL
-        )
-      else
-        B.add(
-          BOX,
-          at(
-            cx,
-            y + h / 2,
-            cz,
-            0,
-            len,
-            0.08,
-            Math.abs(D) * 0.7,
-            0,
-            sgn * slope
-          ),
-          STEEL
-        )
-    }
-  })
-  // the drop ladder from the first landing, hanging to head height off the ground
-  const y0 = e.levels[0],
-    u = L - 0.75
-  for (const w of [0, 0.45])
-    box(u + w, u + w + 0.05, D * 0.45, D * 0.45 + 0.05 * e.sgn, 1.6, y0, IRON)
-  for (let y = 1.8; y < y0; y += 0.32)
-    box(u, u + 0.5, D * 0.45, D * 0.45 + 0.04 * e.sgn, y, y + 0.04, IRON)
-}
-function string (B, G, e) {
-  const n = 7
-  for (let k = 0; k <= n; k++) {
-    const t = k / n,
-      sag = Math.sin(t * Math.PI) * 0.5
-    boxAt(
-      G,
-      e.ax + (e.bx - e.ax) * t,
-      e.y - sag - 0.06,
-      e.az + (e.bz - e.az) * t,
-      0.1,
-      0.12,
-      0.1,
-      0,
-      C(k % 2 ? 0xffd27a : 0xfff0d0)
-    )
-  }
-  const len = Math.hypot(e.bx - e.ax, e.bz - e.az)
-  B.add(
-    BOX,
-    at(
-      (e.ax + e.bx) / 2,
-      e.y - 0.25,
-      (e.az + e.bz) / 2,
-      Math.atan2(-(e.bz - e.az), e.bx - e.ax),
-      len,
-      0.02,
-      0.02
-    ),
-    DARK
-  )
-}
-function news (B, e) {
-  boxAt(B, e.x, 0, e.z, 0.5, 0.95, 0.46, e.yaw, NEWS[e.tint % 5])
-  boxAt(B, e.x, 0.95, e.z, 0.54, 0.08, 0.5, e.yaw, DARK)
-  // (the window on its front, towards the road)
-  const fx = Math.cos(e.yaw) * 0.235,
-    fz = -Math.sin(e.yaw) * 0.235
-  boxAt(
-    B,
-    e.x + fx,
-    0.5,
-    e.z + fz,
-    0.4,
-    0.3,
-    0.02,
-    e.yaw + Math.PI / 2,
-    C(0xd8dcd8)
-  )
-}
-function meter (B, e) {
-  B.add(CYL, at(e.x, 0.55, e.z, 0, 0.045, 1.1, 0.045), GREY)
-  boxAt(B, e.x, 1.08, e.z, 0.2, 0.3, 0.14, e.yaw, DARK)
-  boxAt(B, e.x, 1.17, e.z, 0.22, 0.06, 0.16, e.yaw, C(0xc8a02a))
-}
-function mailbox (B, e) {
-  boxAt(B, e.x, 0.15, e.z, 0.52, 0.85, 0.52, e.yaw, BLUE)
-  B.add(CYL, at(e.x, 1.0, e.z, e.yaw, 0.26, 0.52, 0.26, Math.PI / 2), BLUE)
-  for (const s of [-1, 1])
-    boxAt(B, e.x + s * 0.22, 0, e.z + s * 0.22, 0.06, 0.15, 0.06, e.yaw, DARK)
-}
-function scope (B, e) {
-  B.add(CYL, at(e.x, e.y + 0.55, e.z, 0, 0.08, 1.1, 0.08), C(0x2f4a3a))
-  boxAt(B, e.x, e.y + 1.05, e.z, 0.34, 0.26, 0.26, e.yaw, C(0x2f4a3a))
-  const fx = Math.cos(e.yaw),
-    fz = -Math.sin(e.yaw)
-  for (const s of [-0.08, 0.08])
-    B.add(
-      CYL,
-      at(
-        e.x + fx * 0.25 - fz * s,
-        e.y + 1.12,
-        e.z + fz * 0.25 + fx * s,
-        e.yaw,
-        0.06,
-        0.3,
-        0.06,
-        0,
-        Math.PI / 2
-      ),
-      DARK
-    )
-}
-function bench (B, e) {
-  // (the seat along the yaw's z: sat facing the yaw)
-  const fx = Math.cos(e.yaw),
-    fz = -Math.sin(e.yaw)
-  boxAt(B, e.x, e.y + 0.4, e.z, 0.5, 0.06, 1.8, e.yaw, WOOD)
-  boxAt(
-    B,
-    e.x - fx * 0.24,
-    e.y + 0.46,
-    e.z - fz * 0.24,
-    0.06,
-    0.45,
-    1.8,
-    e.yaw,
-    WOOD
-  )
-  for (const s of [-0.75, 0.75])
-    boxAt(B, e.x + fz * s, e.y, e.z - fx * s, 0.45, 0.4, 0.06, e.yaw, DARK)
-}
-
-const CELL = 576
-function buildExtras (group) {
-  const cells = new Map(),
-    G = new Builder()
-  const cellOf = e => {
-    const k = `${Math.floor((e.x ?? e.ax) / CELL)},${Math.floor(
-      (e.z ?? e.az) / CELL
-    )}`
-    if (!cells.has(k)) cells.set(k, new Builder())
-    return cells.get(k)
-  }
-  const ONE = {
-    dumpster,
-    bin,
-    crate,
-    bags,
-    escape,
-    news,
-    meter,
-    mailbox,
-    scope,
-    bench
-  }
-  for (const e of EXTRAS) {
-    const B = cellOf(e)
-    if (e.kind === 'lamp') lamp(B, G, e)
-    else if (e.kind === 'string') string(B, G, e)
-    else if (e.kind === 'escape') escape(B, G, e)
-    else ONE[e.kind]?.(B, e)
-  }
-  const mat = new THREE.MeshStandardMaterial({
-    vertexColors: true,
-    roughness: 0.75,
-    metalness: 0.15
-  })
-  for (const B of cells.values()) {
-    const m = new THREE.Mesh(B.geometry(), mat)
-    m.castShadow = m.receiveShadow = true
-    m.name = 'extras'
-    group.add(m)
-  }
-  const glowMat = new THREE.MeshBasicMaterial({
-    vertexColors: true,
-    color: new THREE.Color(1, 1, 1)
-  })
-  const gm = new THREE.Mesh(G.geometry(), glowMat)
-  gm.name = 'extras glow'
-  group.add(gm)
-  return {
-    night (k) {
-      glowMat.color.setScalar(0.5 + 2.6 * k)
-    }
-  }
-}
-__export(__exports, { "buildExtras": () => buildExtras })
-})
-
-// ---- js/sim/tokens.js
-__define(253, function (__exports) {
-// Thirty hidden tokens to find round the city, GTA's hidden packages: at the far end of alleys, on
-// the multi-storey car parks' roofs and a few low roofs (the Roadster flies), in the parks, out on
-// the pier and the sand by it, by the lighthouse, the masts, the observatory and the lookout, under the
-// freeway, in the hill road's tunnel, and one in each of the interiors. Picked on their own random
-// numbers (rng 20261023) from what is already laid out, so nothing else moves. Pure: where they
-// are, which have been found, and the step that finds them (render/interiors/glue.js runs it, emits
-// 'token-collected' { id, n, total, pos } and remembers them; render/cityTokens.js draws them).
-const { BLOCKS, BUILDINGS, rng, query } = __require(35)
-const { groundHeight, roofAt, LANDMARKS_V2, LOOKOUT } = __require(102)
-const { ALLEYS } = __require(99)
-const { DECKS } = __require(32)
-const { PIER } = __require(38)
-const { LANDMARKS } = __require(5)
-const { TUNNELS } = __require(30)
-const { FWY } = __require(28)
-const { SITES, POCKET, toWorld } = __require(98)
-
-const TOTAL = 30
-const PICK_R = { foot: 1.4, car: 3.2 } // m from a token that takes it
-const R = rng(20261023)
-const hits = []
-// whether someone could stand at (x, y, z): nothing at body height there
-function clear (x, z, y) {
-  for (const c of query(x - 0.5, z - 0.5, x + 0.5, z + 0.5, hits))
-    if (!c.down && c.y0 < y + 1.8 && c.y1 > y + 0.4) return false
-  return true
-}
-const TOKENS = []
-function add (x, z, y, where) {
-  if (
-    TOKENS.length >= TOTAL ||
-    TOKENS.some(t => Math.hypot(t.x - x, t.z - z) < 20 && Math.abs(t.y - y) < 4)
-  )
-    return false
-  TOKENS.push({ id: TOKENS.length, x, z, y, where })
-  return true
-}
-const onGround = (x, z, where) =>
-  clear(x, z, groundHeight(x, z)) && add(x, z, groundHeight(x, z), where)
-
-// one in each interior, in a corner of its floor clear of the furniture
-for (const s of SITES) {
-  const R2 = s.room
-  for (const [u, v] of [
-    [-R2.w / 2 + 0.8, R2.d - 0.8],
-    [R2.w / 2 - 0.8, R2.d - 0.8],
-    [-R2.w / 2 + 0.8, 1.6],
-    [0, R2.d / 2]
-  ]) {
-    const p = toWorld(s, u, v)
-    const inside = s.solids.every(
-      c =>
-        c.look !== 'room' ||
-        c.y1 <= POCKET + 0.4 ||
-        !(
-          p.x > c.x0 - 0.4 &&
-          p.x < c.x1 + 0.4 &&
-          p.z > c.z0 - 0.4 &&
-          p.z < c.z1 + 0.4
-        )
-    )
-    if (inside && add(p.x, p.z, POCKET, `inside ${s.name}`)) break
-  }
-}
-// the landmarks
-{
-  const L = LOOKOUT
-  add(L.x0 + 3, L.z0 + 3, L.y, 'the lookout')
-  const end = PIER.deck[3]
-  add(
-    (end.x0 + end.x1) / 2,
-    end.z0 + 3,
-    groundHeight((end.x0 + end.x1) / 2, end.z0 + 3),
-    'the end of the pier'
-  )
-  // (on the sand beside the pier)
-  const d0 = PIER.deck[0]
-  const ux = d0.x0 + (d0.x1 - d0.x0) * 0.8
-  onGround(ux, d0.z1 + 5, 'on the beach by the pier')
-  const lh = LANDMARKS_V2.lighthouse
-  if (lh)
-    for (const [dx, dz] of [
-      [4, 0],
-      [-4, 0],
-      [0, 4],
-      [0, -4]
-    ])
-      if (onGround(lh.x + dx, lh.z + dz, 'by the lighthouse')) break
-  const m = LANDMARKS_V2.masts[0]
-  if (m)
-    for (const [dx, dz] of [
-      [5, 0],
-      [-5, 0],
-      [0, 5],
-      [0, -5]
-    ])
-      if (onGround(m.x + dx, m.z + dz, 'at the masts')) break
-  const o = LANDMARKS.observatory
-  for (const dz of [26, 30, 34, -26])
-    if (onGround(o.x, o.z + dz, 'the observatory')) break
-  const t = TUNNELS[0]
-  if (t) {
-    const x = (t.x0 + t.x1) / 2,
-      z = (t.z0 + t.z1) / 2
-    add(x, z - 2.5, groundHeight(x, z - 2.5, t.y0 + 2), 'in the tunnel')
-  }
-  for (const f of [0.3, 0.62]) {
-    const x = FWY.x0 + (FWY.x1 - FWY.x0) * f
-    for (const dz of [-8, 8, 0])
-      if (clear(x, FWY.z + dz, 0) && add(x, FWY.z + dz, 0, 'under the freeway'))
-        break
-  }
-}
-// the multi-storey car parks' roofs
-for (const k of ['10,13', '11,4', '9,9']) {
-  // (lots.js GARAGES)
-  const [bx, bz] = k.split(',').map(Number)
-  const blk = BLOCKS.find(b => b.bx === bx && b.bz === bz)
-  let top = null
-  for (const d of DECKS)
-    if (
-      d.x0 >= blk.x0 &&
-      d.x1 <= blk.x1 &&
-      d.z0 >= blk.z0 &&
-      d.z1 <= blk.z1 &&
-      (!top || d.y1 > top.y1)
-    )
-      top = d
-  if (top)
-    add(
-      (top.x0 + top.x1) / 2,
-      (top.z0 + top.z1) / 2,
-      top.y1,
-      "on a car park's roof"
-    )
-}
-// the parks' middles
-for (const b of BLOCKS)
-  if (b.kind === 'park' && !b.sports)
-    onGround((b.x0 + b.x1) / 2 + 2, (b.z0 + b.z1) / 2 + 2, 'in a park')
-// the far ends of alleys, round the city
-{
-  const order = ALLEYS.map(a => [R(), a]).sort((p, q) => p[0] - q[0])
-  let n = 0
-  for (const [, a] of order) {
-    if (n >= 9) break
-    if (
-      a.deep &&
-      clear(a.deep.x, a.deep.z, 0) &&
-      add(a.deep.x, a.deep.z, 0, 'down an alley')
-    )
-      n++
-  }
-}
-// and the rest on low flat roofs (for the Roadster to land on)
-{
-  const low = BUILDINGS.filter(
-    b =>
-      b.h >= 6 &&
-      b.h <= 16 &&
-      b.tiers.length === 1 &&
-      !b.tiers[0].hip &&
-      !b.shafts
-  )
-  for (let tries = 0; tries < 400 && TOKENS.length < TOTAL; tries++) {
-    const b = low[Math.floor(R() * low.length)]
-    const x = (b.x0 + b.x1) / 2,
-      z = (b.z0 + b.z1) / 2
-    const r = roofAt(x, z, b.h + 0.5)
-    if (r && Math.abs(r.y1 - b.h) < 0.6 && clear(x, z, b.h))
-      add(x, z, b.h, 'on a roof')
-  }
-}
-
-// which have been found (ids); restored from what the game remembered
-const FOUND = new Set()
-const found = () => FOUND.size
-// the token the player at p takes this step, if any ({ x, y, z } feet; car: at the wheel)
-function tokenAt (p, car = false) {
-  const r = car ? PICK_R.car : PICK_R.foot
-  for (const t of TOKENS) {
-    if (FOUND.has(t.id)) continue
-    const dx = p.x - t.x,
-      dz = p.z - t.z
-    if (dx * dx + dz * dz < r * r && Math.abs(p.y - t.y) < 2.5) return t
-  }
-  return null
-}
-// take it: the count found so far
-function take (t) {
-  FOUND.add(t.id)
-  return FOUND.size
-}
-// the found set as a string to keep ('0,4,17'), and back
-const saveFound = () => [...FOUND].join(',')
-function loadFound (s) {
-  FOUND.clear()
-  for (const v of String(s || '').split(','))
-    if (v !== '' && Number(v) < TOKENS.length) FOUND.add(Number(v))
-}
-__export(__exports, { "TOTAL": () => TOTAL, "PICK_R": () => PICK_R, "TOKENS": () => TOKENS, "FOUND": () => FOUND, "found": () => found, "tokenAt": () => tokenAt, "take": () => take, "saveFound": () => saveFound, "loadFound": () => loadFound })
-})
-
-// ---- js/render/cityTokens.js
-__define(254, function (__exports) {
-// The thirty hidden tokens (sim/tokens.js), drawn: gold coins standing on edge, turning and bobbing
-// where they wait, bright enough to catch the eye (the bloom) once you are close, gone once found.
-// One instanced mesh for all of them.
-const THREE = __require(0)
-const { TOKENS, FOUND } = __require(253)
-
-const _m = new THREE.Matrix4(),
-  _q = new THREE.Quaternion(),
-  _p = new THREE.Vector3(),
-  _s = new THREE.Vector3(),
-  _y = new THREE.Vector3(0, 1, 0),
-  _x = new THREE.Quaternion().setFromAxisAngle(
-    new THREE.Vector3(1, 0, 0),
-    Math.PI / 2
-  )
-
-function buildTokens (group) {
-  const coin = new THREE.CylinderGeometry(0.42, 0.42, 0.09, 20, 1)
-  const rim = new THREE.TorusGeometry(0.42, 0.045, 6, 20)
-  const mat = new THREE.MeshBasicMaterial({
-      color: new THREE.Color(1.6, 1.15, 0.3)
-    }),
-    rimMat = new THREE.MeshBasicMaterial({
-      color: new THREE.Color(1.0, 0.55, 0.12)
-    })
-  const n = TOKENS.length
-  const faces = new THREE.InstancedMesh(coin, mat, n),
-    rims = new THREE.InstancedMesh(rim, rimMat, n)
-  for (const m of [faces, rims]) {
-    m.frustumCulled = false // (thirty, a few triangles each: cheaper than keeping their bounds)
-    m.name = 'tokens'
-    group.add(m)
-  }
-  let t = 0
-  const update = dt => {
-    t += dt
-    for (let i = 0; i < n; i++) {
-      const k = TOKENS[i]
-      const gone = FOUND.has(k.id)
-      _p.set(k.x, k.y + 0.9 + Math.sin(t * 2 + i) * 0.12, k.z)
-      _s.setScalar(gone ? 0 : 1)
-      _q.setFromAxisAngle(_y, t * 2.2 + i)
-      // (the coin's axis turned to lie flat across, then the whole spun about the vertical)
-      _m.compose(_p, _q.clone().multiply(_x), _s)
-      faces.setMatrixAt(i, _m)
-      _q.setFromAxisAngle(_y, t * 2.2 + i)
-      _m.compose(_p, _q, _s)
-      rims.setMatrixAt(i, _m)
-    }
-    faces.instanceMatrix.needsUpdate = rims.instanceMatrix.needsUpdate = true
-  }
-  update(0)
-  return {
-    update,
-    night (k) {
-      mat.color.setRGB(1.6 + k * 0.6, 1.15 + k * 0.4, 0.3)
-    }
-  }
-}
-__export(__exports, { "buildTokens": () => buildTokens })
-})
-
-// ---- js/render/cityStopSigns.js
-__define(255, function (__exports) {
-// The all-way stops' signs and their painted "STOP"s (sim/stopSigns.js): a red octagon with a white
-// border and STOP across it, on a galvanised post with its grey back plate; the lane legend in long
-// white letters before the line. Three instanced meshes for every one in the city; a sign knocked
-// flat (its collider down) is not drawn until the city stands up again.
-const THREE = __require(0)
-const { Builder } = __require(231)
-const { SIGNS, LEGENDS, SIGN } = __require(102)
-
-const R = SIGN.face
-
-function octagon (ctx, S, r, fill) {
-  ctx.beginPath()
-  for (let k = 0; k < 8; k++) {
-    const a = Math.PI / 8 + (k * Math.PI) / 4
-    ctx[k ? 'lineTo' : 'moveTo'](
-      S / 2 + Math.cos(a) * r,
-      S / 2 - Math.sin(a) * r
-    )
-  }
-  ctx.closePath()
-  ctx.fillStyle = fill
-  ctx.fill()
-}
-function faceTexture () {
-  const S = 256,
-    cv = document.createElement('canvas')
-  cv.width = cv.height = S
-  const ctx = cv.getContext('2d')
-  // (the circle's uv reaches the octagon's corners at S / 2: a little in for the edge)
-  octagon(ctx, S, S / 2, '#f4f2ee')
-  octagon(ctx, S, S * 0.45, '#b3121a')
-  ctx.fillStyle = '#f4f2ee'
-  ctx.font = `800 ${Math.round(
-    S * 0.27
-  )}px "Arial Black", Impact, Helvetica, sans-serif`
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'middle'
-  ctx.fillText('STOP', S / 2, S / 2 + S * 0.015, S * 0.76)
-  const t = new THREE.CanvasTexture(cv)
-  t.colorSpace = THREE.SRGBColorSpace
-  t.anisotropy = 4
-  return t
-}
-function legendTexture () {
-  const W = 128,
-    H = 256,
-    cv = document.createElement('canvas')
-  cv.width = W
-  cv.height = H
-  const ctx = cv.getContext('2d')
-  ctx.fillStyle = '#ffffff'
-  ctx.font = `700 ${Math.round(W * 0.42)}px Helvetica, Arial, sans-serif`
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'middle'
-  // (letters stretched along the lane, as they are painted, to read foreshortened from the seat)
-  ctx.setTransform(1, 0, 0, 3.2, 0, 0)
-  ctx.fillText('STOP', W / 2, H / 3.2 / 2, W * 0.94)
-  const t = new THREE.CanvasTexture(cv)
-  t.colorSpace = THREE.SRGBColorSpace
-  t.anisotropy = 8
-  return t
-}
-
-const _m = new THREE.Matrix4(),
-  _q = new THREE.Quaternion(),
-  _p = new THREE.Vector3(),
-  _s = new THREE.Vector3(1, 1, 1),
-  _e = new THREE.Euler()
-
-function buildStopSigns (group) {
-  const n = SIGNS.length
-  if (!n) return { update () {}, night () {} }
-  const y = SIGN.h - R - 0.05
-  // the face, looking along local +z
-  const face = new THREE.CircleGeometry(R, 8, Math.PI / 8).translate(
-    0,
-    y,
-    0.035
-  )
-  const faceMat = new THREE.MeshStandardMaterial({
-    map: faceTexture(),
-    roughness: 0.45,
-    metalness: 0.05
-  })
-  // the post, its bracket and the plain back of the plate
-  const B = new Builder(),
-    grey = new THREE.Color(0x9aa0a6),
-    dark = new THREE.Color(0x6a6e72)
-  B.add(
-    new THREE.CylinderGeometry(SIGN.r * 0.6, SIGN.r * 0.6, SIGN.h - 0.1, 8),
-    new THREE.Matrix4().makeTranslation(0, (SIGN.h - 0.1) / 2, 0),
-    grey
-  )
-  B.add(
-    new THREE.CircleGeometry(R * 1.01, 8, Math.PI / 8).rotateY(Math.PI),
-    new THREE.Matrix4().makeTranslation(0, y, 0.03),
-    dark
-  )
-  B.add(
-    new THREE.BoxGeometry(0.12, 0.34, 0.03),
-    new THREE.Matrix4().makeTranslation(0, y, 0.015),
-    dark
-  )
-  const back = B.geometry()
-  const backMat = new THREE.MeshStandardMaterial({
-    vertexColors: true,
-    roughness: 0.6,
-    metalness: 0.4,
-    side: THREE.DoubleSide
-  })
-  const faces = new THREE.InstancedMesh(face, faceMat, n),
-    posts = new THREE.InstancedMesh(back, backMat, n)
-  const place = (hide = false) => {
-    SIGNS.forEach((s, i) => {
-      _q.setFromEuler(_e.set(0, Math.atan2(s.fx, s.fz), 0))
-      _s.setScalar(hide || s.c.down ? 0 : 1)
-      _m.compose(_p.set(s.x, 0, s.z), _q, _s)
-      faces.setMatrixAt(i, _m)
-      posts.setMatrixAt(i, _m)
-    })
-    faces.instanceMatrix.needsUpdate = posts.instanceMatrix.needsUpdate = true
-  }
-  place()
-  for (const m of [faces, posts]) {
-    m.castShadow = true
-    m.name = 'stop signs'
-    group.add(m)
-  }
-  // the lane legends, flat on the road a little above its paint
-  const leg = new THREE.PlaneGeometry(2.1, 4.2).rotateX(-Math.PI / 2)
-  const legMat = new THREE.MeshStandardMaterial({
-    map: legendTexture(),
-    transparent: true,
-    depthWrite: false,
-    roughness: 0.8,
-    color: new THREE.Color(0xdedbd2),
-    polygonOffset: true,
-    polygonOffsetFactor: -2,
-    polygonOffsetUnits: -2
-  })
-  const legends = new THREE.InstancedMesh(leg, legMat, LEGENDS.length)
-  LEGENDS.forEach((l, i) => {
-    _q.setFromEuler(_e.set(0, Math.atan2(-l.dx, -l.dz), 0))
-    _m.compose(_p.set(l.x, 0.014, l.z), _q, _s.setScalar(1))
-    legends.setMatrixAt(i, _m)
-  })
-  legends.receiveShadow = true
-  legends.name = 'stop legends'
-  group.add(legends)
-  let down = 0
-  return {
-    update () {
-      // (only when one has been knocked down, or stood up again)
-      let k = 0
-      for (const s of SIGNS) if (s.c.down) k++
-      if (k !== down) {
-        down = k
-        place()
-      }
-    },
-    night () {}
-  }
-}
-__export(__exports, { "buildStopSigns": () => buildStopSigns })
-})
-
-// ---- js/sim/interiors/state.js
-__define(256, function (__exports) {
-// Going in and out of the interiors, as a little state machine with no DOM in it (the tests drive
-// it in Node; render/interiors/glue.js drives it in the game): the door on offer to the player, the
-// fade to black and back (the swap happens while the screen is black), the room's own world for the
-// feet (its walls and furniture, its floor, no cars), and the body shop's service for a car stopped
-// in its bay. The player is only ever moved by placePlayer, between frames, under the black.
-//
-//   INTERIOR.site   the site the player is inside (sites.js), or null out in the city
-//   INTERIOR.phase  'none', 'out' (fading to black), 'hold' (black, the work being done), 'in'
-//   INTERIOR.fade   0 (clear) to 1 (black), for the renderer
-const { SITES, POCKET } = __require(98)
-const { placePlayer } = __require(79)
-
-const FADE = 0.35 // s to black, and back
-const HOLD = { enter: 0.15, exit: 0.15, service: 1.1 } // s held black
-const DOOR_R = 1.5 // m from the spot in front of a door that it offers to be gone through
-const SERVICE_V = 1.2 // m/s: a car slower than this in the bay may be seen to
-const INTERIOR = { site: null, phase: 'none', t: 0, fade: 0, act: null, target: null }
-
-const inside = () => INTERIOR.site !== null
-const busy = () => INTERIOR.phase !== 'none'
-
-const near = (x, z, p, r) => (p.x - x) ** 2 + (p.z - z) ** 2 < r * r
-const inRect = (b, x, z) => x >= b.x0 && x <= b.x1 && z >= b.z0 && z <= b.z1
-
-// What the player can do here, if anything: { act: 'enter' | 'exit' | 'service', site, why }
-// (why: the reason it can't be done now, shown instead). p: the player (sim/player.js); speed:
-// the car's over the ground, at the wheel.
-function offerAt (p, speed = 0) {
-  if (busy()) return null
-  const s = INTERIOR.site
-  if (s) {
-    if (p.mode === 'foot' && near(s.inner.x, s.inner.z, p.pos, DOOR_R)) return { act: 'exit', site: s }
-    return null
-  }
-  if (p.mode === 'foot') {
-    for (const t of SITES)
-      if (near(t.out.x, t.out.z, p.pos, DOOR_R) && p.pos.y > POCKET + 10) {
-        if (p.wanted > 0) return { act: 'enter', site: t, why: 'Lose the cops first' }
-        return { act: 'enter', site: t }
-      }
-    return null
-  }
-  if (p.mode === 'car')
-    for (const t of SITES)
-      if (t.drive && inRect(t.drive, p.pos.x, p.pos.z)) {
-        if (speed > SERVICE_V) return { act: 'service', site: t, why: 'Stop in the bay' }
-        return { act: 'service', site: t }
-      }
-  return null
-}
-
-// Start going through (o: an offer from offerAt with no why): the fade begins. true if it did.
-function begin (o) {
-  if (!o || o.why || busy()) return false
-  INTERIOR.phase = 'out'
-  INTERIOR.t = 0
-  INTERIOR.act = o.act
-  INTERIOR.target = o.site
-  return true
-}
-
-// One step of the transition (dt: game s). Returns 'swap' the step the screen goes black (do the
-// move then: swapIn/swapOut, or the service), 'done' when it has cleared, else null.
-function stepTransition (dt) {
-  const I = INTERIOR
-  if (I.phase === 'none') return null
-  I.t += dt
-  if (I.phase === 'out') {
-    I.fade = Math.min(1, I.t / FADE)
-    if (I.t >= FADE) {
-      I.phase = 'hold'
-      I.t = 0
-      I.fade = 1
-      return 'swap'
-    }
-  } else if (I.phase === 'hold') {
-    if (I.t >= HOLD[I.act]) {
-      I.phase = 'in'
-      I.t = 0
-    }
-  } else if (I.phase === 'in') {
-    I.fade = Math.max(0, 1 - I.t / FADE)
-    if (I.t >= FADE) {
-      I.phase = 'none'
-      I.fade = 0
-      I.act = I.target = null
-      return 'done'
-    }
-  }
-  return null
-}
-
-// The player into site s's room (just inside its door, facing in), or back out of it onto the
-// street in front of the door, facing away from it
-function swapIn (s, p) {
-  placePlayer(s.inner.x + s.f.x * 0.5, s.inner.z + s.f.z * 0.5, s.yawIn, POCKET, p)
-  INTERIOR.site = s
-}
-function swapOut (p) {
-  const s = INTERIOR.site
-  INTERIOR.site = null
-  if (!s) return
-  placePlayer(s.out.x, s.out.z, s.yawOut, null, p)
-}
-// Out of it at once, with no fade (a reset, being put somewhere else): the state cleared
-function clearInterior () {
-  INTERIOR.site = null
-  INTERIOR.phase = 'none'
-  INTERIOR.fade = 0
-  INTERIOR.t = 0
-  INTERIOR.act = INTERIOR.target = null
-}
-// Whether the player has left the room by some other way than its door (put back in a car, taken
-// somewhere by a reset or a mission): then the interior lets go of them
-function strayed (p) {
-  const s = INTERIOR.site
-  if (!s || busy()) return false
-  if (p.mode === 'car' || p.pos.y > POCKET + 8) return true
-  const b = s.box
-  return p.pos.x < b.x0 - 2 || p.pos.x > b.x1 + 2 || p.pos.z < b.z0 - 2 || p.pos.z > b.z1 + 2
-}
-
-// The room's world for the feet (player.js stepFoot): its own walls and furniture, its floor at
-// POCKET, and no cars (the ones in the street over it are not in the room)
-const NONE = []
-function roomWorld (s) {
-  const hits = []
-  return {
-    site: s,
-    solids (x0, z0, x1, z1) {
-      hits.length = 0
-      for (const c of s.solids) if (c.x1 > x0 && c.x0 < x1 && c.z1 > z0 && c.z0 < z1) hits.push(c)
-      return hits
-    },
-    base: () => POCKET,
-    get cars () {
-      NONE.length = 0
-      return NONE
-    }
-  }
-}
-__export(__exports, { "FADE": () => FADE, "HOLD": () => HOLD, "DOOR_R": () => DOOR_R, "SERVICE_V": () => SERVICE_V, "INTERIOR": () => INTERIOR, "inside": () => inside, "busy": () => busy, "offerAt": () => offerAt, "begin": () => begin, "stepTransition": () => stepTransition, "swapIn": () => swapIn, "swapOut": () => swapOut, "clearInterior": () => clearInterior, "strayed": () => strayed, "roomWorld": () => roomWorld })
-})
-
 // ---- js/render/interiors/rooms.js
-__define(257, function (__exports) {
+__define(252, function (__exports) {
 // The interiors drawn: each room (sim/interiors/rooms.js) as three meshes in its own frame (x
 // across the door's wall, y up, z in from it), placed under the city where its site puts it
 // (sim/interiors/sites.js): the shell (floor, walls, ceiling and everything in the room, its light
@@ -109777,8 +108310,8 @@ __define(257, function (__exports) {
 // bright enough to bloom), and the windows (the sky's light, from the time of day). Hidden until
 // the player goes in; only the room they are in is drawn.
 const THREE = __require(0)
-const { merge, box, tint } = __require(115)
-const { POCKET } = __require(98)
+const { merge, box, tint } = __require(111)
+const { POCKET } = __require(115)
 
 const _c = new THREE.Color(),
   _p = new THREE.Vector3(),
@@ -109907,17 +108440,17 @@ __export(__exports, { "buildRoom": () => buildRoom, "roomMaterials": () => roomM
 })
 
 // ---- js/render/interiors/doors.js
-__define(258, function (__exports) {
+__define(253, function (__exports) {
 // The interiors' doors from the street: a door frame and its lit glass in the building's wall, an
 // awning over it in the place's colour, its name on a sign above, and on the pavement in front the
 // GTA-style marker that says it can be gone into; the body shop's roller door, its big sign, and
 // the marker of its bay out front. Every site's in four meshes for the whole city (lit pieces, the
 // glass, the signs from one canvas, the markers).
 const THREE = __require(0)
-const { merge, box, tint } = __require(115)
+const { merge, box, tint } = __require(111)
 const { canvasTex } = __require(82)
-const { SITES } = __require(98)
-const { groundHeight } = __require(102)
+const { SITES } = __require(115)
+const { groundHeight } = __require(97)
 
 const ROW = 128 // px: each site's name, a row of the signs' canvas
 // a box against a wall: a along it (from the door, along t), out from its face (along n), y up
@@ -110032,17 +108565,17 @@ __export(__exports, { "buildDoors": () => buildDoors })
 })
 
 // ---- js/render/interiors/view.js
-__define(259, function (__exports) {
+__define(254, function (__exports) {
 // The interiors' view (render/city.js keeps one): every room built hidden, the one the player is in
 // shown; the doors outside; the light inside (the scene's lights turned to the room's for the
 // player's figure, the exposure steady, the rain left outside); the windows from the hour; and the
 // camera kept inside the room's walls.
 const THREE = __require(0)
 const { hemi, key, renderer, scene } = __require(82)
-const { SITES, POCKET } = __require(98)
-const { INTERIOR } = __require(256)
-const { buildRoom, roomMaterials } = __require(257)
-const { buildDoors } = __require(258)
+const { SITES, POCKET } = __require(115)
+const { INTERIOR } = __require(116)
+const { buildRoom, roomMaterials } = __require(252)
+const { buildDoors } = __require(253)
 
 const _day = new THREE.Color(1.1, 1.2, 1.35),
   _night = new THREE.Color(0.05, 0.06, 0.1)
@@ -110121,7 +108654,7 @@ __export(__exports, { "InteriorView": () => InteriorView })
 })
 
 // ---- js/render/city.js
-__define(260, function (__exports) {
+__define(255, function (__exports) {
 // The city view: builds the city's meshes the first time it is visited (so the test site loads as
 // fast as ever), shows it in place of the test site, and keeps the traffic, signals, sky, sea and
 // antenna beacons moving, the light following the clock and the weather (daylight.js), and the
@@ -110131,10 +108664,10 @@ const { ENV } = __require(3)
 const { Sky } = __require(171)
 const { Daylight } = __require(188)
 const { plainGrade } = __require(183)
-const { GROUND } = __require(116)
+const { GROUND } = __require(112)
 const { LAMP, lampOut, lampsBack } = __require(189)
-const { Aircraft } = __require(117)
-const { LAYER } = __require(115)
+const { Aircraft } = __require(113)
+const { LAYER } = __require(111)
 const { buildEdges } = __require(200)
 const { scene, site, renderer } = __require(82)
 const { CityShadow } = __require(201)
@@ -110151,10 +108684,7 @@ const { buildStreet } = __require(240)
 const { buildBuildings, BEACON } = __require(251)
 const { updateTrees } = __require(230)
 const { streamed, stream, streamAll, streamBack } = __require(226)
-const { buildExtras } = __require(252)
-const { buildTokens } = __require(254)
-const { buildStopSigns } = __require(255)
-const { InteriorView } = __require(259)
+const { InteriorView } = __require(254)
 
 const _pv = new THREE.Matrix4(),
   _view = new THREE.Frustum()
@@ -110235,9 +108765,6 @@ class CityView {
     buildWorks(g) // (the new districts' docks, stacks, fences, the freeway deck and ramps)
     buildPort(g) // (the quay, its cranes and the ship alongside)
     buildStadium(g) // (the stadium's pitch, stands and canopy)
-    this.extras = buildExtras(g) // (the alleys' dressing, street furniture, benches: cityExtras.js)
-    this.stopSigns = buildStopSigns(g) // (the all-way stops' signs and legends: cityStopSigns.js)
-    this.tokens = buildTokens(g) // (the hidden tokens, turning: cityTokens.js)
     streamCity(g)
     this.interiors = new InteriorView(g) // (the rooms under the city, the doors: interiors/)
     VIEW.interiors = this.interiors
@@ -110288,8 +108815,6 @@ class CityView {
     this.buildings.night(k)
     this.props.night(k)
     this.interiors.night(k)
-    this.extras.night(k)
-    this.tokens.night(k)
     // (each driver switches their headlights on at their own moment: render/traffic.js reads the
     // hour and the weather itself)
     this.cars.beams.visible = k > 0.25
@@ -110349,8 +108874,6 @@ class CityView {
     // once whatever was knocked down has come to rest, its shadow is drawn where it lies
     if (this.falling && !falling) this.shadow.refresh()
     this.falling = falling
-    this.tokens.update(dt)
-    this.stopSigns.update()
     updateTrees(dt, camera) // (the palms' and trees' sway, and detail near)
     this.interiors.update(dt)
     this.buildings.update(dt) // (the Meridian's rings, the lighthouse's beam)
@@ -110381,13 +108904,13 @@ __export(__exports, { "CityView": () => CityView, "clipCamera": () => clipCamera
 })
 
 // ---- js/render/skids.js
-__define(261, function (__exports) {
+__define(256, function (__exports) {
 // Skid marks: one continuous rubber ribbon per sliding tyre. The ribbon is as wide as the tyre's
 // footprint across its path (full tread width in a straight lock-up, the short contact patch when it
 // slides sideways), darkens with how hard the tyre slides and fades in and out at each end.
 const THREE = __require(0)
 const { scene } = __require(82)
-const { GROUND } = __require(116)
+const { GROUND } = __require(112)
 const { ENV } = __require(3)
 
 const MAX_SEG = 3000 // ring buffer of ribbon segments (oldest marks are overwritten)
@@ -110545,7 +109068,7 @@ __export(__exports, { "clearSkids": () => clearSkids, "updateSkids": () => updat
 })
 
 // ---- js/render/wall.js
-__define(262, function (__exports) {
+__define(257, function (__exports) {
 // The curved wall (slab, LED edges that turn white behind the car, centre line) and its steel truss.
 const THREE = __require(0)
 const { site, MAT } = __require(82)
@@ -110801,7 +109324,7 @@ __export(__exports, { "LED_MAT": () => LED_MAT, "buildWall": () => buildWall, "b
 })
 
 // ---- js/render/freeze.js
-__define(263, function (__exports) {
+__define(258, function (__exports) {
 // Fewer draw calls for a model built from many small pieces: every mesh that never moves on its own
 // is baked into one buffer per material (and per shadow setting), in the root's frame, so the
 // Roadster, about 230 meshes as built, is drawn (and drawn again into the shadow map) in a few dozen
@@ -110809,7 +109332,7 @@ __define(263, function (__exports) {
 // panels that dent) is left as it is, and so are the groups the pieces hung off, so anything that
 // reads their positions (the thruster nozzles) still finds them.
 const THREE = __require(0)
-const { merge } = __require(115)
+const { merge } = __require(111)
 
 const _m = new THREE.Matrix4()
 const ATTRS = ['position', 'normal', 'uv', 'color']
@@ -110895,7 +109418,7 @@ __export(__exports, { "freeze": () => freeze })
 })
 
 // ---- js/render/wheels.js
-__define(264, function (__exports) {
+__define(259, function (__exports) {
 // Wheels and wheel wells: arch openings cut into the body shell with dark well liners, tyres with
 // rounded sidewalls round the reveal car's wheels (six black twin spokes over white aero inserts),
 // Ackermann steering and free-spinning wheels in the air.
@@ -111131,13 +109654,13 @@ __export(__exports, { "ARCH_R": () => ARCH_R, "withWheelArches": () => withWheel
 })
 
 // ---- js/render/roadsterSlope.js
-__define(265, function (__exports) {
+__define(260, function (__exports) {
 // The Roadster drawn lying on the slope it drives up (the freeway's ramps, the hill road, the bridge):
 // the sim climbs them as a flight of thin treads (roofs.js, plots.js ramp) and keeps the car level,
 // so the model is pitched and rolled to the ground under its wheels (world.js groundHeight) and set
 // on its smooth surface rather than on the tread's edge.
 const THREE = __require(0)
-const { groundHeight } = __require(102)
+const { groundHeight } = __require(97)
 const { CAR, AX_Z, AX_X } = __require(2)
 
 const EASE = 10,
@@ -111182,7 +109705,7 @@ __export(__exports, { "slopeRoadster": () => slopeRoadster })
 })
 
 // ---- js/render/roadsterRear.js
-__define(266, function (__exports) {
+__define(261, function (__exports) {
 // The Roadster's tail, as in the rear shot from the reveal: a full-width red light bar in a smoked
 // black band under the ducktail lip, a satin panel with the plate and a camera, and the black lower
 // fascia: a louvred housing for the 4 main nozzles over a diffuser of 4 fan bays split by strakes,
@@ -111434,7 +109957,7 @@ __export(__exports, { "fanUnit": () => fanUnit, "buildTail": () => buildTail, "b
 })
 
 // ---- js/render/roadster.js
-__define(267, function (__exports) {
+__define(262, function (__exports) {
 // The Roadster model, measured off the Oct 15, 2026 reveal photos (a side-on shot at the event sets the
 // proportions, a top-down one the canopy, a rear one the tail): a wedge in satin Ano White, smooth
 // panels with crisp creases, a tall blunt nose, sloped fender facets either side of a short hood,
@@ -111444,16 +109967,16 @@ __define(267, function (__exports) {
 // (roadsterRear.js), an active rear wing, underfloor suction fan, skirts and twin-spoke aero wheels,
 // the cabin with its yoke and touchscreen (roadsterCabin.js); plus per-frame pose and animation.
 const THREE = __require(0)
-const { freeze } = __require(263)
+const { freeze } = __require(258)
 const { scene, MAT } = __require(82)
 const { CURB_H } = __require(35)
 const { CAR, clamp, AX_Z } = __require(2)
 const { buildOptimus, poseOptimus } = __require(128)
 const { DRIVER, buildCabin, updateCabin } = __require(129)
 const { loft, loftGeos, at, seam, withStations } = __require(127)
-const { buildWheels, updateWheels, withWheelArches } = __require(264)
-const { slopeRoadster } = __require(265)
-const { buildTail, buildWing, updateWing, fanUnit } = __require(266)
+const { buildWheels, updateWheels, withWheelArches } = __require(259)
+const { slopeRoadster } = __require(260)
+const { buildTail, buildWing, updateWing, fanUnit } = __require(261)
 
 const _a = new THREE.Vector3()
 const SEAM = new THREE.MeshStandardMaterial({
@@ -111918,7 +110441,7 @@ __export(__exports, { "buildRoadster": () => buildRoadster, "updateRoadster": ()
 })
 
 // ---- js/render/rain.js
-__define(268, function (__exports) {
+__define(263, function (__exports) {
 // The rain: streaks falling through a box of air round the camera, and splashes where they land.
 // Each drop has its own place in the box and falls through it on the wind, wrapping round, so the
 // rain stays put in the world as the camera moves through it (driving into it, it comes at the
@@ -111930,7 +110453,7 @@ __define(268, function (__exports) {
 // new spot every time it lands. All in two instanced draws; how many drops, by the rain's strength
 // and the graphics quality. The ground's own wet look is wet.js's.
 const THREE = __require(0)
-const { GROUND } = __require(116)
+const { GROUND } = __require(112)
 const { LAMP, LAMP_FIELD_GLSL } = __require(189)
 const { HALF, PITCH, ROAD_HW, CURB_H } = __require(35)
 
@@ -112156,7 +110679,7 @@ __export(__exports, { "Rain": () => Rain })
 })
 
 // ---- js/render/beams.js
-__define(269, function (__exports) {
+__define(264, function (__exports) {
 // The Roadster's headlight beams seen in the air: in rain or fog at night the light ahead of the car
 // is caught by the water in the air, two pale cones reaching out down the road from the lamps,
 // brightest at the lamps and fading out with distance, soft at their edges. A faint trace on a
@@ -112164,7 +110687,7 @@ __define(269, function (__exports) {
 // car's body (so they pitch and roll with it), drawn only while the headlights are on and there is
 // something in the air to catch them.
 const THREE = __require(0)
-const { GROUND } = __require(116)
+const { GROUND } = __require(112)
 
 const LEN = 24 // m the beams reach
 const SPREAD = 3.6 // m across at their far end
@@ -112227,7 +110750,7 @@ __export(__exports, { "Beams": () => Beams })
 })
 
 // ---- js/climate.js
-__define(270, function (__exports) {
+__define(265, function (__exports) {
 // The clock and the weather in the city, run once a frame from the main loop (main.js): the clock
 // and the weather moving on (sim/env.js), L running the clock on fast to the next time of day and O
 // bringing in the next weather, the light following them (render/daylight.js, through the city
@@ -112237,10 +110760,10 @@ __define(270, function (__exports) {
 // at night (lampLight.js), and the graphics quality (the reflection's size, how many drops, the
 // frame's pixels), remembered.
 const THREE = __require(0)
-const { Rain } = __require(268)
+const { Rain } = __require(263)
 const { hemi, renderer, scene, camera } = __require(82)
-const { Beams } = __require(269)
-const { Mirror } = __require(116)
+const { Beams } = __require(264)
+const { Mirror } = __require(112)
 const { lampLit } = __require(189)
 const { recall, remember } = __require(7)
 const { OPTS } = __require(63)
@@ -112420,7 +110943,7 @@ __export(__exports, { "QUALITY": () => QUALITY, "Climate": () => Climate })
 })
 
 // ---- js/render/resolution.js
-__define(271, function (__exports) {
+__define(266, function (__exports) {
 // Adaptive resolution: the frame is drawn at the screen's full pixel density (up to 2, on a Retina
 // screen) while the GPU keeps up, and at less when it doesn't, a step at a time until it does, and
 // back up once it has room again; so a slower GPU (a laptop's built-in graphics driving a sharp
@@ -112601,7 +111124,7 @@ __export(__exports, { "Resolution": () => Resolution })
 })
 
 // ---- js/render/warm.js
-__define(272, function (__exports) {
+__define(267, function (__exports) {
 // Shader warm-up. three.js compiles a material's program the first time it draws it, and again for
 // each set of lights it is drawn under, and a program takes from a few milliseconds to a tenth of a
 // second to compile (longest on Windows), so the game used to stall at each first: the first
@@ -112728,7 +111251,7 @@ __export(__exports, { "warmUp": () => warmUp })
 })
 
 // ---- js/render/damage.js
-__define(273, function (__exports) {
+__define(268, function (__exports) {
 // Body damage, GTA-style: a knock dents the Roadster's panels where it landed, deeper and wider the
 // harder the hit, the metal crumpling (each dent a little uneven, its facets catching the light)
 // rather than sinking in smooth; dents add up, to a limit, and a reset puts the car back as new.
@@ -113099,7 +111622,7 @@ __export(__exports, { "Damage": () => Damage })
 })
 
 // ---- js/sim/wanted.js
-__define(274, function (__exports) {
+__define(269, function (__exports) {
 // The wanted level, GTA's way: 0 to 5 stars. A crime ('crime' game events: { type, pos, severity })
 // only counts if someone saw it: people on the pavement, drivers, or the police (witness.js looks,
 // along the city's sight lines); the police seeing it themselves count double. What is reported adds
@@ -113257,7 +111780,7 @@ __export(__exports, { "STAR_HEAT": () => STAR_HEAT, "CRIMES": () => CRIMES, "POL
 })
 
 // ---- js/sim/aiDriver.js
-__define(275, function (__exports) {
+__define(270, function (__exports) {
 // A driver at the wheel of a drivable body (vehicleSim.js) for the game's own cars: the police on a
 // chase (police.js) and the cars in the street events (ambient.js). It follows the lane graph to a
 // goal (route.js: the plan worked out once for every lane, so it reads the way on from wherever it
@@ -113443,7 +111966,7 @@ __export(__exports, { "bearing": () => bearing, "Planner": () => Planner, "steer
 })
 
 // ---- js/sim/policeUnit.js
-__define(276, function (__exports) {
+__define(271, function (__exports) {
 // One police car's mind (police.js keeps the force): a traffic car of the police type taken over
 // (handover.js takeOver, tag 'police'), driven by a 'police' handling-class body (vehicleSim.js)
 // through aiDriver.js. On a chase it routes along the lane graph to where the player is (or was
@@ -113452,7 +111975,7 @@ __define(276, function (__exports) {
 // sight, it searches the circle round the last known position; with the stars cleared it switches
 // its lights off and drives away. Pure: no DOM.
 const { clamp } = __require(2)
-const { steerTo, blocker, unstick, cornerV, Follower } = __require(275)
+const { steerTo, blocker, unstick, cornerV, Follower } = __require(270)
 const { makeVehicleInput } = __require(148)
 const { bodyFromTraffic } = __require(149)
 
@@ -113648,7 +112171,7 @@ __export(__exports, { "CHASE_V": () => CHASE_V, "SEARCH_V": () => SEARCH_V, "DIR
 })
 
 // ---- js/sim/policeAir.js
-__define(277, function (__exports) {
+__define(272, function (__exports) {
 // The police from above and ahead (police.js): the helicopter at four stars and up, flying to where
 // the player is (or was last seen), its spotlight on them while it can see them and sweeping the
 // search circle when it can't; and where a roadblock goes: across the road the player is driving,
@@ -113775,7 +112298,7 @@ __export(__exports, { "HELI_Y": () => HELI_Y, "HELI_V": () => HELI_V, "HELI_SEE"
 })
 
 // ---- js/sim/police.js
-__define(278, function (__exports) {
+__define(273, function (__exports) {
 // The police force on the city's streets (the wanted level is wanted.js; each car's mind is
 // policeUnit.js): as many units as the stars call for (UNITS), each put on a lane of the road
 // network off-screen (out of the camera's view or behind a building, between SPAWN_MIN and
@@ -113790,10 +112313,10 @@ const { stepVehicle } = __require(148)
 const { writeToTraffic } = __require(149)
 const { collideTraffic, rectOf } = __require(145)
 const { rectRect, impulse, playerRect, loadBody, storeBody, nudge, BODY } = __require(40)
-const { Planner } = __require(275)
+const { Planner } = __require(270)
 const { clear, policeSight } = __require(139)
-const { makeUnit, think } = __require(276)
-const { Heli, roadblockSpot } = __require(277)
+const { makeUnit, think } = __require(271)
+const { Heli, roadblockSpot } = __require(272)
 
 const UNITS = [0, 2, 3, 4, 5, 6] // pursuing units for 0 to 5 stars
 const SPAWN_MIN = 110
@@ -114095,7 +112618,7 @@ __export(__exports, { "UNITS": () => UNITS, "SPAWN_MIN": () => SPAWN_MIN, "SPAWN
 })
 
 // ---- js/sim/ambient.js
-__define(279, function (__exports) {
+__define(274, function (__exports) {
 // Street events near the player now and then (GTA's random events): a crash scene (two wrecked cars
 // in the road, hazards on, a police car parked by them, its lights going, people stopping to look),
 // the police chasing someone (a traffic car taken over and driven off fast along the lane graph, a
@@ -114106,12 +112629,12 @@ __define(279, function (__exports) {
 const { rng, LANES } = __require(35)
 const { IDX } = __require(58)
 const { hurt } = __require(39)
-const { loosen } = __require(103)
+const { loosen } = __require(98)
 const { stepVehicle, makeVehicleInput } = __require(148)
 const { bodyFromTraffic, writeToTraffic } = __require(149)
 const { collideTraffic } = __require(145)
-const { Planner, Follower, steerTo, blocker, unstick, cornerV } = __require(275)
-const { spawnPoint, inView } = __require(278)
+const { Planner, Follower, steerTo, blocker, unstick, cornerV } = __require(270)
+const { spawnPoint, inView } = __require(273)
 const { bounds } = __require(122)
 
 const KINDS = ['crash', 'chase', 'race', 'fight']
@@ -114369,7 +112892,7 @@ __export(__exports, { "KINDS": () => KINDS, "GAP": () => GAP, "Ambient": () => A
 })
 
 // ---- js/sim/missions/objectives.js
-__define(280, function (__exports) {
+__define(275, function (__exports) {
 // What each kind of mission objective asks, and how it is judged (manager.js runs them): each a
 // { text, start, check } over the objective's data (o), its live state (st) and the mission's
 // context (ctx: { player (playerView), wanted, events (this step's game events), dt }).
@@ -114502,7 +113025,7 @@ __export(__exports, { "place": () => place, "OBJECTIVES": () => OBJECTIVES })
 })
 
 // ---- js/sim/missions/manager.js
-__define(281, function (__exports) {
+__define(276, function (__exports) {
 // The missions' state machine. Idle, every mission on offer has a marker in the world (its start:
 // spots.js); drive (or walk) into one, slowly enough, and it starts (never forced). Running, its
 // objectives (objectives.js) come one after another, each with the place it points at (for the
@@ -114512,7 +113035,7 @@ __define(281, function (__exports) {
 // steal, the GPS) are the game's (game.js) through the hooks: on.start(def), on.end(def, passed),
 // on.objective(def, o, st). Pure: no DOM.
 const { MISSIONS } = __require(77)
-const { OBJECTIVES } = __require(280)
+const { OBJECTIVES } = __require(275)
 const { spot } = __require(122)
 
 const START_R = 6 // m: in the marker
@@ -114662,7 +113185,7 @@ __export(__exports, { "START_R": () => START_R, "START_V": () => START_V, "LEAVE
 })
 
 // ---- js/sim/playerView.js
-__define(282, function (__exports) {
+__define(277, function (__exports) {
 // What the game's systems (the wanted level, the police, the missions, the street events) know of
 // the player, read through one small adapter so that they never depend on where the player lives.
 // The foot workstream's player.js is bound (game.js: bindPlayer(player, { health, driven })): the
@@ -114782,7 +113305,7 @@ __export(__exports, { "playerView": () => playerView, "bindSim": () => bindSim, 
 })
 
 // ---- js/render/crimeView.js
-__define(283, function (__exports) {
+__define(278, function (__exports) {
 // What the game's systems put in the world to see (game.js updates it each frame): the missions'
 // markers, GTA's glowing cylinders with a ring on the ground (a mission's start, the place an
 // objective points at, the next checkpoint dimmer), and the police helicopter overhead, rotor
@@ -114959,7 +113482,7 @@ __export(__exports, { "MARKER_FAR": () => MARKER_FAR, "CrimeView": () => CrimeVi
 })
 
 // ---- js/ui/crimeHud.js
-__define(284, function (__exports) {
+__define(279, function (__exports) {
 // The game's own HUD, GTA's way (game.js drives it): the cash and the wanted stars top right (the
 // stars only while wanted, flashing while the police search), the mission's objective along the
 // bottom and its clock top middle, the big titles (a mission's name as it starts, MISSION PASSED
@@ -115111,7 +113634,7 @@ __export(__exports, { "CrimeHud": () => CrimeHud })
 })
 
 // ---- js/ui/crimeMap.js
-__define(285, function (__exports) {
+__define(280, function (__exports) {
 // The game's marks on the radar (minimap.js's overlay hook) and the pause menu's map (mapDraw.js's):
 // the police as red and blue blips flashing by turns, the helicopter, the search circle round the
 // last known position (red and blue, pulsing, while the stars flash), the missions' blips in their
@@ -115251,7 +113774,7 @@ __export(__exports, { "searchOf": () => searchOf, "radarOverlay": () => radarOve
 })
 
 // ---- js/carName.js
-__define(286, function (__exports) {
+__define(281, function (__exports) {
 // The car's name bottom right (ui/place.js, said by ui/carHud.js as the player gets in) taken down
 // at once: busted or wasted (game.js), or out of the car (onFoot.js). A street's name up is left.
 function dropCarName (hud) {
@@ -115262,7 +113785,7 @@ __export(__exports, { "dropCarName": () => dropCarName })
 })
 
 // ---- js/game.js
-__define(287, function (__exports) {
+__define(282, function (__exports) {
 // The game on top of the drive: the wanted level and the police (sim/wanted.js, police.js), the
 // missions (sim/missions/) and the street events (sim/ambient.js), their marks in the world
 // (render/crimeView.js), on the HUD (ui/crimeHud.js) and on the maps (ui/crimeMap.js), and busted
@@ -115274,21 +113797,21 @@ __define(287, function (__exports) {
 const { ENV } = __require(3)
 const { IDX } = __require(58)
 const { STALLS, rng } = __require(35)
-const { Wanted } = __require(274)
-const { Police, Arrest } = __require(278)
-const { Ambient } = __require(279)
+const { Wanted } = __require(269)
+const { Police, Arrest } = __require(273)
+const { Ambient } = __require(274)
 const { witnesses } = __require(139)
-const { MissionManager } = __require(281)
+const { MissionManager } = __require(276)
 const { spot, nearestKerb, HOSPITALS, STATIONS } = __require(122)
 const { emitGame, onGame } = __require(68)
-const { playerView, bindPlayer, updatePlayerView, setWanted } = __require(282)
+const { playerView, bindPlayer, updatePlayerView, setWanted } = __require(277)
 const { player } = __require(79)
-const { CrimeView } = __require(283)
-const { CrimeHud } = __require(284)
-const { radarOverlay, mapOverlay } = __require(285)
+const { CrimeView } = __require(278)
+const { CrimeHud } = __require(279)
+const { radarOverlay, mapOverlay } = __require(280)
 const { gps } = __require(50)
 const { recall, remember } = __require(7)
-const { dropCarName } = __require(286)
+const { dropCarName } = __require(281)
 
 // where the player is put back: the nearest hospital (wasted) or police station (busted), as
 // fractions of the map: HOSPITALS, STATIONS in missions/spots.js
@@ -115570,7 +114093,7 @@ __export(__exports, { "PENALTY": () => PENALTY, "Game": () => Game })
 })
 
 // ---- js/sim/vehicles.js
-__define(288, function (__exports) {
+__define(283, function (__exports) {
 // Every car the player can get into, in one registry: the Roadster, the traffic's cars on the road
 // and the cars parked in the lots (and the jammed street's). Pure (no DOM), so it is tested in Node.
 // Each entry is stable for as long as its car exists (a WeakMap keeps it), so what is learnt about a
@@ -115775,19 +114298,19 @@ __export(__exports, { "layoutFor": () => layoutFor, "vehicles": () => vehicles }
 })
 
 // ---- js/sim/roadGrip.js
-__define(289, function (__exports) {
+__define(284, function (__exports) {
 // The road's grip for the cars the player drives (vehicleSim.js world.grip), wet or dry: from the
 // city's weather (env.js ENV: how wet the road is and how hard it rains, as game.js gives the
 // police), times a hook anyone may set (GRIP.scale: a weather or a surface of their own, a cheat,
 // a test). One getter, so the rain's grip is the same for every car the player drives.
-const { ENV } = __require(3)
+const { weatherGrip } = __require(3)
 const { clamp } = __require(2)
 
 const GRIP = { scale: 1, min: 0.45 }
 // 1 dry; down to about 0.7 soaked (a puddle's worth less again is the surface's own business)
 function roadGrip () {
-  const wet = Math.max(ENV.wet || 0, 0.6 * (ENV.rain || 0))
-  return clamp((1 - 0.3 * wet) * GRIP.scale, GRIP.min, 1.5)
+  // (the weather's share: env.js weatherGrip, the one getter the shared weather state gives)
+  return clamp(weatherGrip() * GRIP.scale, GRIP.min, 1.5)
 }
 function setGripScale (k) {
   GRIP.scale = Number.isFinite(k) ? k : 1
@@ -115796,7 +114319,7 @@ __export(__exports, { "GRIP": () => GRIP, "roadGrip": () => roadGrip, "setGripSc
 })
 
 // ---- js/sim/drivable.js
-__define(290, function (__exports) {
+__define(285, function (__exports) {
 // Any car the player drives that isn't the Roadster, on the drive workstream's stack: the traffic
 // car is taken off its driver (traffic.takeOver: handover.js), given a body of its handling class
 // (vehicleLink.js bodyFromTraffic, vehicleSim.js stepVehicle, handling.js), knocks the city and the
@@ -115812,7 +114335,7 @@ const { Sim } = __require(48)
 const { stepVehicle, makeVehicleInput } = __require(148)
 const { bodyFromTraffic, writeToTraffic, vehicleProxy, syncProxy, pullProxy } = __require(149)
 const { collideTraffic } = __require(145)
-const { roadGrip } = __require(289)
+const { roadGrip } = __require(284)
 
 // the share of a hit's harm the player's car takes (a traffic car's is 1): GTA-tough, so it
 // takes a few hard crashes to wreck, dented and smoking well before
@@ -115916,7 +114439,7 @@ __export(__exports, { "PLAYER_TOUGH": () => PLAYER_TOUGH, "carInput": () => carI
 })
 
 // ---- js/sim/carsMeet.js
-__define(291, function (__exports) {
+__define(286, function (__exports) {
 // Two of the player's sims meeting: the car the player drives (drivable.js: a, its spec sp)
 // against the Roadster left in the street (b). Pushed apart by mass, momentum traded, a 'bump' for
 // each (heard, and the Roadster dented). Pure, for the Node tests.
@@ -115988,7 +114511,7 @@ __export(__exports, { "carsMeet": () => carsMeet })
 })
 
 // ---- js/sim/footRescue.js
-__define(292, function (__exports) {
+__define(287, function (__exports) {
 // Keeping the player on foot out of trouble (player.js's walker): stuck in something (a wall's
 // corner, a car parked up against them, a gap they were pushed into) or out of the world (fallen
 // through it, off the map, or a position gone bad), they are put back somewhere safe: stuck, the
@@ -116054,11 +114577,13 @@ function nearestPavement (x, z, world = CITY_WORLD) {
   }
   return null
 }
-// out of the world: a position gone bad, fallen through the ground, or off the map's edges
-function outOfWorld (p) {
+// out of the world: a position gone bad, fallen through the ground, or off the map's edges. The
+// ground is the world's own (an interior's floor is under the city: sim/interiors/ roomWorld)
+function outOfWorld (p, world = CITY_WORLD) {
   const { x, y, z } = p.pos
   if (!Number.isFinite(x + y + z)) return true
-  if (y < groundBase(x, z) - RESCUE.below) return true
+  const base = world?.base ? world.base(x, z) : groundBase(x, z)
+  if (y < base - RESCUE.below) return true
   return Math.abs(z) > WALL + 30 || x > WALL + 30 || x < -OUTER - 400
 }
 
@@ -116071,7 +114596,7 @@ class FootRescue {
   }
   // one step: p the player on foot; wantMove: they are asking to go somewhere
   step (p, dt, wantMove, world = CITY_WORLD) {
-    if (outOfWorld(p)) return this.toPavement(p, world)
+    if (outOfWorld(p, world)) return this.toPavement(p, world)
     const { x, y, z } = p.pos
     const blocked = p.grounded && blockedAt(x, z, y, world, FOOT.radius * 0.8)
     this.inside = blocked ? this.inside + dt : 0
@@ -116108,7 +114633,7 @@ __export(__exports, { "RESCUE": () => RESCUE, "nearFree": () => nearFree, "neare
 })
 
 // ---- js/sim/boarding.js
-__define(293, function (__exports) {
+__define(288, function (__exports) {
 // Getting into a car and out of it, as timed phases (pure: the render poses the body and the door
 // from them, onFoot.js runs them). Into a car: walk round to the driver's door (the car's other
 // side, its nose or tail in the way, walked round), then
@@ -116123,8 +114648,8 @@ __define(293, function (__exports) {
 // side, the far side, either end, then anywhere free a few metres round), or up onto its roof if
 // it is boxed in on every side.
 const { stepFoot, freeSpot, blockedAt, floorAt, FOOT } = __require(79)
-const { nearFree } = __require(292)
-const { vehicles } = __require(288)
+const { nearFree } = __require(287)
+const { vehicles } = __require(283)
 const { wrapPi } = __require(2)
 
 const BOARD = {
@@ -116373,11 +114898,11 @@ __export(__exports, { "BOARD": () => BOARD, "howToEnter": () => howToEnter, "sta
 })
 
 // ---- js/ui/prompt.js
-__define(294, function (__exports) {
+__define(289, function (__exports) {
 // The prompt by a car the player can get into, GTA's: the key, what it does and the car ("E Break
 // in · Sedan"), and what is happening while they get in (onFoot.js shows it in #prompt).
-const { vehicles } = __require(288)
-const { howToEnter } = __require(293)
+const { vehicles } = __require(283)
+const { howToEnter } = __require(288)
 
 const PROMPT_R = 2.4 // m from a car's body that it offers to be got into
 const TITLE = {
@@ -116423,7 +114948,7 @@ __export(__exports, { "PROMPT_R": () => PROMPT_R, "TITLE": () => TITLE, "VERB": 
 })
 
 // ---- js/sim/interiors/modshop.js
-__define(295, function (__exports) {
+__define(290, function (__exports) {
 // The body shop's service (Redline Body & Paint): a car stopped in the bay out front, for the
 // price, comes back out repaired and in a new colour. Pure: the price, and the next colour from
 // the shop's list (render/interiors/glue.js puts them on the car).
@@ -116453,69 +114978,8 @@ const repaintKey = (k, i) => (k + 0.37 + 0.11 * i) % 1
 __export(__exports, { "PRICE": () => PRICE, "COLOURS": () => COLOURS, "nextColour": () => nextColour, "canPay": () => canPay, "repaintKey": () => repaintKey })
 })
 
-// ---- js/render/interiors/hunt.js
-__define(296, function (__exports) {
-// The hunt for the thirty hidden tokens (sim/tokens.js), run from the interiors' step (glue.js): on
-// foot or at the wheel, within reach of one it is taken, "Hidden token 7/30 · +$100" pops up, the
-// game hears 'token-collected' { id, n, total, where, pos } (the HUD's counter), the find is
-// remembered between visits and the wallet paid; the thirtieth pays a bonus and says so
-// ('tokens-complete').
-const { player } = __require(79)
-const { emitGame } = __require(68)
-const { recall, remember } = __require(7)
-const { TOTAL, tokenAt, take, found, saveFound, loadFound } = __require(253)
-
-const REWARD = 100
-const BONUS = 2500
-
-class TokenHunt {
-  constructor (foot) {
-    this.foot = foot
-    loadFound(recall('tokens', ''))
-  }
-  get found () {
-    return found()
-  }
-  get total () {
-    return TOTAL
-  }
-  step (wallet) {
-    const car = player.mode === 'car'
-    if (!car && player.mode !== 'foot') return null
-    const t = tokenAt(player.pos, car)
-    if (!t) return null
-    const n = take(t)
-    remember('tokens', saveFound())
-    const pay = REWARD + (n === TOTAL ? BONUS : 0)
-    if (wallet) {
-      wallet.cash += pay
-      remember('cash', String(wallet.cash))
-    }
-    const hud = this.foot.hud
-    hud?.popup?.(`Hidden token <b>${n}/${TOTAL}</b> · +$${pay}`, 2600, 'hint')
-    emitGame('token-collected', {
-      id: t.id,
-      n,
-      total: TOTAL,
-      where: t.where,
-      pos: { x: t.x, y: t.y, z: t.z }
-    })
-    if (n === TOTAL) {
-      hud?.popup?.(
-        `All ${TOTAL} hidden tokens found · +$${BONUS}`,
-        4000,
-        'hint'
-      )
-      emitGame('tokens-complete', { total: TOTAL, bonus: BONUS })
-    }
-    return t
-  }
-}
-__export(__exports, { "REWARD": () => REWARD, "BONUS": () => BONUS, "TokenHunt": () => TokenHunt })
-})
-
 // ---- js/render/interiors/glue.js
-__define(297, function (__exports) {
+__define(291, function (__exports) {
 // The interiors in the game: what onFoot.js asks of them through four calls (the step, the prompt,
 // E, and the wallet handed over by game.js). By a door on foot the prompt offers "E Enter · Night
 // Owl Mart"; E fades the screen to black, puts the player inside (the room's own world for the
@@ -116528,10 +114992,9 @@ const { player } = __require(79)
 const { emitGame } = __require(68)
 const { remember } = __require(7)
 const { MAT } = __require(82)
-const { INTERIOR, inside, busy, offerAt, begin, stepTransition, swapIn, swapOut, clearInterior, strayed, roomWorld } = __require(256)
-const { PRICE, canPay, nextColour, repaintKey } = __require(295)
-const { SITES } = __require(98)
-const { TokenHunt } = __require(296)
+const { INTERIOR, inside, busy, offerAt, begin, stepTransition, swapIn, swapOut, clearInterior, strayed, roomWorld } = __require(116)
+const { PRICE, canPay, nextColour, repaintKey } = __require(290)
+const { SITES } = __require(115)
 
 class InteriorGlue {
   constructor (foot) {
@@ -116541,7 +115004,6 @@ class InteriorGlue {
     this.wallet = null // { cash } (game.js's missions)
     this.damage = null // the Roadster's dents (render/damage.js)
     this.sprays = 0
-    this.hunt = new TokenHunt(foot) // (the hidden tokens: hunt.js)
   }
   // game.js: who pays, and the Roadster's dents to mend
   attach ({ wallet, damage }) {
@@ -116565,7 +115027,6 @@ class InteriorGlue {
     const ev = stepTransition(H)
     if (ev === 'swap') this.swap()
     this.fade()
-    if (!busy()) this.hunt.step(this.wallet)
     return busy()
   }
   swap () {
@@ -116577,22 +115038,14 @@ class InteriorGlue {
       f.world = roomWorld(s)
       this.view()?.show(s)
       this.snap()
-      emitGame('interior-entered', {
-        id: s.id,
-        kind: s.kind,
-        name: s.name,
-        pos: { x: s.out.x, z: s.out.z }
-      })
+      emitGame('interior-entered', { id: s.id, kind: s.kind, name: s.name, pos: { x: s.out.x, z: s.out.z } })
     } else if (act === 'exit') {
       const id = INTERIOR.site?.id
       swapOut(player)
       f.world = this.city
       this.view()?.show(null)
       this.snap()
-      emitGame('interior-exited', {
-        id,
-        pos: { x: player.pos.x, z: player.pos.z }
-      })
+      emitGame('interior-exited', { id, pos: { x: player.pos.x, z: player.pos.z } })
     } else if (act === 'service') this.service(s)
   }
   // the camera straight behind the player, where they now are (no glide through the floor)
@@ -116643,18 +115096,8 @@ class InteriorGlue {
       car.paint = repaintKey(car.paint, this.sprays)
     }
     this.sprays++
-    f.hud?.popup?.(
-      `Repaired and resprayed · ${c.name} · <b>-$${PRICE}</b>`,
-      2600,
-      'hint'
-    )
-    emitGame('car-resprayed', {
-      site: s.id,
-      vehicle: e?.id,
-      colour: c.name,
-      price: PRICE,
-      wanted: player.wanted
-    })
+    f.hud?.popup?.(`Repaired and resprayed · ${c.name} · <b>-$${PRICE}</b>`, 2600, 'hint')
+    emitGame('car-resprayed', { site: s.id, vehicle: e?.id, colour: c.name, price: PRICE, wanted: player.wanted })
   }
 
   // the Roadster's paint: its material and the copies of it its panels were made with
@@ -116664,8 +115107,7 @@ class InteriorGlue {
       this.paints = new Set([MAT.paint])
       this.foot.RS?.car?.traverse(o => {
         for (const m of [].concat(o.material || []))
-          if (m?.isMeshPhysicalMaterial && m.color?.getHex() === was)
-            this.paints.add(m)
+          if (m?.isMeshPhysicalMaterial && m.color?.getHex() === was) this.paints.add(m)
       })
     }
     for (const m of this.paints) m.color.setHex(hex)
@@ -116681,8 +115123,7 @@ class InteriorGlue {
       return o
     }
     const speed = player.mode === 'car' ? f.driven()?.groundSpeed?.() || 0 : 0
-    const c = (this.current =
-      f.app?.intro || f.app?.auto ? null : offerAt(player, speed))
+    const c = (this.current = f.app?.intro || f.app?.auto ? null : offerAt(player, speed))
     if (inside()) {
       // (the cars in the street over the room are not in it)
       o.target = o.how = null
@@ -116697,13 +115138,8 @@ class InteriorGlue {
       const short = !canPay(this.wallet)
       o.text = c.why
         ? `${c.site.name} · ${c.why}`
-        : `<kbd>E</kbd> Repair & respray · $${PRICE}${
-            short ? ' · not enough cash' : ''
-          }`
-    } else
-      o.text = c.why
-        ? `${c.site.name} · ${c.why}`
-        : `<kbd>E</kbd> Enter · ${c.site.name}`
+        : `<kbd>E</kbd> Repair & respray · $${PRICE}${short ? ' · not enough cash' : ''}`
+    } else o.text = c.why ? `${c.site.name} · ${c.why}` : `<kbd>E</kbd> Enter · ${c.site.name}`
     return o
   }
 
@@ -116734,7 +115170,7 @@ __export(__exports, { "InteriorGlue": () => InteriorGlue })
 })
 
 // ---- js/render/footView.js
-__define(298, function (__exports) {
+__define(292, function (__exports) {
 // The player on foot, drawn: Optimus (optimus.js), out of the Roadster and walking the city, its
 // legs and arms swinging with its pace (a longer, quicker stride and a lean running), legs tucked in
 // a jump, flat on its back knocked over; and getting into a car and out of it (boarding.js): at the
@@ -116745,8 +115181,8 @@ __define(298, function (__exports) {
 const THREE = __require(0)
 const { buildOptimus, poseOptimus, HIP_STAND } = __require(128)
 const { boardRoadster, BOARD_T } = __require(130)
-const { doorOf, seatShare, BOARD } = __require(293)
-const { vehicles } = __require(288)
+const { doorOf, seatShare, BOARD } = __require(288)
+const { vehicles } = __require(283)
 const { clamp, wrapPi } = __require(2)
 
 const STRIDE = { walk: 1.45, run: 2.4 } // m per pair of steps
@@ -116973,7 +115409,7 @@ __export(__exports, { "FootView": () => FootView })
 })
 
 // ---- js/render/footCam.js
-__define(299, function (__exports) {
+__define(293, function (__exports) {
 // The camera on foot: GTA's third-person orbit over the player's shoulder. The mouse (the pointer
 // locked to the picture: a click) or a gamepad's right stick swings it round and up and down; the
 // wheel brings it in or lets it out. It follows the player smoothly, keeps out of buildings
@@ -117113,7 +115549,7 @@ __export(__exports, { "clipShare": () => clipShare, "FootCam": () => FootCam })
 })
 
 // ---- js/audio/steps.js
-__define(300, function (__exports) {
+__define(294, function (__exports) {
 // The player's footsteps on foot (onFoot.js): Optimus's tread from the sample bank (buffers.js), its
 // colour by what is underfoot (a hard heel on the road and the pavement, a hollow knock on the
 // pier's planks, a soft swish through grass, a crunch in the sand, a ring off a roof's metal), heavier
@@ -117182,7 +115618,7 @@ __export(__exports, { "footstep": () => footstep, "landing": () => landing, "sma
 })
 
 // ---- js/onFoot.js
-__define(301, function (__exports) {
+__define(295, function (__exports) {
 // The player out of the car: getting out (E), walking the city as Optimus (WASD, Shift to run,
 // Space to jump, the mouse or the right stick looking round), getting into the Roadster or any other
 // car (E by it: in at once if it is open, broken into if it is parked and locked, taken from its
@@ -117195,25 +115631,25 @@ __define(301, function (__exports) {
 const { look } = __require(63)
 const THREE = __require(0)
 const { emitGame } = __require(68)
-const { dropCarName } = __require(286)
+const { dropCarName } = __require(281)
 const { footProxy } = __require(149)
-const { vehicles } = __require(288)
-const { Drivable } = __require(290)
-const { collidePlayer } = __require(103)
-const { carsMeet } = __require(291)
-const { FootRescue } = __require(292)
+const { vehicles } = __require(283)
+const { Drivable } = __require(285)
+const { collidePlayer } = __require(98)
+const { carsMeet } = __require(286)
+const { FootRescue } = __require(287)
 const { makeControls } = __require(2)
 const { player, setMode, placePlayer, stepFoot, moveDir, knockDown, CITY_WORLD } = __require(79)
-const { startEnter, startExit, stepBoard, cancellable, BOARD } = __require(293)
-const { offerFor } = __require(294)
-const { InteriorGlue } = __require(297)
-const { FootView } = __require(298)
-const { FootCam } = __require(299)
-const { clipCamera } = __require(260)
+const { startEnter, startExit, stepBoard, cancellable, BOARD } = __require(288)
+const { offerFor } = __require(289)
+const { InteriorGlue } = __require(291)
+const { FootView } = __require(292)
+const { FootCam } = __require(293)
+const { clipCamera } = __require(255)
 const { scene } = __require(82)
 const { raiseAlarm } = __require(85)
-const { hearing, panOf, placeOf } = __require(118)
-const { footstep, landing, smashWindow, forceLock, doorSound } = __require(300)
+const { hearing, panOf, placeOf } = __require(117)
+const { footstep, landing, smashWindow, forceLock, doorSound } = __require(294)
 
 const HOLD = { ...makeControls(), brake: 1, fan: false }
 // what the radar, the GPS and the place name follow while the player walks: the feet, as a car
@@ -117649,7 +116085,7 @@ __export(__exports, { "OnFoot": () => OnFoot })
 })
 
 // ---- js/render/playerCar.js
-__define(302, function (__exports) {
+__define(296, function (__exports) {
 // The car the player drives when it isn't the Roadster (drivable.js): the traffic renderer keeps
 // drawing it as itself (traffic.js: its body type, paint, glass, lamps and dents), but posed here
 // from its physics body (vehicleSim.js) rather than from the traffic's own springs: the body's
@@ -117757,7 +116193,7 @@ __export(__exports, { "PlayerCar": () => PlayerCar })
 })
 
 // ---- js/audio/engine.js
-__define(303, function (__exports) {
+__define(297, function (__exports) {
 // The engine of whatever the player drives that isn't the Roadster, synthesised: its firing
 // frequency from the rpm and gear vehicleSim.js keeps (rpm / 60 x cylinders / 2), a sawtooth and a
 // half-order rumble through a low-pass that opens with the throttle and the revs, a burble of
@@ -117901,7 +116337,7 @@ __export(__exports, { "EngineVoice": () => EngineVoice })
 })
 
 // ---- js/ui/carHud.js
-__define(304, function (__exports) {
+__define(298, function (__exports) {
 // The HUD kept to whatever the player drives, or to them on foot (hud.js calls update after its
 // own): the car's name bottom right as they get in (GTA's: the class small and gold over the name,
 // 'Stolen' when it was), the speedometer's selector swapped for the gear (1 to 6, R, N) and its
@@ -117913,7 +116349,7 @@ __define(304, function (__exports) {
 //   new CarHud(hud, foot, game)  .entered(entry), .exited(), .update(dt, app)
 //   (foot: onFoot.js; game: () => the Game, game.js, made after the HUD)
 const { $, put } = __require(1)
-const { TITLE } = __require(294)
+const { TITLE } = __require(289)
 
 // the class over the name, for each traffic type
 const CLASS = {
@@ -117998,14 +116434,14 @@ __export(__exports, { "CAR_SLOT": () => CAR_SLOT, "CarHud": () => CarHud })
 })
 
 // ---- js/ui/testDrive.js
-__define(305, function (__exports) {
+__define(299, function (__exports) {
 // A developer's harness for the polish work (not a game mode): put the player straight into a city
 // car of a given traffic type (sedan, sports, suv, pickup, truck, van, bus, police, ...) a few
 // metres ahead of where they are (on the nearest lane), seated as if they had walked up and got in (onFoot.js seated),
 // so the camera, the HUD, the sounds and the effects all follow it. Used by automated smoke tests
 // through window.__roadster.seatIn(type), and by ?drive=<kind>&seat=1.
 const { IDX } = __require(58)
-const { vehicles } = __require(288)
+const { vehicles } = __require(283)
 const { player } = __require(79)
 const { nearestLane } = __require(35)
 
@@ -118037,7 +116473,7 @@ __export(__exports, { "seatIn": () => seatIn })
 })
 
 // ---- js/polish.js
-__define(306, function (__exports) {
+__define(300, function (__exports) {
 // The polish over whatever the player drives, kept out of main.js: each frame, the car that isn't
 // the Roadster posed from its body with its skids and smoke (render/playerCar.js), the camera told
 // what it is following (render/carCam.js), its engine, tyres and horn heard (audio/engine.js) and
@@ -118046,11 +116482,11 @@ __define(306, function (__exports) {
 //   new Polish({ foot, rig, sound, hud, cityView, RS, app, game })
 //   (game: () => the Game, game.js: the player's health on foot)
 //   .frame(dt)  after the physics steps: returns the RS-like stand-in for skids.js and effects.js
-const { PlayerCar } = __require(302)
+const { PlayerCar } = __require(296)
 const { armScale, armRise } = __require(59)
-const { EngineVoice } = __require(303)
-const { CarHud } = __require(304)
-const { seatIn } = __require(305)
+const { EngineVoice } = __require(297)
+const { CarHud } = __require(298)
+const { seatIn } = __require(299)
 
 // V on foot: the camera over the shoulder close, middling or far (footCam.js dist)
 const FOOT_CAMS = [
@@ -118102,7 +116538,7 @@ __export(__exports, { "Polish": () => Polish })
 })
 
 // ---- js/main.js
-__define(307, function (__exports) {
+__define(301, function (__exports) {
 // Tesla Roadster Sim: boot, game state, sim events and the main loop.
 const THREE = __require(0)
 const { Hud } = __require(16)
@@ -118110,11 +116546,11 @@ const { Sim } = __require(48)
 const { Menu } = __require(125)
 const { Input } = __require(13)
 const { Minimap } = __require(126)
-const { smoke } = __require(113)
+const { smoke } = __require(109)
 const { Intro } = __require(130)
 const { Tween } = __require(131)
 const { Peds } = __require(143)
-const { Traffic } = __require(111)
+const { Traffic } = __require(107)
 const { driveDemo } = __require(150)
 const { SoundEngine } = __require(164)
 const { Autopilot } = __require(165)
@@ -118123,28 +116559,28 @@ const { ENV } = __require(3)
 const { buildLineup } = __require(168)
 const { nearestLane, standUp } = __require(35)
 const { handleEvents: simEvents } = __require(170)
-const { CityView, clipCamera } = __require(260)
-const { hearing, panOf, mixSound } = __require(118)
+const { CityView, clipCamera } = __require(255)
+const { hearing, panOf, mixSound } = __require(117)
 const { CameraRig } = __require(62)
-const { updateSkids, clearSkids } = __require(261)
+const { updateSkids, clearSkids } = __require(256)
 const { DEG, TAU, makeControls } = __require(2)
-const { LED_MAT, buildWall, buildTruss } = __require(262)
-const { buildRoadster, updateRoadster } = __require(267)
+const { LED_MAT, buildWall, buildTruss } = __require(257)
+const { buildRoadster, updateRoadster } = __require(262)
 const { Post } = __require(183)
-const { Climate } = __require(270)
-const { Resolution } = __require(271)
-const { warmUp } = __require(272)
-const { Damage } = __require(273)
+const { Climate } = __require(265)
+const { Resolution } = __require(266)
+const { warmUp } = __require(267)
+const { Damage } = __require(268)
 const { MAT, scene, camera, canvas } = __require(82)
 const { renderer, followKeyLight } = __require(82)
 const { fallFx, ALL_PARTICLES, updateNozzles, emitThrusters, emitTireSmoke, attachDiamonds } = __require(169)
-const { emitTrafficSpray } = __require(114)
-const { Game } = __require(287)
-const { OnFoot } = __require(301)
+const { emitTrafficSpray } = __require(110)
+const { Game } = __require(282)
+const { OnFoot } = __require(295)
 const { player } = __require(79)
-const { vehicles } = __require(288)
+const { vehicles } = __require(283)
 const { GAME_EVENTS, tickGame } = __require(68)
-const { Polish } = __require(306)
+const { Polish } = __require(300)
 
 // ---------- world ----------
 buildWall()
@@ -118604,5 +117040,5 @@ window.__roadster = {
 }
 __export(__exports, {  })
 })
-__require(307)
+__require(301)
 })()

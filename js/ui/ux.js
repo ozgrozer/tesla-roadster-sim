@@ -1,7 +1,8 @@
 // The menu's work each frame (menu.frame, from main.js's loop): the player's options applied where
 // a frame is needed for it (the sound's levels once its context exists), a new player's hints
 // (onboard.js) when the help box is free, the captions for the sounds that matter (captions.js,
-// with subtitles on), the stats' tracking (stats.js), and busted or wasted counted.
+// with subtitles on), the stats' tracking (stats.js), busted or wasted counted, and the hidden
+// tokens' counter (tokens.js).
 import { ENV } from '../sim/env.js'
 import { player } from '../sim/player.js'
 import { ALARM } from '../audio/watch.js'
@@ -9,6 +10,7 @@ import { setVolumes } from '../audio/mix.js'
 import { OPTS, loadOptions, onOption } from './options.js'
 import { Onboard } from './onboard.js'
 import { Captions } from './captions.js'
+import { TokenCounter } from './tokens.js'
 import { setReducedMotion } from '../render/motionPref.js'
 
 const CAPTION_S = 2.6 // s a caption stays up
@@ -26,6 +28,12 @@ export class UxFrame {
     el.className = 'captions'
     el.setAttribute('aria-live', 'polite')
     document.body.appendChild(el)
+    // the hidden tokens' count, up for a moment on each find (tokens.js)
+    const tk = document.createElement('div')
+    tk.className = 'tokens'
+    tk.setAttribute('aria-live', 'polite')
+    document.body.appendChild(tk)
+    this.tokens = new TokenCounter(tk)
     onOption(k => {
       if (!k || k === 'master' || k === 'music' || k === 'sfx') setVolumes(sound, OPTS)
       if (k === 'px') app.onQuality?.(app.quality)
@@ -39,6 +47,7 @@ export class UxFrame {
     // (the engine builds its context at the first key or click: the levels then)
     if (sound.ctx && sound.ctx !== this.ctx && setVolumes(sound, OPTS)) this.ctx = sound.ctx
     if (this.app.paused || !(dt > 0)) return
+    this.tokens.update(dt)
     const W = game?.wanted,
       stars = W?.stars || 0
     if (city) this.stats?.track(dt, player, stars, game?.missions)
@@ -80,6 +89,6 @@ export class UxFrame {
   // the STATS tab, drawn as it opens
   showStats (game, mph) {
     const M = game?.missions
-    this.stats?.render(mph, M?.cash || 0, M?.state === 'running' ? M.active?.id : null)
+    this.stats?.render(mph, M?.cash || 0, M?.state === 'running' ? M.active?.id : null, this.tokens)
   }
 }

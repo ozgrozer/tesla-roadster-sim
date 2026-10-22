@@ -142,3 +142,39 @@ test("the police stream's search area wins while fresh, and its absence is fine"
   emitGame('police-search', { pos: null, radius: 0 })
   assert.equal(searchOf({ search: own, units: [{ x: 0, z: 0 }] }), null)
 })
+
+test("an interior's floor (under the city) is not 'fallen out of the world' for the foot rescue", async () => {
+  const { outOfWorld } = await import('../js/sim/footRescue.js')
+  const { SITES, POCKET } = await import('../js/sim/interiors/sites.js')
+  const { roomWorld } = await import('../js/sim/interiors/state.js')
+  const s = SITES[0]
+  const p = { pos: { x: s.inner.x, y: POCKET, z: s.inner.z } }
+  assert.equal(outOfWorld(p, roomWorld(s)), false)
+  assert.equal(outOfWorld(p), true) // (in the street's world, that deep is fallen through)
+})
+
+test("hidden tokens: the HUD counter follows the world's 'token-collected', shows a while, then hides; complete; the stats row", async () => {
+  const { TokenCounter, SHOW_S, DONE_S } = await import('../js/ui/tokens.js')
+  const { emitGame } = await import('../js/sim/gameEvents.js')
+  const { Stats } = await import('../js/ui/stats.js')
+  const c = new TokenCounter()
+  assert.equal(c.n, 0)
+  assert.equal(c.update(0.1), false, 'nothing found: hidden')
+  emitGame('token-collected', { id: 4, n: 1, total: 30, where: 'the lookout', pos: { x: 0, y: 0, z: 0 } })
+  assert.equal(c.text(), '◆ 1/30')
+  assert.equal(c.update(0.1), true, 'up on a find')
+  assert.equal(c.update(SHOW_S), false, 'gone after a few seconds')
+  emitGame('token-collected', { id: 9, n: 7, total: 30, where: 'in the tunnel' })
+  emitGame('token-collected', { id: 9, n: 5, total: 30 }) // (a stray, older count never counts down)
+  assert.equal(c.n, 7)
+  emitGame('tokens-complete', { total: 30, bonus: 2500 })
+  assert.ok(c.done)
+  assert.equal(c.update(SHOW_S + 0.1), true, 'all found: up longer')
+  assert.equal(c.update(DONE_S), false)
+  const box = { innerHTML: '' }
+  new Stats(box).render(false, 0, null, c)
+  assert.match(box.innerHTML, /Hidden tokens<\/dt><dd>30 of 30/)
+  c.dispose()
+  emitGame('token-collected', { id: 1, n: 1, total: 30 })
+  assert.equal(c.n, 30, 'no longer listening once disposed')
+})

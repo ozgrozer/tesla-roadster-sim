@@ -168,3 +168,36 @@ W3, explorables (72150f3, 8dd285f, aab6f35):
   them). The random draws are unchanged, so the alleys and tokens stay where they were. They have open railings, brackets,
   a drop ladder and a lit window per landing (43 -> 28 escapes).
 - npm test 299/299. Shots: v2f-f-stop-approach.png, v2f-f-stop-junction(-night).png, v2f2-f-alley-escape(-night).png.
+
+## U3 (ux): one time+weather state, the scenes checked, the mix
+
+- One state: `ENV` (sim/env.js) is the time and weather everything reads: sky, sun/hemi light, fog, exposure
+  (render/daylight.js), the street lamps, windows and car beams (`city.setDark`), the wet road (wet.js), the rain
+  (rain.js) and the ambience (audio/mix.js `st`). Grip has one getter: `weatherGrip()` (wet road down to 0.7 at most,
+  WET_GRIP 0.3); sim/roadGrip.js multiplies it in instead of keeping its own. `weatherKind()` names the weather.
+- Indoors (interiors/state.js `inside()`): the street, rain and thunder are heard through the walls (cabin lowpass
+  520 Hz, outside bus 0.28; in a car 950 Hz / 0.5).
+- Reduced motion dims the lightning flash to 0.3 (sky, hemi light).
+- Fix (phys file, minimal): footRescue's `outOfWorld` judged the interiors' floor (POCKET, 40 m under the city) as
+  fallen through the world and threw the player straight back out; it uses the walker's own world's `base()` (test).
+- Scenes (headless, downtown ?spawn=96,-60,1.57, clock stopped): day 12.5, golden 17.2, sunset 18.2, night 22,
+  rain 15, rain-night 21.5, fog 9, storm 16 -> /workspace/shots/v2/ux/u3-f-*.png (contact sheet u3-f-contact.png).
+  No flicker or z-fighting between consecutive frames (diffs are rain streaks and the camera settling); bloom only
+  on lamps, beams and the headlight pool. The yellow centre line saturates where the headlights fall (bright paint
+  lit; left as is).
+- Harness note for QA: with drawing off, daylight.js still "draws" the environment map every 0.25 s (a no-op), so a
+  shot right after a time change shows the old sky in reflections. Set `cityView.daylight.envWas = null; envT = 0`
+  before drawing.
+- Mix (analysers on the buses): idle street about -31 dB RMS; storm -24 (peak -14); slow driving car bus -20 vs
+  world -27; a chase with impacts peaks -1 dBFS at the mix input with the limiter (-9 dB, 12:1) holding it. Siren
+  level 1.2/(1+d/28) from the nearest unit; units removed -> chase cleared -> siren silent; car voices freed when a
+  car is unlisted; lanes with nothing to play disconnected; pause suspends the context. Volumes: master (outVol),
+  music (musicBus), effects (mixIn) from the options.
+
+### Hidden tokens counter (ux, for the world's hunt)
+
+- `js/ui/tokens.js` TokenCounter listens for 'token-collected' { id, n, total, where, pos } and 'tokens-complete'
+  (render/interiors/hunt.js on gta-v2-world): "◆ n/30" over the radar's clock for 4 s on a find (8 s and gold when
+  all are found), under the pause menu; the hunt's n is the truth (never counts down); remembered as prefs
+  'tokenCount'. The STATS tab has a "Hidden tokens n of 30" row. Test in tests/ux.test.mjs. Shots:
+  /workspace/shots/v2/ux/x-token-hud.png, x-token-stats.png (events fed in by hand: the hunt is not on this branch).

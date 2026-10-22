@@ -50,7 +50,8 @@ export class Stats {
     remember('stats', JSON.stringify({ ...this.s, passed: [...this.passed] }))
   }
   // the tab drawn afresh (as it opens): mph, whether to show miles; cash
-  render (mph, cash = 0, running = null) {
+  // tokens: the hidden tokens' counter (tokens.js { n, total })
+  render (mph, cash = 0, running = null, tokens = null) {
     const s = this.s,
       dist = m => (mph ? `${(m / 1609).toFixed(1)} mi` : `${(m / 1000).toFixed(1)} km`),
       h = Math.floor(s.time / 3600),
@@ -67,6 +68,7 @@ export class Stats {
       ['Busted · wasted', `${s.busted} · ${s.wasted}`],
       ['Cash', `$${cash.toLocaleString('en-US')}`]
     ]
+    if (tokens) rows.splice(rows.length - 1, 0, ['Hidden tokens', `${tokens.n} of ${tokens.total}`])
     const done = MISSIONS.filter(m => this.passed.has(m.id)).length
     const missions = MISSIONS.map(m => {
       const state = running === m.id ? 'running' : this.passed.has(m.id) ? 'passed' : ''
