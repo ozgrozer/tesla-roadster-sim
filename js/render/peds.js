@@ -31,6 +31,9 @@ const _m = new THREE.Matrix4(),
   _p = new THREE.Vector3(),
   _s = new THREE.Vector3()
 const LAMP = { x: 0, y: 0, z: 0, w: 0 }
+const TAU = Math.PI * 2
+const TURN = 12 // 1/s: how fast someone drawn turns to the way the sim faces them
+const RISE = 7 // 1/s: and gets up off the ground
 
 export class PedView {
   constructor (group, max = 360) {
@@ -88,6 +91,11 @@ export class PedView {
       me = sim ? (sim.mode === 'ground' ? sim.pos : sim.com) : null
     // (the street lights: on at night, at dusk and in a storm's gloom)
     const on = Math.max(NIGHT.value, ENV.dark)
+    // (the frame's own time, for the turns and the getting up eased over a few frames: put)
+    const now = performance.now()
+    this.dt = Math.min(0.1, Math.max(0, (now - (this.at || now)) / 1000))
+    this.at = now
+    this.n = (this.n || 0) + 1
     let i = 0
     for (let pass = 0; pass < 2; pass++) {
       for (const d of peds.list) {
@@ -123,17 +131,30 @@ export class PedView {
   put (d, i, on) {
     // up on the pavement, down in the road
     const h = kerbDist(d.x, d.z) > 0 ? 0 : CURB_H
+    // (a turn and a getting up eased over a few frames rather than in one: the sim snaps them, a
+    // jacked driver up off the road and away, anyone back from a dive; someone not drawn the frame
+    // before is put as they are)
+    if (d.rN !== this.n - 1) {
+      d.ry = d.yaw
+      d.rf = d.fall
+    } else {
+      const a = d.yaw - d.ry
+      d.ry += (a - Math.round(a / TAU) * TAU) * Math.min(1, this.dt * TURN)
+      d.rf = d.fall >= d.rf ? d.fall : d.rf + (d.fall - d.rf) * Math.min(1, this.dt * RISE)
+    }
+    d.rN = this.n
+    const fall = d.rf > 0.01 ? d.rf : 0
     // (fields and arrays written directly: no numbers passed to calls)
     _q._x = _q._z = 0
-    _q._y = Math.sin(d.yaw / 2)
-    _q._w = Math.cos(d.yaw / 2)
+    _q._y = Math.sin(d.ry / 2)
+    _q._w = Math.cos(d.ry / 2)
     // knocked down (sim/pedBrain.js): tipped over backwards onto the road, lying there
-    if (d.fall > 0) {
-      _fall.setFromAxisAngle(_side, (d.fall * Math.PI) / 2.1)
+    if (fall > 0) {
+      _fall.setFromAxisAngle(_side, (fall * Math.PI) / 2.1)
       _q.multiply(_fall)
     }
     _p.x = d.x
-    _p.y = h + (d.fall > 0 ? 0.12 * d.fall : 0)
+    _p.y = h + (fall > 0 ? 0.12 * fall : 0)
     _p.z = d.z
     _s.x = _s.y = d.tall
     _s.z = d.wide

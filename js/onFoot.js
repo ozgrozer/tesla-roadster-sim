@@ -9,6 +9,7 @@
 //   game events: 'car-entered', 'car-exited', 'car-stolen', 'crime' (sim/gameEvents.js)
 import * as THREE from 'three'
 import { emitGame } from './sim/gameEvents.js'
+import { dropCarName } from './carName.js'
 import { footProxy } from './sim/vehicleLink.js'
 import { vehicles } from './sim/vehicles.js'
 import { Drivable } from './sim/drivable.js'
@@ -247,6 +248,7 @@ export class OnFoot {
     this.nearCars()
     this.action = startExit(e, this.world)
     setMode('exiting', e)
+    dropCarName(this.hud) // (its name doesn't stay up after the player: carName.js)
     if (e.kind === 'roadster') this.RS.seated = false
     else doorSound(this.sound, false, 0)
     this.camToFoot()
@@ -284,7 +286,7 @@ export class OnFoot {
   // the driver hauled out of their car: on foot, and running
   pullOut (e, w) {
     // (out of the driver's door, the left: they run off, and the people round about see it)
-    this.traffic.ejectDriver(e.car, { side: 1, jacked: true })
+    this.traffic.ejectDriver(e.car, { side: 1, jacked: true, along: e.seat.x - 0.35 }) // (staged: alight.js haul)
     this.peds.threat?.(w.x, w.z, 14, 2, 2)
     e.vacant = true
     this.sound.honk?.([300, 380], 0.05 * hearing(w.x, w.z), panOf(w.x, w.z))

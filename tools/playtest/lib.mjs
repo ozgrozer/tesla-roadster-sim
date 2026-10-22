@@ -58,7 +58,7 @@ export class Game {
   }
   static async open ({ query = '', width = 960, height = 540 } = {}) {
     const { chromium } = loadPlaywright()
-    const server = await serve()
+    const server = await serve(Number(process.env.PORT) || 0)
     const base = `http://127.0.0.1:${server.address().port}/`
     const browser = await chromium.launch({
       executablePath: process.env.CHROME || '/usr/bin/google-chrome',
@@ -72,8 +72,8 @@ export class Game {
   }
   async goto (query = '') {
     if (this.step === 'load') this.step = 'load ' + query
-    await this.page.goto(this.base + 'index.html' + query)
-    await this.page.waitForFunction(() => window.__roadster && window.__roadster.app.world, null, { timeout: 120000 })
+    await this.page.goto(this.base + 'index.html' + query, { timeout: 180000 })
+    await this.page.waitForFunction(() => window.__roadster && window.__roadster.app.world, null, { timeout: 240000 })
     await this.wait(1500)
     // drawing off between screenshots: a software GL takes a second or more a frame, the game's
     // own work a few ms (the frame loop still runs: the clock, the HUD, the camera)

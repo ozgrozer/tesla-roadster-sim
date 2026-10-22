@@ -26,7 +26,7 @@ import { buildGround } from './cityGround.js'
 import { buildStreet } from './cityStreet.js'
 import { buildBuildings, BEACON } from './cityBuildings.js'
 import { updateTrees } from './cityTrees.js'
-import { streamed, stream, streamAll } from './chunks.js'
+import { streamed, stream, streamAll, streamBack } from './chunks.js'
 
 const _pv = new THREE.Matrix4(),
   _view = new THREE.Frustum()
@@ -195,13 +195,10 @@ export class CityView {
   // before the frame is drawn: the city's shadow map, if it is due (with the cars and hide, the
   // Roadster, left out of it)
   shadows (camera, hide) {
-    if (this.shadow?.pending) streamAll() // (the whole city in it, near or far)
-    if (this.shadow?.pending)
-      this.shadow.update(camera, [
-        ...this.cars.meshes,
-        this.people.mesh,
-        ...hide
-      ])
+    if (!this.shadow?.pending) return
+    streamAll() // (the whole city in it, near or far)
+    this.shadow.update(camera, [...this.cars.meshes, this.people.mesh, ...hide])
+    streamBack() // (and the view as streamed again: chunks.js)
   }
   update (dt, clock, traffic, camera, peds) {
     if (!this.on) return
