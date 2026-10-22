@@ -138,13 +138,55 @@ export function kerbs (b) {
   }
 }
 
+// Two bodies (two cars each driven by a body, vehicleLink.js: the player's and a getaway's, say):
+// the overlap shared by mass, momentum traded at the corner that landed (so one struck off its
+// middle spins), each dented by the other's mass and told on its own events
+const OTHER = { x: 0, z: 0, fx: 1, fz: 0, hl: 1, hw: 1 }
+function clash (b, o, tr) {
+  if (Math.abs(o.x - b.x) > 14 || Math.abs(o.z - b.z) > 14) return 0
+  if ((b.y || 0) > (o.y || 0) + o.hgt || (b.y || 0) + b.hgt < (o.y || 0)) return 0
+  const me = rectOf(b),
+    B = rectOf(o, OTHER)
+  const hit = rectRect(me, B)
+  if (!hit) return 0
+  const at = landed(me, B)
+  const px = at ? at.x : hit.px,
+    pz = at ? at.z : hit.pz
+  const { nx, nz, depth } = hit
+  const share = o.m / (o.m + b.m)
+  b.x += nx * depth * share
+  b.z += nz * depth * share
+  o.x -= nx * depth * (1 - share)
+  o.z -= nz * depth * (1 - share)
+  const w0 = b.w,
+    w1 = o.w
+  const impact = impulse(b, o, { nx, nz, depth, px, pz }, 0.25, 0.3)
+  b.w = w0 + clamp(b.w - w0, -2.5, 2.5)
+  o.w = w1 + clamp(o.w - w1, -2.5, 2.5)
+  if (impact < 0.6) return impact
+  const broke = damage(b, px, pz, impact, o.m),
+    hurtO = damage(o, px, pz, impact, b.m)
+  b.events.push({ type: 'clash', impact, x: px, z: pz, car: o.id, broke, nx, nz })
+  o.events?.push({ type: 'clash', impact, x: px, z: pz, car: b.id, broke: hurtO, nx: -nx, nz: -nz })
+  if (impact > CRASH_AT) b.events.push({ type: 'crash', impact, x: px, z: pz, car: o.id })
+  if (impact > 5) tr.hear?.(px, pz, 22)
+  return impact
+}
+
 // The traffic (traffic.js) against body b: overlap shared out by mass, momentum traded, the car
 // knocked loose and dented, its driver honking; a hard one is heard by the people and frightens the
 // drivers about. skip: a traffic car that is this body itself (one the player took over).
 export function collideTraffic (b, tr, skip = null) {
   const me = rectOf(b)
   for (const car of tr.cars) {
-    if (car === skip || car.ctl) continue
+    if (car === skip) continue
+    if (car.ctl) {
+      // (one driven by a body of its own, the player's or a workstream's: body against body)
+      // (and only while that body is what's drawn there: not one left behind when it changed hands)
+      const o = car.body
+      if (o && o !== b && Math.abs(o.x - car.x) + Math.abs(o.z - car.z) < 1.5) clash(b, o, tr)
+      continue
+    }
     if (Math.abs(car.x - b.x) > 14 || Math.abs(car.z - b.z) > 14) continue
     if (b.y > (car.y || 0) + car.hgt || b.y + b.hgt < (car.y || 0)) continue // (one on a deck above)
     const B = { x: car.x, z: car.z, fx: car.hx, fz: car.hz, hl: car.len / 2, hw: car.wid / 2 }

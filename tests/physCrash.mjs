@@ -8,6 +8,7 @@ import { rectRect } from '../js/sim/collide.js'
 import { Traffic } from '../js/sim/traffic.js'
 import { IDX } from '../js/sim/carTypes.js'
 import { slide } from '../js/sim/wrecks.js'
+import { bodyFromTraffic, writeToTraffic } from '../js/sim/vehicleLink.js'
 
 const H = 1 / 120
 // body of class kind at speed v heading +x into a parked traffic car of type ty, side on (side) or
@@ -78,10 +79,45 @@ export function crash (kind, ty, v, { side = false, dz = 0, thr = 0, secs = 1.5,
     bw: b.w
   }
 }
-export function momentumKept (kind, ty, v) {
-  // right after the hit (0.12 s): the pair's momentum along x against what it was
-  const r = crash(kind, ty, v, { secs: 0.12 + v * 0.05 / v })
-  return r
+// body against body: a body of kind at v into a car taken over and driven by a body of its own
+// (vehicleLink.js), standing, end on or side on, offset dz
+export function bodyCrash (kind, ty, v, { side = false, dz = 0, secs = 1.5 } = {}) {
+  const tr = new Traffic({ count: 0 })
+  const car = tr.make(IDX[ty] ?? 0)
+  tr.setYaw(car, side ? Math.PI / 2 : 0)
+  car.x = 30
+  car.z = dz
+  car.v = car.vx = car.vz = 0
+  tr.takeOver(car, 'test')
+  const o = bodyFromTraffic(car)
+  const b = createVehicleBody(kind, { x: 0, z: 0 })
+  b.x = car.x - (side ? car.wid : car.len) / 2 - b.len / 2 - 0.05 - v * 0.05
+  b.vx = v
+  const p0x = b.m * b.vx
+  const inp = makeVehicleInput(),
+    still = Object.assign(makeVehicleInput(), { handbrake: 1 })
+  let first = -1,
+    over = 0,
+    spinMax = 0,
+    after = null,
+    impact = 0
+  for (let t = 0; t < secs; t += H) {
+    b.events.length = o.events.length = 0
+    stepVehicle(b, inp, H)
+    stepVehicle(o, still, H)
+    collideTraffic(b, tr)
+    collideTraffic(o, tr, car)
+    writeToTraffic(o, car)
+    const ev = b.events.find(e => e.type === 'clash')
+    if (ev) impact = Math.max(impact, ev.impact)
+    if (ev && first < 0) first = t
+    if (first >= 0) spinMax = Math.max(spinMax, Math.abs(o.w))
+    if (first >= 0 && !after && t > first + 0.06) after = { vb: b.vx, vo: Math.hypot(o.vx, o.vz), ox: o.vx }
+    const hit = rectRect(rectOf(b, {}), rectOf(o, {}), {})
+    if (hit) over = Math.max(over, hit.depth)
+  }
+  const a = after || { vb: b.vx, vo: 0 }
+  return { keep: (b.m * a.vb + o.m * (after ? after.ox : 0)) / p0x, vb1: a.vb, vc1: a.vo, bw1: 0, spinMax, over, touches: first >= 0 ? 1 : 0, impact, pushed: o.x - 30, harmB: b.dmg?.harm || 0, harmC: o.dmg?.harm || 0 }
 }
 if (process.argv[1]?.endsWith('physCrash.mjs')) {
   const f = (x, n = 2) => x.toFixed(n)
@@ -94,7 +130,10 @@ if (process.argv[1]?.endsWith('physCrash.mjs')) {
     ['sedan->sedan offset 15', crash('sedan', 'sedan', 15, { dz: 1.2 })],
     ['sedan push 3 thr.6', crash('sedan', 'sedan', 3, { thr: 0.6, secs: 3 })],
     ['suv push 2 thr1', crash('suv', 'sedan', 2, { thr: 1, secs: 3 })],
-    ['sedan rear-end 25 vs 12', crash('sedan', 'sedan', 25, { tv: 12 })]
+    ['sedan rear-end 25 vs 12', crash('sedan', 'sedan', 25, { tv: 12 })],
+    ['body sedan->sedan 15', bodyCrash('sedan', 'sedan', 15)],
+    ['body sedan->sedan off 15', bodyCrash('sedan', 'sedan', 15, { dz: 1.2 })],
+    ['body sports->suv side 15', bodyCrash('sports', 'suv', 15, { side: true })]
   ]
   console.log('case                      keep  vB1   vC1  spinB spinC overlap touch impact pushed harmB harmC')
   for (const [n, r] of rows)

@@ -94,6 +94,7 @@ try {
     await g.run(1.5)
     await shot('p1-sedan-crashed.png')
     // and out, hard by the wall
+    await g.ev(() => window.__roadster.game.wanted.clear())
     await g.press('KeyE', 0)
     await g.run(2.5)
     await shot('p2-out-by-the-wall.png')
@@ -107,7 +108,8 @@ try {
   if (want('tight')) {
     // a sedan nosed slowly up to a building, then turned so its driver's side is hard against it:
     // out by the other side
-    await g.ev(() => window.__roadster.seatIn('sedan'))
+    // (and the wanted level any earlier step earned cleared, so no unit busts them in the shot)
+    await g.ev(() => { window.__roadster.game.wanted.clear(); window.__roadster.seatIn('sedan') })
     await g.run(1)
     const at = await lane()
     await g.ev(({ x, z, yaw }) => {
