@@ -130,3 +130,20 @@ W3, explorables (72150f3, 8dd285f, aab6f35):
   arts 365/379/368/387, skyline 629/710/543/562, hills 364/367/-/379. W3 adds about 13-19 over head.
 - Shots: /workspace/shots/v2/world/shot-w2-*.png (landmarks from a distance), shot-w3-*.png (alleys, furniture,
   lookout, token).
+
+## World follow-ups: crown, all-way stop signs, fire escapes
+
+- The Meridian's crown: the bands now cover most of each step, with light fins on the corners. After dark they slowly cycle
+  through fully saturated hues at a brightness the tone mapping keeps in colour. They read from 500 m
+  (shot v2f3-f-crown-far-se-night.png).
+- All-way stops (sim/trafficStop.js STOPS, 21 junctions):
+  - sim/stopSigns.js puts a STOP octagon at the near-right corner of every approach, 1.9 m before the line and 0.75 m in
+    from the kerb. Each is on a breakaway post (breakAt 4 m/s), and a knocked sign is not drawn until the city is reset.
+  - "STOP" is painted in each lane before the existing stop line.
+  - render/cityStopSigns.js draws all of it as 3 instanced meshes.
+  - tests/stopSigns.test.mjs: every approach has a sign; signs are off the road and off the walking lines, clear of other
+    colliders, and face the drivers.
+- Fire escapes: they now start 2.5-6.5 m from the alley mouth, and go only on walls without a shop canopy (the canopy hid
+  them). The random draws are unchanged, so the alleys and tokens stay where they were. They have open railings, brackets,
+  a drop ladder and a lit window per landing (43 -> 28 escapes).
+- npm test 299/299. Shots: v2f-f-stop-approach.png, v2f-f-stop-junction(-night).png, v2f2-f-alley-escape(-night).png.
