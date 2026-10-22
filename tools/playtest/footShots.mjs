@@ -47,7 +47,7 @@ if (which === 'doors' || which === 'all') {
   const BIG = new Set(['fire', 'truck', 'bus', 'ambulance'])
   for (const name of kinds) {
     if (name === 'roadster') continue
-    const [va, vp, vd] = BIG.has(name) ? [-1.1, 0.16, 9.5] : [-0.7, 0.3, 6]
+    const [va, vp, vd] = BIG.has(name) ? [-0.9, 0.22, 8] : [-0.7, 0.3, 6]
     const k = TYPES.findIndex(t => t.name === name)
     const P = await g.ev(() => ({ ...window.__roadster.player.pos }))
     const l = nearestLane(P.x + 8, P.z)
@@ -145,20 +145,26 @@ if (which === 'runover' || which === 'all') {
   await g.ev(() => window.__roadster.seatIn('sedan'))
   await g.run(1.5)
   log('runover: in', await g.ev(() => window.__roadster.player.mode))
-  const hit = await g.ev(() => {
-    const R = window.__roadster, b = R.foot.alt.body, P = R.player.pos
+  const near = await g.ev(() => {
+    const R = window.__roadster, P = R.player.pos
     let p = null, bd = Infinity
     for (const q of R.peds.list) {
       const d = Math.hypot(q.x - P.x, q.z - P.z)
       if (!q.dead && q.state !== 'down' && !q.hidden && d < bd) { bd = d; p = q }
     }
+    window.__victim = p
+    return p && { x: p.x, z: p.z }
+  })
+  // (run along the kerb, not across it: a car that mounts it there loses speed and they dive clear)
+  const along = near && nearestLane(near.x, near.z).yaw
+  const hit = await g.ev(yaw => {
+    const R = window.__roadster, b = R.foot.alt.body, p = window.__victim
     if (!p) return false
     R.traffic.clearAround(p.x, p.z, 40)
-    const yaw = b.yaw, hx = Math.cos(yaw), hz = -Math.sin(yaw), d = 5
-    window.__victim = p
-    Object.assign(b, { x: p.x - hx * d, z: p.z - hz * d, hx, hz, u: 18, vx: hx * 18, vz: hz * 18, w: 0, lat: 0 })
+    const hx = Math.cos(yaw), hz = -Math.sin(yaw), d = 5
+    Object.assign(b, { x: p.x - hx * d, z: p.z - hz * d, yaw, hx, hz, u: 18, vx: hx * 18, vz: hz * 18, w: 0, lat: 0 })
     return true
-  })
+  }, along ?? 0)
   await g.hold('KeyW', 0.35)
   await g.run(0.15)
   log('runover: hit', hit, await g.ev(() => { const q = window.__victim; return q && { state: q.state, dead: q.dead, air: q.air } }))

@@ -304,3 +304,21 @@ W3, explorables (72150f3, 8dd285f, aab6f35):
   → /workspace/shots/v3/foot.
 - Not touched: handling / vehicle physics (v3-drive's stream). Hub edits: main.js 2 lines (F/Space
   on foot to FootFight, Caps Lock command), onFoot.js (fight hookup, FootView gets cityView).
+
+## gta-v3 integration (round 3): gta-v3-drive + gta-v3-foot → gta-v3-open-world
+
+- Merged gta-v3-foot @0688077 onto gta-v3-drive @5e522c9; conflicts only in DEVLOG (both entries
+  kept) and dist (rebuilt). npm test 337/337; playtest career (22 steps, careerFoot included:
+  punch-ped, run-over-kill, every-car-door) and roam (8) no problems on port 8094, one at a time.
+- Driving x on foot checked: get in/out of every kind with the new handling (careerFoot
+  every-car-door, footShots doors), run-overs (pedBrain knocks down on the body's speed, so a
+  handbrake slide sideways counts as much as head on), the faster brakes don't change the 12 m/s
+  kill threshold (an impact speed).
+- Polish: police cars take `roadGrip()` (game.js, was its own copy of the wet formula: now the
+  grip hook too); a gamepad's X punches on foot (footFight: KeyH as well as F); the door's window
+  its own lighter see-through glass (carDoor.js); footShots shoots the tall cabs' doors from
+  further toward the nose and runs the run-over along the kerb.
+- Shots /workspace/shots/v3/int/: d1-sports-handbrake-drift.png, d1-sports-skid-marks.png,
+  door-sedan-open.png / -in / -out, door-fire-*, door-truck-*, punch-jab.png, punch-landing.png,
+  ped-knocked-down.png, punch-wanted.png, runover-hit.png, runover-aftermath.png (2 stars),
+  d7-sports-rain-night-drive.png, d7-sports-rain-night-slide.png; playtest/ for the runs.

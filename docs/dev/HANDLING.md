@@ -153,5 +153,4 @@ d6-pickup-rain-straightened.png.
 - Van J-turn only 46° and the pickup 100° (the long wheelbase ones); bus/truck no handbrake 180 by
   design.
 - The sports car's wet W+A slip is still 27° (it is meant to be the drifter); it lets go in 1.1 s.
-- The police cars (`police.step`) still get their own grip from game.js rather than `roadGrip()`;
-  same number in the rain, but not the grip hook.
+- (gta-v3) The police cars now take `roadGrip()` too.
