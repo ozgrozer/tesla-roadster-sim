@@ -110826,7 +110826,9 @@ __export(__exports, { "CityView": () => CityView, "clipCamera": () => clipCamera
 __define(264, function (__exports) {
 // Skid marks: one continuous rubber ribbon per sliding tyre. The ribbon is as wide as the tyre's
 // footprint across its path (full tread width in a straight lock-up, the short contact patch when it
-// slides sideways), darkens with how hard the tyre slides and fades in and out at each end.
+// slides sideways), darkens with how hard the tyre slides and fades in and out at each end. Near
+// black and near opaque, so they read on the dark asphalt as well as on the paint, and they wear
+// away: each segment holds for HOLD s, then fades out over FADE s.
 const THREE = __require(0)
 const { scene } = __require(83)
 const { GROUND } = __require(117)
@@ -110837,6 +110839,10 @@ const STEP = 0.14 // m between ribbon samples
 const TREAD = 0.3 // tyre width
 const PATCH = 0.17 // contact patch length
 const Y = 0.022 // just above the pad (or roof)
+const HOLD = 45 // s a mark stays at full strength
+const FADE = 25 // s it then takes to wear away
+const FADE_EVERY = 0.5 // s between passes fading the old marks
+const MAX_A = 0.95 // the darkest a mark gets (a hard slide)
 
 // fine streaks along the mark: the tread grooves dragged across the concrete
 function streakTexture () {
@@ -110845,10 +110851,10 @@ function streakTexture () {
   cv.height = 4
   const g = cv.getContext('2d')
   for (let x = 0; x < 128; x++) {
-    const edge = Math.min(x, 127 - x) / 14 // soft edges across the width
-    const groove = x % 21 < 3 ? 0.45 : 1
-    const a = Math.min(1, edge) * groove * (0.7 + Math.random() * 0.3)
-    g.fillStyle = `rgba(8,8,9,${a.toFixed(3)})`
+    const edge = Math.min(x, 127 - x) / 8 // soft edges across the width
+    const groove = x % 21 < 3 ? 0.75 : 1
+    const a = Math.min(1, edge) * groove * (0.85 + Math.random() * 0.15)
+    g.fillStyle = `rgba(3,3,4,${a.toFixed(3)})`
     g.fillRect(x, 0, 1, 4)
   }
   const t = new THREE.CanvasTexture(cv)
@@ -110861,6 +110867,9 @@ const pos = new Float32Array(MAX_SEG * 4 * 3)
 const col = new Float32Array(MAX_SEG * 4 * 4).fill(1)
 const uv = new Float32Array(MAX_SEG * 4 * 2)
 const idx = new Uint32Array(MAX_SEG * 6)
+// each segment's own alpha at its two ends as laid down, and when (s, the clock below)
+const alpha0 = new Float32Array(MAX_SEG * 2)
+const born = new Float64Array(MAX_SEG)
 for (let i = 0; i < MAX_SEG; i++)
   idx.set([i * 4, i * 4 + 1, i * 4 + 2, i * 4 + 2, i * 4 + 1, i * 4 + 3], i * 6)
 const geo = new THREE.BufferGeometry()
@@ -110896,6 +110905,8 @@ scene.add(mesh)
 
 let head = 0
 let used = 0
+let lastFade = 0
+const now = () => performance.now() / 1000
 // per wheel: the last ribbon edge laid down (null when the tyre isn't sliding)
 const TRAIL = [null, null, null, null]
 // (any other car the player drives keeps its own: RS.skidTrail, playerCar.js)
@@ -110911,6 +110922,9 @@ function addSegment (a, b) {
   pos.set([a.lx, ya, a.lz, a.rx, ya, a.rz, b.lx, yb, b.lz, b.rx, yb, b.rz], v * 3)
   col[v * 4 + 3] = col[(v + 1) * 4 + 3] = a.alpha
   col[(v + 2) * 4 + 3] = col[(v + 3) * 4 + 3] = b.alpha
+  alpha0[head * 2] = a.alpha
+  alpha0[head * 2 + 1] = b.alpha
+  born[head] = now()
   uv.set([0, a.u, 1, a.u, 0, b.u, 1, b.u], v * 2)
   head = (head + 1) % MAX_SEG
   used = Math.min(MAX_SEG, used + 1)
@@ -110924,7 +110938,28 @@ function clearSkids () {
   for (const t of trails) t.fill(null)
 }
 
+// the old marks worn away: each segment's alpha, past HOLD s, down to nothing over FADE s
+function fadeOld (t) {
+  if (t - lastFade < FADE_EVERY) return
+  lastFade = t
+  let changed = false
+  for (let i = 0; i < used; i++) {
+    const age = t - born[i] - HOLD
+    if (age <= 0) continue
+    const k = Math.max(0, 1 - age / FADE),
+      v = i * 4
+    const a = alpha0[i * 2] * k,
+      b = alpha0[i * 2 + 1] * k
+    if (col[v * 4 + 3] === a && col[(v + 2) * 4 + 3] === b) continue
+    col[v * 4 + 3] = col[(v + 1) * 4 + 3] = a
+    col[(v + 2) * 4 + 3] = col[(v + 3) * 4 + 3] = b
+    changed = true
+  }
+  if (changed) colAttr.needsUpdate = true
+}
+
 function updateSkids (RS, sim) {
+  fadeOld(now())
   const trail = RS.skidTrail || TRAIL
   trails.add(trail)
   RS.wheels.forEach((w, i) => {
@@ -110973,10 +111008,10 @@ function updateSkids (RS, sim) {
       lz: _c.z + nz,
       rx: _c.x - nx,
       rz: _c.z - nz,
-      // (a wet tyre slides on the water and leaves little rubber behind)
+      // (a wet tyre slides on the water and leaves less rubber behind)
       alpha:
-        Math.min(0.85, amt * 0.9) *
-        (sim.world === 'city' ? 1 - 0.75 * ENV.wet : 1),
+        Math.min(MAX_A, 0.25 + amt * 1.2) *
+        (sim.world === 'city' ? 1 - 0.5 * ENV.wet : 1),
       u: last.u + len
     }
     addSegment(last, next)
@@ -118294,7 +118329,8 @@ __define(305, function (__exports) {
 const THREE = __require(0)
 
 const PITCH_K = 1.5, // how much the drawn body exaggerates the body's pitch and roll
-  ROLL_K = 1.35
+  ROLL_K = 1.35,
+  DIVE_K = 2.1 // (and nose down on the brakes more again: GTA's dive reads from the side)
 const _p = new THREE.Vector3()
 
 class PlayerCar {
@@ -118330,7 +118366,7 @@ class PlayerCar {
     }
     // the drawn body on the physics body's springs (traffic.js reads these instead of riding)
     car.posed = true
-    car.pitch = -b.pitch * PITCH_K // (the body's pitch is nose down; the drawing's nose up)
+    car.pitch = -b.pitch * (b.pitch > 0 ? DIVE_K : PITCH_K) // (the body's pitch is nose down; the drawing's nose up)
     car.roll = b.roll * ROLL_K
     car.lift = Math.max(-0.05, b.heave)
     car.steer = b.steerAng

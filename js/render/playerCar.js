@@ -12,7 +12,8 @@
 import * as THREE from 'three'
 
 const PITCH_K = 1.5, // how much the drawn body exaggerates the body's pitch and roll
-  ROLL_K = 1.35
+  ROLL_K = 1.35,
+  DIVE_K = 2.1 // (and nose down on the brakes more again: GTA's dive reads from the side)
 const _p = new THREE.Vector3()
 
 export class PlayerCar {
@@ -48,7 +49,7 @@ export class PlayerCar {
     }
     // the drawn body on the physics body's springs (traffic.js reads these instead of riding)
     car.posed = true
-    car.pitch = -b.pitch * PITCH_K // (the body's pitch is nose down; the drawing's nose up)
+    car.pitch = -b.pitch * (b.pitch > 0 ? DIVE_K : PITCH_K) // (the body's pitch is nose down; the drawing's nose up)
     car.roll = b.roll * ROLL_K
     car.lift = Math.max(-0.05, b.heave)
     car.steer = b.steerAng
