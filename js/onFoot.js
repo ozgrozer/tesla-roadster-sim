@@ -72,7 +72,7 @@ export class OnFoot {
     Object.assign(this, g)
     this.alt = new Drivable() // a car that isn't the Roadster, while the player has it
     this.rescue = new FootRescue() // stuck or out of the world: put back somewhere safe
-    this.view = new FootView(scene, g.RS, g.cityView.cars)
+    this.view = new FootView(scene, g.RS, g.cityView)
     this.cam = new FootCam(g.camera, clipCamera)
     this.focus = new Focus()
     this.fight = new FootFight(this) // (fists: F, the left mouse button)

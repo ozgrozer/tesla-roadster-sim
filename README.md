@@ -52,8 +52,10 @@ The city opens as before: Optimus walks up to the Roadster, gets in and you driv
 
 | Key | On foot |
 | --- | --- |
-| W A S D | Walk the way the camera faces (left stick on a pad), easing in and out of a stride |
-| Shift | Run (pad `RB`) |
+| W A S D | Jog (4.5 m/s) the way the camera faces (left stick on a pad: part way over walks) |
+| Shift | Sprint (7 m/s, pad `RB`) |
+| Caps Lock | Walk (2 m/s) instead of jogging, as GTA's walk toggle |
+| F · left click | Punch, soft-locked on the nearest person in front; press again in time for the combo (jab, cross, a hook that knocks them down); someone down is stamped on. An assault is a crime (1 star once reported), a death more; some people fight back, some run, some cower |
 | Space | Jump (pad `A`) |
 | Mouse | Click the picture to lock the pointer, then look round (right stick on a pad); the wheel zooms |
 | E | By a car: get in, as the prompt says (pad `Y`). Walking away from a door cancels it |

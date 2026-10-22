@@ -24,12 +24,12 @@ export const BOARD = {
   smashAt: 0.7, // (and when, into that, a window goes)
   smash: 0.5, // the share of break-ins through the window rather than the lock
   alarm: 0.45, // the share that set the alarm off
-  open: 0.45, // s for the door to open
+  open: 0.6, // s for the door to open (eased in and out: render/carDoor.js)
   pull: 1.3, // s pulling a driver out (out at pullAt)
   pullAt: 0.55,
-  slide: 0.9, // s sliding into the seat
-  close: 0.4, // s for the door to shut
-  outSlide: 0.75, // s out of the seat
+  slide: 1.15, // s stepping into the opening, sitting and swinging the legs in
+  close: 0.45, // s for the door to shut
+  outSlide: 1.0, // s out of the seat: legs out, up and out of the opening
   roadIn: 3.2, // s of the Roadster's own way in (its keys, sped up: intro.js)
   roadOut: 2.6, // and out
   jackV: 3, // m/s: a car slower than this can be taken from its driver
@@ -45,17 +45,20 @@ export function howToEnter (e) {
   return e.locked ? 'theft' : 'open'
 }
 
+// the side of the car the door in use is on (-1 left, 1 right): its own (a bus's on the kerb side),
+// or the other if sg is -1 (the driver's blocked)
+export const sideOf = (e, sg = 1) => (e.doorSide || -1) * sg
 // the way round to the door, in the car's frame, from where the player is (car frame)
 function route (e, l, sg = 1) {
   const hw = e.wid / 2,
     hl = e.len / 2,
     out = []
+  const sd = sideOf(e, sg)
   const A = (l.x >= 0 ? 1 : -1) * (hl + 0.8)
-  const side = -(hw + 0.6) * sg
-  if (l.z * sg > -hw + 0.05) {
+  if (l.z * sd < hw - 0.05) {
     // (on the far side or off an end: round the nearer end)
-    if (Math.abs(l.x) <= hl + 0.4) out.push({ x: A, z: (hw + 0.8) * sg })
-    out.push({ x: A, z: side })
+    if (Math.abs(l.x) <= hl + 0.4) out.push({ x: A, z: -(hw + 0.8) * sd })
+    out.push({ x: A, z: (hw + 0.6) * sd })
   }
   out.push({ x: e.door.x, z: e.door.z * sg })
   return out
@@ -230,7 +233,7 @@ export function stepBoard (a, dt, p, world) {
   }
   // at the door: facing the car, side on to it (the Roadster's way in faces along it)
   if (a.dir === 'in' && a.phase !== 'roadster')
-    p.heading = wrapPi(e.heading - (Math.PI / 2) * (a.side || 1))
+    p.heading = wrapPi(e.heading + (Math.PI / 2) * sideOf(e, a.side || 1))
   const t0 = a.t
   a.t += dt
   if (a.phase === 'jimmy') {

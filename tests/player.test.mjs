@@ -138,7 +138,7 @@ test('the registry covers the Roadster, parked cars and traffic, with seats', ()
     const d = vehicles.toWorld(e, e.door.x, e.door.z)
     assert.ok(vehicles.gap(e, d.x, d.z) > 0.3, `${e.type} door outside`)
     const l = vehicles.toLocal(e, d.x, d.z)
-    assert.ok(Math.abs(l.x - e.door.x) < 1e-9 && l.z < 0, 'round trip, left side')
+    assert.ok(Math.abs(l.x - e.door.x) < 1e-9 && l.z * e.doorSide > 0, 'round trip, the door\'s side (a bus\'s the kerb\'s)')
   }
   const near = vehicles.nearest(parked.pos, 0.5)
   assert.equal(near, parked, 'nearest finds the car it is on')

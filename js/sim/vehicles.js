@@ -13,7 +13,7 @@
 // An entry: { id, kind: 'roadster' | 'traffic' | 'parked', type (its body: carTypes.js name, or
 // 'roadster'), pos { x, y, z }, heading (yaw, as sim.yaw), speed, occupant: 'player' | 'npc' | null,
 // parked, locked, seat { x, y, z } (the driver's hips, car frame), door { x, z } (where to stand to
-// get in, car frame), doorLen, len, wid, hgt, car (the traffic car, or null), sim (the Roadster's,
+// get in, car frame), doorSpan [back, front], doorSide (-1 left), doorLen, len, wid, hgt, car (the traffic car, or null), sim (the Roadster's,
 // or null), stolen, vacant }.
 import { TYPES } from './carTypes.js'
 import { CAR } from './constants.js'
@@ -22,27 +22,55 @@ import { CAR } from './constants.js'
 const CAB = new Set(['bus', 'van', 'truck', 'fire', 'ambulance'])
 // seat heights (the hips over the road, m) for the cars that sit higher or lower than a sedan's
 const SEAT_Y = { sports: 0.34, lowrider: 0.4, suv: 0.72, pickup: 0.78, police: 0.6 }
+// The driver's door, by body: [its back edge, its front edge (the hinge, at the A-pillar)] along
+// the car (m, + forward), as the bodies' shut lines are drawn (render/carSpecs.js doors); a bus's
+// is its folding door, on the kerb (right) side ahead of the front wheels
+export const DOORS = {
+  sedan: [-0.12, 0.93],
+  hatch: [-0.3, 0.74],
+  suv: [-0.08, 1.05],
+  taxi: [-0.12, 0.95],
+  pickup: [0.0, 1.16],
+  van: [1.05, 2.2],
+  bus: [4.45, 5.45],
+  police: [-0.06, 1.12],
+  sports: [-0.95, 0.6],
+  ambulance: [1.07, 2.04],
+  fire: [3.62, 4.74],
+  truck: [3.45, 4.83],
+  lowrider: [-0.55, 0.7],
+  limo: [1.3, 2.7]
+}
+export const DOOR_SIDE = { bus: 1 } // (-1, the left, the driver's side, for every other)
 
-// Where the driver sits and gets in, by body: { seat, door, doorLen } in the car's frame
+// Where the driver sits and gets in, by body: { seat (the hips), door (where to stand to open it:
+// just behind its back edge, out of its swing), doorSpan [x0, x1], doorSide (-1 left, 1 right),
+// doorLen } in the car's frame
 export function layoutFor (name, len, wid, hgt) {
   if (name === 'roadster')
     return {
       seat: { x: -0.3, y: 0.36, z: -0.42 },
       door: { x: -0.2, z: -1.32 },
+      doorSpan: [-0.85, 0.45],
+      doorSide: -1,
       doorLen: 1.3
     }
   const cab = CAB.has(name)
+  const [x0, x1] = DOORS[name] || [0.1 - 0.08 * len - 0.4, 0.1 - 0.08 * len + 0.7]
+  const side = DOOR_SIDE[name] || -1
   const seat = cab
     ? {
-        x: len / 2 - (name === 'bus' ? 1.3 : 1.5),
+        x: name === 'bus' ? len / 2 - 1.3 : (x0 + x1) / 2 - 0.1,
         y: Math.min(1.5, hgt * 0.42),
         z: -wid / 2 + 0.6
       }
-    : { x: 0.1 - 0.08 * len, y: SEAT_Y[name] ?? 0.48, z: -0.38 }
+    : { x: x0 + 0.32 * (x1 - x0), y: SEAT_Y[name] ?? 0.48, z: -0.38 }
   return {
     seat,
-    door: { x: seat.x + 0.15, z: -(wid / 2 + 0.5) },
-    doorLen: cab ? 0.95 : name === 'sports' ? 1.25 : 1.1
+    door: { x: x0 - 0.22, z: side * (wid / 2 + 0.5) },
+    doorSpan: [x0, x1],
+    doorSide: side,
+    doorLen: x1 - x0
   }
 }
 
@@ -71,6 +99,8 @@ function make (car, sim) {
     locked: false,
     seat: L.seat,
     door: L.door,
+    doorSpan: L.doorSpan,
+    doorSide: L.doorSide,
     doorLen: L.doorLen,
     len: car ? car.len : ROADSTER.len,
     wid: car ? car.wid : ROADSTER.wid,
