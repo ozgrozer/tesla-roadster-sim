@@ -46,6 +46,9 @@ const SPIN_K = 7 // N m per kg per rad/s of that, at most SPIN_MAX N m per kg
 const SPIN_MAX = 6
 const HB_RATE = 1.6 // rad/s: the most the handbrake's swing turns the car at (a class's hbRate)
 const RECOVER = 1.6 // rad/s^2 per rad the nose is off the way the car is going
+// the recovery that much stronger with the wheel let go: on the power with hands off, a slide
+// straightens, GTA-style, rather than running on down a straight in the wet
+const HANDS_OFF = 1
 const DRIFT_MAX = 0.6, // rad of slip a drift on the power is held to, DRIFT_K rad/s^2 per rad past it
   DRIFT_K = 5
 const SPUN = 1.2, // rad: the way the car is going this far off its nose, it is spinning, and
@@ -408,9 +411,15 @@ function move (b, inp, dt, world) {
     // power do coming out of a slide: the recovery, less the more the throttle is held)
     // (off: the rear axle's slip, not the middle's: going round a tight turn the middle of a car
     // always moves a little across its nose, and pulling the nose round to that spun it out)
-    const off = beta
+    // (held only while the wheel is held too: on the power with the wheel let go, the car
+    // straightens, as GTA's do, rather than sliding on down a straight in the wet)
+    // (with the wheel let go, by the class's handsOff: a sports car holds a drift on the power
+    // whatever the wheel does, a pickup's slide straightens)
+    const free = (S.handsOff ?? 0) * (1 - Math.min(1, Math.abs(inp.steer) / 0.5)),
+      off = beta,
+      rec = RECOVER * (1 + HANDS_OFF * free) * (1 - (S.slideHold ?? 0.5) * thr * (1 - free))
     if (u > 2 && Math.abs(off) < 1.7)
-      Mz += S.stab * b.I * (RECOVER * off * (1 - (S.slideHold ?? 0.5) * thr) - 0.2 * r * smooth(Math.abs(off) / 0.3))
+      Mz += S.stab * b.I * (rec * off - 0.2 * r * smooth(Math.abs(off) / 0.3))
     // (a drift held on the power is held to DRIFT_MAX of slip, whatever the throttle: past it the
     // car is brought back towards it, so it drives on round sideways rather than bogging down
     // broadside)

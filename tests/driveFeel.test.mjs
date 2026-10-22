@@ -76,3 +76,13 @@ test('the rain costs grip: less cornering, longer stops, and a sports car steps 
   assert.ok(brake100('sedan', wet).d > 1.2 * brake100('sedan').d)
   assert.ok(powerSlide('sports', wet) > 1.5 * powerSlide('sports'))
 })
+
+test('in the wet, a slide on the power straightens once the wheel is let go (no run on down the straight)', () => {
+  const wet = { grip: 0.7 }
+  for (const k of ['pickup', 'sports', 'sedan', 'van']) {
+    const { tOut } = steerResponse(k, 20, wet)
+    assert.ok(tOut < 1.8, `${k} wet centre ${tOut.toFixed(2)} s`)
+  }
+  // and the Roadster's brakes feel the rain too (K16)
+  assert.ok(brake100('roadster', wet).d > 1.2 * brake100('roadster').d)
+})

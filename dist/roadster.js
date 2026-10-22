@@ -83317,7 +83317,9 @@ const { CAR, clamp } = __require(2)
 // GTA tuning (v3): hbGrip the share of their grip the handbrake's locked rears keep (low: the tail
 // swings out and the car carries its speed round); hbRate the most it swings the car at (rad/s);
 // slideHold how much the throttle holds a slide against the hands catching it (RWD high: a power
-// slide; 0.5 the default); revMax, revAcc: backing up (m/s, m/s^2)
+// slide; 0.5 the default); revMax, revAcc: backing up (m/s, m/s^2); handsOff how far letting go of the
+// wheel catches a slide even on the power (1: it straightens, GTA-style; low: a sports car holds a
+// drift on the throttle alone; 0, the default, as before)
 // prettier-ignore
 const HANDLING = {
   sedan: {
@@ -83327,7 +83329,7 @@ const HANDLING = {
     mu: 1.08, gripF: 1.0, gripR: 1.02, slideMu: 0.78, cornF: 85000, cornR: 95000,
     suspHz: 1.4, travel: 0.12, damp: 0.35, rollK: 0.11, pitchK: 0.065,
     hbYaw: 3000, stab: 1, assist: 0.6, feel: 0.85, drag: 0.42, rollRes: 0.013,
-    hbGrip: 0.45, hbRate: 2.9, slideHold: 0.55, revMax: 10, revAcc: 5
+    hbGrip: 0.45, hbRate: 2.9, slideHold: 0.55, revMax: 10, revAcc: 5, handsOff: 1
   },
   sports: {
     mass: 1450, len: 4.5, wid: 1.9, hgt: 1.28, wb: 2.6, wf: 0.47, comH: 0.45, wheelR: 0.34, track: 1.62,
@@ -83336,7 +83338,7 @@ const HANDLING = {
     mu: 1.22, gripF: 1.0, gripR: 1.0, slideMu: 0.8, cornF: 110000, cornR: 120000,
     suspHz: 2.0, travel: 0.08, damp: 0.45, rollK: 0.042, pitchK: 0.04,
     hbYaw: 3600, tc: 0.6, stab: 0.8, assist: 0.7, feel: 1.0, drag: 0.38, rollRes: 0.012,
-    hbGrip: 0.42, hbRate: 3.0, slideHold: 0.72, revMax: 11, revAcc: 5.5
+    hbGrip: 0.42, hbRate: 3.0, slideHold: 0.72, revMax: 11, revAcc: 5.5, handsOff: 0.3
   },
   suv: {
     mass: 2150, len: 4.85, wid: 1.95, hgt: 1.75, wb: 2.9, wf: 0.55, comH: 0.72, wheelR: 0.37, track: 1.65,
@@ -83345,7 +83347,7 @@ const HANDLING = {
     mu: 1.0, gripF: 0.98, gripR: 1.0, slideMu: 0.75, cornF: 95000, cornR: 110000,
     suspHz: 1.2, travel: 0.18, damp: 0.32, rollK: 0.13, pitchK: 0.07,
     hbYaw: 2600, stab: 1.2, assist: 0.5, feel: 0.82, drag: 0.55, rollRes: 0.015,
-    hbGrip: 0.5, hbRate: 2.6, slideHold: 0.55, revMax: 9, revAcc: 4.5
+    hbGrip: 0.5, hbRate: 2.6, slideHold: 0.55, revMax: 9, revAcc: 4.5, handsOff: 1
   },
   pickup: {
     mass: 2300, len: 5.4, wid: 2.0, hgt: 1.85, wb: 3.4, wf: 0.6, comH: 0.75, wheelR: 0.38, track: 1.7,
@@ -83354,7 +83356,7 @@ const HANDLING = {
     mu: 0.98, gripF: 1.0, gripR: 1.0, slideMu: 0.72, cornF: 95000, cornR: 95000,
     suspHz: 1.3, travel: 0.2, damp: 0.3, rollK: 0.14, pitchK: 0.075,
     hbYaw: 2700, tc: 0.8, stab: 1, assist: 0.5, feel: 0.88, drag: 0.6, rollRes: 0.016,
-    hbGrip: 0.48, hbRate: 2.6, slideHold: 0.55, revMax: 9, revAcc: 4.5
+    hbGrip: 0.48, hbRate: 2.6, slideHold: 0.55, revMax: 9, revAcc: 4.5, handsOff: 1
   },
   truck: {
     mass: 9500, len: 9.9, wid: 2.55, hgt: 3.8, wb: 5.6, wf: 0.45, comH: 1.3, wheelR: 0.5, track: 2.0,
@@ -83363,7 +83365,7 @@ const HANDLING = {
     mu: 0.85, gripF: 1.0, gripR: 1.0, slideMu: 0.7, cornF: 280000, cornR: 400000,
     suspHz: 1.1, travel: 0.15, damp: 0.35, rollK: 0.14, pitchK: 0.06,
     hbYaw: 600, stab: 1.4, assist: 0.3, feel: 0.75, drag: 2.5, rollRes: 0.02,
-    hbGrip: 0.65, hbRate: 1.2, revMax: 6
+    hbGrip: 0.65, hbRate: 1.2, revMax: 6, handsOff: 1
   },
   van: {
     mass: 3200, len: 6.4, wid: 2.15, hgt: 2.8, wb: 3.7, wf: 0.55, comH: 1.0, wheelR: 0.36, track: 1.8,
@@ -83372,7 +83374,7 @@ const HANDLING = {
     mu: 0.93, gripF: 1.0, gripR: 1.0, slideMu: 0.72, cornF: 110000, cornR: 140000,
     suspHz: 1.2, travel: 0.14, damp: 0.32, rollK: 0.15, pitchK: 0.075,
     hbYaw: 1600, stab: 1.3, assist: 0.4, feel: 0.8, drag: 1.1, rollRes: 0.017,
-    hbGrip: 0.55, hbRate: 1.9, revMax: 8, revAcc: 4
+    hbGrip: 0.55, hbRate: 1.9, revMax: 8, revAcc: 4, handsOff: 1
   },
   bus: {
     mass: 12500, len: 11.6, wid: 2.55, hgt: 3.15, wb: 6.2, wf: 0.4, comH: 1.2, wheelR: 0.5, track: 2.1,
@@ -83381,7 +83383,7 @@ const HANDLING = {
     mu: 0.85, gripF: 1.0, gripR: 1.0, slideMu: 0.7, cornF: 350000, cornR: 520000,
     suspHz: 1.0, travel: 0.12, damp: 0.35, rollK: 0.13, pitchK: 0.04,
     hbYaw: 500, stab: 1.5, assist: 0.3, feel: 0.75, drag: 3.2, rollRes: 0.02,
-    hbGrip: 0.7, hbRate: 1.0, revMax: 5.5
+    hbGrip: 0.7, hbRate: 1.0, revMax: 5.5, handsOff: 1
   },
   police: {
     mass: 1900, len: 5.05, wid: 2.0, hgt: 1.5, wb: 2.95, wf: 0.54, comH: 0.55, wheelR: 0.35, track: 1.65,
@@ -83390,7 +83392,7 @@ const HANDLING = {
     mu: 1.15, gripF: 1.0, gripR: 1.02, slideMu: 0.8, cornF: 110000, cornR: 125000,
     suspHz: 1.7, travel: 0.11, damp: 0.4, rollK: 0.085, pitchK: 0.055,
     hbYaw: 3300, tc: 0.8, stab: 1, assist: 0.65, feel: 0.95, drag: 0.45, rollRes: 0.013,
-    hbGrip: 0.45, hbRate: 3.0, slideHold: 0.7, revMax: 10.5, revAcc: 5
+    hbGrip: 0.45, hbRate: 3.0, slideHold: 0.7, revMax: 10.5, revAcc: 5, handsOff: 0.6
   },
   // the Roadster: its own physics, untouched (sim.js); these are its spec-sheet figures
   roadster: {
@@ -83883,6 +83885,9 @@ const SPIN_K = 7 // N m per kg per rad/s of that, at most SPIN_MAX N m per kg
 const SPIN_MAX = 6
 const HB_RATE = 1.6 // rad/s: the most the handbrake's swing turns the car at (a class's hbRate)
 const RECOVER = 1.6 // rad/s^2 per rad the nose is off the way the car is going
+// the recovery that much stronger with the wheel let go: on the power with hands off, a slide
+// straightens, GTA-style, rather than running on down a straight in the wet
+const HANDS_OFF = 1
 const DRIFT_MAX = 0.6, // rad of slip a drift on the power is held to, DRIFT_K rad/s^2 per rad past it
   DRIFT_K = 5
 const SPUN = 1.2, // rad: the way the car is going this far off its nose, it is spinning, and
@@ -84245,9 +84250,15 @@ function move (b, inp, dt, world) {
     // power do coming out of a slide: the recovery, less the more the throttle is held)
     // (off: the rear axle's slip, not the middle's: going round a tight turn the middle of a car
     // always moves a little across its nose, and pulling the nose round to that spun it out)
-    const off = beta
+    // (held only while the wheel is held too: on the power with the wheel let go, the car
+    // straightens, as GTA's do, rather than sliding on down a straight in the wet)
+    // (with the wheel let go, by the class's handsOff: a sports car holds a drift on the power
+    // whatever the wheel does, a pickup's slide straightens)
+    const free = (S.handsOff ?? 0) * (1 - Math.min(1, Math.abs(inp.steer) / 0.5)),
+      off = beta,
+      rec = RECOVER * (1 + HANDS_OFF * free) * (1 - (S.slideHold ?? 0.5) * thr * (1 - free))
     if (u > 2 && Math.abs(off) < 1.7)
-      Mz += S.stab * b.I * (RECOVER * off * (1 - (S.slideHold ?? 0.5) * thr) - 0.2 * r * smooth(Math.abs(off) / 0.3))
+      Mz += S.stab * b.I * (rec * off - 0.2 * r * smooth(Math.abs(off) / 0.3))
     // (a drift held on the power is held to DRIFT_MAX of slip, whatever the throttle: past it the
     // car is brought back towards it, so it drives on round sideways rather than bogging down
     // broadside)
