@@ -277,7 +277,8 @@ export const SIGHT = {
       )
         return true
     }
-    return false
+    // (and the player's car, which isn't in the lanes' lists)
+    return this.meComing(node, dir)
   },
   // anyone on their way over junction i (on a turn, or straight through it)
   boxBusy (i) {

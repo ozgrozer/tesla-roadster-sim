@@ -91,6 +91,8 @@ export const HWDRIVE = {
     )
       return null
     if (e.cars.some(o => Math.abs(o.s - s) < o.len + 14)) return null
+    // (nor where a car changing lanes out of it, in the list of the lane beside, still is)
+    if (this.cars.some(o => o.lc && o.from === e && Math.abs(o.x - px) < o.len + 14 && Math.abs(o.z - pz) < o.len + 14)) return null
     const car = this.make(this.pickType())
     car.edge = e
     car.s = s
