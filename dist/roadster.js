@@ -81629,6 +81629,7 @@ const CALL = [4, 8] // s on the phone to the police
 const SCARE_OFF = 5 // m: the player closer than this to a caller and they run, call cut off
 const STUCK = 6 // s getting nowhere before being put back on their way
 const MOVING = new Set(['walk', 'kerb', 'flee', 'back'])
+const MIN_CROWD = 12 // people about before a performer turns up
 const SLOW = 0.5 // s between the heavier looks
 
 const PED_LIFE = {
@@ -81874,7 +81875,9 @@ const PED_LIFE = {
       }
       if (!poi.open) continue
       if (!poi.perf) {
-        // (never appearing in sight)
+        // (never appearing in sight; and only where there is a crowd to play to: none on empty
+        // streets, nor with the people switched off)
+        if (!this.count || this.list.length < MIN_CROWD) continue
         const ahead = view && (poi.x - view.x) * view.fx + (poi.z - view.z) * view.fz > 0
         if ((ahead && d < 120) || d < 25) continue
         poi.perf = this.performer(poi)
@@ -81924,7 +81927,7 @@ const PED_LIFE = {
     this.gathered = (this.gathered || 0) + 1
   }
 }
-__export(__exports, { "SEVERE": () => SEVERE, "COWER_R": () => COWER_R, "CALL": () => CALL, "SCARE_OFF": () => SCARE_OFF, "STUCK": () => STUCK, "PED_LIFE": () => PED_LIFE })
+__export(__exports, { "SEVERE": () => SEVERE, "COWER_R": () => COWER_R, "CALL": () => CALL, "SCARE_OFF": () => SCARE_OFF, "STUCK": () => STUCK, "MIN_CROWD": () => MIN_CROWD, "PED_LIFE": () => PED_LIFE })
 })
 
 // ---- js/sim/peds.js

@@ -150,3 +150,16 @@ test('far off, people move less often (the cheaper level of detail)', () => {
   assert.ok(lods.has(1) && (lods.has(2) || lods.has(4)))
   assert.ok(BLOCKS.length > 0)
 })
+
+test('no street performer on empty streets (people switched off)', () => {
+  const pois = layPois()
+  const poi = pois[0]
+  const sim = new Sim()
+  sim.reset('city', { x: poi.x + 45, z: poi.z + 0.5, yaw: 0 })
+  const tr = new Traffic({ seed: 4, count: 0 })
+  tr.reset(poi.x + 45, poi.z)
+  const peds = new Peds({ seed: 3, count: 0 })
+  peds.reset(poi.x + 45, poi.z)
+  run({ sim, tr, peds }, 5)
+  assert.equal(peds.list.length, 0, 'nobody about, not even a performer')
+})
