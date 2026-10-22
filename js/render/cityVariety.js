@@ -23,14 +23,22 @@ const PAL = {
   brick: [0xffffff, 0xf0c8b4, 0xd8cfc8, 0xfff0d6, 0xc9ae9c, 0xe4d2c8],
   'beach:stucco': [0xf6efe2, 0xf3d9c4, 0xdcebe3, 0xf4dfe0, 0xe8eef4, 0xf2e6c4],
   'strip:stucco': [0xf0d6b0, 0xe9b89a, 0xdcd2a4, 0xc9d6b8, 0xf2e1c8, 0xe4c2a6],
-  'boulevard:stucco': [0xf4ead4, 0xd6eadf, 0xf2d0d6, 0xe0d6ee, 0xf6f2ea, 0xefd9b4],
+  'boulevard:stucco': [
+    0xf4ead4,
+    0xd6eadf,
+    0xf2d0d6,
+    0xe0d6ee,
+    0xf6f2ea,
+    0xefd9b4
+  ],
   'suburb:stucco': [0xeee0c8, 0xe2c4a4, 0xd8d0b0, 0xf2e8d0, 0xd6c0b0, 0xe8dcc0],
   'downtown:glass': [0x8fb8d0, 0x7fa8b4, 0xb49a78, 0x9cc4bf, 0x8a96b0],
   'towers:glass': [0xa3b8c9, 0xc4ab88, 0x9aa8b8, 0xb8c4cc],
   'industrial:concrete': [0xd8d4cc, 0xc8c0b0, 0xb8bcc0, 0xd0c4b0]
 }
 export function variedTint (b) {
-  const p = PAL[`${b.area}:${b.style}`] || (b.style === 'brick' ? PAL.brick : null)
+  const p =
+    PAL[`${b.area}:${b.style}`] || (b.style === 'brick' ? PAL.brick : null)
   if (!p || hash(b) < 0.3) return b.tint
   return p[Math.floor(hash(b, 1) * p.length)]
 }
@@ -44,7 +52,9 @@ const AWN = {
 export function awningFor (b, grey) {
   const p = AWN[b.area]
   if (!p || hash(b, 2) < 0.25) return grey
-  return new THREE.Color(p[Math.floor(hash(b, 3) * p.length)]).multiplyScalar(0.8)
+  return new THREE.Color(p[Math.floor(hash(b, 3) * p.length)]).multiplyScalar(
+    0.8
+  )
 }
 
 const _m = new THREE.Matrix4(),
@@ -53,7 +63,8 @@ const _m = new THREE.Matrix4(),
   _s = new THREE.Vector3(1, 1, 1),
   _p = new THREE.Vector3()
 const C = hex => new THREE.Color(hex)
-const at = (x, y, z, rx = 0, ry = 0, rz = 0) => _m.compose(_p.set(x, y, z), _q.setFromEuler(_e.set(rx, ry, rz)), _s)
+const at = (x, y, z, rx = 0, ry = 0, rz = 0) =>
+  _m.compose(_p.set(x, y, z), _q.setFromEuler(_e.set(rx, ry, rz)), _s)
 const CYL = new THREE.CylinderGeometry(1, 1, 1, 12, 1),
   CONE = new THREE.ConeGeometry(1, 1, 12, 1),
   CONE8 = new THREE.ConeGeometry(1, 1, 8, 1),
@@ -80,10 +91,25 @@ function tank (B, r) {
   const x = (r.x0 + r.x1) / 2,
     z = (r.z0 + r.z1) / 2,
     y = r.y
-  for (const [dx, dz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) B.cuboid(x + dx * 1.3 - 0.12, x + dx * 1.3 + 0.12, z + dz * 1.3 - 0.12, z + dz * 1.3 + 0.12, y, y + 3.4, STEEL)
+  for (const [dx, dz] of [
+    [-1, -1],
+    [1, -1],
+    [1, 1],
+    [-1, 1]
+  ])
+    B.cuboid(
+      x + dx * 1.3 - 0.12,
+      x + dx * 1.3 + 0.12,
+      z + dz * 1.3 - 0.12,
+      z + dz * 1.3 + 0.12,
+      y,
+      y + 3.4,
+      STEEL
+    )
   B.cuboid(x - 1.9, x + 1.9, z - 1.9, z + 1.9, y + 3.2, y + 3.4, DARK)
   put(B, CYL, WOOD, x, y + 5.2, z, r.r, 3.6, r.r)
-  for (const h of [4, 5.2, 6.4]) put(B, CYL, DARK, x, y + h, z, r.r + 0.04, 0.12, r.r + 0.04)
+  for (const h of [4, 5.2, 6.4])
+    put(B, CYL, DARK, x, y + h, z, r.r + 0.04, 0.12, r.r + 0.04)
   put(B, CONE, DARK, x, y + 7.7, z, r.r + 0.2, 1.4, r.r + 0.2)
 }
 function terrace (B, r) {
@@ -92,8 +118,11 @@ function terrace (B, r) {
   // the pergola along the north side, its slats
   const p0 = x0 + 0.4,
     p1 = x1 - 0.4
-  for (const x of [p0, p1]) for (const z of [z0 + 0.4, z0 + 2.6]) B.cuboid(x - 0.1, x + 0.1, z - 0.1, z + 0.1, y, y + 2.6, WHITE)
-  for (let x = p0; x <= p1; x += 0.6) B.cuboid(x - 0.05, x + 0.05, z0 + 0.3, z0 + 2.7, y + 2.6, y + 2.7, WHITE)
+  for (const x of [p0, p1])
+    for (const z of [z0 + 0.4, z0 + 2.6])
+      B.cuboid(x - 0.1, x + 0.1, z - 0.1, z + 0.1, y, y + 2.6, WHITE)
+  for (let x = p0; x <= p1; x += 0.6)
+    B.cuboid(x - 0.05, x + 0.05, z0 + 0.3, z0 + 2.7, y + 2.6, y + 2.7, WHITE)
   // umbrellas and loungers out in the open
   const hues = [0xd94f3a, 0x2a8ab8, 0xf2c14e, 0x3d9a6a]
   const n = Math.max(1, Math.floor((x1 - x0) / 4))
@@ -102,13 +131,37 @@ function terrace (B, r) {
       z = (z0 + 2.7 + z1) / 2 + 0.6
     if (x > x1 - 1.5) break
     B.cuboid(x - 0.04, x + 0.04, z - 0.04, z + 0.04, y, y + 2.2, STEEL)
-    put(B, CONE8, C(hues[Math.floor(r.hue * 4 + i) % 4]), x, y + 2.35, z, 1.3, 0.5, 1.3)
+    put(
+      B,
+      CONE8,
+      C(hues[Math.floor(r.hue * 4 + i) % 4]),
+      x,
+      y + 2.35,
+      z,
+      1.3,
+      0.5,
+      1.3
+    )
     B.cuboid(x + 0.6, x + 1.2, z - 0.9, z + 0.9, y + 0.12, y + 0.42, WHITE)
   }
 }
 function solar (B, r) {
   const { x0, x1, z0, z1, y } = r
-  for (let z = z0 + 0.2; z + 1.4 <= z1; z += 1.9) put(B, BOX, PANEL, (x0 + x1) / 2, y + 0.38, z + 0.7, x1 - x0 - 0.2, 0.06, 1.4, -0.32, 0, 0)
+  for (let z = z0 + 0.2; z + 1.4 <= z1; z += 1.9)
+    put(
+      B,
+      BOX,
+      PANEL,
+      (x0 + x1) / 2,
+      y + 0.38,
+      z + 0.7,
+      x1 - x0 - 0.2,
+      0.06,
+      1.4,
+      -0.32,
+      0,
+      0
+    )
   B.cuboid(x0, x1, z0, z1, y, y + 0.12, STEEL)
 }
 function saw (B, r) {
@@ -117,16 +170,50 @@ function saw (B, r) {
     // a slope up over 4.6 m to the glazing standing at the high side
     const [lo, hi] = r.flip ? [z + 4.6, z] : [z, z + 4.6]
     const n = r.flip ? [0, 0.97, -0.26] : [0, 0.97, 0.26]
-    B.quad([x0, y, lo], [x1, y, lo], [x1, y + 1.2, hi], [x0, y + 1.2, hi], n, [0, 0, 1, 1], SAW)
-    B.quad([x1, y, hi], [x0, y, hi], [x0, y + 1.2, hi], [x1, y + 1.2, hi], [0, 0, r.flip ? -1 : 1], [0, 0, 1, 1], GLAZE)
-    B.quad([x0, y + 1.2, hi], [x1, y + 1.2, hi], [x1, y, hi], [x0, y, hi], [0, 0, r.flip ? 1 : -1], [0, 0, 1, 1], GLAZE)
-    for (const x of [x0, x1]) B.tri([x, y, lo], [x, y, hi], [x, y + 1.2, hi], [x === x0 ? -1 : 1, 0, 0], [0, 0, 1, 0, 1, 1], SAW)
+    B.quad(
+      [x0, y, lo],
+      [x1, y, lo],
+      [x1, y + 1.2, hi],
+      [x0, y + 1.2, hi],
+      n,
+      [0, 0, 1, 1],
+      SAW
+    )
+    B.quad(
+      [x1, y, hi],
+      [x0, y, hi],
+      [x0, y + 1.2, hi],
+      [x1, y + 1.2, hi],
+      [0, 0, r.flip ? -1 : 1],
+      [0, 0, 1, 1],
+      GLAZE
+    )
+    B.quad(
+      [x0, y + 1.2, hi],
+      [x1, y + 1.2, hi],
+      [x1, y, hi],
+      [x0, y, hi],
+      [0, 0, r.flip ? 1 : -1],
+      [0, 0, 1, 1],
+      GLAZE
+    )
+    for (const x of [x0, x1])
+      B.tri(
+        [x, y, lo],
+        [x, y, hi],
+        [x, y + 1.2, hi],
+        [x === x0 ? -1 : 1, 0, 0],
+        [0, 0, 1, 0, 1, 1],
+        SAW
+      )
   }
 }
 function garden (B, r) {
   const { x0, x1, z0, z1, y } = r
   B.cuboid(x0, x1, z0, z1, y, y + 0.35, GREEN)
-  for (let x = x0 + 1; x < x1 - 0.5; x += 2.6) for (let z = z0 + 1; z < z1 - 0.5; z += 2.6) put(B, BUSH, C(0x3f6a2f), x, y + 0.8, z, 0.7, 0.6, 0.7)
+  for (let x = x0 + 1; x < x1 - 0.5; x += 2.6)
+    for (let z = z0 + 1; z < z1 - 0.5; z += 2.6)
+      put(B, BUSH, C(0x3f6a2f), x, y + 0.8, z, 0.7, 0.6, 0.7)
 }
 
 // ---------- balconies ----------
@@ -136,7 +223,13 @@ const HOMES = new Set(['beach', 'strip', 'boulevard', 'venice', 'suburb'])
 function balconies (B) {
   let n = 0
   for (const b of BUILDINGS) {
-    if (!HOMES.has(b.area) || b.style !== 'stucco' || b.form === 'shaft' || b.tiers.length !== 1) continue
+    if (
+      !HOMES.has(b.area) ||
+      b.style !== 'stucco' ||
+      b.form === 'shaft' ||
+      b.tiers.length !== 1
+    )
+      continue
     if (b.h < 6.5 || b.h > 30 || hash(b, 4) < 0.5) continue
     const t = b.tiers[0]
     // the wall nearest a street: 0 north, 1 east, 2 south, 3 west
@@ -155,8 +248,24 @@ function balconies (B) {
       for (let a = a0 + 1.6; a + 2.4 < a1 - 1; a += 6) {
         const box = (u0, u1, o0, o1, h0, h1, c) =>
           along
-            ? B.cuboid(u0, u1, Math.min(face + out * o0, face + out * o1), Math.max(face + out * o0, face + out * o1), h0, h1, c)
-            : B.cuboid(Math.min(face + out * o0, face + out * o1), Math.max(face + out * o0, face + out * o1), u0, u1, h0, h1, c)
+            ? B.cuboid(
+                u0,
+                u1,
+                Math.min(face + out * o0, face + out * o1),
+                Math.max(face + out * o0, face + out * o1),
+                h0,
+                h1,
+                c
+              )
+            : B.cuboid(
+                Math.min(face + out * o0, face + out * o1),
+                Math.max(face + out * o0, face + out * o1),
+                u0,
+                u1,
+                h0,
+                h1,
+                c
+              )
         box(a, a + 2.4, 0, 1.1, y - 0.15, y, slab)
         box(a, a + 2.4, 1.04, 1.1, y, y + 1, rail)
         n++
@@ -171,14 +280,54 @@ function crown (B, rings, beacons, crowns) {
   if (!L) return
   const white = new THREE.Color(1, 1, 1)
   for (const s of L.steps) {
-    crowns.walls(s.x0, s.x1, s.z0, s.z1, s.y0, s.y1 - 0.6, white, w => [0, 0, w / 6, (s.y1 - s.y0) / 7])
-    B.cuboid(s.x0 - 0.2, s.x1 + 0.2, s.z0 - 0.2, s.z1 + 0.2, s.y1 - 0.6, s.y1, STEEL)
-    rings.band(s.x0, s.x1, s.z0, s.z1, 0.35, s.y1 - 0.9, s.y1 - 0.6, white)
+    crowns.walls(s.x0, s.x1, s.z0, s.z1, s.y0, s.y1 - 0.6, white, w => [
+      0,
+      0,
+      w / 6,
+      (s.y1 - s.y0) / 7
+    ])
+    B.cuboid(
+      s.x0 - 0.2,
+      s.x1 + 0.2,
+      s.z0 - 0.2,
+      s.z1 + 0.2,
+      s.y1 - 0.6,
+      s.y1,
+      STEEL
+    )
+    // (a broad band most of the way up each step, to read from across the city)
+    rings.band(s.x0, s.x1, s.z0, s.z1, 0.45, s.y0 + 1.2, s.y1 - 0.6, white)
   }
+  // and light fins up the top step's corners
+  const t = L.steps[L.steps.length - 1]
+  for (const [x, z] of [
+    [t.x0, t.z0],
+    [t.x1, t.z0],
+    [t.x1, t.z1],
+    [t.x0, t.z1]
+  ])
+    rings.cuboid(x - 0.5, x + 0.5, z - 0.5, z + 0.5, t.y0, t.y1 - 0.6, white)
   const p = L.spire
   put(B, CONE, STEEL, p.x, p.y + p.h / 2, p.z, 0.9, p.h, 0.9)
-  for (let k = 1; k <= 3; k++) rings.cuboid(p.x - 1.2 + k * 0.2, p.x + 1.2 - k * 0.2, p.z - 1.2 + k * 0.2, p.z + 1.2 - k * 0.2, p.y + k * 7, p.y + k * 7 + 0.4, white)
-  beacons.cuboid(p.x - 0.4, p.x + 0.4, p.z - 0.4, p.z + 0.4, p.y + p.h, p.y + p.h + 0.8, white)
+  for (let k = 1; k <= 3; k++)
+    rings.cuboid(
+      p.x - 1.2 + k * 0.2,
+      p.x + 1.2 - k * 0.2,
+      p.z - 1.2 + k * 0.2,
+      p.z + 1.2 - k * 0.2,
+      p.y + k * 7,
+      p.y + k * 7 + 0.4,
+      white
+    )
+  beacons.cuboid(
+    p.x - 0.4,
+    p.x + 0.4,
+    p.z - 0.4,
+    p.z + 0.4,
+    p.y + p.h,
+    p.y + p.h + 0.8,
+    white
+  )
 }
 function masts (B, beacons) {
   const RED = C(0xc0302a)
@@ -189,11 +338,33 @@ function masts (B, beacons) {
         y0 = y + k * 10,
         y1 = Math.min(y + h, y0 + 10)
       const r = 1.3 * (1 - (k * 10) / h) + 0.35
-      for (const [dx, dz] of [[1, 0], [-0.5, 0.87], [-0.5, -0.87]]) B.cuboid(x + dx * r - 0.1, x + dx * r + 0.1, z + dz * r - 0.1, z + dz * r + 0.1, y0, y1, c)
+      for (const [dx, dz] of [
+        [1, 0],
+        [-0.5, 0.87],
+        [-0.5, -0.87]
+      ])
+        B.cuboid(
+          x + dx * r - 0.1,
+          x + dx * r + 0.1,
+          z + dz * r - 0.1,
+          z + dz * r + 0.1,
+          y0,
+          y1,
+          c
+        )
       B.cuboid(x - r, x + r, z - r, z + r, y1 - 0.2, y1, c)
     }
-    for (let yy = y + 30; yy < y + h; yy += 30) beacons.cuboid(x - 0.5, x + 0.5, z - 0.5, z + 0.5, yy, yy + 0.8, WHITE)
-    beacons.cuboid(x - 0.7, x + 0.7, z - 0.7, z + 0.7, y + h, y + h + 1.2, WHITE)
+    for (let yy = y + 30; yy < y + h; yy += 30)
+      beacons.cuboid(x - 0.5, x + 0.5, z - 0.5, z + 0.5, yy, yy + 0.8, WHITE)
+    beacons.cuboid(
+      x - 0.7,
+      x + 0.7,
+      z - 0.7,
+      z + 0.7,
+      y + h,
+      y + h + 1.2,
+      WHITE
+    )
   }
 }
 function lighthouse (B, glow) {
@@ -201,12 +372,36 @@ function lighthouse (B, glow) {
   if (!L) return
   const { x, z, y, h } = L
   const RED = C(0xb02a26)
-  B.add(new THREE.CylinderGeometry(1.9, 2.6, h * 0.5, 16), at(x, y + h * 0.25, z), WHITE)
-  B.add(new THREE.CylinderGeometry(1.5, 1.9, h * 0.25, 16), at(x, y + h * 0.625, z), RED)
-  B.add(new THREE.CylinderGeometry(1.3, 1.5, h * 0.17, 16), at(x, y + h * 0.835, z), WHITE)
-  B.add(new THREE.CylinderGeometry(2.2, 2.2, 0.3, 16), at(x, y + h * 0.92, z), DARK)
-  glow.add(new THREE.CylinderGeometry(1.1, 1.1, 2, 12), at(x, y + h * 0.92 + 1.15, z), C(0xfff2c8))
-  B.add(new THREE.ConeGeometry(1.5, 1.6, 12), at(x, y + h * 0.92 + 2.95, z), RED)
+  B.add(
+    new THREE.CylinderGeometry(1.9, 2.6, h * 0.5, 16),
+    at(x, y + h * 0.25, z),
+    WHITE
+  )
+  B.add(
+    new THREE.CylinderGeometry(1.5, 1.9, h * 0.25, 16),
+    at(x, y + h * 0.625, z),
+    RED
+  )
+  B.add(
+    new THREE.CylinderGeometry(1.3, 1.5, h * 0.17, 16),
+    at(x, y + h * 0.835, z),
+    WHITE
+  )
+  B.add(
+    new THREE.CylinderGeometry(2.2, 2.2, 0.3, 16),
+    at(x, y + h * 0.92, z),
+    DARK
+  )
+  glow.add(
+    new THREE.CylinderGeometry(1.1, 1.1, 2, 12),
+    at(x, y + h * 0.92 + 1.15, z),
+    C(0xfff2c8)
+  )
+  B.add(
+    new THREE.ConeGeometry(1.5, 1.6, 12),
+    at(x, y + h * 0.92 + 2.95, z),
+    RED
+  )
 }
 
 export function buildVariety (group, { beacons, crowns }) {
@@ -219,15 +414,24 @@ export function buildVariety (group, { beacons, crowns }) {
   crown(B, rings, beacons, crowns)
   masts(B, beacons)
   lighthouse(B, glow)
-  const lit = new THREE.Mesh(B.geometry(), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.8 }))
+  const lit = new THREE.Mesh(
+    B.geometry(),
+    new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.8 })
+  )
   lit.castShadow = lit.receiveShadow = true
   lit.name = 'variety'
   group.add(lit)
-  const ringMat = new THREE.MeshBasicMaterial({ vertexColors: true, color: new THREE.Color(1, 1, 1) })
+  const ringMat = new THREE.MeshBasicMaterial({
+    vertexColors: true,
+    color: new THREE.Color(1, 1, 1)
+  })
   const rm = new THREE.Mesh(rings.geometry(), ringMat)
   rm.name = 'crown rings'
   group.add(rm)
-  const glowMat = new THREE.MeshBasicMaterial({ vertexColors: true, color: new THREE.Color(1, 1, 1) })
+  const glowMat = new THREE.MeshBasicMaterial({
+    vertexColors: true,
+    color: new THREE.Color(1, 1, 1)
+  })
   const gm = new THREE.Mesh(glow.geometry(), glowMat)
   group.add(gm)
   // the lighthouse's beam: two long fading blades crossed, turning round the lantern
@@ -243,7 +447,14 @@ export function buildVariety (group, { beacons, crowns }) {
   const blade = beamGeo.clone().rotateX(Math.PI / 2)
   const beam = new THREE.Mesh(
     new THREE.BufferGeometry().copy(beamGeo),
-    new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.35, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide })
+    new THREE.MeshBasicMaterial({
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.35,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide
+    })
   )
   beam.add(new THREE.Mesh(blade, beam.material))
   beam.position.set(L.x, L.y + L.h * 0.92 + 1.15, L.z)
@@ -262,8 +473,12 @@ export function buildVariety (group, { beacons, crowns }) {
     update (dt) {
       t += dt
       // the crown's rings: a soft white by day, slowly round the colours after dark
-      hue.setHSL((t * 0.02) % 1, 0.85, 0.55)
-      ringMat.color.setRGB(1, 1, 1).lerp(hue, dark).multiplyScalar(0.9 + 2.6 * dark)
+      // (fully saturated and not so bright that the tone mapping washes it out to white)
+      hue.setHSL((t * 0.02) % 1, 1, 0.5)
+      ringMat.color
+        .setRGB(1, 1, 1)
+        .lerp(hue, dark)
+        .multiplyScalar(0.9 + 0.9 * dark)
       if (beam.visible) beam.rotation.y = -t * 0.9
     }
   }

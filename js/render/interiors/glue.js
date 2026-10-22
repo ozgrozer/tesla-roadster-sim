@@ -23,8 +23,14 @@ import {
   strayed,
   roomWorld
 } from '../../sim/interiors/state.js'
-import { PRICE, canPay, nextColour, repaintKey } from '../../sim/interiors/modshop.js'
+import {
+  PRICE,
+  canPay,
+  nextColour,
+  repaintKey
+} from '../../sim/interiors/modshop.js'
 import { SITES } from '../../sim/interiors/sites.js'
+import { TokenHunt } from './hunt.js'
 
 export class InteriorGlue {
   constructor (foot) {
@@ -34,6 +40,7 @@ export class InteriorGlue {
     this.wallet = null // { cash } (game.js's missions)
     this.damage = null // the Roadster's dents (render/damage.js)
     this.sprays = 0
+    this.hunt = new TokenHunt(foot) // (the hidden tokens: hunt.js)
   }
   // game.js: who pays, and the Roadster's dents to mend
   attach ({ wallet, damage }) {
@@ -57,6 +64,7 @@ export class InteriorGlue {
     const ev = stepTransition(H)
     if (ev === 'swap') this.swap()
     this.fade()
+    if (!busy()) this.hunt.step(this.wallet)
     return busy()
   }
   swap () {
@@ -68,14 +76,22 @@ export class InteriorGlue {
       f.world = roomWorld(s)
       this.view()?.show(s)
       this.snap()
-      emitGame('interior-entered', { id: s.id, kind: s.kind, name: s.name, pos: { x: s.out.x, z: s.out.z } })
+      emitGame('interior-entered', {
+        id: s.id,
+        kind: s.kind,
+        name: s.name,
+        pos: { x: s.out.x, z: s.out.z }
+      })
     } else if (act === 'exit') {
       const id = INTERIOR.site?.id
       swapOut(player)
       f.world = this.city
       this.view()?.show(null)
       this.snap()
-      emitGame('interior-exited', { id, pos: { x: player.pos.x, z: player.pos.z } })
+      emitGame('interior-exited', {
+        id,
+        pos: { x: player.pos.x, z: player.pos.z }
+      })
     } else if (act === 'service') this.service(s)
   }
   // the camera straight behind the player, where they now are (no glide through the floor)
@@ -126,8 +142,18 @@ export class InteriorGlue {
       car.paint = repaintKey(car.paint, this.sprays)
     }
     this.sprays++
-    f.hud?.popup?.(`Repaired and resprayed · ${c.name} · <b>-$${PRICE}</b>`, 2600, 'hint')
-    emitGame('car-resprayed', { site: s.id, vehicle: e?.id, colour: c.name, price: PRICE, wanted: player.wanted })
+    f.hud?.popup?.(
+      `Repaired and resprayed · ${c.name} · <b>-$${PRICE}</b>`,
+      2600,
+      'hint'
+    )
+    emitGame('car-resprayed', {
+      site: s.id,
+      vehicle: e?.id,
+      colour: c.name,
+      price: PRICE,
+      wanted: player.wanted
+    })
   }
 
   // the Roadster's paint: its material and the copies of it its panels were made with
@@ -137,7 +163,8 @@ export class InteriorGlue {
       this.paints = new Set([MAT.paint])
       this.foot.RS?.car?.traverse(o => {
         for (const m of [].concat(o.material || []))
-          if (m?.isMeshPhysicalMaterial && m.color?.getHex() === was) this.paints.add(m)
+          if (m?.isMeshPhysicalMaterial && m.color?.getHex() === was)
+            this.paints.add(m)
       })
     }
     for (const m of this.paints) m.color.setHex(hex)
@@ -153,7 +180,8 @@ export class InteriorGlue {
       return o
     }
     const speed = player.mode === 'car' ? f.driven()?.groundSpeed?.() || 0 : 0
-    const c = (this.current = f.app?.intro || f.app?.auto ? null : offerAt(player, speed))
+    const c = (this.current =
+      f.app?.intro || f.app?.auto ? null : offerAt(player, speed))
     if (inside()) {
       // (the cars in the street over the room are not in it)
       o.target = o.how = null
@@ -168,8 +196,13 @@ export class InteriorGlue {
       const short = !canPay(this.wallet)
       o.text = c.why
         ? `${c.site.name} · ${c.why}`
-        : `<kbd>E</kbd> Repair & respray · $${PRICE}${short ? ' · not enough cash' : ''}`
-    } else o.text = c.why ? `${c.site.name} · ${c.why}` : `<kbd>E</kbd> Enter · ${c.site.name}`
+        : `<kbd>E</kbd> Repair & respray · $${PRICE}${
+            short ? ' · not enough cash' : ''
+          }`
+    } else
+      o.text = c.why
+        ? `${c.site.name} · ${c.why}`
+        : `<kbd>E</kbd> Enter · ${c.site.name}`
     return o
   }
 

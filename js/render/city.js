@@ -27,6 +27,9 @@ import { buildStreet } from './cityStreet.js'
 import { buildBuildings, BEACON } from './cityBuildings.js'
 import { updateTrees } from './cityTrees.js'
 import { streamed, stream, streamAll, streamBack } from './chunks.js'
+import { buildExtras } from './cityExtras.js'
+import { buildTokens } from './cityTokens.js'
+import { buildStopSigns } from './cityStopSigns.js'
 import { InteriorView } from './interiors/view.js'
 
 const _pv = new THREE.Matrix4(),
@@ -108,6 +111,9 @@ export class CityView {
     buildWorks(g) // (the new districts' docks, stacks, fences, the freeway deck and ramps)
     buildPort(g) // (the quay, its cranes and the ship alongside)
     buildStadium(g) // (the stadium's pitch, stands and canopy)
+    this.extras = buildExtras(g) // (the alleys' dressing, street furniture, benches: cityExtras.js)
+    this.stopSigns = buildStopSigns(g) // (the all-way stops' signs and legends: cityStopSigns.js)
+    this.tokens = buildTokens(g) // (the hidden tokens, turning: cityTokens.js)
     streamCity(g)
     this.interiors = new InteriorView(g) // (the rooms under the city, the doors: interiors/)
     VIEW.interiors = this.interiors
@@ -158,6 +164,8 @@ export class CityView {
     this.buildings.night(k)
     this.props.night(k)
     this.interiors.night(k)
+    this.extras.night(k)
+    this.tokens.night(k)
     // (each driver switches their headlights on at their own moment: render/traffic.js reads the
     // hour and the weather itself)
     this.cars.beams.visible = k > 0.25
@@ -217,6 +225,8 @@ export class CityView {
     // once whatever was knocked down has come to rest, its shadow is drawn where it lies
     if (this.falling && !falling) this.shadow.refresh()
     this.falling = falling
+    this.tokens.update(dt)
+    this.stopSigns.update()
     updateTrees(dt, camera) // (the palms' and trees' sway, and detail near)
     this.interiors.update(dt)
     this.buildings.update(dt) // (the Meridian's rings, the lighthouse's beam)
