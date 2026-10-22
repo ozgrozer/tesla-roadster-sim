@@ -126,3 +126,11 @@ Tests: tests/phys.test.mjs (12). Shots: /workspace/shots/v2/phys/ (tools/phys/sh
   level 1.2/(1+d/28) from the nearest unit; units removed -> chase cleared -> siren silent; car voices freed when a
   car is unlisted; lanes with nothing to play disconnected; pause suspends the context. Volumes: master (outVol),
   music (musicBus), effects (mixIn) from the options.
+
+### Hidden tokens counter (ux, for the world's hunt)
+
+- `js/ui/tokens.js` TokenCounter listens for 'token-collected' { id, n, total, where, pos } and 'tokens-complete'
+  (render/interiors/hunt.js on gta-v2-world): "◆ n/30" over the radar's clock for 4 s on a find (8 s and gold when
+  all are found), under the pause menu; the hunt's n is the truth (never counts down); remembered as prefs
+  'tokenCount'. The STATS tab has a "Hidden tokens n of 30" row. Test in tests/ux.test.mjs. Shots:
+  /workspace/shots/v2/ux/x-token-hud.png, x-token-stats.png (events fed in by hand: the hunt is not on this branch).
