@@ -79,10 +79,13 @@ test('a player standing still is arrestable once a unit pulls up beside them', (
   assert.ok(bust > 0, 'a unit stopped beside them')
 })
 
-test('roles: tail at one or two stars, ram at three, box in at four', () => {
+test('roles: tail at one or two stars, box in at three (no ramming yet), ram at four', () => {
   assert.equal(roleFor(1, 0), 'tail')
   assert.equal(roleFor(2, 1), 'tail')
-  assert.equal(roleFor(3, 1), 'ram')
+  // (round 2, S3: aggressive ramming moved to four stars and up)
+  assert.equal(roleFor(3, 0), 'tail')
+  assert.equal(roleFor(3, 1), 'box')
+  assert.ok(![0, 1, 2, 3].some(k => roleFor(3, k) === 'ram'))
   assert.equal(roleFor(4, 0), 'ram')
   assert.equal(roleFor(4, 1), 'box')
 })

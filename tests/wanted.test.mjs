@@ -50,15 +50,22 @@ test('out of sight: flashing, the circle stays, slow inside and quick outside, t
   assert.equal(w.searching, true)
   assert.equal(w.stars, 2)
   assert.deepEqual(w.last, { x: 0, z: 0 })
-  // out of it: cleared within the cooldown
+  // out of it: a star goes within the cooldown, then the next (round 2, S3: the stars decay one
+  // at a time)
   const out = { x: searchRadius(2) + 30, z: 0 }
   let t = 0
-  while (w.stars && t < cd * 2) {
+  while (w.stars === 2 && t < cd * 2) {
+    w.update(0.1, out, false)
+    t += 0.1
+  }
+  assert.equal(w.stars, 1)
+  assert.ok(t <= cd + 0.05, `a star gone in ${t.toFixed(1)} s`)
+  while (w.stars && t < cd * 4) {
     w.update(0.1, out, false)
     t += 0.1
   }
   assert.equal(w.stars, 0)
-  assert.ok(t <= cd, `cleared in ${t.toFixed(1)} s`)
+  assert.ok(t <= cd + cooldownFor(1) + 0.1, `cleared in ${t.toFixed(1)} s`)
   assert.equal(w.cleared, 2)
 })
 

@@ -88,6 +88,18 @@ export class Heli {
 // Where a roadblock goes: on a lane of the road the player is on (or one parallel, near its line),
 // SPOT_MIN to SPOT_MAX m ahead of them along the way they are going, out of the camera's sight if it
 // can be. Returns { e, s } or null.
+// is (x, z) in the camera's sight? view: { x, z, fx, fz }
+export function inView (view, x, z, los = clear) {
+  if (!view) return false
+  const dx = x - view.x,
+    dz = z - view.z,
+    d = Math.hypot(dx, dz)
+  if (d > 300) return false
+  if (d < 25) return true
+  if ((dx * view.fx + dz * view.fz) / d < 0.25) return false
+  return los(view.x, view.z, x, z, 3, 1)
+}
+
 export function roadblockSpot (player, view, R, { min = 110, max = 200 } = {}) {
   const sp = player.speed
   if (sp < 1) return null
@@ -110,9 +122,10 @@ export function roadblockSpot (player, view, R, { min = 110, max = 200 } = {}) {
     if (along < min || along > max) continue
     const lat = Math.abs(dx * vz - dz * vx)
     if (lat > 14) continue
-    // (out of sight beats in sight; nearer the line beats further off it; a little chance)
-    const hidden = view ? !clear(view.x, view.z, x, z, 3, 1) : true
-    const score = lat + (hidden ? 0 : 30) + R() * 4
+    // (nearer the line beats further off it; a little chance)
+    // (never put down in the camera's sight: the player would see it appear)
+    if (inView(view, x, z)) continue
+    const score = lat + R() * 4
     if (score < bs) {
       bs = score
       best = { e, s }

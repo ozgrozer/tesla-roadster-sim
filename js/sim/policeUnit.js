@@ -55,8 +55,9 @@ export function makeUnit (traffic, at, R, role = 'pursuit') {
 // What a unit chasing the player does at this many stars: 'tail' (follow, pull up beside them when
 // they stop), 'ram' or 'box' (alongside, to pin them)
 export function roleFor (stars, slot) {
-  if (stars >= 4 && slot % 2 === 1) return 'box'
-  if (stars >= 3) return 'ram'
+  // (ramming only at four stars and up: at three, roadblocks, and a hard chase that boxes them in)
+  if (stars >= 4) return slot % 2 === 1 ? 'box' : 'ram'
+  if (stars >= 3 && slot % 2 === 1) return 'box'
   return 'tail'
 }
 
@@ -130,7 +131,7 @@ export function think (u, ctx, dt) {
     direct = a.d < DIRECT && u.sees
     tx = a.x
     tz = a.z
-    // (to a standstill beside a player who has stopped: the bust; ramming at three stars)
+    // (to a standstill beside a player who has stopped: the bust; ramming at four stars)
     v = role === 'tail' ? Math.min(CHASE_V, a.sp + 10) : CHASE_V * 1.15
     if (P.driving === false && a.d < 40) stopAt = 5
     else if (a.sp < 3 && role === 'tail') stopAt = 4.5
