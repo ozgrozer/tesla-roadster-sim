@@ -133,6 +133,7 @@ function findAlleys () {
             open: end,
             area: blk.area,
             wall: Math.min(a.h, b.h),
+            shop: [!!a.shop, !!b.shop], // (a shop's canopy runs round it: no fire escape under that)
             len
           })
         }
@@ -203,16 +204,20 @@ function dress (al) {
     side: side ? -1 : 1
   })
   // a fire escape up the taller walls (its landings solid)
-  if (al.wall > 10 && R() < 0.65) {
-    const u0 = 2.5 + R() * Math.min(4, Math.max(0, al.len - 11)), // (near the mouth, to be seen from the street)
-      a = P(u0, 0),
+  // (on the wall across from the bins, or this one if that is a shop's, whose canopy would hide it)
+  const wallSide = al.shop[side ? 0 : 1] ? 1 - side : side
+  // (the draws as they always were, so the alleys picked after this one stay where they are)
+  const tall = al.wall > 10 && R() < 0.65
+  const u0 = tall ? 2.5 + R() * Math.min(4, Math.max(0, al.len - 11)) : 0 // (near the mouth, to be seen)
+  if (tall && !al.shop[wallSide ? 0 : 1]) {
+    const a = P(u0, 0),
       b = P(u0 + 4.5, 0)
-    const v = side ? 0 : w
+    const v = wallSide ? 0 : w
     const deep = Math.min(1.1, w * 0.3)
     const levels = []
     for (let y = 3.4; y < al.wall - 1.2; y += 3.3) levels.push(y)
     if (levels.length) {
-      const sgn = side ? 1 : -1 // (out from the wall it hangs on, into the alley)
+      const sgn = wallSide ? 1 : -1 // (out from the wall it hangs on, into the alley)
       const q0 = along
         ? { x: al.x0 + v, z: Math.min(a.z, b.z) }
         : { x: Math.min(a.x, b.x), z: al.z0 + v }

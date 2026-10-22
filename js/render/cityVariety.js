@@ -295,8 +295,8 @@ function crown (B, rings, beacons, crowns) {
       s.y1,
       STEEL
     )
-    // (a broad band under each step's lip, thick enough to read from across the city)
-    rings.band(s.x0, s.x1, s.z0, s.z1, 0.45, s.y1 - 3.4, s.y1 - 0.6, white)
+    // (a broad band most of the way up each step, to read from across the city)
+    rings.band(s.x0, s.x1, s.z0, s.z1, 0.45, s.y0 + 1.2, s.y1 - 0.6, white)
   }
   // and light fins up the top step's corners
   const t = L.steps[L.steps.length - 1]
