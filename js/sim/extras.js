@@ -204,7 +204,7 @@ function dress (al) {
   })
   // a fire escape up the taller walls (its landings solid)
   if (al.wall > 10 && R() < 0.65) {
-    const u0 = 3 + R() * Math.max(0, al.len - 11),
+    const u0 = 2.5 + R() * Math.min(4, Math.max(0, al.len - 11)), // (near the mouth, to be seen from the street)
       a = P(u0, 0),
       b = P(u0 + 4.5, 0)
     const v = side ? 0 : w

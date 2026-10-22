@@ -34,6 +34,8 @@ const STEEL = C(0x4a4e54),
   BLUE = C(0x1f4f9a),
   BAGS = C(0x15171a)
 const SKIP = [0x2f6b3a, 0x2a4f8a, 0x6b4a2a, 0x3a5a5a].map(C)
+const IRON = C(0x1c1e21),
+  LIT = C(0xf0d49a)
 const NEWS = [0xc8302a, 0x2a5aa8, 0xe8c02a, 0x3a8a4a, 0xe8e4da].map(C)
 
 function dumpster (B, e) {
@@ -155,13 +157,13 @@ function lamp (B, G, e) {
     C(0x5a3a2a)
   )
 }
-function escape (B, e) {
+function escape (B, G, e) {
   const L = e.len,
     D = e.deep * e.sgn
   // the landings (as the colliders), their railings, and a flight of steps between each pair
-  const box = (u0, u1, v0, v1, y0, y1, col) =>
+  const box = (u0, u1, v0, v1, y0, y1, col, T = B) =>
     e.along
-      ? B.cuboid(
+      ? T.cuboid(
           Math.min(e.x + v0, e.x + v1),
           Math.max(e.x + v0, e.x + v1),
           e.z + u0,
@@ -170,7 +172,7 @@ function escape (B, e) {
           y1,
           col
         )
-      : B.cuboid(
+      : T.cuboid(
           e.x + u0,
           e.x + u1,
           Math.min(e.z + v0, e.z + v1),
@@ -181,9 +183,30 @@ function escape (B, e) {
         )
   e.levels.forEach((y, i) => {
     box(0, L, 0, D, y - 0.12, y, STEEL)
-    box(0, L, D - 0.04 * e.sgn, D, y, y + 1.0, DARK) // (the rail's mesh as a dark screen)
-    box(0, 0.05, 0, D, y, y + 1.0, DARK)
-    box(L - 0.05, L, 0, D, y, y + 1.0, DARK)
+    // the railing: top and middle rails, and bars down to the landing, open to see through
+    const s = e.sgn
+    for (const r of [0.5, 1.0]) {
+      box(0, L, D - 0.05 * s, D, y + r - 0.05, y + r, IRON)
+      box(0, 0.05, 0, D, y + r - 0.05, y + r, IRON)
+      box(L - 0.05, L, 0, D, y + r - 0.05, y + r, IRON)
+    }
+    for (let u = 0; u <= L + 0.01; u += 0.45)
+      box(u, u + 0.04, D - 0.04 * s, D, y, y + 1.0, IRON)
+    // its brackets under it, back to the wall
+    for (const u of [0.1, L - 0.1])
+      box(u - 0.04, u + 0.04, 0, D, y - 0.5, y - 0.12, IRON)
+    // the window it serves, lit at night (a hand's width out from the wall)
+    box(L * 0.55, L * 0.55 + 1.1, 0, 0.06 * s, y + 0.2, y + 1.7, C(0x2a2622))
+    box(
+      L * 0.55 + 0.1,
+      L * 0.55 + 1.0,
+      0.06 * s,
+      0.08 * s,
+      y + 0.3,
+      y + 1.6,
+      LIT,
+      G
+    )
     const next = e.levels[i + 1]
     if (next !== undefined) {
       // the steps: a slab sloping up along it
@@ -230,6 +253,13 @@ function escape (B, e) {
         )
     }
   })
+  // the drop ladder from the first landing, hanging to head height off the ground
+  const y0 = e.levels[0],
+    u = L - 0.75
+  for (const w of [0, 0.45])
+    box(u + w, u + w + 0.05, D * 0.45, D * 0.45 + 0.05 * e.sgn, 1.6, y0, IRON)
+  for (let y = 1.8; y < y0; y += 0.32)
+    box(u, u + 0.5, D * 0.45, D * 0.45 + 0.04 * e.sgn, y, y + 0.04, IRON)
 }
 function string (B, G, e) {
   const n = 7
@@ -361,6 +391,7 @@ export function buildExtras (group) {
     const B = cellOf(e)
     if (e.kind === 'lamp') lamp(B, G, e)
     else if (e.kind === 'string') string(B, G, e)
+    else if (e.kind === 'escape') escape(B, G, e)
     else ONE[e.kind]?.(B, e)
   }
   const mat = new THREE.MeshStandardMaterial({
