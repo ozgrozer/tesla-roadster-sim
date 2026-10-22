@@ -248,8 +248,8 @@ export class Traffic {
       sndLv: undefined,
       sndAlarm: false,
       jam: false,
-      // (handover.js: who has taken it over, left parked by them, its driver's mood, style)
-      ctl: null,
+      ctl: null, // (handover.js: who has taken it over, left parked by them, its driver's mood, style)
+      body: null, // (and the body driving it: vehicleLink.js)
       abandoned: false, // (and taken off, gridlocked: jammed)
       jammed: false,
       angry: 0,

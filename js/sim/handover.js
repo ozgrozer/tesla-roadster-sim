@@ -69,6 +69,7 @@ export const HANDOVER = {
   handBack (car, { rejoin = false } = {}) {
     if (!car?.ctl) return false
     car.ctl = null
+    car.body = null
     car.v = 0
     car.homeX = car.x
     car.homeZ = car.z

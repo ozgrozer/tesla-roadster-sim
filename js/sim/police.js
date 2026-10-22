@@ -268,15 +268,17 @@ export class Police {
 
 // two bodies against each other (two units, or a unit and a car the player drives); returns the
 // closing speed (0: apart)
-function bodies (a, b) {
+export function bodies (a, b) {
   if (Math.abs(a.x - b.x) > 8 || Math.abs(a.z - b.z) > 8) return 0
   const A = { ...rectOf(a) }
   const hit = rectRect(A, rectOf(b, _a))
   if (!hit) return 0
-  a.x += hit.nx * hit.depth * 0.5
-  a.z += hit.nz * hit.depth * 0.5
-  b.x -= hit.nx * hit.depth * 0.5
-  b.z -= hit.nz * hit.depth * 0.5
+  // (the overlap shared by mass: the lighter is pushed the further)
+  const k = (b.m || 1) / ((a.m || 1) + (b.m || 1))
+  a.x += hit.nx * hit.depth * k
+  a.z += hit.nz * hit.depth * k
+  b.x -= hit.nx * hit.depth * (1 - k)
+  b.z -= hit.nz * hit.depth * (1 - k)
   const w0 = a.w,
     w1 = b.w
   const impact = impulse(a, b, hit, 0.2, 0.3)

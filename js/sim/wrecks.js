@@ -282,7 +282,16 @@ export function collidePlayer (tr, sim) {
   const bottom = sim.mode === 'ground' ? sim.pos.y : sim.com.y - 0.9
   const mass = sim.mass || CAR.mass // (whatever the player drives: vehicleLink.js)
   for (const car of tr.cars) {
-    if (car.ctl || Math.abs(car.x - me.x) > 9 || Math.abs(car.z - me.z) > 9) continue
+    if (Math.abs(car.x - me.x) > 9 || Math.abs(car.z - me.z) > 9) continue
+    if (car.ctl) {
+      // (one driven by a body of its own, a getaway's say: body against body, by mass; the police
+      // meet the player in police.js ram, and the player's own body is the player)
+      const o = car.body
+      if (o && car.ctl !== 'police' && o !== sim.body && Math.abs(o.x - car.x) + Math.abs(o.z - car.z) < 1.5) {
+        clashBody(tr, sim, me, bottom, mass, car, o)
+      }
+      continue
+    }
     if (bottom > (car.y || 0) + car.hgt || bottom + 1.3 < (car.y || 0)) continue // (or under it)
     const hit = rectRect(me, carRect(car))
     if (!hit) continue
@@ -323,4 +332,45 @@ export function collidePlayer (tr, sim) {
     }
   }
   if (sim.mode === 'ground') sim.syncPose()
+}
+
+// The player's car against o, the body driving traffic car `car` (vehicleLink.js): the overlap
+// shared by mass, momentum traded, both dented, each told (the player's 'bump', the body's 'clash')
+const _o = { x: 0, z: 0, fx: 1, fz: 0, hl: 1, hw: 1 }
+function clashBody (tr, sim, me, bottom, mass, car, o) {
+  if (bottom > (o.y || 0) + (o.hgt || car.hgt) || bottom + 1.3 < (o.y || 0)) return
+  _o.x = o.x
+  _o.z = o.z
+  _o.fx = o.hx ?? Math.cos(o.yaw)
+  _o.fz = o.hz ?? -Math.sin(o.yaw)
+  _o.hl = (o.len || car.len) / 2
+  _o.hw = (o.wid || car.wid) / 2
+  const hit = rectRect(me, _o)
+  if (!hit) return
+  const { nx, nz } = hit
+  const at = landed(me, _o)
+  const px = at ? at.x : hit.px,
+    pz = at ? at.z : hit.pz
+  const om = o.m || car.m
+  const share = om / (om + mass)
+  nudge(sim, nx * hit.depth * share, nz * hit.depth * share)
+  o.x -= nx * hit.depth * (1 - share)
+  o.z -= nz * hit.depth * (1 - share)
+  car.x = o.x
+  car.z = o.z
+  const w0 = o.w
+  const impact = impulse(loadBody(sim), o, hit, 0.25, 0.3)
+  o.w = w0 + Math.max(-2.5, Math.min(2.5, o.w - w0))
+  storeBody(sim)
+  me.x = BODY.x
+  me.z = BODY.z
+  if (impact < 0.6) return
+  const broke = hurt({ x: o.x, z: o.z, hx: _o.fx, hz: _o.fz, len: _o.hl * 2, wid: _o.hw * 2, m: om, get dmg () { return o.dmg }, set dmg (d) { o.dmg = d } }, px, pz, impact, mass, tr.t)
+  if (o.dmg) {
+    o.limp = o.dmg.limp ?? 1
+    o.dead = !!o.dmg.wreck
+  }
+  o.events?.push({ type: 'clash', impact, x: px, z: pz, car: 'player', broke, nx: -nx, nz: -nz })
+  sim.emit('bump', { impact, what: 'car', px, pz, nx, nz, broke, peds: true })
+  if (impact > 5) tr.hear(me.x, me.z, 22)
 }
