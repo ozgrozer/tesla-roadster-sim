@@ -55553,7 +55553,8 @@ __define(9, function (__exports) {
 //   RT throttle   LT brake, reverse   A e-brake   RB boost (main thrusters)   LB fly (lift thrusters)
 //   X horn   Y get in / out (E)   B camera   D-pad up / down backflip / kickflip   View reset
 //   Menu Autopilot   the right stick pressed in: look behind, held (as in GTA)
-// On foot (onFoot.js): the left stick walks, the right stick looks, A jumps, RB sprints, Y gets in.
+// On foot (onFoot.js): the left stick walks, the right stick looks, A jumps, RB sprints, X (or LB)
+// punches, Y gets in.
 const BUTTONS = {
   0: 'Space',
   1: 'KeyV',
@@ -68341,7 +68342,7 @@ const ACTIONS = [
   ['ShiftLeft', 'Boost · sprint', 'Drive · on foot'],
   ['KeyE', 'Get in, out · steal', 'Drive · on foot'],
   ['KeyF', 'Fly (lift thrusters) · punch', 'Drive · on foot'],
-  ['KeyH', 'Horn', 'Drive'],
+  ['KeyH', 'Horn · punch', 'Drive · on foot'],
   ['KeyZ', 'Look behind', 'Drive'],
   ['KeyQ', 'Yaw left (flying)', 'Fly'],
   ['KeyX', 'Backflip', 'Fly'],
@@ -116246,6 +116247,7 @@ __define(292, function (__exports) {
 // Debugging and screenshots: ?wanted=3 (stars from the start), ?mission=race (a mission started at
 // once), ?ambient=chase (that street event soon), ?cash=5000; window.__crime in the console.
 const { ENV } = __require(3)
+const { roadGrip } = __require(43)
 const { IDX } = __require(59)
 const { STALLS, rng } = __require(35)
 const { Wanted } = __require(278)
@@ -116392,7 +116394,7 @@ class Game {
     }
     this.crimes.length = 0
     this.reports.step(h, W)
-    const grip = 1 - 0.3 * Math.max(ENV.wet, 0.6 * ENV.rain)
+    const grip = roadGrip() // (the same wet grip and grip hook as the player's cars: roadGrip.js)
     const f = this.foot,
       inCar = player.mode === 'car'
     const sim = inCar && f.inRoadster() ? this.sim : null,
@@ -117632,11 +117634,12 @@ class FootFight {
       if (e.how === 'car' && e.by === 'player') bodySound(this.foot.sound, e.speed || 0)
     })
   }
-  // a drive key pressed on foot (main.js): Space jumps, F punches. True if it was taken
+  // a drive key pressed on foot (main.js): Space jumps, F punches (and H: a gamepad's X, the horn in
+  // a car, punches on foot, as in GTA). True if it was taken
   press (code, first) {
     if (!first) return false
     if (code === 'Space') return (this.foot.jumpQ = true)
-    if (code === 'KeyF') return this.punch()
+    if (code === 'KeyF' || code === 'KeyH') return this.punch()
     return false
   }
   // any other key on foot: Caps Lock toggles walking
@@ -118212,6 +118215,19 @@ class CarDoors {
       polygonOffsetFactor: -2,
       polygonOffsetUnits: -2
     })
+    // the door's own window: lighter and see-through, so an open door reads as glass against the
+    // dark cabin behind it (the body's glass is near black head on; a broken one isn't drawn crazed)
+    this.glass = new THREE.MeshPhysicalMaterial({
+      color: 0x5d7486,
+      roughness: 0.05,
+      metalness: 0,
+      clearcoat: 1,
+      clearcoatRoughness: 0.02,
+      envMapIntensity: 2.6,
+      transparent: true,
+      opacity: 0.62,
+      side: THREE.DoubleSide
+    })
     this.cur = null
     this.angle = 0
     this.mat = new THREE.Matrix4() // the car's body, as drawn
@@ -118241,7 +118257,7 @@ class CarDoors {
     const paint = inst(sh.paint, ty.body.material)
     sh.paint.setAttribute('aPaint', new THREE.InstancedBufferAttribute(new Float32Array(1), 1))
     paint.setColorAt(0, new THREE.Color())
-    const glass = sh.glass ? inst(sh.glass, ty.glass.material) : null
+    const glass = sh.glass ? inst(sh.glass, this.glass) : null
     const card = new THREE.Mesh(sh.paint, this.card)
     const holes = [new THREE.Mesh(hole.paint, this.hole)]
     if (hole.glass) holes.push(new THREE.Mesh(hole.glass, this.hole))

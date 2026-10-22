@@ -7,6 +7,7 @@
 // Debugging and screenshots: ?wanted=3 (stars from the start), ?mission=race (a mission started at
 // once), ?ambient=chase (that street event soon), ?cash=5000; window.__crime in the console.
 import { ENV } from './sim/env.js'
+import { roadGrip } from './sim/roadGrip.js'
 import { IDX } from './sim/carTypes.js'
 import { STALLS, rng } from './sim/city.js'
 import { Wanted } from './sim/wanted.js'
@@ -153,7 +154,7 @@ export class Game {
     }
     this.crimes.length = 0
     this.reports.step(h, W)
-    const grip = 1 - 0.3 * Math.max(ENV.wet, 0.6 * ENV.rain)
+    const grip = roadGrip() // (the same wet grip and grip hook as the player's cars: roadGrip.js)
     const f = this.foot,
       inCar = player.mode === 'car'
     const sim = inCar && f.inRoadster() ? this.sim : null,

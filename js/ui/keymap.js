@@ -16,7 +16,7 @@ export const ACTIONS = [
   ['ShiftLeft', 'Boost · sprint', 'Drive · on foot'],
   ['KeyE', 'Get in, out · steal', 'Drive · on foot'],
   ['KeyF', 'Fly (lift thrusters) · punch', 'Drive · on foot'],
-  ['KeyH', 'Horn', 'Drive'],
+  ['KeyH', 'Horn · punch', 'Drive · on foot'],
   ['KeyZ', 'Look behind', 'Drive'],
   ['KeyQ', 'Yaw left (flying)', 'Fly'],
   ['KeyX', 'Backflip', 'Fly'],

@@ -24,11 +24,12 @@ export class FootFight {
       if (e.how === 'car' && e.by === 'player') bodySound(this.foot.sound, e.speed || 0)
     })
   }
-  // a drive key pressed on foot (main.js): Space jumps, F punches. True if it was taken
+  // a drive key pressed on foot (main.js): Space jumps, F punches (and H: a gamepad's X, the horn in
+  // a car, punches on foot, as in GTA). True if it was taken
   press (code, first) {
     if (!first) return false
     if (code === 'Space') return (this.foot.jumpQ = true)
-    if (code === 'KeyF') return this.punch()
+    if (code === 'KeyF' || code === 'KeyH') return this.punch()
     return false
   }
   // any other key on foot: Caps Lock toggles walking

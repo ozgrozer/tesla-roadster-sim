@@ -96,6 +96,19 @@ export class CarDoors {
       polygonOffsetFactor: -2,
       polygonOffsetUnits: -2
     })
+    // the door's own window: lighter and see-through, so an open door reads as glass against the
+    // dark cabin behind it (the body's glass is near black head on; a broken one isn't drawn crazed)
+    this.glass = new THREE.MeshPhysicalMaterial({
+      color: 0x5d7486,
+      roughness: 0.05,
+      metalness: 0,
+      clearcoat: 1,
+      clearcoatRoughness: 0.02,
+      envMapIntensity: 2.6,
+      transparent: true,
+      opacity: 0.62,
+      side: THREE.DoubleSide
+    })
     this.cur = null
     this.angle = 0
     this.mat = new THREE.Matrix4() // the car's body, as drawn
@@ -125,7 +138,7 @@ export class CarDoors {
     const paint = inst(sh.paint, ty.body.material)
     sh.paint.setAttribute('aPaint', new THREE.InstancedBufferAttribute(new Float32Array(1), 1))
     paint.setColorAt(0, new THREE.Color())
-    const glass = sh.glass ? inst(sh.glass, ty.glass.material) : null
+    const glass = sh.glass ? inst(sh.glass, this.glass) : null
     const card = new THREE.Mesh(sh.paint, this.card)
     const holes = [new THREE.Mesh(hole.paint, this.hole)]
     if (hole.glass) holes.push(new THREE.Mesh(hole.glass, this.hole))
