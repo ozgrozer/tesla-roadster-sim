@@ -105,6 +105,72 @@ try {
     await g.hold(['KeyW', 'ShiftLeft'], 1.5)
     await shot('p2-run-along-wall.png')
   }
+  if (want('dents')) {
+    // progressive damage: a sedan nosed into a building five times, gently, each knock too soft to
+    // break a lamp on its own; then looked at from in front, out of it
+    await g.ev(() => { window.__roadster.game.wanted.clear(); window.__roadster.seatIn('sedan') })
+    await g.run(1)
+    const at = await lane()
+    for (let k = 1; k <= 5; k++) {
+      await g.ev(({ x, z, yaw }) => {
+        const b = window.__roadster.foot.alt.body
+        const y = yaw + Math.PI / 2 + 0.25
+        Object.assign(b, { x, z, yaw: y, hx: Math.cos(y), hz: -Math.sin(y), w: 0, lat: 0, u: 6, vx: Math.cos(y) * 6, vz: -Math.sin(y) * 6 })
+      }, at)
+      await g.hold('KeyW', 0.5)
+      await g.run(2)
+      log['dents' + k] = await state()
+      console.log('dents', k, JSON.stringify(log['dents' + k]))
+    }
+    await g.hold('KeyS', 1)
+    await g.run(1.5)
+    const car = await g.ev(() => {
+      const b = window.__roadster.foot.alt.body
+      return { x: b.x, z: b.z, yaw: b.yaw, hx: b.hx, hz: b.hz, len: b.len, dents: Array.from(b.dmg?.dents || [], d => Math.round(d * 100) / 100), glass: b.dmg?.glass || 0 }
+    })
+    log.dentsCar = car
+    console.log('dents car', JSON.stringify(car))
+    await g.ev(() => window.__roadster.game.wanted.clear())
+    await g.press('KeyE', 0)
+    await g.run(2.5)
+    await g.ev(c => {
+      const R = window.__roadster, p = R.player, cam = R.foot.cam
+      const d = c.len / 2 + 2.6
+      p.pos.x = c.x + c.hx * d
+      p.pos.z = c.z + c.hz * d
+      p.heading = c.yaw + Math.PI
+      cam.yaw = c.yaw + Math.PI
+      cam.pitch = 0.3
+      cam.dist = 3.2
+    }, car)
+    await g.run(0.6)
+    await shot('p1-sedan-dented-nose.png')
+  }
+  if (want('kerb')) {
+    // a sedan up the kerb at an angle: one front wheel up, the body tilted and rocked
+    await g.ev(() => { window.__roadster.game.wanted.clear(); window.__roadster.seatIn('sedan') })
+    await g.run(1)
+    const at = await lane()
+    await g.ev(({ x, z, yaw }) => {
+      const b = window.__roadster.foot.alt.body
+      const y = yaw + 0.5
+      Object.assign(b, { x, z, yaw: y, hx: Math.cos(y), hz: -Math.sin(y), w: 0, lat: 0, u: 7, vx: Math.cos(y) * 7, vz: -Math.sin(y) * 7 })
+    }, at)
+    let st = null
+    for (let i = 0; i < 40; i++) {
+      await g.run(0.05)
+      st = await g.ev(() => {
+        const b = window.__roadster.foot.alt.body
+        return { w: (b.kerbW || []).map(Boolean), y: b.y, gr: b.gr, gp: b.gp, roll: b.roll }
+      })
+      if (st.w.some(Boolean) && !st.w.every(Boolean)) break
+    }
+    log.kerb = st
+    console.log('kerb', JSON.stringify(st))
+    await g.run(0.08)
+    await shot('p1-sedan-kerb-one-wheel.png')
+    await g.hold('KeyS', 2)
+  }
   if (want('tight')) {
     // a sedan nosed slowly up to a building, then turned so its driver's side is hard against it:
     // out by the other side
