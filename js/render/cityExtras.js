@@ -35,7 +35,7 @@ const STEEL = C(0x4a4e54),
   BAGS = C(0x15171a)
 const SKIP = [0x2f6b3a, 0x2a4f8a, 0x6b4a2a, 0x3a5a5a].map(C)
 const IRON = C(0x1c1e21),
-  LIT = C(0xf0d49a)
+  LIT = C(0x7a6444) // (a lit room behind, not a lamp: dim in the glow mesh)
 const NEWS = [0xc8302a, 0x2a5aa8, 0xe8c02a, 0x3a8a4a, 0xe8e4da].map(C)
 
 function dumpster (B, e) {
