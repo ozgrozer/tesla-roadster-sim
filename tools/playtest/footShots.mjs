@@ -43,8 +43,11 @@ if (which === 'doors' || which === 'all') {
   await g.shot('door-roadster-out.png')
   await until(() => window.__roadster.player.mode === 'foot', 6)
   await g.run(1)
+  // the tall cabs (the door up at head height) from further off and more toward the nose
+  const BIG = new Set(['fire', 'truck', 'bus', 'ambulance'])
   for (const name of kinds) {
     if (name === 'roadster') continue
+    const [va, vp, vd] = BIG.has(name) ? [-1.1, 0.16, 9.5] : [-0.7, 0.3, 6]
     const k = TYPES.findIndex(t => t.name === name)
     const P = await g.ev(() => ({ ...window.__roadster.player.pos }))
     const l = nearestLane(P.x + 8, P.z)
@@ -71,17 +74,17 @@ if (which === 'doors' || which === 'all') {
     const got = await until(() => { const a = window.__roadster.foot.action; return a && a.phase === 'open' && a.t > 0.42 }, 8)
     log(name, ok, 'open?', got, await g.ev(phaseOf))
     log(name, 'door', await g.ev(() => { const d = window.__roadster.foot.view.doors; return [d.angle, !!d.cur, d.cur?.door.map(m => m.visible)] }))
-    await aim(-0.7, 0.3, 6)
+    await aim(va, vp, vd)
     await g.shot(`door-${name}-open.png`)
     await until(() => { const a = window.__roadster.foot.action; return a && a.phase === 'in' && a.t > 0.45 }, 4)
-    await aim(-0.7, 0.3, 6)
+    await aim(va, vp, vd)
     await g.shot(`door-${name}-in.png`)
     const seated = await until(() => window.__roadster.player.mode === 'car', 6)
     log(name, 'seated', seated)
     await g.run(0.5)
     await g.press('KeyE', 0)
     await until(() => { const a = window.__roadster.foot.action; return a && a.dir === 'out' && a.phase === 'out' && a.t > 0.35 }, 5)
-    await aim(-0.6, 0.3, 6.5)
+    await aim(va + 0.1, vp, vd + 0.5)
     await g.shot(`door-${name}-out.png`)
     await until(() => window.__roadster.player.mode === 'foot' && !window.__roadster.foot.action, 6)
     await g.run(0.4)

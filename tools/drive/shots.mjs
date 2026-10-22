@@ -1,6 +1,7 @@
 // The v3 drive stream's headless look at the driving (not part of npm test): the real build in
 // headless Chrome on port 8094, a handbrake drift with its skid marks, a braking nose dive seen from
-// the side, cornering body roll from ahead, and the Roadster's handbrake turn. Screenshots and the
+// the side, cornering body roll from ahead, the Roadster's handbrake turn, skid marks on asphalt, the
+// rain (stops, a pickup's slide) and a rain night drive. Screenshots and the
 // body's state to /workspace/shots/v3/drive/.
 //   node --import ./tools/node-loader/register.mjs tools/drive/shots.mjs [only,steps]
 import fs from 'node:fs'
@@ -196,6 +197,28 @@ try {
     await look(0, 0)
     await drive('KeyS', 2)
     await weather('clear')
+  }
+  if (want('night')) {
+    // a rain night drive: 22:00 in a downpour, the sports car flat out down the wet road, its lamps
+    // in the spray, then a power slide across the wet asphalt (the sky's map redrawn for the hour)
+    await g.ev(() => {
+      const R = window.__roadster
+      R.climate.setHour(22)
+      R.climate.setWeather('rain', { now: true })
+      const d = R.cityView.daylight
+      if (d) { d.envWas = null; d.envT = 0 }
+    })
+    await g.run(1)
+    await seat('sports')
+    await drive('KeyW', 3.2)
+    await look(0.35, 0.06)
+    await shot('d7-sports-rain-night-drive.png')
+    await drive(['KeyW', 'KeyA'], 0.6)
+    await look(0.6, 0.12)
+    await shot('d7-sports-rain-night-slide.png')
+    await look(0, 0)
+    await drive('KeyS', 2.5)
+    await g.ev(() => { window.__roadster.climate.setHour(17); window.__roadster.climate.setWeather('clear', { now: true }) })
   }
 } catch (e) {
   console.error(e)
