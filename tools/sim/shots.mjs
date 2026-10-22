@@ -264,6 +264,8 @@ SCENES.police = () => play('?spawn=-480,430,1.5708', async page => {
     await page.screenshot({ path: r.shot3, clip: box, timeout: 180000 })
     await page.evaluate(() => { window.__draw = false })
   }
+  // (and on, far off, to lie low: the stars going one by one)
+  await page.evaluate(() => window.__roadster.resetTo('city', { x: 480, z: -384, yaw: 0 }))
   const decay = [r.search.stars]
   const t0 = Date.now()
   let gt = 0
