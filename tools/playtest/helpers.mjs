@@ -8,7 +8,7 @@ export const logEvents = () => {
   const subs = R.events.subs
   const on = (k, fn) => (subs.has(k) ? subs : subs.set(k, new Set())).get(k).add(fn)
   // (a crime's payload carries its own type, which replaces 'crime': sim/gameEvents.js)
-  on('*', e => window.__evlog.push({ type: e.type, how: e.how, model: e.model, alarm: e.alarm, speed: e.speed && +e.speed.toFixed(1) }))
+  on('*', e => window.__evlog.push({ type: e.type, how: e.how, model: e.model, alarm: e.alarm, by: e.by, speed: e.speed && +e.speed.toFixed(1) }))
   on('crime', e => window.__evlog.push({ type: 'crime', what: e.type, severity: e.severity }))
 }
 export const events = () => window.__evlog.splice(0)
