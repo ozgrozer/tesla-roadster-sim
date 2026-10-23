@@ -1,5 +1,5 @@
 // Bug hunt: the ways a player gets the game into a muddle, one after another in real time (keys
-// mashed, cancelled half way, the world and the quality switched), with the state checked after
+// (GTA V's: F in and out) mashed, cancelled half way, the world and the quality switched), with the state checked after
 // each for what shouldn't be: a console error, a getting in or out that never finishes, a car
 // that won't drive, a NaN anywhere, the player on foot inside a car's action.
 //   PORT=8094 SHOTS=/workspace/shots/v5/core node tools/playtest/bughunt.mjs
@@ -8,7 +8,7 @@ import path from 'node:path'
 import { Game, SHOTS } from './lib.mjs'
 import { toDoor } from './helpers.mjs'
 
-const g = await Game.open({})
+const g = await Game.open({ query: '?debug=1' }) // (Y, L, O: the debug keys)
 await g.untilReal(() => !window.__roadster.intro.active, 30000).catch(() => {})
 await g.ev(() => window.__roadster.intro.active && window.__roadster.intro.finish(true))
 const k = g.page.keyboard
@@ -57,24 +57,24 @@ const nearestParked = (skip = 0) => g.ev(skip => {
   return best
 }, skip)
 
-await step('out of the Roadster', () => tap('KeyE'), 2500, { mode: 'foot' })
-await step('E mashed by the Roadster (in, out, in...)', () => tap('KeyE', 7, 60), 4000)
+await step('out of the Roadster (F)', () => tap('KeyF'), 2500, { mode: 'foot' })
+await step('F mashed by the Roadster (in, out, in...)', () => tap('KeyF', 7, 60), 4000)
 let s = await state()
-if (s.mode === 'foot') await step('back into the Roadster', () => tap('KeyE'), 3000, { mode: 'car' })
+if (s.mode === 'foot') await step('back into the Roadster', () => tap('KeyF'), 3000, { mode: 'car' })
 await step('drive off, steer both ways', async () => { await k.down('KeyW'); await g.wait(1500); await k.down('KeyA'); await g.wait(600); await k.up('KeyA'); await k.down('KeyD'); await g.wait(600); await k.up('KeyD') }, 200)
-await step('E at speed then E again (cancel the bail-out)', async () => { await tap('KeyE'); await g.wait(150); await tap('KeyE') }, 1500, { mode: 'car' })
-await step('E at speed: brakes and gets out', async () => { await k.up('KeyW'); await tap('KeyE') }, 5000, { mode: 'foot' })
+await step('F at speed then E again (cancel the bail-out)', async () => { await tap('KeyF'); await g.wait(150); await tap('KeyF') }, 1500, { mode: 'car' })
+await step('F at speed: brakes and gets out', async () => { await k.up('KeyW'); await tap('KeyF') }, 5000, { mode: 'foot' })
 let i = await nearestParked(4)
-await step('a parked car: E, then S during the break-in (it goes on)', async () => { await g.ev(toDoor, i); await g.wait(200); await tap('KeyE'); await g.wait(250); await k.down('KeyS'); await g.wait(300); await k.up('KeyS') }, 2500, { mode: 'car' })
-await step('out of it', () => tap('KeyE'), 2000, { mode: 'foot' })
-await step('back in (E), W held from 0.7 s (hurried)', async () => { await g.ev(toDoor, i); await g.wait(200); await tap('KeyE'); await g.wait(700); await k.down('KeyW'); await g.wait(1200) }, 1500, { mode: 'car' })
+await step('a parked car: F, then S during the break-in (it goes on)', async () => { await g.ev(toDoor, i); await g.wait(200); await tap('KeyF'); await g.wait(250); await k.down('KeyS'); await g.wait(300); await k.up('KeyS') }, 2500, { mode: 'car' })
+await step('out of it', () => tap('KeyF'), 2000, { mode: 'foot' })
+await step('back in (F), W held from 0.7 s (hurried)', async () => { await g.ev(toDoor, i); await g.wait(200); await tap('KeyF'); await g.wait(700); await k.down('KeyW'); await g.wait(1200) }, 1500, { mode: 'car' })
 await k.up('KeyW')
-await step('in the stolen car: E then E during the exit', async () => { await g.wait(1500); await tap('KeyE'); await g.wait(300); await tap('KeyE') }, 4000)
+await step('in the stolen car: F then F during the exit', async () => { await g.wait(1500); await tap('KeyF'); await g.wait(300); await tap('KeyF') }, 4000)
 s = await state()
-if (s.mode === 'car') await step('out of the stolen car', () => tap('KeyE'), 2500, { mode: 'foot' })
-await step('E mashed by the stolen car', async () => { await g.ev(toDoor, i).catch(() => {}); await tap('KeyE', 9, 50) }, 4500)
+if (s.mode === 'car') await step('out of the stolen car', () => tap('KeyF'), 2500, { mode: 'foot' })
+await step('F mashed by the stolen car', async () => { await g.ev(toDoor, i).catch(() => {}); await tap('KeyF', 9, 50) }, 4500)
 s = await state()
-await step('world switch (C) and back', async () => { await tap('KeyC'); await g.wait(2500); await tap('KeyC') }, 3000)
+await step('world switch (Y) and back', async () => { await tap('KeyY'); await g.wait(2500); await tap('KeyY') }, 3000)
 await step('time skip to night (L x3) and weather (O x3)', async () => { for (let n = 0; n < 3; n++) { await tap('KeyL'); await g.wait(3600) } await tap('KeyO', 3, 300) }, 1500)
 for (const q of ['low', 'medium', 'high', 'auto']) {
   await step('quality ' + q + ' (a frame drawn)', async () => { await g.ev(q => window.__roadster.climate.quality(q), q); await g.draw(1) }, 300)

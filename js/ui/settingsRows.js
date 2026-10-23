@@ -127,7 +127,7 @@ export const ROWS = [
   {
     id: 'quality',
     name: 'Quality',
-    hint: 'How much of the city is drawn, and how finely',
+    hint: 'Auto picks one for the graphics card and steps down when frames run slow',
     opts: QUALITIES.map(q => [q, cap(q)])
   },
   {
