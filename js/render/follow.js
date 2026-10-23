@@ -1,4 +1,5 @@
 // The follow camera, GTA-style: a spring arm close behind the car's heading (camera.js runs it).
+// (the speed pull-back's proportional part adapted from mrdoob/slop-newyork js/cameras.js, MIT, (c) 2026 Mr.doob)
 import * as THREE from 'three'
 import { clamp, wrapPi } from '../sim/constants.js'
 
@@ -21,6 +22,10 @@ export const ARM = 6.3,
 const FOV_SPEED = 11,
   FOV_AT = 55,
   SURGE = 0.07
+// and the arm let out in proportion to the speed as well (eased over a third of a second or so): PULL
+// of its length per m/s, at most PULL_MAX, so a bus's longer arm goes out further than a car's
+const PULL = 0.0045,
+  PULL_MAX = 0.16
 const _f = new THREE.Vector3(),
   _u = new THREE.Vector3()
 
@@ -73,6 +78,7 @@ export function follow (rig, dt, sim, P) {
     f.reach = Math.min(REACH_MAX, sim.groundSpeed() * REACH)
     f.ahead = 0
     f.surge = 0
+    f.pace = sim.groundSpeed()
   }
   f.heading += clamp(
     wrapPi(f.targetHeading - f.heading) * lerpK(3.2, dt),
@@ -89,6 +95,7 @@ export function follow (rig, dt, sim, P) {
   f.elev += ((sim.mode === 'ramp' ? up.y : 1) - f.elev) * lerpK(3, dt)
   const speed = sim.groundSpeed()
   f.reach += (Math.min(REACH_MAX, speed * REACH) - f.reach) * lerpK(1.5, dt)
+  f.pace = (f.pace ?? 0) + (speed - (f.pace ?? 0)) * lerpK(3, dt)
   // (looking down the road the way the car is going, not while it backs up)
   const fwdSpeed = sim.mode === 'ground' ? Math.max(0, sim.speed) : 0
   f.ahead += (Math.min(AHEAD, fwdSpeed * 0.06) - f.ahead) * lerpK(1.2, dt)
@@ -100,7 +107,8 @@ export function follow (rig, dt, sim, P) {
   f.size = (f.size ?? 1) + ((rig.armK || 1) - (f.size ?? 1)) * lerpK(2, dt)
   f.up = (f.up ?? 0) + ((rig.armUp || 0) - (f.up ?? 0)) * lerpK(2, dt)
   f.far = (f.far ?? 0) + ((rig.mode === 'far' ? 1 : 0) - (f.far ?? 0)) * lerpK(4, dt)
-  const dist = (f.dist * f.size + f.reach + f.surge) * (1 + 0.5 * f.far)
+  const pull = 1 + Math.min(PULL_MAX, f.pace * PULL)
+  const dist = (f.dist * f.size * pull + f.reach + f.surge) * (1 + 0.5 * f.far)
   // looking back (rig.behind: Z, or a pad's right stick pressed in, as in GTA): the arm swung round
   // in front of the car at once, looking back over it the way it has come, and straight back again
   // when it is let go
