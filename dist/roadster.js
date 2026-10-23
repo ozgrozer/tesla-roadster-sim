@@ -70213,12 +70213,14 @@ const hemi = new THREE.HemisphereLight(0x8394b8, 0x0b0b0d, 0.28)
 scene.add(hemi)
 const key = new THREE.DirectionalLight(0xe4ebff, 1.15)
 key.castShadow = true
-key.shadow.mapSize.set(2048, 2048)
+// (3072 texels over 72 m where the card allows: a texel 2.3 cm, and the box set ahead of the camera)
+const SHADOW_PX = renderer.capabilities.maxTextureSize >= 4096 ? 3072 : 2048
+key.shadow.mapSize.set(SHADOW_PX, SHADOW_PX)
 Object.assign(key.shadow.camera, {
-  left: -30,
-  right: 30,
-  top: 30,
-  bottom: -30,
+  left: -36,
+  right: 36,
+  top: 36,
+  bottom: -36,
   near: 1,
   far: 140
 })
@@ -70338,7 +70340,18 @@ const _sr = new THREE.Vector3(),
   _sf = new THREE.Vector3(),
   _sp = new THREE.Vector3(),
   _up = new THREE.Vector3(0, 1, 0)
-function followKeyLight (pos) {
+// The box is centred a little ahead of where the camera looks (view: the camera), so more of what is
+// in view is in it, with the car or the player (pos) still well inside (camera-centred, after
+// mrdoob/slop-newyork's sun shadow is, MIT, (c) 2026 Mr.doob).
+const _cf = new THREE.Vector3(),
+  _cp = new THREE.Vector3()
+const AHEAD = 14 // m
+function followKeyLight (pos, view) {
+  if (view) {
+    view.getWorldDirection(_cf)
+    const l = Math.hypot(_cf.x, _cf.z)
+    if (l > 1e-3) pos = _cp.copy(pos).add(_cf.set(_cf.x / l, 0, _cf.z / l).multiplyScalar(AHEAD))
+  }
   const cam = key.shadow.camera,
     texel = (cam.right - cam.left) / key.shadow.mapSize.x
   _sf.copy(keyOffset).normalize()
@@ -92736,8 +92749,2135 @@ function canyonLit (m) {
 __export(__exports, { "CANYON": () => CANYON, "canyonHeights": () => canyonHeights, "canyonLight": () => canyonLight, "canyonLit": () => canyonLit })
 })
 
-// ---- js/render/treeTex.js
+// ---- js/render/lampLight.js
 __define(191, function (__exports) {
+// The street lights' light on the ground at night. Every street has its lights at the same places
+// (sim/kerbside.js: three a side along each block, 18, 42 and 66 m from its corner, their heads
+// reaching out over the road nine metres up), so the ground's shaders (the asphalt, the pavements,
+// the lots and the paint) work out for themselves which heads are near and how much light falls
+// from each: as from a lamp, strongest straight under it, falling off with distance and the
+// slant, so each pool is bright in the middle and soft at its edge, on the asphalt dark and on
+// the pavement and the paint bright, as light on things of their colour is (instead of a glow
+// laid over the ground the same whatever it falls on). Which lights are standing, and whether on a
+// steel pole or a wooden one, is in a little texture, one texel a light: knock one down and its
+// pool goes out (lampOut), and they all come back with the city (lampsBack).
+const THREE = __require(0)
+const { LAMPS, N, PITCH, HALF, ROAD_HW } = __require(35)
+
+// where a light's head is: how far its arm reaches in from its pole, and how high its lens is
+// (cityProps.js HEAD, and the lens under it)
+const STEEL = [2.39, 8.92],
+  WOOD = [2.07, 8.15]
+const FIRST = 18, // m from the block's corner (the road's centre line) to the first light
+  STEP = 24
+const POLE = ROAD_HW + 0.6 // m from the road's centre line to the poles
+const COUNT = (N + 1) * N * 2 * 2 * 3
+// the strength of a light: what falls straight under it, times its height squared (the light's
+// colour: a warm white). A cobra head throws its light down onto the road under it, so it falls
+// off faster with the slant than a bare bulb's would: a pool half as bright at about half the
+// lamp's height out, with darker road between one pool and the next.
+const POWER = 260
+const COLOUR = [1.0, 0.78, 0.52]
+
+// the texel of a light, from where it stands: its road (i), block (j), side, which way the road
+// runs and which of the block's three it is (as kerbside.js lays them out)
+function slot (l) {
+  const alongZ = l.ax !== 0,
+    across = alongZ ? l.x : l.z,
+    along = alongZ ? l.z : l.x
+  const i = Math.round(across / PITCH + N / 2),
+    c = (i - N / 2) * PITCH,
+    side = across > c ? 1 : 0,
+    j = Math.min(N - 1, Math.max(0, Math.floor((along + HALF) / PITCH))),
+    k = Math.round((along - (j - N / 2) * PITCH - FIRST) / STEP)
+  return (((i * N + j) * 2 + side) * 2 + (alongZ ? 0 : 1)) * 3 + k
+}
+const data = new Uint8Array(COUNT)
+const SLOT = LAMPS.map(slot)
+const STAND = LAMPS.map(l => (l.wood ? 128 : 255))
+SLOT.forEach((s, i) => {
+  if (s >= 0 && s < COUNT) data[s] = STAND[i]
+})
+const tex = new THREE.DataTexture(data, COUNT, 1, THREE.RedFormat)
+tex.needsUpdate = true
+
+const LAMP = {
+  tLamps: { value: tex },
+  uLampOn: { value: 0 } // how far on they are (the city's dark: 0 by day)
+}
+// a light knocked down (its index in LAMPS), and all of them up again
+function lampOut (i) {
+  const s = SLOT[i]
+  if (s >= 0 && s < COUNT) {
+    data[s] = 0
+    tex.needsUpdate = true
+  }
+}
+// whether light i (in LAMPS) is standing (nightLights.js)
+const lampUp = i => !(SLOT[i] >= 0 && SLOT[i] < COUNT) || data[SLOT[i]] > 0
+function lampsBack () {
+  SLOT.forEach((s, i) => {
+    if (s >= 0 && s < COUNT) data[s] = STAND[i]
+  })
+  tex.needsUpdate = true
+}
+
+const f = v => v.toFixed(2)
+// The GLSL: lampField(p, n), the street lights' light at a point p, on each nearby street from the
+// two lights either side of it along each kerb, on a surface facing n (a unit vector in the world;
+// none, (0, 0, 0), for a point in the air, a raindrop, which takes it head on from every side);
+// lampLight(p), what falls on the ground there, lampLightN(p, n) on a surface facing n (a car's
+// body, someone walking), and lampGlow(p), what lights a drop
+const LAMP_FIELD_GLSL = `
+  uniform sampler2D tLamps;
+  uniform float uLampOn;
+  float lampField (vec3 p, vec3 n) {
+    if (uLampOn <= 0.0) return 0.0;
+    float E = 0.0;
+    for (int ax = 0; ax < 2; ax++) {
+      // (ax 0: a street running along x, ax 1: along z)
+      float across = ax == 0 ? p.z : p.x, along = ax == 0 ? p.x : p.z;
+      float ri = floor(across / ${f(PITCH)} + ${f(N / 2 + 0.5)});
+      if (ri < 0.0 || ri > ${f(N)}) continue;
+      float c = (ri - ${f(N / 2)}) * ${f(PITCH)};
+      float j = clamp(floor((along + ${f(HALF)}) / ${f(PITCH)}), 0.0, ${f(N - 1)});
+      float start = (j - ${f(N / 2)}) * ${f(PITCH)};
+      float k0 = clamp(floor((along - start - ${f(FIRST)}) / ${f(STEP)}), 0.0, 1.0);
+      for (int sd = 0; sd < 2; sd++) {
+        float side = sd == 0 ? -1.0 : 1.0;
+        for (int dk = 0; dk < 2; dk++) {
+          float k = k0 + float(dk);
+          int idx = (((int(ri) * ${N} + int(j)) * 2 + sd) * 2 + (ax == 1 ? 0 : 1)) * 3 + int(k);
+          float st = texelFetch(tLamps, ivec2(idx, 0), 0).r;
+          if (st < 0.25) continue;
+          vec2 head = st < 0.75 ? vec2(${f(WOOD[0])}, ${f(WOOD[1])}) : vec2(${f(
+            STEEL[0]
+          )}, ${f(STEEL[1])});
+          float lat = c + side * (${f(POLE)} - head.x);
+          float lon = start + ${f(FIRST)} + ${f(STEP)} * k;
+          vec3 L = (ax == 0 ? vec3(lon, head.y, lat) : vec3(lat, head.y, lon)) - p;
+          float d2 = dot(L, L), d = sqrt(d2), c = max(L.y, 0.0) / d;
+          float facing = dot(n, n) > 0.5 ? max(dot(n, L) / d, 0.0) : 1.0;
+          E += c * c * facing / d2;
+        }
+      }
+    }
+    return E * ${f(POWER)} * uLampOn;
+  }
+  vec3 lampLight (vec3 p) {
+    return vec3(${COLOUR.map(f).join(', ')}) * lampField(p, vec3(0.0, 1.0, 0.0));
+  }
+  vec3 lampLightN (vec3 p, vec3 n) {
+    return vec3(${COLOUR.map(f).join(', ')}) * lampField(p, n);
+  }
+  vec3 lampGlow (vec3 p) {
+    return vec3(${COLOUR.map(f).join(', ')}) * lampField(p, vec3(0.0));
+  }`
+const LAMP_GLSL = `
+  varying vec3 vLampW;
+  ${LAMP_FIELD_GLSL}`
+
+// The street lights nearest the camera are real lights too (nightLights.js: the first LAMP_POOL
+// point lights), for what isn't lit by them here; what is skips them, so nothing is lit twice
+const LAMP_POOL = 6
+const POINT = '\t\tpointLight = pointLights[ i ];\n'
+const POINT_END = '\t}\n\t#pragma unroll_loop_end\n#endif\n#if ( NUM_SPOT_LIGHTS > 0 )'
+function noLampPool () {
+  const c = THREE.ShaderChunk.lights_fragment_begin
+  if (!c.includes(POINT) || !c.includes(POINT_END))
+    throw new Error('lampLight.js: three.js lights_fragment_begin has changed')
+  return c
+    .replace(POINT, `\t\t#if ( UNROLLED_LOOP_INDEX >= ${LAMP_POOL} )\n${POINT}`)
+    .replace(POINT_END, `\t\t#endif\n${POINT_END}`)
+}
+// Light a material by the street lights: their light added to what falls on it from the sky
+// (chained onto whatever it already does before it is compiled). The ground faces up; anything else
+// (facing: the Roadster's body, the cars, the people) takes it on whichever way it faces.
+function lampLit (m, facing = false) {
+  const before = m.onBeforeCompile
+  m.onBeforeCompile = (shader, r) => {
+    before?.call(m, shader, r)
+    Object.assign(shader.uniforms, LAMP)
+    shader.vertexShader = shader.vertexShader
+      .replace(
+        '#include <common>',
+        `#include <common>
+        varying vec3 vLampW;`
+      )
+      .replace(
+        '#include <begin_vertex>',
+        `#include <begin_vertex>
+        {
+          vec4 lw = vec4(transformed, 1.0);
+          #ifdef USE_INSTANCING
+          lw = instanceMatrix * lw;
+          #endif
+          vLampW = (modelMatrix * lw).xyz;
+        }`
+      )
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', `#include <common>\n${LAMP_GLSL}`)
+      .replace('#include <lights_fragment_begin>', noLampPool())
+      .replace(
+        '#include <lights_fragment_maps>',
+        `#include <lights_fragment_maps>
+        irradiance += ${
+          facing
+            ? 'lampLightN(vLampW, normalize((vec4(normal, 0.0) * viewMatrix).xyz))'
+            : 'lampLight(vLampW)'
+        };`
+      )
+  }
+  const key = m.customProgramCacheKey.bind(m)
+  m.customProgramCacheKey = () => `${key()} lamps ${facing}`
+  return m
+}
+__export(__exports, { "LAMP": () => LAMP, "lampOut": () => lampOut, "lampUp": () => lampUp, "lampsBack": () => lampsBack, "LAMP_FIELD_GLSL": () => LAMP_FIELD_GLSL, "LAMP_POOL": () => LAMP_POOL, "lampLit": () => lampLit })
+})
+
+// ---- js/render/signArt.js
+__define(192, function (__exports) {
+// The artwork for the signs' atlas (signTex.js): drawing helpers (lettering that fits its space,
+// gradients, a border of bulbs, a palm's silhouette), the billboards' eight designs, the made-up
+// names (hotels, films, blade signs, fast food, gas brands) and the murals. Every name and brand is
+// made up.
+const { rng } = __require(35)
+
+const R = rng(31)
+const SANS = '"Helvetica Neue", Helvetica, Arial, sans-serif'
+const SERIF = 'Georgia, "Times New Roman", serif'
+
+// ---------- drawing helpers ----------
+function text (g, s, x, y, px, o = {}) {
+  g.save()
+  g.font = `${o.weight || 'bold'} ${px}px ${o.font || SANS}`
+  g.textAlign = o.align || 'center'
+  g.textBaseline = 'middle'
+  if (o.glow) {
+    g.shadowColor = o.glow
+    g.shadowBlur = o.blur ?? px * 0.35
+  }
+  const w = g.measureText(s).width
+  const sx = o.maxW && w > o.maxW ? o.maxW / w : 1
+  g.translate(x, y)
+  g.scale(sx * (o.sx || 1), 1)
+  if (o.stroke) {
+    g.lineWidth = o.lw || px * 0.12
+    g.strokeStyle = o.stroke
+    g.strokeText(s, 0, 0)
+  }
+  g.fillStyle = o.color || '#fff'
+  g.fillText(s, 0, 0)
+  g.restore()
+}
+const grad = (g, x, y, w, h, stops, horiz = false) => {
+  const gr = horiz
+    ? g.createLinearGradient(x, 0, x + w, 0)
+    : g.createLinearGradient(0, y, 0, y + h)
+  stops.forEach((c, i) => gr.addColorStop(i / (stops.length - 1), c))
+  g.fillStyle = gr
+  g.fillRect(x, y, w, h)
+}
+function bulbs (g, x, y, w, h, gap, color = '#fff6c8') {
+  g.save()
+  g.fillStyle = color
+  g.shadowColor = '#ffd27a'
+  g.shadowBlur = gap * 0.6
+  for (let t = x + gap / 2; t < x + w; t += gap) {
+    g.fillRect(t - 1.5, y + 1, 3, 3)
+    g.fillRect(t - 1.5, y + h - 4, 3, 3)
+  }
+  for (let t = y + gap / 2; t < y + h; t += gap) {
+    g.fillRect(x + 1, t - 1.5, 3, 3)
+    g.fillRect(x + w - 4, t - 1.5, 3, 3)
+  }
+  g.restore()
+}
+function palmSil (g, x, y, h, color) {
+  g.save()
+  g.strokeStyle = g.fillStyle = color
+  g.lineWidth = Math.max(2, h * 0.03)
+  g.beginPath()
+  g.moveTo(x, y)
+  g.quadraticCurveTo(x + h * 0.08, y - h * 0.5, x + h * 0.04, y - h)
+  g.stroke()
+  for (let i = 0; i < 7; i++) {
+    const a = -Math.PI / 2 + (i - 3) * 0.45
+    g.beginPath()
+    g.moveTo(x + h * 0.04, y - h)
+    g.quadraticCurveTo(
+      x + h * 0.04 + Math.cos(a) * h * 0.22,
+      y - h + Math.sin(a) * h * 0.12 - h * 0.05,
+      x + h * 0.04 + Math.cos(a) * h * 0.3,
+      y - h + h * 0.12
+    )
+    g.stroke()
+  }
+  g.restore()
+}
+
+// ---------- the cells ----------
+const BILLBOARDS = [
+  // a film: night sky, a moon, the title and when
+  (g, x, y, w, h) => {
+    grad(g, x, y, w, h, ['#0b1030', '#2b1a4a', '#a3402f'])
+    g.fillStyle = '#f6e7c1'
+    g.beginPath()
+    g.arc(x + w * 0.78, y + h * 0.36, h * 0.22, 0, Math.PI * 2)
+    g.fill()
+    text(g, 'STARFALL', x + w * 0.38, y + h * 0.42, h * 0.32, {
+      color: '#f4d58d',
+      maxW: w * 0.62,
+      font: SERIF
+    })
+    text(g, 'IN THEATERS FRIDAY', x + w * 0.38, y + h * 0.78, h * 0.11, {
+      color: '#fff'
+    })
+  },
+  // a fizzy drink: red, a white wave
+  (g, x, y, w, h) => {
+    g.fillStyle = '#c8102e'
+    g.fillRect(x, y, w, h)
+    g.fillStyle = '#fff'
+    g.beginPath()
+    g.moveTo(x, y + h * 0.7)
+    g.bezierCurveTo(
+      x + w * 0.3,
+      y + h * 0.4,
+      x + w * 0.6,
+      y + h * 1.0,
+      x + w,
+      y + h * 0.6
+    )
+    g.lineTo(x + w, y + h * 0.75)
+    g.bezierCurveTo(
+      x + w * 0.6,
+      y + h * 1.1,
+      x + w * 0.3,
+      y + h * 0.55,
+      x,
+      y + h * 0.85
+    )
+    g.fill()
+    text(g, 'STAY COOL', x + w * 0.42, y + h * 0.36, h * 0.34, {
+      color: '#fff',
+      font: SERIF,
+      weight: 'bold italic'
+    })
+  },
+  // a phone
+  (g, x, y, w, h) => {
+    grad(g, x, y, w, h, ['#f4f4f2', '#d9dde2'])
+    g.fillStyle = '#16181c'
+    g.fillRect(x + w * 0.72, y + h * 0.1, h * 0.42, h * 0.8)
+    g.fillStyle = '#4c7bd9'
+    g.fillRect(x + w * 0.72 + 5, y + h * 0.1 + 7, h * 0.42 - 10, h * 0.8 - 14)
+    text(g, 'Thinner. Faster.', x + w * 0.36, y + h * 0.42, h * 0.2, {
+      color: '#16181c',
+      weight: '600'
+    })
+    text(g, 'PHONE 9', x + w * 0.36, y + h * 0.7, h * 0.13, { color: '#555' })
+  },
+  // an injury lawyer, as on every LA bus bench
+  (g, x, y, w, h) => {
+    g.fillStyle = '#f7d117'
+    g.fillRect(x, y, w, h)
+    g.fillStyle = '#1b1b1b'
+    g.fillRect(x, y + h * 0.72, w, h * 0.28)
+    text(g, 'HURT IN A CRASH?', x + w * 0.5, y + h * 0.3, h * 0.26, {
+      color: '#1b1b1b',
+      maxW: w * 0.92
+    })
+    text(g, 'CALL 1-800-555-0199', x + w * 0.5, y + h * 0.86, h * 0.16, {
+      color: '#f7d117',
+      maxW: w * 0.9
+    })
+  },
+  // tequila: dark blue and gold
+  (g, x, y, w, h) => {
+    grad(g, x, y, w, h, ['#0c2340', '#14365e'], true)
+    g.fillStyle = '#c99b3b'
+    g.fillRect(x + w * 0.75, y + h * 0.15, h * 0.2, h * 0.75)
+    g.fillRect(x + w * 0.75 - 4, y + h * 0.35, h * 0.2 + 8, h * 0.55)
+    text(g, 'AÑEJO DE ORO', x + w * 0.38, y + h * 0.45, h * 0.24, {
+      color: '#e2b65a',
+      font: SERIF,
+      maxW: w * 0.66
+    })
+    text(g, 'SIP RESPONSIBLY', x + w * 0.38, y + h * 0.78, h * 0.09, {
+      color: '#9fb2c8'
+    })
+  },
+  // an electric car
+  (g, x, y, w, h) => {
+    grad(g, x, y, w, h, ['#e9f1f6', '#9fc3d9'])
+    g.fillStyle = '#20252b'
+    g.beginPath()
+    g.moveTo(x + w * 0.5, y + h * 0.78)
+    g.lineTo(x + w * 0.56, y + h * 0.56)
+    g.quadraticCurveTo(x + w * 0.7, y + h * 0.42, x + w * 0.86, y + h * 0.56)
+    g.lineTo(x + w * 0.95, y + h * 0.62)
+    g.lineTo(x + w * 0.95, y + h * 0.78)
+    g.fill()
+    text(g, 'GO ELECTRIC', x + w * 0.27, y + h * 0.42, h * 0.22, {
+      color: '#16303f',
+      maxW: w * 0.48
+    })
+    text(g, 'zero tailpipe', x + w * 0.27, y + h * 0.72, h * 0.12, {
+      color: '#2f5970',
+      weight: 'normal'
+    })
+  },
+  // a radio station
+  (g, x, y, w, h) => {
+    grad(g, x, y, w, h, ['#ff5f6d', '#ffc371'], true)
+    text(g, 'KLAX', x + w * 0.3, y + h * 0.5, h * 0.52, {
+      color: '#fff',
+      weight: '900'
+    })
+    text(g, '97.1 FM', x + w * 0.72, y + h * 0.4, h * 0.22, {
+      color: '#2a1033'
+    })
+    text(g, 'THE BEACH', x + w * 0.72, y + h * 0.7, h * 0.14, {
+      color: '#2a1033'
+    })
+  },
+  // a television series
+  (g, x, y, w, h) => {
+    grad(g, x, y, w, h, ['#3a0d5c', '#c2185b'], true)
+    g.fillStyle = 'rgba(255,255,255,0.18)'
+    for (let i = 0; i < 6; i++) g.fillRect(x + w * (0.55 + i * 0.07), y, 6, h)
+    text(g, 'SILVER LAKE', x + w * 0.36, y + h * 0.42, h * 0.26, {
+      color: '#fff',
+      maxW: w * 0.62
+    })
+    text(g, 'SEASON 4 · NOW STREAMING', x + w * 0.36, y + h * 0.75, h * 0.1, {
+      color: '#ffd6e8',
+      maxW: w * 0.64
+    })
+  }
+]
+const HOTELS = [
+  'HOTEL ALEXANDER',
+  'THE PALISADE',
+  'HOTEL BELMONT',
+  'OCEAN VIEW',
+  'HOTEL SAN MARCO',
+  'MIRADOR'
+]
+const FILMS = ['STARFALL', 'MIDNIGHT RUN', 'SILVER CITY', 'DESERT ROSE']
+const BLADES = [
+  'PALACE',
+  'REGENT',
+  'VOGUE',
+  'RIALTO',
+  'BAR',
+  'HOTEL',
+  'CAFE',
+  'LIQUOR',
+  'DINER',
+  'PAWN'
+]
+const NEON = [
+  '#ff3b6b',
+  '#36e2ff',
+  '#ffd23b',
+  '#7dff6a',
+  '#ff7a2f',
+  '#c86bff'
+]
+const FOODS = [
+  ['BURGERS', '#d62828', '#fcbf49'],
+  ['TACOS', '#2a9d8f', '#f4a261'],
+  ['CHICKEN', '#f77f00', '#fff3b0'],
+  ['DONUTS', '#e56b9f', '#fff']
+]
+const BRANDS = [
+  ['PACIFIC', '#0b4ea2', '#ffffff'],
+  ['GLOBE', '#d1202f', '#ffffff'],
+  ['SUN OIL', '#f2b705', '#c8102e'],
+  ['XPRESS', '#138a52', '#ffffff']
+]
+function mural (g, x, y, w, h, k) {
+  if (k === 0) {
+    // a sunset over the sea, palms against it
+    grad(g, x, y, w, h * 0.7, ['#ff7e5f', '#feb47b', '#ffd38a'])
+    g.fillStyle = '#ffe9a8'
+    g.beginPath()
+    g.arc(x + w * 0.5, y + h * 0.66, h * 0.2, Math.PI, 0)
+    g.fill()
+    grad(g, x, y + h * 0.66, w, h * 0.34, ['#1d6fa3', '#0b3a5c'])
+    palmSil(g, x + w * 0.18, y + h * 0.95, h * 0.8, '#2b1b2e')
+    palmSil(g, x + w * 0.82, y + h * 0.95, h * 0.65, '#2b1b2e')
+  } else if (k === 1) {
+    // shapes, bright on white
+    g.fillStyle = '#fbf6ec'
+    g.fillRect(x, y, w, h)
+    for (let i = 0; i < 14; i++) {
+      g.fillStyle = NEON[i % NEON.length]
+      g.beginPath()
+      g.arc(x + R() * w, y + R() * h, 8 + R() * h * 0.25, 0, Math.PI * 2)
+      g.fill()
+    }
+  } else if (k === 2) {
+    // waves
+    for (let i = 0; i < 8; i++) {
+      g.fillStyle = ['#0b3954', '#087e8b', '#bfd7ea', '#ff5a5f'][i % 4]
+      g.fillRect(x, y + (h * i) / 8, w, h / 8 + 1)
+    }
+    text(g, 'VENICE', x + w / 2, y + h * 0.5, h * 0.42, {
+      color: '#fff',
+      stroke: '#0b3954',
+      weight: '900',
+      maxW: w * 0.9
+    })
+  } else if (k === 3) {
+    // a face in profile, in blocks of colour
+    grad(g, x, y, w, h, ['#ffcf56', '#ff6f59'], true)
+    g.fillStyle = '#2d1e2f'
+    g.beginPath()
+    g.ellipse(x + w * 0.45, y + h * 0.55, h * 0.32, h * 0.42, 0, 0, Math.PI * 2)
+    g.fill()
+    g.fillStyle = '#43aa8b'
+    g.fillRect(x + w * 0.62, y, w * 0.2, h)
+  } else if (k === 4) {
+    // a rainbow in stripes
+    const c = ['#e63946', '#f4a261', '#e9c46a', '#2a9d8f', '#457b9d', '#6a4c93']
+    c.forEach((s, i) => {
+      g.fillStyle = s
+      g.fillRect(x + (w * i) / c.length, y, w / c.length + 1, h)
+    })
+  } else {
+    // the city's name in big letters, a postcard
+    grad(g, x, y, w, h, ['#4cc9f0', '#f72585'], true)
+    text(g, 'LOS ANGELES', x + w / 2, y + h * 0.52, h * 0.34, {
+      color: '#ffe066',
+      stroke: '#2b2d42',
+      weight: '900',
+      maxW: w * 0.92
+    })
+  }
+}
+__export(__exports, { "SANS": () => SANS, "SERIF": () => SERIF, "text": () => text, "grad": () => grad, "bulbs": () => bulbs, "BILLBOARDS": () => BILLBOARDS, "HOTELS": () => HOTELS, "FILMS": () => FILMS, "BLADES": () => BLADES, "NEON": () => NEON, "FOODS": () => FOODS, "BRANDS": () => BRANDS, "mural": () => mural })
+})
+
+// ---- js/render/shopTex.js
+__define(193, function (__exports) {
+// The shops' signs, drawn into one atlas at startup: a name board for each kind of shop (cafés and
+// restaurants, clothes shops, convenience stores and pharmacies, salons and barbers, bars), and the
+// things stuck in the windows (a FOR LEASE board, an OPEN sign in neon, a bar's cocktail glass in
+// neon). Every name is made up. The colour is in the texture's red, green and blue and how much
+// each texel glows at night in its alpha: a lightbox's whole face, a sign's lit letters, a neon
+// tube; a painted board only faintly, as the light from under the canopy catches it. The texture is
+// built from the canvas's pixels by hand (a canvas keeps its colours premultiplied by their alpha,
+// which would lose the colour of everything that doesn't glow).
+const THREE = __require(0)
+const { renderer } = __require(83)
+const { SANS, SERIF, text } = __require(192)
+
+// the kinds of shop, in the order the shader knows them (shopShader.js)
+const KINDS = ['cafe', 'clothes', 'store', 'salon', 'bar', 'empty']
+const W = 1024
+const H = 1280
+// a name board's cell, and how many there are across the atlas; the window signs' cells, in a row
+// under the boards
+const BOARD = [512, 80]
+const DECAL = [256, 160]
+const DECAL_Y = 1120
+
+// Each kind's names: [name, board, letters, font, how it is lit]: 'paint', a painted board;
+// 'box', a lightbox (its whole face glows); 'letters', lit letters on a dark board; 'neon'
+const NAMES = {
+  cafe: [
+    ['LUNA CAFE', '#1f3b2d', '#f3e6c4', SERIF, 'letters'],
+    ['DAILY GRIND', '#2b1d16', '#f2c46d', SANS, 'letters'],
+    ['PICO DELI', '#b8332e', '#ffffff', SANS, 'paint'],
+    ['TAQUERIA', '#e2a72e', '#5b1a12', SANS, 'paint'],
+    ['NOODLE HOUSE', '#8e1b1b', '#ffd75e', SANS, 'letters'],
+    ['PIZZA', '#f4efe2', '#b8332e', SERIF, 'box'],
+    ['SUSHI', '#121212', '#f5f5f5', SANS, 'letters'],
+    ['BAKERY', '#f2d5c4', '#6b3a2a', SERIF, 'paint']
+  ],
+  clothes: [
+    ['BOUTIQUE', '#111111', '#f0e6d2', SERIF, 'letters'],
+    ['VINTAGE', '#d9c9a8', '#3a2a1e', SERIF, 'paint'],
+    ['DENIM CO', '#1f3550', '#f4f4f4', SANS, 'letters'],
+    ['SURF SHOP', '#2a9fb5', '#ffffff', SANS, 'paint'],
+    ['SHOES', '#f6f2ea', '#1b1b1b', SANS, 'box'],
+    ['THREADS', '#5a2b4f', '#f6d6e8', SERIF, 'letters']
+  ],
+  store: [
+    ['MINI MARKET', '#f7f3e8', '#c8102e', SANS, 'box'],
+    ['LIQUOR', '#151515', '#ff3b3b', SANS, 'neon'],
+    ['PHARMACY', '#ffffff', '#1a7a3c', SANS, 'box'],
+    ['24 HR MART', '#ffd23b', '#1b3a8c', SANS, 'box'],
+    ['DRUGS', '#f4f4f4', '#d1202f', SANS, 'box']
+  ],
+  salon: [
+    ['HAIR SALON', '#f6dfe6', '#7a2a4a', SERIF, 'paint'],
+    ['NAILS', '#2a1a2e', '#ff7ac8', SANS, 'neon'],
+    ['BARBER', '#1c2a44', '#f2f2f2', SERIF, 'letters'],
+    ['BEAUTY', '#ffffff', '#c03c7a', SERIF, 'box']
+  ],
+  bar: [
+    ['COCKTAILS', '#120d14', '#ff4fa0', SERIF, 'neon'],
+    ['TAVERN', '#2a1810', '#f2c46d', SERIF, 'letters'],
+    ['LOUNGE', '#0d1424', '#36e2ff', SANS, 'neon'],
+    ['THE BLUE ROOM', '#101828', '#5da8ff', SERIF, 'neon']
+  ]
+}
+// every board in atlas order: { kind, name, board, letters, font, lit }; and, by kind, the boards'
+// indices in it
+const BOARDS = []
+const BY_KIND = KINDS.map(k =>
+  (NAMES[k] || []).map(([name, board, letters, font, lit]) => {
+    BOARDS.push({ kind: k, name, board, letters, font, lit })
+    return BOARDS.length - 1
+  })
+)
+// the window signs: a FOR LEASE board, OPEN in neon, a cocktail glass in neon, OPEN 24 HRS
+const DECALS = { lease: 0, open: 1, glass: 2, allNight: 3 }
+
+// a board: the name across it, its glow (how much each part lights up at night) into the mask
+function board (g, m, b, x, y) {
+  const [w, h] = BOARD
+  const glow = { paint: [0.1, 0.22], box: [0.75, 0.55], letters: [0, 1] }[
+    b.lit
+  ] || [0, 1]
+  g.fillStyle = b.board
+  g.fillRect(x, y, w, h)
+  m.fillStyle = grey(glow[0])
+  m.fillRect(x, y, w, h)
+  // a thin edge round the board, darker, and a lighter line under its top
+  g.strokeStyle = 'rgba(0,0,0,0.35)'
+  g.lineWidth = 4
+  g.strokeRect(x + 2, y + 2, w - 4, h - 4)
+  const px = b.name.length > 10 ? h * 0.5 : h * 0.6
+  const o = { color: b.letters, maxW: w * 0.86, font: b.font }
+  if (b.lit === 'neon') o.weight = 'normal'
+  text(g, b.name, x + w / 2, y + h * 0.54, px, o)
+  text(m, b.name, x + w / 2, y + h * 0.54, px, { ...o, color: grey(glow[1]) })
+}
+const grey = v => {
+  const c = Math.round(v * 255)
+  return `rgb(${c},${c},${c})`
+}
+
+// the window signs
+function decal (g, m, i, x, y) {
+  const [w, h] = DECAL
+  if (i === DECALS.lease) {
+    // a white board with a red border: FOR LEASE, and a telephone number
+    g.fillStyle = '#f4f2ec'
+    g.fillRect(x, y, w, h)
+    g.strokeStyle = '#c8102e'
+    g.lineWidth = 8
+    g.strokeRect(x + 6, y + 6, w - 12, h - 12)
+    text(g, 'FOR', x + w / 2, y + h * 0.24, h * 0.16, { color: '#c8102e' })
+    text(g, 'LEASE', x + w / 2, y + h * 0.5, h * 0.3, { color: '#c8102e' })
+    text(g, '310 555 0144', x + w / 2, y + h * 0.78, h * 0.13, {
+      color: '#1b1b1b'
+    })
+    m.fillStyle = '#000'
+    m.fillRect(x, y, w, h)
+    return
+  }
+  // neon: the tubes in their colour, glowing; dark round them (the shader adds only the glow)
+  g.fillStyle = '#000'
+  g.fillRect(x, y, w, h)
+  m.fillStyle = '#000'
+  m.fillRect(x, y, w, h)
+  const tube = (ctx, col, draw) => {
+    ctx.save()
+    ctx.strokeStyle = col
+    ctx.lineWidth = 6
+    ctx.lineCap = ctx.lineJoin = 'round'
+    ctx.beginPath()
+    draw(ctx)
+    ctx.stroke()
+    ctx.restore()
+  }
+  const both = (col, draw) => {
+    tube(g, col, draw)
+    tube(m, '#fff', draw)
+  }
+  const word = (s, cy, px, col) => {
+    text(g, s, x + w / 2, y + cy, px, { color: col, weight: 'normal' })
+    text(m, s, x + w / 2, y + cy, px, { color: '#fff', weight: 'normal' })
+  }
+  if (i === DECALS.open || i === DECALS.allNight) {
+    both('#3aa0ff', c => roundRect(c, x + 14, y + 26, w - 28, h - 52, 22))
+    word('OPEN', h * (i === DECALS.open ? 0.5 : 0.42), h * 0.3, '#ff3040')
+    if (i === DECALS.allNight) word('24 HRS', h * 0.68, h * 0.14, '#ffd23b')
+  } else {
+    // a cocktail glass, an olive in it, and BAR under it
+    both('#ff4fa0', c => {
+      c.moveTo(x + w * 0.3, y + h * 0.12)
+      c.lineTo(x + w * 0.7, y + h * 0.12)
+      c.lineTo(x + w * 0.5, y + h * 0.45)
+      c.closePath()
+      c.moveTo(x + w * 0.5, y + h * 0.45)
+      c.lineTo(x + w * 0.5, y + h * 0.66)
+      c.moveTo(x + w * 0.4, y + h * 0.68)
+      c.lineTo(x + w * 0.6, y + h * 0.68)
+    })
+    both('#7dff6a', c => c.arc(x + w * 0.56, y + h * 0.2, 8, 0, Math.PI * 2))
+    word('BAR', h * 0.85, h * 0.18, '#36e2ff')
+  }
+}
+function roundRect (c, x, y, w, h, r) {
+  c.moveTo(x + r, y)
+  c.arcTo(x + w, y, x + w, y + h, r)
+  c.arcTo(x + w, y + h, x, y + h, r)
+  c.arcTo(x, y + h, x, y, r)
+  c.arcTo(x, y, x + w, y, r)
+  c.closePath()
+}
+
+// where board k's cell starts in the atlas (px)
+const boardAt = k => [(k % 2) * BOARD[0], Math.floor(k / 2) * BOARD[1]]
+
+function shopSigns () {
+  const canvas = () => {
+    const cv = document.createElement('canvas')
+    cv.width = W
+    cv.height = H
+    return cv.getContext('2d', { willReadFrequently: true })
+  }
+  const g = canvas(),
+    m = canvas()
+  g.fillStyle = '#000'
+  g.fillRect(0, 0, W, H)
+  m.fillStyle = '#000'
+  m.fillRect(0, 0, W, H)
+  BOARDS.forEach((b, k) => board(g, m, b, ...boardAt(k)))
+  for (let i = 0; i < 4; i++) decal(g, m, i, i * DECAL[0], DECAL_Y)
+  // (the colour from one canvas, the glow from the other into its alpha)
+  const c = g.getImageData(0, 0, W, H).data,
+    a = m.getImageData(0, 0, W, H).data
+  for (let i = 0; i < c.length; i += 4) c[i + 3] = a[i]
+  const t = new THREE.DataTexture(c, W, H, THREE.RGBAFormat)
+  t.colorSpace = THREE.SRGBColorSpace
+  t.generateMipmaps = true
+  t.minFilter = THREE.LinearMipmapLinearFilter
+  t.magFilter = THREE.LinearFilter
+  t.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy())
+  t.needsUpdate = true
+  return t
+}
+__export(__exports, { "KINDS": () => KINDS, "W": () => W, "H": () => H, "BOARD": () => BOARD, "DECAL": () => DECAL, "DECAL_Y": () => DECAL_Y, "BOARDS": () => BOARDS, "BY_KIND": () => BY_KIND, "DECALS": () => DECALS, "boardAt": () => boardAt, "shopSigns": () => shopSigns })
+})
+
+// ---- js/render/facade.js
+__define(194, function (__exports) {
+// Facades where every window is its own, and has depth. The facade textures repeat every 8 bays and 8
+// storeys, so whatever varies window to window is picked in the shader from the window's place on the
+// building (its cell in the texture's UVs, which run on unbroken round a building and up it): whether
+// its light is on, warm or cool, bright or dim; whether its blinds are down and how far; and, for
+// glass, the slight angle each pane sits at, so the sky's reflection breaks up pane by pane.
+// The glass sits back from the wall face, so at an angle the reveal round the opening shows (the sill
+// lit, the head in shadow) and the pane slides behind it; and behind each pane is a room, traced in
+// the shader: a box a bay wide, a storey high and a few metres deep, with a floor, a ceiling, walls
+// and a dark desk or cabinet, lit by its lamp or only by the dusk outside. The glass itself is smooth
+// and reflects the sky at a glancing angle, as glass does, however rough the wall round it. Far off,
+// where a window is only a few pixels across, the reveal and the room go (nobody could see them)
+// and each window is simply its glass with the room's average light behind it, its edges box-filtered
+// over the pixel so the grid of them doesn't shimmer (the filtered pulse after mrdoob/slop-newyork's
+// facade windows, MIT, (c) 2026 Mr.doob). (The wall between the windows skips all of it.)
+const THREE = __require(0)
+
+const BAY = 3 // m: a texture cell is a bay wide (cityBuildings.js) ...
+const STOREY = 3.5 // ... and a storey high
+const ROOM = 4.5 // m: how far back a room runs, on average
+// 0 at golden hour, 1 at night: more of the windows lit (those lit by day stay lit), the dark rooms
+// darker still
+const NIGHT = { value: 0 }
+
+// win: the window's rectangle in a cell (x, y from the cell's top, w, h, as fractions); lit: share
+// of windows with a light on (and litNight, at night); blinds: share with blinds down; tilt: how far
+// panes go off true;
+// inset: m the glass sits back from the wall face; glassMetal: how mirrored the glass is (0 for
+// clear glass, more for a curtain wall's coated panes); fill: the share of bays with a window at all
+// (a house's wall has few; where there is none the wall carries on over it, its surround too)
+function facadeMaterial (
+  opts,
+  {
+    cells,
+    win,
+    lit,
+    litNight = lit,
+    blinds,
+    tilt,
+    inset,
+    glassMetal = 0,
+    fill = 1
+  }
+) {
+  const m = new THREE.MeshStandardMaterial(opts)
+  const f = v => v.toFixed(4)
+  const [wx, wy, ww, wh] = win.map(f)
+  const C = cells.toFixed(1)
+  const blank =
+    fill < 1
+      ? `if (cellHash(gCell + 13.7) > ${f(fill)}) {
+            if (f.x > x0 - 0.07 && f.x < x1 + 0.07 && f.y > bot - 0.07 && f.y < top + 0.07)
+              diffuseColor.rgb = diffuse * textureLod(map, (gCell + vec2(0.06, 0.06)) / ${C}, 2.0).rgb;
+            gWin = 0.0;
+          }`
+      : ''
+  m.onBeforeCompile = shader => {
+    shader.uniforms.uNight = NIGHT
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        '#include <common>',
+        `#include <common>
+        uniform float uNight;
+        float cellHash (vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+        // (how much of a pixel w cells wide at x is inside [a, b] of every cell: a box filter)
+        float pulseInt (float a, float b, float x) { return floor(x) * (b - a) + clamp(fract(x) - a, 0.0, b - a); }
+        float fPulse (float a, float b, float x, float w) {
+          return clamp((pulseInt(a, b, x + 0.5 * w) - pulseInt(a, b, x - 0.5 * w)) / w, 0.0, 1.0);
+        }
+        float gBlind = 0.0, gWin = 0.0;
+        vec2 gCell = vec2(0.0);
+        vec3 gRoom = vec3(0.0);`
+      )
+      .replace(
+        '#include <map_fragment>',
+        `#include <map_fragment>
+        #ifdef USE_MAP
+        {
+          vec2 cu = vMapUv * ${C};
+          vec2 du = dFdx(vMapUv), dv = dFdy(vMapUv);
+          gCell = floor(cu);
+          vec2 f = fract(cu);
+          float x0 = ${wx}, x1 = ${wx} + ${ww}, top = 1.0 - ${wy}, bot = top - ${wh};
+          // (far off: windows a few pixels across, cells per pixel past a quarter)
+          bool far = max(length(du), length(dv)) * ${C} > 0.25;
+          vec2 fwc = max(fwidth(cu), vec2(1e-4));
+          float cov = fPulse(x0, x1, cu.x, fwc.x) * fPulse(bot, top, cu.y, fwc.y);
+          vec3 wallRgb = diffuseColor.rgb;
+          gWin = far ? step(0.002, cov) : step(x0, f.x) * step(f.x, x1) * step(bot, f.y) * step(f.y, top);
+          ${blank}
+          float pane = 0.0;
+          // (the wall between the windows has nothing more to work out)
+          if (gWin > 0.5) {
+          // the view ray in the wall's own frame (along it, up it, out of it), in bays, storeys and
+          // room depths
+          vec3 n = normalize(vNormal);
+          vec3 up = normalize((viewMatrix * vec4(0.0, 1.0, 0.0, 0.0)).xyz);
+          vec3 ta = normalize(cross(up, n));
+          vec3 rd = normalize(-vViewPosition);
+          vec3 r = vec3(dot(rd, ta) / ${f(BAY)}, dot(rd, up) / ${f(STOREY)},
+            min(dot(rd, n), -0.03) / ${f(ROOM)});
+          // where it meets the glass, set back from the wall face; short of it, the reveal
+          vec2 g = far ? f : f + r.xy * (${f(inset / ROOM)} / -r.z);
+          pane = far ? 1.0 : step(x0, g.x) * step(g.x, x1) * step(bot, g.y) * step(g.y, top);
+          if (pane < 0.5) {
+            // the reveal: the wall's own colour, the sill catching the light, the head in shadow
+            vec3 wall = textureLod(map, (gCell + vec2(0.03, 0.03)) / ${C}, 3.0).rgb;
+            diffuseColor.rgb = diffuse * wall * (g.y < bot ? 0.95 : g.y > top ? 0.42 : 0.66);
+          } else if (pane > 0.5) {
+            // the glass, seen through from where the ray meets it: dark, as clear glass is
+            diffuseColor.rgb = diffuse * textureGrad(map, (gCell + g) / ${C}, du, dv).rgb * 0.45;
+            float hb = cellHash(gCell + 7.7);
+            float level = hb < ${blinds.toFixed(
+              3
+            )} ? 0.25 + 0.75 * cellHash(gCell + 3.3) : 0.0;
+            gBlind = step(top - level * (top - bot), g.y);
+            // blinds or curtains: pale, beige or grey, a little striped
+            vec3 bc = mix(vec3(0.86, 0.84, 0.78), vec3(0.74, 0.7, 0.62), cellHash(gCell + 9.1));
+            bc *= 0.92 + 0.08 * step(0.5, fract(g.y * 40.0));
+            diffuseColor.rgb = mix(diffuseColor.rgb, bc, gBlind * 0.9);
+            vec3 wallC = mix(vec3(0.9, 0.86, 0.78), vec3(0.72, 0.77, 0.82), cellHash(gCell + 8.1));
+            if (far) gRoom = wallC * 0.62 * (1.0 - 0.6 * gBlind); // (the room's light, on average)
+            else {
+            // the room behind: a box from the glass back to its back wall, floor to ceiling
+            float depth = 0.7 + 0.6 * cellHash(gCell + 5.5);
+            vec2 rq = vec2(abs(r.x) < 1e-4 ? 1e-4 : r.x, abs(r.y) < 1e-4 ? 1e-4 : r.y);
+            float tx = (step(0.0, r.x) - g.x) / rq.x;
+            float ty = (step(0.0, r.y) - g.y) / rq.y;
+            float tz = depth / -r.z;
+            float tm = min(min(tx, ty), tz);
+            vec3 h = vec3(g, 0.0) + r * tm;
+            vec3 c;
+            if (tm == tz) {
+              c = wallC;
+              // a desk, a cabinet or a sofa against the back wall
+              float fx = 0.2 + 0.5 * cellHash(gCell + 2.2), fw = 0.12 + 0.2 * cellHash(gCell + 4.4);
+              c *= 1.0 - 0.78 * step(h.y, 0.3 + 0.15 * cellHash(gCell + 1.9)) * step(abs(h.x - fx), fw);
+            } else if (tm == tx) c = wallC * 0.72;
+            else if (r.y > 0.0) c = vec3(0.96, 0.94, 0.9);
+            else c = mix(vec3(0.34, 0.23, 0.15), vec3(0.4, 0.4, 0.39), step(0.5, cellHash(gCell + 6.6)));
+            // lit from a lamp in the middle of the ceiling, darker into the corners
+            vec3 lamp = vec3(0.5, 0.95, -0.45 * depth);
+            vec3 dl = (h - lamp) * vec3(1.0, 1.2, 1.0 / depth);
+            c *= 1.25 / (1.0 + 2.6 * dot(dl, dl));
+            gRoom = c * (1.0 - 0.6 * gBlind);
+            }
+          }
+          }
+          gWin = pane;
+          if (far && pane > 0.5) {
+            diffuseColor.rgb = mix(wallRgb, diffuseColor.rgb, cov);
+            gWin *= cov;
+          }
+        }
+        #endif`
+      )
+      .replace(
+        '#include <metalnessmap_fragment>',
+        `#include <metalnessmap_fragment>
+        // glass is smooth whatever the wall round it is made of
+        roughnessFactor = mix(roughnessFactor, 0.05, gWin);
+        metalnessFactor = mix(metalnessFactor, ${f(glassMetal)}, gWin);`
+      )
+      .replace(
+        '#include <normal_fragment_maps>',
+        `#include <normal_fragment_maps>
+        if (gWin > 0.5)
+          normal = normalize(normal + (vec3(cellHash(gCell + 1.0), cellHash(gCell + 2.0), cellHash(gCell + 3.0)) - 0.5) * ${tilt.toFixed(
+            3
+          )});`
+      )
+      .replace(
+        '#include <emissivemap_fragment>',
+        `if (gWin <= 0.0) totalEmissiveRadiance = vec3(0.0);
+        else {
+          float h1 = cellHash(gCell), h2 = cellHash(gCell + 17.3), h3 = cellHash(gCell + 41.1);
+          float on = step(h1, mix(${lit.toFixed(3)}, ${litNight.toFixed(3)}, uNight));
+          vec3 warm = mix(vec3(1.0, 0.66, 0.36), vec3(1.0, 0.84, 0.62), h2);
+          vec3 light = mix(warm, vec3(0.72, 0.84, 1.0), step(0.8, h3)) * (0.35 + 0.65 * h2);
+          // a lit room, or a dark one with only the dusk in it
+          vec3 dark = vec3(0.07, 0.065, 0.075) * (1.0 - 0.8 * uNight);
+          totalEmissiveRadiance *= gRoom * mix(dark, light, on) * gWin;
+        }`
+      )
+  }
+  m.customProgramCacheKey = () =>
+    `facade aa ${win} ${lit} ${litNight} ${blinds} ${tilt} ${inset} ${glassMetal} ${fill}`
+  return m
+}
+__export(__exports, { "NIGHT": () => NIGHT, "facadeMaterial": () => facadeMaterial })
+})
+
+// ---- js/render/shopRooms.js
+__define(195, function (__exports) {
+// The insides of the shops, traced in the shader (shopShader.js) the way facade.js traces the rooms
+// behind the windows above: the view ray goes on through the glass into a box a few metres deep (its
+// floor, ceiling, side walls and back wall), and before that it is tested against what stands in it,
+// a handful of boxes and flat cut-outs, each kind of shop its own: a café's counter across the back
+// under its menu board, tables with chairs round them by the window and lamps hanging over them; a
+// clothes shop's rails of clothes down both walls, a table of folded clothes and mannequins in the
+// window; a convenience store's aisles of shelves of bright packets running back from the window,
+// its till by the door and its fridges glowing along the back; a salon's chairs facing mirrors
+// ringed with bulbs; a bar's counter down one side, stools along it and its bottles lit behind; and
+// an empty unit's bare concrete with a few boxes left in it. While a shop is open someone is at work
+// in it, behind the counter, the till, the bar or a chair. Each is lit by its own lamps (or not,
+// shut), and by day by what comes in through the window. All in metres, in the shop's own frame: x
+// along the shopfront from its left end, y up from the pavement, z out of the glass (the room is at
+// z < 0).
+const ROOMS_GLSL = `
+  #define SH_FLOOR 0
+  #define SH_CEIL 1
+  #define SH_SIDE 2
+  #define SH_BACK 3
+  #define SH_A 4
+  #define SH_B 5
+  #define SH_C 6
+  #define SH_D 7
+  #define SH_P 8
+  struct ShHit { float t; int id; vec3 n; };
+  // the ray (o, its reciprocal iv) against the box b0 to b1: kept if it is nearer than what it has hit
+  void shBox (vec3 o, vec3 iv, vec3 b0, vec3 b1, int id, inout ShHit h) {
+    vec3 t0 = (b0 - o) * iv, t1 = (b1 - o) * iv;
+    vec3 lo = min(t0, t1), hi = max(t0, t1);
+    float tn = max(max(lo.x, lo.y), lo.z), tf = min(min(hi.x, hi.y), hi.z);
+    if (tn < tf && tn > 0.0 && tn < h.t) {
+      h.t = tn;
+      h.id = id;
+      h.n = tn == lo.x ? vec3(-sign(iv.x), 0.0, 0.0)
+        : tn == lo.y ? vec3(0.0, -sign(iv.y), 0.0) : vec3(0.0, 0.0, -sign(iv.z));
+    }
+  }
+  // where the ray crosses a flat cut-out standing across the room at depth z (far off if it is
+  // beyond what the ray has hit already)
+  vec2 shCard (vec3 o, vec3 r, float z, ShHit h, out float t) {
+    t = (z - o.z) / r.z;
+    return t > 0.0 && t < h.t ? o.xy + r.xy * t : vec2(-99.0);
+  }
+  // a chair seen from in front or behind: four legs, a seat, a frame of a back
+  float shChair (vec2 p, float cx) {
+    float x = abs(p.x - cx);
+    float legs = step(0.15, x) * step(x, 0.19) * step(p.y, 0.45);
+    float seat = step(x, 0.21) * step(0.42, p.y) * step(p.y, 0.47);
+    float back = step(x, 0.19) * step(0.47, p.y) * step(p.y, 0.88)
+      * max(step(0.14, x), step(0.78, p.y));
+    return max(max(legs, seat), back);
+  }
+  // a bar stool: a round seat on one leg, a ring for the feet, a foot on the floor
+  float shStool (vec2 p, float cx) {
+    float x = abs(p.x - cx);
+    return max(max(step(x, 0.18) * step(0.7, p.y) * step(p.y, 0.77),
+      step(x, 0.025) * step(p.y, 0.7)),
+      max(step(x, 0.14) * step(abs(p.y - 0.3), 0.015), step(x, 0.16) * step(p.y, 0.03)));
+  }
+  // a mannequin on its stand (or, stand 0, someone at work): 1 its body, 2 its top, 3 its trousers
+  // or skirt; 0 off it
+  float shMannequin (vec2 p, float cx, float dress, float stand) {
+    vec2 d = vec2(p.x - cx, p.y);
+    float x = abs(d.x);
+    if (length(vec2(d.x, (d.y - 1.63) * 0.8)) < 0.1) return 1.0;
+    if (x < 0.035 && d.y > 1.44 && d.y < 1.56) return 1.0;
+    float w = mix(0.14, 0.21, smoothstep(1.05, 1.42, d.y));
+    if (d.y > 1.02 && d.y < 1.46 && x < w) return 2.0;
+    if (x > 0.205 && x < 0.245 && d.y > 0.86 && d.y < 1.44) return 2.0 - step(d.y, 1.12);
+    if (dress > 0.5) {
+      if (d.y > 0.55 && d.y < 1.04 && x < mix(0.24, 0.15, (d.y - 0.55) / 0.49)) return 3.0;
+    } else if (d.y > 0.08 * stand && d.y < 1.04 && x > 0.015 && x < 0.085 + 0.04 * step(0.75, d.y))
+      return 3.0;
+    if (stand > 0.5 && ((x < 0.015 && d.y < 0.55) || (x < 0.13 && d.y < 0.025))) return 1.0;
+    return 0.0;
+  }
+  // someone at work in a shop that is open, standing at depth z, x across: the shop's hit h taken
+  // if they are nearer, its part (1 skin, 2 top, 3 trousers) in part
+  void shPerson (vec3 o, vec3 r, float x, float z, float open, inout ShHit h, inout float part) {
+    float t;
+    float q = open > 0.5 ? shMannequin(shCard(o, r, z, h, t), x, 0.0, 0.0) : 0.0;
+    if (q > 0.5) { h.t = t; h.id = SH_P; h.n = vec3(0.0, 0.0, 1.0); part = q; }
+  }
+  // a colour picked from a palette of things on sale: bright packets, clothes, bottles
+  vec3 shGoods (float h) {
+    return h < 0.14 ? vec3(0.72, 0.06, 0.05) : h < 0.27 ? vec3(0.9, 0.62, 0.05)
+      : h < 0.38 ? vec3(0.05, 0.22, 0.6) : h < 0.5 ? vec3(0.08, 0.42, 0.12)
+      : h < 0.6 ? vec3(0.85, 0.82, 0.76) : h < 0.7 ? vec3(0.04, 0.04, 0.05)
+      : h < 0.8 ? vec3(0.75, 0.28, 0.45) : h < 0.9 ? vec3(0.95, 0.4, 0.08) : vec3(0.2, 0.55, 0.75);
+  }
+  float shH (vec2 p, float k) { return fract(sin(dot(p, vec2(127.1, 311.7)) + k) * 43758.5453); }
+  // whether (x, y), each 0 to 1 across a bottle's place on a shelf, is on the bottle: its body, its
+  // shoulders and its neck
+  bool shBottle (float x, float y) {
+    float w = y < 0.5 ? 0.24 : y < 0.6 ? mix(0.24, 0.07, (y - 0.5) / 0.1) : 0.07;
+    return y > 0.08 && y < 0.82 && abs(x - 0.5) < w;
+  }
+  // shelves of goods on a face running along u (m), y up: shelf boards, and on each a row of boxes
+  // and bags, each row its own size, each its own height and colour, most with a pale label
+  vec3 shShelves (float u, float y, float seed) {
+    float row = floor((y - 0.12) / 0.4), f = fract((y - 0.12) / 0.4);
+    if (y < 0.12 || y > 1.72 || f < 0.07) return vec3(0.55, 0.55, 0.53);
+    float w = 0.12 + 0.16 * shH(vec2(row, seed), 1.0);
+    float k = floor(u / w), e = fract(u / w), hk = shH(vec2(k, row), seed);
+    float ht = 0.45 + 0.45 * hk, up = (f - 0.07) / (0.93 * ht);
+    if (up > 1.0 || e < 0.04 || e > 0.96) return vec3(0.03);
+    vec3 c = shGoods(shH(vec2(k, row), seed + 3.0));
+    if (hk > 0.35 && abs(up - 0.55) < 0.15) c = mix(c, vec3(0.85), 0.7);
+    return c * (0.75 + 0.25 * up);
+  }
+  // wooden boards along x, each a shade of its own
+  vec3 shPlanks (vec3 q, vec3 c) {
+    float k = floor(q.x / 0.16);
+    float e = min(fract(q.x / 0.16), 1.0 - fract(q.x / 0.16));
+    return c * (0.75 + 0.45 * shH(vec2(k, floor(q.z / 2.4 + 0.5 * fract(k * 0.37))), 2.0))
+      * (e < 0.04 ? 0.6 : 1.0);
+  }
+  // tiles: s m square, a and b alternating (checked) or a with grout lines between them
+  vec3 shTiles (vec2 q, float s, vec3 a, vec3 b) {
+    vec2 f = fract(q / s), k = floor(q / s);
+    if (min(min(f.x, f.y), min(1.0 - f.x, 1.0 - f.y)) < 0.03) return a * 0.6;
+    return mod(k.x + k.y, 2.0) < 0.5 ? a : b;
+  }
+  // the light on a point in the room: lamps down the middle of the ceiling (brightest under them,
+  // less into the corners and at the back; even: as even as a store's tubes), and by day what comes
+  // in through the window, strongest near it
+  vec3 shLight (vec3 q, float x0, float x1, float Hc, float even, float lamps, vec3 lc) {
+    float dx = (q.x - 0.5 * (x0 + x1)) / max(0.5 * (x1 - x0), 1.0);
+    float l = 1.0 / (1.0 + 1.4 * dx * dx + 0.9 * (q.y / Hc) * (q.y / Hc));
+    l = mix(l, 0.85, even) * (0.7 + 0.3 * exp(q.z * 0.2));
+    float day = (1.0 - uNight) * 0.16 * (0.25 + 0.75 * exp(q.z / 2.2));
+    return lc * l * lamps + vec3(0.9, 0.95, 1.05) * day + vec3(0.01);
+  }
+
+  // what comes out of the shop through its glass. o: where the view ray meets the glass (z = 0), r
+  // the ray (z < 0); W the shop's width, k its kind (0 a café, 1 clothes, 2 a store, 3 a salon, 4 a
+  // bar, 5 empty), s its own random number and H four more made from it; L how lit it is
+  // (shopLights), lc its lamps' colour
+  vec3 shopRoom (vec3 o, vec3 r, float W, float k, float s, vec4 H, vec4 L, vec3 lc, float head) {
+    float D = 5.0 + 4.0 * H.w, Hc = head + 0.3;
+    float x0 = 0.15, x1 = W - 0.15, xm = 0.5 * W;
+    vec3 rr = vec3(abs(r.x) < 1e-4 ? 1e-4 : r.x, abs(r.y) < 1e-4 ? 1e-4 : r.y, r.z);
+    vec3 iv = 1.0 / rr;
+    // the room's own surfaces
+    float tx = ((rr.x > 0.0 ? x1 : x0) - o.x) * iv.x;
+    float ty = ((rr.y > 0.0 ? Hc : 0.0) - o.y) * iv.y;
+    float tz = (-D - o.z) * iv.z;
+    ShHit h;
+    h.t = min(min(tx, ty), tz);
+    h.id = h.t == tz ? SH_BACK : h.t == tx ? SH_SIDE : rr.y > 0.0 ? SH_CEIL : SH_FLOOR;
+    h.n = h.id == SH_BACK ? vec3(0.0, 0.0, 1.0) : h.id == SH_SIDE ? vec3(-sign(rr.x), 0.0, 0.0)
+      : vec3(0.0, -sign(rr.y), 0.0);
+    float h1 = H.x, h2 = H.y, h3 = H.z;
+    // lamps: how bright the kind keeps its lamps, how evenly they light it (by day only a room's
+    // light, dim beside the street's)
+    float lamps = L.x * mix(0.2, 1.6, uNight);
+    float lk = 0.6, even = 0.0;
+    vec3 c = vec3(0.6), em = vec3(0.0);
+    float ct = 0.0, part = 0.0;
+    vec2 cp;
+    vec3 q;
+    if (k < 0.5) {
+      // ---- a café or a restaurant ----
+      float cz = -D + 1.5, pass = 1.1;
+      vec3 c0 = h1 < 0.5 ? vec3(x0 + pass, 0.0, cz - 0.6) : vec3(x0, 0.0, cz - 0.6);
+      vec3 c1 = h1 < 0.5 ? vec3(x1, 1.05, cz) : vec3(x1 - pass, 1.05, cz);
+      shBox(o, iv, c0, c1, SH_A, h);
+      shPerson(o, rr, mix(c0.x, c1.x, 0.3 + 0.4 * h3), -D + 0.5, L.x, h, part);
+      // tables by the window, a chair either side of each, a lamp over each
+      vec3 T1 = vec3(mix(x0 + 0.7, x1 - 0.7, h2), 0.0, -1.15);
+      vec3 T2 = vec3(mix(x0 + 0.7, x1 - 0.7, fract(h2 + 0.5)), 0.0, -2.75);
+      shBox(o, iv, T1 + vec3(-0.36, 0.71, -0.36), T1 + vec3(0.36, 0.76, 0.36), SH_B, h);
+      shBox(o, iv, T1 + vec3(-0.04, 0.0, -0.04), T1 + vec3(0.04, 0.71, 0.04), SH_C, h);
+      shBox(o, iv, T2 + vec3(-0.36, 0.71, -0.36), T2 + vec3(0.36, 0.76, 0.36), SH_B, h);
+      shBox(o, iv, T2 + vec3(-0.04, 0.0, -0.04), T2 + vec3(0.04, 0.71, 0.04), SH_C, h);
+      for (int i = 0; i < 4; i++) {
+        vec3 T = i < 2 ? T1 : T2;
+        cp = shCard(o, rr, T.z + (i == 0 || i == 2 ? 0.55 : -0.55), h, ct);
+        if (shChair(cp, T.x) > 0.5) { h.t = ct; h.id = SH_D; h.n = vec3(0.0, 0.0, 1.0); }
+      }
+      // the lamps: a shade on its cord, the bulb glowing under it
+      for (int i = 0; i < 3; i++) {
+        vec3 P = i == 0 ? T1 : i == 1 ? T2 : vec3(mix(c0.x, c1.x, 0.5), 0.0, cz - 0.3);
+        cp = shCard(o, rr, P.z, h, ct);
+        vec2 d = cp - vec2(P.x, Hc - 0.95);
+        if (d.y > 0.0 && abs(d.x) < 0.012) { h.t = ct; h.id = SH_C; em = vec3(0.0); }
+        else if (length(d * vec2(1.0, 1.6)) < 0.17) {
+          h.t = ct; h.id = SH_C; em = lc * 3.0 * L.x * step(d.y, -0.02);
+        }
+      }
+      q = o + rr * h.t;
+      vec3 wall = h3 < 0.3 ? vec3(0.75, 0.68, 0.55) : h3 < 0.55 ? vec3(0.03, 0.12, 0.07)
+        : h3 < 0.8 ? vec3(0.42, 0.15, 0.09) : vec3(0.8);
+      if (h.id == SH_FLOOR) c = h2 < 0.6 ? shPlanks(q, vec3(0.3, 0.17, 0.09))
+        : shTiles(q.xz, 0.3, vec3(0.03), vec3(0.75));
+      else if (h.id == SH_CEIL) c = h1 < 0.5 ? vec3(0.03) : vec3(0.7);
+      else if (h.id == SH_SIDE) {
+        c = wall;
+        if (h3 > 0.55 && h3 < 0.8) // (bare brick)
+          c *= fract(q.y / 0.075) < 0.15 || fract(q.z / 0.215 + 0.5 * floor(q.y / 0.075)) < 0.06
+            ? 1.5 : 0.8 + 0.3 * shH(floor(vec2(q.z / 0.215, q.y / 0.075)), 1.0);
+      } else if (h.id == SH_BACK) {
+        c = wall;
+        // the menu board, its lines of chalk; shelves of cups under it
+        if (abs(q.x - xm) < 1.2 && q.y > 1.9 && q.y < 2.7) {
+          c = vec3(0.025);
+          if (fract(q.y / 0.09) < 0.35 && abs(q.x - xm) < 1.05
+            && shH(floor(vec2(q.x / 0.3, q.y / 0.09)), 4.0) > 0.25) c = vec3(0.6);
+        } else if (q.y > 1.25 && q.y < 1.75) c = fract(q.y / 0.25) < 0.1 ? vec3(0.3, 0.2, 0.12)
+          : shH(floor(vec2(q.x / 0.12, q.y / 0.25)), 5.0) > 0.4 ? vec3(0.8) : c;
+      } else if (h.id == SH_A) c = h.n.y > 0.5 ? vec3(0.7) : h2 < 0.5 ? vec3(0.25, 0.13, 0.06)
+        : shTiles(q.xy, 0.15, vec3(0.7), vec3(0.65));
+      else if (h.id == SH_B) c = h1 < 0.5 ? vec3(0.32, 0.18, 0.08) : vec3(0.75);
+      else if (h.id == SH_C) c = vec3(0.03);
+      else c = h3 < 0.5 ? vec3(0.03) : vec3(0.35, 0.18, 0.08);
+      // (pools of light under the lamps)
+      lk = 0.45 + 0.6 * exp(-4.0 * dot(q.xz - T1.xz, q.xz - T1.xz))
+        + 0.6 * exp(-4.0 * dot(q.xz - T2.xz, q.xz - T2.xz));
+    } else if (k < 1.5) {
+      // ---- a clothes shop ----
+      shBox(o, iv, vec3(x0, 0.95, -D + 0.6), vec3(x0 + 0.5, 1.75, -1.1), SH_A, h);
+      shBox(o, iv, vec3(x1 - 0.5, 0.95, -D + 0.6), vec3(x1, 1.75, -1.1), SH_A, h);
+      shBox(o, iv, vec3(xm - 0.55, 0.0, -0.55 * D - 0.45), vec3(xm + 0.55, 0.8, -0.55 * D + 0.45),
+        SH_B, h);
+      // mannequins in the window, one or two
+      float m1 = mix(x0 + 0.6, x1 - 0.6, h2), m2 = mix(x0 + 0.6, x1 - 0.6, fract(h2 + 0.45));
+      cp = shCard(o, rr, -0.6, h, ct);
+      float mq = shMannequin(cp, m1, step(0.5, h3), 1.0);
+      if (mq < 0.5 && W > 4.0) mq = shMannequin(cp, m2, step(0.5, h1), 1.0);
+      if (mq > 0.5) { h.t = ct; h.id = SH_D; h.n = vec3(0.0, 0.0, 1.0); part = mq; }
+      q = o + rr * h.t;
+      vec3 wall = h3 < 0.6 ? vec3(0.8) : vec3(0.75, 0.66, 0.62);
+      if (h.id == SH_FLOOR) c = h1 < 0.5 ? shPlanks(q, vec3(0.5, 0.36, 0.22)) : vec3(0.42);
+      else if (h.id == SH_CEIL) {
+        c = vec3(0.75);
+        // spotlights in two rows
+        vec2 f = vec2(abs(q.x - xm) - 0.25 * W, fract(q.z / 1.2) - 0.5);
+        if (dot(f, f) < 0.004) em = lc * 2.4 * L.x;
+      } else if (h.id == SH_A) {
+        // clothes on hangers, side by side: each its colour, rounded into shadow at its edges (and
+        // at the rail's end, the last one's folds)
+        float g = (h.n.z > 0.5 ? q.x : q.z) / 0.075;
+        c = h.n.y > 0.5 ? vec3(0.4) : shGoods(shH(vec2(floor(g), s), 6.0))
+          * (0.55 + 0.45 * sin(3.1416 * fract(g))) * (h.n.z > 0.5 ? 0.6 : 1.0);
+      } else if (h.id == SH_B) c = h.n.y > 0.5
+        ? shGoods(shH(floor(q.xz / vec2(0.3, 0.25)), 7.0)) * (fract(q.z / 0.25) < 0.1 ? 0.5 : 1.0)
+        : vec3(0.75);
+      else if (h.id == SH_D) c = part < 1.5 ? (h1 < 0.6 ? vec3(0.8) : vec3(0.04))
+        : shGoods(shH(vec2(part, s), 8.0));
+      else c = h.id == SH_BACK && q.y > 0.4 && q.y < 2.2 && abs(q.x - xm) < 0.35 * W
+        ? shShelves(q.x, q.y, s) : wall;
+      lk = 0.75;
+      // (a closed shop's window display stays lit)
+      lamps = max(lamps, L.z * 0.8 * smoothstep(-2.0, -0.8, q.z));
+    } else if (k < 2.5) {
+      // ---- a convenience store or a pharmacy ----
+      float na = W > 5.0 ? 2.0 : 1.0;
+      for (int i = 0; i < 2; i++) {
+        if (float(i) >= na) break;
+        float ax = mix(x0, x1, (float(i) + 1.0) / (na + 1.0));
+        shBox(o, iv, vec3(ax - 0.42, 0.0, -D + 1.9), vec3(ax + 0.42, 1.7, -2.3), SH_A, h);
+      }
+      float side = h1 < 0.5 ? x0 + 0.1 : x1 - 1.4;
+      shBox(o, iv, vec3(side, 0.0, -1.8), vec3(side + 1.3, 1.0, -0.9), SH_B, h);
+      shPerson(o, rr, side + 0.65, -2.15, L.x, h, part);
+      q = o + rr * h.t;
+      if (h.id == SH_FLOOR) c = shTiles(q.xz, 0.3, vec3(0.62), vec3(0.55));
+      else if (h.id == SH_CEIL) {
+        c = vec3(0.7);
+        // fluorescent tubes, two rows down the shop
+        if (abs(abs(q.x - xm) - 0.17 * W) < 0.07 && fract(q.z / 1.6) > 0.2) em = lc * 2.2 * L.x;
+      } else if (h.id == SH_BACK) {
+        // fridges: glass doors, shelves of bottles behind, lit
+        c = vec3(0.6);
+        if (q.y > 0.05 && q.y < 2.15) {
+          float f = fract(q.x / 0.75);
+          if (f < 0.04 || f > 0.96 || q.y < 0.15 || q.y > 2.05) c = vec3(0.05);
+          else {
+            float b = fract(q.y / 0.38), bx = fract(q.x / 0.075);
+            bool on = shBottle(bx, b);
+            c = vec3(0.04);
+            em = vec3(0.8, 0.92, 1.0) * mix(0.45, 0.95, uNight) * max(L.x, 0.4)
+              * (b < 0.08 ? 0.4 : on ? 0.7 : 1.0);
+            if (on) em *= shGoods(shH(floor(vec2(q.x / 0.075, q.y / 0.38)), 9.0)) * 1.4 + 0.1;
+          }
+        }
+      } else if (h.id == SH_A || h.id == SH_SIDE)
+        // (an aisle's end faces the window: more shelves, a header in a bright colour over them)
+        c = h.n.y > 0.5 ? vec3(0.6) : h.n.z < 0.5 ? shShelves(q.z, q.y, s)
+          : q.y > 1.72 ? shGoods(h2) : shShelves(q.x, q.y, s + 7.0);
+      else c = h.n.y > 0.5 ? vec3(0.55) : vec3(0.15, 0.16, 0.2);
+      lk = 0.85;
+      even = 0.7;
+    } else if (k < 3.5) {
+      // ---- a hair or nail salon: chairs facing mirrors down one wall ----
+      float mw = h1 < 0.5 ? x0 : x1, sd = h1 < 0.5 ? 1.0 : -1.0;
+      for (int i = 0; i < 3; i++) {
+        float cz = -1.5 - 1.5 * float(i);
+        if (cz < -D + 1.0) break;
+        float a = mw + sd * 0.55, b = mw + sd * 1.1;
+        shBox(o, iv, vec3(min(a, b), 0.0, cz - 0.3), vec3(max(a, b), 1.1, cz + 0.3), SH_A, h);
+      }
+      shPerson(o, rr, mw + sd * 1.45, -1.5, L.x, h, part);
+      float dsk = h1 < 0.5 ? x1 - 1.5 : x0 + 0.2;
+      shBox(o, iv, vec3(dsk, 0.0, -D + 0.8), vec3(dsk + 1.3, 1.05, -D + 1.5), SH_B, h);
+      q = o + rr * h.t;
+      vec3 wall = h3 < 0.33 ? vec3(0.8, 0.6, 0.62) : h3 < 0.66 ? vec3(0.6, 0.78, 0.7)
+        : vec3(0.82, 0.8, 0.74);
+      if (h.id == SH_FLOOR) c = h2 < 0.5 ? shTiles(q.xz, 0.3, vec3(0.03), vec3(0.78))
+        : shPlanks(q, vec3(0.5, 0.36, 0.22));
+      else if (h.id == SH_CEIL) {
+        c = vec3(0.75);
+        vec2 f = vec2(fract(q.x / 1.4) - 0.5, fract(q.z / 1.5) - 0.5);
+        if (dot(f, f) < 0.01) em = lc * 2.0 * L.x;
+      } else if (h.id == SH_SIDE && abs(q.x - mw) < 0.01) {
+        // the mirrors, bulbs round each
+        float mz = (fract((q.z + 1.5) / 1.5 + 0.5) - 0.5) * 1.5;
+        c = wall;
+        if (abs(mz) < 0.45 && q.y > 0.8 && q.y < 2.05 && q.z < -0.9) {
+          c = mix(vec3(0.35, 0.38, 0.4), vec3(0.6, 0.62, 0.62), (q.y - 0.8) / 1.25);
+          vec2 e = vec2(0.45 - abs(mz), min(q.y - 0.8, 2.05 - q.y));
+          if (min(e.x, e.y) < 0.05) {
+            c = vec3(0.9);
+            if (fract(q.y / 0.2) < 0.4 || fract(mz / 0.2) < 0.4) em = lc * 1.6 * L.x;
+          }
+        }
+      } else if (h.id == SH_A) c = h2 < 0.4 ? vec3(0.03) : h2 < 0.7 ? vec3(0.4, 0.03, 0.04)
+        : vec3(0.6, 0.52, 0.42);
+      else if (h.id == SH_B) c = vec3(0.85);
+      else c = h.id == SH_BACK && q.y > 1.2 && q.y < 2.0 && fract(q.y / 0.4) > 0.15
+        ? shGoods(shH(floor(vec2(q.x / 0.06, q.y / 0.4)), 3.0)) : wall;
+      lk = 0.8;
+      even = 0.4;
+    } else if (k < 4.5) {
+      // ---- a bar: its counter down one side, stools along it, bottles lit behind ----
+      float bw = h1 < 0.5 ? x0 : x1, sd = h1 < 0.5 ? 1.0 : -1.0;
+      float a = bw + sd * 0.95, b = bw + sd * 1.55;
+      shBox(o, iv, vec3(min(a, b), 0.0, -D + 0.8), vec3(max(a, b), 1.08, -1.6), SH_A, h);
+      shPerson(o, rr, bw + sd * 0.5, -2.4 - 1.4 * h2, L.x, h, part);
+      for (int i = 0; i < 3; i++) {
+        cp = shCard(o, rr, -2.0 - 1.1 * float(i), h, ct);
+        if (shStool(cp, bw + sd * 1.9) > 0.5) { h.t = ct; h.id = SH_C; h.n = vec3(0.0, 0.0, 1.0); }
+      }
+      q = o + rr * h.t;
+      vec3 wall = h3 < 0.4 ? vec3(0.12, 0.02, 0.02) : h3 < 0.7 ? vec3(0.02, 0.06, 0.04)
+        : vec3(0.1, 0.05, 0.03);
+      if (h.id == SH_FLOOR) c = shPlanks(q, vec3(0.12, 0.06, 0.03));
+      else if (h.id == SH_CEIL) c = vec3(0.02);
+      else if (h.id == SH_SIDE && abs(q.x - bw) < 0.01 && q.y > 1.2 && q.y < 2.5) {
+        // shelves of bottles, lit from behind
+        float b = fract((q.y - 1.2) / 0.43), bx = fract(q.z / 0.09);
+        c = vec3(0.03);
+        em = vec3(1.0, 0.62, 0.3) * 0.6 * L.x;
+        if (shBottle(bx, b))
+          em *= 0.5 + 1.8 * shGoods(shH(floor(vec2(q.z / 0.09, q.y / 0.43)), 2.0));
+        else if (b < 0.08) em *= 0.2;
+      } else if (h.id == SH_A) c = h.n.y > 0.5 ? vec3(0.05, 0.03, 0.02)
+        : q.y < 0.2 && q.y > 0.17 ? vec3(0.6, 0.45, 0.15) : vec3(0.1, 0.05, 0.025);
+      else if (h.id == SH_C) c = vec3(0.04);
+      else c = wall;
+      lk = 0.55 + 0.6 * exp(-1.5 * (q.x - bw) * (q.x - bw));
+    } else {
+      // ---- an empty unit: bare concrete, a few boxes left behind ----
+      shBox(o, iv, vec3(x1 - 1.3, 0.0, -D + 0.9), vec3(x1 - 0.4, 0.75, -D + 1.7), SH_A, h);
+      shBox(o, iv, vec3(x1 - 1.1, 0.75, -D + 1.0), vec3(x1 - 0.55, 1.2, -D + 1.5), SH_A, h);
+      q = o + rr * h.t;
+      if (h.id == SH_A) c = vec3(0.42, 0.28, 0.15);
+      else if (h.id == SH_FLOOR) c = vec3(0.3) * (0.85 + 0.3 * shH(floor(q.xz * 1.3), 1.0));
+      else if (h.id == SH_CEIL) c = vec3(0.12);
+      else c = vec3(0.55, 0.53, 0.5) * (fract(q.y * 0.6 + q.x * 0.1) < 0.3 ? 0.9 : 1.0);
+      lk = 0.0;
+    }
+    // (someone at work: their skin, their top, their trousers)
+    if (h.id == SH_P)
+      c = part < 1.5 ? (h2 < 0.3 ? vec3(0.6, 0.42, 0.32) : h2 < 0.6 ? vec3(0.36, 0.22, 0.14)
+        : h2 < 0.85 ? vec3(0.5, 0.33, 0.22) : vec3(0.13, 0.08, 0.05))
+        : part < 2.5 ? shGoods(fract(h3 * 7.3)) : vec3(0.04, 0.045, 0.06);
+    vec3 E = shLight(q, x0, x1, Hc, even, lamps * lk, lc);
+    // (darker into the room's corners and along its edges, where the light reaches less)
+    vec3 e = 1.0 - smoothstep(0.0, 0.5, vec3(min(q.x - x0, x1 - q.x), min(q.y, Hc - q.y), q.z + D));
+    float ao = 1.0 - 0.45 * (e.x * e.y + e.x * e.z + e.y * e.z);
+    return c * E * ao + em;
+  }
+  // the same, seen from far off: the room's light on average (each kind's matched by eye to what
+  // the traced room gives, straight on, by day and at night), a shut clothes shop's lit window
+  // and a bar's lit bottles with it
+  vec3 shopAverage (float k, float s, vec4 L, vec3 lc) {
+    float lamps = L.x * mix(0.2, 1.6, uNight);
+    vec3 a = k < 0.5 ? vec3(0.38, 0.33, 0.26) : k < 1.5 ? vec3(0.38, 0.34, 0.32)
+      : k < 2.5 ? vec3(0.5, 0.48, 0.45) : k < 3.5 ? vec3(0.48, 0.44, 0.42)
+      : k < 4.5 ? vec3(0.05, 0.035, 0.025) : vec3(0.4);
+    float lk = k < 0.5 ? 0.7 : k < 1.5 ? 0.75 : k < 2.5 ? 0.95 : k < 3.5 ? 0.85 : k < 4.5 ? 1.2 : 0.0;
+    float day = (1.0 - uNight) * 0.15;
+    return a * (lc * (lamps * lk + 0.3 * L.z) * 0.6 + day)
+      + (k > 3.5 && k < 4.5 ? vec3(0.02, 0.025, 0.015) * L.x : vec3(0.0));
+  }
+`
+__export(__exports, { "ROOMS_GLSL": () => ROOMS_GLSL })
+})
+
+// ---- js/render/shopShader.js
+__define(196, function (__exports) {
+// The shopfronts' shader. Each shop is one flat quad on its building's ground floor (shopfronts.js),
+// and everything on it is worked out per pixel from where the pixel is on the shop (x along it from
+// its left end, y up from the pavement, in metres) and the shop's own numbers: the piers either side
+// in the building's colour, the fascia over it with the shop's name on its board (lit at night, a
+// lightbox's whole face, a sign's letters or a neon tube: shopTex.js); and, set back from them so
+// the reveal shows at an angle, the shopfront itself: a stall riser of granite, tiles or paint under
+// the glass, the frame and its mullions, a transom bar, a glass door with its push bar; over some, an
+// awning in the shop's colour, plain or striped (its own quads, v below 0). Through the glass, the
+// shop inside, traced as the rooms behind the windows above are (shopRooms.js). The glass is smooth,
+// and what it reflects is worked out too: the pavement and the road below eye level, the buildings
+// across the street (their walls and windows, their own shops lit along their feet at night) and
+// the sky over them; it reflects more the more glancing the view (Fresnel), so straight on you see
+// into the shop and along the street you see the street. By day the shops are lit only
+// as well as a room is, darker than the sunlit street; as it gets dark (NIGHT: facade.js) each
+// switches its sign and its lights on at its own moment, and some shut, more of them late; those
+// open throw their light on the pavement in front (poolMaterial). Far off, where a shop is only a
+// few pixels high, the reveal and the room go and the glass shows the room's light on average.
+const THREE = __require(0)
+const { NIGHT } = __require(194)
+const { ROOMS_GLSL } = __require(195)
+const { W, H, BOARD, DECAL, DECAL_Y } = __require(193)
+
+const INSET = 0.18 // m the glazing sits back from the piers and the fascia
+const FAR = 0.07 // m a pixel, past which the glass shows the room's light on average
+const ACROSS = 22.8 // m from a shopfront to the buildings across the street
+const f = v => v.toFixed(4)
+const vec2 = (a, b) => `vec2(${f(a)}, ${f(b)})`
+
+// a random number, 0 to 1, from a shop's own one (s) and a key (k)
+const HASH_GLSL = `
+  float sHash (float s, float k) { return fract(sin(s * 78.233 + k * 12.9898) * 43758.5453); }`
+// How lit a shop is, and in what light, shared with the light it throws on the pavement (worked
+// out once a corner, in the vertex shader: they are the same all over a shop)
+const LIGHTS_GLSL = `
+  // At darkness n (0 by day, 1 at night): x, the lights inside (0 to 1); y, the sign; z, a shut
+  // clothes shop's window display; w, the neon in the window. Each shop switches its sign on at its
+  // own moment as the light goes; a bar opens as it gets dark; a share of the rest shut for the
+  // night, each at its own hour (most clothes shops and salons, a third of the cafés, a few stores),
+  // half of them leaving their sign on and most clothes shops their window lit. An empty shop is dark.
+  vec4 shopLights (float k, float s, float n) {
+    if (k > 4.5) return vec4(0.0);
+    float h1 = sHash(s, 1.0), h2 = sHash(s, 2.0), h3 = sHash(s, 3.0);
+    float t1 = 0.12 + 0.4 * h1;
+    float sg = smoothstep(t1, t1 + 0.04, n), lamps = 1.0, display = 0.0;
+    if (k > 3.5) {
+      float t2 = 0.08 + 0.35 * h2;
+      lamps = 0.2 + 0.8 * smoothstep(t2, t2 + 0.04, n);
+    } else if (h2 < (k < 0.5 ? 0.3 : k < 1.5 ? 0.6 : k < 2.5 ? 0.12 : 0.7)) {
+      float t3 = 0.45 + 0.5 * h3, off = smoothstep(t3, t3 + 0.04, n);
+      lamps = 1.0 - off;
+      sg *= 1.0 - off * step(0.5, h1);
+      display = k > 0.5 && k < 1.5 && h3 > 0.3 ? off : 0.0;
+    }
+    return vec4(lamps, sg, display, sg * smoothstep(0.3, 0.6, lamps));
+  }
+  // the lamps' colour: a café's and a bar's warm, a store's cool white, the rest between
+  vec3 shopLightColour (float k, float s) {
+    float h = sHash(s, 4.0);
+    vec3 warm = vec3(1.0, 0.7, 0.42), mid = vec3(1.0, 0.86, 0.7), cool = vec3(0.84, 0.92, 1.0);
+    return k < 0.5 ? mix(warm, mid, 0.6 * h) : k < 1.5 ? mix(mid, cool, 0.7 * h)
+      : k < 2.5 ? mix(cool, mid, 0.3 * h) : k < 3.5 ? mix(mid, cool, h)
+      : mix(vec3(1.0, 0.5, 0.25), vec3(0.95, 0.38, 0.5), h);
+  }`
+
+// What the glass reflects, in the street's frame: below eye level the pavement and the road, then
+// the buildings across the street up to their roofs (pale walls in rows of windows, their own shops
+// along their feet, lit at night), and the sky (the environment map, sky) over them; far off, more
+// of the sky's haze. R: the reflected ray, N: out of the shopfront, both in the world; y: the
+// point's height
+const MIRROR_GLSL = `
+  vec3 shopMirror (vec3 sky, vec3 R, vec3 N, float y, vec3 at) {
+    float away = dot(R.xz, N.xz);
+    float tF = away > 0.01 ? ${f(ACROSS)} / away : 1e5;
+    float tG = R.y < -1e-3 ? (y - 0.08) / -R.y : 1e5;
+    vec3 c = sky;
+    if (tG < tF) {
+      float d = tG * away;
+      c = (d < 4.4 || d > ${f(ACROSS - 4.4)} ? vec3(0.13) : vec3(0.035)) * mix(1.0, 0.15, uNight);
+    } else if (tF < 1e4) {
+      float yF = y + R.y * tF;
+      vec2 T = vec2(N.z, -N.x);
+      float s = dot(at.xz, T) + tF * dot(R.xz, T), b = floor(s / 16.0);
+      float hb = sHash(b, 11.0);
+      if (yF < 6.0 + 24.0 * hb * hb) {
+        vec3 wall = mix(vec3(0.5, 0.45, 0.4), vec3(0.78, 0.72, 0.62), sHash(b, 12.0)) * 0.42;
+        // (its windows, and the piers between its shops, fading out far off rather than flicker)
+        vec2 w = vec2(fract(s / 3.0), fract(yF / 3.5));
+        float near = 1.0 - smoothstep(40.0, 120.0, tF);
+        float win = yF > 4.6 && w.x > 0.25 && w.x < 0.75 && w.y > 0.3 && w.y < 0.8 ? near : 0.0;
+        float lit = step(sHash(floor(s / 3.0) + 31.0 * floor(yF / 3.5), 13.0), 0.4);
+        float pier = step(fract(s / 5.5), 0.08) * near;
+        c = yF < 4.6 ? (yF > 3.4 ? wall * 0.6 : mix(vec3(0.04), wall * 0.8, pier))
+          : mix(wall, vec3(0.05), win);
+        vec3 nc = vec3(0.01) + vec3(0.5, 0.34, 0.18) * win * lit;
+        if (yF < 3.3 && yF > 0.5) nc = vec3(0.42, 0.3, 0.18) * step(0.35, sHash(floor(s / 5.0), 14.0));
+        c = mix(c, nc, uNight);
+      }
+    }
+    return mix(c, sky, smoothstep(50.0, 220.0, min(tF, tG)));
+  }`
+
+function shopMaterial (signs) {
+  const m = new THREE.MeshStandardMaterial({
+    vertexColors: true,
+    roughness: 0.8
+  })
+  const cell = vec2(BOARD[0] / W, BOARD[1] / H),
+    decal = vec2(DECAL[0] / W, DECAL[1] / H),
+    aspect = f(BOARD[0] / BOARD[1])
+  m.onBeforeCompile = shader => {
+    shader.uniforms.uNight = NIGHT
+    shader.uniforms.uSigns = { value: signs }
+    shader.vertexShader = shader.vertexShader
+      .replace(
+        '#include <common>',
+        `#include <common>
+        uniform float uNight;
+        attribute vec4 shop, shopDoor, shopTrim;
+        attribute vec3 shopBrand;
+        varying vec2 vShopUv;
+        flat varying vec4 vShop, vShopDoor, vShopTrim, vShopL, vShopH, vShopF;
+        flat varying vec3 vShopBrand, vShopC;
+        varying vec3 vShopW;
+        ${HASH_GLSL}
+        ${LIGHTS_GLSL}`
+      )
+      .replace(
+        '#include <uv_vertex>',
+        `#include <uv_vertex>
+        vShopUv = uv;
+        vShop = shop;
+        vShopDoor = shopDoor;
+        vShopTrim = shopTrim;
+        vShopBrand = shopBrand;
+        // (what is the same all over the shop: how lit it is and in what light, and its own
+        // random numbers for its room, its sign and its riser)
+        vShopL = shopLights(shop.y, shop.w, uNight);
+        vShopC = shopLightColour(shop.y, shop.w);
+        vShopH = vec4(sHash(shop.w, 7.0), sHash(shop.w, 8.0), sHash(shop.w, 9.0), sHash(shop.w, 6.0));
+        vShopF = vec4(sHash(shop.w, 21.0), sHash(shop.w, 22.0), sHash(shop.w, 23.0), sHash(shop.w, 24.0));`
+      )
+      .replace(
+        '#include <begin_vertex>',
+        `#include <begin_vertex>
+        vShopW = (modelMatrix * vec4(transformed, 1.0)).xyz;`
+      )
+    shader.fragmentShader = shader.fragmentShader
+      .replace(
+        '#include <common>',
+        `#include <common>
+        uniform float uNight;
+        uniform sampler2D uSigns;
+        varying vec2 vShopUv;
+        flat varying vec4 vShop, vShopDoor, vShopTrim, vShopL, vShopH, vShopF;
+        flat varying vec3 vShopBrand, vShopC;
+        varying vec3 vShopW;
+        float gGlass = 0.0, gRough = 0.85, gMetal = 0.0;
+        vec3 gEmit = vec3(0.0);
+        ${HASH_GLSL}
+        ${ROOMS_GLSL}
+        ${MIRROR_GLSL}
+        // a sign in the window: where it is on the glass (centre c, size sz, m), its cell d in
+        // the atlas; its colour and, in alpha, its glow (alpha -1: not on it)
+        vec4 shopDecal (vec2 g, vec2 c, vec2 sz, float d, vec2 gx, vec2 gy) {
+          vec2 l = (g - c) / sz + 0.5;
+          if (l.x < 0.0 || l.x > 1.0 || l.y < 0.0 || l.y > 1.0) return vec4(0.0, 0.0, 0.0, -1.0);
+          vec2 uv = vec2(d * ${decal}.x + l.x * ${decal}.x, ${f(DECAL_Y / H)} + (1.0 - l.y) * ${decal}.y);
+          return textureGrad(uSigns, uv, gx / sz * ${decal}, gy / sz * ${decal});
+        }`
+      )
+      .replace(
+        '#include <color_fragment>',
+        `{
+        float Wu = vShop.x, kind = vShop.y, seed = vShop.w;
+        float pier = vShopDoor.x, doorX = vShopDoor.y, doorW = vShopDoor.z, head = vShopDoor.w;
+        float riser = vShopTrim.x, transom = vShopTrim.y, frameK = vShopTrim.z;
+        float cover = floor((vShopTrim.w + 0.5) / 8.0), decal = floor(mod(vShopTrim.w + 0.5, 8.0));
+        vec2 p = vShopUv, pdx = dFdx(p), pdy = dFdy(p);
+        float mpp = max(max(length(pdx), length(pdy)), 1e-4);
+        bool far = mpp > ${f(FAR)};
+        vec4 L = vShopL;
+        vec3 lc = vShopC;
+        // the view ray in the wall's frame: along it, up it, out of it
+        vec3 nv = normalize(vNormal);
+        vec3 up = normalize((viewMatrix * vec4(0.0, 1.0, 0.0, 0.0)).xyz);
+        vec3 ta = normalize(cross(up, nv));
+        vec3 rd = normalize(-vViewPosition);
+        vec3 r = vec3(dot(rd, ta), dot(rd, up), min(dot(rd, nv), -0.02));
+        // the light from inside on the shopfront round the glass, at night
+        vec3 spill = lc * L.x * uNight;
+        vec3 frameC = frameK < 0.5 ? vec3(0.025) : frameK < 1.5 ? vec3(0.07, 0.05, 0.035)
+          : frameK < 2.5 ? vec3(0.45, 0.47, 0.5) : frameK < 3.5 ? vec3(0.75) : vShopBrand * 0.85;
+        vec3 col = vColor;
+        if (p.y < -0.5) {
+          // ---- an awning: cloth in the shop's colour, plain or striped, a darker hem along its
+          // valance; seen from under it, a little of the sun coming through, and the shop's light
+          // on it at night ----
+          float t = -p.y - 1.0;
+          vec3 c2 = dot(vShopBrand, vec3(0.3, 0.55, 0.15)) > 0.35 ? vec3(0.05, 0.14, 0.09)
+            : vec3(0.82, 0.78, 0.68);
+          col = vShopF.x < 0.55 ? mix(vShopBrand, c2, step(0.5, fract(p.x / 0.5))) : vShopBrand;
+          col *= t > 1.86 ? 0.55 : 1.0;
+          gRough = 0.9;
+          float under = step(inverseTransformDirection(nv, viewMatrix).y, -0.1);
+          gEmit = col * (under * 0.08 * (1.0 - uNight) + spill * mix(0.03, 0.25, under));
+        } else if (p.y > head) {
+          // ---- the fascia, the shop's name on a board (the whole width, or narrower) ----
+          float b0 = head + 0.2, b1 = min(4.38, b0 + 0.8 + 0.2 * vShopF.y);
+          float bw = (Wu - 2.0 * pier) * (vShopF.z < 0.55 ? 1.0 : 0.6 + 0.3 * vShopF.w);
+          vec2 e = vec2(0.5 * bw - abs(p.x - 0.5 * Wu), min(p.y - b0, b1 - p.y));
+          if (min(e.x, e.y) > 0.0) {
+            if (min(e.x, e.y) < 0.035) col = frameC;
+            else if (kind > 4.5) col = mix(vShopBrand, vec3(0.6), 0.6) * (0.85 + 0.15 * sin(p.x * 3.0));
+            else {
+              // (the cell as big as fits, the letters keeping their shape)
+              float cw = min(bw, (b1 - b0) * ${aspect}), ch = cw / ${aspect};
+              vec2 l = vec2((p.x - 0.5 * Wu) / cw, (p.y - 0.5 * (b0 + b1)) / ch) + 0.5;
+              l = clamp(l, vec2(0.02, 0.1), vec2(0.98, 0.9));
+              float si = floor(vShop.z + 0.5);
+              vec2 k = vec2(mod(si, 2.0), floor(si / 2.0));
+              vec2 uv = (k + vec2(l.x, 1.0 - l.y)) * ${cell};
+              vec4 s = textureGrad(uSigns, uv, pdx / vec2(cw, -ch) * ${cell}, pdy / vec2(cw, -ch) * ${cell});
+              col = s.rgb;
+              gRough = 0.5;
+              // (a lightbox's face kept under the bloom's threshold; its letters, a lit sign's
+              // and neon over it)
+              gEmit = s.rgb * s.a * L.y * mix(0.3, 1.1 + 0.5 * step(0.9, s.a), uNight);
+            }
+          } else gEmit = col * spill * 0.05;
+        } else if (p.x < pier || p.x > Wu - pier) {
+          // ---- a pier, a plinth at its foot ----
+          col *= p.y < 0.28 ? 0.7 : 1.0;
+          gEmit = col * spill * 0.04;
+        } else {
+          // ---- the shopfront, set back: where the view ray meets it ----
+          vec2 g = far ? p : p + r.xy * (${f(INSET)} / -r.z);
+          if (g.x < pier || g.x > Wu - pier) {
+            col *= 0.62;
+            gEmit = col * spill * 0.15;
+          } else if (g.y > head) {
+            col *= 0.4;
+            gEmit = col * spill * 0.12;
+          } else if (g.y < 0.0) col = vec3(0.4);
+          else {
+            // 0 glass, 1 frame, 2 the stall riser
+            int what = 0;
+            float fw = 0.06 + 0.7 * mpp;
+            // (the door's head meets the transom bar, if there is one)
+            float dh = transom > 0.0 ? transom - 0.5 * fw : min(2.3, head - 0.3);
+            bool door = g.x > doorX && g.x < doorX + doorW;
+            if (door) {
+              float ex = min(g.x - doorX, doorX + doorW - g.x);
+              if (g.y < dh) {
+                if (ex < 0.085 || dh - g.y < 0.09 || g.y < 0.22 || abs(g.y - 1.02) < 0.025)
+                  what = 1;
+                // (a pair of doors: a stile down the middle)
+                if (doorW > 1.5 && abs(g.x - doorX - 0.5 * doorW) < 0.06) what = 1;
+              } else if (g.y < dh + fw || g.y > head - fw || ex < 0.5 * fw) what = 1;
+            } else if (g.y < riser) what = 2;
+            else if (g.y < riser + fw || g.y > head - fw) what = 1;
+            else if (transom > 0.0 && abs(g.y - transom) < 0.5 * fw) what = 1;
+            else {
+              // the mullions: panes of up to 2 m between the jambs and the door
+              float a = g.x < doorX ? pier : doorX + doorW, b = g.x < doorX ? doorX : Wu - pier;
+              float n = max(1.0, ceil((b - a) / 2.0)), q = (g.x - a) / (b - a) * n;
+              float e = min(fract(q), 1.0 - fract(q)) * (b - a) / n;
+              if (e < 0.5 * fw || g.x - pier < fw || Wu - pier - g.x < fw) what = 1;
+            }
+            if (what == 2) {
+              // the stall riser: polished granite, tiles or a painted panel
+              float rk = vShopF.x;
+              col = rk < 0.4 ? vec3(0.03) : rk < 0.7 ? shTiles(g, 0.1, vShopBrand * 0.6 + 0.04,
+                vShopBrand * 0.5 + 0.04) : vColor * 0.55;
+              gRough = rk < 0.4 ? 0.18 : 0.55;
+              gEmit = col * spill * 0.2;
+            } else if (what == 1) {
+              col = frameC;
+              gRough = 0.4;
+              gMetal = frameK > 1.5 && frameK < 2.5 ? 0.7 : 0.2;
+              gEmit = col * spill * 0.15;
+            } else {
+              // ---- glass ----
+              gGlass = 1.0;
+              gRough = 0.05;
+              col = vec3(0.004);
+              // the wider side of the door: where a sign in the window goes
+              float lw = doorX - pier, rw = Wu - pier - doorX - doorW;
+              float wide = lw > rw ? 0.5 * (pier + doorX) : 0.5 * (doorX + doorW + Wu - pier);
+              // an empty shop's windows papered over, or whitewashed
+              bool covered = cover > 0.5 && !door && g.y > riser + 0.08 && g.y < head - 0.12;
+              if (covered) {
+                if (cover < 1.5) {
+                  // brown paper in sheets, their seams, the odd crease
+                  vec2 k = floor(vec2(g.x / 0.9, g.y / 1.25));
+                  col = vec3(0.4, 0.29, 0.17) * (0.9 + 0.1 * shH(k, 3.0));
+                  col *= fract(g.x / 0.9) < 0.02 || fract(g.y / 1.25) < 0.015 ? 0.75 : 1.0;
+                  col *= 0.97 + 0.03 * sin(g.x * 31.0 + 9.0 * g.y) * sin(g.y * 17.0 - 5.0 * g.x);
+                } else
+                  // whitewash brushed on in streaks
+                  col = vec3(0.6, 0.6, 0.56) * (0.88 + 0.12 * smoothstep(-1.0, 1.0,
+                    sin(g.y * 29.0 + 2.5 * sin(g.x * 3.7)) * sin(g.x * 2.1 + g.y)));
+                gRough = 0.9;
+              }
+              // (decal: the sign's cell in the atlas, one on; 0 none)
+              vec4 d = vec4(0.0, 0.0, 0.0, -1.0);
+              if (decal > 0.5 && decal < 1.5) {
+                // a FOR LEASE board
+                d = shopDecal(g, vec2(wide, 1.45), vec2(0.9, 0.5625), 0.0, pdx, pdy);
+                if (d.a >= 0.0) { col = d.rgb; gRough = 0.7; covered = true; }
+              } else if (decal > 1.5 && !far) {
+                // neon: OPEN on the glass by the door, or a bar's cocktail glass
+                bool bar = decal > 2.5 && decal < 3.5;
+                vec2 c = bar ? vec2(wide, 1.75)
+                  : vec2(lw > rw ? doorX - 0.5 : doorX + doorW + 0.5, 1.55);
+                vec2 sz = bar ? vec2(1.0, 0.625) : vec2(0.62, 0.39);
+                d = shopDecal(g, c, sz, decal - 1.0, pdx, pdy);
+                if (d.a >= 0.0) {
+                  gEmit += d.rgb * d.a * L.w * 2.6;
+                  col += d.rgb * d.a * 0.12;
+                }
+              }
+              if (!covered) {
+                vec3 inside = far ? shopAverage(kind, seed, L, lc)
+                  : shopRoom(vec3(g, 0.0), r, Wu, kind, seed, vShopH, L, lc, head);
+                // (what the glass doesn't reflect comes through it, tinted a little green)
+                float F = 0.05 + 0.95 * pow(clamp(1.0 + r.z, 0.0, 1.0), 5.0);
+                gEmit += inside * (1.0 - F) * vec3(0.88, 0.95, 0.93);
+              }
+            }
+          }
+        }
+        diffuseColor.rgb = col;
+        }`
+      )
+      .replace(
+        '#include <metalnessmap_fragment>',
+        `#include <metalnessmap_fragment>
+        roughnessFactor = gRough;
+        metalnessFactor = gMetal;`
+      )
+      .replace(
+        '#include <emissivemap_fragment>',
+        'totalEmissiveRadiance = gEmit;'
+      )
+      .replace(
+        '#include <lights_fragment_maps>',
+        `#include <lights_fragment_maps>
+        // (a shop's plate glass reflects a little more than bare glass would: 5% straight on)
+        if (gGlass > 0.5)
+          radiance = 1.25 * shopMirror(radiance, inverseTransformDirection(reflect(-geometryViewDir,
+            geometryNormal), viewMatrix), inverseTransformDirection(geometryNormal, viewMatrix),
+            vShopUv.y, vShopW);`
+      )
+  }
+  m.customProgramCacheKey = () => 'shopfronts'
+  return m
+}
+
+// The light a lit shop throws on the pavement in front of it at night: brightest at the shopfront,
+// fading out over the pavement and towards the shop's ends, in its lamps' colour; added onto the
+// ground, as the gas stations' canopies' is (citySigns.js)
+function poolMaterial () {
+  return new THREE.ShaderMaterial({
+    uniforms: { uNight: NIGHT },
+    vertexShader: `
+      uniform float uNight;
+      attribute vec4 shop;
+      varying vec2 vUv;
+      flat varying vec3 vLight;
+      varying float vFade;
+      ${HASH_GLSL}
+      ${LIGHTS_GLSL}
+      void main () {
+        vUv = uv;
+        vLight = shopLightColour(shop.y, shop.w) * shopLights(shop.y, shop.w, uNight).x
+          * smoothstep(0.15, 0.7, uNight) * 0.14;
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        vFade = 1.0 - smoothstep(120.0, 260.0, -mv.z);
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: `
+      varying vec2 vUv;
+      flat varying vec3 vLight;
+      varying float vFade;
+      void main () {
+        float k = pow(clamp(1.0 - vUv.y, 0.0, 1.0), 2.2) * smoothstep(0.0, 0.3, vUv.x)
+          * smoothstep(1.0, 0.7, vUv.x);
+        gl_FragColor = vec4(vLight * k * vFade, 1.0);
+      }`,
+    transparent: true,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    polygonOffset: true,
+    polygonOffsetFactor: -4,
+    polygonOffsetUnits: -4
+  })
+}
+__export(__exports, { "shopMaterial": () => shopMaterial, "poolMaterial": () => poolMaterial })
+})
+
+// ---- js/render/shopfronts.js
+__define(197, function (__exports) {
+// The storefronts round the ground floor of every building with shops (the sim's b.shop): each wall
+// split into shops a few metres wide (narrower on Hollywood's strip, wider in the strip malls), each
+// one flat quad carrying its own numbers for the shader (shopShader.js): its width, its kind (a café,
+// a clothes shop, a store, a salon, a bar or an empty unit, in each neighbourhood's own mix), its
+// sign, the piers either side, where its door is, the height of its glass, its stall riser and
+// transom, the colour of its frame, what is stuck in its window, and a random number of its own for
+// the rest; over some, a fabric awning. A stand-alone shop (a gas station's, a fast-food stand) is
+// one business all round. A wall hidden against its neighbour's is left out. In front of each shop,
+// on the pavement, a quad for the light it throws there at night. One mesh for all the shops (and
+// their awnings), one for all their light.
+const THREE = __require(0)
+const { query, rng, CURB_H } = __require(35)
+const { BOARDS, BY_KIND, DECALS, shopSigns } = __require(193)
+const { shopMaterial, poolMaterial } = __require(196)
+
+const R = rng(4071)
+// the share of each kind (café, clothes, store, salon, bar, empty) by neighbourhood
+const MIX = {
+  beach: [30, 24, 12, 12, 8, 8],
+  boulevard: [20, 22, 14, 10, 18, 12],
+  downtown: [24, 14, 20, 8, 12, 18],
+  strip: [30, 8, 24, 20, 6, 12],
+  venice: [30, 24, 10, 14, 12, 8]
+}
+// how wide a shop is, about (m)
+const WIDE = { boulevard: 5, venice: 5.4, beach: 6, downtown: 6.4, strip: 6.8 }
+const POOL = 3.3 // m the light reaches out over the pavement
+const pick = w => {
+  let x = R() * w.reduce((a, b) => a + b, 0)
+  for (let i = 0; i < w.length; i++) if ((x -= w[i]) < 0) return i
+  return w.length - 1
+}
+// a tiled or painted surround instead of the building's own wall: black, green, oxblood, cream
+const SURROUNDS = [0x161616, 0x1f3d2c, 0x4a1a1a, 0xe8dcc4].map(h =>
+  new THREE.Color().setHex(h)
+)
+
+// A business: its kind (picked by the neighbourhood's mix, unless given), sign, colours, frame and
+// trim, and its own random number
+function business (b, kind = pick(MIX[b.area] || MIX.downtown)) {
+  const signs = BY_KIND[kind]
+  const sign = signs.length ? signs[Math.floor(R() * signs.length)] : 0
+  const brand = new THREE.Color(
+    signs.length ? BOARDS[sign].board : pickOf(['#7a6a58', '#5a6470'])
+  )
+  // what is stuck in the window: OPEN in neon, a bar's cocktail glass, OPEN 24 HRS, FOR LEASE;
+  // and an empty shop's windows papered over (1) or whitewashed (2), or not
+  const r = R()
+  const decal = [
+    r < 0.3 ? DECALS.open : -1,
+    -1,
+    r < 0.45 ? DECALS.open : r < 0.7 ? DECALS.allNight : -1,
+    r < 0.2 ? DECALS.open : -1,
+    r < 0.7 ? DECALS.glass : -1,
+    r < 0.7 ? DECALS.lease : -1
+  ][kind]
+  const c = R()
+  const cover = kind === 5 ? (c < 0.45 ? 1 : c < 0.7 ? 2 : 0) : 0
+  return {
+    kind,
+    sign,
+    brand,
+    seed: R(),
+    // black, dark bronze, silver, white, or the shop's own colour
+    frame: pick([35, 20, 25, 10, 10]),
+    riser: 0.35 + R() * 0.25,
+    head: 3.05 + R() * 0.35,
+    transom: R() < 0.55,
+    trim: decal + 1 + 8 * cover,
+    surround: R() < 0.25 ? SURROUNDS[Math.floor(R() * 4)] : null,
+    // a fabric awning over the glass (most cafés, some clothes shops and salons): how far it
+    // reaches out and how far it drops
+    awning:
+      R() < [0.55, 0.3, 0.06, 0.2, 0.12, 0][kind]
+        ? [1.0 + R() * 0.35, 0.55 + R() * 0.25]
+        : null
+  }
+}
+const pickOf = l => l[Math.floor(R() * l.length)]
+
+// the four walls of a tier: where each starts (a), along it (t), out of it (n), its length
+function walls ({ x0, x1, z0, z1 }) {
+  return [
+    { a: [x0, z1], t: [1, 0], n: [0, 1], len: x1 - x0 },
+    { a: [x1, z0], t: [-1, 0], n: [0, -1], len: x1 - x0 },
+    { a: [x1, z1], t: [0, -1], n: [1, 0], len: z1 - z0 },
+    { a: [x0, z0], t: [0, 1], n: [-1, 0], len: z1 - z0 }
+  ]
+}
+// the point s along wall w and o out from it, [x, z]
+const at = (w, s, o) => [
+  w.a[0] + w.t[0] * s + w.n[0] * o,
+  w.a[1] + w.t[1] * s + w.n[1] * o
+]
+// whether the stretch s0 to s1 of a wall stands against another building all along (so nobody
+// can see it)
+const hits = []
+function hidden (w, s0, s1) {
+  for (const k of [0.05, 0.25, 0.5, 0.75, 0.95]) {
+    const [x, z] = at(w, s0 + (s1 - s0) * k, 0.3)
+    query(x - 0.01, z - 0.01, x + 0.01, z + 0.01, hits)
+    const inside = hits.some(
+      c =>
+        c.kind === 'building' &&
+        c.y0 < 1 &&
+        c.y1 > 2.5 &&
+        x > c.x0 &&
+        x < c.x1 &&
+        z > c.z0 &&
+        z < c.z1
+    )
+    if (!inside) return false
+  }
+  return true
+}
+
+// quads with the attributes in spec (name: size), indexed
+function quads (spec) {
+  const data = Object.fromEntries(Object.keys(spec).map(k => [k, []]))
+  const index = []
+  let n = 0
+  return {
+    // the four corners a, b, c, d anticlockwise from the front, and the other attributes: one value
+    // for all four corners, or (uv) four
+    push (corners, vals) {
+      for (const p of corners) data.position.push(...p)
+      for (const k in vals)
+        for (let i = 0; i < 4; i++)
+          data[k].push(...(Array.isArray(vals[k][0]) ? vals[k][i] : vals[k]))
+      index.push(n, n + 1, n + 2, n, n + 2, n + 3)
+      n += 4
+    },
+    get count () {
+      return n / 4
+    },
+    geometry () {
+      const g = new THREE.BufferGeometry()
+      for (const k in spec)
+        g.setAttribute(k, new THREE.Float32BufferAttribute(data[k], spec[k]))
+      g.setIndex(index)
+      g.computeBoundingSphere()
+      return g
+    }
+  }
+}
+
+// where each lit shop's light stands: out over the pavement in front of its middle (nightLights.js)
+const SHOP_SPOTS = []
+function shopfronts () {
+  SHOP_SPOTS.length = 0
+  const fronts = quads({
+    position: 3,
+    normal: 3,
+    uv: 2,
+    color: 3,
+    shop: 4,
+    shopDoor: 4,
+    shopTrim: 4,
+    shopBrand: 3
+  })
+  const pools = quads({ position: 3, uv: 2, shop: 4 })
+  // one shop, from s0 to s1 along wall w, top high; tint: the building's colour
+  function shopAt (w, s0, s1, top, biz, tint) {
+    const W = s1 - s0
+    const pier = Math.min(0.3 + R() * 0.14, W * 0.12)
+    const inner = W - 2 * pier
+    // the door: at one end of a narrow shop, at either end or in the middle of a wider one, a
+    // pair in some wide ones (none in a sliver of a wall)
+    let dw = inner > 7 && R() < 0.5 ? 1.8 : 1.0,
+      dx = pier
+    if (inner < dw + 0.4) dw = 0
+    else if (inner < dw + 1.6)
+      dx = R() < 0.5 ? pier + 0.08 : pier + inner - dw - 0.08
+    else {
+      const k = R()
+      dx =
+        k < 0.35
+          ? pier + 0.1
+          : k < 0.7
+          ? pier + inner - dw - 0.1
+          : pier + (inner - dw) / 2
+    }
+    const transom = biz.transom
+      ? Math.min(2.45 + R() * 0.2, biz.head - 0.35)
+      : 0
+    const shop = [W, biz.kind, biz.sign, biz.seed]
+    const col = biz.surround || tint
+    const vals = {
+      color: [col.r, col.g, col.b],
+      shop,
+      shopDoor: [pier, dx, dw, biz.head],
+      shopTrim: [biz.riser, transom, biz.frame, biz.trim],
+      shopBrand: [biz.brand.r, biz.brand.g, biz.brand.b]
+    }
+    // a quad across the shop from a to b (m along it), its bottom edge o0 out from the wall at
+    // height y0 and its top edge o1 out at y1, facing nrm; v0 and v1 the shader's v along them
+    const P = (s, o, y) => {
+      const [x, z] = at(w, s0 + s, o)
+      return [x, y, z]
+    }
+    const quad = (a, b, [o0, y0], [o1, y1], nrm, v0, v1) =>
+      fronts.push([P(a, o0, y0), P(b, o0, y0), P(b, o1, y1), P(a, o1, y1)], {
+        ...vals,
+        normal: nrm,
+        uv: [
+          [a, v0],
+          [b, v0],
+          [b, v1],
+          [a, v1]
+        ]
+      })
+    const fwd = [w.n[0], 0, w.n[1]]
+    quad(0, W, [0, 0], [0, top], fwd, 0, top)
+    if (biz.awning && inner > 1.5) {
+      // an awning over the glass: its slope, out from just over the glass and down, and the
+      // valance hanging from its front edge, each with an underside (v less than 0 tells the
+      // shader it is cloth: -1 to -2 down the slope, -2 to -3 down the valance)
+      const [out, drop] = biz.awning,
+        y0 = biz.head + 0.1,
+        y1 = y0 - drop,
+        l = Math.hypot(out, drop)
+      const up = [(w.n[0] * drop) / l, out / l, (w.n[1] * drop) / l]
+      const a = pier,
+        b = W - pier,
+        hem = [out, y1 - 0.24]
+      quad(a, b, [out, y1], [0, y0], up, -2, -1)
+      quad(a, b, [0, y0], [out, y1], up.map(v => -v), -1, -2)
+      quad(a, b, hem, [out, y1], fwd, -3, -2)
+      quad(b, a, hem, [out, y1], fwd.map(v => -v), -3, -2)
+    }
+    if (biz.kind === 5) return
+    const [lx, lz] = at(w, (s0 + s1) / 2, 1.4)
+    SHOP_SPOTS.push({ x: lx, y: Math.min(2.8, biz.head), z: lz })
+    // the light on the pavement in front (anticlockwise seen from above)
+    const y = CURB_H + 0.03
+    const p = (s, o) => {
+      const [x, z] = at(w, s, o)
+      return [x, y, z]
+    }
+    pools.push(
+      [
+        p(s0 - 0.3, 0.02),
+        p(s0 - 0.3, POOL),
+        p(s1 + 0.3, POOL),
+        p(s1 + 0.3, 0.02)
+      ],
+      {
+        uv: [
+          [0, 0],
+          [0, 1],
+          [1, 1],
+          [1, 0]
+        ],
+        shop
+      }
+    )
+  }
+  return {
+    // the shops round the foot of tier t of building b, up to top; tint: the building's colour
+    add (b, t, top, tint) {
+      // (a stand-alone shop is one business all round: a gas station's store, a fast-food stand)
+      const small = (t.x1 - t.x0) * (t.z1 - t.z0) < 250
+      const one =
+        b.kiosk !== undefined
+          ? business(b, 2)
+          : b.area === 'strip' && small
+          ? business(b, 0)
+          : null
+      for (const w of walls(t)) {
+        const n = Math.max(1, Math.round(w.len / (WIDE[b.area] || 6)))
+        const shares = Array.from({ length: n }, () => 0.85 + R() * 0.3)
+        const sum = shares.reduce((a, c) => a + c, 0)
+        let s = 0
+        for (const share of shares) {
+          const s0 = s
+          s += (share * w.len) / sum
+          if (!hidden(w, s0, s))
+            shopAt(w, s0, s, top, one || business(b), tint)
+        }
+      }
+    },
+    // the meshes, into group; returns night(k): the light on the pavement shown once it is dusk
+    build (group) {
+      const front = new THREE.Mesh(
+        fronts.geometry(),
+        shopMaterial(shopSigns())
+      )
+      front.name = 'storefronts'
+      front.castShadow = true
+      front.receiveShadow = true
+      group.add(front)
+      const light = new THREE.Mesh(pools.geometry(), poolMaterial())
+      light.name = 'shop light'
+      light.visible = false
+      group.add(light)
+      return {
+        shops: fronts.count,
+        night (k) {
+          light.visible = k > 0.15
+        }
+      }
+    }
+  }
+}
+__export(__exports, { "SHOP_SPOTS": () => SHOP_SPOTS, "shopfronts": () => shopfronts })
+})
+
+// ---- js/render/nightLights.js
+__define(198, function (__exports) {
+// Real lights at night where the camera is (the pooled lights after mrdoob/slop-newyork's
+// js/street-lights.js, MIT, (c) 2026 Mr.doob): a fixed handful of point lights, never more or fewer
+// (so no shader is compiled again at dusk), handed each few frames to the street lights and lit
+// shops nearest the point a little ahead of the camera, faded out of one and into the next so none
+// pops. The street lights' pools on the ground are worked out in its shaders (lampLight.js), so the
+// first LAMP_POOL lights (the street lights') are skipped there and light only what the ground's
+// shaders don't (walls, poles, trees, the props); the shops' light falls on everything near them,
+// the cars and the people going by included.
+const THREE = __require(0)
+const { LAMPS } = __require(35)
+const { LAMP_POOL, lampUp } = __require(191)
+const { SHOP_SPOTS } = __require(197)
+
+const SHOPS = 4 // lights for the shops (after the LAMP_POOL for the street lights)
+const LAMP = { colour: 0xffc785, power: 220, reach: 30 } // (as lampLight.js's, nine metres up)
+const SHOP = { colour: 0xffd9a8, power: 7, reach: 11 }
+const _f = new THREE.Vector3()
+
+class NightLights {
+  constructor (scene) {
+    this.lights = []
+    for (let i = 0; i < LAMP_POOL + SHOPS; i++) {
+      const k = i < LAMP_POOL ? LAMP : SHOP
+      const l = new THREE.PointLight(k.colour, 0, k.reach, 2)
+      l.userData = { spot: -1, next: -1, level: 0, power: k.power }
+      scene.add(l)
+      this.lights.push(l)
+    }
+    this.t = 0
+  }
+
+  // the n spots nearest (x, z) that are lit (ok), as indices
+  static nearest (spots, x, z, n, ok) {
+    const best = []
+    for (let i = 0; i < spots.length; i++) {
+      const s = spots[i],
+        d = (s.x - x) ** 2 + (s.z - z) ** 2
+      if (d > 4900 || (best.length === n && d >= best[n - 1][0]) || !ok(i)) continue
+      best.push([d, i])
+      best.sort((a, b) => a[0] - b[0])
+      if (best.length > n) best.pop()
+    }
+    return best.map(b => b[1])
+  }
+
+  // camera: where it looks from; dark: the city's dark (0 by day, 1 at night); on: in the city
+  update (dt, camera, dark, on) {
+    const ls = this.lights
+    if (!on || dark < 0.02) {
+      for (const l of ls) {
+        l.intensity = 0
+        Object.assign(l.userData, { level: 0, spot: -1, next: -1 })
+      }
+      return
+    }
+    this.t -= dt
+    if (this.t <= 0) {
+      this.t = 0.2
+      camera.getWorldDirection(_f)
+      const len = Math.hypot(_f.x, _f.z) || 1,
+        x = camera.position.x + (_f.x / len) * 10,
+        z = camera.position.z + (_f.z / len) * 10
+      this.assign(ls.slice(0, LAMP_POOL), NightLights.nearest(LAMPS, x, z, LAMP_POOL, lampUp))
+      this.assign(ls.slice(LAMP_POOL), NightLights.nearest(SHOP_SPOTS, x, z, SHOPS, () => true))
+    }
+    for (let i = 0; i < ls.length; i++) {
+      const u = ls[i].userData,
+        want = u.next === u.spot && u.spot >= 0 ? 1 : 0
+      u.level += Math.max(-dt * 4, Math.min(dt * 2, want - u.level))
+      if (u.level <= 0 && u.next !== u.spot) this.place(ls[i], i < LAMP_POOL, u.next)
+      ls[i].intensity = u.level * u.power * dark
+    }
+  }
+
+  // each light kept on its spot if that is still wanted, the others given the spots left over
+  assign (ls, want) {
+    const left = want.filter(s => !ls.some(l => l.userData.spot === s))
+    for (const l of ls) {
+      const u = l.userData
+      u.next = want.includes(u.spot) ? u.spot : left.shift() ?? -1
+    }
+  }
+
+  place (l, lamp, i) {
+    const u = l.userData
+    u.spot = i
+    if (i < 0) return
+    if (lamp) {
+      const s = LAMPS[i],
+        reach = s.wood ? 2.07 : 2.39
+      l.position.set(s.x + s.ax * reach, s.wood ? 7.9 : 8.7, s.z + s.az * reach)
+    } else {
+      const s = SHOP_SPOTS[i]
+      l.position.set(s.x, s.y, s.z)
+    }
+  }
+}
+__export(__exports, { "NightLights": () => NightLights })
+})
+
+// ---- js/render/treeTex.js
+__define(199, function (__exports) {
 // The palms' and trees' leaves, drawn once at start-up on one sheet: everything cut out of a
 // picture (a fan palm's leaf, a dead one hanging, the skirt of dead fronds under its crown, a date
 // palm's feather frond, a spray of each street tree's leaves, a ficus's, a plane's and a
@@ -93141,7 +95281,7 @@ __export(__exports, { "SIZE": () => SIZE, "SHEET": () => SHEET, "FAN_AT": () => 
 })
 
 // ---- js/render/treeShapes.js
-__define(192, function (__exports) {
+__define(200, function (__exports) {
 // The street trees' shapes (cityTrees.js plants them, treeWind.js moves them), each in two: the
 // full one for those near the camera and a cheap one for the rest, alike in outline and colour so
 // that one hands over to the other unseen. Near, a trunk that forks at head height into four limbs
@@ -93152,7 +95292,7 @@ __define(192, function (__exports) {
 // vertex at a time with the shader's own attribute; a tube along a path, for trunks and limbs; and
 // a card.
 const THREE = __require(0)
-const { SHEET, SIZE } = __require(191)
+const { SHEET, SIZE } = __require(199)
 const { rng } = __require(35)
 const { TAU } = __require(2)
 
@@ -93420,7 +95560,7 @@ __export(__exports, { "PART": () => PART, "KINDS": () => KINDS, "FORK": () => FO
 })
 
 // ---- js/render/palmShapes.js
-__define(193, function (__exports) {
+__define(201, function (__exports) {
 // The palms' shapes (cityTrees.js plants them, treeWind.js moves them), each in two: the full one
 // for those near the camera and a cheap one for the rest, alike in outline and colour so that one
 // hands over to the other unseen. The Mexican fan palm: a slender grey-brown trunk ringed with old
@@ -93433,8 +95573,8 @@ __define(193, function (__exports) {
 // crown of long arching feather fronds folded into a V along their ribs, a few dead ones hanging
 // under them (trimmed off some palms).
 const THREE = __require(0)
-const { Shape, PART, tube, barkUV, card, add, scale, cross, norm } = __require(192)
-const { SHEET, SIZE, FAN_AT, FAN_R } = __require(191)
+const { Shape, PART, tube, barkUV, card, add, scale, cross, norm } = __require(200)
+const { SHEET, SIZE, FAN_AT, FAN_R } = __require(199)
 const { rng } = __require(35)
 const { TAU } = __require(2)
 
@@ -93749,7 +95889,7 @@ __export(__exports, { "FAN_H": () => FAN_H, "DATE_H": () => DATE_H, "SKIRT_Y": (
 })
 
 // ---- js/render/treeWind.js
-__define(194, function (__exports) {
+__define(202, function (__exports) {
 // The palms and trees in the wind, and each in two shapes by its distance from the camera
 // (grove.js): their shader, added to three.js's standard material and to the depth material their
 // shadows are drawn with, so that the shadows move with them. Everything moves in the vertex
@@ -93763,9 +95903,9 @@ __define(194, function (__exports) {
 // glossy and paler under, a street tree's crown lit as one rounded mass whichever side of a leaf
 // card is seen.
 const THREE = __require(0)
-const { SIZE } = __require(191)
-const { SKIRT_Y } = __require(193)
-const { FORK, KINDS } = __require(192)
+const { SIZE } = __require(199)
+const { SKIRT_Y } = __require(201)
+const { FORK, KINDS } = __require(200)
 
 // The wind, for the weather to set: time (s, run on by the city view), strength (0 a calm, 0.25 a
 // breeze, 1 a storm that thrashes the crowns) and the way it blows over the ground (x east, z
@@ -94021,7 +96161,7 @@ __export(__exports, { "WIND": () => WIND, "EYE": () => EYE, "LOD": () => LOD, "t
 })
 
 // ---- js/render/daylight.js
-__define(195, function (__exports) {
+__define(203, function (__exports) {
 // The city's light through the day and the weather: each frame the clock and the weather (ENV,
 // sim/env.js) are turned into the sky's colours (citySky.js), the sun's or the moon's light and
 // where it comes from, the sky's light, the fog, the exposure, how dark the shadows are, and how
@@ -94044,8 +96184,9 @@ const { SKY } = __require(176)
 const { GRADE } = __require(189)
 const { WET } = __require(113)
 const { CANYON } = __require(190)
-const { WIND } = __require(194)
-const { scene, renderer, hemi, key, keyOffset } = __require(83)
+const { NightLights } = __require(198)
+const { WIND } = __require(202)
+const { scene, renderer, camera, hemi, key, keyOffset } = __require(83)
 
 const DEG = 180 / Math.PI
 // a light touch of the GTA look over it all (the gameplay workstream): a little more colour and
@@ -94243,6 +96384,7 @@ class Daylight {
     this.envWas = null // the sky the environment map was last drawn from
     this.darkWas = -1
     this.lit = false // the moon (not the sun) gives the light
+    this.lamps = new NightLights(city.group) // (real lights where the camera is, at night)
   }
   // once a frame in the city (dt: real seconds)
   update (dt, clock) {
@@ -94370,7 +96512,8 @@ class Daylight {
     WET.uRainT.value += dt
     at(DAMP, a, _v)
     WET.uDamp.value = LOOK.on ? _v[0] * (1 - 0.5 * fog) : 0
-    // ---- how dark it is for the city's own lights
+    // ---- how dark it is for the city's own lights, and the real ones near the camera
+    this.lamps.update(dt, camera, e.dark, LOOK.on)
     if (Math.abs(e.dark - this.darkWas) > 0.004) {
       this.darkWas = e.dark
       city.setDark(e.dark)
@@ -94416,178 +96559,8 @@ class Daylight {
 __export(__exports, { "LOOK": () => LOOK, "Daylight": () => Daylight })
 })
 
-// ---- js/render/lampLight.js
-__define(196, function (__exports) {
-// The street lights' light on the ground at night. Every street has its lights at the same places
-// (sim/kerbside.js: three a side along each block, 18, 42 and 66 m from its corner, their heads
-// reaching out over the road nine metres up), so the ground's shaders (the asphalt, the pavements,
-// the lots and the paint) work out for themselves which heads are near and how much light falls
-// from each: as from a lamp, strongest straight under it, falling off with distance and the
-// slant, so each pool is bright in the middle and soft at its edge, on the asphalt dark and on
-// the pavement and the paint bright, as light on things of their colour is (instead of a glow
-// laid over the ground the same whatever it falls on). Which lights are standing, and whether on a
-// steel pole or a wooden one, is in a little texture, one texel a light: knock one down and its
-// pool goes out (lampOut), and they all come back with the city (lampsBack).
-const THREE = __require(0)
-const { LAMPS, N, PITCH, HALF, ROAD_HW } = __require(35)
-
-// where a light's head is: how far its arm reaches in from its pole, and how high its lens is
-// (cityProps.js HEAD, and the lens under it)
-const STEEL = [2.39, 8.92],
-  WOOD = [2.07, 8.15]
-const FIRST = 18, // m from the block's corner (the road's centre line) to the first light
-  STEP = 24
-const POLE = ROAD_HW + 0.6 // m from the road's centre line to the poles
-const COUNT = (N + 1) * N * 2 * 2 * 3
-// the strength of a light: what falls straight under it, times its height squared (the light's
-// colour: a warm white). A cobra head throws its light down onto the road under it, so it falls
-// off faster with the slant than a bare bulb's would: a pool half as bright at about half the
-// lamp's height out, with darker road between one pool and the next.
-const POWER = 260
-const COLOUR = [1.0, 0.78, 0.52]
-
-// the texel of a light, from where it stands: its road (i), block (j), side, which way the road
-// runs and which of the block's three it is (as kerbside.js lays them out)
-function slot (l) {
-  const alongZ = l.ax !== 0,
-    across = alongZ ? l.x : l.z,
-    along = alongZ ? l.z : l.x
-  const i = Math.round(across / PITCH + N / 2),
-    c = (i - N / 2) * PITCH,
-    side = across > c ? 1 : 0,
-    j = Math.min(N - 1, Math.max(0, Math.floor((along + HALF) / PITCH))),
-    k = Math.round((along - (j - N / 2) * PITCH - FIRST) / STEP)
-  return (((i * N + j) * 2 + side) * 2 + (alongZ ? 0 : 1)) * 3 + k
-}
-const data = new Uint8Array(COUNT)
-const SLOT = LAMPS.map(slot)
-const STAND = LAMPS.map(l => (l.wood ? 128 : 255))
-SLOT.forEach((s, i) => {
-  if (s >= 0 && s < COUNT) data[s] = STAND[i]
-})
-const tex = new THREE.DataTexture(data, COUNT, 1, THREE.RedFormat)
-tex.needsUpdate = true
-
-const LAMP = {
-  tLamps: { value: tex },
-  uLampOn: { value: 0 } // how far on they are (the city's dark: 0 by day)
-}
-// a light knocked down (its index in LAMPS), and all of them up again
-function lampOut (i) {
-  const s = SLOT[i]
-  if (s >= 0 && s < COUNT) {
-    data[s] = 0
-    tex.needsUpdate = true
-  }
-}
-function lampsBack () {
-  SLOT.forEach((s, i) => {
-    if (s >= 0 && s < COUNT) data[s] = STAND[i]
-  })
-  tex.needsUpdate = true
-}
-
-const f = v => v.toFixed(2)
-// The GLSL: lampField(p, n), the street lights' light at a point p, on each nearby street from the
-// two lights either side of it along each kerb, on a surface facing n (a unit vector in the world;
-// none, (0, 0, 0), for a point in the air, a raindrop, which takes it head on from every side);
-// lampLight(p), what falls on the ground there, lampLightN(p, n) on a surface facing n (a car's
-// body, someone walking), and lampGlow(p), what lights a drop
-const LAMP_FIELD_GLSL = `
-  uniform sampler2D tLamps;
-  uniform float uLampOn;
-  float lampField (vec3 p, vec3 n) {
-    if (uLampOn <= 0.0) return 0.0;
-    float E = 0.0;
-    for (int ax = 0; ax < 2; ax++) {
-      // (ax 0: a street running along x, ax 1: along z)
-      float across = ax == 0 ? p.z : p.x, along = ax == 0 ? p.x : p.z;
-      float ri = floor(across / ${f(PITCH)} + ${f(N / 2 + 0.5)});
-      if (ri < 0.0 || ri > ${f(N)}) continue;
-      float c = (ri - ${f(N / 2)}) * ${f(PITCH)};
-      float j = clamp(floor((along + ${f(HALF)}) / ${f(PITCH)}), 0.0, ${f(N - 1)});
-      float start = (j - ${f(N / 2)}) * ${f(PITCH)};
-      float k0 = clamp(floor((along - start - ${f(FIRST)}) / ${f(STEP)}), 0.0, 1.0);
-      for (int sd = 0; sd < 2; sd++) {
-        float side = sd == 0 ? -1.0 : 1.0;
-        for (int dk = 0; dk < 2; dk++) {
-          float k = k0 + float(dk);
-          int idx = (((int(ri) * ${N} + int(j)) * 2 + sd) * 2 + (ax == 1 ? 0 : 1)) * 3 + int(k);
-          float st = texelFetch(tLamps, ivec2(idx, 0), 0).r;
-          if (st < 0.25) continue;
-          vec2 head = st < 0.75 ? vec2(${f(WOOD[0])}, ${f(WOOD[1])}) : vec2(${f(
-            STEEL[0]
-          )}, ${f(STEEL[1])});
-          float lat = c + side * (${f(POLE)} - head.x);
-          float lon = start + ${f(FIRST)} + ${f(STEP)} * k;
-          vec3 L = (ax == 0 ? vec3(lon, head.y, lat) : vec3(lat, head.y, lon)) - p;
-          float d2 = dot(L, L), d = sqrt(d2), c = max(L.y, 0.0) / d;
-          float facing = dot(n, n) > 0.5 ? max(dot(n, L) / d, 0.0) : 1.0;
-          E += c * c * facing / d2;
-        }
-      }
-    }
-    return E * ${f(POWER)} * uLampOn;
-  }
-  vec3 lampLight (vec3 p) {
-    return vec3(${COLOUR.map(f).join(', ')}) * lampField(p, vec3(0.0, 1.0, 0.0));
-  }
-  vec3 lampLightN (vec3 p, vec3 n) {
-    return vec3(${COLOUR.map(f).join(', ')}) * lampField(p, n);
-  }
-  vec3 lampGlow (vec3 p) {
-    return vec3(${COLOUR.map(f).join(', ')}) * lampField(p, vec3(0.0));
-  }`
-const LAMP_GLSL = `
-  varying vec3 vLampW;
-  ${LAMP_FIELD_GLSL}`
-
-// Light a material by the street lights: their light added to what falls on it from the sky
-// (chained onto whatever it already does before it is compiled). The ground faces up; anything else
-// (facing: the Roadster's body, the cars, the people) takes it on whichever way it faces.
-function lampLit (m, facing = false) {
-  const before = m.onBeforeCompile
-  m.onBeforeCompile = (shader, r) => {
-    before?.call(m, shader, r)
-    Object.assign(shader.uniforms, LAMP)
-    shader.vertexShader = shader.vertexShader
-      .replace(
-        '#include <common>',
-        `#include <common>
-        varying vec3 vLampW;`
-      )
-      .replace(
-        '#include <begin_vertex>',
-        `#include <begin_vertex>
-        {
-          vec4 lw = vec4(transformed, 1.0);
-          #ifdef USE_INSTANCING
-          lw = instanceMatrix * lw;
-          #endif
-          vLampW = (modelMatrix * lw).xyz;
-        }`
-      )
-    shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', `#include <common>\n${LAMP_GLSL}`)
-      .replace(
-        '#include <lights_fragment_maps>',
-        `#include <lights_fragment_maps>
-        irradiance += ${
-          facing
-            ? 'lampLightN(vLampW, normalize((vec4(normal, 0.0) * viewMatrix).xyz))'
-            : 'lampLight(vLampW)'
-        };`
-      )
-  }
-  const key = m.customProgramCacheKey.bind(m)
-  m.customProgramCacheKey = () => `${key()} lamps ${facing}`
-  return m
-}
-__export(__exports, { "LAMP": () => LAMP, "lampOut": () => lampOut, "lampsBack": () => lampsBack, "LAMP_FIELD_GLSL": () => LAMP_FIELD_GLSL, "lampLit": () => lampLit })
-})
-
 // ---- js/render/citySea.js
-__define(197, function (__exports) {
+__define(204, function (__exports) {
 // The Pacific, west of the city: past the promenade a broad beach runs north and south along the coast
 // and drops down its steeper face into the water, which goes out to the horizon under the setting
 // sun. The water is a shader: a few rolling swells and ripples for its surface, the evening sky in it
@@ -94880,7 +96853,7 @@ __export(__exports, { "buildSea": () => buildSea })
 })
 
 // ---- js/render/cityGlow.js
-__define(198, function (__exports) {
+__define(205, function (__exports) {
 // Lights seen from afar at night: the hills' windows, the city's street lights running off to the
 // horizon, the freeway's head and tail lights, the pier's lamps and the Ferris wheel's rim. Each is
 // a point drawn as a soft round glow, its size in metres (never less than a pixel and a half: a far
@@ -94949,7 +96922,7 @@ __export(__exports, { "GLOW_SCALE": () => GLOW_SCALE, "glowMaterial": () => glow
 })
 
 // ---- js/render/cityKit.js
-__define(199, function (__exports) {
+__define(206, function (__exports) {
 // What the scenery round the city is made of, shared by the verges, the hills and the sprawl: tall
 // skinny palms (LA's Mexican fan palms, a skirt of dead fronds under a small crown), round-headed
 // trees, the canvas textures of grass and concrete, and instancing split into chunks across the land,
@@ -95247,7 +97220,7 @@ __export(__exports, { "PLANT": () => PLANT, "palmTrunk": () => palmTrunk, "palmC
 })
 
 // ---- js/render/cityWalls.js
-__define(200, function (__exports) {
+__define(207, function (__exports) {
 // The verges and walls round the city on three sides: past the promenade's edge a strip of dry grass,
 // palms and the odd round-headed tree along it, then at the foot of the hills (north) a concrete
 // retaining wall with ivy spilling down it, and on the east and south a freeway's sound wall of
@@ -95259,7 +97232,7 @@ const { merge } = __require(116)
 const { PROMENADE, rng } = __require(35)
 const { WALL, WALL_H } = __require(38)
 const { HILL_GAP } = __require(30)
-const { PLANT, roundTree, palmAt, bake, pose, lump, grassTexture, wallTexture } = __require(199)
+const { PLANT, roundTree, palmAt, bake, pose, lump, grassTexture, wallTexture } = __require(206)
 
 const R = rng(505)
 const T = 0.6 // the walls' thickness
@@ -95394,7 +97367,7 @@ __export(__exports, { "buildWalls": () => buildWalls })
 })
 
 // ---- js/render/citySprawl.js
-__define(201, function (__exports) {
+__define(208, function (__exports) {
 // The city going on, east and south past the freeway, to the horizon: the street grid carried on
 // from the city's own (a street every 96 m, an avenue every fourth), low stucco boxes of one to three
 // storeys with flat pale roofs, yards, car parks and the odd turquoise pool between them, a few
@@ -95402,9 +97375,9 @@ __define(201, function (__exports) {
 // sodium orange off to the horizon, street lights and windows twinkling along them.
 const THREE = __require(0)
 const { LAYER, merge, box, tint } = __require(116)
-const { glowMaterial, glowPoints } = __require(198)
+const { glowMaterial, glowPoints } = __require(205)
 const { SKY } = __require(176)
-const { palmsAt } = __require(199)
+const { palmsAt } = __require(206)
 const { PITCH, PROMENADE, rng } = __require(35)
 const { WALL } = __require(38)
 const { LANDMARKS } = __require(5)
@@ -95666,7 +97639,7 @@ __export(__exports, { "buildSprawl": () => buildSprawl })
 })
 
 // ---- js/render/cityFreeway.js
-__define(202, function (__exports) {
+__define(209, function (__exports) {
 // The freeways behind the sound walls, east and south (LANDMARKS.freeways): concrete decks on
 // hammerhead columns ten metres up, three lanes each way between jersey barriers, the southern one
 // climbing over the eastern in a stack past the city's corner and, at its west end, coming down to
@@ -95677,7 +97650,7 @@ __define(202, function (__exports) {
 const THREE = __require(0)
 const { merge, box, tint } = __require(116)
 const { canvasTex, speckle } = __require(83)
-const { glowMaterial } = __require(198)
+const { glowMaterial } = __require(205)
 const { SKY } = __require(176)
 const { LANDMARKS } = __require(5)
 const { rng } = __require(35)
@@ -96099,14 +98072,14 @@ __export(__exports, { "deckHeight": () => deckHeight, "buildFreeway": () => buil
 })
 
 // ---- js/render/citySign.js
-__define(203, function (__exports) {
+__define(210, function (__exports) {
 // The sign on the hills above Hollywood: LOS ANGELES in white sheet-metal letters twelve metres tall,
 // standing in a line across the face of the slope at the head of La Brea (LANDMARKS.sign), each a
 // little out of true with its neighbours, held up from behind by a steel frame dug into the hill; lit
 // by floodlights at night. The letters are drawn here (no fonts): a tall, plain sans.
 const THREE = __require(0)
 const { merge, box, tint } = __require(116)
-const { glowMaterial, glowPoints } = __require(198)
+const { glowMaterial, glowPoints } = __require(205)
 const { LANDMARKS } = __require(5)
 const { hillHeight } = __require(38)
 const { rng } = __require(35)
@@ -96363,7 +98336,7 @@ __export(__exports, { "buildSign": () => buildSign })
 })
 
 // ---- js/render/cityHills.js
-__define(204, function (__exports) {
+__define(211, function (__exports) {
 // The Hollywood Hills, north of the city behind the retaining wall: steep faces of chaparral, dark
 // green scrub in clumps on dry gold grass and pale dirt, greener down the canyons and on the slopes
 // that face away from the sun, bare along the ridges; houses stacked up the lower slopes on their
@@ -96374,9 +98347,9 @@ __define(204, function (__exports) {
 const THREE = __require(0)
 const { LAYER, merge, box, tint } = __require(116)
 const { canvasTex, speckle } = __require(83)
-const { glowMaterial, glowPoints } = __require(198)
-const { PLANT, lump, scatter, pose } = __require(199)
-const { buildSign } = __require(203)
+const { glowMaterial, glowPoints } = __require(205)
+const { PLANT, lump, scatter, pose } = __require(206)
+const { buildSign } = __require(210)
 const { PROMENADE, rng } = __require(35)
 const { LANDMARKS } = __require(5)
 const { WALL, hillHeight, hillNormal, noise, TERRACE } = __require(38)
@@ -96782,14 +98755,14 @@ __export(__exports, { "buildHills": () => buildHills })
 })
 
 // ---- js/render/cityRides.js
-__define(205, function (__exports) {
+__define(212, function (__exports) {
 // The pier's amusement park: the Ferris wheel, white steel turning slowly on its A-frames with its
 // gondolas hanging level, its rim and spokes lit at night in colours that chase round it; and the
 // roller coaster looping round the park on its columns (sim/edge.js COASTER), a train running round it,
 // hauled slowly up the lift hill and racing down.
 const THREE = __require(0)
 const { merge, box, tint } = __require(116)
-const { glowMaterial, glowPoints } = __require(198)
+const { glowMaterial, glowPoints } = __require(205)
 const { CURB_H } = __require(35)
 const { WHEEL, COASTER } = __require(38)
 
@@ -97058,7 +99031,7 @@ __export(__exports, { "buildRides": () => buildRides })
 })
 
 // ---- js/render/cityPier.js
-__define(206, function (__exports) {
+__define(213, function (__exports) {
 // Santa Monica's pier, out into the Pacific from the end of Wilshire (LANDMARKS.pier): a broad deck
 // of weathered planks level with the promenade, standing on rows of timber piles once it is out over
 // the sand, white railings round it and lamp posts along them; under an arch with the town's name, the
@@ -97068,8 +99041,8 @@ __define(206, function (__exports) {
 const THREE = __require(0)
 const { merge, box, tint } = __require(116)
 const { canvasTex, speckle, softTex, hdr } = __require(83)
-const { glowMaterial, glowPoints } = __require(198)
-const { buildRides } = __require(205)
+const { glowMaterial, glowPoints } = __require(205)
+const { buildRides } = __require(212)
 const { CURB_H, PROMENADE, rng } = __require(35)
 const { PIER, RAILS, RAIL_H, PIER_HOUSES, SHORE, ARCH } = __require(38)
 
@@ -97461,19 +99434,19 @@ __export(__exports, { "buildPier": () => buildPier })
 })
 
 // ---- js/render/cityEdges.js
-__define(207, function (__exports) {
+__define(214, function (__exports) {
 // Everything past the ring road's outer pavement, which makes the city Los Angeles: the Pacific and
 // Santa Monica's pier to the west, the hills with their sign to the north, and the city going on to
 // the east and south behind the freeway. One update for what moves out there (the water, the Ferris
 // wheel, the freeway's traffic) and one switch for night (its lights).
 const { renderer } = __require(83)
-const { buildSea } = __require(197)
-const { GLOW_SCALE } = __require(198)
-const { buildWalls } = __require(200)
-const { buildSprawl } = __require(201)
-const { buildFreeway } = __require(202)
-const { buildHills } = __require(204)
-const { buildPier } = __require(206)
+const { buildSea } = __require(204)
+const { GLOW_SCALE } = __require(205)
+const { buildWalls } = __require(207)
+const { buildSprawl } = __require(208)
+const { buildFreeway } = __require(209)
+const { buildHills } = __require(211)
+const { buildPier } = __require(213)
 
 // (each part's objects are tagged with its name in userData.edge, to measure them by)
 const BUILD = {
@@ -97509,7 +99482,7 @@ __export(__exports, { "buildEdges": () => buildEdges })
 })
 
 // ---- js/render/sunShadow.js
-__define(208, function (__exports) {
+__define(215, function (__exports) {
 // Long shadows across the whole city at golden hour. The sun light that rides along with the car
 // (scene.js) only shadows a box sixty metres across round it: crisp, and it moves with the traffic,
 // but past it every street was in full sun, and its edge could be seen sweeping along the pavement.
@@ -97663,7 +99636,7 @@ __export(__exports, { "CityShadow": () => CityShadow })
 })
 
 // ---- js/render/carSlope.js
-__define(209, function (__exports) {
+__define(216, function (__exports) {
 // A car's turn on the road (yaw about y) and its lie on a slope (gp, its nose up the slope, about
 // its z; gr, its right side down, about its x): into quaternion q, field by field (no allocation).
 // For the traffic and the cars the player drives up a ramp, the freeway or the hill road
@@ -97690,7 +99663,7 @@ __export(__exports, { "slopeTo": () => slopeTo })
 })
 
 // ---- js/render/carRide.js
-__define(210, function (__exports) {
+__define(217, function (__exports) {
 // A traffic car's body on its springs (render/traffic.js): a damped spring each for pitch and roll,
 // tuned per type (a car's body bobs at about 1.5 Hz, a van's or pickup's slower, a bus's under 1 Hz
 // and softer still), so a car settles back with a slight bob after it stops. Pitch follows the
@@ -97789,7 +99762,7 @@ __export(__exports, { "RIDE_DT": () => RIDE_DT, "ride": () => ride })
 })
 
 // ---- js/render/wreckSmoke.js
-__define(211, function (__exports) {
+__define(218, function (__exports) {
 // Smoke off the traffic's damaged cars (sim/carDamage.js: dmg.smoke): white steam from under the
 // bonnet of one whose engine is hurt, thin and quick to go, trailing behind it as it limps on, and
 // thick dark smoke rolling up off a wreck, a little steam in it, carried off on the breeze
@@ -97877,7 +99850,7 @@ __export(__exports, { "STEAM": () => STEAM, "WRECK_SMOKE": () => WRECK_SMOKE, "w
 })
 
 // ---- js/render/drawnOnly.js
-__define(212, function (__exports) {
+__define(219, function (__exports) {
 // Only what is there is drawn. An instanced mesh with no instances left in it still costs a draw
 // call (three.js sets up its program and uniforms and asks the GPU for no instances), in the frame
 // and again in each shadow map it casts into; a city's worth of car types, most with nobody of that
@@ -97903,7 +99876,7 @@ __export(__exports, { "shown": () => shown, "dirty": () => dirty })
 })
 
 // ---- js/render/carSpecs.js
-__define(213, function (__exports) {
+__define(220, function (__exports) {
 // What each traffic type looks like, as the lines of its body (carBody.js) and the pieces on it:
 // today's cars, the kind on Los Angeles' streets. A midsize sedan with a long raked windscreen and
 // a fastback rear window, a compact hatch, a crossover SUV with roof rails, a hybrid liftback cab,
@@ -98073,7 +100046,7 @@ __export(__exports, { "SPECS": () => SPECS })
 })
 
 // ---- js/render/carBody.js
-__define(214, function (__exports) {
+__define(221, function (__exports) {
 // The traffic's car bodies, lofted like the Roadster's (loft.js) but from lines drawn along the car
 // the way a designer draws one (each type's are in carSpecs.js): the centre line over the top
 // (nose, hood, windscreen, roof, rear window, deck or tailgate), the beltline, the underside, the
@@ -98437,7 +100410,7 @@ __export(__exports, { "lerp": () => lerp, "line": () => line, "P": () => P, "bod
 })
 
 // ---- js/render/carParts.js
-__define(215, function (__exports) {
+__define(222, function (__exports) {
 // What the traffic's trim and lamps (carTrim.js, carExtras.js, carRigs.js, carClassics.js,
 // carLamps.js) are made of: pieces in vertex colours, each vertex tagged with what it is (aLamp: a
 // lamp to light, chrome, gloss black or brushed aluminium to shine, a roller door to roll up), as
@@ -98445,7 +100418,7 @@ __define(215, function (__exports) {
 // on its surface and wrapped round its rounded corners.
 const THREE = __require(0)
 const { at, seam } = __require(130)
-const { sideAt, lerp } = __require(214)
+const { sideAt, lerp } = __require(221)
 
 // what each piece is (aLamp), and how it lights (carLamps.js lampMaterial)
 const LAMP = {
@@ -98736,7 +100709,7 @@ __export(__exports, { "LAMP": () => LAMP, "LENS": () => LENS, "BLACK": () => BLA
 })
 
 // ---- js/render/carLamps.js
-__define(216, function (__exports) {
+__define(223, function (__exports) {
 // The traffic's lamps, part of each type's trim (carShapes.js), the way today's cars have them:
 // slim headlight units that wrap round the corners of the nose, a dark housing behind a clear lens
 // with a running-light strip along the top and the indicator at the outer end; tail lights that wrap
@@ -98751,7 +100724,7 @@ __define(216, function (__exports) {
 // fraction), so lighting them all costs nothing beyond the trim's draw. The tags also mark the
 // trim's chrome, gloss black and brushed aluminium, which the same material gives their shine, and
 // a box truck's roller door, which it runs up.
-const { LAMP, LENS, CHROME, wrap, piece, rounded, onTop, disc } = __require(215)
+const { LAMP, LENS, CHROME, wrap, piece, rounded, onTop, disc } = __require(222)
 
 
 const HOUSING = 0x0c0d0f
@@ -99053,7 +101026,7 @@ __export(__exports, { "lampsFor": () => lampsFor, "BARS": () => BARS, "LAMP_T": 
 })
 
 // ---- js/render/carRigs.js
-__define(217, function (__exports) {
+__define(224, function (__exports) {
 // The working trucks' own pieces, on top of their trim (carExtras.js calls them): an ambulance's
 // warning lamps (red at the box's corners, white and amber between, red in the grille), its doors
 // and windows and the step at the back; a fire engine's chrome grille and bumper with its air
@@ -99061,7 +101034,7 @@ __define(217, function (__exports) {
 // shutters of its compartments, the pump panel behind the cab, the hose bed and the ladder on top;
 // and a box truck's roller door at the back (run up at a delivery stop: carLamps.js) over the
 // cargo inside, the box's aluminium frame and its clearance lamps, and the chassis under it.
-const { LAMP, LENS, BLACK, GLOSS, CHROME, SATIN, box, quad, disc, paint, piece, rounded } = __require(215)
+const { LAMP, LENS, BLACK, GLOSS, CHROME, SATIN, box, quad, disc, paint, piece, rounded } = __require(222)
 
 const DARK = 0x16171a
 const RIM = 0x2a2c30 // (a door's or a compartment's outline)
@@ -99311,14 +101284,14 @@ __export(__exports, { "rigs": () => rigs })
 })
 
 // ---- js/render/carClassics.js
-__define(218, function (__exports) {
+__define(225, function (__exports) {
 // The lowrider's and the limousine's own pieces, on top of their trim (carExtras.js calls them; the
 // window surrounds are chrome on both, carTrim.js, and the lowrider's lamps are round,
 // carLamps.js): a lowrider's chrome grille between its headlights, the spear along each side at the
 // crease and the trim along its rockers (its bumpers are chrome in the paint's shader), and a
 // stretch limousine's tall chrome grille and the chrome along its sides.
-const { P } = __require(214)
-const { LAMP, CHROME, piece, rounded, quad, band } = __require(215)
+const { P } = __require(221)
+const { LAMP, CHROME, piece, rounded, quad, band } = __require(222)
 
 const chrome = [CHROME, LAMP.chrome]
 
@@ -99352,7 +101325,7 @@ __export(__exports, { "classics": () => classics })
 })
 
 // ---- js/render/carExtras.js
-__define(219, function (__exports) {
+__define(226, function (__exports) {
 // What makes each traffic type itself, on top of its trim (carTrim.js): an SUV's roof rails, a shark
 // fin aerial on the cars, a pickup's open bed, chrome bumpers and step, a van's and a bus's black
 // bumpers, a van's split back doors, a bus's glass doors, the fairing over the gas tanks on its roof,
@@ -99361,10 +101334,10 @@ __define(219, function (__exports) {
 // car's quad exhausts; and the ambulance's, the fire engine's and the box truck's (carRigs.js), and
 // the lowrider's and the limousine's (carClassics.js).
 const THREE = __require(0)
-const { lerp, sideAt } = __require(214)
-const { LAMP, LENS, BLACK, GLOSS, CHROME, box, piece, rounded } = __require(215)
-const { rigs } = __require(217)
-const { classics } = __require(218)
+const { lerp, sideAt } = __require(221)
+const { LAMP, LENS, BLACK, GLOSS, CHROME, box, piece, rounded } = __require(222)
+const { rigs } = __require(224)
+const { classics } = __require(225)
 
 const LINER = 0x18191b
 // (the cars with a shark fin aerial on the roof)
@@ -99581,7 +101554,7 @@ __export(__exports, { "extras": () => extras })
 })
 
 // ---- js/render/carTrim.js
-__define(220, function (__exports) {
+__define(227, function (__exports) {
 // The trim on the traffic's bodies (carShapes.js), in vertex colours (carParts.js): the black round
 // the glass (the window surrounds, chrome on the old and the stately, the pillars, the frit at the
 // edges of the windscreen and rear window, the cowl and its wipers), the doors' shut lines and
@@ -99591,9 +101564,9 @@ __define(220, function (__exports) {
 // trim's material (carLamps.js) to give them their shine.
 const THREE = __require(0)
 const { at } = __require(130)
-const { P, sideAt, lerp } = __require(214)
-const { LAMP, LENS, BLACK, GLOSS, CHROME, paint, box, piece, rounded, wrap, band, across } = __require(215)
-const { extras } = __require(219)
+const { P, sideAt, lerp } = __require(221)
+const { LAMP, LENS, BLACK, GLOSS, CHROME, paint, box, piece, rounded, wrap, band, across } = __require(222)
+const { extras } = __require(226)
 
 // The trim of type T on its body (lines B, stations st); paint_ and glass: body-coloured pieces and
 // glass go in them
@@ -99836,7 +101809,7 @@ __export(__exports, { "trimFor": () => trimFor })
 })
 
 // ---- js/render/carShapes.js
-__define(221, function (__exports) {
+__define(228, function (__exports) {
 // The traffic's car shapes, one per type: the body lofted from its lines (carBody.js, the lines in
 // carSpecs.js), its glass, and its trim and lamps (carTrim.js, carLamps.js), as three geometries
 // (paint, glass, trim) drawn instanced per type (traffic.js). And the paint's material, which cuts
@@ -99846,11 +101819,11 @@ __define(221, function (__exports) {
 // checker band, a bus's white roof and dark skirt, an ambulance's red stripes, a fire engine's
 // white cab roof and gold stripe, the chevrons on their backs, a box truck's white box, and the
 // chrome of the bumpers that are part of the body (a fire engine's, an ambulance's, a lowrider's).
-const { SPECS } = __require(213)
-const { bodyLines, stationsOf, pieceOf, loftIx, mergeIx } = __require(214)
-const { lampsFor } = __require(216)
-const { LAMP, paint: tinted } = __require(215)
-const { trimFor } = __require(220)
+const { SPECS } = __require(220)
+const { bodyLines, stationsOf, pieceOf, loftIx, mergeIx } = __require(221)
+const { lampsFor } = __require(223)
+const { LAMP, paint: tinted } = __require(222)
+const { trimFor } = __require(227)
 
 
 // the shape of type T (len, wid from the sim): geometries for the paint, glass and trim, what the
@@ -100023,7 +101996,7 @@ __export(__exports, { "carShape": () => carShape, "bodyMaterial": () => bodyMate
 })
 
 // ---- js/render/carDents.js
-__define(222, function (__exports) {
+__define(229, function (__exports) {
 // The traffic's damage as it is seen (sim/carDamage.js keeps it): each car's body crumpled in
 // where it was hit, bent in the vertex shader of every one of its type's instanced meshes (paint,
 // glass, trim and lamps alike, from the same function of where each vertex lies on the car at rest,
@@ -100393,7 +102366,7 @@ __export(__exports, { "CRACKS": () => CRACKS, "dented": () => dented, "dentsFor"
 })
 
 // ---- js/render/carWheels.js
-__define(223, function (__exports) {
+__define(230, function (__exports) {
 // The traffic's wheels: a low-profile tyre with rounded shoulders, and a rim whose face is set in a
 // shallow dish, standing just proud of the tyre's bead. All the rims are one instanced mesh: their
 // faces come from one atlas of nine designs (a ten-spoke alloy, ten slim spokes with machined
@@ -100714,7 +102687,7 @@ __export(__exports, { "RIM_FINISH": () => RIM_FINISH, "ALLOY": () => ALLOY, "tyr
 })
 
 // ---- js/render/carPaint.js
-__define(224, function (__exports) {
+__define(231, function (__exports) {
 // How the traffic is painted, and shod: the colours Los Angeles' cars come in (about a quarter
 // white, a fifth black, a third greys and silvers, then dark blues and reds and the odd bright
 // one), each a solid gloss or a metallic under the clear coat, some with a black roof; sports cars
@@ -100878,7 +102851,7 @@ __export(__exports, { "paletteFor": () => paletteFor, "blackRoofOf": () => black
 })
 
 // ---- js/render/traffic.js
-__define(225, function (__exports) {
+__define(232, function (__exports) {
 // Traffic cars: fourteen body types (carShapes.js), instanced per type, painted the way Los
 // Angeles' cars are (carPaint.js), each a solid or a metallic under the clear coat and some with a
 // black roof, on low-profile tyres and rims of their own design (carWheels.js) that roll with the
@@ -100899,19 +102872,19 @@ __define(225, function (__exports) {
 // shadows it can: the frustum is let out a little for those), in the view and in the sun's shadow
 // map alike; out of sight a car costs nothing but its springs.
 const THREE = __require(0)
-const { slopeTo } = __require(209)
+const { slopeTo } = __require(216)
 const { ENV } = __require(3)
 const { CURB_H } = __require(35)
 const { clamp } = __require(2)
 const { TYPES } = __require(112)
-const { ride, RIDE_DT } = __require(210)
-const { wreckSmoke } = __require(211)
-const { shown, dirty } = __require(212)
-const { carShape, bodyMaterial } = __require(221)
-const { dentsFor, putDents, headlightsLeft } = __require(222)
-const { lampMaterial, LAMP_T, LAMP_DARK, BARS } = __require(216)
-const { RIM_FINISH, ALLOY, rimMaterial, rimGeometry, tyreGeometry, farWheelGeometry } = __require(223)
-const { paletteFor, blackRoofOf, RIMS, underTexture, beamTexture, glowTexture } = __require(224)
+const { ride, RIDE_DT } = __require(217)
+const { wreckSmoke } = __require(218)
+const { shown, dirty } = __require(219)
+const { carShape, bodyMaterial } = __require(228)
+const { dentsFor, putDents, headlightsLeft } = __require(229)
+const { lampMaterial, LAMP_T, LAMP_DARK, BARS } = __require(223)
+const { RIM_FINISH, ALLOY, rimMaterial, rimGeometry, tyreGeometry, farWheelGeometry } = __require(230)
+const { paletteFor, blackRoofOf, RIMS, underTexture, beamTexture, glowTexture } = __require(231)
 
 const _m = new THREE.Matrix4(),
   _b = new THREE.Matrix4(),
@@ -101367,201 +103340,8 @@ class TrafficView {
 __export(__exports, { "NEAR": () => NEAR, "TrafficView": () => TrafficView })
 })
 
-// ---- js/render/facade.js
-__define(226, function (__exports) {
-// Facades where every window is its own, and has depth. The facade textures repeat every 8 bays and 8
-// storeys, so whatever varies window to window is picked in the shader from the window's place on the
-// building (its cell in the texture's UVs, which run on unbroken round a building and up it): whether
-// its light is on, warm or cool, bright or dim; whether its blinds are down and how far; and, for
-// glass, the slight angle each pane sits at, so the sky's reflection breaks up pane by pane.
-// The glass sits back from the wall face, so at an angle the reveal round the opening shows (the sill
-// lit, the head in shadow) and the pane slides behind it; and behind each pane is a room, traced in
-// the shader: a box a bay wide, a storey high and a few metres deep, with a floor, a ceiling, walls
-// and a dark desk or cabinet, lit by its lamp or only by the dusk outside. The glass itself is smooth
-// and reflects the sky at a glancing angle, as glass does, however rough the wall round it. Far off,
-// where a window is only a few pixels across, the reveal and the room go (nobody could see them)
-// and each window is simply its glass with the room's average light behind it, its edges box-filtered
-// over the pixel so the grid of them doesn't shimmer (the filtered pulse after mrdoob/slop-newyork's
-// facade windows, MIT, (c) 2026 Mr.doob). (The wall between the windows skips all of it.)
-const THREE = __require(0)
-
-const BAY = 3 // m: a texture cell is a bay wide (cityBuildings.js) ...
-const STOREY = 3.5 // ... and a storey high
-const ROOM = 4.5 // m: how far back a room runs, on average
-// 0 at golden hour, 1 at night: more of the windows lit (those lit by day stay lit), the dark rooms
-// darker still
-const NIGHT = { value: 0 }
-
-// win: the window's rectangle in a cell (x, y from the cell's top, w, h, as fractions); lit: share
-// of windows with a light on (and litNight, at night); blinds: share with blinds down; tilt: how far
-// panes go off true;
-// inset: m the glass sits back from the wall face; glassMetal: how mirrored the glass is (0 for
-// clear glass, more for a curtain wall's coated panes); fill: the share of bays with a window at all
-// (a house's wall has few; where there is none the wall carries on over it, its surround too)
-function facadeMaterial (
-  opts,
-  {
-    cells,
-    win,
-    lit,
-    litNight = lit,
-    blinds,
-    tilt,
-    inset,
-    glassMetal = 0,
-    fill = 1
-  }
-) {
-  const m = new THREE.MeshStandardMaterial(opts)
-  const f = v => v.toFixed(4)
-  const [wx, wy, ww, wh] = win.map(f)
-  const C = cells.toFixed(1)
-  const blank =
-    fill < 1
-      ? `if (cellHash(gCell + 13.7) > ${f(fill)}) {
-            if (f.x > x0 - 0.07 && f.x < x1 + 0.07 && f.y > bot - 0.07 && f.y < top + 0.07)
-              diffuseColor.rgb = diffuse * textureLod(map, (gCell + vec2(0.06, 0.06)) / ${C}, 2.0).rgb;
-            gWin = 0.0;
-          }`
-      : ''
-  m.onBeforeCompile = shader => {
-    shader.uniforms.uNight = NIGHT
-    shader.fragmentShader = shader.fragmentShader
-      .replace(
-        '#include <common>',
-        `#include <common>
-        uniform float uNight;
-        float cellHash (vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-        // (how much of a pixel w cells wide at x is inside [a, b] of every cell: a box filter)
-        float pulseInt (float a, float b, float x) { return floor(x) * (b - a) + clamp(fract(x) - a, 0.0, b - a); }
-        float fPulse (float a, float b, float x, float w) {
-          return clamp((pulseInt(a, b, x + 0.5 * w) - pulseInt(a, b, x - 0.5 * w)) / w, 0.0, 1.0);
-        }
-        float gBlind = 0.0, gWin = 0.0;
-        vec2 gCell = vec2(0.0);
-        vec3 gRoom = vec3(0.0);`
-      )
-      .replace(
-        '#include <map_fragment>',
-        `#include <map_fragment>
-        #ifdef USE_MAP
-        {
-          vec2 cu = vMapUv * ${C};
-          vec2 du = dFdx(vMapUv), dv = dFdy(vMapUv);
-          gCell = floor(cu);
-          vec2 f = fract(cu);
-          float x0 = ${wx}, x1 = ${wx} + ${ww}, top = 1.0 - ${wy}, bot = top - ${wh};
-          // (far off: windows a few pixels across, cells per pixel past a quarter)
-          bool far = max(length(du), length(dv)) * ${C} > 0.25;
-          vec2 fwc = max(fwidth(cu), vec2(1e-4));
-          float cov = fPulse(x0, x1, cu.x, fwc.x) * fPulse(bot, top, cu.y, fwc.y);
-          vec3 wallRgb = diffuseColor.rgb;
-          gWin = far ? step(0.002, cov) : step(x0, f.x) * step(f.x, x1) * step(bot, f.y) * step(f.y, top);
-          ${blank}
-          float pane = 0.0;
-          // (the wall between the windows has nothing more to work out)
-          if (gWin > 0.5) {
-          // the view ray in the wall's own frame (along it, up it, out of it), in bays, storeys and
-          // room depths
-          vec3 n = normalize(vNormal);
-          vec3 up = normalize((viewMatrix * vec4(0.0, 1.0, 0.0, 0.0)).xyz);
-          vec3 ta = normalize(cross(up, n));
-          vec3 rd = normalize(-vViewPosition);
-          vec3 r = vec3(dot(rd, ta) / ${f(BAY)}, dot(rd, up) / ${f(STOREY)},
-            min(dot(rd, n), -0.03) / ${f(ROOM)});
-          // where it meets the glass, set back from the wall face; short of it, the reveal
-          vec2 g = far ? f : f + r.xy * (${f(inset / ROOM)} / -r.z);
-          pane = far ? 1.0 : step(x0, g.x) * step(g.x, x1) * step(bot, g.y) * step(g.y, top);
-          if (pane < 0.5) {
-            // the reveal: the wall's own colour, the sill catching the light, the head in shadow
-            vec3 wall = textureLod(map, (gCell + vec2(0.03, 0.03)) / ${C}, 3.0).rgb;
-            diffuseColor.rgb = diffuse * wall * (g.y < bot ? 0.95 : g.y > top ? 0.42 : 0.66);
-          } else if (pane > 0.5) {
-            // the glass, seen through from where the ray meets it: dark, as clear glass is
-            diffuseColor.rgb = diffuse * textureGrad(map, (gCell + g) / ${C}, du, dv).rgb * 0.45;
-            float hb = cellHash(gCell + 7.7);
-            float level = hb < ${blinds.toFixed(
-              3
-            )} ? 0.25 + 0.75 * cellHash(gCell + 3.3) : 0.0;
-            gBlind = step(top - level * (top - bot), g.y);
-            // blinds or curtains: pale, beige or grey, a little striped
-            vec3 bc = mix(vec3(0.86, 0.84, 0.78), vec3(0.74, 0.7, 0.62), cellHash(gCell + 9.1));
-            bc *= 0.92 + 0.08 * step(0.5, fract(g.y * 40.0));
-            diffuseColor.rgb = mix(diffuseColor.rgb, bc, gBlind * 0.9);
-            vec3 wallC = mix(vec3(0.9, 0.86, 0.78), vec3(0.72, 0.77, 0.82), cellHash(gCell + 8.1));
-            if (far) gRoom = wallC * 0.62 * (1.0 - 0.6 * gBlind); // (the room's light, on average)
-            else {
-            // the room behind: a box from the glass back to its back wall, floor to ceiling
-            float depth = 0.7 + 0.6 * cellHash(gCell + 5.5);
-            vec2 rq = vec2(abs(r.x) < 1e-4 ? 1e-4 : r.x, abs(r.y) < 1e-4 ? 1e-4 : r.y);
-            float tx = (step(0.0, r.x) - g.x) / rq.x;
-            float ty = (step(0.0, r.y) - g.y) / rq.y;
-            float tz = depth / -r.z;
-            float tm = min(min(tx, ty), tz);
-            vec3 h = vec3(g, 0.0) + r * tm;
-            vec3 c;
-            if (tm == tz) {
-              c = wallC;
-              // a desk, a cabinet or a sofa against the back wall
-              float fx = 0.2 + 0.5 * cellHash(gCell + 2.2), fw = 0.12 + 0.2 * cellHash(gCell + 4.4);
-              c *= 1.0 - 0.78 * step(h.y, 0.3 + 0.15 * cellHash(gCell + 1.9)) * step(abs(h.x - fx), fw);
-            } else if (tm == tx) c = wallC * 0.72;
-            else if (r.y > 0.0) c = vec3(0.96, 0.94, 0.9);
-            else c = mix(vec3(0.34, 0.23, 0.15), vec3(0.4, 0.4, 0.39), step(0.5, cellHash(gCell + 6.6)));
-            // lit from a lamp in the middle of the ceiling, darker into the corners
-            vec3 lamp = vec3(0.5, 0.95, -0.45 * depth);
-            vec3 dl = (h - lamp) * vec3(1.0, 1.2, 1.0 / depth);
-            c *= 1.25 / (1.0 + 2.6 * dot(dl, dl));
-            gRoom = c * (1.0 - 0.6 * gBlind);
-            }
-          }
-          }
-          gWin = pane;
-          if (far && pane > 0.5) {
-            diffuseColor.rgb = mix(wallRgb, diffuseColor.rgb, cov);
-            gWin *= cov;
-          }
-        }
-        #endif`
-      )
-      .replace(
-        '#include <metalnessmap_fragment>',
-        `#include <metalnessmap_fragment>
-        // glass is smooth whatever the wall round it is made of
-        roughnessFactor = mix(roughnessFactor, 0.05, gWin);
-        metalnessFactor = mix(metalnessFactor, ${f(glassMetal)}, gWin);`
-      )
-      .replace(
-        '#include <normal_fragment_maps>',
-        `#include <normal_fragment_maps>
-        if (gWin > 0.5)
-          normal = normalize(normal + (vec3(cellHash(gCell + 1.0), cellHash(gCell + 2.0), cellHash(gCell + 3.0)) - 0.5) * ${tilt.toFixed(
-            3
-          )});`
-      )
-      .replace(
-        '#include <emissivemap_fragment>',
-        `if (gWin <= 0.0) totalEmissiveRadiance = vec3(0.0);
-        else {
-          float h1 = cellHash(gCell), h2 = cellHash(gCell + 17.3), h3 = cellHash(gCell + 41.1);
-          float on = step(h1, mix(${lit.toFixed(3)}, ${litNight.toFixed(3)}, uNight));
-          vec3 warm = mix(vec3(1.0, 0.66, 0.36), vec3(1.0, 0.84, 0.62), h2);
-          vec3 light = mix(warm, vec3(0.72, 0.84, 1.0), step(0.8, h3)) * (0.35 + 0.65 * h2);
-          // a lit room, or a dark one with only the dusk in it
-          vec3 dark = vec3(0.07, 0.065, 0.075) * (1.0 - 0.8 * uNight);
-          totalEmissiveRadiance *= gRoom * mix(dark, light, on) * gWin;
-        }`
-      )
-  }
-  m.customProgramCacheKey = () =>
-    `facade aa ${win} ${lit} ${litNight} ${blinds} ${tilt} ${inset} ${glassMetal} ${fill}`
-  return m
-}
-__export(__exports, { "NIGHT": () => NIGHT, "facadeMaterial": () => facadeMaterial })
-})
-
 // ---- js/render/dogFigure.js
-__define(227, function (__exports) {
+__define(233, function (__exports) {
 // The figure every dog is drawn from (dogs.js), standing facing +x with its right side to +z, a
 // medium dog half a metre high at the shoulder (each is scaled to its own size): a body lofted
 // through rings from the rump to a deeper chest, a neck up to a head with a muzzle and ears, a
@@ -101740,7 +103520,7 @@ __export(__exports, { "DOG": () => DOG, "HIPS": () => HIPS, "COLLAR": () => COLL
 })
 
 // ---- js/render/pedLight.js
-__define(228, function (__exports) {
+__define(234, function (__exports) {
 // The street lights' light on the people and their dogs at night (peds.js, pedShader.js, dogs.js).
 // A street light lights the ground under it (the ground's own shaders work it out: lampLight.js),
 // so someone standing in its pool was lit by the moon and the sky alone: a dark figure on the bright
@@ -101837,7 +103617,7 @@ __export(__exports, { "lampOn": () => lampOn, "LAMP_VERTEX": () => LAMP_VERTEX, 
 })
 
 // ---- js/render/dogs.js
-__define(229, function (__exports) {
+__define(235, function (__exports) {
 // Dogs on a lead (the sim is sim/dogs.js), all in one instanced mesh of the figure in dogFigure.js,
 // posed in the vertex shader as the people are: a trot, each diagonal pair of legs together and the
 // paw lifted as it swings forward, the body bobbing, the tail wagging (less at a run), the floppy
@@ -101846,12 +103626,12 @@ __define(229, function (__exports) {
 // coat, from its look: black, brown, golden, cream, grey, white or red, some with a pale chest or a
 // dark saddle, and a collar. Lit at night by the nearest street light, as the people are.
 const THREE = __require(0)
-const { NEAR } = __require(225)
+const { NEAR } = __require(232)
 const { CURB_H } = __require(35)
 const { kerbDist } = __require(45)
-const { DOG, HIPS, COLLAR, dogFigure } = __require(227)
-const { lampOn, LAMP_VERTEX, LAMP_FRAGMENT } = __require(228)
-const { shown } = __require(212)
+const { DOG, HIPS, COLLAR, dogFigure } = __require(233)
+const { lampOn, LAMP_VERTEX, LAMP_FRAGMENT } = __require(234)
+const { shown } = __require(219)
 
 const HASH = `
   float dogHash (float k, float m) { return fract(sin(k * 78.233 + m * 12.9898) * 43758.5453); }
@@ -102127,7 +103907,7 @@ __export(__exports, { "DogView": () => DogView })
 })
 
 // ---- js/render/pedGear.js
-__define(230, function (__exports) {
+__define(236, function (__exports) {
 // What people put up in the rain, as pieces of the figure everyone is drawn from (pedFigure.js;
 // pedShader.js shows them only on those who have them up, folded away to nothing on the rest): an
 // umbrella held up in the right hand, its domed canopy on a shaft that runs through the fist with a
@@ -102211,7 +103991,7 @@ __export(__exports, { "UMBRELLA": () => UMBRELLA, "gear": () => gear })
 })
 
 // ---- js/render/pedFigure.js
-__define(231, function (__exports) {
+__define(237, function (__exports) {
 // The figure every person on foot is drawn from (peds.js), standing facing +x with their right side
 // to +z, about 1.75 m tall: a trunk lofted through rings from the hips in at the waist and out to
 // the chest and shoulders, a neck, a head a little longer than it is wide with a jaw and a nose,
@@ -102223,7 +104003,7 @@ __define(231, function (__exports) {
 // (pedShader.js); the pieces only some have fold away to nothing on everyone else. Indexed, so the
 // vertex shader poses each corner once.
 const THREE = __require(0)
-const { gear } = __require(230)
+const { gear } = __require(236)
 
 const PART = {
   TORSO: 0,
@@ -102639,7 +104419,7 @@ __export(__exports, { "PART": () => PART, "HEAD_AT": () => HEAD_AT, "figure": ()
 })
 
 // ---- js/render/pedShader.js
-__define(232, function (__exports) {
+__define(238, function (__exports) {
 // How the people on foot (peds.js, the figure in pedFigure.js) are posed and dressed, in the shaders,
 // from a few numbers each: their stride, what they are doing, and their look, a number from 0 to 1
 // that everything about them follows from. Posed, in the vertex shader: each foot is planted through
@@ -102657,9 +104437,9 @@ __define(232, function (__exports) {
 // navy or red; a few are golf umbrellas, wider, in panels of two colours, and a few clear bubbles
 // (half their pixels left out, so the head shows through). At night the nearest street light
 // lights each of them (pedLight.js).
-const { PART, HEAD_AT } = __require(231)
-const { UMBRELLA } = __require(230)
-const { LAMP_VERTEX, LAMP_FRAGMENT } = __require(228)
+const { PART, HEAD_AT } = __require(237)
+const { UMBRELLA } = __require(236)
+const { LAMP_VERTEX, LAMP_FRAGMENT } = __require(234)
 
 const P = PART
 // What someone wears, from their look, as bits: 1 a woman; top (2 bits from 2): 0 a tank top, 1 a
@@ -103053,7 +104833,7 @@ __export(__exports, { "posed": () => posed })
 })
 
 // ---- js/render/peds.js
-__define(233, function (__exports) {
+__define(239, function (__exports) {
 // People on foot (the sim is peds.js and crowd.js), all in one instanced mesh: a figure with a
 // shaped trunk, tapered limbs, hands and trainers, a head with a face, and the pieces only some
 // have (hair in its several cuts, a cap, a hood, a skirt, a bag, a backpack, a phone, an umbrella;
@@ -103072,13 +104852,13 @@ const THREE = __require(0)
 const { CURB_H } = __require(35)
 const { ENV } = __require(3)
 const { kerbDist } = __require(45)
-const { NEAR } = __require(225)
-const { NIGHT } = __require(226)
-const { DogView } = __require(229)
-const { lampOn } = __require(228)
-const { figure } = __require(231)
-const { posed } = __require(232)
-const { shown } = __require(212)
+const { NEAR } = __require(232)
+const { NIGHT } = __require(194)
+const { DogView } = __require(235)
+const { lampOn } = __require(234)
+const { figure } = __require(237)
+const { posed } = __require(238)
+const { shown } = __require(219)
 
 const _sp = new THREE.Sphere()
 const _m = new THREE.Matrix4(),
@@ -103253,7 +105033,7 @@ __export(__exports, { "PedView": () => PedView })
 })
 
 // ---- js/render/chunks.js
-__define(234, function (__exports) {
+__define(240, function (__exports) {
 // The city's static meshes split by district. three.js skips any mesh whose bounds lie outside a
 // camera's view, and that includes the sun's shadow camera round the car, but a mesh that spans the
 // whole city is never outside anything: the street lights and palms of every district were drawn
@@ -103413,12 +105193,12 @@ __export(__exports, { "DISTRICTS": () => DISTRICTS, "district": () => district, 
 })
 
 // ---- js/render/fallers.js
-__define(235, function (__exports) {
+__define(241, function (__exports) {
 // What goes over when the Roadster hits it (the sim decides: breakables.js): the instanced parts of
 // each street light, signal mast, tree and palm, moved as one as it falls. Shared by the street
 // furniture's builders (cityProps.js, cityTrees.js).
 const THREE = __require(0)
-const { Instances } = __require(234)
+const { Instances } = __require(240)
 const { G, clamp } = __require(2)
 
 const _m = new THREE.Matrix4(),
@@ -103573,7 +105353,7 @@ __export(__exports, { "pose": () => pose, "instanced": () => instanced, "one": (
 })
 
 // ---- js/render/grove.js
-__define(236, function (__exports) {
+__define(242, function (__exports) {
 // One kind of palm or tree in its two shapes (palmShapes.js, treeShapes.js): far off, the cheap
 // shape, all of them in one instanced mesh a district (chunks.js); near the camera, the full shape,
 // in one instanced mesh holding only those within reach, filled again as the camera moves. The
@@ -103582,8 +105362,8 @@ __define(236, function (__exports) {
 // one's few numbers of its own (treeWind.js) ride in its instance colour. A Grove stands in for a
 // set of Instances where Fallers knocks one over (setMatrixAt, getMatrixAt, refit, bounds).
 const THREE = __require(0)
-const { Instances } = __require(234)
-const { LOD } = __require(194)
+const { Instances } = __require(240)
+const { LOD } = __require(202)
 
 const REACH = LOD.far + 4 // m: the near mesh holds every one within this of where it was filled
 const MOVE = 2 // m the camera may move before the near mesh is filled again
@@ -103677,7 +105457,7 @@ __export(__exports, { "Grove": () => Grove })
 })
 
 // ---- js/render/treeBark.js
-__define(237, function (__exports) {
+__define(243, function (__exports) {
 // The palms' and trees' bark, drawn once at start-up, each tiled once round its trunk and on up
 // it: the Mexican fan palm's grey-brown, ringed every few centimetres with the scars of old leaves;
 // the Canary Island date palm's diamonds of old leaf bases cut off close; the street trees'
@@ -103826,7 +105606,7 @@ __export(__exports, { "fanBark": () => fanBark, "dateBark": () => dateBark, "tre
 })
 
 // ---- js/render/cityTrees.js
-__define(238, function (__exports) {
+__define(244, function (__exports) {
 // Palms and trees (the sim places them: PALMS, TREES; breakables.js says what snaps them). The
 // palms are Los Angeles' two: the Mexican fan palm, twenty to thirty metres of slender grey-brown
 // trunk under a dense round head of fan leaves, the skirt of dead fronds hanging under it (only a
@@ -103840,13 +105620,13 @@ __define(238, function (__exports) {
 const { PALMS, TREES, BLOCKS, PITCH, N, rng } = __require(35)
 const { AREAS, areaOf } = __require(5)
 const { TAU } = __require(2)
-const { Fallers, pose, one, subset } = __require(235)
-const { Grove } = __require(236)
-const { foliageSheet } = __require(191)
-const { fanBark, dateBark, treeBark } = __require(237)
-const { treeMaterials, WIND, EYE } = __require(194)
-const { fanPalm, datePalm, FAN_H, DATE_H } = __require(193)
-const { broadleaf, CROWN } = __require(192)
+const { Fallers, pose, one, subset } = __require(241)
+const { Grove } = __require(242)
+const { foliageSheet } = __require(199)
+const { fanBark, dateBark, treeBark } = __require(243)
+const { treeMaterials, WIND, EYE } = __require(202)
+const { fanPalm, datePalm, FAN_H, DATE_H } = __require(201)
+const { broadleaf, CROWN } = __require(200)
 
 
 const R = rng(99)
@@ -103991,7 +105771,7 @@ __export(__exports, { "updateTrees": () => updateTrees, "greenery": () => greene
 })
 
 // ---- js/render/builder.js
-__define(239, function (__exports) {
+__define(245, function (__exports) {
 // Merged geometry for the city's buildings: quads pushed into flat arrays (position, normal, uv,
 // colour) and made into one buffer per material, so hundreds of buildings draw in a few calls.
 // Boxes, bands standing out round them (cornices, parapets, canopies), prisms on any convex plan
@@ -104354,7 +106134,7 @@ __export(__exports, { "Builder": () => Builder, "grow": () => grow })
 })
 
 // ---- js/render/cityKerb.js
-__define(240, function (__exports) {
+__define(246, function (__exports) {
 // Along the kerb (the sim lays it out: kerbside.js): the power lines strung from one wooden pole to
 // the next along Mid-City's and Venice's streets and over their junctions, three on the crossarm and
 // a cable lower down, each sagging between its poles (lines a pixel wide, as thin wires look from
@@ -104362,8 +106142,8 @@ __define(240, function (__exports) {
 // A pole knocked down takes its wires with it; the city standing back up restrings them.
 const THREE = __require(0)
 const { LAMPS, WIRES, DECOR } = __require(35)
-const { Builder } = __require(239)
-const { pose } = __require(235)
+const { Builder } = __require(245)
+const { pose } = __require(241)
 
 // where the wires hang from, in a pole's frame (x out over the road, y up): the crossarm's ends and
 // middle, and the cable below
@@ -104481,13 +106261,13 @@ __export(__exports, { "WIRE_AT": () => WIRE_AT, "Wires": () => Wires, "buildDeco
 })
 
 // ---- js/render/cityNames.js
-__define(241, function (__exports) {
+__define(247, function (__exports) {
 // The lit street-name signs on the signal masts' arms, as at Los Angeles' junctions: the name of
 // the street being crossed (areas.js), white on green, lit from inside at night. All the names are
 // drawn into one small texture; each sign is an instance of one plate, its own name picked out of
 // the texture by an attribute of its own (its rect in the texture), so the lot draws in one call.
 const THREE = __require(0)
-const { Instances } = __require(234)
+const { Instances } = __require(240)
 const { STREETS_EW, STREETS_NS } = __require(5)
 const { NODES } = __require(35)
 
@@ -104594,7 +106374,7 @@ __export(__exports, { "nameSigns": () => nameSigns })
 })
 
 // ---- js/render/cityProps.js
-__define(242, function (__exports) {
+__define(248, function (__exports) {
 // Street furniture: street lights and a signal mast on every corner whose red, yellow and green
 // lamps follow the intersection's signal plan; with the palms and trees (cityTrees.js), the power
 // lines, benches, hydrants and bins (cityKerb.js). The street lights are Los Angeles' cobra heads:
@@ -104605,12 +106385,12 @@ __define(242, function (__exports) {
 // fallers.js).
 const THREE = __require(0)
 const { hdr, softTex } = __require(83)
-const { Instances } = __require(234)
+const { Instances } = __require(240)
 const { merge, box, tint } = __require(116)
-const { Fallers, pose, instanced, one, subset } = __require(235)
-const { greenery } = __require(238)
-const { Wires, buildDecor } = __require(240)
-const { nameSigns } = __require(241)
+const { Fallers, pose, instanced, one, subset } = __require(241)
+const { greenery } = __require(244)
+const { Wires, buildDecor } = __require(246)
+const { nameSigns } = __require(247)
 const { NODES, CURB_H, LAMPS, POLES, DIRS, RED, YELLOW, GREEN, ROAD_HW, LANE_OFF, signal } = __require(35)
 
 const _m = new THREE.Matrix4(),
@@ -104880,7 +106660,7 @@ __export(__exports, { "Signals": () => Signals, "buildProps": () => buildProps }
 })
 
 // ---- js/render/cityWorks.js
-__define(243, function (__exports) {
+__define(249, function (__exports) {
 // The new districts' working things (the sim lays them out: PROPS, DECKS, RAMPS and the SOLIDS'
 // looks): the port's container stacks and the yards' trailers, loading docks down the sheds' sides,
 // water towers on the Arts District's roofs, factory chimneys and tanks, chain-link fences, the
@@ -104894,8 +106674,8 @@ const { PROPS, DECKS, RAMPS } = __require(32)
 const { FWY } = __require(28)
 const { TUNNELS, HILL_HW } = __require(30)
 const { canvasTex } = __require(83)
-const { Builder } = __require(239)
-const { district, DISTRICTS, Instances } = __require(234)
+const { Builder } = __require(245)
+const { district, DISTRICTS, Instances } = __require(240)
 
 // the boxes' colours (works.js BOXES): the shipping lines' blues, reds, greens, a rust, greys
 const BOX = [
@@ -105202,7 +106982,7 @@ __export(__exports, { "buildWorks": () => buildWorks })
 })
 
 // ---- js/render/cityPort.js
-__define(244, function (__exports) {
+__define(250, function (__exports) {
 // The port's waterfront (the sim lays it out: quay.js): the concrete wharf over the beach's face,
 // its edge line, bollards and fenders, the ship-to-shore cranes on their rails (legs, portal, boom
 // out over the water, the machinery house and the A-frame over it), and the container ship moored
@@ -105211,7 +106991,7 @@ __define(244, function (__exports) {
 const THREE = __require(0)
 const { QUAY, CRANES, SHIP } = __require(31)
 const { PROPS } = __require(32)
-const { Builder } = __require(239)
+const { Builder } = __require(245)
 
 const C = hex => new THREE.Color(hex)
 const BOX = [
@@ -105315,7 +107095,7 @@ __export(__exports, { "buildPort": () => buildPort })
 })
 
 // ---- js/render/cityStadium.js
-__define(245, function (__exports) {
+__define(251, function (__exports) {
 // The stadium's bowl (venues.js lays the building out: b.stadium { cx, cz, rx, rz, h }): over its
 // concrete drum, the pitch in mown stripes with its lines, the stands raked up from it in tiers of
 // coloured seats with aisles of concrete between, the back wall round the top, and the canopy ring
@@ -105323,7 +107103,7 @@ __define(245, function (__exports) {
 // one mesh for all of it.
 const THREE = __require(0)
 const { BUILDINGS } = __require(32)
-const { Builder } = __require(239)
+const { Builder } = __require(245)
 
 const C = hex => new THREE.Color(hex)
 const SEATS = [C(0x1f4fa0), C(0xc9a227), C(0x1f4fa0), C(0xb8332b)],
@@ -105424,7 +107204,7 @@ __export(__exports, { "buildStadium": () => buildStadium })
 })
 
 // ---- js/render/roadSurface.js
-__define(246, function (__exports) {
+__define(252, function (__exports) {
 // The street's asphalt, worn the way a city's is: two darker, smoother wheel tracks down every lane
 // (polished enough to catch the low sun), a line of oil drips between them, more wear on the
 // approach to each stop line, broad patches of newer and older surface, tar-sealed cracks wandering
@@ -105605,7 +107385,7 @@ __export(__exports, { "roadMaterial": () => roadMaterial })
 })
 
 // ---- js/render/cityGround.js
-__define(247, function (__exports) {
+__define(253, function (__exports) {
 // The city's ground: asphalt, kerbed blocks with sidewalks and rounded corners, lane
 // paint, stop lines and zebra crossings, parks, parking lots and the promenade round the ring road;
 // and on each block's lot what the sim laid out (lots.js): its base (paving, a lawn or asphalt) and
@@ -105613,11 +107393,11 @@ __define(247, function (__exports) {
 const THREE = __require(0)
 const { merge, marks, LAYER } = __require(116)
 const { canvasTex, speckle } = __require(83)
-const { roadMaterial } = __require(246)
+const { roadMaterial } = __require(252)
 const { wetGround } = __require(113)
 const { canyonLit } = __require(190)
 const { paintAA } = __require(178)
-const { lampLit } = __require(196)
+const { lampLit } = __require(191)
 const { dotted, eachMarker } = __require(44)
 const { N, DIRS, WALK, STOP, HALF, ROADS, NODES, STALLS, CURB_H, CURB_R, BLOCKS, LANE_W, ROAD_HW, PROMENADE, PITCH, segOpen, BLVD_EW, BLVD_NS, MEDIAN_HW } = __require(35)
 
@@ -106004,7 +107784,7 @@ __export(__exports, { "buildGround": () => buildGround })
 })
 
 // ---- js/render/cityStreet.js
-__define(248, function (__exports) {
+__define(254, function (__exports) {
 // The street's details: cast-iron manhole lids out in the lanes, drain grates in the gutters by the
 // corners (both laid out by the sim, street.js, which feels the lids under the wheels), and the
 // arrows painted in each lane before the stop line, showing the moves the lane graph allows from it
@@ -106234,334 +108014,8 @@ function buildStreet (group) {
 __export(__exports, { "buildStreet": () => buildStreet })
 })
 
-// ---- js/render/signArt.js
-__define(249, function (__exports) {
-// The artwork for the signs' atlas (signTex.js): drawing helpers (lettering that fits its space,
-// gradients, a border of bulbs, a palm's silhouette), the billboards' eight designs, the made-up
-// names (hotels, films, blade signs, fast food, gas brands) and the murals. Every name and brand is
-// made up.
-const { rng } = __require(35)
-
-const R = rng(31)
-const SANS = '"Helvetica Neue", Helvetica, Arial, sans-serif'
-const SERIF = 'Georgia, "Times New Roman", serif'
-
-// ---------- drawing helpers ----------
-function text (g, s, x, y, px, o = {}) {
-  g.save()
-  g.font = `${o.weight || 'bold'} ${px}px ${o.font || SANS}`
-  g.textAlign = o.align || 'center'
-  g.textBaseline = 'middle'
-  if (o.glow) {
-    g.shadowColor = o.glow
-    g.shadowBlur = o.blur ?? px * 0.35
-  }
-  const w = g.measureText(s).width
-  const sx = o.maxW && w > o.maxW ? o.maxW / w : 1
-  g.translate(x, y)
-  g.scale(sx * (o.sx || 1), 1)
-  if (o.stroke) {
-    g.lineWidth = o.lw || px * 0.12
-    g.strokeStyle = o.stroke
-    g.strokeText(s, 0, 0)
-  }
-  g.fillStyle = o.color || '#fff'
-  g.fillText(s, 0, 0)
-  g.restore()
-}
-const grad = (g, x, y, w, h, stops, horiz = false) => {
-  const gr = horiz
-    ? g.createLinearGradient(x, 0, x + w, 0)
-    : g.createLinearGradient(0, y, 0, y + h)
-  stops.forEach((c, i) => gr.addColorStop(i / (stops.length - 1), c))
-  g.fillStyle = gr
-  g.fillRect(x, y, w, h)
-}
-function bulbs (g, x, y, w, h, gap, color = '#fff6c8') {
-  g.save()
-  g.fillStyle = color
-  g.shadowColor = '#ffd27a'
-  g.shadowBlur = gap * 0.6
-  for (let t = x + gap / 2; t < x + w; t += gap) {
-    g.fillRect(t - 1.5, y + 1, 3, 3)
-    g.fillRect(t - 1.5, y + h - 4, 3, 3)
-  }
-  for (let t = y + gap / 2; t < y + h; t += gap) {
-    g.fillRect(x + 1, t - 1.5, 3, 3)
-    g.fillRect(x + w - 4, t - 1.5, 3, 3)
-  }
-  g.restore()
-}
-function palmSil (g, x, y, h, color) {
-  g.save()
-  g.strokeStyle = g.fillStyle = color
-  g.lineWidth = Math.max(2, h * 0.03)
-  g.beginPath()
-  g.moveTo(x, y)
-  g.quadraticCurveTo(x + h * 0.08, y - h * 0.5, x + h * 0.04, y - h)
-  g.stroke()
-  for (let i = 0; i < 7; i++) {
-    const a = -Math.PI / 2 + (i - 3) * 0.45
-    g.beginPath()
-    g.moveTo(x + h * 0.04, y - h)
-    g.quadraticCurveTo(
-      x + h * 0.04 + Math.cos(a) * h * 0.22,
-      y - h + Math.sin(a) * h * 0.12 - h * 0.05,
-      x + h * 0.04 + Math.cos(a) * h * 0.3,
-      y - h + h * 0.12
-    )
-    g.stroke()
-  }
-  g.restore()
-}
-
-// ---------- the cells ----------
-const BILLBOARDS = [
-  // a film: night sky, a moon, the title and when
-  (g, x, y, w, h) => {
-    grad(g, x, y, w, h, ['#0b1030', '#2b1a4a', '#a3402f'])
-    g.fillStyle = '#f6e7c1'
-    g.beginPath()
-    g.arc(x + w * 0.78, y + h * 0.36, h * 0.22, 0, Math.PI * 2)
-    g.fill()
-    text(g, 'STARFALL', x + w * 0.38, y + h * 0.42, h * 0.32, {
-      color: '#f4d58d',
-      maxW: w * 0.62,
-      font: SERIF
-    })
-    text(g, 'IN THEATERS FRIDAY', x + w * 0.38, y + h * 0.78, h * 0.11, {
-      color: '#fff'
-    })
-  },
-  // a fizzy drink: red, a white wave
-  (g, x, y, w, h) => {
-    g.fillStyle = '#c8102e'
-    g.fillRect(x, y, w, h)
-    g.fillStyle = '#fff'
-    g.beginPath()
-    g.moveTo(x, y + h * 0.7)
-    g.bezierCurveTo(
-      x + w * 0.3,
-      y + h * 0.4,
-      x + w * 0.6,
-      y + h * 1.0,
-      x + w,
-      y + h * 0.6
-    )
-    g.lineTo(x + w, y + h * 0.75)
-    g.bezierCurveTo(
-      x + w * 0.6,
-      y + h * 1.1,
-      x + w * 0.3,
-      y + h * 0.55,
-      x,
-      y + h * 0.85
-    )
-    g.fill()
-    text(g, 'STAY COOL', x + w * 0.42, y + h * 0.36, h * 0.34, {
-      color: '#fff',
-      font: SERIF,
-      weight: 'bold italic'
-    })
-  },
-  // a phone
-  (g, x, y, w, h) => {
-    grad(g, x, y, w, h, ['#f4f4f2', '#d9dde2'])
-    g.fillStyle = '#16181c'
-    g.fillRect(x + w * 0.72, y + h * 0.1, h * 0.42, h * 0.8)
-    g.fillStyle = '#4c7bd9'
-    g.fillRect(x + w * 0.72 + 5, y + h * 0.1 + 7, h * 0.42 - 10, h * 0.8 - 14)
-    text(g, 'Thinner. Faster.', x + w * 0.36, y + h * 0.42, h * 0.2, {
-      color: '#16181c',
-      weight: '600'
-    })
-    text(g, 'PHONE 9', x + w * 0.36, y + h * 0.7, h * 0.13, { color: '#555' })
-  },
-  // an injury lawyer, as on every LA bus bench
-  (g, x, y, w, h) => {
-    g.fillStyle = '#f7d117'
-    g.fillRect(x, y, w, h)
-    g.fillStyle = '#1b1b1b'
-    g.fillRect(x, y + h * 0.72, w, h * 0.28)
-    text(g, 'HURT IN A CRASH?', x + w * 0.5, y + h * 0.3, h * 0.26, {
-      color: '#1b1b1b',
-      maxW: w * 0.92
-    })
-    text(g, 'CALL 1-800-555-0199', x + w * 0.5, y + h * 0.86, h * 0.16, {
-      color: '#f7d117',
-      maxW: w * 0.9
-    })
-  },
-  // tequila: dark blue and gold
-  (g, x, y, w, h) => {
-    grad(g, x, y, w, h, ['#0c2340', '#14365e'], true)
-    g.fillStyle = '#c99b3b'
-    g.fillRect(x + w * 0.75, y + h * 0.15, h * 0.2, h * 0.75)
-    g.fillRect(x + w * 0.75 - 4, y + h * 0.35, h * 0.2 + 8, h * 0.55)
-    text(g, 'AÑEJO DE ORO', x + w * 0.38, y + h * 0.45, h * 0.24, {
-      color: '#e2b65a',
-      font: SERIF,
-      maxW: w * 0.66
-    })
-    text(g, 'SIP RESPONSIBLY', x + w * 0.38, y + h * 0.78, h * 0.09, {
-      color: '#9fb2c8'
-    })
-  },
-  // an electric car
-  (g, x, y, w, h) => {
-    grad(g, x, y, w, h, ['#e9f1f6', '#9fc3d9'])
-    g.fillStyle = '#20252b'
-    g.beginPath()
-    g.moveTo(x + w * 0.5, y + h * 0.78)
-    g.lineTo(x + w * 0.56, y + h * 0.56)
-    g.quadraticCurveTo(x + w * 0.7, y + h * 0.42, x + w * 0.86, y + h * 0.56)
-    g.lineTo(x + w * 0.95, y + h * 0.62)
-    g.lineTo(x + w * 0.95, y + h * 0.78)
-    g.fill()
-    text(g, 'GO ELECTRIC', x + w * 0.27, y + h * 0.42, h * 0.22, {
-      color: '#16303f',
-      maxW: w * 0.48
-    })
-    text(g, 'zero tailpipe', x + w * 0.27, y + h * 0.72, h * 0.12, {
-      color: '#2f5970',
-      weight: 'normal'
-    })
-  },
-  // a radio station
-  (g, x, y, w, h) => {
-    grad(g, x, y, w, h, ['#ff5f6d', '#ffc371'], true)
-    text(g, 'KLAX', x + w * 0.3, y + h * 0.5, h * 0.52, {
-      color: '#fff',
-      weight: '900'
-    })
-    text(g, '97.1 FM', x + w * 0.72, y + h * 0.4, h * 0.22, {
-      color: '#2a1033'
-    })
-    text(g, 'THE BEACH', x + w * 0.72, y + h * 0.7, h * 0.14, {
-      color: '#2a1033'
-    })
-  },
-  // a television series
-  (g, x, y, w, h) => {
-    grad(g, x, y, w, h, ['#3a0d5c', '#c2185b'], true)
-    g.fillStyle = 'rgba(255,255,255,0.18)'
-    for (let i = 0; i < 6; i++) g.fillRect(x + w * (0.55 + i * 0.07), y, 6, h)
-    text(g, 'SILVER LAKE', x + w * 0.36, y + h * 0.42, h * 0.26, {
-      color: '#fff',
-      maxW: w * 0.62
-    })
-    text(g, 'SEASON 4 · NOW STREAMING', x + w * 0.36, y + h * 0.75, h * 0.1, {
-      color: '#ffd6e8',
-      maxW: w * 0.64
-    })
-  }
-]
-const HOTELS = [
-  'HOTEL ALEXANDER',
-  'THE PALISADE',
-  'HOTEL BELMONT',
-  'OCEAN VIEW',
-  'HOTEL SAN MARCO',
-  'MIRADOR'
-]
-const FILMS = ['STARFALL', 'MIDNIGHT RUN', 'SILVER CITY', 'DESERT ROSE']
-const BLADES = [
-  'PALACE',
-  'REGENT',
-  'VOGUE',
-  'RIALTO',
-  'BAR',
-  'HOTEL',
-  'CAFE',
-  'LIQUOR',
-  'DINER',
-  'PAWN'
-]
-const NEON = [
-  '#ff3b6b',
-  '#36e2ff',
-  '#ffd23b',
-  '#7dff6a',
-  '#ff7a2f',
-  '#c86bff'
-]
-const FOODS = [
-  ['BURGERS', '#d62828', '#fcbf49'],
-  ['TACOS', '#2a9d8f', '#f4a261'],
-  ['CHICKEN', '#f77f00', '#fff3b0'],
-  ['DONUTS', '#e56b9f', '#fff']
-]
-const BRANDS = [
-  ['PACIFIC', '#0b4ea2', '#ffffff'],
-  ['GLOBE', '#d1202f', '#ffffff'],
-  ['SUN OIL', '#f2b705', '#c8102e'],
-  ['XPRESS', '#138a52', '#ffffff']
-]
-function mural (g, x, y, w, h, k) {
-  if (k === 0) {
-    // a sunset over the sea, palms against it
-    grad(g, x, y, w, h * 0.7, ['#ff7e5f', '#feb47b', '#ffd38a'])
-    g.fillStyle = '#ffe9a8'
-    g.beginPath()
-    g.arc(x + w * 0.5, y + h * 0.66, h * 0.2, Math.PI, 0)
-    g.fill()
-    grad(g, x, y + h * 0.66, w, h * 0.34, ['#1d6fa3', '#0b3a5c'])
-    palmSil(g, x + w * 0.18, y + h * 0.95, h * 0.8, '#2b1b2e')
-    palmSil(g, x + w * 0.82, y + h * 0.95, h * 0.65, '#2b1b2e')
-  } else if (k === 1) {
-    // shapes, bright on white
-    g.fillStyle = '#fbf6ec'
-    g.fillRect(x, y, w, h)
-    for (let i = 0; i < 14; i++) {
-      g.fillStyle = NEON[i % NEON.length]
-      g.beginPath()
-      g.arc(x + R() * w, y + R() * h, 8 + R() * h * 0.25, 0, Math.PI * 2)
-      g.fill()
-    }
-  } else if (k === 2) {
-    // waves
-    for (let i = 0; i < 8; i++) {
-      g.fillStyle = ['#0b3954', '#087e8b', '#bfd7ea', '#ff5a5f'][i % 4]
-      g.fillRect(x, y + (h * i) / 8, w, h / 8 + 1)
-    }
-    text(g, 'VENICE', x + w / 2, y + h * 0.5, h * 0.42, {
-      color: '#fff',
-      stroke: '#0b3954',
-      weight: '900',
-      maxW: w * 0.9
-    })
-  } else if (k === 3) {
-    // a face in profile, in blocks of colour
-    grad(g, x, y, w, h, ['#ffcf56', '#ff6f59'], true)
-    g.fillStyle = '#2d1e2f'
-    g.beginPath()
-    g.ellipse(x + w * 0.45, y + h * 0.55, h * 0.32, h * 0.42, 0, 0, Math.PI * 2)
-    g.fill()
-    g.fillStyle = '#43aa8b'
-    g.fillRect(x + w * 0.62, y, w * 0.2, h)
-  } else if (k === 4) {
-    // a rainbow in stripes
-    const c = ['#e63946', '#f4a261', '#e9c46a', '#2a9d8f', '#457b9d', '#6a4c93']
-    c.forEach((s, i) => {
-      g.fillStyle = s
-      g.fillRect(x + (w * i) / c.length, y, w / c.length + 1, h)
-    })
-  } else {
-    // the city's name in big letters, a postcard
-    grad(g, x, y, w, h, ['#4cc9f0', '#f72585'], true)
-    text(g, 'LOS ANGELES', x + w / 2, y + h * 0.52, h * 0.34, {
-      color: '#ffe066',
-      stroke: '#2b2d42',
-      weight: '900',
-      maxW: w * 0.92
-    })
-  }
-}
-__export(__exports, { "SANS": () => SANS, "SERIF": () => SERIF, "text": () => text, "grad": () => grad, "bulbs": () => bulbs, "BILLBOARDS": () => BILLBOARDS, "HOTELS": () => HOTELS, "FILMS": () => FILMS, "BLADES": () => BLADES, "NEON": () => NEON, "FOODS": () => FOODS, "BRANDS": () => BRANDS, "mural": () => mural })
-})
-
 // ---- js/render/signTex.js
-__define(250, function (__exports) {
+__define(255, function (__exports) {
 // The city's signs and pictures, drawn into one atlas at startup: billboards, old hotels' names for
 // their roofs, theatre marquees and blade signs, a motel's neon, fast-food and strip-mall signs on
 // poles, gas prices and a gas station's canopy fascia, murals for the walls, a helipad's H and a
@@ -106571,7 +108025,7 @@ __define(250, function (__exports) {
 const THREE = __require(0)
 const { rng } = __require(35)
 const { renderer } = __require(83)
-const { SERIF, text, grad, bulbs, BILLBOARDS, HOTELS, FILMS, BLADES, NEON, FOODS, BRANDS, mural } = __require(249)
+const { SERIF, text, grad, bulbs, BILLBOARDS, HOTELS, FILMS, BLADES, NEON, FOODS, BRANDS, mural } = __require(192)
 
 const R = rng(31)
 const W = 2048,
@@ -106863,7 +108317,7 @@ __export(__exports, { "CELLS": () => CELLS, "signAtlas": () => signAtlas, "SIGN_
 })
 
 // ---- js/render/citySigns.js
-__define(251, function (__exports) {
+__define(256, function (__exports) {
 // The signs (the sim lays them out: SIGNS, and the solid things on the lots: SOLIDS). Billboards on
 // poles and on roofs, two-faced, with a catwalk under each and lamps over it; signs up on poles for
 // the motel, the fast-food stands, the strip malls and the gas prices; a theatre's marquee over the
@@ -106874,8 +108328,8 @@ __define(251, function (__exports) {
 // is painted on, and the steel and concrete that holds it up.
 const THREE = __require(0)
 const { SIGNS, SOLIDS, BUILDINGS, BLOCKS, CURB_H } = __require(35)
-const { Builder } = __require(239)
-const { CELLS, signAtlas } = __require(250)
+const { Builder } = __require(245)
+const { CELLS, signAtlas } = __require(255)
 const { softTex } = __require(83)
 
 const FACE = [
@@ -107356,7 +108810,7 @@ __export(__exports, { "buildSigns": () => buildSigns })
 })
 
 // ---- js/render/cityYards.js
-__define(252, function (__exports) {
+__define(257, function (__exports) {
 // What the houses' yards are closed off with (the sim lays them out, solid: SOLIDS): clipped hedges
 // along Beverly Hills' pavements, some as tall as the garage, in a leafy texture, each a shade of
 // its own; low stucco garden walls; white picket fences round Venice's bungalows (cut out of a
@@ -107364,8 +108818,8 @@ __define(252, function (__exports) {
 const THREE = __require(0)
 const { SOLIDS } = __require(35)
 const { canvasTex } = __require(83)
-const { Builder } = __require(239)
-const { district, DISTRICTS } = __require(234)
+const { Builder } = __require(245)
+const { district, DISTRICTS } = __require(240)
 
 // leaves, 2 m a tile: a dark green, clumps lit on top and shaded under
 function leafTex () {
@@ -107499,1323 +108953,8 @@ function add (group, b, mat, cast, name) {
 __export(__exports, { "buildYards": () => buildYards })
 })
 
-// ---- js/render/shopTex.js
-__define(253, function (__exports) {
-// The shops' signs, drawn into one atlas at startup: a name board for each kind of shop (cafés and
-// restaurants, clothes shops, convenience stores and pharmacies, salons and barbers, bars), and the
-// things stuck in the windows (a FOR LEASE board, an OPEN sign in neon, a bar's cocktail glass in
-// neon). Every name is made up. The colour is in the texture's red, green and blue and how much
-// each texel glows at night in its alpha: a lightbox's whole face, a sign's lit letters, a neon
-// tube; a painted board only faintly, as the light from under the canopy catches it. The texture is
-// built from the canvas's pixels by hand (a canvas keeps its colours premultiplied by their alpha,
-// which would lose the colour of everything that doesn't glow).
-const THREE = __require(0)
-const { renderer } = __require(83)
-const { SANS, SERIF, text } = __require(249)
-
-// the kinds of shop, in the order the shader knows them (shopShader.js)
-const KINDS = ['cafe', 'clothes', 'store', 'salon', 'bar', 'empty']
-const W = 1024
-const H = 1280
-// a name board's cell, and how many there are across the atlas; the window signs' cells, in a row
-// under the boards
-const BOARD = [512, 80]
-const DECAL = [256, 160]
-const DECAL_Y = 1120
-
-// Each kind's names: [name, board, letters, font, how it is lit]: 'paint', a painted board;
-// 'box', a lightbox (its whole face glows); 'letters', lit letters on a dark board; 'neon'
-const NAMES = {
-  cafe: [
-    ['LUNA CAFE', '#1f3b2d', '#f3e6c4', SERIF, 'letters'],
-    ['DAILY GRIND', '#2b1d16', '#f2c46d', SANS, 'letters'],
-    ['PICO DELI', '#b8332e', '#ffffff', SANS, 'paint'],
-    ['TAQUERIA', '#e2a72e', '#5b1a12', SANS, 'paint'],
-    ['NOODLE HOUSE', '#8e1b1b', '#ffd75e', SANS, 'letters'],
-    ['PIZZA', '#f4efe2', '#b8332e', SERIF, 'box'],
-    ['SUSHI', '#121212', '#f5f5f5', SANS, 'letters'],
-    ['BAKERY', '#f2d5c4', '#6b3a2a', SERIF, 'paint']
-  ],
-  clothes: [
-    ['BOUTIQUE', '#111111', '#f0e6d2', SERIF, 'letters'],
-    ['VINTAGE', '#d9c9a8', '#3a2a1e', SERIF, 'paint'],
-    ['DENIM CO', '#1f3550', '#f4f4f4', SANS, 'letters'],
-    ['SURF SHOP', '#2a9fb5', '#ffffff', SANS, 'paint'],
-    ['SHOES', '#f6f2ea', '#1b1b1b', SANS, 'box'],
-    ['THREADS', '#5a2b4f', '#f6d6e8', SERIF, 'letters']
-  ],
-  store: [
-    ['MINI MARKET', '#f7f3e8', '#c8102e', SANS, 'box'],
-    ['LIQUOR', '#151515', '#ff3b3b', SANS, 'neon'],
-    ['PHARMACY', '#ffffff', '#1a7a3c', SANS, 'box'],
-    ['24 HR MART', '#ffd23b', '#1b3a8c', SANS, 'box'],
-    ['DRUGS', '#f4f4f4', '#d1202f', SANS, 'box']
-  ],
-  salon: [
-    ['HAIR SALON', '#f6dfe6', '#7a2a4a', SERIF, 'paint'],
-    ['NAILS', '#2a1a2e', '#ff7ac8', SANS, 'neon'],
-    ['BARBER', '#1c2a44', '#f2f2f2', SERIF, 'letters'],
-    ['BEAUTY', '#ffffff', '#c03c7a', SERIF, 'box']
-  ],
-  bar: [
-    ['COCKTAILS', '#120d14', '#ff4fa0', SERIF, 'neon'],
-    ['TAVERN', '#2a1810', '#f2c46d', SERIF, 'letters'],
-    ['LOUNGE', '#0d1424', '#36e2ff', SANS, 'neon'],
-    ['THE BLUE ROOM', '#101828', '#5da8ff', SERIF, 'neon']
-  ]
-}
-// every board in atlas order: { kind, name, board, letters, font, lit }; and, by kind, the boards'
-// indices in it
-const BOARDS = []
-const BY_KIND = KINDS.map(k =>
-  (NAMES[k] || []).map(([name, board, letters, font, lit]) => {
-    BOARDS.push({ kind: k, name, board, letters, font, lit })
-    return BOARDS.length - 1
-  })
-)
-// the window signs: a FOR LEASE board, OPEN in neon, a cocktail glass in neon, OPEN 24 HRS
-const DECALS = { lease: 0, open: 1, glass: 2, allNight: 3 }
-
-// a board: the name across it, its glow (how much each part lights up at night) into the mask
-function board (g, m, b, x, y) {
-  const [w, h] = BOARD
-  const glow = { paint: [0.1, 0.22], box: [0.75, 0.55], letters: [0, 1] }[
-    b.lit
-  ] || [0, 1]
-  g.fillStyle = b.board
-  g.fillRect(x, y, w, h)
-  m.fillStyle = grey(glow[0])
-  m.fillRect(x, y, w, h)
-  // a thin edge round the board, darker, and a lighter line under its top
-  g.strokeStyle = 'rgba(0,0,0,0.35)'
-  g.lineWidth = 4
-  g.strokeRect(x + 2, y + 2, w - 4, h - 4)
-  const px = b.name.length > 10 ? h * 0.5 : h * 0.6
-  const o = { color: b.letters, maxW: w * 0.86, font: b.font }
-  if (b.lit === 'neon') o.weight = 'normal'
-  text(g, b.name, x + w / 2, y + h * 0.54, px, o)
-  text(m, b.name, x + w / 2, y + h * 0.54, px, { ...o, color: grey(glow[1]) })
-}
-const grey = v => {
-  const c = Math.round(v * 255)
-  return `rgb(${c},${c},${c})`
-}
-
-// the window signs
-function decal (g, m, i, x, y) {
-  const [w, h] = DECAL
-  if (i === DECALS.lease) {
-    // a white board with a red border: FOR LEASE, and a telephone number
-    g.fillStyle = '#f4f2ec'
-    g.fillRect(x, y, w, h)
-    g.strokeStyle = '#c8102e'
-    g.lineWidth = 8
-    g.strokeRect(x + 6, y + 6, w - 12, h - 12)
-    text(g, 'FOR', x + w / 2, y + h * 0.24, h * 0.16, { color: '#c8102e' })
-    text(g, 'LEASE', x + w / 2, y + h * 0.5, h * 0.3, { color: '#c8102e' })
-    text(g, '310 555 0144', x + w / 2, y + h * 0.78, h * 0.13, {
-      color: '#1b1b1b'
-    })
-    m.fillStyle = '#000'
-    m.fillRect(x, y, w, h)
-    return
-  }
-  // neon: the tubes in their colour, glowing; dark round them (the shader adds only the glow)
-  g.fillStyle = '#000'
-  g.fillRect(x, y, w, h)
-  m.fillStyle = '#000'
-  m.fillRect(x, y, w, h)
-  const tube = (ctx, col, draw) => {
-    ctx.save()
-    ctx.strokeStyle = col
-    ctx.lineWidth = 6
-    ctx.lineCap = ctx.lineJoin = 'round'
-    ctx.beginPath()
-    draw(ctx)
-    ctx.stroke()
-    ctx.restore()
-  }
-  const both = (col, draw) => {
-    tube(g, col, draw)
-    tube(m, '#fff', draw)
-  }
-  const word = (s, cy, px, col) => {
-    text(g, s, x + w / 2, y + cy, px, { color: col, weight: 'normal' })
-    text(m, s, x + w / 2, y + cy, px, { color: '#fff', weight: 'normal' })
-  }
-  if (i === DECALS.open || i === DECALS.allNight) {
-    both('#3aa0ff', c => roundRect(c, x + 14, y + 26, w - 28, h - 52, 22))
-    word('OPEN', h * (i === DECALS.open ? 0.5 : 0.42), h * 0.3, '#ff3040')
-    if (i === DECALS.allNight) word('24 HRS', h * 0.68, h * 0.14, '#ffd23b')
-  } else {
-    // a cocktail glass, an olive in it, and BAR under it
-    both('#ff4fa0', c => {
-      c.moveTo(x + w * 0.3, y + h * 0.12)
-      c.lineTo(x + w * 0.7, y + h * 0.12)
-      c.lineTo(x + w * 0.5, y + h * 0.45)
-      c.closePath()
-      c.moveTo(x + w * 0.5, y + h * 0.45)
-      c.lineTo(x + w * 0.5, y + h * 0.66)
-      c.moveTo(x + w * 0.4, y + h * 0.68)
-      c.lineTo(x + w * 0.6, y + h * 0.68)
-    })
-    both('#7dff6a', c => c.arc(x + w * 0.56, y + h * 0.2, 8, 0, Math.PI * 2))
-    word('BAR', h * 0.85, h * 0.18, '#36e2ff')
-  }
-}
-function roundRect (c, x, y, w, h, r) {
-  c.moveTo(x + r, y)
-  c.arcTo(x + w, y, x + w, y + h, r)
-  c.arcTo(x + w, y + h, x, y + h, r)
-  c.arcTo(x, y + h, x, y, r)
-  c.arcTo(x, y, x + w, y, r)
-  c.closePath()
-}
-
-// where board k's cell starts in the atlas (px)
-const boardAt = k => [(k % 2) * BOARD[0], Math.floor(k / 2) * BOARD[1]]
-
-function shopSigns () {
-  const canvas = () => {
-    const cv = document.createElement('canvas')
-    cv.width = W
-    cv.height = H
-    return cv.getContext('2d', { willReadFrequently: true })
-  }
-  const g = canvas(),
-    m = canvas()
-  g.fillStyle = '#000'
-  g.fillRect(0, 0, W, H)
-  m.fillStyle = '#000'
-  m.fillRect(0, 0, W, H)
-  BOARDS.forEach((b, k) => board(g, m, b, ...boardAt(k)))
-  for (let i = 0; i < 4; i++) decal(g, m, i, i * DECAL[0], DECAL_Y)
-  // (the colour from one canvas, the glow from the other into its alpha)
-  const c = g.getImageData(0, 0, W, H).data,
-    a = m.getImageData(0, 0, W, H).data
-  for (let i = 0; i < c.length; i += 4) c[i + 3] = a[i]
-  const t = new THREE.DataTexture(c, W, H, THREE.RGBAFormat)
-  t.colorSpace = THREE.SRGBColorSpace
-  t.generateMipmaps = true
-  t.minFilter = THREE.LinearMipmapLinearFilter
-  t.magFilter = THREE.LinearFilter
-  t.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy())
-  t.needsUpdate = true
-  return t
-}
-__export(__exports, { "KINDS": () => KINDS, "W": () => W, "H": () => H, "BOARD": () => BOARD, "DECAL": () => DECAL, "DECAL_Y": () => DECAL_Y, "BOARDS": () => BOARDS, "BY_KIND": () => BY_KIND, "DECALS": () => DECALS, "boardAt": () => boardAt, "shopSigns": () => shopSigns })
-})
-
-// ---- js/render/shopRooms.js
-__define(254, function (__exports) {
-// The insides of the shops, traced in the shader (shopShader.js) the way facade.js traces the rooms
-// behind the windows above: the view ray goes on through the glass into a box a few metres deep (its
-// floor, ceiling, side walls and back wall), and before that it is tested against what stands in it,
-// a handful of boxes and flat cut-outs, each kind of shop its own: a café's counter across the back
-// under its menu board, tables with chairs round them by the window and lamps hanging over them; a
-// clothes shop's rails of clothes down both walls, a table of folded clothes and mannequins in the
-// window; a convenience store's aisles of shelves of bright packets running back from the window,
-// its till by the door and its fridges glowing along the back; a salon's chairs facing mirrors
-// ringed with bulbs; a bar's counter down one side, stools along it and its bottles lit behind; and
-// an empty unit's bare concrete with a few boxes left in it. While a shop is open someone is at work
-// in it, behind the counter, the till, the bar or a chair. Each is lit by its own lamps (or not,
-// shut), and by day by what comes in through the window. All in metres, in the shop's own frame: x
-// along the shopfront from its left end, y up from the pavement, z out of the glass (the room is at
-// z < 0).
-const ROOMS_GLSL = `
-  #define SH_FLOOR 0
-  #define SH_CEIL 1
-  #define SH_SIDE 2
-  #define SH_BACK 3
-  #define SH_A 4
-  #define SH_B 5
-  #define SH_C 6
-  #define SH_D 7
-  #define SH_P 8
-  struct ShHit { float t; int id; vec3 n; };
-  // the ray (o, its reciprocal iv) against the box b0 to b1: kept if it is nearer than what it has hit
-  void shBox (vec3 o, vec3 iv, vec3 b0, vec3 b1, int id, inout ShHit h) {
-    vec3 t0 = (b0 - o) * iv, t1 = (b1 - o) * iv;
-    vec3 lo = min(t0, t1), hi = max(t0, t1);
-    float tn = max(max(lo.x, lo.y), lo.z), tf = min(min(hi.x, hi.y), hi.z);
-    if (tn < tf && tn > 0.0 && tn < h.t) {
-      h.t = tn;
-      h.id = id;
-      h.n = tn == lo.x ? vec3(-sign(iv.x), 0.0, 0.0)
-        : tn == lo.y ? vec3(0.0, -sign(iv.y), 0.0) : vec3(0.0, 0.0, -sign(iv.z));
-    }
-  }
-  // where the ray crosses a flat cut-out standing across the room at depth z (far off if it is
-  // beyond what the ray has hit already)
-  vec2 shCard (vec3 o, vec3 r, float z, ShHit h, out float t) {
-    t = (z - o.z) / r.z;
-    return t > 0.0 && t < h.t ? o.xy + r.xy * t : vec2(-99.0);
-  }
-  // a chair seen from in front or behind: four legs, a seat, a frame of a back
-  float shChair (vec2 p, float cx) {
-    float x = abs(p.x - cx);
-    float legs = step(0.15, x) * step(x, 0.19) * step(p.y, 0.45);
-    float seat = step(x, 0.21) * step(0.42, p.y) * step(p.y, 0.47);
-    float back = step(x, 0.19) * step(0.47, p.y) * step(p.y, 0.88)
-      * max(step(0.14, x), step(0.78, p.y));
-    return max(max(legs, seat), back);
-  }
-  // a bar stool: a round seat on one leg, a ring for the feet, a foot on the floor
-  float shStool (vec2 p, float cx) {
-    float x = abs(p.x - cx);
-    return max(max(step(x, 0.18) * step(0.7, p.y) * step(p.y, 0.77),
-      step(x, 0.025) * step(p.y, 0.7)),
-      max(step(x, 0.14) * step(abs(p.y - 0.3), 0.015), step(x, 0.16) * step(p.y, 0.03)));
-  }
-  // a mannequin on its stand (or, stand 0, someone at work): 1 its body, 2 its top, 3 its trousers
-  // or skirt; 0 off it
-  float shMannequin (vec2 p, float cx, float dress, float stand) {
-    vec2 d = vec2(p.x - cx, p.y);
-    float x = abs(d.x);
-    if (length(vec2(d.x, (d.y - 1.63) * 0.8)) < 0.1) return 1.0;
-    if (x < 0.035 && d.y > 1.44 && d.y < 1.56) return 1.0;
-    float w = mix(0.14, 0.21, smoothstep(1.05, 1.42, d.y));
-    if (d.y > 1.02 && d.y < 1.46 && x < w) return 2.0;
-    if (x > 0.205 && x < 0.245 && d.y > 0.86 && d.y < 1.44) return 2.0 - step(d.y, 1.12);
-    if (dress > 0.5) {
-      if (d.y > 0.55 && d.y < 1.04 && x < mix(0.24, 0.15, (d.y - 0.55) / 0.49)) return 3.0;
-    } else if (d.y > 0.08 * stand && d.y < 1.04 && x > 0.015 && x < 0.085 + 0.04 * step(0.75, d.y))
-      return 3.0;
-    if (stand > 0.5 && ((x < 0.015 && d.y < 0.55) || (x < 0.13 && d.y < 0.025))) return 1.0;
-    return 0.0;
-  }
-  // someone at work in a shop that is open, standing at depth z, x across: the shop's hit h taken
-  // if they are nearer, its part (1 skin, 2 top, 3 trousers) in part
-  void shPerson (vec3 o, vec3 r, float x, float z, float open, inout ShHit h, inout float part) {
-    float t;
-    float q = open > 0.5 ? shMannequin(shCard(o, r, z, h, t), x, 0.0, 0.0) : 0.0;
-    if (q > 0.5) { h.t = t; h.id = SH_P; h.n = vec3(0.0, 0.0, 1.0); part = q; }
-  }
-  // a colour picked from a palette of things on sale: bright packets, clothes, bottles
-  vec3 shGoods (float h) {
-    return h < 0.14 ? vec3(0.72, 0.06, 0.05) : h < 0.27 ? vec3(0.9, 0.62, 0.05)
-      : h < 0.38 ? vec3(0.05, 0.22, 0.6) : h < 0.5 ? vec3(0.08, 0.42, 0.12)
-      : h < 0.6 ? vec3(0.85, 0.82, 0.76) : h < 0.7 ? vec3(0.04, 0.04, 0.05)
-      : h < 0.8 ? vec3(0.75, 0.28, 0.45) : h < 0.9 ? vec3(0.95, 0.4, 0.08) : vec3(0.2, 0.55, 0.75);
-  }
-  float shH (vec2 p, float k) { return fract(sin(dot(p, vec2(127.1, 311.7)) + k) * 43758.5453); }
-  // whether (x, y), each 0 to 1 across a bottle's place on a shelf, is on the bottle: its body, its
-  // shoulders and its neck
-  bool shBottle (float x, float y) {
-    float w = y < 0.5 ? 0.24 : y < 0.6 ? mix(0.24, 0.07, (y - 0.5) / 0.1) : 0.07;
-    return y > 0.08 && y < 0.82 && abs(x - 0.5) < w;
-  }
-  // shelves of goods on a face running along u (m), y up: shelf boards, and on each a row of boxes
-  // and bags, each row its own size, each its own height and colour, most with a pale label
-  vec3 shShelves (float u, float y, float seed) {
-    float row = floor((y - 0.12) / 0.4), f = fract((y - 0.12) / 0.4);
-    if (y < 0.12 || y > 1.72 || f < 0.07) return vec3(0.55, 0.55, 0.53);
-    float w = 0.12 + 0.16 * shH(vec2(row, seed), 1.0);
-    float k = floor(u / w), e = fract(u / w), hk = shH(vec2(k, row), seed);
-    float ht = 0.45 + 0.45 * hk, up = (f - 0.07) / (0.93 * ht);
-    if (up > 1.0 || e < 0.04 || e > 0.96) return vec3(0.03);
-    vec3 c = shGoods(shH(vec2(k, row), seed + 3.0));
-    if (hk > 0.35 && abs(up - 0.55) < 0.15) c = mix(c, vec3(0.85), 0.7);
-    return c * (0.75 + 0.25 * up);
-  }
-  // wooden boards along x, each a shade of its own
-  vec3 shPlanks (vec3 q, vec3 c) {
-    float k = floor(q.x / 0.16);
-    float e = min(fract(q.x / 0.16), 1.0 - fract(q.x / 0.16));
-    return c * (0.75 + 0.45 * shH(vec2(k, floor(q.z / 2.4 + 0.5 * fract(k * 0.37))), 2.0))
-      * (e < 0.04 ? 0.6 : 1.0);
-  }
-  // tiles: s m square, a and b alternating (checked) or a with grout lines between them
-  vec3 shTiles (vec2 q, float s, vec3 a, vec3 b) {
-    vec2 f = fract(q / s), k = floor(q / s);
-    if (min(min(f.x, f.y), min(1.0 - f.x, 1.0 - f.y)) < 0.03) return a * 0.6;
-    return mod(k.x + k.y, 2.0) < 0.5 ? a : b;
-  }
-  // the light on a point in the room: lamps down the middle of the ceiling (brightest under them,
-  // less into the corners and at the back; even: as even as a store's tubes), and by day what comes
-  // in through the window, strongest near it
-  vec3 shLight (vec3 q, float x0, float x1, float Hc, float even, float lamps, vec3 lc) {
-    float dx = (q.x - 0.5 * (x0 + x1)) / max(0.5 * (x1 - x0), 1.0);
-    float l = 1.0 / (1.0 + 1.4 * dx * dx + 0.9 * (q.y / Hc) * (q.y / Hc));
-    l = mix(l, 0.85, even) * (0.7 + 0.3 * exp(q.z * 0.2));
-    float day = (1.0 - uNight) * 0.16 * (0.25 + 0.75 * exp(q.z / 2.2));
-    return lc * l * lamps + vec3(0.9, 0.95, 1.05) * day + vec3(0.01);
-  }
-
-  // what comes out of the shop through its glass. o: where the view ray meets the glass (z = 0), r
-  // the ray (z < 0); W the shop's width, k its kind (0 a café, 1 clothes, 2 a store, 3 a salon, 4 a
-  // bar, 5 empty), s its own random number and H four more made from it; L how lit it is
-  // (shopLights), lc its lamps' colour
-  vec3 shopRoom (vec3 o, vec3 r, float W, float k, float s, vec4 H, vec4 L, vec3 lc, float head) {
-    float D = 5.0 + 4.0 * H.w, Hc = head + 0.3;
-    float x0 = 0.15, x1 = W - 0.15, xm = 0.5 * W;
-    vec3 rr = vec3(abs(r.x) < 1e-4 ? 1e-4 : r.x, abs(r.y) < 1e-4 ? 1e-4 : r.y, r.z);
-    vec3 iv = 1.0 / rr;
-    // the room's own surfaces
-    float tx = ((rr.x > 0.0 ? x1 : x0) - o.x) * iv.x;
-    float ty = ((rr.y > 0.0 ? Hc : 0.0) - o.y) * iv.y;
-    float tz = (-D - o.z) * iv.z;
-    ShHit h;
-    h.t = min(min(tx, ty), tz);
-    h.id = h.t == tz ? SH_BACK : h.t == tx ? SH_SIDE : rr.y > 0.0 ? SH_CEIL : SH_FLOOR;
-    h.n = h.id == SH_BACK ? vec3(0.0, 0.0, 1.0) : h.id == SH_SIDE ? vec3(-sign(rr.x), 0.0, 0.0)
-      : vec3(0.0, -sign(rr.y), 0.0);
-    float h1 = H.x, h2 = H.y, h3 = H.z;
-    // lamps: how bright the kind keeps its lamps, how evenly they light it (by day only a room's
-    // light, dim beside the street's)
-    float lamps = L.x * mix(0.2, 1.6, uNight);
-    float lk = 0.6, even = 0.0;
-    vec3 c = vec3(0.6), em = vec3(0.0);
-    float ct = 0.0, part = 0.0;
-    vec2 cp;
-    vec3 q;
-    if (k < 0.5) {
-      // ---- a café or a restaurant ----
-      float cz = -D + 1.5, pass = 1.1;
-      vec3 c0 = h1 < 0.5 ? vec3(x0 + pass, 0.0, cz - 0.6) : vec3(x0, 0.0, cz - 0.6);
-      vec3 c1 = h1 < 0.5 ? vec3(x1, 1.05, cz) : vec3(x1 - pass, 1.05, cz);
-      shBox(o, iv, c0, c1, SH_A, h);
-      shPerson(o, rr, mix(c0.x, c1.x, 0.3 + 0.4 * h3), -D + 0.5, L.x, h, part);
-      // tables by the window, a chair either side of each, a lamp over each
-      vec3 T1 = vec3(mix(x0 + 0.7, x1 - 0.7, h2), 0.0, -1.15);
-      vec3 T2 = vec3(mix(x0 + 0.7, x1 - 0.7, fract(h2 + 0.5)), 0.0, -2.75);
-      shBox(o, iv, T1 + vec3(-0.36, 0.71, -0.36), T1 + vec3(0.36, 0.76, 0.36), SH_B, h);
-      shBox(o, iv, T1 + vec3(-0.04, 0.0, -0.04), T1 + vec3(0.04, 0.71, 0.04), SH_C, h);
-      shBox(o, iv, T2 + vec3(-0.36, 0.71, -0.36), T2 + vec3(0.36, 0.76, 0.36), SH_B, h);
-      shBox(o, iv, T2 + vec3(-0.04, 0.0, -0.04), T2 + vec3(0.04, 0.71, 0.04), SH_C, h);
-      for (int i = 0; i < 4; i++) {
-        vec3 T = i < 2 ? T1 : T2;
-        cp = shCard(o, rr, T.z + (i == 0 || i == 2 ? 0.55 : -0.55), h, ct);
-        if (shChair(cp, T.x) > 0.5) { h.t = ct; h.id = SH_D; h.n = vec3(0.0, 0.0, 1.0); }
-      }
-      // the lamps: a shade on its cord, the bulb glowing under it
-      for (int i = 0; i < 3; i++) {
-        vec3 P = i == 0 ? T1 : i == 1 ? T2 : vec3(mix(c0.x, c1.x, 0.5), 0.0, cz - 0.3);
-        cp = shCard(o, rr, P.z, h, ct);
-        vec2 d = cp - vec2(P.x, Hc - 0.95);
-        if (d.y > 0.0 && abs(d.x) < 0.012) { h.t = ct; h.id = SH_C; em = vec3(0.0); }
-        else if (length(d * vec2(1.0, 1.6)) < 0.17) {
-          h.t = ct; h.id = SH_C; em = lc * 3.0 * L.x * step(d.y, -0.02);
-        }
-      }
-      q = o + rr * h.t;
-      vec3 wall = h3 < 0.3 ? vec3(0.75, 0.68, 0.55) : h3 < 0.55 ? vec3(0.03, 0.12, 0.07)
-        : h3 < 0.8 ? vec3(0.42, 0.15, 0.09) : vec3(0.8);
-      if (h.id == SH_FLOOR) c = h2 < 0.6 ? shPlanks(q, vec3(0.3, 0.17, 0.09))
-        : shTiles(q.xz, 0.3, vec3(0.03), vec3(0.75));
-      else if (h.id == SH_CEIL) c = h1 < 0.5 ? vec3(0.03) : vec3(0.7);
-      else if (h.id == SH_SIDE) {
-        c = wall;
-        if (h3 > 0.55 && h3 < 0.8) // (bare brick)
-          c *= fract(q.y / 0.075) < 0.15 || fract(q.z / 0.215 + 0.5 * floor(q.y / 0.075)) < 0.06
-            ? 1.5 : 0.8 + 0.3 * shH(floor(vec2(q.z / 0.215, q.y / 0.075)), 1.0);
-      } else if (h.id == SH_BACK) {
-        c = wall;
-        // the menu board, its lines of chalk; shelves of cups under it
-        if (abs(q.x - xm) < 1.2 && q.y > 1.9 && q.y < 2.7) {
-          c = vec3(0.025);
-          if (fract(q.y / 0.09) < 0.35 && abs(q.x - xm) < 1.05
-            && shH(floor(vec2(q.x / 0.3, q.y / 0.09)), 4.0) > 0.25) c = vec3(0.6);
-        } else if (q.y > 1.25 && q.y < 1.75) c = fract(q.y / 0.25) < 0.1 ? vec3(0.3, 0.2, 0.12)
-          : shH(floor(vec2(q.x / 0.12, q.y / 0.25)), 5.0) > 0.4 ? vec3(0.8) : c;
-      } else if (h.id == SH_A) c = h.n.y > 0.5 ? vec3(0.7) : h2 < 0.5 ? vec3(0.25, 0.13, 0.06)
-        : shTiles(q.xy, 0.15, vec3(0.7), vec3(0.65));
-      else if (h.id == SH_B) c = h1 < 0.5 ? vec3(0.32, 0.18, 0.08) : vec3(0.75);
-      else if (h.id == SH_C) c = vec3(0.03);
-      else c = h3 < 0.5 ? vec3(0.03) : vec3(0.35, 0.18, 0.08);
-      // (pools of light under the lamps)
-      lk = 0.45 + 0.6 * exp(-4.0 * dot(q.xz - T1.xz, q.xz - T1.xz))
-        + 0.6 * exp(-4.0 * dot(q.xz - T2.xz, q.xz - T2.xz));
-    } else if (k < 1.5) {
-      // ---- a clothes shop ----
-      shBox(o, iv, vec3(x0, 0.95, -D + 0.6), vec3(x0 + 0.5, 1.75, -1.1), SH_A, h);
-      shBox(o, iv, vec3(x1 - 0.5, 0.95, -D + 0.6), vec3(x1, 1.75, -1.1), SH_A, h);
-      shBox(o, iv, vec3(xm - 0.55, 0.0, -0.55 * D - 0.45), vec3(xm + 0.55, 0.8, -0.55 * D + 0.45),
-        SH_B, h);
-      // mannequins in the window, one or two
-      float m1 = mix(x0 + 0.6, x1 - 0.6, h2), m2 = mix(x0 + 0.6, x1 - 0.6, fract(h2 + 0.45));
-      cp = shCard(o, rr, -0.6, h, ct);
-      float mq = shMannequin(cp, m1, step(0.5, h3), 1.0);
-      if (mq < 0.5 && W > 4.0) mq = shMannequin(cp, m2, step(0.5, h1), 1.0);
-      if (mq > 0.5) { h.t = ct; h.id = SH_D; h.n = vec3(0.0, 0.0, 1.0); part = mq; }
-      q = o + rr * h.t;
-      vec3 wall = h3 < 0.6 ? vec3(0.8) : vec3(0.75, 0.66, 0.62);
-      if (h.id == SH_FLOOR) c = h1 < 0.5 ? shPlanks(q, vec3(0.5, 0.36, 0.22)) : vec3(0.42);
-      else if (h.id == SH_CEIL) {
-        c = vec3(0.75);
-        // spotlights in two rows
-        vec2 f = vec2(abs(q.x - xm) - 0.25 * W, fract(q.z / 1.2) - 0.5);
-        if (dot(f, f) < 0.004) em = lc * 2.4 * L.x;
-      } else if (h.id == SH_A) {
-        // clothes on hangers, side by side: each its colour, rounded into shadow at its edges (and
-        // at the rail's end, the last one's folds)
-        float g = (h.n.z > 0.5 ? q.x : q.z) / 0.075;
-        c = h.n.y > 0.5 ? vec3(0.4) : shGoods(shH(vec2(floor(g), s), 6.0))
-          * (0.55 + 0.45 * sin(3.1416 * fract(g))) * (h.n.z > 0.5 ? 0.6 : 1.0);
-      } else if (h.id == SH_B) c = h.n.y > 0.5
-        ? shGoods(shH(floor(q.xz / vec2(0.3, 0.25)), 7.0)) * (fract(q.z / 0.25) < 0.1 ? 0.5 : 1.0)
-        : vec3(0.75);
-      else if (h.id == SH_D) c = part < 1.5 ? (h1 < 0.6 ? vec3(0.8) : vec3(0.04))
-        : shGoods(shH(vec2(part, s), 8.0));
-      else c = h.id == SH_BACK && q.y > 0.4 && q.y < 2.2 && abs(q.x - xm) < 0.35 * W
-        ? shShelves(q.x, q.y, s) : wall;
-      lk = 0.75;
-      // (a closed shop's window display stays lit)
-      lamps = max(lamps, L.z * 0.8 * smoothstep(-2.0, -0.8, q.z));
-    } else if (k < 2.5) {
-      // ---- a convenience store or a pharmacy ----
-      float na = W > 5.0 ? 2.0 : 1.0;
-      for (int i = 0; i < 2; i++) {
-        if (float(i) >= na) break;
-        float ax = mix(x0, x1, (float(i) + 1.0) / (na + 1.0));
-        shBox(o, iv, vec3(ax - 0.42, 0.0, -D + 1.9), vec3(ax + 0.42, 1.7, -2.3), SH_A, h);
-      }
-      float side = h1 < 0.5 ? x0 + 0.1 : x1 - 1.4;
-      shBox(o, iv, vec3(side, 0.0, -1.8), vec3(side + 1.3, 1.0, -0.9), SH_B, h);
-      shPerson(o, rr, side + 0.65, -2.15, L.x, h, part);
-      q = o + rr * h.t;
-      if (h.id == SH_FLOOR) c = shTiles(q.xz, 0.3, vec3(0.62), vec3(0.55));
-      else if (h.id == SH_CEIL) {
-        c = vec3(0.7);
-        // fluorescent tubes, two rows down the shop
-        if (abs(abs(q.x - xm) - 0.17 * W) < 0.07 && fract(q.z / 1.6) > 0.2) em = lc * 2.2 * L.x;
-      } else if (h.id == SH_BACK) {
-        // fridges: glass doors, shelves of bottles behind, lit
-        c = vec3(0.6);
-        if (q.y > 0.05 && q.y < 2.15) {
-          float f = fract(q.x / 0.75);
-          if (f < 0.04 || f > 0.96 || q.y < 0.15 || q.y > 2.05) c = vec3(0.05);
-          else {
-            float b = fract(q.y / 0.38), bx = fract(q.x / 0.075);
-            bool on = shBottle(bx, b);
-            c = vec3(0.04);
-            em = vec3(0.8, 0.92, 1.0) * mix(0.45, 0.95, uNight) * max(L.x, 0.4)
-              * (b < 0.08 ? 0.4 : on ? 0.7 : 1.0);
-            if (on) em *= shGoods(shH(floor(vec2(q.x / 0.075, q.y / 0.38)), 9.0)) * 1.4 + 0.1;
-          }
-        }
-      } else if (h.id == SH_A || h.id == SH_SIDE)
-        // (an aisle's end faces the window: more shelves, a header in a bright colour over them)
-        c = h.n.y > 0.5 ? vec3(0.6) : h.n.z < 0.5 ? shShelves(q.z, q.y, s)
-          : q.y > 1.72 ? shGoods(h2) : shShelves(q.x, q.y, s + 7.0);
-      else c = h.n.y > 0.5 ? vec3(0.55) : vec3(0.15, 0.16, 0.2);
-      lk = 0.85;
-      even = 0.7;
-    } else if (k < 3.5) {
-      // ---- a hair or nail salon: chairs facing mirrors down one wall ----
-      float mw = h1 < 0.5 ? x0 : x1, sd = h1 < 0.5 ? 1.0 : -1.0;
-      for (int i = 0; i < 3; i++) {
-        float cz = -1.5 - 1.5 * float(i);
-        if (cz < -D + 1.0) break;
-        float a = mw + sd * 0.55, b = mw + sd * 1.1;
-        shBox(o, iv, vec3(min(a, b), 0.0, cz - 0.3), vec3(max(a, b), 1.1, cz + 0.3), SH_A, h);
-      }
-      shPerson(o, rr, mw + sd * 1.45, -1.5, L.x, h, part);
-      float dsk = h1 < 0.5 ? x1 - 1.5 : x0 + 0.2;
-      shBox(o, iv, vec3(dsk, 0.0, -D + 0.8), vec3(dsk + 1.3, 1.05, -D + 1.5), SH_B, h);
-      q = o + rr * h.t;
-      vec3 wall = h3 < 0.33 ? vec3(0.8, 0.6, 0.62) : h3 < 0.66 ? vec3(0.6, 0.78, 0.7)
-        : vec3(0.82, 0.8, 0.74);
-      if (h.id == SH_FLOOR) c = h2 < 0.5 ? shTiles(q.xz, 0.3, vec3(0.03), vec3(0.78))
-        : shPlanks(q, vec3(0.5, 0.36, 0.22));
-      else if (h.id == SH_CEIL) {
-        c = vec3(0.75);
-        vec2 f = vec2(fract(q.x / 1.4) - 0.5, fract(q.z / 1.5) - 0.5);
-        if (dot(f, f) < 0.01) em = lc * 2.0 * L.x;
-      } else if (h.id == SH_SIDE && abs(q.x - mw) < 0.01) {
-        // the mirrors, bulbs round each
-        float mz = (fract((q.z + 1.5) / 1.5 + 0.5) - 0.5) * 1.5;
-        c = wall;
-        if (abs(mz) < 0.45 && q.y > 0.8 && q.y < 2.05 && q.z < -0.9) {
-          c = mix(vec3(0.35, 0.38, 0.4), vec3(0.6, 0.62, 0.62), (q.y - 0.8) / 1.25);
-          vec2 e = vec2(0.45 - abs(mz), min(q.y - 0.8, 2.05 - q.y));
-          if (min(e.x, e.y) < 0.05) {
-            c = vec3(0.9);
-            if (fract(q.y / 0.2) < 0.4 || fract(mz / 0.2) < 0.4) em = lc * 1.6 * L.x;
-          }
-        }
-      } else if (h.id == SH_A) c = h2 < 0.4 ? vec3(0.03) : h2 < 0.7 ? vec3(0.4, 0.03, 0.04)
-        : vec3(0.6, 0.52, 0.42);
-      else if (h.id == SH_B) c = vec3(0.85);
-      else c = h.id == SH_BACK && q.y > 1.2 && q.y < 2.0 && fract(q.y / 0.4) > 0.15
-        ? shGoods(shH(floor(vec2(q.x / 0.06, q.y / 0.4)), 3.0)) : wall;
-      lk = 0.8;
-      even = 0.4;
-    } else if (k < 4.5) {
-      // ---- a bar: its counter down one side, stools along it, bottles lit behind ----
-      float bw = h1 < 0.5 ? x0 : x1, sd = h1 < 0.5 ? 1.0 : -1.0;
-      float a = bw + sd * 0.95, b = bw + sd * 1.55;
-      shBox(o, iv, vec3(min(a, b), 0.0, -D + 0.8), vec3(max(a, b), 1.08, -1.6), SH_A, h);
-      shPerson(o, rr, bw + sd * 0.5, -2.4 - 1.4 * h2, L.x, h, part);
-      for (int i = 0; i < 3; i++) {
-        cp = shCard(o, rr, -2.0 - 1.1 * float(i), h, ct);
-        if (shStool(cp, bw + sd * 1.9) > 0.5) { h.t = ct; h.id = SH_C; h.n = vec3(0.0, 0.0, 1.0); }
-      }
-      q = o + rr * h.t;
-      vec3 wall = h3 < 0.4 ? vec3(0.12, 0.02, 0.02) : h3 < 0.7 ? vec3(0.02, 0.06, 0.04)
-        : vec3(0.1, 0.05, 0.03);
-      if (h.id == SH_FLOOR) c = shPlanks(q, vec3(0.12, 0.06, 0.03));
-      else if (h.id == SH_CEIL) c = vec3(0.02);
-      else if (h.id == SH_SIDE && abs(q.x - bw) < 0.01 && q.y > 1.2 && q.y < 2.5) {
-        // shelves of bottles, lit from behind
-        float b = fract((q.y - 1.2) / 0.43), bx = fract(q.z / 0.09);
-        c = vec3(0.03);
-        em = vec3(1.0, 0.62, 0.3) * 0.6 * L.x;
-        if (shBottle(bx, b))
-          em *= 0.5 + 1.8 * shGoods(shH(floor(vec2(q.z / 0.09, q.y / 0.43)), 2.0));
-        else if (b < 0.08) em *= 0.2;
-      } else if (h.id == SH_A) c = h.n.y > 0.5 ? vec3(0.05, 0.03, 0.02)
-        : q.y < 0.2 && q.y > 0.17 ? vec3(0.6, 0.45, 0.15) : vec3(0.1, 0.05, 0.025);
-      else if (h.id == SH_C) c = vec3(0.04);
-      else c = wall;
-      lk = 0.55 + 0.6 * exp(-1.5 * (q.x - bw) * (q.x - bw));
-    } else {
-      // ---- an empty unit: bare concrete, a few boxes left behind ----
-      shBox(o, iv, vec3(x1 - 1.3, 0.0, -D + 0.9), vec3(x1 - 0.4, 0.75, -D + 1.7), SH_A, h);
-      shBox(o, iv, vec3(x1 - 1.1, 0.75, -D + 1.0), vec3(x1 - 0.55, 1.2, -D + 1.5), SH_A, h);
-      q = o + rr * h.t;
-      if (h.id == SH_A) c = vec3(0.42, 0.28, 0.15);
-      else if (h.id == SH_FLOOR) c = vec3(0.3) * (0.85 + 0.3 * shH(floor(q.xz * 1.3), 1.0));
-      else if (h.id == SH_CEIL) c = vec3(0.12);
-      else c = vec3(0.55, 0.53, 0.5) * (fract(q.y * 0.6 + q.x * 0.1) < 0.3 ? 0.9 : 1.0);
-      lk = 0.0;
-    }
-    // (someone at work: their skin, their top, their trousers)
-    if (h.id == SH_P)
-      c = part < 1.5 ? (h2 < 0.3 ? vec3(0.6, 0.42, 0.32) : h2 < 0.6 ? vec3(0.36, 0.22, 0.14)
-        : h2 < 0.85 ? vec3(0.5, 0.33, 0.22) : vec3(0.13, 0.08, 0.05))
-        : part < 2.5 ? shGoods(fract(h3 * 7.3)) : vec3(0.04, 0.045, 0.06);
-    vec3 E = shLight(q, x0, x1, Hc, even, lamps * lk, lc);
-    // (darker into the room's corners and along its edges, where the light reaches less)
-    vec3 e = 1.0 - smoothstep(0.0, 0.5, vec3(min(q.x - x0, x1 - q.x), min(q.y, Hc - q.y), q.z + D));
-    float ao = 1.0 - 0.45 * (e.x * e.y + e.x * e.z + e.y * e.z);
-    return c * E * ao + em;
-  }
-  // the same, seen from far off: the room's light on average (each kind's matched by eye to what
-  // the traced room gives, straight on, by day and at night), a shut clothes shop's lit window
-  // and a bar's lit bottles with it
-  vec3 shopAverage (float k, float s, vec4 L, vec3 lc) {
-    float lamps = L.x * mix(0.2, 1.6, uNight);
-    vec3 a = k < 0.5 ? vec3(0.38, 0.33, 0.26) : k < 1.5 ? vec3(0.38, 0.34, 0.32)
-      : k < 2.5 ? vec3(0.5, 0.48, 0.45) : k < 3.5 ? vec3(0.48, 0.44, 0.42)
-      : k < 4.5 ? vec3(0.05, 0.035, 0.025) : vec3(0.4);
-    float lk = k < 0.5 ? 0.7 : k < 1.5 ? 0.75 : k < 2.5 ? 0.95 : k < 3.5 ? 0.85 : k < 4.5 ? 1.2 : 0.0;
-    float day = (1.0 - uNight) * 0.15;
-    return a * (lc * (lamps * lk + 0.3 * L.z) * 0.6 + day)
-      + (k > 3.5 && k < 4.5 ? vec3(0.02, 0.025, 0.015) * L.x : vec3(0.0));
-  }
-`
-__export(__exports, { "ROOMS_GLSL": () => ROOMS_GLSL })
-})
-
-// ---- js/render/shopShader.js
-__define(255, function (__exports) {
-// The shopfronts' shader. Each shop is one flat quad on its building's ground floor (shopfronts.js),
-// and everything on it is worked out per pixel from where the pixel is on the shop (x along it from
-// its left end, y up from the pavement, in metres) and the shop's own numbers: the piers either side
-// in the building's colour, the fascia over it with the shop's name on its board (lit at night, a
-// lightbox's whole face, a sign's letters or a neon tube: shopTex.js); and, set back from them so
-// the reveal shows at an angle, the shopfront itself: a stall riser of granite, tiles or paint under
-// the glass, the frame and its mullions, a transom bar, a glass door with its push bar; over some, an
-// awning in the shop's colour, plain or striped (its own quads, v below 0). Through the glass, the
-// shop inside, traced as the rooms behind the windows above are (shopRooms.js). The glass is smooth,
-// and what it reflects is worked out too: the pavement and the road below eye level, the buildings
-// across the street (their walls and windows, their own shops lit along their feet at night) and
-// the sky over them; it reflects more the more glancing the view (Fresnel), so straight on you see
-// into the shop and along the street you see the street. By day the shops are lit only
-// as well as a room is, darker than the sunlit street; as it gets dark (NIGHT: facade.js) each
-// switches its sign and its lights on at its own moment, and some shut, more of them late; those
-// open throw their light on the pavement in front (poolMaterial). Far off, where a shop is only a
-// few pixels high, the reveal and the room go and the glass shows the room's light on average.
-const THREE = __require(0)
-const { NIGHT } = __require(226)
-const { ROOMS_GLSL } = __require(254)
-const { W, H, BOARD, DECAL, DECAL_Y } = __require(253)
-
-const INSET = 0.18 // m the glazing sits back from the piers and the fascia
-const FAR = 0.07 // m a pixel, past which the glass shows the room's light on average
-const ACROSS = 22.8 // m from a shopfront to the buildings across the street
-const f = v => v.toFixed(4)
-const vec2 = (a, b) => `vec2(${f(a)}, ${f(b)})`
-
-// a random number, 0 to 1, from a shop's own one (s) and a key (k)
-const HASH_GLSL = `
-  float sHash (float s, float k) { return fract(sin(s * 78.233 + k * 12.9898) * 43758.5453); }`
-// How lit a shop is, and in what light, shared with the light it throws on the pavement (worked
-// out once a corner, in the vertex shader: they are the same all over a shop)
-const LIGHTS_GLSL = `
-  // At darkness n (0 by day, 1 at night): x, the lights inside (0 to 1); y, the sign; z, a shut
-  // clothes shop's window display; w, the neon in the window. Each shop switches its sign on at its
-  // own moment as the light goes; a bar opens as it gets dark; a share of the rest shut for the
-  // night, each at its own hour (most clothes shops and salons, a third of the cafés, a few stores),
-  // half of them leaving their sign on and most clothes shops their window lit. An empty shop is dark.
-  vec4 shopLights (float k, float s, float n) {
-    if (k > 4.5) return vec4(0.0);
-    float h1 = sHash(s, 1.0), h2 = sHash(s, 2.0), h3 = sHash(s, 3.0);
-    float t1 = 0.12 + 0.4 * h1;
-    float sg = smoothstep(t1, t1 + 0.04, n), lamps = 1.0, display = 0.0;
-    if (k > 3.5) {
-      float t2 = 0.08 + 0.35 * h2;
-      lamps = 0.2 + 0.8 * smoothstep(t2, t2 + 0.04, n);
-    } else if (h2 < (k < 0.5 ? 0.3 : k < 1.5 ? 0.6 : k < 2.5 ? 0.12 : 0.7)) {
-      float t3 = 0.45 + 0.5 * h3, off = smoothstep(t3, t3 + 0.04, n);
-      lamps = 1.0 - off;
-      sg *= 1.0 - off * step(0.5, h1);
-      display = k > 0.5 && k < 1.5 && h3 > 0.3 ? off : 0.0;
-    }
-    return vec4(lamps, sg, display, sg * smoothstep(0.3, 0.6, lamps));
-  }
-  // the lamps' colour: a café's and a bar's warm, a store's cool white, the rest between
-  vec3 shopLightColour (float k, float s) {
-    float h = sHash(s, 4.0);
-    vec3 warm = vec3(1.0, 0.7, 0.42), mid = vec3(1.0, 0.86, 0.7), cool = vec3(0.84, 0.92, 1.0);
-    return k < 0.5 ? mix(warm, mid, 0.6 * h) : k < 1.5 ? mix(mid, cool, 0.7 * h)
-      : k < 2.5 ? mix(cool, mid, 0.3 * h) : k < 3.5 ? mix(mid, cool, h)
-      : mix(vec3(1.0, 0.5, 0.25), vec3(0.95, 0.38, 0.5), h);
-  }`
-
-// What the glass reflects, in the street's frame: below eye level the pavement and the road, then
-// the buildings across the street up to their roofs (pale walls in rows of windows, their own shops
-// along their feet, lit at night), and the sky (the environment map, sky) over them; far off, more
-// of the sky's haze. R: the reflected ray, N: out of the shopfront, both in the world; y: the
-// point's height
-const MIRROR_GLSL = `
-  vec3 shopMirror (vec3 sky, vec3 R, vec3 N, float y, vec3 at) {
-    float away = dot(R.xz, N.xz);
-    float tF = away > 0.01 ? ${f(ACROSS)} / away : 1e5;
-    float tG = R.y < -1e-3 ? (y - 0.08) / -R.y : 1e5;
-    vec3 c = sky;
-    if (tG < tF) {
-      float d = tG * away;
-      c = (d < 4.4 || d > ${f(ACROSS - 4.4)} ? vec3(0.13) : vec3(0.035)) * mix(1.0, 0.15, uNight);
-    } else if (tF < 1e4) {
-      float yF = y + R.y * tF;
-      vec2 T = vec2(N.z, -N.x);
-      float s = dot(at.xz, T) + tF * dot(R.xz, T), b = floor(s / 16.0);
-      float hb = sHash(b, 11.0);
-      if (yF < 6.0 + 24.0 * hb * hb) {
-        vec3 wall = mix(vec3(0.5, 0.45, 0.4), vec3(0.78, 0.72, 0.62), sHash(b, 12.0)) * 0.42;
-        // (its windows, and the piers between its shops, fading out far off rather than flicker)
-        vec2 w = vec2(fract(s / 3.0), fract(yF / 3.5));
-        float near = 1.0 - smoothstep(40.0, 120.0, tF);
-        float win = yF > 4.6 && w.x > 0.25 && w.x < 0.75 && w.y > 0.3 && w.y < 0.8 ? near : 0.0;
-        float lit = step(sHash(floor(s / 3.0) + 31.0 * floor(yF / 3.5), 13.0), 0.4);
-        float pier = step(fract(s / 5.5), 0.08) * near;
-        c = yF < 4.6 ? (yF > 3.4 ? wall * 0.6 : mix(vec3(0.04), wall * 0.8, pier))
-          : mix(wall, vec3(0.05), win);
-        vec3 nc = vec3(0.01) + vec3(0.5, 0.34, 0.18) * win * lit;
-        if (yF < 3.3 && yF > 0.5) nc = vec3(0.42, 0.3, 0.18) * step(0.35, sHash(floor(s / 5.0), 14.0));
-        c = mix(c, nc, uNight);
-      }
-    }
-    return mix(c, sky, smoothstep(50.0, 220.0, min(tF, tG)));
-  }`
-
-function shopMaterial (signs) {
-  const m = new THREE.MeshStandardMaterial({
-    vertexColors: true,
-    roughness: 0.8
-  })
-  const cell = vec2(BOARD[0] / W, BOARD[1] / H),
-    decal = vec2(DECAL[0] / W, DECAL[1] / H),
-    aspect = f(BOARD[0] / BOARD[1])
-  m.onBeforeCompile = shader => {
-    shader.uniforms.uNight = NIGHT
-    shader.uniforms.uSigns = { value: signs }
-    shader.vertexShader = shader.vertexShader
-      .replace(
-        '#include <common>',
-        `#include <common>
-        uniform float uNight;
-        attribute vec4 shop, shopDoor, shopTrim;
-        attribute vec3 shopBrand;
-        varying vec2 vShopUv;
-        flat varying vec4 vShop, vShopDoor, vShopTrim, vShopL, vShopH, vShopF;
-        flat varying vec3 vShopBrand, vShopC;
-        varying vec3 vShopW;
-        ${HASH_GLSL}
-        ${LIGHTS_GLSL}`
-      )
-      .replace(
-        '#include <uv_vertex>',
-        `#include <uv_vertex>
-        vShopUv = uv;
-        vShop = shop;
-        vShopDoor = shopDoor;
-        vShopTrim = shopTrim;
-        vShopBrand = shopBrand;
-        // (what is the same all over the shop: how lit it is and in what light, and its own
-        // random numbers for its room, its sign and its riser)
-        vShopL = shopLights(shop.y, shop.w, uNight);
-        vShopC = shopLightColour(shop.y, shop.w);
-        vShopH = vec4(sHash(shop.w, 7.0), sHash(shop.w, 8.0), sHash(shop.w, 9.0), sHash(shop.w, 6.0));
-        vShopF = vec4(sHash(shop.w, 21.0), sHash(shop.w, 22.0), sHash(shop.w, 23.0), sHash(shop.w, 24.0));`
-      )
-      .replace(
-        '#include <begin_vertex>',
-        `#include <begin_vertex>
-        vShopW = (modelMatrix * vec4(transformed, 1.0)).xyz;`
-      )
-    shader.fragmentShader = shader.fragmentShader
-      .replace(
-        '#include <common>',
-        `#include <common>
-        uniform float uNight;
-        uniform sampler2D uSigns;
-        varying vec2 vShopUv;
-        flat varying vec4 vShop, vShopDoor, vShopTrim, vShopL, vShopH, vShopF;
-        flat varying vec3 vShopBrand, vShopC;
-        varying vec3 vShopW;
-        float gGlass = 0.0, gRough = 0.85, gMetal = 0.0;
-        vec3 gEmit = vec3(0.0);
-        ${HASH_GLSL}
-        ${ROOMS_GLSL}
-        ${MIRROR_GLSL}
-        // a sign in the window: where it is on the glass (centre c, size sz, m), its cell d in
-        // the atlas; its colour and, in alpha, its glow (alpha -1: not on it)
-        vec4 shopDecal (vec2 g, vec2 c, vec2 sz, float d, vec2 gx, vec2 gy) {
-          vec2 l = (g - c) / sz + 0.5;
-          if (l.x < 0.0 || l.x > 1.0 || l.y < 0.0 || l.y > 1.0) return vec4(0.0, 0.0, 0.0, -1.0);
-          vec2 uv = vec2(d * ${decal}.x + l.x * ${decal}.x, ${f(DECAL_Y / H)} + (1.0 - l.y) * ${decal}.y);
-          return textureGrad(uSigns, uv, gx / sz * ${decal}, gy / sz * ${decal});
-        }`
-      )
-      .replace(
-        '#include <color_fragment>',
-        `{
-        float Wu = vShop.x, kind = vShop.y, seed = vShop.w;
-        float pier = vShopDoor.x, doorX = vShopDoor.y, doorW = vShopDoor.z, head = vShopDoor.w;
-        float riser = vShopTrim.x, transom = vShopTrim.y, frameK = vShopTrim.z;
-        float cover = floor((vShopTrim.w + 0.5) / 8.0), decal = floor(mod(vShopTrim.w + 0.5, 8.0));
-        vec2 p = vShopUv, pdx = dFdx(p), pdy = dFdy(p);
-        float mpp = max(max(length(pdx), length(pdy)), 1e-4);
-        bool far = mpp > ${f(FAR)};
-        vec4 L = vShopL;
-        vec3 lc = vShopC;
-        // the view ray in the wall's frame: along it, up it, out of it
-        vec3 nv = normalize(vNormal);
-        vec3 up = normalize((viewMatrix * vec4(0.0, 1.0, 0.0, 0.0)).xyz);
-        vec3 ta = normalize(cross(up, nv));
-        vec3 rd = normalize(-vViewPosition);
-        vec3 r = vec3(dot(rd, ta), dot(rd, up), min(dot(rd, nv), -0.02));
-        // the light from inside on the shopfront round the glass, at night
-        vec3 spill = lc * L.x * uNight;
-        vec3 frameC = frameK < 0.5 ? vec3(0.025) : frameK < 1.5 ? vec3(0.07, 0.05, 0.035)
-          : frameK < 2.5 ? vec3(0.45, 0.47, 0.5) : frameK < 3.5 ? vec3(0.75) : vShopBrand * 0.85;
-        vec3 col = vColor;
-        if (p.y < -0.5) {
-          // ---- an awning: cloth in the shop's colour, plain or striped, a darker hem along its
-          // valance; seen from under it, a little of the sun coming through, and the shop's light
-          // on it at night ----
-          float t = -p.y - 1.0;
-          vec3 c2 = dot(vShopBrand, vec3(0.3, 0.55, 0.15)) > 0.35 ? vec3(0.05, 0.14, 0.09)
-            : vec3(0.82, 0.78, 0.68);
-          col = vShopF.x < 0.55 ? mix(vShopBrand, c2, step(0.5, fract(p.x / 0.5))) : vShopBrand;
-          col *= t > 1.86 ? 0.55 : 1.0;
-          gRough = 0.9;
-          float under = step(inverseTransformDirection(nv, viewMatrix).y, -0.1);
-          gEmit = col * (under * 0.08 * (1.0 - uNight) + spill * mix(0.03, 0.25, under));
-        } else if (p.y > head) {
-          // ---- the fascia, the shop's name on a board (the whole width, or narrower) ----
-          float b0 = head + 0.2, b1 = min(4.38, b0 + 0.8 + 0.2 * vShopF.y);
-          float bw = (Wu - 2.0 * pier) * (vShopF.z < 0.55 ? 1.0 : 0.6 + 0.3 * vShopF.w);
-          vec2 e = vec2(0.5 * bw - abs(p.x - 0.5 * Wu), min(p.y - b0, b1 - p.y));
-          if (min(e.x, e.y) > 0.0) {
-            if (min(e.x, e.y) < 0.035) col = frameC;
-            else if (kind > 4.5) col = mix(vShopBrand, vec3(0.6), 0.6) * (0.85 + 0.15 * sin(p.x * 3.0));
-            else {
-              // (the cell as big as fits, the letters keeping their shape)
-              float cw = min(bw, (b1 - b0) * ${aspect}), ch = cw / ${aspect};
-              vec2 l = vec2((p.x - 0.5 * Wu) / cw, (p.y - 0.5 * (b0 + b1)) / ch) + 0.5;
-              l = clamp(l, vec2(0.02, 0.1), vec2(0.98, 0.9));
-              float si = floor(vShop.z + 0.5);
-              vec2 k = vec2(mod(si, 2.0), floor(si / 2.0));
-              vec2 uv = (k + vec2(l.x, 1.0 - l.y)) * ${cell};
-              vec4 s = textureGrad(uSigns, uv, pdx / vec2(cw, -ch) * ${cell}, pdy / vec2(cw, -ch) * ${cell});
-              col = s.rgb;
-              gRough = 0.5;
-              // (a lightbox's face kept under the bloom's threshold; its letters, a lit sign's
-              // and neon over it)
-              gEmit = s.rgb * s.a * L.y * mix(0.3, 1.1 + 0.5 * step(0.9, s.a), uNight);
-            }
-          } else gEmit = col * spill * 0.05;
-        } else if (p.x < pier || p.x > Wu - pier) {
-          // ---- a pier, a plinth at its foot ----
-          col *= p.y < 0.28 ? 0.7 : 1.0;
-          gEmit = col * spill * 0.04;
-        } else {
-          // ---- the shopfront, set back: where the view ray meets it ----
-          vec2 g = far ? p : p + r.xy * (${f(INSET)} / -r.z);
-          if (g.x < pier || g.x > Wu - pier) {
-            col *= 0.62;
-            gEmit = col * spill * 0.15;
-          } else if (g.y > head) {
-            col *= 0.4;
-            gEmit = col * spill * 0.12;
-          } else if (g.y < 0.0) col = vec3(0.4);
-          else {
-            // 0 glass, 1 frame, 2 the stall riser
-            int what = 0;
-            float fw = 0.06 + 0.7 * mpp;
-            // (the door's head meets the transom bar, if there is one)
-            float dh = transom > 0.0 ? transom - 0.5 * fw : min(2.3, head - 0.3);
-            bool door = g.x > doorX && g.x < doorX + doorW;
-            if (door) {
-              float ex = min(g.x - doorX, doorX + doorW - g.x);
-              if (g.y < dh) {
-                if (ex < 0.085 || dh - g.y < 0.09 || g.y < 0.22 || abs(g.y - 1.02) < 0.025)
-                  what = 1;
-                // (a pair of doors: a stile down the middle)
-                if (doorW > 1.5 && abs(g.x - doorX - 0.5 * doorW) < 0.06) what = 1;
-              } else if (g.y < dh + fw || g.y > head - fw || ex < 0.5 * fw) what = 1;
-            } else if (g.y < riser) what = 2;
-            else if (g.y < riser + fw || g.y > head - fw) what = 1;
-            else if (transom > 0.0 && abs(g.y - transom) < 0.5 * fw) what = 1;
-            else {
-              // the mullions: panes of up to 2 m between the jambs and the door
-              float a = g.x < doorX ? pier : doorX + doorW, b = g.x < doorX ? doorX : Wu - pier;
-              float n = max(1.0, ceil((b - a) / 2.0)), q = (g.x - a) / (b - a) * n;
-              float e = min(fract(q), 1.0 - fract(q)) * (b - a) / n;
-              if (e < 0.5 * fw || g.x - pier < fw || Wu - pier - g.x < fw) what = 1;
-            }
-            if (what == 2) {
-              // the stall riser: polished granite, tiles or a painted panel
-              float rk = vShopF.x;
-              col = rk < 0.4 ? vec3(0.03) : rk < 0.7 ? shTiles(g, 0.1, vShopBrand * 0.6 + 0.04,
-                vShopBrand * 0.5 + 0.04) : vColor * 0.55;
-              gRough = rk < 0.4 ? 0.18 : 0.55;
-              gEmit = col * spill * 0.2;
-            } else if (what == 1) {
-              col = frameC;
-              gRough = 0.4;
-              gMetal = frameK > 1.5 && frameK < 2.5 ? 0.7 : 0.2;
-              gEmit = col * spill * 0.15;
-            } else {
-              // ---- glass ----
-              gGlass = 1.0;
-              gRough = 0.05;
-              col = vec3(0.004);
-              // the wider side of the door: where a sign in the window goes
-              float lw = doorX - pier, rw = Wu - pier - doorX - doorW;
-              float wide = lw > rw ? 0.5 * (pier + doorX) : 0.5 * (doorX + doorW + Wu - pier);
-              // an empty shop's windows papered over, or whitewashed
-              bool covered = cover > 0.5 && !door && g.y > riser + 0.08 && g.y < head - 0.12;
-              if (covered) {
-                if (cover < 1.5) {
-                  // brown paper in sheets, their seams, the odd crease
-                  vec2 k = floor(vec2(g.x / 0.9, g.y / 1.25));
-                  col = vec3(0.4, 0.29, 0.17) * (0.9 + 0.1 * shH(k, 3.0));
-                  col *= fract(g.x / 0.9) < 0.02 || fract(g.y / 1.25) < 0.015 ? 0.75 : 1.0;
-                  col *= 0.97 + 0.03 * sin(g.x * 31.0 + 9.0 * g.y) * sin(g.y * 17.0 - 5.0 * g.x);
-                } else
-                  // whitewash brushed on in streaks
-                  col = vec3(0.6, 0.6, 0.56) * (0.88 + 0.12 * smoothstep(-1.0, 1.0,
-                    sin(g.y * 29.0 + 2.5 * sin(g.x * 3.7)) * sin(g.x * 2.1 + g.y)));
-                gRough = 0.9;
-              }
-              // (decal: the sign's cell in the atlas, one on; 0 none)
-              vec4 d = vec4(0.0, 0.0, 0.0, -1.0);
-              if (decal > 0.5 && decal < 1.5) {
-                // a FOR LEASE board
-                d = shopDecal(g, vec2(wide, 1.45), vec2(0.9, 0.5625), 0.0, pdx, pdy);
-                if (d.a >= 0.0) { col = d.rgb; gRough = 0.7; covered = true; }
-              } else if (decal > 1.5 && !far) {
-                // neon: OPEN on the glass by the door, or a bar's cocktail glass
-                bool bar = decal > 2.5 && decal < 3.5;
-                vec2 c = bar ? vec2(wide, 1.75)
-                  : vec2(lw > rw ? doorX - 0.5 : doorX + doorW + 0.5, 1.55);
-                vec2 sz = bar ? vec2(1.0, 0.625) : vec2(0.62, 0.39);
-                d = shopDecal(g, c, sz, decal - 1.0, pdx, pdy);
-                if (d.a >= 0.0) {
-                  gEmit += d.rgb * d.a * L.w * 2.6;
-                  col += d.rgb * d.a * 0.12;
-                }
-              }
-              if (!covered) {
-                vec3 inside = far ? shopAverage(kind, seed, L, lc)
-                  : shopRoom(vec3(g, 0.0), r, Wu, kind, seed, vShopH, L, lc, head);
-                // (what the glass doesn't reflect comes through it, tinted a little green)
-                float F = 0.05 + 0.95 * pow(clamp(1.0 + r.z, 0.0, 1.0), 5.0);
-                gEmit += inside * (1.0 - F) * vec3(0.88, 0.95, 0.93);
-              }
-            }
-          }
-        }
-        diffuseColor.rgb = col;
-        }`
-      )
-      .replace(
-        '#include <metalnessmap_fragment>',
-        `#include <metalnessmap_fragment>
-        roughnessFactor = gRough;
-        metalnessFactor = gMetal;`
-      )
-      .replace(
-        '#include <emissivemap_fragment>',
-        'totalEmissiveRadiance = gEmit;'
-      )
-      .replace(
-        '#include <lights_fragment_maps>',
-        `#include <lights_fragment_maps>
-        // (a shop's plate glass reflects a little more than bare glass would: 5% straight on)
-        if (gGlass > 0.5)
-          radiance = 1.25 * shopMirror(radiance, inverseTransformDirection(reflect(-geometryViewDir,
-            geometryNormal), viewMatrix), inverseTransformDirection(geometryNormal, viewMatrix),
-            vShopUv.y, vShopW);`
-      )
-  }
-  m.customProgramCacheKey = () => 'shopfronts'
-  return m
-}
-
-// The light a lit shop throws on the pavement in front of it at night: brightest at the shopfront,
-// fading out over the pavement and towards the shop's ends, in its lamps' colour; added onto the
-// ground, as the gas stations' canopies' is (citySigns.js)
-function poolMaterial () {
-  return new THREE.ShaderMaterial({
-    uniforms: { uNight: NIGHT },
-    vertexShader: `
-      uniform float uNight;
-      attribute vec4 shop;
-      varying vec2 vUv;
-      flat varying vec3 vLight;
-      varying float vFade;
-      ${HASH_GLSL}
-      ${LIGHTS_GLSL}
-      void main () {
-        vUv = uv;
-        vLight = shopLightColour(shop.y, shop.w) * shopLights(shop.y, shop.w, uNight).x
-          * smoothstep(0.15, 0.7, uNight) * 0.14;
-        vec4 mv = modelViewMatrix * vec4(position, 1.0);
-        vFade = 1.0 - smoothstep(120.0, 260.0, -mv.z);
-        gl_Position = projectionMatrix * mv;
-      }`,
-    fragmentShader: `
-      varying vec2 vUv;
-      flat varying vec3 vLight;
-      varying float vFade;
-      void main () {
-        float k = pow(clamp(1.0 - vUv.y, 0.0, 1.0), 2.2) * smoothstep(0.0, 0.3, vUv.x)
-          * smoothstep(1.0, 0.7, vUv.x);
-        gl_FragColor = vec4(vLight * k * vFade, 1.0);
-      }`,
-    transparent: true,
-    blending: THREE.AdditiveBlending,
-    depthWrite: false,
-    polygonOffset: true,
-    polygonOffsetFactor: -4,
-    polygonOffsetUnits: -4
-  })
-}
-__export(__exports, { "shopMaterial": () => shopMaterial, "poolMaterial": () => poolMaterial })
-})
-
-// ---- js/render/shopfronts.js
-__define(256, function (__exports) {
-// The storefronts round the ground floor of every building with shops (the sim's b.shop): each wall
-// split into shops a few metres wide (narrower on Hollywood's strip, wider in the strip malls), each
-// one flat quad carrying its own numbers for the shader (shopShader.js): its width, its kind (a café,
-// a clothes shop, a store, a salon, a bar or an empty unit, in each neighbourhood's own mix), its
-// sign, the piers either side, where its door is, the height of its glass, its stall riser and
-// transom, the colour of its frame, what is stuck in its window, and a random number of its own for
-// the rest; over some, a fabric awning. A stand-alone shop (a gas station's, a fast-food stand) is
-// one business all round. A wall hidden against its neighbour's is left out. In front of each shop,
-// on the pavement, a quad for the light it throws there at night. One mesh for all the shops (and
-// their awnings), one for all their light.
-const THREE = __require(0)
-const { query, rng, CURB_H } = __require(35)
-const { BOARDS, BY_KIND, DECALS, shopSigns } = __require(253)
-const { shopMaterial, poolMaterial } = __require(255)
-
-const R = rng(4071)
-// the share of each kind (café, clothes, store, salon, bar, empty) by neighbourhood
-const MIX = {
-  beach: [30, 24, 12, 12, 8, 8],
-  boulevard: [20, 22, 14, 10, 18, 12],
-  downtown: [24, 14, 20, 8, 12, 18],
-  strip: [30, 8, 24, 20, 6, 12],
-  venice: [30, 24, 10, 14, 12, 8]
-}
-// how wide a shop is, about (m)
-const WIDE = { boulevard: 5, venice: 5.4, beach: 6, downtown: 6.4, strip: 6.8 }
-const POOL = 3.3 // m the light reaches out over the pavement
-const pick = w => {
-  let x = R() * w.reduce((a, b) => a + b, 0)
-  for (let i = 0; i < w.length; i++) if ((x -= w[i]) < 0) return i
-  return w.length - 1
-}
-// a tiled or painted surround instead of the building's own wall: black, green, oxblood, cream
-const SURROUNDS = [0x161616, 0x1f3d2c, 0x4a1a1a, 0xe8dcc4].map(h =>
-  new THREE.Color().setHex(h)
-)
-
-// A business: its kind (picked by the neighbourhood's mix, unless given), sign, colours, frame and
-// trim, and its own random number
-function business (b, kind = pick(MIX[b.area] || MIX.downtown)) {
-  const signs = BY_KIND[kind]
-  const sign = signs.length ? signs[Math.floor(R() * signs.length)] : 0
-  const brand = new THREE.Color(
-    signs.length ? BOARDS[sign].board : pickOf(['#7a6a58', '#5a6470'])
-  )
-  // what is stuck in the window: OPEN in neon, a bar's cocktail glass, OPEN 24 HRS, FOR LEASE;
-  // and an empty shop's windows papered over (1) or whitewashed (2), or not
-  const r = R()
-  const decal = [
-    r < 0.3 ? DECALS.open : -1,
-    -1,
-    r < 0.45 ? DECALS.open : r < 0.7 ? DECALS.allNight : -1,
-    r < 0.2 ? DECALS.open : -1,
-    r < 0.7 ? DECALS.glass : -1,
-    r < 0.7 ? DECALS.lease : -1
-  ][kind]
-  const c = R()
-  const cover = kind === 5 ? (c < 0.45 ? 1 : c < 0.7 ? 2 : 0) : 0
-  return {
-    kind,
-    sign,
-    brand,
-    seed: R(),
-    // black, dark bronze, silver, white, or the shop's own colour
-    frame: pick([35, 20, 25, 10, 10]),
-    riser: 0.35 + R() * 0.25,
-    head: 3.05 + R() * 0.35,
-    transom: R() < 0.55,
-    trim: decal + 1 + 8 * cover,
-    surround: R() < 0.25 ? SURROUNDS[Math.floor(R() * 4)] : null,
-    // a fabric awning over the glass (most cafés, some clothes shops and salons): how far it
-    // reaches out and how far it drops
-    awning:
-      R() < [0.55, 0.3, 0.06, 0.2, 0.12, 0][kind]
-        ? [1.0 + R() * 0.35, 0.55 + R() * 0.25]
-        : null
-  }
-}
-const pickOf = l => l[Math.floor(R() * l.length)]
-
-// the four walls of a tier: where each starts (a), along it (t), out of it (n), its length
-function walls ({ x0, x1, z0, z1 }) {
-  return [
-    { a: [x0, z1], t: [1, 0], n: [0, 1], len: x1 - x0 },
-    { a: [x1, z0], t: [-1, 0], n: [0, -1], len: x1 - x0 },
-    { a: [x1, z1], t: [0, -1], n: [1, 0], len: z1 - z0 },
-    { a: [x0, z0], t: [0, 1], n: [-1, 0], len: z1 - z0 }
-  ]
-}
-// the point s along wall w and o out from it, [x, z]
-const at = (w, s, o) => [
-  w.a[0] + w.t[0] * s + w.n[0] * o,
-  w.a[1] + w.t[1] * s + w.n[1] * o
-]
-// whether the stretch s0 to s1 of a wall stands against another building all along (so nobody
-// can see it)
-const hits = []
-function hidden (w, s0, s1) {
-  for (const k of [0.05, 0.25, 0.5, 0.75, 0.95]) {
-    const [x, z] = at(w, s0 + (s1 - s0) * k, 0.3)
-    query(x - 0.01, z - 0.01, x + 0.01, z + 0.01, hits)
-    const inside = hits.some(
-      c =>
-        c.kind === 'building' &&
-        c.y0 < 1 &&
-        c.y1 > 2.5 &&
-        x > c.x0 &&
-        x < c.x1 &&
-        z > c.z0 &&
-        z < c.z1
-    )
-    if (!inside) return false
-  }
-  return true
-}
-
-// quads with the attributes in spec (name: size), indexed
-function quads (spec) {
-  const data = Object.fromEntries(Object.keys(spec).map(k => [k, []]))
-  const index = []
-  let n = 0
-  return {
-    // the four corners a, b, c, d anticlockwise from the front, and the other attributes: one value
-    // for all four corners, or (uv) four
-    push (corners, vals) {
-      for (const p of corners) data.position.push(...p)
-      for (const k in vals)
-        for (let i = 0; i < 4; i++)
-          data[k].push(...(Array.isArray(vals[k][0]) ? vals[k][i] : vals[k]))
-      index.push(n, n + 1, n + 2, n, n + 2, n + 3)
-      n += 4
-    },
-    get count () {
-      return n / 4
-    },
-    geometry () {
-      const g = new THREE.BufferGeometry()
-      for (const k in spec)
-        g.setAttribute(k, new THREE.Float32BufferAttribute(data[k], spec[k]))
-      g.setIndex(index)
-      g.computeBoundingSphere()
-      return g
-    }
-  }
-}
-
-function shopfronts () {
-  const fronts = quads({
-    position: 3,
-    normal: 3,
-    uv: 2,
-    color: 3,
-    shop: 4,
-    shopDoor: 4,
-    shopTrim: 4,
-    shopBrand: 3
-  })
-  const pools = quads({ position: 3, uv: 2, shop: 4 })
-  // one shop, from s0 to s1 along wall w, top high; tint: the building's colour
-  function shopAt (w, s0, s1, top, biz, tint) {
-    const W = s1 - s0
-    const pier = Math.min(0.3 + R() * 0.14, W * 0.12)
-    const inner = W - 2 * pier
-    // the door: at one end of a narrow shop, at either end or in the middle of a wider one, a
-    // pair in some wide ones (none in a sliver of a wall)
-    let dw = inner > 7 && R() < 0.5 ? 1.8 : 1.0,
-      dx = pier
-    if (inner < dw + 0.4) dw = 0
-    else if (inner < dw + 1.6)
-      dx = R() < 0.5 ? pier + 0.08 : pier + inner - dw - 0.08
-    else {
-      const k = R()
-      dx =
-        k < 0.35
-          ? pier + 0.1
-          : k < 0.7
-          ? pier + inner - dw - 0.1
-          : pier + (inner - dw) / 2
-    }
-    const transom = biz.transom
-      ? Math.min(2.45 + R() * 0.2, biz.head - 0.35)
-      : 0
-    const shop = [W, biz.kind, biz.sign, biz.seed]
-    const col = biz.surround || tint
-    const vals = {
-      color: [col.r, col.g, col.b],
-      shop,
-      shopDoor: [pier, dx, dw, biz.head],
-      shopTrim: [biz.riser, transom, biz.frame, biz.trim],
-      shopBrand: [biz.brand.r, biz.brand.g, biz.brand.b]
-    }
-    // a quad across the shop from a to b (m along it), its bottom edge o0 out from the wall at
-    // height y0 and its top edge o1 out at y1, facing nrm; v0 and v1 the shader's v along them
-    const P = (s, o, y) => {
-      const [x, z] = at(w, s0 + s, o)
-      return [x, y, z]
-    }
-    const quad = (a, b, [o0, y0], [o1, y1], nrm, v0, v1) =>
-      fronts.push([P(a, o0, y0), P(b, o0, y0), P(b, o1, y1), P(a, o1, y1)], {
-        ...vals,
-        normal: nrm,
-        uv: [
-          [a, v0],
-          [b, v0],
-          [b, v1],
-          [a, v1]
-        ]
-      })
-    const fwd = [w.n[0], 0, w.n[1]]
-    quad(0, W, [0, 0], [0, top], fwd, 0, top)
-    if (biz.awning && inner > 1.5) {
-      // an awning over the glass: its slope, out from just over the glass and down, and the
-      // valance hanging from its front edge, each with an underside (v less than 0 tells the
-      // shader it is cloth: -1 to -2 down the slope, -2 to -3 down the valance)
-      const [out, drop] = biz.awning,
-        y0 = biz.head + 0.1,
-        y1 = y0 - drop,
-        l = Math.hypot(out, drop)
-      const up = [(w.n[0] * drop) / l, out / l, (w.n[1] * drop) / l]
-      const a = pier,
-        b = W - pier,
-        hem = [out, y1 - 0.24]
-      quad(a, b, [out, y1], [0, y0], up, -2, -1)
-      quad(a, b, [0, y0], [out, y1], up.map(v => -v), -1, -2)
-      quad(a, b, hem, [out, y1], fwd, -3, -2)
-      quad(b, a, hem, [out, y1], fwd.map(v => -v), -3, -2)
-    }
-    if (biz.kind === 5) return
-    // the light on the pavement in front (anticlockwise seen from above)
-    const y = CURB_H + 0.03
-    const p = (s, o) => {
-      const [x, z] = at(w, s, o)
-      return [x, y, z]
-    }
-    pools.push(
-      [
-        p(s0 - 0.3, 0.02),
-        p(s0 - 0.3, POOL),
-        p(s1 + 0.3, POOL),
-        p(s1 + 0.3, 0.02)
-      ],
-      {
-        uv: [
-          [0, 0],
-          [0, 1],
-          [1, 1],
-          [1, 0]
-        ],
-        shop
-      }
-    )
-  }
-  return {
-    // the shops round the foot of tier t of building b, up to top; tint: the building's colour
-    add (b, t, top, tint) {
-      // (a stand-alone shop is one business all round: a gas station's store, a fast-food stand)
-      const small = (t.x1 - t.x0) * (t.z1 - t.z0) < 250
-      const one =
-        b.kiosk !== undefined
-          ? business(b, 2)
-          : b.area === 'strip' && small
-          ? business(b, 0)
-          : null
-      for (const w of walls(t)) {
-        const n = Math.max(1, Math.round(w.len / (WIDE[b.area] || 6)))
-        const shares = Array.from({ length: n }, () => 0.85 + R() * 0.3)
-        const sum = shares.reduce((a, c) => a + c, 0)
-        let s = 0
-        for (const share of shares) {
-          const s0 = s
-          s += (share * w.len) / sum
-          if (!hidden(w, s0, s))
-            shopAt(w, s0, s, top, one || business(b), tint)
-        }
-      }
-    },
-    // the meshes, into group; returns night(k): the light on the pavement shown once it is dusk
-    build (group) {
-      const front = new THREE.Mesh(
-        fronts.geometry(),
-        shopMaterial(shopSigns())
-      )
-      front.name = 'storefronts'
-      front.castShadow = true
-      front.receiveShadow = true
-      group.add(front)
-      const light = new THREE.Mesh(pools.geometry(), poolMaterial())
-      light.name = 'shop light'
-      light.visible = false
-      group.add(light)
-      return {
-        shops: fronts.count,
-        night (k) {
-          light.visible = k > 0.15
-        }
-      }
-    }
-  }
-}
-__export(__exports, { "shopfronts": () => shopfronts })
-})
-
 // ---- js/render/buildingTex.js
-__define(257, function (__exports) {
+__define(258, function (__exports) {
 // The buildings' textures, drawn at startup: a facade per style (glass curtain wall, office ribbon
 // windows, brick at its real size, stucco with balconies, pale stone or terracotta with tall windows
 // between piers, a house's wall with its few windows), a flat roof's membrane, red clay tiles for hip
@@ -109113,7 +109252,7 @@ __export(__exports, { "COL": () => COL, "FLOOR": () => FLOOR, "CELLS": () => CEL
 })
 
 // ---- js/render/cityVariety.js
-__define(258, function (__exports) {
+__define(259, function (__exports) {
 // The city's variety, drawn (sim/variety.js lays it out): the districts' own palettes for their
 // walls and awnings, balconies down the apartments' street fronts, and on the roofs the water
 // tanks, terraces, solar panels, sawtooth factory roofs and gardens; and three landmarks seen from
@@ -109122,10 +109261,10 @@ __define(258, function (__exports) {
 // groyne, its beam sweeping the sea at night. All of it in five draws for the whole city: the lit
 // pieces, the crown rings, what glows, the beacons (cityBuildings.js's, blinking) and the beam.
 const THREE = __require(0)
-const { Builder } = __require(239)
+const { Builder } = __require(245)
 const { ROOFTOPS, LANDMARKS_V2 } = __require(103)
 const { BUILDINGS, ROADS } = __require(35)
-const { FLOOR, SHOP } = __require(257)
+const { FLOOR, SHOP } = __require(258)
 
 // a building's own number from where it stands (no random draws: the layout's streams untouched)
 const hash = (b, k = 0) => {
@@ -109603,7 +109742,7 @@ __export(__exports, { "variedTint": () => variedTint, "awningFor": () => awningF
 })
 
 // ---- js/render/cityBuildings.js
-__define(259, function (__exports) {
+__define(260, function (__exports) {
 // City buildings: procedural facades (glass curtain wall, office, brick, stucco, stone and
 // terracotta, a house's wall) with windows lit for the evening, storefronts under canopies along
 // the street, setbacks, cornices, roof lips, rooftop plant and antenna beacons; houses under clay tile
@@ -109617,16 +109756,16 @@ __define(259, function (__exports) {
 const THREE = __require(0)
 const { canyonLit } = __require(190)
 const { LIP, LIP_H } = __require(36)
-const { facadeMaterial } = __require(226)
-const { district, DISTRICTS } = __require(234)
+const { facadeMaterial } = __require(194)
+const { district, DISTRICTS } = __require(240)
 const { BUILDINGS, rng } = __require(35)
 const { hdr } = __require(83)
-const { Builder } = __require(239)
-const { buildSigns } = __require(251)
-const { buildYards } = __require(252)
-const { shopfronts } = __require(256)
-const { buildVariety, variedTint, awningFor } = __require(258)
-const { COL, FLOOR, CELLS, SHOP, INSET, WIN, STYLES, facadeMap, roofTex, tileTex, crownTex } = __require(257)
+const { Builder } = __require(245)
+const { buildSigns } = __require(256)
+const { buildYards } = __require(257)
+const { shopfronts } = __require(197)
+const { buildVariety, variedTint, awningFor } = __require(259)
+const { COL, FLOOR, CELLS, SHOP, INSET, WIN, STYLES, facadeMap, roofTex, tileTex, crownTex } = __require(258)
 
 const R = rng(77)
 
@@ -110007,7 +110146,7 @@ __export(__exports, { "BEACON": () => BEACON, "buildBuildings": () => buildBuild
 })
 
 // ---- js/render/cityExtras.js
-__define(260, function (__exports) {
+__define(261, function (__exports) {
 // What there is to find off the streets, drawn (sim/extras.js lays it out): the alleys' dumpsters,
 // bins, crates and trash bags, the lamps over their back doors, their fire escapes and the lights
 // strung across them; the street furniture (newspaper boxes, parking meters, mailboxes); the
@@ -110015,7 +110154,7 @@ __define(260, function (__exports) {
 // of 576 m squares (each streamed out with the fog, chunks.js, as the districts' meshes), lit
 // pieces in one mesh a square and what glows in one mesh for the city.
 const THREE = __require(0)
-const { Builder } = __require(239)
+const { Builder } = __require(245)
 const { EXTRAS } = __require(103)
 
 const C = hex => new THREE.Color(hex)
@@ -110432,7 +110571,7 @@ __export(__exports, { "buildExtras": () => buildExtras })
 })
 
 // ---- js/sim/tokens.js
-__define(261, function (__exports) {
+__define(262, function (__exports) {
 // Thirty hidden tokens to find round the city, GTA's hidden packages: at the far end of alleys, on
 // the multi-storey car parks' roofs and a few low roofs (the Roadster flies), in the parks, out on
 // the pier and the sand by it, by the lighthouse, the masts, the observatory and the lookout, under the
@@ -110637,12 +110776,12 @@ __export(__exports, { "TOTAL": () => TOTAL, "PICK_R": () => PICK_R, "TOKENS": ()
 })
 
 // ---- js/render/cityTokens.js
-__define(262, function (__exports) {
+__define(263, function (__exports) {
 // The thirty hidden tokens (sim/tokens.js), drawn: gold coins standing on edge, turning and bobbing
 // where they wait, bright enough to catch the eye (the bloom) once you are close, gone once found.
 // One instanced mesh for all of them.
 const THREE = __require(0)
-const { TOKENS, FOUND } = __require(261)
+const { TOKENS, FOUND } = __require(262)
 
 const _m = new THREE.Matrix4(),
   _q = new THREE.Quaternion(),
@@ -110701,13 +110840,13 @@ __export(__exports, { "buildTokens": () => buildTokens })
 })
 
 // ---- js/render/cityStopSigns.js
-__define(263, function (__exports) {
+__define(264, function (__exports) {
 // The all-way stops' signs and their painted "STOP"s (sim/stopSigns.js): a red octagon with a white
 // border and STOP across it, on a galvanised post with its grey back plate; the lane legend in long
 // white letters before the line. Three instanced meshes for every one in the city; a sign knocked
 // flat (its collider down) is not drawn until the city stands up again.
 const THREE = __require(0)
-const { Builder } = __require(239)
+const { Builder } = __require(245)
 const { SIGNS, LEGENDS, SIGN } = __require(103)
 
 const R = SIGN.face
@@ -110869,7 +111008,7 @@ __export(__exports, { "buildStopSigns": () => buildStopSigns })
 })
 
 // ---- js/render/interiors/rooms.js
-__define(264, function (__exports) {
+__define(265, function (__exports) {
 // The interiors drawn: each room (sim/interiors/rooms.js) as three meshes in its own frame (x
 // across the door's wall, y up, z in from it), placed under the city where its site puts it
 // (sim/interiors/sites.js): the shell (floor, walls, ceiling and everything in the room, its light
@@ -111008,7 +111147,7 @@ __export(__exports, { "buildRoom": () => buildRoom, "roomMaterials": () => roomM
 })
 
 // ---- js/render/interiors/doors.js
-__define(265, function (__exports) {
+__define(266, function (__exports) {
 // The interiors' doors from the street: a door frame and its lit glass in the building's wall, an
 // awning over it in the place's colour, its name on a sign above, and on the pavement in front the
 // GTA-style marker that says it can be gone into; the body shop's roller door, its big sign, and
@@ -111133,7 +111272,7 @@ __export(__exports, { "buildDoors": () => buildDoors })
 })
 
 // ---- js/render/interiors/view.js
-__define(266, function (__exports) {
+__define(267, function (__exports) {
 // The interiors' view (render/city.js keeps one): every room built hidden, the one the player is in
 // shown; the doors outside; the light inside (the scene's lights turned to the room's for the
 // player's figure, the exposure steady, the rain left outside); the windows from the hour; and the
@@ -111142,8 +111281,8 @@ const THREE = __require(0)
 const { hemi, key, renderer, scene } = __require(83)
 const { SITES, POCKET } = __require(99)
 const { INTERIOR } = __require(119)
-const { buildRoom, roomMaterials } = __require(264)
-const { buildDoors } = __require(265)
+const { buildRoom, roomMaterials } = __require(265)
+const { buildDoors } = __require(266)
 
 const _day = new THREE.Color(1.1, 1.2, 1.35),
   _night = new THREE.Color(0.05, 0.06, 0.1)
@@ -111222,7 +111361,7 @@ __export(__exports, { "InteriorView": () => InteriorView })
 })
 
 // ---- js/render/city.js
-__define(267, function (__exports) {
+__define(268, function (__exports) {
 // The city view: builds the city's meshes the first time it is visited (so the test site loads as
 // fast as ever), shows it in place of the test site, and keeps the traffic, signals, sky, sea and
 // antenna beacons moving, the light following the clock and the weather (daylight.js), and the
@@ -111230,32 +111369,32 @@ __define(267, function (__exports) {
 const THREE = __require(0)
 const { ENV } = __require(3)
 const { Sky } = __require(176)
-const { Daylight } = __require(195)
+const { Daylight } = __require(203)
 const { plainGrade } = __require(189)
 const { GROUND } = __require(117)
-const { LAMP, lampOut, lampsBack } = __require(196)
+const { LAMP, lampOut, lampsBack } = __require(191)
 const { Aircraft } = __require(118)
 const { LAYER } = __require(116)
-const { buildEdges } = __require(207)
+const { buildEdges } = __require(214)
 const { scene, site, renderer } = __require(83)
-const { CityShadow } = __require(208)
+const { CityShadow } = __require(215)
 const { raycast, BUILDINGS, OUTER } = __require(35)
-const { PedView } = __require(233)
-const { TrafficView } = __require(225)
-const { NIGHT } = __require(226)
-const { buildProps } = __require(242)
-const { buildWorks } = __require(243)
-const { buildPort } = __require(244)
-const { buildStadium } = __require(245)
-const { buildGround } = __require(247)
-const { buildStreet } = __require(248)
-const { buildBuildings, BEACON } = __require(259)
-const { updateTrees } = __require(238)
-const { streamed, stream, streamAll, streamBack } = __require(234)
-const { buildExtras } = __require(260)
-const { buildTokens } = __require(262)
-const { buildStopSigns } = __require(263)
-const { InteriorView } = __require(266)
+const { PedView } = __require(239)
+const { TrafficView } = __require(232)
+const { NIGHT } = __require(194)
+const { buildProps } = __require(248)
+const { buildWorks } = __require(249)
+const { buildPort } = __require(250)
+const { buildStadium } = __require(251)
+const { buildGround } = __require(253)
+const { buildStreet } = __require(254)
+const { buildBuildings, BEACON } = __require(260)
+const { updateTrees } = __require(244)
+const { streamed, stream, streamAll, streamBack } = __require(240)
+const { buildExtras } = __require(261)
+const { buildTokens } = __require(263)
+const { buildStopSigns } = __require(264)
+const { InteriorView } = __require(267)
 
 const _pv = new THREE.Matrix4(),
   _view = new THREE.Frustum()
@@ -111482,7 +111621,7 @@ __export(__exports, { "CityView": () => CityView, "clipCamera": () => clipCamera
 })
 
 // ---- js/render/skids.js
-__define(268, function (__exports) {
+__define(269, function (__exports) {
 // Skid marks: one continuous rubber ribbon per sliding tyre. The ribbon is as wide as the tyre's
 // footprint across its path (full tread width in a straight lock-up, the short contact patch when it
 // slides sideways), darkens with how hard the tyre slides and fades in and out at each end. Near
@@ -111681,7 +111820,7 @@ __export(__exports, { "clearSkids": () => clearSkids, "updateSkids": () => updat
 })
 
 // ---- js/render/wall.js
-__define(269, function (__exports) {
+__define(270, function (__exports) {
 // The curved wall (slab, LED edges that turn white behind the car, centre line) and its steel truss.
 const THREE = __require(0)
 const { site, MAT } = __require(83)
@@ -111937,7 +112076,7 @@ __export(__exports, { "LED_MAT": () => LED_MAT, "buildWall": () => buildWall, "b
 })
 
 // ---- js/render/freeze.js
-__define(270, function (__exports) {
+__define(271, function (__exports) {
 // Fewer draw calls for a model built from many small pieces: every mesh that never moves on its own
 // is baked into one buffer per material (and per shadow setting), in the root's frame, so the
 // Roadster, about 230 meshes as built, is drawn (and drawn again into the shadow map) in a few dozen
@@ -112031,7 +112170,7 @@ __export(__exports, { "freeze": () => freeze })
 })
 
 // ---- js/render/wheels.js
-__define(271, function (__exports) {
+__define(272, function (__exports) {
 // Wheels and wheel wells: arch openings cut into the body shell with dark well liners, tyres with
 // rounded sidewalls round the reveal car's wheels (six black twin spokes over white aero inserts),
 // Ackermann steering and free-spinning wheels in the air.
@@ -112267,7 +112406,7 @@ __export(__exports, { "ARCH_R": () => ARCH_R, "withWheelArches": () => withWheel
 })
 
 // ---- js/render/roadsterSlope.js
-__define(272, function (__exports) {
+__define(273, function (__exports) {
 // The Roadster drawn lying on the slope it drives up (the freeway's ramps, the hill road, the bridge):
 // the sim climbs them as a flight of thin treads (roofs.js, plots.js ramp) and keeps the car level,
 // so the model is pitched and rolled to the ground under its wheels (world.js groundHeight) and set
@@ -112318,7 +112457,7 @@ __export(__exports, { "slopeRoadster": () => slopeRoadster })
 })
 
 // ---- js/render/roadsterRear.js
-__define(273, function (__exports) {
+__define(274, function (__exports) {
 // The Roadster's tail, as in the rear shot from the reveal: a full-width red light bar in a smoked
 // black band under the ducktail lip, a satin panel with the plate and a camera, and the black lower
 // fascia: a louvred housing for the 4 main nozzles over a diffuser of 4 fan bays split by strakes,
@@ -112570,7 +112709,7 @@ __export(__exports, { "fanUnit": () => fanUnit, "buildTail": () => buildTail, "b
 })
 
 // ---- js/render/roadster.js
-__define(274, function (__exports) {
+__define(275, function (__exports) {
 // The Roadster model, measured off the Oct 15, 2026 reveal photos (a side-on shot at the event sets the
 // proportions, a top-down one the canopy, a rear one the tail): a wedge in satin Ano White, smooth
 // panels with crisp creases, a tall blunt nose, sloped fender facets either side of a short hood,
@@ -112580,16 +112719,16 @@ __define(274, function (__exports) {
 // (roadsterRear.js), an active rear wing, underfloor suction fan, skirts and twin-spoke aero wheels,
 // the cabin with its yoke and touchscreen (roadsterCabin.js); plus per-frame pose and animation.
 const THREE = __require(0)
-const { freeze } = __require(270)
+const { freeze } = __require(271)
 const { scene, MAT } = __require(83)
 const { CURB_H } = __require(35)
 const { CAR, clamp, AX_Z } = __require(2)
 const { buildOptimus, poseOptimus } = __require(131)
 const { DRIVER, buildCabin, updateCabin } = __require(132)
 const { loft, loftGeos, at, seam, withStations } = __require(130)
-const { buildWheels, updateWheels, withWheelArches } = __require(271)
-const { slopeRoadster } = __require(272)
-const { buildTail, buildWing, updateWing, fanUnit } = __require(273)
+const { buildWheels, updateWheels, withWheelArches } = __require(272)
+const { slopeRoadster } = __require(273)
+const { buildTail, buildWing, updateWing, fanUnit } = __require(274)
 
 const _a = new THREE.Vector3()
 const SEAM = new THREE.MeshStandardMaterial({
@@ -113055,7 +113194,7 @@ __export(__exports, { "buildRoadster": () => buildRoadster, "updateRoadster": ()
 })
 
 // ---- js/render/rain.js
-__define(275, function (__exports) {
+__define(276, function (__exports) {
 // The rain: streaks falling through a box of air round the camera, and splashes where they land.
 // Each drop has its own place in the box and falls through it on the wind, wrapping round, so the
 // rain stays put in the world as the camera moves through it (driving into it, it comes at the
@@ -113068,7 +113207,7 @@ __define(275, function (__exports) {
 // and the graphics quality. The ground's own wet look is wet.js's.
 const THREE = __require(0)
 const { GROUND } = __require(117)
-const { LAMP, LAMP_FIELD_GLSL } = __require(196)
+const { LAMP, LAMP_FIELD_GLSL } = __require(191)
 const { HALF, PITCH, ROAD_HW, CURB_H } = __require(35)
 
 const MAX = 9000 // streaks at the heaviest rain (high quality)
@@ -113293,7 +113432,7 @@ __export(__exports, { "Rain": () => Rain })
 })
 
 // ---- js/render/beams.js
-__define(276, function (__exports) {
+__define(277, function (__exports) {
 // The Roadster's headlight beams seen in the air: in rain or fog at night the light ahead of the car
 // is caught by the water in the air, two pale cones reaching out down the road from the lamps,
 // brightest at the lamps and fading out with distance, soft at their edges. A faint trace on a
@@ -113364,7 +113503,7 @@ __export(__exports, { "Beams": () => Beams })
 })
 
 // ---- js/climate.js
-__define(277, function (__exports) {
+__define(278, function (__exports) {
 // The clock and the weather in the city, run once a frame from the main loop (main.js): the clock
 // and the weather moving on (sim/env.js), L running the clock on fast to the next time of day and O
 // bringing in the next weather, the light following them (render/daylight.js, through the city
@@ -113374,11 +113513,11 @@ __define(277, function (__exports) {
 // at night (lampLight.js), and the graphics quality (the reflection's size, how many drops, the
 // frame's pixels), remembered.
 const THREE = __require(0)
-const { Rain } = __require(275)
+const { Rain } = __require(276)
 const { hemi, renderer, scene, camera } = __require(83)
-const { Beams } = __require(276)
+const { Beams } = __require(277)
 const { Mirror } = __require(117)
-const { lampLit } = __require(196)
+const { lampLit } = __require(191)
 const { WET } = __require(113)
 const { recall, remember } = __require(7)
 const { OPTS } = __require(64)
@@ -113559,7 +113698,7 @@ __export(__exports, { "QUALITY": () => QUALITY, "Climate": () => Climate })
 })
 
 // ---- js/render/resolution.js
-__define(278, function (__exports) {
+__define(279, function (__exports) {
 // Adaptive resolution: the frame is drawn at the screen's full pixel density (up to 2, on a Retina
 // screen) while the GPU keeps up, and at less when it doesn't, a step at a time until it does, and
 // back up once it has room again; so a slower GPU (a laptop's built-in graphics driving a sharp
@@ -113740,7 +113879,7 @@ __export(__exports, { "Resolution": () => Resolution })
 })
 
 // ---- js/render/warm.js
-__define(279, function (__exports) {
+__define(280, function (__exports) {
 // Shader warm-up. three.js compiles a material's program the first time it draws it, and again for
 // each set of lights it is drawn under, and a program takes from a few milliseconds to a tenth of a
 // second to compile (longest on Windows), so the game used to stall at each first: the first
@@ -113883,7 +114022,7 @@ __export(__exports, { "warmUp": () => warmUp })
 })
 
 // ---- js/render/damage.js
-__define(280, function (__exports) {
+__define(281, function (__exports) {
 // Body damage, GTA-style: a knock dents the Roadster's panels where it landed, deeper and wider the
 // harder the hit, the metal crumpling (each dent a little uneven, its facets catching the light)
 // rather than sinking in smooth; dents add up, to a limit, and a reset puts the car back as new.
@@ -113896,7 +114035,7 @@ __define(280, function (__exports) {
 const THREE = __require(0)
 const { clamp } = __require(2)
 const { carFrame } = __require(40)
-const { CRACKS } = __require(222)
+const { CRACKS } = __require(229)
 const { Wear, LAMPS, PANE, paneOf } = __require(39)
 
 const MIN_HIT = 2.5 // m/s closing speed below which a knock leaves no mark
@@ -114254,7 +114393,7 @@ __export(__exports, { "Damage": () => Damage })
 })
 
 // ---- js/sim/wanted.js
-__define(281, function (__exports) {
+__define(282, function (__exports) {
 // The wanted level, GTA's way: 0 to 5 stars. A crime ('crime' game events: { type, pos, severity })
 // only counts if someone saw it: people on the pavement, drivers, or the police (witness.js looks,
 // along the city's sight lines); the police seeing it themselves count double. What is reported adds
@@ -114464,7 +114603,7 @@ __export(__exports, { "STAR_HEAT": () => STAR_HEAT, "CRIMES": () => CRIMES, "POL
 })
 
 // ---- js/sim/aiDriver.js
-__define(282, function (__exports) {
+__define(283, function (__exports) {
 // A driver at the wheel of a drivable body (vehicleSim.js) for the game's own cars: the police on a
 // chase (police.js) and the cars in the street events (ambient.js). It follows the lane graph to a
 // goal (route.js: the plan worked out once for every lane, so it reads the way on from wherever it
@@ -114650,7 +114789,7 @@ __export(__exports, { "bearing": () => bearing, "Planner": () => Planner, "steer
 })
 
 // ---- js/sim/policeUnit.js
-__define(283, function (__exports) {
+__define(284, function (__exports) {
 // One police car's mind (police.js keeps the force): a traffic car of the police type taken over
 // (handover.js takeOver, tag 'police'), driven by a 'police' handling-class body (vehicleSim.js)
 // through aiDriver.js. On a chase it routes along the lane graph to where the player is (or was
@@ -114659,7 +114798,7 @@ __define(283, function (__exports) {
 // sight, it searches the circle round the last known position; with the stars cleared it switches
 // its lights off and drives away. Pure: no DOM.
 const { clamp } = __require(2)
-const { steerTo, blocker, unstick, cornerV, Follower } = __require(282)
+const { steerTo, blocker, unstick, cornerV, Follower } = __require(283)
 const { makeVehicleInput } = __require(152)
 const { bodyFromTraffic } = __require(153)
 
@@ -114902,7 +115041,7 @@ __export(__exports, { "CHASE_V": () => CHASE_V, "SEARCH_V": () => SEARCH_V, "DIR
 })
 
 // ---- js/sim/policeAir.js
-__define(284, function (__exports) {
+__define(285, function (__exports) {
 // The police from above and ahead (police.js): the helicopter at four stars and up, flying to where
 // the player is (or was last seen), its spotlight on them while it can see them and sweeping the
 // search circle when it can't; and where a roadblock goes: across the road the player is driving,
@@ -115045,7 +115184,7 @@ __export(__exports, { "HELI_Y": () => HELI_Y, "HELI_V": () => HELI_V, "HELI_SEE"
 })
 
 // ---- js/sim/police.js
-__define(285, function (__exports) {
+__define(286, function (__exports) {
 // The police force on the city's streets (the wanted level is wanted.js; each car's mind is
 // policeUnit.js): as many units as the stars call for (UNITS), each put on a lane of the road
 // network off-screen (out of the camera's view or behind a building, between SPAWN_MIN and
@@ -115060,10 +115199,10 @@ const { stepVehicle } = __require(152)
 const { writeToTraffic } = __require(153)
 const { collideTraffic, rectOf } = __require(149)
 const { rectRect, impulse, playerRect, loadBody, storeBody, nudge, BODY } = __require(40)
-const { Planner } = __require(282)
+const { Planner } = __require(283)
 const { clear, policeSight } = __require(143)
-const { makeUnit, think } = __require(283)
-const { Heli, roadblockSpot, inView: seenBy } = __require(284)
+const { makeUnit, think } = __require(284)
+const { Heli, roadblockSpot, inView: seenBy } = __require(285)
 
 const UNITS = [0, 2, 3, 4, 5, 6] // pursuing units for 0 to 5 stars
 const SPAWN_MIN = 110
@@ -115358,7 +115497,7 @@ __export(__exports, { "UNITS": () => UNITS, "SPAWN_MIN": () => SPAWN_MIN, "SPAWN
 })
 
 // ---- js/sim/ambient.js
-__define(286, function (__exports) {
+__define(287, function (__exports) {
 // Street events near the player now and then (GTA's random events): a crash scene (two wrecked cars
 // in the road, hazards on, a police car parked by them, its lights going, people stopping to look),
 // the police chasing someone (a traffic car taken over and driven off fast along the lane graph, a
@@ -115373,8 +115512,8 @@ const { loosen } = __require(104)
 const { stepVehicle, makeVehicleInput } = __require(152)
 const { bodyFromTraffic, writeToTraffic } = __require(153)
 const { collideTraffic } = __require(149)
-const { Planner, Follower, steerTo, blocker, unstick, cornerV } = __require(282)
-const { spawnPoint, inView } = __require(285)
+const { Planner, Follower, steerTo, blocker, unstick, cornerV } = __require(283)
+const { spawnPoint, inView } = __require(286)
 const { bounds } = __require(125)
 const { weatherGrip } = __require(3)
 
@@ -115633,7 +115772,7 @@ __export(__exports, { "KINDS": () => KINDS, "GAP": () => GAP, "Ambient": () => A
 })
 
 // ---- js/sim/wantedReports.js
-__define(287, function (__exports) {
+__define(288, function (__exports) {
 // Crimes reported to the police (wanted.js), as the people who saw them get round to it: the police
 // seeing it themselves, at once; otherwise someone has to ring it in. A person on foot who saw it
 // (peds' witnessCrime, living/pedLife.js) gets on the phone a few seconds once safe, and the report
@@ -115698,7 +115837,7 @@ __export(__exports, { "DRIVER_CALL": () => DRIVER_CALL, "GIVE_UP": () => GIVE_UP
 })
 
 // ---- js/sim/missions/objectives.js
-__define(288, function (__exports) {
+__define(289, function (__exports) {
 // What each kind of mission objective asks, and how it is judged (manager.js runs them): each a
 // { text, start, check } over the objective's data (o), its live state (st) and the mission's
 // context (ctx: { player (playerView), wanted, events (this step's game events), dt }).
@@ -115831,7 +115970,7 @@ __export(__exports, { "place": () => place, "OBJECTIVES": () => OBJECTIVES })
 })
 
 // ---- js/sim/missions/manager.js
-__define(289, function (__exports) {
+__define(290, function (__exports) {
 // The missions' state machine. Idle, every mission on offer has a marker in the world (its start:
 // spots.js); drive (or walk) into one, slowly enough, and it starts (never forced). Running, its
 // objectives (objectives.js) come one after another, each with the place it points at (for the
@@ -115841,7 +115980,7 @@ __define(289, function (__exports) {
 // steal, the GPS) are the game's (game.js) through the hooks: on.start(def), on.end(def, passed),
 // on.objective(def, o, st). Pure: no DOM.
 const { MISSIONS } = __require(78)
-const { OBJECTIVES } = __require(288)
+const { OBJECTIVES } = __require(289)
 const { spot } = __require(125)
 
 const START_R = 6 // m: in the marker
@@ -115991,7 +116130,7 @@ __export(__exports, { "START_R": () => START_R, "START_V": () => START_V, "LEAVE
 })
 
 // ---- js/sim/playerView.js
-__define(290, function (__exports) {
+__define(291, function (__exports) {
 // What the game's systems (the wanted level, the police, the missions, the street events) know of
 // the player, read through one small adapter so that they never depend on where the player lives.
 // The foot workstream's player.js is bound (game.js: bindPlayer(player, { health, driven })): the
@@ -116111,7 +116250,7 @@ __export(__exports, { "playerView": () => playerView, "bindSim": () => bindSim, 
 })
 
 // ---- js/render/crimeView.js
-__define(291, function (__exports) {
+__define(292, function (__exports) {
 // What the game's systems put in the world to see (game.js updates it each frame): the missions'
 // markers, GTA's glowing cylinders with a ring on the ground (a mission's start, the place an
 // objective points at, the next checkpoint dimmer), and the police helicopter overhead, rotor
@@ -116288,7 +116427,7 @@ __export(__exports, { "MARKER_FAR": () => MARKER_FAR, "CrimeView": () => CrimeVi
 })
 
 // ---- js/ui/crimeHud.js
-__define(292, function (__exports) {
+__define(293, function (__exports) {
 // The game's own HUD, GTA's way (game.js drives it): the cash and the wanted stars top right (the
 // stars only while wanted, flashing while the police search), the mission's objective along the
 // bottom and its clock top middle, the big titles (a mission's name as it starts, MISSION PASSED
@@ -116440,7 +116579,7 @@ __export(__exports, { "CrimeHud": () => CrimeHud })
 })
 
 // ---- js/ui/crimeMap.js
-__define(293, function (__exports) {
+__define(294, function (__exports) {
 // The game's marks on the radar (minimap.js's overlay hook) and the pause menu's map (mapDraw.js's):
 // the police as red and blue blips flashing by turns, the helicopter, the search circle round the
 // last known position (red and blue, pulsing, while the stars flash), the missions' blips in their
@@ -116580,7 +116719,7 @@ __export(__exports, { "searchOf": () => searchOf, "radarOverlay": () => radarOve
 })
 
 // ---- js/carName.js
-__define(294, function (__exports) {
+__define(295, function (__exports) {
 // The car's name bottom right (ui/place.js, said by ui/carHud.js as the player gets in) taken down
 // at once: busted or wasted (game.js), or out of the car (onFoot.js). A street's name up is left.
 function dropCarName (hud) {
@@ -116591,7 +116730,7 @@ __export(__exports, { "dropCarName": () => dropCarName })
 })
 
 // ---- js/game.js
-__define(295, function (__exports) {
+__define(296, function (__exports) {
 // The game on top of the drive: the wanted level and the police (sim/wanted.js, police.js), the
 // missions (sim/missions/) and the street events (sim/ambient.js), their marks in the world
 // (render/crimeView.js), on the HUD (ui/crimeHud.js) and on the maps (ui/crimeMap.js), and busted
@@ -116604,22 +116743,22 @@ const { ENV } = __require(3)
 const { roadGrip } = __require(43)
 const { IDX } = __require(59)
 const { STALLS, rng } = __require(35)
-const { Wanted } = __require(281)
-const { Police, Arrest } = __require(285)
-const { Ambient } = __require(286)
+const { Wanted } = __require(282)
+const { Police, Arrest } = __require(286)
+const { Ambient } = __require(287)
 const { witnesses } = __require(143)
-const { Reports } = __require(287)
-const { MissionManager } = __require(289)
+const { Reports } = __require(288)
+const { MissionManager } = __require(290)
 const { spot, nearestKerb, HOSPITALS, STATIONS } = __require(125)
 const { emitGame, onGame } = __require(69)
-const { playerView, bindPlayer, updatePlayerView, setWanted } = __require(290)
+const { playerView, bindPlayer, updatePlayerView, setWanted } = __require(291)
 const { player } = __require(80)
-const { CrimeView } = __require(291)
-const { CrimeHud } = __require(292)
-const { radarOverlay, mapOverlay } = __require(293)
+const { CrimeView } = __require(292)
+const { CrimeHud } = __require(293)
+const { radarOverlay, mapOverlay } = __require(294)
 const { gps } = __require(51)
 const { recall, remember } = __require(7)
-const { dropCarName } = __require(294)
+const { dropCarName } = __require(295)
 
 // where the player is put back: the nearest hospital (wasted) or police station (busted), as
 // fractions of the map: HOSPITALS, STATIONS in missions/spots.js
@@ -116906,7 +117045,7 @@ __export(__exports, { "PENALTY": () => PENALTY, "Game": () => Game })
 })
 
 // ---- js/sim/vehicles.js
-__define(296, function (__exports) {
+__define(297, function (__exports) {
 // Every car the player can get into, in one registry: the Roadster, the traffic's cars on the road
 // and the cars parked in the lots (and the jammed street's). Pure (no DOM), so it is tested in Node.
 // Each entry is stable for as long as its car exists (a WeakMap keeps it), so what is learnt about a
@@ -117141,7 +117280,7 @@ __export(__exports, { "DOORS": () => DOORS, "DOOR_SIDE": () => DOOR_SIDE, "layou
 })
 
 // ---- js/sim/drivable.js
-__define(297, function (__exports) {
+__define(298, function (__exports) {
 // Any car the player drives that isn't the Roadster, on the drive workstream's stack: the traffic
 // car is taken off its driver (traffic.takeOver: handover.js), given a body of its handling class
 // (vehicleLink.js bodyFromTraffic, vehicleSim.js stepVehicle, handling.js), knocks the city and the
@@ -117268,7 +117407,7 @@ __export(__exports, { "PLAYER_TOUGH": () => PLAYER_TOUGH, "carInput": () => carI
 })
 
 // ---- js/sim/carsMeet.js
-__define(298, function (__exports) {
+__define(299, function (__exports) {
 // Two of the player's sims meeting: the car the player drives (drivable.js: a, its spec sp)
 // against the Roadster left in the street (b). Pushed apart by mass, momentum traded, a 'bump' for
 // each (heard, and the Roadster dented). Pure, for the Node tests.
@@ -117340,7 +117479,7 @@ __export(__exports, { "carsMeet": () => carsMeet })
 })
 
 // ---- js/sim/footRescue.js
-__define(299, function (__exports) {
+__define(300, function (__exports) {
 // Keeping the player on foot out of trouble (player.js's walker): stuck in something (a wall's
 // corner, a car parked up against them, a gap they were pushed into) or out of the world (fallen
 // through it, off the map, or a position gone bad), they are put back somewhere safe: stuck, the
@@ -117462,7 +117601,7 @@ __export(__exports, { "RESCUE": () => RESCUE, "nearFree": () => nearFree, "neare
 })
 
 // ---- js/sim/boarding.js
-__define(300, function (__exports) {
+__define(301, function (__exports) {
 // Getting into a car and out of it, as timed phases (pure: the render poses the body and the door
 // from them, onFoot.js runs them). Into a car: walk round to the driver's door (the car's other
 // side, its nose or tail in the way, walked round), then
@@ -117477,8 +117616,8 @@ __define(300, function (__exports) {
 // side, the far side, either end, then anywhere free a few metres round), or up onto its roof if
 // it is boxed in on every side.
 const { stepFoot, freeSpot, blockedAt, floorAt, FOOT } = __require(80)
-const { nearFree } = __require(299)
-const { vehicles } = __require(296)
+const { nearFree } = __require(300)
+const { vehicles } = __require(297)
 const { wrapPi } = __require(2)
 
 const BOARD = {
@@ -117730,11 +117869,11 @@ __export(__exports, { "BOARD": () => BOARD, "howToEnter": () => howToEnter, "sid
 })
 
 // ---- js/ui/prompt.js
-__define(301, function (__exports) {
+__define(302, function (__exports) {
 // The prompt by a car the player can get into, GTA's: the key, what it does and the car ("E Break
 // in · Sedan"), and what is happening while they get in (onFoot.js shows it in #prompt).
-const { vehicles } = __require(296)
-const { howToEnter } = __require(300)
+const { vehicles } = __require(297)
+const { howToEnter } = __require(301)
 
 const PROMPT_R = 2.4 // m from a car's body that it offers to be got into
 const TITLE = {
@@ -117780,7 +117919,7 @@ __export(__exports, { "PROMPT_R": () => PROMPT_R, "TITLE": () => TITLE, "VERB": 
 })
 
 // ---- js/sim/melee.js
-__define(302, function (__exports) {
+__define(303, function (__exports) {
 // The player's fists on foot, GTA's way: a press (F, or the left mouse button) throws a punch, and
 // presses in time chain a combo of three: a jab, a cross and a heavy hook that knocks people down.
 // Each punch soft-locks on to the nearest person in front (within LOCK m, turning to face them and
@@ -117939,7 +118078,7 @@ __export(__exports, { "COMBO": () => COMBO, "STOMP": () => STOMP, "MELEE": () =>
 })
 
 // ---- js/audio/fists.js
-__define(303, function (__exports) {
+__define(304, function (__exports) {
 // Fists and bodies: a punch thrown (the air it moves), one landing (a dull smack), a person hit by
 // a car (the thump on the bonnet, heavier the faster), and someone landing on the road after it.
 function swingSound (sound, heavy = false) {
@@ -117961,17 +118100,17 @@ __export(__exports, { "swingSound": () => swingSound, "punchSound": () => punchS
 })
 
 // ---- js/footFight.js
-__define(304, function (__exports) {
+__define(305, function (__exports) {
 // The player's fists on foot (sim/melee.js) and what comes of them: the keys (F or the left mouse
 // button to punch, presses in time for the combo; Caps Lock between a walk and the jog), the blows
 // landing on people (sim/brawl.js: staggered, knocked down, killed; the crimes it is), the punches
 // of anyone fighting back landing on the player (a shove, health off: game.js 'player-hit'), and
 // the sounds. onFoot.js makes one and runs it each step on foot.
-const { Melee } = __require(302)
+const { Melee } = __require(303)
 const { emitGame, onGame } = __require(69)
 const { player } = __require(80)
 const { panOf } = __require(120)
-const { swingSound, punchSound, bodySound } = __require(303)
+const { swingSound, punchSound, bodySound } = __require(304)
 
 const STILL = { x: 0, z: 0, mag: 0, run: false, walk: false, jump: false }
 
@@ -118045,7 +118184,7 @@ __export(__exports, { "FootFight": () => FootFight })
 })
 
 // ---- js/sim/interiors/modshop.js
-__define(305, function (__exports) {
+__define(306, function (__exports) {
 // The body shop's service (Redline Body & Paint): a car stopped in the bay out front, for the
 // price, comes back out repaired and in a new colour. Pure: the price, and the next colour from
 // the shop's list (render/interiors/glue.js puts them on the car).
@@ -118076,7 +118215,7 @@ __export(__exports, { "PRICE": () => PRICE, "COLOURS": () => COLOURS, "nextColou
 })
 
 // ---- js/render/interiors/hunt.js
-__define(306, function (__exports) {
+__define(307, function (__exports) {
 // The hunt for the thirty hidden tokens (sim/tokens.js), run from the interiors' step (glue.js): on
 // foot or at the wheel, within reach of one it is taken, "Hidden token 7/30 · +$100" pops up, the
 // game hears 'token-collected' { id, n, total, where, pos } (the HUD's counter), the find is
@@ -118085,7 +118224,7 @@ __define(306, function (__exports) {
 const { player } = __require(80)
 const { emitGame } = __require(69)
 const { recall, remember } = __require(7)
-const { TOTAL, tokenAt, take, found, saveFound, loadFound } = __require(261)
+const { TOTAL, tokenAt, take, found, saveFound, loadFound } = __require(262)
 
 const REWARD = 100
 const BONUS = 2500
@@ -118137,7 +118276,7 @@ __export(__exports, { "REWARD": () => REWARD, "BONUS": () => BONUS, "TokenHunt":
 })
 
 // ---- js/render/interiors/glue.js
-__define(307, function (__exports) {
+__define(308, function (__exports) {
 // The interiors in the game: what onFoot.js asks of them through four calls (the step, the prompt,
 // E, and the wallet handed over by game.js). By a door on foot the prompt offers "E Enter · Night
 // Owl Mart"; E fades the screen to black, puts the player inside (the room's own world for the
@@ -118151,9 +118290,9 @@ const { emitGame } = __require(69)
 const { remember } = __require(7)
 const { MAT } = __require(83)
 const { INTERIOR, inside, busy, offerAt, begin, stepTransition, swapIn, swapOut, clearInterior, strayed, roomWorld } = __require(119)
-const { PRICE, canPay, nextColour, repaintKey } = __require(305)
+const { PRICE, canPay, nextColour, repaintKey } = __require(306)
 const { SITES } = __require(99)
-const { TokenHunt } = __require(306)
+const { TokenHunt } = __require(307)
 
 class InteriorGlue {
   constructor (foot) {
@@ -118356,7 +118495,7 @@ __export(__exports, { "InteriorGlue": () => InteriorGlue })
 })
 
 // ---- js/render/optimusGait.js
-__define(308, function (__exports) {
+__define(309, function (__exports) {
 // Optimus's gaits on foot, over poseOptimus's walk cycle (optimus.js): a walk, a jog and a sprint,
 // each with its own stride so the planted foot moves back at the pace the body goes forward (no
 // sliding): the walk cycle swings each leg 0.36 rad a side per unit of `walk`, so a leg 0.85 m long
@@ -118408,7 +118547,7 @@ __export(__exports, { "STRIDE_PER_AMP": () => STRIDE_PER_AMP, "ampFor": () => am
 })
 
 // ---- js/render/optimusFists.js
-__define(309, function (__exports) {
+__define(310, function (__exports) {
 // Optimus fighting (sim/melee.js): fists up in guard by the face, a jab and a cross thrown straight
 // out from the shoulder with the body leaning into them, a hook swung round from the side, and a
 // stamp on someone down. The hands and a foot reached for by poseOptimus's limbs (optimus.js), the
@@ -118470,7 +118609,7 @@ __export(__exports, { "poseFists": () => poseFists })
 })
 
 // ---- js/render/carDoor.js
-__define(310, function (__exports) {
+__define(311, function (__exports) {
 // The driver's door of a city car, opened and shut as the player gets in or out (sim/boarding.js):
 // its own skin, cut from the car's body between the door's shut lines (sim/vehicles.js DOORS, the
 // shut lines carSpecs.js draws) and from the sill up to the beltline, its window up to the glass's
@@ -118481,7 +118620,7 @@ __define(310, function (__exports) {
 // and out, to ~66° (a van's or a truck's to ~72°, a bus's folding door further), riding the car's
 // body (its springs and the slope: render/traffic.js hands over the car's matrix).
 const THREE = __require(0)
-const { sectionAt, P } = __require(214)
+const { sectionAt, P } = __require(221)
 
 const SWING = { default: 1.15, van: 1.25, truck: 1.25, fire: 1.25, ambulance: 1.25, bus: 1.45 }
 // eased in and out (the door's weight: it starts, swings and is checked by its strap)
@@ -118699,7 +118838,7 @@ __export(__exports, { "SWING": () => SWING, "easeDoor": () => easeDoor, "swingOf
 })
 
 // ---- js/render/boardPose.js
-__define(311, function (__exports) {
+__define(312, function (__exports) {
 // Optimus getting into a city car and out of it (sim/boarding.js's phases), GTA's way: stood just
 // behind the door's back edge, a hand on the handle pulling it open (the hand riding the handle as
 // the door swings, then letting go), a step forward into the opening turning to face ahead, ducking
@@ -118709,8 +118848,8 @@ __define(311, function (__exports) {
 // out. A carjacking reaches in after the driver; a break-in works at the lock or the window. The
 // door itself is carDoor.js's (pointOn: where its handle is as it swings).
 const { poseOptimus, HIP_STAND, ANKLE_UP } = __require(131)
-const { doorOf, seatShare, sideOf, BOARD } = __require(300)
-const { vehicles } = __require(296)
+const { doorOf, seatShare, sideOf, BOARD } = __require(301)
+const { vehicles } = __require(297)
 const { clamp, wrapPi } = __require(2)
 
 const ease = t => t * t * (3 - 2 * t)
@@ -118871,7 +119010,7 @@ __export(__exports, { "wayIn": () => wayIn, "poseBoard": () => poseBoard, "pushH
 })
 
 // ---- js/render/footView.js
-__define(312, function (__exports) {
+__define(313, function (__exports) {
 // The player on foot, drawn: Optimus (optimus.js), out of the Roadster and walking the city, its
 // legs and arms swinging with its pace (a longer, quicker stride and a lean running), legs tucked in
 // a jump, flat on its back knocked over; and getting into a car and out of it (boarding.js): at the
@@ -118881,13 +119020,13 @@ __define(312, function (__exports) {
 // that swings open on its front hinge.
 const THREE = __require(0)
 const { buildOptimus, poseOptimus, HIP_STAND } = __require(131)
-const { poseGait, ampFor, strideFor } = __require(308)
-const { poseFists } = __require(309)
-const { punchPose } = __require(302)
+const { poseGait, ampFor, strideFor } = __require(309)
+const { poseFists } = __require(310)
+const { punchPose } = __require(303)
 const { boardRoadster, BOARD_T } = __require(133)
-const { CarDoors } = __require(310)
-const { poseBoard, pushHands } = __require(311)
-const { doorOf, sideOf, BOARD } = __require(300)
+const { CarDoors } = __require(311)
+const { poseBoard, pushHands } = __require(312)
+const { doorOf, sideOf, BOARD } = __require(301)
 const { clamp } = __require(2)
 
 const ease = t => t * t * (3 - 2 * t)
@@ -119007,7 +119146,7 @@ __export(__exports, { "FootView": () => FootView })
 })
 
 // ---- js/render/footCam.js
-__define(313, function (__exports) {
+__define(314, function (__exports) {
 // The camera on foot: GTA's third-person orbit over the player's shoulder. The mouse (the pointer
 // locked to the picture: a click) or a gamepad's right stick swings it round and up and down; the
 // wheel brings it in or lets it out. It follows the player smoothly, keeps out of buildings
@@ -119148,7 +119287,7 @@ __export(__exports, { "clipShare": () => clipShare, "FootCam": () => FootCam })
 })
 
 // ---- js/audio/steps.js
-__define(314, function (__exports) {
+__define(315, function (__exports) {
 // The player's footsteps on foot (onFoot.js): Optimus's tread from the sample bank (buffers.js), its
 // colour by what is underfoot (a hard heel on the road and the pavement, a hollow knock on the
 // pier's planks, a soft swish through grass, a crunch in the sand, a ring off a roof's metal), heavier
@@ -119217,7 +119356,7 @@ __export(__exports, { "footstep": () => footstep, "landing": () => landing, "sma
 })
 
 // ---- js/onFoot.js
-__define(315, function (__exports) {
+__define(316, function (__exports) {
 // The player out of the car: getting out (E), walking the city as Optimus (WASD, Shift to run,
 // Space to jump, the mouse or the right stick looking round), getting into the Roadster or any other
 // car (E by it: in at once if it is open, broken into if it is parked and locked, taken from its
@@ -119230,27 +119369,27 @@ __define(315, function (__exports) {
 const { look } = __require(64)
 const THREE = __require(0)
 const { emitGame } = __require(69)
-const { dropCarName } = __require(294)
+const { dropCarName } = __require(295)
 const { footProxy } = __require(153)
-const { vehicles } = __require(296)
-const { Drivable } = __require(297)
+const { vehicles } = __require(297)
+const { Drivable } = __require(298)
 const { collidePlayer } = __require(104)
-const { carsMeet } = __require(298)
-const { FootRescue } = __require(299)
+const { carsMeet } = __require(299)
+const { FootRescue } = __require(300)
 const { makeControls } = __require(2)
 const { player, setMode, placePlayer, stepFoot, moveDir, knockDown, CITY_WORLD } = __require(80)
-const { startEnter, startExit, stepBoard, cancellable, BOARD } = __require(300)
-const { offerFor } = __require(301)
-const { FootFight } = __require(304)
-const { InteriorGlue } = __require(307)
-const { FootView } = __require(312)
+const { startEnter, startExit, stepBoard, cancellable, BOARD } = __require(301)
+const { offerFor } = __require(302)
+const { FootFight } = __require(305)
+const { InteriorGlue } = __require(308)
+const { FootView } = __require(313)
 const { boardRoadster, BOARD_T } = __require(133)
-const { FootCam } = __require(313)
-const { clipCamera } = __require(267)
+const { FootCam } = __require(314)
+const { clipCamera } = __require(268)
 const { scene } = __require(83)
 const { raiseAlarm } = __require(86)
 const { hearing, panOf, placeOf } = __require(120)
-const { footstep, landing, smashWindow, forceLock, doorSound } = __require(314)
+const { footstep, landing, smashWindow, forceLock, doorSound } = __require(315)
 
 const HOLD = { ...makeControls(), brake: 1, fan: false }
 // what the radar, the GPS and the place name follow while the player walks: the feet, as a car
@@ -119696,7 +119835,7 @@ __export(__exports, { "OnFoot": () => OnFoot })
 })
 
 // ---- js/render/playerCar.js
-__define(316, function (__exports) {
+__define(317, function (__exports) {
 // The car the player drives when it isn't the Roadster (drivable.js): the traffic renderer keeps
 // drawing it as itself (traffic.js: its body type, paint, glass, lamps and dents), but posed here
 // from its physics body (vehicleSim.js) rather than from the traffic's own springs: the body's
@@ -119805,7 +119944,7 @@ __export(__exports, { "PlayerCar": () => PlayerCar })
 })
 
 // ---- js/audio/engine.js
-__define(317, function (__exports) {
+__define(318, function (__exports) {
 // The engine of whatever the player drives that isn't the Roadster, synthesised: its firing
 // frequency from the rpm and gear vehicleSim.js keeps (rpm / 60 x cylinders / 2), a sawtooth and a
 // half-order rumble through a low-pass that opens with the throttle and the revs, a burble of
@@ -119949,7 +120088,7 @@ __export(__exports, { "EngineVoice": () => EngineVoice })
 })
 
 // ---- js/ui/carHud.js
-__define(318, function (__exports) {
+__define(319, function (__exports) {
 // The HUD kept to whatever the player drives, or to them on foot (hud.js calls update after its
 // own): the car's name bottom right as they get in (GTA's: the class small and gold over the name,
 // 'Stolen' when it was), the speedometer's selector swapped for the gear (1 to 6, R, N) and its
@@ -119961,7 +120100,7 @@ __define(318, function (__exports) {
 //   new CarHud(hud, foot, game)  .entered(entry), .exited(), .update(dt, app)
 //   (foot: onFoot.js; game: () => the Game, game.js, made after the HUD)
 const { $, put } = __require(1)
-const { TITLE } = __require(301)
+const { TITLE } = __require(302)
 
 // the class over the name, for each traffic type
 const CLASS = {
@@ -120046,14 +120185,14 @@ __export(__exports, { "CAR_SLOT": () => CAR_SLOT, "CarHud": () => CarHud })
 })
 
 // ---- js/ui/testDrive.js
-__define(319, function (__exports) {
+__define(320, function (__exports) {
 // A developer's harness for the polish work (not a game mode): put the player straight into a city
 // car of a given traffic type (sedan, sports, suv, pickup, truck, van, bus, police, ...) a few
 // metres ahead of where they are (on the nearest lane), seated as if they had walked up and got in (onFoot.js seated),
 // so the camera, the HUD, the sounds and the effects all follow it. Used by automated smoke tests
 // through window.__roadster.seatIn(type), and by ?drive=<kind>&seat=1.
 const { IDX } = __require(59)
-const { vehicles } = __require(296)
+const { vehicles } = __require(297)
 const { player } = __require(80)
 const { nearestLane } = __require(35)
 
@@ -120085,7 +120224,7 @@ __export(__exports, { "seatIn": () => seatIn })
 })
 
 // ---- js/polish.js
-__define(320, function (__exports) {
+__define(321, function (__exports) {
 // The polish over whatever the player drives, kept out of main.js: each frame, the car that isn't
 // the Roadster posed from its body with its skids and smoke (render/playerCar.js), the camera told
 // what it is following (render/carCam.js), its engine, tyres and horn heard (audio/engine.js) and
@@ -120094,11 +120233,11 @@ __define(320, function (__exports) {
 //   new Polish({ foot, rig, sound, hud, cityView, RS, app, game })
 //   (game: () => the Game, game.js: the player's health on foot)
 //   .frame(dt)  after the physics steps: returns the RS-like stand-in for skids.js and effects.js
-const { PlayerCar } = __require(316)
+const { PlayerCar } = __require(317)
 const { armScale, armRise } = __require(60)
-const { EngineVoice } = __require(317)
-const { CarHud } = __require(318)
-const { seatIn } = __require(319)
+const { EngineVoice } = __require(318)
+const { CarHud } = __require(319)
+const { seatIn } = __require(320)
 
 // V on foot: the camera over the shoulder close, middling or far (footCam.js dist)
 const FOOT_CAMS = [
@@ -120150,7 +120289,7 @@ __export(__exports, { "Polish": () => Polish })
 })
 
 // ---- js/main.js
-__define(321, function (__exports) {
+__define(322, function (__exports) {
 // Tesla Roadster Sim: boot, game state, sim events and the main loop.
 const THREE = __require(0)
 const { Hud } = __require(16)
@@ -120171,28 +120310,28 @@ const { ENV } = __require(3)
 const { buildLineup } = __require(172)
 const { nearestLane, standUp } = __require(35)
 const { handleEvents: simEvents } = __require(174)
-const { CityView, clipCamera } = __require(267)
+const { CityView, clipCamera } = __require(268)
 const { hearing, panOf, mixSound } = __require(120)
 const { CameraRig } = __require(63)
-const { updateSkids, clearSkids } = __require(268)
+const { updateSkids, clearSkids } = __require(269)
 const { DEG, TAU, makeControls } = __require(2)
-const { LED_MAT, buildWall, buildTruss } = __require(269)
-const { buildRoadster, updateRoadster } = __require(274)
+const { LED_MAT, buildWall, buildTruss } = __require(270)
+const { buildRoadster, updateRoadster } = __require(275)
 const { Post } = __require(189)
-const { Climate } = __require(277)
-const { Resolution } = __require(278)
-const { warmUp } = __require(279)
-const { Damage } = __require(280)
+const { Climate } = __require(278)
+const { Resolution } = __require(279)
+const { warmUp } = __require(280)
+const { Damage } = __require(281)
 const { MAT, scene, camera, canvas } = __require(83)
 const { renderer, followKeyLight } = __require(83)
 const { fallFx, ALL_PARTICLES, updateNozzles, emitThrusters, emitTireSmoke, attachDiamonds } = __require(173)
 const { emitTrafficSpray } = __require(115)
-const { Game } = __require(295)
-const { OnFoot } = __require(315)
+const { Game } = __require(296)
+const { OnFoot } = __require(316)
 const { player } = __require(80)
-const { vehicles } = __require(296)
+const { vehicles } = __require(297)
 const { GAME_EVENTS, tickGame } = __require(69)
-const { Polish } = __require(320)
+const { Polish } = __require(321)
 
 // ---------- world ----------
 buildWall()
@@ -120577,7 +120716,7 @@ function frame (now) {
   tween.apply(Math.min(1, acc / H), city)
   const walking = foot.frame(dt, Math.min(1, acc / H), clock)
   updateRoadster(RS, sim, foot.inRoadster() ? app.lastCtl : HOLD, dt)
-  followKeyLight(app.focus ? app.focus.pos : app.sim.pos)
+  followKeyLight(app.focus ? app.focus.pos : app.sim.pos, camera)
   const fx = polish.frame(dt) // (the car the player drives: playerCar.js, polish.js)
   updateSkids(fx, foot.seen())
   updateNozzles(RS, sim)
@@ -120652,5 +120791,5 @@ window.__roadster = {
 }
 __export(__exports, {  })
 })
-__require(321)
+__require(322)
 })()
