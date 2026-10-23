@@ -35,15 +35,17 @@ export function aerialFog () {
 #endif`
   C.fog_fragment = `#ifdef USE_FOG
   #ifdef FOG_EXP2
+  {
     vec3 fogRay = vFogW - cameraPosition;
     float fogDist = length(fogRay);
-    float fyc = max(cameraPosition.y, 0.0), fyp = max(vFogW.y, 0.0), fdy = fyp - fyc;
-    float fhc = exp(-fyc / ${FOG_H.toFixed(1)}), fhp = exp(-fyp / ${FOG_H.toFixed(1)});
-    float fogAvg = max(abs(fdy) > 0.5 ? (fhc - fhp) * ${FOG_H.toFixed(1)} / fdy : fhc, ${FLOOR.toFixed(2)});
+    float fogYc = max(cameraPosition.y, 0.0), fogYp = max(vFogW.y, 0.0), fogDy = fogYp - fogYc;
+    float fogHc = exp(-fogYc / ${FOG_H.toFixed(1)}), fogHp = exp(-fogYp / ${FOG_H.toFixed(1)});
+    float fogAvg = max(abs(fogDy) > 0.5 ? (fogHc - fogHp) * ${FOG_H.toFixed(1)} / fogDy : fogHc, ${FLOOR.toFixed(2)});
     float fogTau = fogDensity * fogDist * fogAvg;
     float fogFactor = 1.0 - exp(- fogTau * fogTau);
     vec3 fogC = fogColor * (1.0 + 0.12 * clamp(fogRay.y / max(fogDist, 1.0) * 4.0, -0.5, 1.0));
     gl_FragColor.rgb = mix(gl_FragColor.rgb, fogC, fogFactor);
+  }
   #else
     float fogFactor = smoothstep(fogNear, fogFar, vFogDepth);
     gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, fogFactor);
