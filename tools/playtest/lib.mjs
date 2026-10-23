@@ -56,7 +56,7 @@ export class Game {
     })
     page.on('pageerror', e => this.console.push({ step: this.step, type: 'pageerror', text: String(e.stack || e.message).slice(0, 600) }))
   }
-  static async open ({ query = '', width = 960, height = 540 } = {}) {
+  static async open ({ query = '', width = 960, height = 540, init = null } = {}) {
     const { chromium } = loadPlaywright()
     const server = await serve(Number(process.env.PORT) || 0)
     const base = `http://127.0.0.1:${server.address().port}/`
@@ -65,6 +65,7 @@ export class Game {
       args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--autoplay-policy=no-user-gesture-required', '--enable-precise-memory-info', '--js-flags=--expose-gc']
     })
     const page = await browser.newPage({ viewport: { width, height } })
+    if (init) await page.addInitScript(init) // (before the page's own scripts)
     const g = new Game(browser, page, base)
     g.server = server
     await g.goto(query)

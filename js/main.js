@@ -179,6 +179,7 @@ const SPAWN_AT = (() => {
   const [x, z, yaw = 0] = (v || '').split(',').map(Number)
   return v && Number.isFinite(x) && Number.isFinite(z) ? { x, z, yaw } : null
 })()
+const PLAY_INTRO = new URLSearchParams(location.search).has('intro')
 function enterCity () {
   resetTo('city', SPAWN_AT)
   if (SPAWN_AT) {
@@ -186,11 +187,23 @@ function enterCity () {
     peds.reset(sim.pos.x, sim.pos.z)
   }
   setCam('follow')
-  intro.start(() => {
+  // (the car drawn where the sim put it before anything frames it: the scene's camera works from it)
+  RS.car.position.copy(sim.pos)
+  RS.car.quaternion.copy(sim.quat)
+  RS.car.updateMatrixWorld()
+  const welcome = () => {
     traffic.walker = null
     hud.popup('Welcome to Los Angeles · <b>F</b> to get out · <b>Esc</b> for the map, settings and controls', 4500, 'hint')
     if (stuntKeys()) hud.popup('Gridlock on the avenue ahead · hold <b>G</b> to fly over it', 4200, 'hint')
-  })
+  }
+  intro.start(welcome)
+  // the city opens sat in the car behind it, the follow camera's first frame (the Optimus scene
+  // only on ?intro=1): v6
+  if (!PLAY_INTRO) {
+    intro.finish(true)
+    rig.cut()
+    welcome()
+  }
 }
 function toggleWorld () {
   hud.fade(() => (app.world === 'city' ? startDemo() : enterCity()))
