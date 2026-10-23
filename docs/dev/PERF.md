@@ -266,3 +266,34 @@ After:
   cut per-pixel cost: samples, shadow texels, the light loops and the mirror.
 - On a real GPU, the day-time light hiding helps every preset: 10 fewer point-light iterations per
   fragment on every lit material. On SwiftShader the day ms between runs is load noise.
+
+## v5 perf2: mid-play stalls (gta-v5, e67c7ed..1302fb6)
+
+Scene-dependent spikes first: shaders compiled mid-play, GPU sync points, GC hitches. Tools:
+`glcount.mjs` (every WebGL sync/upload call counted per drawn frame, after the warm-up),
+`dusk.mjs` (programs linked through a dusk, H by day and a quality change at night),
+`programs.mjs` (programs linked getting out of a sedan and the first night on foot),
+`geochurn.mjs` (new geometry/attributes while playing), `perfx.mjs --cpu=1`.
+Raw data: `/workspace/shots/v5/perf2/`.
+
+| what | before | after |
+|---|---|---|
+| programs linked mid-play, dusk 17:00-21:00 + H by day (dusk.mjs) | 59 at 18:00 (street lights) + 56 at noon H (headlights) | 0 (each light set warmed; a quality change re-warms in the background, then 0) |
+| programs linked getting out of a sedan / first night on foot (programs.mjs) | 5 / 6 (the car door, made on its first opening) | 0 / 0 |
+| first frame at night: getActiveUniform / link checks (getProgramParameter, logs) | 2270 / 60 per frame | 178 / 6 (first use done in the warm-up; the 6 were the door's new links, warmed since: programs.mjs 0) |
+| readPixels, finish, getError, clientWaitSync, getBufferSubData per frame | 0 | 0 (the driver's 4 ReadPixels warnings are load-time, Chrome's: K33) |
+| sync points per frame, steady (drive / city car / foot) | 10 / 0.4 / 0 link checks (warm-up still running into play) | 0.3 / 0 / 0 (the 0.3: one re-warm after the probe's quality switch) |
+| createBuffer per frame on foot, steady | 0 (the glcount phase counts were first draws after a mode switch, not churn: geochurn sees 729 geometries before and after) | 0 |
+| resolution resizes | every few s without a timer | a ratio that failed is a ceiling for 30 s, doubled each time |
+
+Heaviest scenes (draw calls per frame, glcount at High, 480x270): night in a car downtown
+~1570 (drawArrays 622, instanced 608 + 295, elements 43), the High damp-night mirror +364 on top
+of that; day Roadster drive ~1200; in a city car ~680; on foot ~670. Rain adds the mirror at
+High only. CPU (perfx --cpu=1, 60 s, drawing off): foot.step 30 ms/s, peds.step 18, cityView.update
+14, traffic.step 9; GC 88 ms in 60 s; the thunder's three claps are synthesised once, a task each,
+when the rain sound is first built.
+
+Auto on Apple silicon: Chrome's renderer string `ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Max,
+Unspecified Version)` is High (tests/quality.test.mjs); frames slow because the page's own work
+fills them (Resolution.cpuBound) count a quarter as fast toward a preset down, so a busy street
+doesn't take a fast GPU down to Medium.
