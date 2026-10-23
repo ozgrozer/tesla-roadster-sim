@@ -161,7 +161,7 @@ export class OnFoot {
         setMode('foot', null)
       } else return this.board(H)
     }
-    if (a) this.board(H) // (the door shutting behind the player, as they walk off)
+    if (this.action) this.board(H) // (the door shutting behind the player, as they walk off; not a walk-up just called off)
     const k = this.moveKeys()
     let ctl = moveDir(this.cam.yaw, k.f, k.r)
     ctl.run = this.input.held('ShiftLeft', 'ShiftRight')
