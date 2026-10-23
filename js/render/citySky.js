@@ -77,7 +77,7 @@ export const SKY_GLSL = `
     col += uGlow * (pow(s, 5.0) * 0.3 + pow(s, 48.0) * 0.5) * (1.0 - grey);
     // at night the city's orange glow low down, from every side but the sea's (west)
     float land = smoothstep(-0.75, 0.2, d.x / max(length(d.xz), 1e-4));
-    col += vec3(0.24, 0.12, 0.05) * exp(-max(h, 0.0) * 11.0) * mix(0.18, 1.0, land) * uNight;
+    col += vec3(0.15, 0.075, 0.03) * exp(-max(h, 0.0) * 14.0) * mix(0.18, 1.0, land) * uNight;
     // a grey sky over it all when the cloud closes in, darker in the rain
     vec3 deck = uFogCol * mix(1.08, 0.82, smoothstep(0.0, 0.6, h)) * (1.0 - 0.25 * uRain);
     col = mix(col, deck, grey * 0.85);
