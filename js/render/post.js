@@ -27,13 +27,17 @@ if (
 )
   throw new Error('post.js: three.js OutputShader has changed')
 
-// The grade, after the tone mapping, on the colour as it will be shown: the saturation, an S-curve
-// for contrast, the shadows and the highlights each pulled a little toward a tint, a vignette
+// The grade, before the tone mapping, on the scene's own light (as a camera's would be: the
+// technique adapted from mrdoob/slop-newyork js/post-processing.js, MIT, (c) 2026 Mr.doob): the
+// white balance, the shadows cooled and the highlights warmed by multiplying (never lifting the
+// black), contrast pivoted on middle grey (all three channels alike, so no hue shifts), the
+// saturation with a touch of vibrance for the duller colours, and a vignette scaled to the frame
 export const GRADE = {
   uSat: { value: 1 },
   uContrast: { value: 0 },
   uShadow: { value: new THREE.Vector3() },
   uHigh: { value: new THREE.Vector3() },
+  uBalance: { value: new THREE.Vector3(1, 1, 1) },
   uVignette: { value: 0 }
 }
 // (the test site keeps a plain grade of its own)
@@ -42,20 +46,25 @@ export function plainGrade () {
   GRADE.uContrast.value = 0.12
   GRADE.uShadow.value.set(0, 0, 0)
   GRADE.uHigh.value.set(0, 0, 0)
+  GRADE.uBalance.value.set(1, 1, 1)
   GRADE.uVignette.value = 0.22
 }
 plainGrade()
 const GRADE_GLSL = `
   uniform float uSat, uContrast, uVignette;
-  uniform vec3 uShadow, uHigh;
+  uniform vec3 uShadow, uHigh, uBalance;
+  uniform vec2 uAspect;
   vec3 grade (vec3 c, vec2 uv) {
-    c = clamp(c, 0.0, 1.0);
+    c = max(c, 0.0) * uBalance;
     float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
-    c = clamp(mix(vec3(l), c, uSat), 0.0, 1.0);
-    c = mix(c, c * c * (3.0 - 2.0 * c), uContrast);
-    c += uShadow * (1.0 - l) * (1.0 - l) + uHigh * l * l;
-    vec2 d = uv - 0.5;
-    return c * (1.0 - uVignette * dot(d, d) * 2.0);
+    c *= (1.0 + 2.5 * uShadow * (1.0 - smoothstep(0.02, 0.6, l))) * (1.0 + uHigh * smoothstep(0.6, 3.0, l));
+    c *= pow(max(l, 1e-4) / 0.18, 0.5 * uContrast);
+    float g = dot(c, vec3(0.2126, 0.7152, 0.0722));
+    float hi = max(c.r, max(c.g, c.b));
+    float vib = 0.1 * (1.0 - (hi - min(c.r, min(c.g, c.b))) / max(hi, 1e-4));
+    c = max(mix(vec3(g), c, uSat + vib), 0.0);
+    float r = length((uv - 0.5) * uAspect) / length(0.5 * uAspect);
+    return c * (1.0 - 0.5 * uVignette * smoothstep(0.35, 1.0, r));
   }`
 
 // The bloom's first pass, which picks out what glows: the light over the threshold, with a knee
@@ -90,15 +99,19 @@ const finalShader = blur =>
       }
       ${blur ? SPEED_BLUR : ''}`
     )
-    .replace(FRAME, `gl_FragColor = ${blur ? 'speedBlur' : 'frame'}(vUv);`)
+    .replace(
+      FRAME,
+      `gl_FragColor = ${blur ? 'speedBlur' : 'frame'}(vUv);
+      gl_FragColor.rgb = grade(gl_FragColor.rgb, vUv);`
+    )
     .replace('varying vec2 vUv;', `varying vec2 vUv;\n${GRADE_GLSL}`)
-    .replace(OUT, '$1\n      gl_FragColor.rgb = grade(gl_FragColor.rgb, vUv);')
 class FinalPass extends OutputPass {
   constructor (bloom) {
     super()
     this.bloom = bloom
     this.uniforms.tBloom = { value: null }
     this.uniforms.uAmount = { value: 0 }
+    this.uniforms.uAspect = { value: new THREE.Vector2(1, 1) }
     Object.assign(this.uniforms, GRADE)
     this.plain = this.material
     this.plain.fragmentShader = finalShader(false)
@@ -117,9 +130,29 @@ class FinalPass extends OutputPass {
   }
 }
 
+// MSAA samples at pixel ratio r (top: the highest the adaptive resolution goes)
+export function samplesFor (r, top, max) {
+  if (max <= 0 || r < 0.75 * top) return 0
+  return Math.min(max, r > 1.5 ? 2 : 4)
+}
+
 export class Post {
   constructor (renderer, scene, camera) {
-    const composer = new EffectComposer(renderer)
+    // Multisampled (MSAA) targets for the frame: the edges of the poles, the kerbs, the palms'
+    // trunks and the rooflines smooth instead of crawling. 4 samples, 2 on a high-density screen
+    // (its pixels already small), none once the adaptive resolution has had to step well down
+    // (resolution.js: the GPU is short of time) or with ?msaa=0
+    this.maxSamples = /[?&]msaa=0/.test(location.search)
+      ? 0
+      : Math.min(4, renderer.capabilities.maxSamples || 0)
+    this.top = Math.min(window.devicePixelRatio || 1, 2)
+    this.samples = samplesFor(this.top, this.top, this.maxSamples)
+    const target = new THREE.WebGLRenderTarget(1, 1, {
+      type: THREE.HalfFloatType,
+      samples: this.samples
+    })
+    const composer = new EffectComposer(renderer, target)
+    composer.setPixelRatio(renderer.getPixelRatio()) // (a target of our own starts it at 1)
     composer.addPass(new RenderPass(scene, camera))
     const bloom = new UnrealBloomPass(
       new THREE.Vector2(window.innerWidth, window.innerHeight),
@@ -148,15 +181,26 @@ export class Post {
       composer.setSize(window.innerWidth, window.innerHeight)
       camera.aspect = window.innerWidth / window.innerHeight
       camera.updateProjectionMatrix()
+      this.final.uniforms.uAspect.value.set(camera.aspect, 1)
     })
     window.addEventListener('resize', resize)
     resize()
   }
   // pixels drawn per CSS pixel (resolution.js)
   setPixelRatio (r) {
+    this.setSamples(samplesFor(r, this.top, this.maxSamples))
     this.renderer.setPixelRatio(r)
     this.composer.setPixelRatio(r)
     this.resize()
+  }
+  // the frame's MSAA samples (the targets made again at their next use)
+  setSamples (n) {
+    for (const t of [this.composer.renderTarget1, this.composer.renderTarget2]) {
+      if (t.samples === n) continue
+      t.samples = n
+      t.dispose()
+    }
+    this.samples = n
   }
   // draw the frame (shot: the camera's shot, for the speed blur)
   render (sim, shot, dt) {
