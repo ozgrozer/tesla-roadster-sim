@@ -195,7 +195,7 @@ function enterCity () {
   RS.car.updateMatrixWorld()
   const welcome = () => {
     traffic.walker = null
-    hud.popup('Welcome to Los Angeles · <b>F</b> to get out · <b>Esc</b> for the map, settings and controls', 4500, 'hint')
+    hud.popup('Welcome to Los Angeles · <b>F</b> to get out · <b>Esc</b> for the map, settings and controls', 4500, 'hint', 'car')
     if (stuntKeys()) hud.popup('Gridlock on the avenue ahead · hold <b>G</b> to fly over it', 4200, 'hint')
   }
   intro.start(welcome)
@@ -451,6 +451,7 @@ function frame (now) {
   }
   game.frame(dt, city)
   mixSound(sound, app, traffic, dt, clock, peds)
+  if (!foot.driven()) hud.helpbox.drop('car') // (no "F to get out" once out)
   hud.update(dt, app)
   menu.frame(dt, city) // (hints, captions, stats: ui/ux.js)
   if (city) cityView.shadows(camera, [RS.car])

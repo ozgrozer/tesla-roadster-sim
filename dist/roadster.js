@@ -57064,6 +57064,12 @@ class HelpBox {
     if (this.queue.length > 4) this.queue.shift()
   }
 
+  // the hints in slot no longer apply (the car's, once the player is out of it)
+  drop (slot) {
+    if (this.cur && this.cur.slot === slot) this.cur.left = 0
+    for (let i = this.queue.length - 1; i >= 0; i--) if (this.queue[i].slot === slot) this.queue.splice(i, 1)
+  }
+
   // a new world: the hints still waiting were about the old one
   clear () {
     this.queue.length = 0
@@ -57233,8 +57239,8 @@ class Hud {
   }
 
   // a hint goes in the help box (kind 'hint'); anything else is a title mid-screen
-  popup (html, ms = 2300, kind = '') {
-    if (kind === 'hint') this.helpbox.push(html, ms)
+  popup (html, ms = 2300, kind = '', slot = '') {
+    if (kind === 'hint') this.helpbox.push(html, ms, slot)
     else this.notices.show({ title: html, html: true, tone: 'plain', ms })
   }
   // a stunt, a record or a crash (events.js): see Notices.show
@@ -122602,7 +122608,7 @@ function enterCity () {
   RS.car.updateMatrixWorld()
   const welcome = () => {
     traffic.walker = null
-    hud.popup('Welcome to Los Angeles · <b>F</b> to get out · <b>Esc</b> for the map, settings and controls', 4500, 'hint')
+    hud.popup('Welcome to Los Angeles · <b>F</b> to get out · <b>Esc</b> for the map, settings and controls', 4500, 'hint', 'car')
     if (stuntKeys()) hud.popup('Gridlock on the avenue ahead · hold <b>G</b> to fly over it', 4200, 'hint')
   }
   intro.start(welcome)
@@ -122858,6 +122864,7 @@ function frame (now) {
   }
   game.frame(dt, city)
   mixSound(sound, app, traffic, dt, clock, peds)
+  if (!foot.driven()) hud.helpbox.drop('car') // (no "F to get out" once out)
   hud.update(dt, app)
   menu.frame(dt, city) // (hints, captions, stats: ui/ux.js)
   if (city) cityView.shadows(camera, [RS.car])

@@ -98,8 +98,8 @@ export class Hud {
   }
 
   // a hint goes in the help box (kind 'hint'); anything else is a title mid-screen
-  popup (html, ms = 2300, kind = '') {
-    if (kind === 'hint') this.helpbox.push(html, ms)
+  popup (html, ms = 2300, kind = '', slot = '') {
+    if (kind === 'hint') this.helpbox.push(html, ms, slot)
     else this.notices.show({ title: html, html: true, tone: 'plain', ms })
   }
   // a stunt, a record or a crash (events.js): see Notices.show

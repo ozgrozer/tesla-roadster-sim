@@ -114,6 +114,12 @@ export class HelpBox {
     if (this.queue.length > 4) this.queue.shift()
   }
 
+  // the hints in slot no longer apply (the car's, once the player is out of it)
+  drop (slot) {
+    if (this.cur && this.cur.slot === slot) this.cur.left = 0
+    for (let i = this.queue.length - 1; i >= 0; i--) if (this.queue[i].slot === slot) this.queue.splice(i, 1)
+  }
+
   // a new world: the hints still waiting were about the old one
   clear () {
     this.queue.length = 0
