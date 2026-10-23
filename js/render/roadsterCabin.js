@@ -206,8 +206,10 @@ export function updateCabin (C, O, sim, seated, dt) {
     poseOptimus(O, { ...DRIVER, hands, look: C.look })
     C.posed = [C.angle, C.look]
   }
+  // (the screen drawn again and sent to the GPU, with its mipmaps, 8 times a second from the seat,
+  // once a second otherwise: nobody reads it from outside)
   if ((C.t -= dt) < 0) {
-    C.t = 0.12
+    C.t = seated ? 0.12 : 1
     drawScreen(C.screen, sim)
   }
 }

@@ -24,6 +24,7 @@ const WAY = []
 // (steps sideways a walker tries, least first)
 const STEPS = [0, 0.3, -0.3, 0.6, -0.6, 0.9, -0.9, 1.2, -1.2, 1.6, -1.6]
 const grid = new Map()
+const USED = [] // (the cells with someone in them, this step)
 const key = (x, z) =>
   (Math.floor(x / CELL) * 73856093) ^ (Math.floor(z / CELL) * 19349663)
 
@@ -45,13 +46,18 @@ export const PEDSTEER = {
   },
   steer (dt) {
     const S = this.S || (this.S = rng(91))
-    grid.clear()
+    // (the cells' lists kept and emptied, not made again 120 times a second; all of them dropped
+    // once there are many, the cells the people have left behind)
+    if (grid.size > 2048) grid.clear()
+    for (const c of USED) c.length = 0
+    USED.length = 0
     for (const p of this.list) {
       if (p.lod > 2) continue
       const k = key(p.x, p.z)
-      const c = grid.get(k)
-      if (c) c.push(p)
-      else grid.set(k, [p])
+      let c = grid.get(k)
+      if (!c) grid.set(k, (c = []))
+      if (!c.length) USED.push(c)
+      c.push(p)
     }
     const horn = this.hornWas && this.me
     for (const p of this.list) {

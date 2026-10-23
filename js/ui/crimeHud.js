@@ -105,7 +105,7 @@ export class CrimeHud {
       }
     }
     this.cashLeft -= dt
-    if (this.cashLeft < 3) this.cashD.classList.remove('on')
+    if (this.cashLeft < 3 && this.cashD.classList.contains('on')) this.cashD.classList.remove('on')
     this.cashEl.classList.toggle('on', show && (this.cashLeft > 0 || !!status || stars > 0))
     // the objective and the clock
     const text = status ? status.text + (status.progress ? `<span class="p">${status.progress}</span>` : '') : ''

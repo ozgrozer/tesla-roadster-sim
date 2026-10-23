@@ -235,11 +235,15 @@ export class Menu {
   }
 
   // a pad's Menu (or B) shuts the menu: the game's input isn't polled while it is open
+  // (watched only while the menu is open: show() starts it)
   padWatch () {
     let was = true
     const look = () => {
+      if (!this.open) {
+        this.watching = false
+        return (was = true)
+      }
       requestAnimationFrame(look)
-      if (!this.open) return (was = true)
       let p = null
       try {
         p = [...(navigator.getGamepads?.() || [])].find(q => q?.connected && q.mapping === 'standard')
@@ -248,7 +252,11 @@ export class Menu {
       if (on && !was) this.hide()
       was = on
     }
-    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(look)
+    this.watchPad = () => {
+      if (this.watching || typeof requestAnimationFrame !== 'function') return
+      this.watching = true
+      requestAnimationFrame(look)
+    }
   }
 
   show (tab = this.tab) {
@@ -262,6 +270,7 @@ export class Menu {
       this.root.hidden = false
       this.status()
       this.settings.refresh()
+      this.watchPad?.()
     }
     this.select(tab, true)
   }
