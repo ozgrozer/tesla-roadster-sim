@@ -82,6 +82,7 @@ export const PEDBRAIN = {
       for (const t of ext) if (t.level < 2) this.keepFrom(p, t.x, t.z, 2.5, t.r)
     }
     this.spread()
+    this.steer(dt) // (round each other, fright spreading, getting over it: pedSteer.js)
   },
   // keeping r from someone at (x, z) (looking at them within look m); pushed, they step aside
   keepFrom (p, x, z, r, look = 6) {
@@ -91,7 +92,7 @@ export const PEDBRAIN = {
     if (d2 > look * look || p.state === 'down') return
     if (d2 >= r * r) return
     const d = Math.sqrt(d2) || 1e-3
-    if (p.state === 'walk') p.pass = Math.max(-0.9, Math.min(0.9, p.pass + (r - d) * Math.sign(p.side + 0.01)))
+    if (p.state === 'walk') p.pass = Math.max(-1.3, Math.min(1.3, p.pass + Math.min(0.03, r - d) * Math.sign(p.side + 0.01)))
     else {
       p.x += (dx / d) * (r - d)
       p.z += (dz / d) * (r - d)
@@ -226,7 +227,7 @@ export const PEDBRAIN = {
   spread () {
     grid.clear()
     for (const p of this.list) {
-      p.pass *= 0.97
+      if (!p.passT) p.pass *= 0.97
       if (p.lod > 1 || p.state === 'down' || p.state === 'linger') continue
       const k = Math.floor(p.x / CELL) * 73856093 ^ Math.floor(p.z / CELL) * 19349663
       const c = grid.get(k)
@@ -253,8 +254,9 @@ export const PEDBRAIN = {
     const d = Math.sqrt(d2) || 1e-3,
       push = (GAP - d) / 2
     for (const [q, sg] of [[p, -1], [o, 1]]) {
-      if (q.state === 'walk') q.pass = Math.max(-0.9, Math.min(0.9, q.pass + sg * q.dir * push))
-      else if (q.state !== 'cross' && q.state !== 'dodge') {
+      if (q.state === 'walk') q.pass = Math.max(-1.3, Math.min(1.3, q.pass + sg * q.dir * Math.min(push, 0.02))) // (eased)
+      else if (q.state !== 'cross' && q.state !== 'dodge' && (sg < 0 ? o : p).state !== 'walk') {
+        // (someone standing isn't shoved by a walker: the walker goes round, pedSteer.js)
         const x = q.x + (sg * dx * push) / d,
           z = q.z + (sg * dz * push) / d
         // (never nudged out towards the road)

@@ -21,6 +21,7 @@ import { LINGER } from './linger.js'
 import { SHELTER } from './shelter.js'
 import { FOOTFALL } from './footfall.js'
 import { PED_LIFE } from './living/pedLife.js'
+import { PEDSTEER } from './pedSteer.js'
 import { warm } from './traffic.js'
 import { CAR, clamp } from './constants.js'
 import { rng, BLOCKS } from './city.js'
@@ -196,7 +197,7 @@ export class Peds {
     // drifting a little from side to side as they walk (and beside whoever they walk with)
     let o = 0.12 * Math.sin(p.sway) * p.dir + p.side + p.pass
     // (stepping out to pass someone never takes them off the pavement: pedBrain.js)
-    if (p.pass && kerbDist(P.x - P.hz * o, P.z + P.hx * o) > -0.5) o -= 2 * p.pass
+    if (p.pass && kerbDist(P.x - P.hz * o, P.z + P.hx * o) > -0.5) o -= p.pass *= 0.8
     p.x = P.x - P.hz * o
     p.z = P.z + P.hx * o
     p.yaw = Math.atan2(-P.hz * p.dir, P.hx * p.dir)
@@ -297,7 +298,7 @@ export class Peds {
     const R = this.R
     if (p.state === 'walk') {
       // (quicker in the rain, hunched with shorter steps, or running for it: shelter.js)
-      const v = p.v * p.rush
+      const v = p.v * p.rush * p.slow // (slowed for someone in the way: pedSteer.js)
       const pace =
         p.jog || v > 2.2
           ? 1.35
@@ -326,7 +327,7 @@ export class Peds {
           p.state = 'kerb'
         }
       } else if (!paired && R() < dt * 0.006 * this.traits(p).jay) this.jaywalk(p)
-      else if (!paired && !p.jog && R() < dt * 0.004 * this.traits(p).idle) {
+      else if (!paired && !p.jog && !p.shaken && R() < dt * 0.004 * this.traits(p).idle) {
         // stopping a moment: a call, a message, a look in a window
         p.state = 'idle'
         p.act = R() < this.traits(p).phone * 0.75 ? 1 : 0
@@ -442,7 +443,7 @@ export class Peds {
       : p.state === 'cross'
       ? p.v * Math.max(p.hurry || 1.08, p.rush)
       : p.state === 'walk'
-      ? p.v * p.rush
+      ? p.v * p.rush * p.slow
       : p.v
     const stride = 3.5 * p.tall * Math.sin(0.42 * Math.max(0.35, p.gait))
     // (sitting, the clock stops: no gestures, and no steps to be heard)
@@ -495,4 +496,4 @@ export class Peds {
     this.strays()
   }
 }
-Object.assign(Peds.prototype, CROWD, SHELTER, LINGER, DOGS, FOOTFALL, ALIGHT, PEDBRAIN, PED_LIFE)
+Object.assign(Peds.prototype, CROWD, SHELTER, LINGER, DOGS, FOOTFALL, ALIGHT, PEDBRAIN, PED_LIFE, PEDSTEER)

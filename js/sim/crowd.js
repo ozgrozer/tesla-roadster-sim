@@ -32,6 +32,7 @@ export const CROWD = {
     p.act = 0 // standing about: 1 on the phone, 2 chatting
     p.lead = null // walking with someone: them
     p.side = 0 // m in from their line (a pair walks side by side)
+    this.steerInit(p) // (pedSteer.js)
   },
   // A companion for p, walking beside them (or, standing, facing them for a chat): on the middle
   // line, with the companion inside them, where two side by side are clear of the palms, the
@@ -104,7 +105,7 @@ export const CROWD = {
       if (want && p.state === 'idle' && Math.abs(want) > 0.9)
         p.yaw += Math.sign(want) * Math.min(Math.abs(want) - 0.9, dt * 1.5)
     }
-    p.headT = want
+    p.headT = want || p.glance // (or a look round: pedSteer.js)
     p.head += (p.headT - p.head) * Math.min(1, dt * 5)
   },
 
