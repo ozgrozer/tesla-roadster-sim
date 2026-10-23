@@ -69,6 +69,10 @@ const play = async (sec, keys = []) => {
   await g.ev(() => { window.__draw = false })
   return take()
 }
+// (the warm-up's compiles and first uses happen in the background over the first half-minute or
+// so: waited for, so the phases count play only)
+await g.draw(2)
+await g.untilReal(() => window.__roadster.post.warmed && (window.__roadster.post.warmed.then(() => { window.__warm = true }), window.__warm), 90000)
 const phases = {}
 phases.load = await take()
 await g.ev(q => window.__roadster.climate.quality(q), process.argv[4] || 'high'); await g.run(1)

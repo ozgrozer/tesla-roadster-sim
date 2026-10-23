@@ -115228,6 +115228,22 @@ async function warm (cityView, RS, post, withSite) {
       as(cityView, RS, from, () => renderer.compile(NOTHING, camera, scene))
       as(cityView, RS, to, shadows)
     }
+  await firstUse()
+}
+// A program's first draw also reads back its link status and logs, and lists its uniforms and
+// attributes (getProgramParameter, getShaderInfoLog, getActiveUniform: each one waits on the
+// graphics process): two thousand such calls in the first frame at night. Done here instead, a
+// few dozen programs at a time, once each program has finished linking in the background.
+async function firstUse () {
+  const all = renderer.info.programs || []
+  for (let i = 0; i < all.length; i += 24) {
+    await pause(GAP / 8)
+    for (const p of all.slice(i, i + 24)) {
+      if (!p.isReady()) continue // (still linking: left to its first draw)
+      p.getUniforms()
+      p.getAttributes()
+    }
+  }
 }
 const NOTHING = new THREE.Object3D() // (compiling it only sets up the lights)
 
