@@ -154,3 +154,86 @@ d6-pickup-rain-straightened.png.
   design.
 - The sports car's wet W+A slip is still 27° (it is meant to be the drifter); it lets go in 1.1 s.
 - (gta-v3) The police cars now take `roadGrip()` too.
+
+
+## v5 (gta-v5-core): "I can't turn left or right"
+
+**Root cause.** Players hold W through a turn. A front-wheel-drive car (sedan, hatch, taxi, lowrider,
+limo: most of the traffic you can steal) in a low gear asked its front tyres for their whole grip as
+drive force, and the friction circle (lateral = sqrt(Fmax² - Fx²)) then left them almost nothing to
+turn with: a sedan with W+A turned **5° in a second at 30 km/h** (46° with W let go). The AWD SUV and
+police car lost some too, and every class waited on a slow key ramp (up to 0.38 s at speed) and
+on body inertia before the nose moved. The input path itself (focus, handoff, keymap defaults,
+gamepad deadzone) was fine: keySteer and the body's steer both reached ±1 in headless Playwright.
+
+**Fix** (`js/sim/arcadeGrip.js`, used by `vehicleSim.js`):
+- tyres hold `ARCADE.lat` = 1.3× more across the road than along it (class `latGrip`; truck 1.12),
+  not while backing up nor on rears locked by the handbrake, so J-turns and handbrake turns still swing;
+- `steerDrive`: drive on a steered axle gives up to 60% of its grip to the lock (`ARCADE.reserve`);
+- `yawAssist`: the yaw rate is pulled towards the steered wheels' kinematic rate (capped at 0.85 of
+  the grip's) at 6/s, faded out by 0.12 rad of body slip, so it points the car and never slides it;
+- the key ramp (`input.js`): full lock in 0.08 s + 0.003 s per m/s (was 0.1 + 0.008), so 0.1-0.18 s;
+- the Roadster's understeer control (`ground.js`) waits `HELD_WAIT` 0.15 s (scaled by speed up to
+  20 m/s) before counting a held turn, so a quick-ramp tap at speed doesn't cut the power.
+
+Regression: `tests/steer.test.mjs` drives every class through real keydown events (A, ArrowRight,
+D, W held) at 30/60/100 km/h and asserts the heading change in 1 s, and at 20 fps.
+
+W+A held 1 s, heading change (before → after):
+
+| class | 30 km/h | 60 km/h | 100 km/h |
+| --- | --- | --- | --- |
+| roadster | 45 → 47 | 32 → 35 | 22 → 25 |
+| sedan | **5 → 57** | 19 → 35 | 17 → 24 |
+| sports | 41 → 51 | 37 → 45 | 27 → 32 |
+| suv | 21 → 43 | 21 → 29 | 18 → 21 |
+| pickup | 37 → 48 | 30 → 40 | 21 → 27 |
+| truck | 21 → 25 | 17 → 21 | 10 → 14 |
+| van | 28 → 38 | 21 → 29 | 15 → 19 |
+| bus | 17 → 21 | 13 → 17 | 7 → 11 |
+| police | 36 → 51 | 22 → 34 | 19 → 24 |
+
+Raw (after; st = steer angle at 1 s, t6° = time to 6° of heading):
+
+```
+roadster | 30: 44° st21 v39 t6°=0.31 | 60: 32° st9 v72 t6°=0.31 | 100: 24° st6 v113 t6°=0.33
+sedan | 30: 57° st25 v33 t6°=0.22 | 60: 35° st9 v63 t6°=0.22 | 100: 24° st6 v101 t6°=0.27
+sports | 30: 51° st20 v43 t6°=0.19 | 60: 45° st10 v69 t6°=0.18 | 100: 32° st9 v106 t6°=0.21
+suv | 30: 43° st15 v43 t6°=0.25 | 60: 29° st7 v69 t6°=0.24 | 100: 21° st4 v104 t6°=0.29
+pickup | 30: 48° st27 v31 t6°=0.23 | 60: 40° st12 v58 t6°=0.23 | 100: 27° st8 v100 t6°=0.33
+truck | 30: 26° st19 v37 t6°=0.38 | 60: 22° st8 v61 t6°=0.36 | 100: 14° st5 v98 t6°=0.50
+van | 30: 39° st21 v35 t6°=0.28 | 60: 29° st10 v63 t6°=0.29 | 100: 19° st5 v100 t6°=0.38
+bus | 30: 21° st16 v35 t6°=0.41 | 60: 17° st8 v61 t6°=0.43 | 100: 12° st4 v98 t6°=0.58
+police | 30: 53° st21 v44 t6°=0.22 | 60: 34° st7 v76 t6°=0.23 | 100: 23° st5 v111 t6°=0.26
+```
+
+In the browser (headless, real keys): stolen parked cars turned 60°/35° (A / ArrowRight, 1 s at
+~27 km/h) and the Roadster 29°/27° at 70 km/h.
+
+### v5 metrics, dry
+
+| class | 0-100 s | 100-0 m | 100-0 s | dive° | steer in s | centre s | lat g | roll° | circle m | HB 170° s | HB km/h | HB end° | J-turn° | stop→rev s | 0-10 s | W+A slip° | W, let go s | LC slip° | LC settle s | drift° | drift turn° | drift km/h | HB@100 off° | HB@100 km/h |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| roadster | 2.27 | 31.0 | 2.19 | 3.1 | 0.19 | 0.28 | 1.30 | 5.0 | 11.8 | 1.36 | 22 | 173 | 172 | 0.57 | 0.27 | 7.9 | 0.44 | 2.1 | 0.52 | 50 | 168 | 46 | 67 | 81 |
+| sedan | 7.02 | 36.8 | 2.61 | 5.3 | 0.12 | 0.17 | 1.10 | 6.9 | 10.3 | 1.32 | 35 | 186 | 169 | 0.57 | 0.60 | 8.0 | 0.17 | 2.9 | 0.43 | 6 | 106 | 31 | 56 | 89 |
+| sports | 3.86 | 32.5 | 2.30 | 3.4 | 0.11 | 0.27 | 1.30 | 3.1 | 9.5 | 1.25 | 34 | 188 | 178 | 0.55 | 0.43 | 11.5 | 0.43 | 3.4 | 0.44 | 9 | 113 | 35 | 69 | 82 |
+| suv | 6.88 | 40.4 | 2.87 | 5.3 | 0.12 | 0.17 | 0.94 | 7.0 | 11.3 | 1.42 | 35 | 184 | 131 | 0.59 | 0.55 | 9.4 | 0.15 | 1.8 | 0.22 | 6 | 82 | 48 | 48 | 88 |
+| pickup | 7.50 | 41.7 | 2.96 | 5.6 | 0.24 | 0.36 | 0.83 | 6.6 | 13.3 | 1.46 | 36 | 186 | 100 | 0.66 | 0.67 | 23.6 | 0.19 | 1.6 | 0.23 | 16 | 84 | 33 | 47 | 79 |
+| truck | 19.74 | 53.7 | 3.82 | 3.3 | 0.17 | 0.18 | 0.66 | 5.3 | 22.1 | — | 16 | 161 | 16 | 0.66 | 0.58 | 5.0 | 0.17 | 1.1 | 0.19 | 12 | 57 | 43 | 8 | 91 |
+| van | 13.06 | 46.2 | 3.29 | 5.0 | 0.15 | 0.18 | 0.84 | 7.4 | 14.6 | 1.94 | 30 | 178 | 46 | 0.65 | 0.75 | 10.2 | 0.17 | 1.3 | 0.21 | 19 | 72 | 32 | 32 | 81 |
+| bus | 60.01 | 57.6 | 4.10 | 2.1 | 0.28 | 0.19 | 0.64 | 4.8 | 25.2 | — | 13 | 156 | 10 | 0.65 | 0.95 | 3.7 | 0.15 | 1.1 | 0.17 | 5 | 50 | 55 | 3 | 79 |
+| police | 5.30 | 34.2 | 2.42 | 4.6 | 0.09 | 0.20 | 1.17 | 5.6 | 10.8 | 1.30 | 34 | 187 | 157 | 0.57 | 0.53 | 10.4 | 0.21 | 2.8 | 0.28 | 6 | 110 | 42 | 60 | 83 |
+
+### v5 metrics, wet (grip 0.7)
+
+| class | 0-100 s | 100-0 m | 100-0 s | dive° | steer in s | centre s | lat g | roll° | circle m | HB 170° s | HB km/h | HB end° | J-turn° | stop→rev s | 0-10 s | W+A slip° | W, let go s | LC slip° | LC settle s | drift° | drift turn° | drift km/h | HB@100 off° | HB@100 km/h |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| roadster | 3.02 | 41.9 | 2.98 | 2.3 | 0.17 | 0.31 | 0.91 | 3.5 | 11.8 | 1.57 | 28 | 178 | 242 | 0.57 | 0.33 | 5.6 | 0.33 | 2.3 | 0.51 | 49 | 118 | 50 | 58 | 87 |
+| sedan | 8.36 | 50.5 | 3.61 | 3.8 | 0.12 | 0.17 | 0.84 | 5.3 | 10.3 | 1.41 | 40 | 187 | 174 | 0.57 | 0.79 | 4.2 | 0.23 | 2.7 | 0.38 | 11 | 68 | 39 | 50 | 98 |
+| sports | 5.77 | 45.2 | 3.22 | 2.4 | 0.08 | 0.33 | 1.00 | 2.4 | 9.5 | 1.32 | 40 | 189 | 186 | 0.59 | 0.59 | 27.6 | 0.88 | 3.7 | 0.45 | 16 | 78 | 46 | 62 | 84 |
+| suv | 6.91 | 55.4 | 3.96 | 3.9 | 0.11 | 0.17 | 0.73 | 5.5 | 11.3 | 1.52 | 40 | 184 | 152 | 0.57 | 0.55 | 10.6 | 0.12 | 1.8 | 0.22 | 10 | 58 | 54 | 44 | 91 |
+| pickup | 10.13 | 55.6 | 3.97 | 4.2 | 0.17 | 0.33 | 0.63 | 4.9 | 13.3 | 1.57 | 41 | 187 | 62 | 0.76 | 0.97 | 12.7 | 0.17 | 1.3 | 0.22 | 19 | 60 | 41 | 43 | 82 |
+| truck | 20.32 | 63.4 | 4.53 | 2.8 | 0.17 | 0.18 | 0.52 | 4.2 | 22.1 | — | 26 | 166 | 17 | 0.70 | 0.83 | 7.7 | 0.15 | 0.9 | 0.18 | 11 | 42 | 48 | 9 | 92 |
+| van | 13.73 | 58.2 | 4.16 | 4.0 | 0.13 | 0.17 | 0.66 | 5.7 | 14.6 | 1.99 | 36 | 180 | 46 | 0.75 | 0.92 | 10.1 | 0.17 | 1.1 | 0.20 | 23 | 56 | 35 | 30 | 85 |
+| bus | 60.01 | 63.6 | 4.53 | 1.9 | 0.26 | 0.19 | 0.58 | 4.3 | 25.2 | — | 22 | 145 | 13 | 0.67 | 0.95 | 3.8 | 0.15 | 1.1 | 0.17 | 5 | 47 | 56 | 3 | 81 |
+| police | 5.30 | 47.6 | 3.40 | 3.3 | 0.11 | 0.19 | 0.90 | 4.3 | 10.8 | 1.41 | 39 | 189 | 166 | 0.57 | 0.53 | 11.6 | 0.38 | 2.8 | 0.27 | 12 | 74 | 51 | 51 | 91 |
