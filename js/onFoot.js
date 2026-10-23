@@ -24,7 +24,6 @@ import {
   placePlayer,
   stepFoot,
   moveDir,
-  knockDown,
   CITY_WORLD
 } from './sim/player.js'
 import {
@@ -32,10 +31,12 @@ import {
   startExit,
   stepBoard,
   cancellable,
+  hurry,
   BOARD
 } from './sim/boarding.js'
 import { offerFor } from './ui/prompt.js'
 import { FootFight } from './footFight.js'
+import { hitByCars } from './footHits.js'
 import { InteriorGlue } from './render/interiors/glue.js'
 import { FootView } from './render/footView.js'
 import { boardRoadster, BOARD_T } from './render/intro.js'
@@ -43,7 +44,7 @@ import { FootCam } from './render/footCam.js'
 import { clipCamera } from './render/city.js'
 import { scene } from './render/scene.js'
 import { raiseAlarm } from './audio/watch.js'
-import { hearing, panOf, placeOf } from './audio/mix.js'
+import { hearing, panOf } from './audio/mix.js'
 import { footstep, landing, smashWindow, forceLock, doorSound } from './audio/steps.js'
 
 const HOLD = { ...makeControls(), brake: 1, fan: false }
@@ -78,6 +79,7 @@ export class OnFoot {
     this.fight = new FootFight(this) // (fists: F, the left mouse button)
     this.view.melee = this.fight.melee
     this.action = null // getting in or out (boarding.js)
+    this.exitQ = false // E pressed at speed: the car being stopped to get out
     this.target = null // the car the prompt is for
     this.how = null
     this.jumpQ = false
@@ -119,6 +121,7 @@ export class OnFoot {
     const held = this.interiors.step(H) // (going through a door: the feet held under the fade)
     const ds = this.driven(),
       sim = this.sim
+    if (this.exitQ) c = this.braking(ds) // (E at speed: brought to a stop, then out)
     sim.step(H, ds === sim ? c : HOLD)
     if (this.alt.active) this.alt.step(H, ds === this.alt.sim ? c : HOLD)
     if (!city) return
@@ -145,6 +148,20 @@ export class OnFoot {
       traffic.step(H, sim, view)
     }
     if (this.onFoot() && !held) this.stepPlayer(H)
+    else if (this.action) this.board(H) // (sat in, driving off, the door shutting behind)
+  }
+  // E at speed: the brakes on hard until the car is slow enough to get out of, then out (E again,
+  // or the car taken out of the player's hands, calls it off)
+  braking (s) {
+    if (!s || player.mode !== 'car') {
+      this.exitQ = false
+      return HOLD
+    }
+    if (s.groundSpeed() <= BOARD.exitV) {
+      this.exitQ = false
+      this.exit()
+    }
+    return HOLD
   }
 
   // the player's feet, one step: walking under the keys, or getting in or out of a car
@@ -156,10 +173,14 @@ export class OnFoot {
     this.nearCars()
     const a = this.action
     if (a && !(a.dir === 'out' && player.mode === 'foot')) {
-      if (a.dir === 'in' && cancellable(a) && this.moveKeys().mag > 0.3) {
+      // (a move key: a walk up or a break-in called off, the rest of getting in or out skipped)
+      const go = this.moveKeys().mag > 0.3
+      let ev
+      if (a.dir === 'in' && (cancellable(a) || a.phase === 'jimmy') && go) {
         this.action = null
         setMode('foot', null)
-      } else return this.board(H)
+      } else if (go && (ev = hurry(a)).length) return this.events(a, ev)
+      else return this.board(H)
     }
     if (this.action) this.board(H) // (the door shutting behind the player, as they walk off; not a walk-up just called off)
     const k = this.moveKeys()
@@ -172,7 +193,7 @@ export class OnFoot {
     const out = stepFoot(p, H, ctl, this.world)
     this.rescue.step(p, H, ctl.mag > 0.3, this.world) // (footRescue.js)
     if (out.landed > 3) landing(this.sound, p.surface, out.landed, 0)
-    this.hitByCars()
+    hitByCars(this)
   }
   // forward and right asked for, from the keys and the left stick
   moveKeys () {
@@ -197,26 +218,6 @@ export class OnFoot {
       n++
     }
   }
-  // a moving car into the player on foot: knocked over
-  hitByCars () {
-    const p = player
-    if (p.down > 0) return
-    for (const r of this.world.cars) {
-      const e = r.e
-      if (e.speed < 4 || r.ignore) continue
-      const dx = p.pos.x - r.x,
-        dz = p.pos.z - r.z
-      const lf = dx * r.fx + dz * r.fz,
-        ls = dz * r.fx - dx * r.fz
-      if (Math.abs(lf) > r.hl + 0.5 || Math.abs(ls) > r.hw + 0.5) continue
-      const vx = r.fx * e.speed * Math.sign(e.car?.v ?? 1),
-        vz = r.fz * e.speed * Math.sign(e.car?.v ?? 1)
-      knockDown(p, vx * 0.7 + Math.sign(ls || 1) * -r.fz * 2, vz * 0.7 + Math.sign(ls || 1) * r.fx * 2)
-      this.sound.bump?.(e.speed, 'car', placeOf(p.pos.x, p.pos.z))
-      emitGame('player-hit', { by: e.id, speed: e.speed, pos: { ...p.pos } })
-      return
-    }
-  }
   // ---------- getting in and out ----------
   // E (or the pad's Y): in or out. true when it was taken (in the air it yaws the Roadster instead)
   interact () {
@@ -231,7 +232,7 @@ export class OnFoot {
       const s = this.driven()
       if (s.mode !== 'ground' && s.mode !== 'crash') return false
       if (s.groundSpeed() > BOARD.exitV) {
-        this.hud.popup('Slow down to get out', 1400, 'hint')
+        this.exitQ = !this.exitQ // (braked to a stop, then out: braking)
         return true
       }
       return this.exit()
@@ -271,9 +272,12 @@ export class OnFoot {
   }
   // the boarding's step and what comes of it
   board (H) {
-    const a = this.action,
-      e = a.entry
-    for (const ev of stepBoard(a, H, player, this.world)) {
+    const a = this.action
+    this.events(a, stepBoard(a, H, player, this.world))
+  }
+  events (a, list) {
+    const e = a.entry
+    for (const ev of list) {
       const w = vehicles.toWorld(e, e.door.x, e.door.z)
       const pan = panOf(w.x, w.z)
       if (ev === 'arrived') {
@@ -290,7 +294,10 @@ export class OnFoot {
         emitGame('crime', { type: 'car-alarm', pos: { x: w.x, z: w.z }, severity: 1, vehicle: e.id })
       } else if (ev === 'pulled') this.pullOut(e, w)
       else if (ev === 'seated') this.seated(e, a)
-      else if (ev === 'out') this.outOf(e, a)
+      else if (ev === 'shut') {
+        if (e.kind !== 'roadster') doorSound(this.sound, true, pan)
+        if (this.action === a) this.action = null
+      } else if (ev === 'out') this.outOf(e, a)
       else if (ev === 'closed') {
         if (e.kind !== 'roadster') doorSound(this.sound, true, pan)
         else this.sound.lock?.(pan)
@@ -308,7 +315,7 @@ export class OnFoot {
     emitGame('crime', { type: 'carjack', pos: { x: w.x, z: w.z }, severity: 2, vehicle: e.id })
   }
   seated (e, a) {
-    this.action = null
+    if (a.done) this.action = null // (else its door still shutting as the car moves off)
     if (e.kind === 'roadster') {
       this.RS.seated = true
       this.RS.door = 0
@@ -316,11 +323,10 @@ export class OnFoot {
       e.occupant = 'player'
     } else {
       this.alt.board(e, this.traffic)
-      doorSound(this.sound, true, 0)
     }
     setMode('car', e)
     this.view.hide()
-    this.input.handoff()
+    if (!a.hurried) this.input.handoff() // (a key that hurried it in drives at once)
     this.camToCar(e)
     const pos = { x: e.pos.x, z: e.pos.z }
     if (a.how === 'theft' || a.how === 'jack') {
@@ -344,7 +350,7 @@ export class OnFoot {
       this.alt.leave()
       e.vacant = true
     }
-    this.input.handoff()
+    if (!a.hurried) this.input.handoff() // (a key that hurried it out walks at once)
     this.hud.carHud?.exited()
     emitGame('car-exited', { vehicle: e.id, kind: e.kind, model: e.type, pos: { x: s.x, z: s.z } })
   }
@@ -366,6 +372,7 @@ export class OnFoot {
   reset () {
     if (this.alt.active) this.alt.leave()
     this.action = null
+    this.exitQ = false
     this.fight.reset()
     vehicles.sync(null, this.sim)
     setMode('car', vehicles.roadster)

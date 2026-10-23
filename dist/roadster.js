@@ -118574,8 +118574,38 @@ class FootFight {
 __export(__exports, { "FootFight": () => FootFight })
 })
 
-// ---- js/sim/interiors/modshop.js
+// ---- js/footHits.js
 __define(309, function (__exports) {
+// The player on foot hit by a moving car (onFoot.js steps it): knocked over, heard, and told.
+const { player, knockDown } = __require(80)
+const { placeOf } = __require(120)
+const { emitGame } = __require(69)
+
+// A moving car into the player on foot: knocked over (foot: the OnFoot, its world's cars and sound)
+function hitByCars (foot) {
+  const p = player
+  if (p.down > 0) return
+  for (const r of foot.world.cars) {
+    const e = r.e
+    if (e.speed < 4 || r.ignore) continue
+    const dx = p.pos.x - r.x,
+      dz = p.pos.z - r.z
+    const lf = dx * r.fx + dz * r.fz,
+      ls = dz * r.fx - dx * r.fz
+    if (Math.abs(lf) > r.hl + 0.5 || Math.abs(ls) > r.hw + 0.5) continue
+    const vx = r.fx * e.speed * Math.sign(e.car?.v ?? 1),
+      vz = r.fz * e.speed * Math.sign(e.car?.v ?? 1)
+    knockDown(p, vx * 0.7 + Math.sign(ls || 1) * -r.fz * 2, vz * 0.7 + Math.sign(ls || 1) * r.fx * 2)
+    foot.sound.bump?.(e.speed, 'car', placeOf(p.pos.x, p.pos.z))
+    emitGame('player-hit', { by: e.id, speed: e.speed, pos: { ...p.pos } })
+    return
+  }
+}
+__export(__exports, { "hitByCars": () => hitByCars })
+})
+
+// ---- js/sim/interiors/modshop.js
+__define(310, function (__exports) {
 // The body shop's service (Redline Body & Paint): a car stopped in the bay out front, for the
 // price, comes back out repaired and in a new colour. Pure: the price, and the next colour from
 // the shop's list (render/interiors/glue.js puts them on the car).
@@ -118606,7 +118636,7 @@ __export(__exports, { "PRICE": () => PRICE, "COLOURS": () => COLOURS, "nextColou
 })
 
 // ---- js/render/interiors/hunt.js
-__define(310, function (__exports) {
+__define(311, function (__exports) {
 // The hunt for the thirty hidden tokens (sim/tokens.js), run from the interiors' step (glue.js): on
 // foot or at the wheel, within reach of one it is taken, "Hidden token 7/30 · +$100" pops up, the
 // game hears 'token-collected' { id, n, total, where, pos } (the HUD's counter), the find is
@@ -118667,7 +118697,7 @@ __export(__exports, { "REWARD": () => REWARD, "BONUS": () => BONUS, "TokenHunt":
 })
 
 // ---- js/render/interiors/glue.js
-__define(311, function (__exports) {
+__define(312, function (__exports) {
 // The interiors in the game: what onFoot.js asks of them through four calls (the step, the prompt,
 // E, and the wallet handed over by game.js). By a door on foot the prompt offers "E Enter · Night
 // Owl Mart"; E fades the screen to black, puts the player inside (the room's own world for the
@@ -118681,9 +118711,9 @@ const { emitGame } = __require(69)
 const { remember } = __require(7)
 const { MAT } = __require(83)
 const { INTERIOR, inside, busy, offerAt, begin, stepTransition, swapIn, swapOut, clearInterior, strayed, roomWorld } = __require(119)
-const { PRICE, canPay, nextColour, repaintKey } = __require(309)
+const { PRICE, canPay, nextColour, repaintKey } = __require(310)
 const { SITES } = __require(99)
-const { TokenHunt } = __require(310)
+const { TokenHunt } = __require(311)
 
 class InteriorGlue {
   constructor (foot) {
@@ -118886,7 +118916,7 @@ __export(__exports, { "InteriorGlue": () => InteriorGlue })
 })
 
 // ---- js/render/optimusGait.js
-__define(312, function (__exports) {
+__define(313, function (__exports) {
 // Optimus's gaits on foot, over poseOptimus's walk cycle (optimus.js): a walk, a jog and a sprint,
 // each with its own stride so the planted foot moves back at the pace the body goes forward (no
 // sliding): the walk cycle swings each leg 0.36 rad a side per unit of `walk`, so a leg 0.85 m long
@@ -118938,7 +118968,7 @@ __export(__exports, { "STRIDE_PER_AMP": () => STRIDE_PER_AMP, "ampFor": () => am
 })
 
 // ---- js/render/optimusFists.js
-__define(313, function (__exports) {
+__define(314, function (__exports) {
 // Optimus fighting (sim/melee.js): fists up in guard by the face, a jab and a cross thrown straight
 // out from the shoulder with the body leaning into them, a hook swung round from the side, and a
 // stamp on someone down. The hands and a foot reached for by poseOptimus's limbs (optimus.js), the
@@ -119000,7 +119030,7 @@ __export(__exports, { "poseFists": () => poseFists })
 })
 
 // ---- js/render/carDoor.js
-__define(314, function (__exports) {
+__define(315, function (__exports) {
 // The driver's door of a city car, opened and shut as the player gets in or out (sim/boarding.js):
 // its own skin, cut from the car's body between the door's shut lines (sim/vehicles.js DOORS, the
 // shut lines carSpecs.js draws) and from the sill up to the beltline, its window up to the glass's
@@ -119229,7 +119259,7 @@ __export(__exports, { "SWING": () => SWING, "easeDoor": () => easeDoor, "swingOf
 })
 
 // ---- js/render/boardPose.js
-__define(315, function (__exports) {
+__define(316, function (__exports) {
 // Optimus getting into a city car and out of it (sim/boarding.js's phases), GTA's way: stood just
 // behind the door's back edge, a hand on the handle pulling it open (the hand riding the handle as
 // the door swings, then letting go), a step forward into the opening turning to face ahead, ducking
@@ -119401,7 +119431,7 @@ __export(__exports, { "wayIn": () => wayIn, "poseBoard": () => poseBoard, "pushH
 })
 
 // ---- js/render/footView.js
-__define(316, function (__exports) {
+__define(317, function (__exports) {
 // The player on foot, drawn: Optimus (optimus.js), out of the Roadster and walking the city, its
 // legs and arms swinging with its pace (a longer, quicker stride and a lean running), legs tucked in
 // a jump, flat on its back knocked over; and getting into a car and out of it (boarding.js): at the
@@ -119411,12 +119441,12 @@ __define(316, function (__exports) {
 // that swings open on its front hinge.
 const THREE = __require(0)
 const { buildOptimus, poseOptimus, HIP_STAND } = __require(131)
-const { poseGait, ampFor, strideFor } = __require(312)
-const { poseFists } = __require(313)
+const { poseGait, ampFor, strideFor } = __require(313)
+const { poseFists } = __require(314)
 const { punchPose } = __require(306)
 const { boardRoadster, BOARD_T } = __require(133)
-const { CarDoors } = __require(314)
-const { poseBoard, pushHands } = __require(315)
+const { CarDoors } = __require(315)
+const { poseBoard, pushHands } = __require(316)
 const { doorOf, sideOf, BOARD } = __require(304)
 const { clamp } = __require(2)
 
@@ -119537,7 +119567,7 @@ __export(__exports, { "FootView": () => FootView })
 })
 
 // ---- js/render/footCam.js
-__define(317, function (__exports) {
+__define(318, function (__exports) {
 // The camera on foot: GTA's third-person orbit over the player's shoulder. The mouse (the pointer
 // locked to the picture: a click) or a gamepad's right stick swings it round and up and down; the
 // wheel brings it in or lets it out. It follows the player smoothly, keeps out of buildings
@@ -119678,7 +119708,7 @@ __export(__exports, { "clipShare": () => clipShare, "FootCam": () => FootCam })
 })
 
 // ---- js/audio/steps.js
-__define(318, function (__exports) {
+__define(319, function (__exports) {
 // The player's footsteps on foot (onFoot.js): Optimus's tread from the sample bank (buffers.js), its
 // colour by what is underfoot (a hard heel on the road and the pavement, a hollow knock on the
 // pier's planks, a soft swish through grass, a crunch in the sand, a ring off a roof's metal), heavier
@@ -119747,7 +119777,7 @@ __export(__exports, { "footstep": () => footstep, "landing": () => landing, "sma
 })
 
 // ---- js/onFoot.js
-__define(319, function (__exports) {
+__define(320, function (__exports) {
 // The player out of the car: getting out (E), walking the city as Optimus (WASD, Shift to run,
 // Space to jump, the mouse or the right stick looking round), getting into the Roadster or any other
 // car (E by it: in at once if it is open, broken into if it is parked and locked, taken from its
@@ -119768,19 +119798,20 @@ const { collidePlayer } = __require(104)
 const { carsMeet } = __require(302)
 const { FootRescue } = __require(303)
 const { makeControls } = __require(2)
-const { player, setMode, placePlayer, stepFoot, moveDir, knockDown, CITY_WORLD } = __require(80)
-const { startEnter, startExit, stepBoard, cancellable, BOARD } = __require(304)
+const { player, setMode, placePlayer, stepFoot, moveDir, CITY_WORLD } = __require(80)
+const { startEnter, startExit, stepBoard, cancellable, hurry, BOARD } = __require(304)
 const { offerFor } = __require(305)
 const { FootFight } = __require(308)
-const { InteriorGlue } = __require(311)
-const { FootView } = __require(316)
+const { hitByCars } = __require(309)
+const { InteriorGlue } = __require(312)
+const { FootView } = __require(317)
 const { boardRoadster, BOARD_T } = __require(133)
-const { FootCam } = __require(317)
+const { FootCam } = __require(318)
 const { clipCamera } = __require(271)
 const { scene } = __require(83)
 const { raiseAlarm } = __require(86)
-const { hearing, panOf, placeOf } = __require(120)
-const { footstep, landing, smashWindow, forceLock, doorSound } = __require(318)
+const { hearing, panOf } = __require(120)
+const { footstep, landing, smashWindow, forceLock, doorSound } = __require(319)
 
 const HOLD = { ...makeControls(), brake: 1, fan: false }
 // what the radar, the GPS and the place name follow while the player walks: the feet, as a car
@@ -119814,6 +119845,7 @@ class OnFoot {
     this.fight = new FootFight(this) // (fists: F, the left mouse button)
     this.view.melee = this.fight.melee
     this.action = null // getting in or out (boarding.js)
+    this.exitQ = false // E pressed at speed: the car being stopped to get out
     this.target = null // the car the prompt is for
     this.how = null
     this.jumpQ = false
@@ -119855,6 +119887,7 @@ class OnFoot {
     const held = this.interiors.step(H) // (going through a door: the feet held under the fade)
     const ds = this.driven(),
       sim = this.sim
+    if (this.exitQ) c = this.braking(ds) // (E at speed: brought to a stop, then out)
     sim.step(H, ds === sim ? c : HOLD)
     if (this.alt.active) this.alt.step(H, ds === this.alt.sim ? c : HOLD)
     if (!city) return
@@ -119881,6 +119914,20 @@ class OnFoot {
       traffic.step(H, sim, view)
     }
     if (this.onFoot() && !held) this.stepPlayer(H)
+    else if (this.action) this.board(H) // (sat in, driving off, the door shutting behind)
+  }
+  // E at speed: the brakes on hard until the car is slow enough to get out of, then out (E again,
+  // or the car taken out of the player's hands, calls it off)
+  braking (s) {
+    if (!s || player.mode !== 'car') {
+      this.exitQ = false
+      return HOLD
+    }
+    if (s.groundSpeed() <= BOARD.exitV) {
+      this.exitQ = false
+      this.exit()
+    }
+    return HOLD
   }
 
   // the player's feet, one step: walking under the keys, or getting in or out of a car
@@ -119892,10 +119939,14 @@ class OnFoot {
     this.nearCars()
     const a = this.action
     if (a && !(a.dir === 'out' && player.mode === 'foot')) {
-      if (a.dir === 'in' && cancellable(a) && this.moveKeys().mag > 0.3) {
+      // (a move key: a walk up or a break-in called off, the rest of getting in or out skipped)
+      const go = this.moveKeys().mag > 0.3
+      let ev
+      if (a.dir === 'in' && (cancellable(a) || a.phase === 'jimmy') && go) {
         this.action = null
         setMode('foot', null)
-      } else return this.board(H)
+      } else if (go && (ev = hurry(a)).length) return this.events(a, ev)
+      else return this.board(H)
     }
     if (this.action) this.board(H) // (the door shutting behind the player, as they walk off; not a walk-up just called off)
     const k = this.moveKeys()
@@ -119908,7 +119959,7 @@ class OnFoot {
     const out = stepFoot(p, H, ctl, this.world)
     this.rescue.step(p, H, ctl.mag > 0.3, this.world) // (footRescue.js)
     if (out.landed > 3) landing(this.sound, p.surface, out.landed, 0)
-    this.hitByCars()
+    hitByCars(this)
   }
   // forward and right asked for, from the keys and the left stick
   moveKeys () {
@@ -119933,26 +119984,6 @@ class OnFoot {
       n++
     }
   }
-  // a moving car into the player on foot: knocked over
-  hitByCars () {
-    const p = player
-    if (p.down > 0) return
-    for (const r of this.world.cars) {
-      const e = r.e
-      if (e.speed < 4 || r.ignore) continue
-      const dx = p.pos.x - r.x,
-        dz = p.pos.z - r.z
-      const lf = dx * r.fx + dz * r.fz,
-        ls = dz * r.fx - dx * r.fz
-      if (Math.abs(lf) > r.hl + 0.5 || Math.abs(ls) > r.hw + 0.5) continue
-      const vx = r.fx * e.speed * Math.sign(e.car?.v ?? 1),
-        vz = r.fz * e.speed * Math.sign(e.car?.v ?? 1)
-      knockDown(p, vx * 0.7 + Math.sign(ls || 1) * -r.fz * 2, vz * 0.7 + Math.sign(ls || 1) * r.fx * 2)
-      this.sound.bump?.(e.speed, 'car', placeOf(p.pos.x, p.pos.z))
-      emitGame('player-hit', { by: e.id, speed: e.speed, pos: { ...p.pos } })
-      return
-    }
-  }
   // ---------- getting in and out ----------
   // E (or the pad's Y): in or out. true when it was taken (in the air it yaws the Roadster instead)
   interact () {
@@ -119967,7 +119998,7 @@ class OnFoot {
       const s = this.driven()
       if (s.mode !== 'ground' && s.mode !== 'crash') return false
       if (s.groundSpeed() > BOARD.exitV) {
-        this.hud.popup('Slow down to get out', 1400, 'hint')
+        this.exitQ = !this.exitQ // (braked to a stop, then out: braking)
         return true
       }
       return this.exit()
@@ -120007,9 +120038,12 @@ class OnFoot {
   }
   // the boarding's step and what comes of it
   board (H) {
-    const a = this.action,
-      e = a.entry
-    for (const ev of stepBoard(a, H, player, this.world)) {
+    const a = this.action
+    this.events(a, stepBoard(a, H, player, this.world))
+  }
+  events (a, list) {
+    const e = a.entry
+    for (const ev of list) {
       const w = vehicles.toWorld(e, e.door.x, e.door.z)
       const pan = panOf(w.x, w.z)
       if (ev === 'arrived') {
@@ -120026,7 +120060,10 @@ class OnFoot {
         emitGame('crime', { type: 'car-alarm', pos: { x: w.x, z: w.z }, severity: 1, vehicle: e.id })
       } else if (ev === 'pulled') this.pullOut(e, w)
       else if (ev === 'seated') this.seated(e, a)
-      else if (ev === 'out') this.outOf(e, a)
+      else if (ev === 'shut') {
+        if (e.kind !== 'roadster') doorSound(this.sound, true, pan)
+        if (this.action === a) this.action = null
+      } else if (ev === 'out') this.outOf(e, a)
       else if (ev === 'closed') {
         if (e.kind !== 'roadster') doorSound(this.sound, true, pan)
         else this.sound.lock?.(pan)
@@ -120044,7 +120081,7 @@ class OnFoot {
     emitGame('crime', { type: 'carjack', pos: { x: w.x, z: w.z }, severity: 2, vehicle: e.id })
   }
   seated (e, a) {
-    this.action = null
+    if (a.done) this.action = null // (else its door still shutting as the car moves off)
     if (e.kind === 'roadster') {
       this.RS.seated = true
       this.RS.door = 0
@@ -120052,11 +120089,10 @@ class OnFoot {
       e.occupant = 'player'
     } else {
       this.alt.board(e, this.traffic)
-      doorSound(this.sound, true, 0)
     }
     setMode('car', e)
     this.view.hide()
-    this.input.handoff()
+    if (!a.hurried) this.input.handoff() // (a key that hurried it in drives at once)
     this.camToCar(e)
     const pos = { x: e.pos.x, z: e.pos.z }
     if (a.how === 'theft' || a.how === 'jack') {
@@ -120080,7 +120116,7 @@ class OnFoot {
       this.alt.leave()
       e.vacant = true
     }
-    this.input.handoff()
+    if (!a.hurried) this.input.handoff() // (a key that hurried it out walks at once)
     this.hud.carHud?.exited()
     emitGame('car-exited', { vehicle: e.id, kind: e.kind, model: e.type, pos: { x: s.x, z: s.z } })
   }
@@ -120102,6 +120138,7 @@ class OnFoot {
   reset () {
     if (this.alt.active) this.alt.leave()
     this.action = null
+    this.exitQ = false
     this.fight.reset()
     vehicles.sync(null, this.sim)
     setMode('car', vehicles.roadster)
@@ -120226,7 +120263,7 @@ __export(__exports, { "OnFoot": () => OnFoot })
 })
 
 // ---- js/render/playerCar.js
-__define(320, function (__exports) {
+__define(321, function (__exports) {
 // The car the player drives when it isn't the Roadster (drivable.js): the traffic renderer keeps
 // drawing it as itself (traffic.js: its body type, paint, glass, lamps and dents), but posed here
 // from its physics body (vehicleSim.js) rather than from the traffic's own springs: the body's
@@ -120335,7 +120372,7 @@ __export(__exports, { "PlayerCar": () => PlayerCar })
 })
 
 // ---- js/audio/engine.js
-__define(321, function (__exports) {
+__define(322, function (__exports) {
 // The engine of whatever the player drives that isn't the Roadster, synthesised: its firing
 // frequency from the rpm and gear vehicleSim.js keeps (rpm / 60 x cylinders / 2), a sawtooth and a
 // half-order rumble through a low-pass that opens with the throttle and the revs, a burble of
@@ -120479,7 +120516,7 @@ __export(__exports, { "EngineVoice": () => EngineVoice })
 })
 
 // ---- js/ui/carHud.js
-__define(322, function (__exports) {
+__define(323, function (__exports) {
 // The HUD kept to whatever the player drives, or to them on foot (hud.js calls update after its
 // own): the car's name bottom right as they get in (GTA's: the class small and gold over the name,
 // 'Stolen' when it was), the speedometer's selector swapped for the gear (1 to 6, R, N) and its
@@ -120576,7 +120613,7 @@ __export(__exports, { "CAR_SLOT": () => CAR_SLOT, "CarHud": () => CarHud })
 })
 
 // ---- js/ui/testDrive.js
-__define(323, function (__exports) {
+__define(324, function (__exports) {
 // A developer's harness for the polish work (not a game mode): put the player straight into a city
 // car of a given traffic type (sedan, sports, suv, pickup, truck, van, bus, police, ...) a few
 // metres ahead of where they are (on the nearest lane), seated as if they had walked up and got in (onFoot.js seated),
@@ -120615,7 +120652,7 @@ __export(__exports, { "seatIn": () => seatIn })
 })
 
 // ---- js/polish.js
-__define(324, function (__exports) {
+__define(325, function (__exports) {
 // The polish over whatever the player drives, kept out of main.js: each frame, the car that isn't
 // the Roadster posed from its body with its skids and smoke (render/playerCar.js), the camera told
 // what it is following (render/carCam.js), its engine, tyres and horn heard (audio/engine.js) and
@@ -120624,11 +120661,11 @@ __define(324, function (__exports) {
 //   new Polish({ foot, rig, sound, hud, cityView, RS, app, game })
 //   (game: () => the Game, game.js: the player's health on foot)
 //   .frame(dt)  after the physics steps: returns the RS-like stand-in for skids.js and effects.js
-const { PlayerCar } = __require(320)
+const { PlayerCar } = __require(321)
 const { armScale, armRise } = __require(60)
-const { EngineVoice } = __require(321)
-const { CarHud } = __require(322)
-const { seatIn } = __require(323)
+const { EngineVoice } = __require(322)
+const { CarHud } = __require(323)
+const { seatIn } = __require(324)
 
 // V on foot: the camera over the shoulder close, middling or far (footCam.js dist)
 const FOOT_CAMS = [
@@ -120680,7 +120717,7 @@ __export(__exports, { "Polish": () => Polish })
 })
 
 // ---- js/main.js
-__define(325, function (__exports) {
+__define(326, function (__exports) {
 // Tesla Roadster Sim: boot, game state, sim events and the main loop.
 const THREE = __require(0)
 const { Hud } = __require(16)
@@ -120718,11 +120755,11 @@ const { renderer, followKeyLight } = __require(83)
 const { fallFx, ALL_PARTICLES, updateNozzles, emitThrusters, emitTireSmoke, attachDiamonds } = __require(175)
 const { emitTrafficSpray } = __require(115)
 const { Game } = __require(299)
-const { OnFoot } = __require(319)
+const { OnFoot } = __require(320)
 const { player } = __require(80)
 const { vehicles } = __require(300)
 const { GAME_EVENTS, tickGame } = __require(69)
-const { Polish } = __require(324)
+const { Polish } = __require(325)
 
 // ---------- world ----------
 buildWall()
@@ -121182,5 +121219,5 @@ window.__roadster = {
 }
 __export(__exports, {  })
 })
-__require(325)
+__require(326)
 })()
