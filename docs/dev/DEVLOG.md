@@ -336,3 +336,18 @@ W3, explorables (72150f3, 8dd285f, aab6f35):
   door-sedan-open.png / -in / -out, door-fire-*, door-truck-*, punch-jab.png, punch-landing.png,
   ped-knocked-down.png, punch-wanted.png, runover-hit.png, runover-aftermath.png (2 stars),
   d7-sports-rain-night-drive.png, d7-sports-rain-night-slide.png; playtest/ for the runs.
+
+## v5 core: steering, driving feel, enter/exit, performance, bug hunt (gta-v5-core)
+
+- Steering: with W held, front-drive cars spent their whole friction circle on drive and could
+  barely turn (a sedan at 30 km/h turned 5 degrees in 1 s with W+A). Fixed in sim/arcadeGrip.js
+  (lateral reserve, a slip-limited yaw assist) and a quicker key ramp. See HANDLING.md.
+- Getting in and out about 2.5x quicker (boarding.js phases). You're seated as the door shuts, a
+  move key hurries the rest, and getting out at speed brakes first, then exits. All of it goes
+  through foot.interact(), so the keymap's enter/exit action decides the key.
+- Performance: Low/Medium/High presets plus Auto, the default (render/quality.js). Night lights
+  are hidden by day. See PERF.md, v5.
+- Bug hunt (tools/playtest/bughunt.mjs): a move key no longer calls off a theft once the break-in
+  has begun. NightLights.nearest no longer crashes when it has 0 lights. 0 console errors and 0
+  stuck states across 17 abuse steps. npm test 346/346, and the career and roam playtests are clean.
+- Shots and data: /workspace/shots/v5/core/ (perf/, qa/, bughunt.json).
