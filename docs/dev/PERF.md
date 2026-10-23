@@ -202,3 +202,67 @@ SwiftShader it is fill-bound, so read it relative only.
   reflect). The pooled point lights add no calls, but they make every lit material's fragment
   shader heavier.
 - Data: `/workspace/shots/v4/perf/{main,preD,postD,postD-msaa0}.json`.
+
+## v5: graphics presets and Auto (core-3)
+
+`render/quality.js` holds the presets. `climate.usePreset` puts them in. What a preset turns off is
+skipped outright: the mirror pass isn't drawn, the frame's targets are single-sampled, and hidden
+lights drop out of every shader's light loop.
+
+| preset | px cap | MSAA | key shadow | real point lights at night | wet mirror | rain drops |
+|---|---|---|---|---|---|---|
+| High | 2 | 4x | 3072 | 10 (6 street + 4 shop) | 0.5 of the frame | 100% |
+| Medium | 1.5 | 2x | 2048 | 4 (street) | off | 65% |
+| Low | 1 | off | 1024 | 0 | off | 35% |
+
+Auto is the new default; a saved low, medium or high is kept. It starts from the WebGL renderer
+string: SwiftShader or llvmpipe gives Low; Intel, UHD, Iris, Mali, Adreno or a phone gives Medium;
+anything else gives High. It then watches the measured frame interval (the median of
+`resolution.frames`). If frames stay over 24 ms for 3 s, and over 1.2x any pace the browser holds
+(a 30 Hz battery cap doesn't count as slow), it steps down one preset. The adaptive resolution
+steps down first. A frame it can't help, because the ratio is still at the top (CPU-bound), takes
+twice as long to trigger. If frames stay under 10.5 ms with no pace, at full resolution, for 20 s,
+it steps back up, but only once and only after fewer than 2 downs, so it doesn't swing back and
+forth. It waits 8 s at start and 5 s after each change while shaders compile.
+
+The night lights are now also hidden by day on every preset. Before, all 10 were always in the
+scene at intensity 0, so every lit material looped over 10 point lights at noon. `warm.js`
+compiles both variants, so dusk doesn't hitch.
+
+### Measured (tools/playtest/quality.mjs)
+
+Headless SwiftShader, 960x540 at DPR 1, so px caps don't bite. The box was shared, with a load
+average of 8 to 13. The wall ms is the median of 6 drawn frames and is only good for comparisons
+within a run. Calls and triangles are exact. Rain-night never got wet in the 8 s window (wet 0),
+so it is effectively night. Raw data: `/workspace/shots/v5/core/perf/{before,after}.json`.
+
+Before (old presets: only mirror, rain and px differed; MSAA 4x, 3072 shadow and 10 lights everywhere):
+
+| scene | preset | ms/frame | calls | triangles | samples |
+|---|---|---|---|---|---|
+| day | high | 5633 | 524 | 2.65 M | 4 |
+| day | medium | 5033 | 505 | 2.52 M | 4 |
+| day | low | 5083 | 505 | 2.52 M | 4 |
+| night | high | 5900 | 875 | 4.64 M | 4 |
+| night | medium | 5267 | 511 | 2.50 M | 4 |
+| night | low | 4600 | 511 | 2.50 M | 4 |
+
+After:
+
+| scene | preset | ms/frame | calls | triangles | samples | shadow | lights |
+|---|---|---|---|---|---|---|---|
+| day | high | 3983 | 521 | 2.63 M | 4 | 3072 | 0 (hidden by day) |
+| day | medium | 4667 | 505 | 2.52 M | 2 | 2048 | 0 |
+| day | low | 1900 | 505 | 2.52 M | 0 | 1024 | 0 |
+| night | high | 4833 | 876 | 4.64 M | 4 | 3072 | 10 |
+| night | medium | 3883 | 512 | 2.50 M | 2 | 2048 | 4 |
+| night | low | 1717 | 512 | 2.50 M | 0 | 1024 | 0 |
+
+- Low now really is cheaper: 2.7x faster than before at night, 2.7x by day. Most of that is the
+  MSAA HalfFloat target going single-sampled, then the smaller shadow map and the lights.
+- High at night costs +364 draw calls and +2.1 M triangles over Medium. That is the mirror pass,
+  which High draws whenever the street is damp at night. Medium and Low never draw it now.
+- Triangles don't change with the preset, because the city's geometry is the same. The presets
+  cut per-pixel cost: samples, shadow texels, the light loops and the mirror.
+- On a real GPU, the day-time light hiding helps every preset: 10 fewer point-light iterations per
+  fragment on every lit material. On SwiftShader the day ms between runs is load noise.
