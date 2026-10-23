@@ -7,7 +7,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { Game, SHOTS } from './lib.mjs'
-import { toDoor, stopCar } from './helpers.mjs'
+import { toDoor, stopCar, placeCar } from './helpers.mjs'
 
 const g = await Game.open({ query: '?debug=1' })
 await g.untilReal(() => !window.__roadster.intro.active, 30000).catch(() => {})
@@ -26,25 +26,40 @@ const where = () => g.ev(() => {
 const dir = (a, b) => Math.atan2(b.x - a.x, b.z - a.z)
 const turn = (a, b) => (((b - a) * 180) / Math.PI + 540) % 360 - 180
 // W to get going, then W+A (and W+D), each turn's heading change in degrees, through key events
-async function steer (label) {
+// (reset: back to the same spot before each side; mid: the wheels' angle half way through the
+// turn and whether it hit anything, so a wall on one side reads as a wall, not as weak steering)
+async function steer (label, reset) {
   const res = {}
   for (const side of ['KeyA', 'KeyD']) {
-    await g.hold('KeyW', 2)
+    await reset()
+    await g.run(0.5)
+    await g.hold('KeyW', 1.5)
     const a = await where(); await g.hold('KeyW', 0.15); const b = await where()
-    await g.hold(['KeyW', side], 1)
+    let mid
+    await g.hold(['KeyW', side], async () => {
+      await g.run(0.5)
+      mid = await g.ev(() => {
+        const R = window.__roadster, b = R.foot.alt?.active ? R.foot.alt.body : null
+        return b ? { ang: b.steerAng, hit: !!b.dmg?.harm } : { ang: R.sim.steerAngle ?? null, hit: R.sim.mode === 'crash' }
+      })
+      await g.run(0.5)
+    })
     const c = await where(); await g.hold('KeyW', 0.15); const d = await where()
-    res[side] = { kmh: +(Math.abs(b.v) * 3.6).toFixed(0), deg: +turn(dir(a, b), dir(c, d)).toFixed(0) }
+    res[side] = { kmh: +(Math.abs(b.v) * 3.6).toFixed(0), deg: +turn(dir(a, b), dir(c, d)).toFixed(0), ...mid }
     await g.hold('KeyS', 2)
   }
   out.steer[label] = res
-  g.expect(Math.abs(res.KeyA.deg) > 15 && Math.abs(res.KeyD.deg) > 15 && Math.sign(res.KeyA.deg) !== Math.sign(res.KeyD.deg), 'steering weak or one-sided', { label, res })
+  const ok = r => r.hit || Math.abs(r.deg) > 15
+  g.expect(ok(res.KeyA) && ok(res.KeyD) && res.KeyA.deg > 0 && res.KeyD.deg < 0, 'steering weak or one-sided', { label, res })
 }
 
 g.step = 'steer'
-await steer('roadster')
+await steer('roadster', () => g.ev(() => window.__roadster.resetTo('site')))
+await g.ev(() => window.__roadster.resetTo('city')); await g.run(1)
 // a shot downtown in a city car, HUD as it is
 await g.ev(t => window.__roadster.seatIn(t), 'sedan'); await g.run(1.5)
-await steer('sedan')
+const at = await g.ev(() => { const b = window.__roadster.foot.alt.body; return { x: b.x, z: b.z, yaw: b.yaw } })
+await steer('sedan', () => g.ev(placeCar, { ...at, u: 0 }))
 await g.hold('KeyW', 2.5)
 await k.down('KeyW'); await shot('01-drive-downtown-hud.png'); await k.up('KeyW')
 await g.ev(stopCar).catch(() => {})
