@@ -139,7 +139,7 @@ export function handleEvents (g) {
     } else if (e.type === 'knock') {
       // a street light, signal or tree snapped off, by the Roadster or a car it sent sliding
       cityView.knock(e)
-      knockFx(e)
+      if (e.kind !== 'prop') knockFx(e) // (street furniture throws its own: cityKnocks.js)
       const mine = e.by === 'roadster'
       sound.snap(
         e.kind,

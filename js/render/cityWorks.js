@@ -230,17 +230,19 @@ function propOf (B, p) {
       box(B, x, z, 0, 0, 0, p.big ? 1.2 : 0.8, p.big ? 6 : 3, p.h, p.h + (p.big ? 3.5 : 1.6), C(0xe8e6da))
       break
     }
-    case 'shelter': {
-      const yaw = p.yaw
-      for (const w of [-1.7, 1.7]) box(B, x, z, yaw, -0.6, w, 0.1, 0.1, 0, 2.5, STEEL)
-      box(B, x, z, yaw, -0.2, 0, 1.6, 3.8, 2.5, 2.62, STEEL)
-      box(B, x, z, yaw, -0.65, 0, 0.05, 3.4, 0.3, 2.4, GLASS)
-      box(B, x, z, yaw, -0.6, -1.68, 0.8, 0.05, 0.3, 2.4, GLASS)
-      box(B, x, z, yaw, -0.35, 0, 0.4, 2.2, 0.45, 0.5, WOOD) // (the bench)
-      box(B, x, z, yaw, -0.6, 1.9, 0.08, 1.2, 0.4, 2.4, C(0xf2efe2, 1.3)) // (its ad panel)
+    case 'shelter':
+      if (p.knock === undefined) shelterAt(B, x, z, p.yaw)
       break
-    }
   }
+}
+// a bus shelter at (x, z) facing yaw (the road): its posts, roof, glass, bench and ad panel
+export function shelterAt (B, x, z, yaw) {
+  for (const w of [-1.7, 1.7]) box(B, x, z, yaw, -0.6, w, 0.1, 0.1, 0, 2.5, STEEL)
+  box(B, x, z, yaw, -0.2, 0, 1.6, 3.8, 2.5, 2.62, STEEL)
+  box(B, x, z, yaw, -0.65, 0, 0.05, 3.4, 0.3, 2.4, GLASS)
+  box(B, x, z, yaw, -0.6, -1.68, 0.8, 0.05, 0.3, 2.4, GLASS)
+  box(B, x, z, yaw, -0.35, 0, 0.4, 2.2, 0.45, 0.5, WOOD) // (the bench)
+  box(B, x, z, yaw, -0.6, 1.9, 0.08, 1.2, 0.4, 2.4, C(0xf2efe2, 1.3)) // (its ad panel)
 }
 
 export function buildWorks (group) {

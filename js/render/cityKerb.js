@@ -86,7 +86,7 @@ const can = (r0, r1, h, top, n) => [
   new THREE.ConeGeometry(r1, top, n, 1, true).translate(0, h + top / 2, 0)
 ]
 // each piece: [geometry, colour], in the item's frame (x towards the road, y up)
-const PIECES = {
+export const PIECES = {
   // an LA bus bench: concrete legs, a slatted seat, its back a board for an advert
   bench: [
     [box(-0.25, 0, -0.86, 0.25, 0.42, -0.74), C(0x9a958c)],
@@ -105,13 +105,16 @@ const PIECES = {
     C(i ? 0x26302b : 0x2f4a3a)
   ])
 }
-// (small enough to cast no shadow worth drawing: one mesh for the city)
+// (small enough to cast no shadow worth drawing: one mesh for the city). Those a car can knock
+// over (all of them: sim/knockables.js) are drawn instanced instead, by cityKnocks.js.
 export function buildDecor (group) {
   const out = new Builder()
   for (const d of DECOR) {
+    if (d.knock !== undefined) continue
     const M = pose(d.x, 0.08, d.z, d.yaw)
     for (const [g, c] of PIECES[d.kind]) out.add(g, M, c)
   }
+  if (out.empty) return
   const m = new THREE.Mesh(
     out.geometry(),
     new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.65 })

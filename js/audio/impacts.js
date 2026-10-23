@@ -182,6 +182,10 @@ export const IMPACTS = {
       this.play('wood', 0.6 * k, o)
       this.play('leaves', 0.35 * k, { ...o, delay: 0.05 })
       this.play('thud', 0.45 * k, { ...o, rate: 0.65 })
+    } else if (kind === 'prop') {
+      // street furniture: a lighter clang and the thump of it going
+      this.play('metal', 0.32 * k, { ...o, rate: 1.6, lp: 6000 })
+      this.play('thud', 0.35 * k, { ...o, rate: 1.2 })
     } else {
       this.play('pole', 0.45 * k, { ...o, rate: kind === 'signal' ? 0.7 : 1 })
       this.play('metal', 0.3 * k, { ...o, rate: 1.3, lp: 5000 })

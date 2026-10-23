@@ -29,6 +29,7 @@ import { buildBuildings, BEACON } from './cityBuildings.js'
 import { updateTrees } from './cityTrees.js'
 import { streamed, stream, streamAll, streamBack } from './chunks.js'
 import { buildExtras } from './cityExtras.js'
+import { buildKnocks } from './cityKnocks.js'
 import { buildTokens } from './cityTokens.js'
 import { buildStopSigns } from './cityStopSigns.js'
 import { InteriorView } from './interiors/view.js'
@@ -113,6 +114,7 @@ export class CityView {
     buildPort(g) // (the quay, its cranes and the ship alongside)
     buildStadium(g) // (the stadium's pitch, stands and canopy)
     this.extras = buildExtras(g) // (the alleys' dressing, street furniture, benches: cityExtras.js)
+    props.fallers.prop = buildKnocks(g) // (and what a car can knock flying of it: cityKnocks.js)
     this.stopSigns = buildStopSigns(g) // (the all-way stops' signs and legends: cityStopSigns.js)
     this.tokens = buildTokens(g) // (the hidden tokens, turning: cityTokens.js)
     streamCity(g)

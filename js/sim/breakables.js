@@ -57,8 +57,8 @@ export function snap (body, c, nx, nz, m) {
   return {
     kind: c.kind,
     i: c.i,
-    x: c.x,
-    z: c.z,
+    x: c.x ?? (c.x0 + c.x1) / 2,
+    z: c.z ?? (c.z0 + c.z1) / 2,
     dx,
     dz,
     impact: vn,

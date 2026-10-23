@@ -42,8 +42,10 @@ import { GAME_EVENTS, tickGame } from './sim/gameEvents.js'
 import { Polish } from './polish.js'
 import { gtaCommands, wheelRadio } from './keys.js'
 import { DEBUG, stuntKeys } from './ui/debug.js'
+import { layKnocks } from './sim/knockables.js'
 
 // ---------- world ----------
+layKnocks() // (the street furniture knockable: once every module has laid the city out)
 buildWall()
 buildTruss()
 buildLineup()

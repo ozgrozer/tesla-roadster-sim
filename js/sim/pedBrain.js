@@ -208,7 +208,7 @@ export const PEDBRAIN = {
   unwall (p) {
     query(p.x - 0.4, p.z - 0.4, p.x + 0.4, p.z + 0.4, near)
     for (const c of near) {
-      if (c.r || c.down || c.y0 > 1.5 || c.y1 < 0.5) continue
+      if (c.r || c.down || c.walk || c.y0 > 1.5 || c.y1 < 0.5) continue
       const m = 0.25
       const l = p.x - (c.x0 - m),
         r = c.x1 + m - p.x,

@@ -364,6 +364,9 @@ function bench (B, e) {
     boxAt(B, e.x + fz * s, e.y, e.z - fx * s, 0.45, 0.4, 0.06, e.yaw, DARK)
 }
 
+// the street furniture, bins and crates on their own (cityKnocks.js draws them, knockable)
+export const DRAW = { news, meter, mailbox, scope, bench, bin, crate }
+
 const CELL = 576
 export function buildExtras (group) {
   const cells = new Map(),
@@ -388,6 +391,7 @@ export function buildExtras (group) {
     bench
   }
   for (const e of EXTRAS) {
+    if (e.knock !== undefined) continue
     const B = cellOf(e)
     if (e.kind === 'lamp') lamp(B, G, e)
     else if (e.kind === 'string') string(B, G, e)

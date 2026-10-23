@@ -47,7 +47,7 @@ export const KINDS = [
 export function insideSolid (x, z, m = 0.3) {
   query(x - 0.1, z - 0.1, x + 0.1, z + 0.1, near)
   for (const c of near) {
-    if (c.r || c.down || c.y0 > 1 || c.y1 < 0.5) continue
+    if (c.r || c.down || c.walk || c.y0 > 1 || c.y1 < 0.5) continue
     if (x > c.x0 + m && x < c.x1 - m && z > c.z0 + m && z < c.z1 - m)
       return c.kind || 'solid'
   }
