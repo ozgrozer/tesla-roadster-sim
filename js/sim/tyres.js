@@ -27,10 +27,14 @@ export function tyreCurve (x, slideMu = CAR.slideMu) {
 // road wheels at u m/s (rad)
 export const steerMax = u => 0.6 / (1 + (u * u) / 300)
 const LOCK = 0.62 // the road wheels' full lock (rad)
-// the steering rack: how fast hands turn the road wheels (rad/s, full lock in a third of a second),
-// and the extra speed they come back to the middle at as the car rolls (the tyres' self-aligning
-// torque, per m/s)
-const HANDS = 1.8,
+// the steering rack: how fast hands turn the road wheels (rad/s): HANDS at a crawl (full lock in a
+// quarter of a second, GTA-quick), easing to HANDS_V by HANDS_AT m/s (where the lock is small and a
+// quicker rack only spins a handbrake turn on round; sliding, the wheels follow the slide at
+// HANDS_V times 1 to 3, as before), and the extra speed they come back to the
+// middle at as the car rolls (the tyres' self-aligning torque, per m/s)
+const HANDS = 2.6,
+  HANDS_V = 1.8,
+  HANDS_AT = 20,
   CENTRE = 0.08
 // The understeer control (ground.js) starts taking the power away once the wheel asks the fronts for
 // PUSH_0 of the slip they grip hardest at, and has all of it PUSH_W further on
@@ -86,7 +90,8 @@ export function steer (s, c, u, w, r, beta, FmaxF, FmaxR, track, dt) {
   // spinning through them as the wheels follow a slide)
   const centring =
     Math.abs(steerT) < Math.abs(s.steerAng) && steerT * s.steerAng >= 0
-  const rate = HANDS * (1 + 2 * slide) + (centring ? CENTRE * Math.abs(u) : 0)
+  const hands = HANDS + (HANDS_V - HANDS) * Math.min(1, Math.abs(u) / HANDS_AT)
+  const rate = Math.max(hands, HANDS_V * (1 + 2 * slide)) + (centring ? CENTRE * Math.abs(u) : 0)
   s.steerAng += clamp(steerT - s.steerAng, -rate * dt, rate * dt)
   _out.slide = slide
   _out.push = push

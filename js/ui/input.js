@@ -18,14 +18,15 @@ const KEY_T = 0.08,
   KEY_T_V = 0.003,
   KEY_V_TOP = 35,
   KEY_BACK = 2.5
-// The brake key squeezes the pedal rather than stamping on it: the brakes come on over BRAKE_T s,
-// as a foot pushes the pedal down and the calipers build pressure (about how long a real hard stop
-// takes to reach its full bite), so a tap slows the car a little and holding it is a full stop; let
+// The brake key stamps on the pedal, GTA-style: the brakes are fully on BRAKE_T s after S goes
+// down (a tap is a short, sharp brake, holding it a full stop from the first moment); let
 // go, they are off in BRAKE_OFF s. Held through a stop, it keeps the car on its brakes for STOP_HOLD
 // s, as a driver stops and then selects reverse, before it backs up (pressed afresh at a standstill
-// it backs up at once), the motor's pull easing in over BRAKE_T s.
-// (GTA-quick: the bite is there in BRAKE_T s, and a stop held turns into reversing STOP_HOLD s on)
-const BRAKE_T = 0.15,
+// it backs up at once), the motor's pull easing in over REV_T s.
+// (GTA-quick: the full bite is there in BRAKE_T s, a stamp rather than a squeeze, and a stop held
+// turns into reversing STOP_HOLD s on)
+const BRAKE_T = 0.06,
+  REV_T = 0.15,
   BRAKE_OFF = 0.08,
   STOP_HOLD = 0.3
 // The throttle key presses the pedal down over GAS_T s, as a foot does (and the motors' torque
@@ -261,7 +262,7 @@ export class Input {
           rev = true
           c.reverse =
             this.stopT >= 0
-              ? Math.min(brake, this.backing + dt / BRAKE_T)
+              ? Math.min(brake, this.backing + dt / REV_T)
               : brake
         }
       } else this.stopT = -1

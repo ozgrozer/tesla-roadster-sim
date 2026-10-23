@@ -255,15 +255,15 @@ function brakeKey (from, to, secs) {
   return { sim, log }
 }
 
-test('the brake key squeezes the pedal: a tap slows the car a little, holding it is a full stop', () => {
-  // a tenth of a second's tap at 100 km/h: a part brake, a few km/h off, not a stamp on the pedal
-  // (v3 drive: GTA-quick, the full bite in 0.15 s, so a tap is two thirds of it)
+test('the brake key stamps on the pedal: a tap is a short sharp brake, holding it is a full stop', () => {
+  // a tenth of a second's tap at 100 km/h: the full bite almost at once (v6: GTA-quick, fully on
+  // in 0.06 s), yet only a few km/h off
   const tap = brakeKey(0.1, 0.2, 1)
   const coast = brakeKey(9, 9, 1) // (the same second without it: regen slows the car too)
   const lost = (coast.sim.speed - tap.sim.speed) * 3.6
   assert.ok(
-    Math.max(...tap.log.map(l => l.brake)) < 0.75,
-    'a tap is a light brake'
+    tap.log.find(l => l.brake === 1)?.t < 0.18,
+    'a tap is on full within 0.1 s'
   )
   assert.ok(lost < 6, `a tap takes ${lost.toFixed(1)} km/h off`)
   // held, the brakes are fully on within a fifth of a second, and the car stops from 100 km/h in
@@ -276,7 +276,7 @@ test('the brake key squeezes the pedal: a tap slows the car a little, holding it
   )
   const stop = held.log.find(l => l.v <= 0)
   assert.ok(
-    stop.t > 2.3 && stop.t < 2.9,
+    stop.t > 2.1 && stop.t < 2.9,
     `stopped in ${(stop.t - 0.1).toFixed(2)} s`
   )
 })

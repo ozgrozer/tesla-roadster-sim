@@ -381,3 +381,8 @@ W3, explorables (72150f3, 8dd285f, aab6f35):
   dive after 0.4-0.8 s at <= 3.6 m/s; pavement/prop-knock scares now local. K22's speed loss was
   solid kerb-side furniture (news boxes, meters, hydrants), not the kerb. tools/sim/pedHits.mjs aimed
   hit rate: 58% -> 97% (40 km/h 53% -> 100%, 70 km/h 63% -> 94%); unaimed 88%.
+
+### v6 brakes and steering (GTA-quick)
+- S stamps the brakes (full in 0.06 s, was 0.15; reverse still eases in over 0.15 s); city-car brakes up ~10-15% (sedan 100-0 2.61→2.54 s, SUV 2.87→2.79, pickup 2.96→2.80, van 3.29→2.93, truck 3.82→3.33, bus 4.10→3.55). The Roadster stays at 2.16 s.
+- Handbrake: city cars now scrub 5 m/s² × grip more when going forwards, scaled by how straight the wheel is (sedan 100-0 on Space 11.7 s→3.8 s, Roadster unchanged at 2.1 s). Handbrake turns, J-turns and drifts are unchanged (metrics.mjs).
+- Roadster steering rack: 2.6 rad/s at a crawl, easing to 1.8 by 20 m/s (full lock 0.31→0.22 s). Van, bus steerRate up. Probe: tools/drive/brakeSteer.mjs; test: tests/brake.test.mjs.

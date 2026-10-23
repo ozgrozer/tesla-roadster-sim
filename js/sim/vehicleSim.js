@@ -30,6 +30,11 @@ const SPIN_UP = 1.6 // per s: how fast locked rears get their grip back once it 
 // stopping on its rears (a sliding tyre's slideMu kept it planted and scrubbed the speed away)
 const HB_GRIP = 0.5
 const HB_FAST = 18 // m/s: past this the handbrake's swing rate is held lower, as HB_FAST / speed
+// and, GTA-style, a hard scrub besides: HB_DRAG m/s^2 (times the road's grip) against the way the
+// car is going, so a handbrake pulled at speed bleeds it off fast as well as swinging the tail
+// (going forwards only: a J-turn's swing backing up keeps its speed; less of it the further the
+// wheel is over, none at full lock, so a handbrake turn still swings round)
+const HB_DRAG = 5
 const HB_HOLD = 20 // 1/s: how hard the swing is held to its rate (a stiff yaw-rate limiter)
 const J_TURN = 2.6 // the swing backing up (a J-turn), times the class's hbYaw going forwards
 const SHIFT_T = 0.22 // s a gear change cuts the drive
@@ -112,6 +117,7 @@ export function stepVehicle (b, inp, dt, world = null) {
 }
 
 // the car's motion through one step: tyres, engine, brakes
+const spdHbOf = (u, w) => Math.sqrt(u * u + w * w)
 function move (b, inp, dt, world) {
   const S = b.spec,
     m = b.m
@@ -307,6 +313,11 @@ function move (b, inp, dt, world) {
   Fu += Fxr
   Fw += Fyr
   Mz -= bb * Fyr
+  if (hb && b.hbDir >= 0 && u > 0 && spdHbOf(u, w) > 0.5) {
+    const k = (HB_DRAG * (1 - Math.min(1, Math.abs(inp.steer))) * mu * b.ebLock * m) / spdHbOf(u, w)
+    Fu -= u * k
+    Fw -= w * k
+  }
   // the handbrake's swing (going forwards, fading as the car comes round), and catching the slide
   // once it is let go: a car turning faster than its tyres could carry it round is eased back
   // Going forwards it fades once the car is hbFade rad off the way it is going (momentum carries it

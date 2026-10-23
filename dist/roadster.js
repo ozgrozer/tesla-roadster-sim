@@ -55904,10 +55904,14 @@ function tyreCurve (x, slideMu = CAR.slideMu) {
 // road wheels at u m/s (rad)
 const steerMax = u => 0.6 / (1 + (u * u) / 300)
 const LOCK = 0.62 // the road wheels' full lock (rad)
-// the steering rack: how fast hands turn the road wheels (rad/s, full lock in a third of a second),
-// and the extra speed they come back to the middle at as the car rolls (the tyres' self-aligning
-// torque, per m/s)
-const HANDS = 1.8,
+// the steering rack: how fast hands turn the road wheels (rad/s): HANDS at a crawl (full lock in a
+// quarter of a second, GTA-quick), easing to HANDS_V by HANDS_AT m/s (where the lock is small and a
+// quicker rack only spins a handbrake turn on round; sliding, the wheels follow the slide at
+// HANDS_V times 1 to 3, as before), and the extra speed they come back to the
+// middle at as the car rolls (the tyres' self-aligning torque, per m/s)
+const HANDS = 2.6,
+  HANDS_V = 1.8,
+  HANDS_AT = 20,
   CENTRE = 0.08
 // The understeer control (ground.js) starts taking the power away once the wheel asks the fronts for
 // PUSH_0 of the slip they grip hardest at, and has all of it PUSH_W further on
@@ -55963,7 +55967,8 @@ function steer (s, c, u, w, r, beta, FmaxF, FmaxR, track, dt) {
   // spinning through them as the wheels follow a slide)
   const centring =
     Math.abs(steerT) < Math.abs(s.steerAng) && steerT * s.steerAng >= 0
-  const rate = HANDS * (1 + 2 * slide) + (centring ? CENTRE * Math.abs(u) : 0)
+  const hands = HANDS + (HANDS_V - HANDS) * Math.min(1, Math.abs(u) / HANDS_AT)
+  const rate = Math.max(hands, HANDS_V * (1 + 2 * slide)) + (centring ? CENTRE * Math.abs(u) : 0)
   s.steerAng += clamp(steerT - s.steerAng, -rate * dt, rate * dt)
   _out.slide = slide
   _out.push = push
@@ -56375,14 +56380,15 @@ const KEY_T = 0.08,
   KEY_T_V = 0.003,
   KEY_V_TOP = 35,
   KEY_BACK = 2.5
-// The brake key squeezes the pedal rather than stamping on it: the brakes come on over BRAKE_T s,
-// as a foot pushes the pedal down and the calipers build pressure (about how long a real hard stop
-// takes to reach its full bite), so a tap slows the car a little and holding it is a full stop; let
+// The brake key stamps on the pedal, GTA-style: the brakes are fully on BRAKE_T s after S goes
+// down (a tap is a short, sharp brake, holding it a full stop from the first moment); let
 // go, they are off in BRAKE_OFF s. Held through a stop, it keeps the car on its brakes for STOP_HOLD
 // s, as a driver stops and then selects reverse, before it backs up (pressed afresh at a standstill
-// it backs up at once), the motor's pull easing in over BRAKE_T s.
-// (GTA-quick: the bite is there in BRAKE_T s, and a stop held turns into reversing STOP_HOLD s on)
-const BRAKE_T = 0.15,
+// it backs up at once), the motor's pull easing in over REV_T s.
+// (GTA-quick: the full bite is there in BRAKE_T s, a stamp rather than a squeeze, and a stop held
+// turns into reversing STOP_HOLD s on)
+const BRAKE_T = 0.06,
+  REV_T = 0.15,
   BRAKE_OFF = 0.08,
   STOP_HOLD = 0.3
 // The throttle key presses the pedal down over GAS_T s, as a foot does (and the motors' torque
@@ -56618,7 +56624,7 @@ class Input {
           rev = true
           c.reverse =
             this.stopT >= 0
-              ? Math.min(brake, this.backing + dt / BRAKE_T)
+              ? Math.min(brake, this.backing + dt / REV_T)
               : brake
         }
       } else this.stopT = -1
@@ -84443,7 +84449,7 @@ const HANDLING = {
   sedan: {
     mass: 1550, len: 4.7, wid: 1.85, hgt: 1.45, wb: 2.8, wf: 0.58, comH: 0.55, wheelR: 0.33, track: 1.58,
     torque: 320, rpmIdle: 800, rpmPeak: 4200, rpmRed: 6500, gears: [3.5, 2.1, 1.4, 1.0, 0.8, 0.65], final: 3.6, front: 1, vMax: 58,
-    brake: 10.5, lock: 0.68, steerV: 18, steerRate: 3.4,
+    brake: 11.5, lock: 0.68, steerV: 18, steerRate: 3.4,
     mu: 1.08, gripF: 1.0, gripR: 1.02, slideMu: 0.78, cornF: 85000, cornR: 95000,
     suspHz: 1.4, travel: 0.12, damp: 0.35, rollK: 0.11, pitchK: 0.065,
     hbYaw: 3000, stab: 1, assist: 0.6, feel: 0.85, drag: 0.42, rollRes: 0.013,
@@ -84461,7 +84467,7 @@ const HANDLING = {
   suv: {
     mass: 2150, len: 4.85, wid: 1.95, hgt: 1.75, wb: 2.9, wf: 0.55, comH: 0.72, wheelR: 0.37, track: 1.65,
     torque: 450, rpmIdle: 750, rpmPeak: 4000, rpmRed: 6000, gears: [3.6, 2.2, 1.5, 1.15, 0.9, 0.72], final: 3.7, front: 0.45, vMax: 55,
-    brake: 9.5, lock: 0.64, steerV: 16, steerRate: 3.0,
+    brake: 10.5, lock: 0.64, steerV: 16, steerRate: 3.0,
     mu: 1.0, gripF: 0.98, gripR: 1.0, slideMu: 0.75, cornF: 95000, cornR: 110000,
     suspHz: 1.2, travel: 0.18, damp: 0.32, rollK: 0.13, pitchK: 0.07,
     hbYaw: 2600, stab: 1.2, assist: 0.5, feel: 0.82, drag: 0.55, rollRes: 0.015,
@@ -84470,7 +84476,7 @@ const HANDLING = {
   pickup: {
     mass: 2300, len: 5.4, wid: 2.0, hgt: 1.85, wb: 3.4, wf: 0.6, comH: 0.75, wheelR: 0.38, track: 1.7,
     torque: 520, rpmIdle: 700, rpmPeak: 3500, rpmRed: 5600, gears: [3.5, 2.1, 1.4, 1.0, 0.75], final: 3.73, front: 0, vMax: 50,
-    brake: 9.2, lock: 0.64, steerV: 15, steerRate: 2.8,
+    brake: 10.5, lock: 0.64, steerV: 15, steerRate: 2.8,
     mu: 0.98, gripF: 1.0, gripR: 1.0, slideMu: 0.72, cornF: 95000, cornR: 95000,
     suspHz: 1.3, travel: 0.2, damp: 0.3, rollK: 0.14, pitchK: 0.075,
     hbYaw: 2700, tc: 0.8, stab: 1, assist: 0.5, feel: 0.88, drag: 0.6, rollRes: 0.016,
@@ -84480,7 +84486,7 @@ const HANDLING = {
     latGrip: 1.12, // (the arcade lateral boost held down: a laden truck still leans on its limit)
     mass: 9500, len: 9.9, wid: 2.55, hgt: 3.8, wb: 5.6, wf: 0.45, comH: 1.3, wheelR: 0.5, track: 2.0,
     torque: 1500, rpmIdle: 600, rpmPeak: 1600, rpmRed: 2600, gears: [6.5, 4.0, 2.6, 1.7, 1.25, 1.0], final: 4.1, front: 0, vMax: 30,
-    brake: 7, lock: 0.62, steerV: 11, steerRate: 1.8,
+    brake: 8, lock: 0.62, steerV: 11, steerRate: 1.8,
     mu: 0.85, gripF: 1.0, gripR: 1.0, slideMu: 0.7, cornF: 280000, cornR: 400000,
     suspHz: 1.1, travel: 0.15, damp: 0.35, rollK: 0.14, pitchK: 0.06,
     hbYaw: 600, stab: 1.4, assist: 0.3, feel: 0.75, drag: 2.5, rollRes: 0.02,
@@ -84489,7 +84495,7 @@ const HANDLING = {
   van: {
     mass: 3200, len: 6.4, wid: 2.15, hgt: 2.8, wb: 3.7, wf: 0.55, comH: 1.0, wheelR: 0.36, track: 1.8,
     torque: 400, rpmIdle: 750, rpmPeak: 3200, rpmRed: 5000, gears: [4.0, 2.4, 1.5, 1.0, 0.8], final: 3.9, front: 0, vMax: 42,
-    brake: 8.2, lock: 0.64, steerV: 13, steerRate: 2.5,
+    brake: 9.5, lock: 0.64, steerV: 13, steerRate: 3.0,
     mu: 0.93, gripF: 1.0, gripR: 1.0, slideMu: 0.72, cornF: 110000, cornR: 140000,
     suspHz: 1.2, travel: 0.14, damp: 0.32, rollK: 0.15, pitchK: 0.075,
     hbYaw: 1600, stab: 1.3, assist: 0.4, feel: 0.8, drag: 1.1, rollRes: 0.017,
@@ -84498,7 +84504,7 @@ const HANDLING = {
   bus: {
     mass: 12500, len: 11.6, wid: 2.55, hgt: 3.15, wb: 6.2, wf: 0.4, comH: 1.2, wheelR: 0.5, track: 2.1,
     torque: 1500, rpmIdle: 600, rpmPeak: 1400, rpmRed: 2300, gears: [3.4, 2.0, 1.4, 1.0, 0.75], final: 5.2, front: 0, vMax: 26,
-    brake: 6.5, lock: 0.62, steerV: 9, steerRate: 1.5,
+    brake: 7.5, lock: 0.62, steerV: 9, steerRate: 2.0,
     mu: 0.85, gripF: 1.0, gripR: 1.0, slideMu: 0.7, cornF: 350000, cornR: 520000,
     suspHz: 1.0, travel: 0.12, damp: 0.35, rollK: 0.13, pitchK: 0.04,
     hbYaw: 500, stab: 1.5, assist: 0.3, feel: 0.75, drag: 3.2, rollRes: 0.02,
@@ -84507,7 +84513,7 @@ const HANDLING = {
   police: {
     mass: 1900, len: 5.05, wid: 2.0, hgt: 1.5, wb: 2.95, wf: 0.54, comH: 0.55, wheelR: 0.35, track: 1.65,
     torque: 520, rpmIdle: 800, rpmPeak: 4800, rpmRed: 6800, gears: [3.0, 2.0, 1.45, 1.12, 0.87, 0.7], final: 3.4, front: 0.35, vMax: 70,
-    brake: 11.5, lock: 0.67, steerV: 20, steerRate: 3.8,
+    brake: 12, lock: 0.67, steerV: 20, steerRate: 3.8,
     mu: 1.15, gripF: 1.0, gripR: 1.02, slideMu: 0.8, cornF: 110000, cornR: 125000,
     suspHz: 1.7, travel: 0.11, damp: 0.4, rollK: 0.085, pitchK: 0.055,
     hbYaw: 3300, tc: 0.8, stab: 1, assist: 0.65, feel: 0.95, drag: 0.45, rollRes: 0.013,
@@ -85126,6 +85132,11 @@ const SPIN_UP = 1.6 // per s: how fast locked rears get their grip back once it 
 // stopping on its rears (a sliding tyre's slideMu kept it planted and scrubbed the speed away)
 const HB_GRIP = 0.5
 const HB_FAST = 18 // m/s: past this the handbrake's swing rate is held lower, as HB_FAST / speed
+// and, GTA-style, a hard scrub besides: HB_DRAG m/s^2 (times the road's grip) against the way the
+// car is going, so a handbrake pulled at speed bleeds it off fast as well as swinging the tail
+// (going forwards only: a J-turn's swing backing up keeps its speed; less of it the further the
+// wheel is over, none at full lock, so a handbrake turn still swings round)
+const HB_DRAG = 5
 const HB_HOLD = 20 // 1/s: how hard the swing is held to its rate (a stiff yaw-rate limiter)
 const J_TURN = 2.6 // the swing backing up (a J-turn), times the class's hbYaw going forwards
 const SHIFT_T = 0.22 // s a gear change cuts the drive
@@ -85207,6 +85218,7 @@ function stepVehicle (b, inp, dt, world = null) {
 }
 
 // the car's motion through one step: tyres, engine, brakes
+const spdHbOf = (u, w) => Math.sqrt(u * u + w * w)
 function move (b, inp, dt, world) {
   const S = b.spec,
     m = b.m
@@ -85402,6 +85414,11 @@ function move (b, inp, dt, world) {
   Fu += Fxr
   Fw += Fyr
   Mz -= bb * Fyr
+  if (hb && b.hbDir >= 0 && u > 0 && spdHbOf(u, w) > 0.5) {
+    const k = (HB_DRAG * (1 - Math.min(1, Math.abs(inp.steer))) * mu * b.ebLock * m) / spdHbOf(u, w)
+    Fu -= u * k
+    Fw -= w * k
+  }
   // the handbrake's swing (going forwards, fading as the car comes round), and catching the slide
   // once it is let go: a car turning faster than its tyres could carry it round is eased back
   // Going forwards it fades once the car is hbFade rad off the way it is going (momentum carries it

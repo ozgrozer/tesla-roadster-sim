@@ -446,7 +446,7 @@ test('Track Mode: on the power after a handbrake flick the car holds a drift for
 })
 
 test('the steering turns at the speed of hands, and the tyres corner to their limit', () => {
-  // a step of full lock at walking pace: the wheels take about a third of a second to get there
+  // a step of full lock at walking pace: the wheels take about a quarter of a second to get there
   const sim = new Sim()
   sim.reset('start')
   sim.pos.set(-300, 0, 60)
@@ -458,11 +458,11 @@ test('the steering turns at the speed of hands, and the tyres corner to their li
   c.steer = 1
   for (let i = 0; i < 12; i++) sim.step(H, c)
   assert.ok(
-    sim.steerAng > 0.15 && sim.steerAng < 0.25,
+    sim.steerAng > 0.2 && sim.steerAng < 0.4,
     `a tenth of a second in: ${(sim.steerAng / DEG).toFixed(0)}°`
   )
-  for (let i = 0; i < 36; i++) sim.step(H, c)
-  assert.ok(sim.steerAng > 0.55, 'at full lock by 0.4 s')
+  for (let i = 0; i < 18; i++) sim.step(H, c)
+  assert.ok(sim.steerAng > 0.55, 'at full lock by 0.25 s')
   // and at 60 km/h, full lock held: the car corners at the grip of its tyres (1.26 g)
   const fast = from60((c, t) => {
     c.steer = t > 0.2 ? 1 : 0
