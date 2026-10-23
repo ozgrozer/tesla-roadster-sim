@@ -60,6 +60,8 @@ export function lampOut (i) {
     tex.needsUpdate = true
   }
 }
+// whether light i (in LAMPS) is standing (nightLights.js)
+export const lampUp = i => !(SLOT[i] >= 0 && SLOT[i] < COUNT) || data[SLOT[i]] > 0
 export function lampsBack () {
   SLOT.forEach((s, i) => {
     if (s >= 0 && s < COUNT) data[s] = STAND[i]
@@ -122,6 +124,19 @@ const LAMP_GLSL = `
   varying vec3 vLampW;
   ${LAMP_FIELD_GLSL}`
 
+// The street lights nearest the camera are real lights too (nightLights.js: the first LAMP_POOL
+// point lights), for what isn't lit by them here; what is skips them, so nothing is lit twice
+export const LAMP_POOL = 6
+const POINT = '\t\tpointLight = pointLights[ i ];\n'
+const POINT_END = '\t}\n\t#pragma unroll_loop_end\n#endif\n#if ( NUM_SPOT_LIGHTS > 0 )'
+function noLampPool () {
+  const c = THREE.ShaderChunk.lights_fragment_begin
+  if (!c.includes(POINT) || !c.includes(POINT_END))
+    throw new Error('lampLight.js: three.js lights_fragment_begin has changed')
+  return c
+    .replace(POINT, `\t\t#if ( UNROLLED_LOOP_INDEX >= ${LAMP_POOL} )\n${POINT}`)
+    .replace(POINT_END, `\t\t#endif\n${POINT_END}`)
+}
 // Light a material by the street lights: their light added to what falls on it from the sky
 // (chained onto whatever it already does before it is compiled). The ground faces up; anything else
 // (facing: the Roadster's body, the cars, the people) takes it on whichever way it faces.
@@ -149,6 +164,7 @@ export function lampLit (m, facing = false) {
       )
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', `#include <common>\n${LAMP_GLSL}`)
+      .replace('#include <lights_fragment_begin>', noLampPool())
       .replace(
         '#include <lights_fragment_maps>',
         `#include <lights_fragment_maps>

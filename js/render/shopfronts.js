@@ -144,7 +144,10 @@ function quads (spec) {
   }
 }
 
+// where each lit shop's light stands: out over the pavement in front of its middle (nightLights.js)
+export const SHOP_SPOTS = []
 export function shopfronts () {
+  SHOP_SPOTS.length = 0
   const fronts = quads({
     position: 3,
     normal: 3,
@@ -226,6 +229,8 @@ export function shopfronts () {
       quad(b, a, hem, [out, y1], fwd.map(v => -v), -3, -2)
     }
     if (biz.kind === 5) return
+    const [lx, lz] = at(w, (s0 + s1) / 2, 1.4)
+    SHOP_SPOTS.push({ x: lx, y: Math.min(2.8, biz.head), z: lz })
     // the light on the pavement in front (anticlockwise seen from above)
     const y = CURB_H + 0.03
     const p = (s, o) => {

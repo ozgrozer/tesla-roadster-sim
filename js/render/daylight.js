@@ -20,8 +20,9 @@ import { SKY } from './citySky.js'
 import { GRADE } from './post.js'
 import { WET } from './wet.js'
 import { CANYON } from './canyon.js'
+import { NightLights } from './nightLights.js'
 import { WIND } from './treeWind.js'
-import { scene, renderer, hemi, key, keyOffset } from './scene.js'
+import { scene, renderer, camera, hemi, key, keyOffset } from './scene.js'
 
 const DEG = 180 / Math.PI
 // a light touch of the GTA look over it all (the gameplay workstream): a little more colour and
@@ -219,6 +220,7 @@ export class Daylight {
     this.envWas = null // the sky the environment map was last drawn from
     this.darkWas = -1
     this.lit = false // the moon (not the sun) gives the light
+    this.lamps = new NightLights(city.group) // (real lights where the camera is, at night)
   }
   // once a frame in the city (dt: real seconds)
   update (dt, clock) {
@@ -346,7 +348,8 @@ export class Daylight {
     WET.uRainT.value += dt
     at(DAMP, a, _v)
     WET.uDamp.value = LOOK.on ? _v[0] * (1 - 0.5 * fog) : 0
-    // ---- how dark it is for the city's own lights
+    // ---- how dark it is for the city's own lights, and the real ones near the camera
+    this.lamps.update(dt, camera, e.dark, LOOK.on)
     if (Math.abs(e.dark - this.darkWas) > 0.004) {
       this.darkWas = e.dark
       city.setDark(e.dark)
