@@ -9,6 +9,7 @@
 // own slight angle; and every shop too, with the shop inside it (shopfronts.js). (Signs, billboards
 // and helipads: citySigns.js; hedges and walls: cityYards.js.)
 import * as THREE from 'three'
+import { canyonLit } from './canyon.js'
 import { LIP, LIP_H } from '../sim/roofs.js'
 import { facadeMaterial } from './facade.js'
 import { district, DISTRICTS } from './chunks.js'
@@ -214,7 +215,7 @@ export function buildBuildings (group) {
       L = LOOK[s]
     add(
       F[s],
-      facadeMaterial(
+      canyonLit(facadeMaterial(
         {
           map: facadeMap(s),
           emissive: 0xffffff,
@@ -235,14 +236,13 @@ export function buildBuildings (group) {
           glassMetal: glass ? 0.6 : 0,
           fill: L.fill ?? 1
         }
-      ),
+      )),
       `facades ${s}`
     )
   }
-  const ledgeMat = new THREE.MeshStandardMaterial({
-    vertexColors: true,
-    roughness: 0.75
-  })
+  const ledgeMat = canyonLit(
+    new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.75 })
+  )
   for (const l of ledgesBy) add(l, ledgeMat, 'cornices')
   const shopLight = shops.build(group)
   const roofMat = new THREE.MeshStandardMaterial({

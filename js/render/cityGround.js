@@ -7,6 +7,7 @@ import { merge, marks, LAYER } from './geo.js'
 import { canvasTex, speckle } from './scene.js'
 import { roadMaterial } from './roadSurface.js'
 import { wetGround } from './wet.js'
+import { canyonLit } from './canyon.js'
 import { lampLit } from './lampLight.js'
 import { dotted, eachMarker } from '../sim/botts.js'
 import {
@@ -163,15 +164,17 @@ export function buildGround (group) {
     dark = 0.62,
     gloss = 0.32
   ) =>
-    lampLit(
-      wetGround(
-        new THREE.MeshStandardMaterial({ map, color, roughness: rough }),
-        dark,
-        gloss
+    canyonLit(
+      lampLit(
+        wetGround(
+          new THREE.MeshStandardMaterial({ map, color, roughness: rough }),
+          dark,
+          gloss
+        )
       )
     )
   const M = {
-    asphalt: lampLit(roadMaterial({ map: T.asphalt, roughness: 0.88 })),
+    asphalt: canyonLit(lampLit(roadMaterial({ map: T.asphalt, roughness: 0.88 }))),
     walk: mat(T.walk),
     plaza: mat(T.plaza),
     grass: mat(T.grass, 0xffffff, 0.98, 0.75, 0.7)
@@ -184,7 +187,9 @@ export function buildGround (group) {
     return m
   }
   const O = {
-    asphalt: over(lampLit(roadMaterial({ map: T.asphalt, roughness: 0.88 }))),
+    asphalt: over(
+      canyonLit(lampLit(roadMaterial({ map: T.asphalt, roughness: 0.88 })))
+    ),
     concrete: over(mat(T.walk, 0xf2efe8)),
     plaza: over(mat(T.plaza)),
     grass: over(mat(T.grass, 0xffffff, 0.98, 0.75, 0.7)),
@@ -346,7 +351,7 @@ export function buildGround (group) {
   const paint = (color, list, y, off = 1) => {
     const m = marks(
       list,
-      lampLit(
+      canyonLit(lampLit(
         wetGround(
           new THREE.MeshStandardMaterial({
             color,
@@ -358,7 +363,7 @@ export function buildGround (group) {
           0.8,
           0.2
         )
-      ),
+      )),
       y
     )
     group.add(m)
