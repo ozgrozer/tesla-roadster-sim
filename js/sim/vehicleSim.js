@@ -19,6 +19,7 @@ import { collideWorld, kerbs } from './vehicleHit.js'
 import { settle } from './bodyGround.js'
 import { springs, slopeForce } from './vehicleBody.js'
 import { createVehicleBody, makeVehicleInput } from './vehicleMake.js'
+import { ARCADE, latLeft, steerDrive, yawAssist } from './arcadeGrip.js'
 
 const MAX_DT = 1 / 120
 const TRANSFER = 0.12 // s the weight's shift onto an axle lags the acceleration
@@ -149,6 +150,11 @@ function move (b, inp, dt, world) {
     : Math.min(1, b.rearGrip + dt * SPIN_UP)
   const FmaxF = mu * S.gripF * Math.max(0, Nf) * kLat,
     FmaxR = mu * S.gripR * Math.max(0, Nr) * kLat * b.rearGrip
+  // (across the road the tyres hold more: arcadeGrip.js; not backing up, nor rears locked on the
+  // handbrake, so a J-turn and a handbrake turn still swing)
+  const lat = 1 + ((S.latGrip ?? ARCADE.lat) - 1) * Math.min(1, Math.max(0, (u + 1) / 3)),
+    FlatF = FmaxF * lat,
+    FlatR = FmaxR * (lat - (lat - 1) * b.ebLock)
   const au = Math.abs(u),
     su = u > 0.05 ? 1 : u < -0.05 ? -1 : 0
   const beta = Math.atan2(w - bb * r, Math.max(au, 2))
@@ -166,7 +172,7 @@ function move (b, inp, dt, world) {
     // further past the way the car is going than the slip they grip hardest at (the class's feel
     // of it: a sports car's driver right to the peak, a truck's well short), so full lock on the
     // keys at speed corners on the tyres' peak instead of scrubbing wide on their sliding grip
-    const aLim = (S.feel ?? 0.9) * (PEAK * FmaxF) / Math.max(S.cornF, 1)
+    const aLim = (S.feel ?? 0.9) * (PEAK * FlatF) / Math.max(S.cornF, 1)
     target = clamp(target, aKin - aLim, aKin + aLim) * (1 - slide) + target * slide
     target += (aKin + inp.steer * 0.5 * S.lock - target) * slide * S.assist
   }
@@ -267,7 +273,7 @@ function move (b, inp, dt, world) {
   b.spin = 0
   if (Math.abs(Fxr) > 0.95 * FmaxR && Fdrive * Fxr > 0)
     b.spin = clamp(Math.abs(Fxr) / Math.max(FmaxR, 1) - 0.95, 0, 1) * (1 - (S.tc ?? 1))
-  Fxf = clamp(Fxf, -FmaxF, FmaxF)
+  Fxf = clamp(steerDrive(Fxf, FmaxF, inp.steer), -FmaxF, FmaxF) // (room left to turn: arcadeGrip.js)
   Fxr = clamp(Fxr, -FmaxR, FmaxR)
   // (sliding with the wheel let go, the drive leaves the rears grip to come back in line with)
   if (free > 0 && Fxr > 0) Fxr = Math.min(Fxr, FmaxR * (1 - 0.4 * free * smooth(Math.abs(beta) / 0.06)))
@@ -278,8 +284,8 @@ function move (b, inp, dt, world) {
   const uwf = u * cd + wfA * sd,
     wwf = -u * sd + wfA * cd
   const alphaF = Math.atan2(wwf, Math.max(Math.abs(uwf), 2))
-  let Fyf = -FmaxF * tyreCurve((S.cornF * alphaF) / Math.max(FmaxF, 1), S.slideMu)
-  const limF = Math.sqrt(Math.max(0, FmaxF * FmaxF - Fxf * Fxf))
+  let Fyf = -FlatF * tyreCurve((S.cornF * alphaF) / Math.max(FlatF, 1), S.slideMu)
+  const limF = latLeft(Fxf, FmaxF, FlatF)
   Fyf = clamp(Fyf, -limF, limF)
   let Fu = Fxf * cd - Fyf * sd,
     Fw = Fxf * sd + Fyf * cd
@@ -294,8 +300,8 @@ function move (b, inp, dt, world) {
     Fyr = -wr * k
   } else {
     const alphaR = Math.atan2(wr, Math.max(au, 2))
-    Fyr = -FmaxR * tyreCurve((S.cornR * alphaR) / Math.max(FmaxR, 1), S.slideMu)
-    const limR = Math.sqrt(Math.max(0, FmaxR * FmaxR - Fxr * Fxr)) * (1 - 0.6 * b.spin)
+    Fyr = -FlatR * tyreCurve((S.cornR * alphaR) / Math.max(FlatR, 1), S.slideMu)
+    const limR = latLeft(Fxr, FmaxR, FlatR) * (1 - 0.6 * b.spin)
     Fyr = clamp(Fyr, -limR, limR)
   }
   Fu += Fxr
@@ -325,6 +331,8 @@ function move (b, inp, dt, world) {
       smooth((spdHb - 2) / 6) *
       fade
   }
+  // (the nose answering the wheel at once, off the handbrake and out of a slide: arcadeGrip.js)
+  if (!hb) Mz += yawAssist(b, S, u, r, mu * lat * G, beta)
   // (the swing held to a rate a driver can catch)
   // (and lower at speed: a flick at 100 km/h is a slide to catch, not a pirouette)
   const hbRate = (S.hbRate ?? HB_RATE) * clamp(HB_FAST / Math.max(spdHb, 1), 0.5, 1)
@@ -334,7 +342,7 @@ function move (b, inp, dt, world) {
     // (the rate the wheel asks for counts only the way the car is turning: opposite lock asks
     // for less, not more, so it can't excuse a spin)
     const rKin = Math.max(0, (Math.sign(r) * u * Math.tan(b.steerAng)) / S.wb)
-    const rOk = Math.max(rKin, (mu * G) / spd)
+    const rOk = Math.max(rKin, (mu * lat * G) / spd)
     const over = Math.abs(r) - rOk - SPIN_OK
     if (over > 0) Mz -= Math.sign(r) * Math.min(SPIN_K * m * over, SPIN_MAX * m) * S.stab
     // (and the nose brought back round to where the car is going, as a driver's hands and the
@@ -401,10 +409,10 @@ function move (b, inp, dt, world) {
   b.x += b.vx * dt
   b.z += b.vz * dt
   // how much the tyres slide, for marks and squeal
-  const sF = clamp(((S.cornF * Math.abs(alphaF)) / Math.max(FmaxF, 1) - 1.4) / 0.8, 0, 1)
+  const sF = clamp(((S.cornF * Math.abs(alphaF)) / Math.max(FlatF, 1) - 1.4) / 0.8, 0, 1)
   const sR = locked
     ? clamp(Math.hypot(u, wr) / 3, 0, 1)
-    : clamp(((S.cornR * Math.abs(beta)) / Math.max(FmaxR, 1) - 1.2) / 0.8, 0, 1)
+    : clamp(((S.cornR * Math.abs(beta)) / Math.max(FlatR, 1) - 1.2) / 0.8, 0, 1)
   b.skid = Math.max(sF, sR, b.spin) * clamp(spd / 3, 0, 1)
 }
 

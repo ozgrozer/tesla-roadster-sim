@@ -8,12 +8,13 @@ import { G, CAR, clamp, makeControls } from '../sim/constants.js'
 
 // The steering keys ease the wheel over rather than throwing it to full lock: full in KEY_T s at a
 // standstill and KEY_T_V s more per m/s (up to KEY_V_TOP m/s: past it the wheel turns no slower, as
-// the steering's reach is already small up there), so at speed a tap is a small correction, holding
-// the key a lane change, then a turn at the tyres' limit; with the handbrake pulled, or the car
+// the steering's reach is already small up there): GTA-quick, the wheel is over in 0.1-0.2 s at any
+// speed (its reach at speed is cut in the sim instead: lockAt), so a tap at speed is a correction,
+// holding the key a turn at the tyres' limit at once; with the handbrake pulled, or the car
 // sliding, as fast as at a standstill (a handbrake turn, a slide to catch). Let go and it comes back
 // KEY_BACK times as fast.
-const KEY_T = 0.1,
-  KEY_T_V = 0.008,
+const KEY_T = 0.08,
+  KEY_T_V = 0.003,
   KEY_V_TOP = 35,
   KEY_BACK = 2.5
 // The brake key squeezes the pedal rather than stamping on it: the brakes come on over BRAKE_T s,

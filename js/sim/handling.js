@@ -69,6 +69,7 @@ export const HANDLING = {
     hbGrip: 0.48, hbRate: 2.6, slideHold: 0.55, revMax: 9, revAcc: 4.5, handsOff: 1
   },
   truck: {
+    latGrip: 1.12, // (the arcade lateral boost held down: a laden truck still leans on its limit)
     mass: 9500, len: 9.9, wid: 2.55, hgt: 3.8, wb: 5.6, wf: 0.45, comH: 1.3, wheelR: 0.5, track: 2.0,
     torque: 1500, rpmIdle: 600, rpmPeak: 1600, rpmRed: 2600, gears: [6.5, 4.0, 2.6, 1.7, 1.25, 1.0], final: 4.1, front: 0, vMax: 30,
     brake: 7, lock: 0.62, steerV: 11, steerRate: 1.8,

@@ -162,8 +162,8 @@ test('the steering keys ease the wheel over: gently at speed, quickly parking or
   assert.ok(after(0.08, 0) > 0.7, 'a tap at a standstill is most of full lock')
   const tap = after(0.08, 100 / 3.6)
   assert.ok(
-    tap > 0.1 && tap < 0.3,
-    `at 100 km/h a tap is a small correction (${tap.toFixed(2)})`
+    tap > 0.3 && tap < 0.65,
+    `at 100 km/h a tap is a correction, not full lock (${tap.toFixed(2)})`
   )
   assert.ok(after(0.6, 100 / 3.6) === 1, 'held, it is full steering')
   assert.ok(

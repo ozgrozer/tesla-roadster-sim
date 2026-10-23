@@ -52,7 +52,8 @@ const TRANSFER = 0.09 // s: how far behind the acceleration the weight's shift o
 const PUSH_IN = 0.08, // s: the understeer control's cut eases in, and the power back
   PUSH_OUT = 0.2,
   HELD_AT = 0.9, // the wheel held this far over (of full lock on the keys) ...
-  HELD_T = 0.3 // ... for this long (s) is a turn the understeer control tightens
+  HELD_WAIT = 0.15, // ... for longer than this (s, a tap on the keys' quick ramp is shorter) ...
+  HELD_T = 0.3 // ... and over this long (s) after is a turn the understeer control tightens
 const REV_MAX = 9 // m/s: as fast as the car backs up
 // the share of an axle's speed into the kerb the car loses as it climbs it (a tyre meeting an 8 cm
 // edge rolls over it at about 39 degrees), the most a strike takes (m/s), and the most it turns the
@@ -189,7 +190,9 @@ export function stepGround (s, dt, c, main, lift) {
   // builds over HELD_T s with the wheel over HELD_AT or more, and is gone at once without): a tap of
   // the keys at speed, a lane change, is no turn to tighten, and cutting the power for it lurched
   // the car at every correction.
-  s.held = Math.abs(c.steer) >= HELD_AT ? Math.min(1, s.held + dt / HELD_T) : 0
+  s.heldT = Math.abs(c.steer) >= HELD_AT ? (s.heldT || 0) + dt : 0
+  // (the wait at speed, where a tap is a correction; round a tight corner the cut comes at once)
+  s.held = Math.min(1, Math.max(0, (s.heldT - HELD_WAIT * Math.min(1, au / 20)) / HELD_T))
   const pushT = push * s.held
   // (eased: the cut comes in over PUSH_IN s and the power back over PUSH_OUT s, as the motors'
   // torque is ramped, rather than switching in one step as the wheel sweeps through the band)

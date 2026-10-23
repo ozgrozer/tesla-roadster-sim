@@ -100,6 +100,7 @@ export class Sim {
     this.push = 0 // how much of the power the understeer control is holding back, 0 to 1
     this.pushF = 0 // (the same, eased, whatever the throttle: ground.js)
     this.held = 0 // how long the wheel has been held over, for the understeer control (0 to 1)
+    this.heldT = 0 // (the same in s)
     this.track = false // Track Mode: the handbrake has the electronics stand back (ground.js)
     this.calm = 0
     this.driftA = 0 // the drift angle a step ago
