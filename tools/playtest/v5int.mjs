@@ -14,7 +14,6 @@ await g.untilReal(() => !window.__roadster.intro.active, 30000).catch(() => {})
 await g.ev(() => { window.__roadster.intro.finish(true); const h = document.getElementById('help'); if (h) h.hidden = true })
 const k = g.page.keyboard
 const out = { steer: {}, doors: {}, punch: {}, menu: {}, shots: [] }
-const mode = () => g.ev(() => window.__roadster.player.mode)
 const shot = async name => { try { out.shots.push(await g.shot(name)) } catch (e) { g.issue('shot', name + ' ' + e.message) } }
 // where the driven thing is (the Roadster's sim, or the city car's body)
 const where = () => g.ev(() => {
