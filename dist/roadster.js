@@ -79350,11 +79350,15 @@ class Menu {
   }
 
   // a pad's Menu (or B) shuts the menu: the game's input isn't polled while it is open
+  // (watched only while the menu is open: show() starts it)
   padWatch () {
     let was = true
     const look = () => {
+      if (!this.open) {
+        this.watching = false
+        return (was = true)
+      }
       requestAnimationFrame(look)
-      if (!this.open) return (was = true)
       let p = null
       try {
         p = [...(navigator.getGamepads?.() || [])].find(q => q?.connected && q.mapping === 'standard')
@@ -79363,7 +79367,11 @@ class Menu {
       if (on && !was) this.hide()
       was = on
     }
-    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(look)
+    this.watchPad = () => {
+      if (this.watching || typeof requestAnimationFrame !== 'function') return
+      this.watching = true
+      requestAnimationFrame(look)
+    }
   }
 
   show (tab = this.tab) {
@@ -79377,6 +79385,7 @@ class Menu {
       this.root.hidden = false
       this.status()
       this.settings.refresh()
+      this.watchPad?.()
     }
     this.select(tab, true)
   }
@@ -80674,8 +80683,10 @@ function updateCabin (C, O, sim, seated, dt) {
     poseOptimus(O, { ...DRIVER, hands, look: C.look })
     C.posed = [C.angle, C.look]
   }
+  // (the screen drawn again and sent to the GPU, with its mipmaps, 8 times a second from the seat,
+  // once a second otherwise: nobody reads it from outside)
   if ((C.t -= dt) < 0) {
-    C.t = 0.12
+    C.t = seated ? 0.12 : 1
     drawScreen(C.screen, sim)
   }
 }
@@ -83527,6 +83538,7 @@ const WAY = []
 // (steps sideways a walker tries, least first)
 const STEPS = [0, 0.3, -0.3, 0.6, -0.6, 0.9, -0.9, 1.2, -1.2, 1.6, -1.6]
 const grid = new Map()
+const USED = [] // (the cells with someone in them, this step)
 const key = (x, z) =>
   (Math.floor(x / CELL) * 73856093) ^ (Math.floor(z / CELL) * 19349663)
 
@@ -83548,13 +83560,18 @@ const PEDSTEER = {
   },
   steer (dt) {
     const S = this.S || (this.S = rng(91))
-    grid.clear()
+    // (the cells' lists kept and emptied, not made again 120 times a second; all of them dropped
+    // once there are many, the cells the people have left behind)
+    if (grid.size > 2048) grid.clear()
+    for (const c of USED) c.length = 0
+    USED.length = 0
     for (const p of this.list) {
       if (p.lod > 2) continue
       const k = key(p.x, p.z)
-      const c = grid.get(k)
-      if (c) c.push(p)
-      else grid.set(k, [p])
+      let c = grid.get(k)
+      if (!c) grid.set(k, (c = []))
+      if (!c.length) USED.push(c)
+      c.push(p)
     }
     const horn = this.hornWas && this.me
     for (const p of this.list) {
@@ -114762,8 +114779,11 @@ class Climate {
     const l = this.cityView.daylight?.lamps,
       s = PRESETS[this.preset]
     if (!l || l.preset === this.preset) return
+    const was = l.preset && l.nLamp + ',' + l.nShop
     l.setCount(s.lamps, s.shops)
     l.preset = this.preset
+    // (another number of lights: other programs for every material, compiled ahead, main.js)
+    if (was && was !== l.nLamp + ',' + l.nShop) this.onLights?.()
   }
   // what the quality is now (for the checks and the stats)
   qualityState () {
@@ -115155,17 +115175,27 @@ function showEmpty (o) {
 
 // cityView, RS: the city and the Roadster (main.js); post: post.js's Post. Returns a promise that
 // settles once everything is compiled.
-async function warmUp (cityView, RS, post) {
+// (site: false, the city's looks only: again after the graphics quality changes the number of the
+// city's lights, climate.js)
+async function warmUp (cityView, RS, post, site = true) {
   try {
-    await warm(cityView, RS, post)
+    await warm(cityView, RS, post, site)
   } catch (e) {
     // (a warm-up that fails leaves the compiling to the first use, as before)
   }
 }
-async function warm (cityView, RS, post) {
-  const looks = [{ city: false }]
+async function warm (cityView, RS, post, withSite) {
+  const looks = withSite ? [{ city: false }] : []
+  // (the city's lights each way round: the street lights come on at dusk a while before the
+  // drivers' headlights, the headlights go on by day in the rain or the fog or with H, and each
+  // set of lights is a program of its own for every material, five or six dozen of them)
   if (cityView.group)
-    looks.unshift({ city: true, night: false }, { city: true, night: true })
+    looks.unshift(
+      { city: true, night: false },
+      { city: true, night: true },
+      { city: true, night: true, head: false },
+      { city: true, night: false, head: true }
+    )
   // the speed blur's shader, with the tone mapping the plain one has by now
   const { plain, blurred } = post.final
   blurred.defines = { ...plain.defines }
@@ -115214,7 +115244,7 @@ function as (cityView, RS, look, fn) {
   }
   if (cityView.on !== look.city) cityView.show(look.city)
   if (look.city && cityView.night !== look.night) cityView.setNight(look.night)
-  RS.headlights.visible = !!(look.city && look.night)
+  RS.headlights.visible = !!(look.city && (look.head ?? look.night))
   // (the real lights shown at night only: the shaders have a version with them and one without)
   const lamps = cityView.daylight?.lamps
   lamps?.show(!!(look.city && look.night))
@@ -117769,7 +117799,7 @@ class CrimeHud {
       }
     }
     this.cashLeft -= dt
-    if (this.cashLeft < 3) this.cashD.classList.remove('on')
+    if (this.cashLeft < 3 && this.cashD.classList.contains('on')) this.cashD.classList.remove('on')
     this.cashEl.classList.toggle('on', show && (this.cashLeft > 0 || !!status || stars > 0))
     // the objective and the clock
     const text = status ? status.text + (status.progress ? `<span class="p">${status.progress}</span>` : '') : ''
@@ -121777,6 +121807,8 @@ const app = {
 }
 // the clock and the weather, the rain, the wet street and the graphics quality (climate.js)
 const climate = new Climate({ app, hud, RS, cityView, resolution, post })
+// (a quality with another number of the city's lights: their programs compiled again, warm.js)
+climate.onLights = () => post.warmed && (post.warmed = post.warmed.then(() => warmUp(cityView, RS, post, false)))
 
 function setAuto (on) {
   app.auto = on
