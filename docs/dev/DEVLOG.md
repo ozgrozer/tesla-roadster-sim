@@ -1,5 +1,19 @@
 # Devlog
 
+## visuals (gta-v4-visuals) · slop-newyork techniques (A-D), no NYC/OSM data
+- A: adaptive MSAA (4x/2x/off by pixel ratio, `?msaa=0`), pre-tonemap grade with per-hour white balance,
+  canyon sky-light darkening + warm wall bounce, time-of-day road damp (film, pools, night mirror).
+  MIT credit to Mr.doob in vendor/slop-newyork/LICENSE and one-line headers in adapted files.
+- B: height fog thinning with altitude (aerialFog.js), road marks widened/faded under 1.5 px, box-filtered
+  far window grid (no shimmer).
+- C: key shadow 3072 over 72 m ahead of the camera; pooled night point lights (6 street + 4 shops).
+- Night tweak: moon 0.26, hemi 0.2/0.3, exposure 0.96, more contrast, dimmer horizon glow.
+- Follow camera: speed pull-back up to +16% (eased), on top of the speed FOV.
+- D perf: shadowProxy.js (key-shadow stand-ins per 96 m cell), size-based far distances for instanced
+  details (chunks.js sizeFar): -10-12% triangles, -0.5-2.5% calls (PERF.md v4).
+- Fix: aerial fog locals prefixed/scoped (clashed with the crash-damage shader's `fdy`).
+- Checks: npm test 337/337; playtest career and roam: no problems. Open: K25-K29.
+
 ## world (gta-v2-world) · W1 enterable interiors
 - `js/sim/interiors/` (rooms.js templates, sites.js placement on existing buildings by footprint, state.js
   door offers + fade state machine + room world for the feet, modshop.js prices/colours) and
