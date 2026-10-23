@@ -20,7 +20,7 @@ export const ROWS = [
   {
     id: 'sound',
     name: 'Sound',
-    hint: 'The car, the street and the radio (N)',
+    hint: 'The car, the street and the radio',
     opts: [
       [true, 'On'],
       [false, 'Off']
@@ -48,7 +48,7 @@ export const ROWS = [
   {
     id: 'units',
     name: 'Speed units',
-    hint: 'The speedometer in kilometres or miles an hour (U)',
+    hint: 'The speedometer in kilometres or miles an hour',
     opts: [
       ['kmh', 'km/h'],
       ['mph', 'mph']
@@ -96,6 +96,13 @@ export const ROWS = [
     name: 'Invert look',
     hint: 'The mouse up looks down',
     opts: CHOICES.invert.map(v => [v, v ? 'On' : 'Off'])
+  },
+  { head: 'Controls' },
+  {
+    opt: 'stunts',
+    name: 'Roadster stunt keys',
+    hint: 'G flies the Roadster on its thrusters, X and K flip it in the air (on with ?debug=1)',
+    opts: CHOICES.stunts.map(v => [v, v ? 'On' : 'Off'])
   },
   { head: 'World' },
   {

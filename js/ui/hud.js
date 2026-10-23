@@ -1,21 +1,23 @@
-// The HUD, in the spirit of GTA V: a clean screen while driving (the title and the buttons fade away
-// until the mouse moves or a key that isn't a drive key is pressed), the radar bottom left with the
-// car's condition and its air under it (minimap.js) and the clock over it (clock.js), the
-// speedometer over where you are bottom right (speedo.js, place.js), the engineering instruments
-// only when they matter (instruments.js), stunt titles, the help box and the score (notify.js), the
-// keys card, and the test site's captions and countdown.
+// The HUD, GTA V's: nothing on screen but the radar bottom left with the health and the air under
+// it (minimap.js) and the clock over it (clock.js), the stars and the cash top right (crimeHud.js),
+// the speedometer over where you are bottom right (speedo.js, place.js), and the help box top left
+// (notify.js) that says the keys for what is going on for a few seconds the first time it comes up.
+// No title, no buttons, no line of keys: the pause menu (Esc, P) has the settings, the controls and
+// (with ?debug=1) the test site, slow motion and Autopilot. Also the engineering instruments only
+// when they matter (instruments.js), stunt titles and the score, and the test site's captions.
 import { $, put } from './dom.js'
 import { Clock } from './clock.js'
 import { Place } from './place.js'
 import { Speedo } from './speedo.js'
 import { DRIVE_KEYS, LOOK_BACK } from './input.js'
+import { keyOf } from './keymap.js'
 import { CAR } from '../sim/constants.js'
 import { recall, remember } from './prefs.js'
 import { Instruments } from './instruments.js'
 import { Notices, HelpBox, Score } from './notify.js'
 
 const FAN_TEXT = {
-  auto: 'Suction fan: auto · it spins up for the wall · <b>G</b> to change',
+  auto: 'Suction fan: auto · it spins up for the wall · <b>B</b> to change',
   on: 'Suction fan: on · 2.1 G of grip',
   off: 'Suction fan: off'
 }
@@ -26,12 +28,13 @@ const PLAY_KEYS = new Set([
   ...DRIVE_KEYS,
   LOOK_BACK,
   'KeyH',
-  'KeyG',
+  'KeyZ',
   'KeyX',
   'KeyK',
-  'KeyB'
+  'Period',
+  'Comma'
 ])
-const LINE_S = 7 // s the line of keys along the bottom stays up after it changes
+const LINE_S = 6 // s the help box says the keys for what is going on, the first time it comes up
 const DENTED = 1 // m of dents (damage.js's amount) that take the condition bar down to nothing
 
 export class Hud {
@@ -41,24 +44,12 @@ export class Hud {
     this.clock = 0
     this.acc = 0
     this.el = {
-      mode: $('btnMode'),
-      modeLabel: $('modeLabel'),
-      cam: $('camLabel'),
-      camBtn: $('btnCam'),
-      slow: $('btnSlow'),
-      sound: $('btnSound'),
-      helpBtn: $('btnHelp'),
-      help: $('help'),
       cap: $('caption'),
       capE: $('capEyebrow'),
       capT: $('capTitle'),
       capS: $('capSub'),
       countdown: $('countdown'),
-      hint: $('hint'),
       loading: $('loading'),
-      world: $('btnWorld'),
-      worldLabel: $('worldLabel'),
-      brandSub: $('brandSub'),
       fade: $('fade'),
       cond: $('condBar'),
       condBox: $('condBox'),
@@ -70,7 +61,6 @@ export class Hud {
     }
     this.radioLeft = 0 // s the radio's station stays up
     this.world = 'site'
-    this.siteSub = this.el.brandSub.textContent
     this.instruments = new Instruments(RS)
     this.speedo = new Speedo()
     this.speedo.onToggle = unit =>
@@ -80,10 +70,11 @@ export class Hud {
     this.notices = new Notices($('notices'))
     this.helpbox = new HelpBox($('helpbox'), $('helpText'))
     this.score = new Score($('scoreBox'), $('score'))
-    this.line = '' // the line of keys along the bottom, how long it has been up, whether it is
-    this.lineT = 0 // new, and the lines already shown in this world (each once: a clean screen)
-    this.fresh = false
-    this.lines = new Set()
+    this.line = '' // the keys for what is going on, and the ones already said in this world (each
+    this.lines = new Set() // once: a clean screen)
+    this.cam = '' // the camera's name, the slow motion and the sound (the pause menu shows them)
+    this.slow = false
+    this.sound = false
     // GTA's empty screen: the time of the last wake (the mouse moved, the screen was touched away
     // from the drive pad, a key that isn't a drive key) and of the last driving
     this.wokeAt = 0
@@ -99,14 +90,11 @@ export class Hud {
       if (!PLAY_KEYS.has(e.code)) wake()
       else this.droveAt = this.clock
     })
-    // the keys card: on the first visit only, afterwards a hint (there are no keys on a phone),
-    // given on the first update (the world set up at boot clears the help box)
+    // the first visit: where the keys are, said once on the first update (the world set up at boot
+    // clears the help box; there are no keys on a phone)
     const touch = !!window.matchMedia?.('(pointer: coarse)')?.matches
-    this.keysHint = false
-    if (recall('keysSeen') === '1' || touch) {
-      this.showHelp(false)
-      this.keysHint = !touch
-    } else remember('keysSeen', '1')
+    this.keysHint = !touch && recall('keysSeen') !== '1'
+    remember('keysSeen', '1')
   }
 
   // a hint goes in the help box (kind 'hint'); anything else is a title mid-screen
@@ -125,7 +113,7 @@ export class Hud {
   // sound is off, so the radio is too
   radio (st) {
     if (st === undefined)
-      return this.helpbox.push('The sound is off · <b>N</b> to turn it on', 1800)
+      return this.helpbox.push('The sound is off · turn it on in Settings (<b>Esc</b>)', 1800)
     put(this.el.radioFreq, 'text', st ? `${st.freq} FM` : '')
     put(this.el.radioName, 'text', st ? st.name : 'Radio off')
     this.radioLeft = 2.6
@@ -136,22 +124,13 @@ export class Hud {
   }
 
   setMode (auto) {
-    this.el.mode.classList.toggle('manual', !auto)
-    this.el.modeLabel.textContent = auto ? 'Autopilot' : 'Manual'
+    this.auto = auto
     this.el.cap.style.opacity = auto ? 1 : 0
   }
   setWorld (w) {
     this.world = w
     const city = w === 'city'
     document.body.classList.toggle('in-city', city)
-    this.el.worldLabel.textContent = city ? 'Test site' : 'City'
-    this.el.world.setAttribute(
-      'aria-label',
-      city ? 'Back to the test site' : 'Drive in the city'
-    )
-    this.el.brandSub.textContent = city
-      ? 'Los Angeles · free roam · live traffic and signals'
-      : this.siteSub
     this.lines.clear()
     this.helpbox.clear()
   }
@@ -164,22 +143,16 @@ export class Hud {
       setTimeout(() => (f.style.opacity = 0), 140)
     }, 260)
   }
+  // (the old top bar's: kept as state, the pause menu reads it)
   setCam (name) {
-    this.el.cam.textContent = name
+    this.cam = name
   }
   setSlow (on) {
-    this.el.slow.setAttribute('aria-pressed', String(on))
+    this.slow = on
+    if (this.clock > 0) this.helpbox.push(on ? 'Slow motion' : 'Slow motion off', 1200, 'slow')
   }
   setSound (on) {
-    this.el.sound.textContent = on ? 'Sound: on' : 'Sound: off'
-    this.el.sound.setAttribute('aria-pressed', String(on))
-  }
-  showHelp (show) {
-    this.el.help.hidden = !show
-    this.el.helpBtn.setAttribute('aria-pressed', String(show))
-  }
-  toggleHelp () {
-    this.showHelp(this.el.help.hidden)
+    this.sound = on
   }
   hideLoading () {
     const l = this.el.loading
@@ -211,7 +184,7 @@ export class Hud {
     if (this.keysHint) {
       this.keysHint = false
       this.helpbox.push(
-        'Press <b>Esc</b> for the map and settings, <b>I</b> for the keys',
+        '<b>Esc</b> or <b>P</b>: the map, settings and controls',
         4500
       )
     }
@@ -256,48 +229,43 @@ export class Hud {
     put(el.countdown, '.go', cd === 0)
   }
 
-  // the keys for what the car is doing, along the bottom: for good while Autopilot drives, Optimus
-  // gets in or the car is wrecked, otherwise for a few seconds the first time each comes up
+  // the keys for what is going on, in the help box top left (GTA's) for LINE_S s the first time
+  // each comes up in this world (while Autopilot drives, Optimus gets in or the car is wrecked,
+  // each time)
   keysLine (dt, app) {
     const text = this.lineFor(app)
-    if (text !== this.line) {
-      this.line = text
-      this.lineT = 0
-      this.fresh = !this.lines.has(text)
-      this.lines.add(text)
-    } else this.lineT += dt
-    const sticky = app.auto || app.intro || app.sim.mode === 'crash'
-    put(this.el.hint, 'text', text)
-    put(
-      this.el.hint,
-      '.on',
-      !!text && (sticky || (this.fresh && this.lineT < LINE_S))
-    )
+    if (text === this.line) return
+    this.line = text
+    const again = app.auto || app.intro || app.sim.mode === 'crash'
+    if (!text || (this.lines.has(text) && !again)) return
+    this.lines.add(text)
+    this.helpbox.push(text, LINE_S * 1000, 'keys')
   }
   lineFor (app) {
     const { sim } = app
+    const k = c => `<b>${keyOf(c)}</b>`
     if (app.auto) {
       const what = this.world === 'city' ? 'Autopilot on' : 'Autopilot demo'
-      return app.soundOn
-        ? `${what} · press any drive key to take over`
-        : `${what} · click or press N for sound · any drive key takes over`
+      return `${what} · any drive key takes over`
     }
     if (app.intro) return 'Optimus is getting in · any drive key skips'
     // (on foot, and in a car that isn't the Roadster: onFoot.js)
     if (app.foot)
-      return 'W A S D jog · Shift sprint · Caps walk · F or click punch · Space jump · E get in a car'
+      return `${k('KeyF')} enter a vehicle · ${k('ShiftLeft')} sprint · ${k('Space')} jump · ` +
+        `<b>Click</b> or ${k('KeyR')} punch · <b>Alt</b> walk`
     if (app.vehicle && app.vehicle.kind !== 'roadster' && sim.mode !== 'crash')
-      return 'W throttle · S brake · A/D steer · Space handbrake · H horn · E get out'
+      return `${k('Space')} handbrake · ${k('KeyE')} horn · ${k('KeyF')} exit · ${k('KeyC')} look behind`
     if (sim.mode === 'crash')
       return sim.up().y > 0.95
-        ? 'Crashed · W to drive on · R to reset · P to watch the autopilot'
-        : 'Upside down · A/D to roll it back over · R to reset'
+        ? `Crashed · ${k('KeyW')} to drive on · ${k('KeyR')} to reset`
+        : `Upside down · ${k('KeyA')} ${k('KeyD')} to roll it back over · ${k('KeyR')} to reset`
     if (sim.mode === 'air')
-      return 'W/S pitch · A/D roll · Q/E yaw · F lift · Shift boost · X backflip · K kickflip'
+      return `${k('KeyW')} ${k('KeyS')} pitch · ${k('KeyA')} ${k('KeyD')} roll · ${k('KeyQ')} <b>E</b> yaw · ` +
+        `${k('KeyG')} lift · ${k('KeyX')} backflip · ${k('KeyK')} kickflip`
     if (sim.mode === 'ramp')
-      return 'W climb · S brake, then reverse down · Space hold · Shift main burn off the lip'
+      return `${k('KeyW')} climb · ${k('KeyS')} brake, then reverse down · ${k('ShiftLeft')} main burn off the lip`
     return this.world === 'city'
-      ? 'W throttle · S brake · A/D steer · Space e-brake · Shift boost · F fly · E get out'
-      : 'W throttle · release to coast · S brake · Space e-brake · A/D steer · Shift boost · F fly'
+      ? `${k('Space')} handbrake · ${k('ShiftLeft')} boost · ${k('KeyE')} horn · ${k('KeyF')} exit · ${k('KeyV')} camera`
+      : `${k('Space')} handbrake · ${k('ShiftLeft')} boost · ${k('KeyG')} fly`
   }
 }

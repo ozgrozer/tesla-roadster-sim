@@ -3,7 +3,8 @@
 // tab's card of bindings: each action with its key, a click (or Enter) on one waits for the next key
 // and binds it (Esc leaves it as it was), and a button puts them all back. Under it the gamepad's
 // buttons, as gamepad.js maps them.
-import { ACTIONS, BINDS, RESERVED, bind, keyName, loadKeys, resetKeys, translate } from './keymap.js'
+import { ACTIONS, BINDS, FIXED, MIGRATED, RESERVED, bind, keyName, loadKeys, resetKeys, translate } from './keymap.js'
+import { DEBUG } from './debug.js'
 
 const MARK = '__remapped'
 // translate keys while on(): the event pressed is stopped and the game's own is sent in its place
@@ -30,19 +31,23 @@ export function installRemap (on) {
   window.addEventListener('keyup', pass, true)
 }
 
-// the gamepad's buttons, as gamepad.js presses them
-const PAD = [
-  ['RT · LT', 'Throttle · brake, reverse'],
-  ['Left stick', 'Steer · walk · pitch and roll'],
-  ['Right stick', 'Look round · yaw'],
+// the gamepad's buttons, as gamepad.js presses them (GTA V's Xbox layout)
+export const PAD = [
+  ['RT · LT', 'Accelerate · brake, reverse'],
+  ['Left stick', 'Steer · move'],
+  ['Right stick', 'Look round (recentres in a car)'],
+  ['RB', 'Handbrake'],
+  ['A', 'Sprint · Roadster boost'],
+  ['X', 'Jump'],
+  ['B', 'Melee attack · reset a wreck'],
+  ['Y', 'Enter, exit vehicle'],
+  ['L3 (stick in)', 'Horn · interact'],
   ['R3 (stick in)', 'Look behind (hold)'],
-  ['A', 'Handbrake · jump'],
-  ['B', 'Camera'],
-  ['X', 'Horn'],
-  ['Y', 'Get in, out · steal'],
-  ['RB · LB', 'Boost, run · fly'],
-  ['D-pad ↑ ↓', 'Backflip · kickflip'],
-  ['View · Menu', 'Reset · Autopilot']
+  ['LB · D-pad ←', 'Radio: next · previous station'],
+  ['D-pad →', 'Headlights'],
+  ['D-pad ↓', 'Expanded radar'],
+  ['View', 'Cycle camera'],
+  ['Menu', 'Pause menu']
 ]
 
 export class KeyCard {
@@ -51,7 +56,8 @@ export class KeyCard {
     this.waiting = null // the action waiting for its key
     box.classList.add('rk')
     const groups = new Map()
-    for (const [code, what, group] of ACTIONS) {
+    for (const [code, what, group, dbg] of ACTIONS) {
+      if (dbg && !DEBUG.on) continue
       if (!groups.has(group)) groups.set(group, [])
       groups.get(group).push([code, what])
     }
@@ -62,11 +68,13 @@ export class KeyCard {
         html += `<li><button type="button" class="rk-key" data-code="${code}"></button>${what}</li>`
       html += '</ul>'
     }
+    html += '<h4>Fixed</h4><ul>' +
+      FIXED.map(([k, what]) => `<li><span class="k"><kbd>${k}</kbd></span>${what}</li>`).join('') + '</ul>'
     html += '<p class="rk-foot"><button type="button" class="btn rk-reset">Reset to defaults</button>' +
       '<span class="rk-note" aria-live="polite"></span></p></section>'
     html += '<section class="rk-pad"><h3>Gamepad</h3><ul>' +
       PAD.map(([b, what]) => `<li><span class="k"><kbd>${b}</kbd></span>${what}</li>`).join('') +
-      '</ul><p class="rk-hint">Arrow keys always drive too · Esc pauses</p></section>'
+      '</ul><p class="rk-hint">GTA V\'s default layout · Esc or P pauses</p></section>'
     box.innerHTML = html
     this.buttons = [...box.querySelectorAll('.rk-key')]
     this.note = box.querySelector('.rk-note')
@@ -77,6 +85,8 @@ export class KeyCard {
       this.refresh()
     })
     this.refresh()
+    // (keys saved under the old layout were dropped for GTA V's: said once)
+    if (MIGRATED.from) this.say('Controls updated to GTA V\'s layout: your old bindings were reset')
   }
   refresh () {
     for (const b of this.buttons) {

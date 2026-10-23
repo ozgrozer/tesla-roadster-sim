@@ -1,11 +1,12 @@
-// The pause menu, GTA V's. Esc, or the menu button in the top bar (the way in on a phone), stops
+// The pause menu, GTA V's. Esc or P (a pad's Menu, the MENU button on a touch screen), stops
 // the game where it is (main.js steps nothing while it is open: the sim, the traffic and the people
 // stand still, and the sound is paused) and lays the menu over the last frame drawn, dimmed and
-// blurred. Its tabs: MAP (the city, the waypoint and the GPS route: map.js), SETTINGS (settings.js)
-// and CONTROLS (the keys card's rows, with the menu's, the map's and a gamepad's). Q and E switch
-// tabs, as do the left and right keys on the tabs themselves; Esc or Resume closes it. Nothing
-// pressed while it is open reaches the game. It wires up the top bar too: each button does what
-// its key does (main.js's COMMANDS), and the menu button opens this.
+// blurred. Its tabs: MAP (the city, the waypoint and the GPS route: map.js; M opens it there),
+// SETTINGS (settings.js: the sound, the camera, the display), CONTROLS (every key, remappable, and
+// the gamepad's: remap.js), STATS, and with ?debug=1 DEBUG (debugTab.js: the test site, slow
+// motion, Autopilot, what the old top bar's buttons did). Q and E switch tabs, as do the left and
+// right keys on the tabs themselves; Esc, P or Resume closes it. Nothing pressed while it is open
+// reaches the game.
 import { $, put } from './dom.js'
 import { gps } from './gps.js'
 import { COLOR } from './blips.js'
@@ -19,16 +20,10 @@ import { KeyCard, installRemap } from './remap.js'
 import { Stats } from './stats.js'
 import { UxFrame } from './ux.js'
 import { poiIcon } from './poiMap.js'
+import { DEBUG } from './debug.js'
+import { CREDIT, debugPanel, debugTabButton, wireDebug } from './debugTab.js'
 
-const TABS = ['map', 'settings', 'controls', 'stats']
-// the top bar's buttons and the keys they press (the mode button: M or P, menu.bar)
-const BAR = {
-  btnWorld: 'KeyC',
-  btnCam: 'KeyV',
-  btnSlow: 'KeyT',
-  btnHelp: 'KeyI',
-  btnSound: 'KeyN'
-}
+const TABS = ['map', 'settings', 'controls', 'stats', ...(DEBUG.on ? ['debug'] : [])]
 // the keys along the bottom, GTA's: for every tab, then for each
 const PROMPTS = {
   all: [
@@ -45,7 +40,8 @@ const PROMPTS = {
     ['← →', 'Change']
   ],
   controls: [['Click', 'Change a key']],
-  stats: []
+  stats: [],
+  debug: [['Click', 'Do it and resume']]
 }
 // the legend's marks, each a 16 x 16 drawing, as the map draws them (blips.js)
 const icon = body => `<svg viewBox="0 0 16 16" aria-hidden="true">${body}</svg>`
@@ -89,6 +85,7 @@ const MARKUP = `
     <button type="button" role="tab" id="mnTabSettings" aria-controls="mnSettings">Settings</button>
     <button type="button" role="tab" id="mnTabControls" aria-controls="mnControls">Controls</button>
     <button type="button" role="tab" id="mnTabStats" aria-controls="mnStats">Stats</button>
+    ${debugTabButton()}
   </nav>
   <section class="mn-panel mn-map" id="mnMap" role="tabpanel" aria-labelledby="mnTabMap">
     <canvas tabindex="0" aria-label="Map of the city: arrows pan, plus and minus zoom,
@@ -113,7 +110,10 @@ const MARKUP = `
     aria-labelledby="mnTabControls" tabindex="0" hidden><div class="mn-keys"></div></section>
   <section class="mn-panel mn-stats" id="mnStats" role="tabpanel"
     aria-labelledby="mnTabStats" tabindex="0" hidden></section>
+  ${debugPanel()}
   <footer class="mn-foot" aria-hidden="true"></footer>
+  <p class="mn-credit">${CREDIT} <a class="promo" href="https://grape.cool" target="_blank"
+    rel="noopener">grape.cool</a></p>
 </div>`
 // the CONTROLS tab's own column: the menu's keys, the map's and a gamepad's
 const kbd = keys => keys.map(k => `<kbd>${k}</kbd>`).join('')
@@ -122,7 +122,8 @@ const list = (title, rows) => `<h3>${title}</h3><ul>${rows.join('')}</ul>`
 const MORE =
   '<section>' +
   list('Pause menu', [
-    row(kbd(['Esc']), 'pause · resume'),
+    row(kbd(['Esc']) + kbd(['P']), 'pause · resume'),
+    row(kbd(['M']), 'the map'),
     row(kbd(['Q', 'E']), 'tabs'),
     row(kbd(['↑', '↓']), 'settings: choose'),
     row(kbd(['←', '→']), 'settings: change')
@@ -132,7 +133,7 @@ const MORE =
     row('drag · wheel', 'pan · zoom'),
     row(kbd(['Enter']), 'waypoint at the cross'),
     row(kbd(['C']), 'find the car'),
-    row(kbd(['P']), 'Autopilot drives there, once resumed')
+    row('route', 'the purple GPS line to the waypoint, on the radar too')
   ]) +
   '</section>'
 
@@ -140,8 +141,8 @@ export class Menu {
   // keys: what each key does (main.js's COMMANDS); app, hud, sound, rig: the game's; cityPilot:
   // Autopilot in the city, which drives to the waypoint; setCam(mode); world: the world's settings
   // (world.js makes them if main.js passes none)
-  constructor (keys, { app, hud, sound, rig, cityPilot, setCam, world }) {
-    Object.assign(this, { keys, app, hud, sound, gps }) // (gps: for the console)
+  constructor (keys, { app, hud, sound, rig, cityPilot, setCam, world, toggleSound }) {
+    Object.assign(this, { keys, app, hud, sound, gps, toggleSound }) // (gps: for the console)
     const w = (this.world = world || worldSettings(app))
     // (the remapped keys passed on as the game's own while the menu is shut: ahead of every other
     // listener, the menu's own too)
@@ -166,7 +167,8 @@ export class Menu {
         map: q('#mnMap'),
         settings: q('#mnSettings'),
         controls: q('#mnControls'),
-        stats: q('#mnStats')
+        stats: q('#mnStats'),
+        debug: q('#mnDebug')
       },
       sub: q('.mn-sub'),
       wx: q('.mn-wx'),
@@ -189,7 +191,7 @@ export class Menu {
       {
         units: u => u !== hud.speedo.unit && hud.toggleUnits(true),
         sound: on => {
-          if (on !== sound.enabled) keys.KeyN()
+          if (on !== sound.enabled) this.toggleSound()
           this.hush()
         },
         cam: setCam,
@@ -209,10 +211,10 @@ export class Menu {
     // (the legend open where there is room for it)
     const small = '(max-width: 760px), (max-height: 540px)'
     q('.mp-legend').open = !window.matchMedia?.(small)?.matches
-    // (how to start Autopilot: P, or on a touch screen the mode button in the top bar, Manual)
-    const touch = window.matchMedia?.('(pointer: coarse)')?.matches
-    this.how = touch ? 'tap <b>Manual</b>' : '<b>P</b>'
-    this.bar(keys, app)
+    // (a debug player can have Autopilot drive to the waypoint: I)
+    this.how = DEBUG.on ? '<b>I</b> and Autopilot drives there' : 'follow the purple GPS route'
+    wireDebug(root, keys, this)
+    this.padWatch()
     // the GPS leads Autopilot to the waypoint, and the help box says when it is reached
     gps.onGoal = (plan, reached) => cityPilot.goTo(plan, reached)
     gps.onReach = () => hud.popup('Waypoint reached', 2600, 'hint')
@@ -232,17 +234,21 @@ export class Menu {
     this.size = 0
   }
 
-  // the top bar: each button presses its key; the menu button opens the menu
-  bar (keys, app) {
-    for (const [id, code] of Object.entries(BAR))
-      $(id).addEventListener('click', () => keys[code]())
-    $('btnMode').addEventListener('click', () =>
-      keys[app.auto ? 'KeyM' : 'KeyP']()
-    )
-    $('btnMenu').addEventListener('click', () => this.show())
-    // (a clicked button lets go of focus, or Space, the e-brake, would press it again)
-    for (const b of document.querySelectorAll('.controls-top .btn'))
-      b.addEventListener('click', e => e.detail && b.blur())
+  // a pad's Menu (or B) shuts the menu: the game's input isn't polled while it is open
+  padWatch () {
+    let was = true
+    const look = () => {
+      requestAnimationFrame(look)
+      if (!this.open) return (was = true)
+      let p = null
+      try {
+        p = [...(navigator.getGamepads?.() || [])].find(q => q?.connected && q.mapping === 'standard')
+      } catch {}
+      const on = !!(p?.buttons[9]?.pressed || p?.buttons[1]?.pressed)
+      if (on && !was) this.hide()
+      was = on
+    }
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(look)
   }
 
   show (tab = this.tab) {
@@ -272,7 +278,7 @@ export class Menu {
     const app = this.app,
       fresh = gps.goal && gps.goal !== this.goalWas
     if (fresh && app.world === 'city' && !app.auto) {
-      const hint = `Waypoint set · ${this.how} and Autopilot drives there`
+      const hint = `Waypoint set · ${this.how}`
       this.hud.popup(hint, 3200, 'hint')
     }
   }
@@ -321,7 +327,7 @@ export class Menu {
   enter () {
     if (this.tab === 'map') this.map.cv.focus()
     else if (this.tab === 'settings') this.settings.focus()
-    else this.el.panels.controls.focus()
+    else this.el.panels[this.tab].focus()
   }
 
   // the header: the time and the weather, and where the car is
@@ -360,10 +366,13 @@ export class Menu {
   key (e) {
     if (e.metaKey || e.ctrlKey || e.altKey) return
     if (!this.open) {
-      // (not while the title card is still up)
-      if (e.code !== 'Escape' || e.repeat || this.hud.el.loading) return
+      // (not while the title card is still up) Esc and P pause, M opens the map (GTA V's PC keys)
+      const c = e.code
+      if (e.repeat || this.hud.el.loading) return
+      if (c !== 'Escape' && c !== 'KeyP' && c !== 'KeyM') return
       e.preventDefault()
-      return this.show()
+      if (c !== 'Escape') e.stopImmediatePropagation() // (P and M aren't the game's)
+      return this.show(c === 'KeyM' ? 'map' : this.tab)
     }
     e.stopImmediatePropagation()
     if (this.tab === 'controls' && this.card.key(e)) return e.preventDefault()
@@ -371,7 +380,7 @@ export class Menu {
       onTabs = this.el.tabs.includes(document.activeElement),
       side = c === 'ArrowLeft' ? -1 : c === 'ArrowRight' ? 1 : 0
     let used = true
-    if (c === 'Escape') {
+    if (c === 'Escape' || c === 'KeyP') {
       if (!e.repeat) this.hide()
     } else if (c === 'KeyQ' || c === 'KeyE') this.step(c === 'KeyQ' ? -1 : 1)
     else if ((onTabs || this.tab === 'controls') && side) this.step(side)

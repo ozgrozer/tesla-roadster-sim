@@ -1,38 +1,7 @@
 /* Tesla Roadster Sim: the pause menu (ui/menu.js), GTA V's: over the last frame, dimmed and blurred,
    a header with the time, the weather and where the car is, a row of tabs (MAP, SETTINGS,
-   CONTROLS), the tab, and the keys along the bottom; the settings list and the keys. And the top
-   bar's menu button. The map tab is in map.css, phone rules in phone.css. */
-
-/* the menu button: three bars and its name */
-.btn-menu {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-.burger,
-.burger::before,
-.burger::after {
-  display: block;
-  width: 12px;
-  height: 2px;
-  border-radius: 1px;
-  background: currentColor;
-}
-.burger {
-  position: relative;
-}
-.burger::before,
-.burger::after {
-  content: '';
-  position: absolute;
-  left: 0;
-}
-.burger::before {
-  top: -4px;
-}
-.burger::after {
-  top: 4px;
-}
+   CONTROLS, STATS, DEBUG with ?debug=1), the tab, and the keys along the bottom; the settings list
+   and the keys. The map tab is in map.css, phone rules in phone.css. */
 
 /* paused: the HUD steps aside for the menu (all of it, the instruments' own visibility too) */
 .paused .hud,
@@ -134,7 +103,8 @@
 /* the tabs, GTA's: dark, white capitals; the open one white with a gold edge */
 .mn-tabs {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
   gap: 4px;
 }
 .mn-tabs button {
