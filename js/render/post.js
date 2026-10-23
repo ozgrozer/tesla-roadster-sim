@@ -13,6 +13,7 @@
 import * as THREE from 'three'
 import { SPEED_BLUR, updateSpeedBlur } from './speedBlur.js'
 import { motionFx } from '../ui/options.js'
+import { PAINT_PX } from './paintAA.js'
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js'
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js'
 import { OutputShader } from 'three/addons/shaders/OutputShader.js'
@@ -182,6 +183,7 @@ export class Post {
       camera.aspect = window.innerWidth / window.innerHeight
       camera.updateProjectionMatrix()
       this.final.uniforms.uAspect.value.set(camera.aspect, 1)
+      PAINT_PX.value = window.innerHeight * renderer.getPixelRatio()
     })
     window.addEventListener('resize', resize)
     resize()

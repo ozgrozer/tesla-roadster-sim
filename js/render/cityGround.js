@@ -8,6 +8,7 @@ import { canvasTex, speckle } from './scene.js'
 import { roadMaterial } from './roadSurface.js'
 import { wetGround } from './wet.js'
 import { canyonLit } from './canyon.js'
+import { paintAA } from './paintAA.js'
 import { lampLit } from './lampLight.js'
 import { dotted, eachMarker } from '../sim/botts.js'
 import {
@@ -351,7 +352,7 @@ export function buildGround (group) {
   const paint = (color, list, y, off = 1) => {
     const m = marks(
       list,
-      canyonLit(lampLit(
+      canyonLit(lampLit(paintAA(
         wetGround(
           new THREE.MeshStandardMaterial({
             color,
@@ -363,7 +364,7 @@ export function buildGround (group) {
           0.8,
           0.2
         )
-      )),
+      ))),
       y
     )
     group.add(m)
