@@ -3,7 +3,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { OPTS, DEFAULTS, setOption, resetOptions, look, shakeScale, onOption } from '../js/ui/options.js'
-import { BINDS, bind, translate, resetKeys, loadKeys, keyName } from '../js/ui/keymap.js'
+import { ACTIONS, BINDS, KEYMAP_VERSION, MIGRATED, bind, translate, resetKeys, loadKeys, keyName } from '../js/ui/keymap.js'
+import { BUTTONS } from '../js/ui/gamepad.js'
 import { Onboard } from '../js/ui/onboard.js'
 import { Captions } from '../js/ui/captions.js'
 
@@ -55,6 +56,37 @@ test('keymap: binding a key swaps with whoever had it, and the game hears its ow
   assert.equal(translate('KeyJ'), 'KeyJ')
   assert.equal(keyName('ShiftLeft'), 'Shift')
   assert.equal(keyName('KeyQ'), 'Q')
+})
+
+test('keymap: GTA V\'s PC defaults, and a v1 map is dropped (its keys meant other actions)', () => {
+  const store = new Map()
+  const had = globalThis.window
+  globalThis.window = { localStorage: { getItem: k => store.get(k) ?? null, setItem: (k, v) => store.set(k, String(v)) } }
+  try {
+    // a v1 map: plain { action: key }
+    store.set('roadster.keys', JSON.stringify({ KeyE: 'KeyJ' }))
+    MIGRATED.from = 0
+    loadKeys()
+    assert.equal(BINDS.KeyE, 'KeyE', 'the old map is gone')
+    assert.equal(MIGRATED.from, 1, 'and that is said once')
+    assert.equal(JSON.parse(store.get('roadster.keys')).v, KEYMAP_VERSION, 'rewritten as v' + KEYMAP_VERSION)
+  } finally {
+    globalThis.window = had
+    resetKeys()
+  }
+  const label = code => ACTIONS.find(a => a[0] === code)?.[1] || ''
+  assert.match(label('KeyF'), /enter|exit/i, 'F enters and leaves a vehicle')
+  assert.match(label('KeyE'), /horn/i, 'E is the horn')
+  assert.match(label('Space'), /handbrake/i)
+  assert.match(label('KeyH'), /headlight/i)
+  assert.match(label('KeyC'), /behind/i)
+  assert.match(label('KeyV'), /camera/i)
+  assert.match(label('KeyR'), /melee/i)
+  assert.ok(ACTIONS.filter(a => /test site|slow/i.test(a[1])).every(a => a[3]), 'the test site and slow-mo are debug keys')
+  // the pad: GTA V's Xbox layout
+  assert.equal(BUTTONS[3], 'KeyF', 'Y enters and exits')
+  assert.equal(BUTTONS[1], 'KeyR', 'B punches')
+  assert.equal(BUTTONS[5], 'Space', 'RB is the handbrake')
 })
 
 test('onboarding: each hint once, never two at once, in the right situations', () => {

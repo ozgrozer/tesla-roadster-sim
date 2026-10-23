@@ -6,6 +6,7 @@
 // from it. In a car stopped in the body shop's bay, "E Repair & respray · $150". Nothing else is
 // touched: the traffic, the police and the missions go on above (the player is where the shop is,
 // for all of them), and a reset or a respawn that puts the player elsewhere lets the room go.
+import { keyOf } from '../../ui/keymap.js'
 import { player } from '../../sim/player.js'
 import { emitGame } from '../../sim/gameEvents.js'
 import { remember } from '../../ui/prefs.js'
@@ -185,7 +186,7 @@ export class InteriorGlue {
     if (inside()) {
       // (the cars in the street over the room are not in it)
       o.target = o.how = null
-      o.text = c ? `<kbd>E</kbd> Exit · ${c.site.name}` : ''
+      o.text = c ? `<kbd>${keyOf('KeyE')}</kbd> Exit · ${c.site.name}` : ''
       return o
     }
     if (!c || o.target) {
@@ -196,13 +197,13 @@ export class InteriorGlue {
       const short = !canPay(this.wallet)
       o.text = c.why
         ? `${c.site.name} · ${c.why}`
-        : `<kbd>E</kbd> Repair & respray · $${PRICE}${
+        : `<kbd>${keyOf('KeyE')}</kbd> Repair & respray · $${PRICE}${
             short ? ' · not enough cash' : ''
           }`
     } else
       o.text = c.why
         ? `${c.site.name} · ${c.why}`
-        : `<kbd>E</kbd> Enter · ${c.site.name}`
+        : `<kbd>${keyOf('KeyE')}</kbd> Enter · ${c.site.name}`
     return o
   }
 

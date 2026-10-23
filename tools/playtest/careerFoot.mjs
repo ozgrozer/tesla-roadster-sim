@@ -14,7 +14,7 @@ async function onFootClean (g) {
   for (let k = 0; k < 4 && await g.ev(mode) !== 'foot'; k++) {
     await g.ev(() => { const R = window.__roadster, b = R.foot.alt.body; if (b) Object.assign(b, { u: 0, vx: 0, vz: 0, w: 0, lat: 0 }) })
     await g.hold('Space', 1.2)
-    await g.press('KeyE', 0)
+    await g.press('KeyF', 0)
     await g.until(() => window.__roadster.player.mode === 'foot' && !window.__roadster.foot.action, 8)
   }
   const why = await g.ev(() => { const R = window.__roadster, s = R.foot.driven?.(); return { mode: R.player.mode, drive: s?.mode, v: s?.groundSpeed?.(), down: !!R.foot.down } })
@@ -49,7 +49,7 @@ export const CAREER_FOOT = [
       if (!g.expect(id !== null, 'nobody about to punch')) return
       await g.run(0.1)
       for (let n = 0; n < 3; n++) {
-        await g.press('KeyF', 0)
+        await g.press('KeyR', 0)
         await g.until(() => !window.__roadster.foot.fight.melee.busy, 2)
       }
       ev = ev.concat(await g.ev(events))
@@ -128,13 +128,13 @@ export const CAREER_FOOT = [
       const name = TYPES[k].name
       if (!r) { fails.push(`${name}: not parked`); continue }
       await g.run(0.3)
-      await g.press('KeyE', 0)
+      await g.press('KeyF', 0)
       const opened = await g.until(() => ['open', 'in'].includes(window.__roadster.foot.action?.phase), 4)
       const shown = opened && await g.ev(() => !!window.__roadster.foot.view.doors.cur)
       const inCar = await g.until(() => window.__roadster.player.mode === 'car', 8)
       const kind = await g.ev(() => window.__roadster.player.vehicle?.type)
       await g.run(0.4)
-      await g.press('KeyE', 0)
+      await g.press('KeyF', 0)
       const out = await g.until(() => window.__roadster.player.mode === 'foot' && !window.__roadster.foot.action, 8)
       const side = await g.ev(([id, sd]) => {
         const R = window.__roadster, e = R.vehicles.list?.find?.(v => v.id === id) || R.player.lastVehicle

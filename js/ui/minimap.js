@@ -54,6 +54,11 @@ export class Minimap {
     this.map = null
     this.clock = 0
     this.zoom = 0
+    this.big = false // Z: GTA's expanded radar (bigger, and further out)
+  }
+  toggleBig () {
+    this.big = !this.big
+    this.cv.closest?.('.radarbox')?.classList.toggle('big', this.big)
   }
 
   // heading: the camera's yaw, so the map turns with the view
@@ -81,7 +86,7 @@ export class Minimap {
       SPAN +
       Math.min(1, sim.groundSpeed() / 45) * SPAN_V +
       Math.min(SPAN_UP, up * 3)
-    const want = H / span
+    const want = H / (this.big ? span * 2.2 : span)
     this.zoom = this.zoom
       ? this.zoom + (want - this.zoom) * Math.min(1, dt * 3)
       : want

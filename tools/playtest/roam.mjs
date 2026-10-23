@@ -28,7 +28,7 @@ export const PLACES = [
 export async function roam (g, place) {
   const { at, car } = place
   await g.goto(`?spawn=${at.x.toFixed(1)},${at.z.toFixed(1)},${at.yaw.toFixed(3)}`)
-  await g.ev(() => { window.__roadster.intro.finish(true); document.getElementById('help').hidden = true })
+  await g.ev(() => { window.__roadster.intro.finish(true); const h = document.getElementById('help'); if (h) h.hidden = true })
   await g.run(1)
   const id = await g.ev(t => window.__roadster.seatIn(t), car)
   g.expect(id, 'seatIn failed', car)

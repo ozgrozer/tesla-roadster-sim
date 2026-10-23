@@ -46,7 +46,9 @@ export async function play (g, steps, label) {
 
 const report = { at: new Date().toISOString(), runs: [] }
 if (which === 'career' || which === 'all') {
-  const g = await Game.open()
+  // (debug: the career also visits the test site, runs the clock and the weather on their keys and
+  // flies the Roadster, all ?debug=1 keys now: ui/debug.js)
+  const g = await Game.open({ query: '?debug=1' })
   const log = await play(g, [...CAREER, ...CAREER_FOOT, ...CAREER2], 'career')
   report.runs.push({ name: 'career', log, issues: g.issues, console: g.console, notes: g.notes })
   await g.close()
@@ -59,7 +61,7 @@ if (which === 'roam' || which === 'all') {
   await g.close()
 }
 if (which === 'perf' || which === 'all') {
-  const g = await Game.open()
+  const g = await Game.open({ query: '?debug=1' }) // (I: Autopilot is a debug key)
   g.step = 'perf'
   const minutes = Number((args.find(a => a.startsWith('--minutes=')) || '').slice(10)) || 4
   const perf = await profile(g, { minutes })

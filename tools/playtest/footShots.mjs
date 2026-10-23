@@ -13,7 +13,7 @@ const g = await Game.open({ query: '?spawn=' + (process.env.SPAWN || '-150,-58,0
 const log = (...a) => console.log(...a)
 const phaseOf = () => { const a = window.__roadster.foot.action; return a ? `${a.dir}:${a.phase}:${a.t.toFixed(2)}` : window.__roadster.player.mode }
 await g.ev(logEvents)
-await g.ev(() => { window.__roadster.intro.finish(true); document.getElementById('help').hidden = true })
+await g.ev(() => { window.__roadster.intro.finish(true); const h = document.getElementById('help'); if (h) h.hidden = true })
 await g.run(1)
 // the camera at an angle on the car's driver's side (a from square on, toward its tail)
 const aim = (a = 0.6, pitch = 0.32, dist = 5.2) => g.ev(([a, pitch, dist]) => {
@@ -37,7 +37,7 @@ const until = (f, sec, arg) => g.until(f, sec, arg, 0.05)
 
 if (which === 'doors' || which === 'all') {
   // the Roadster first: out, and back in
-  await g.press('KeyE', 0)
+  await g.press('KeyF', 0)
   await until(() => window.__roadster.foot.action?.phase === 'roadster' && window.__roadster.foot.action.t > 1.2, 6)
   await aim(0.5)
   await g.shot('door-roadster-out.png')
@@ -70,7 +70,7 @@ if (which === 'doors' || which === 'all') {
       return e.id
     }, [k, { x: l.x, z: l.z, yaw: l.yaw }])
     await g.run(0.4)
-    await g.press('KeyE', 0)
+    await g.press('KeyF', 0)
     const got = await until(() => { const a = window.__roadster.foot.action; return a && a.phase === 'open' && a.t > 0.42 }, 8)
     log(name, ok, 'open?', got, await g.ev(phaseOf))
     log(name, 'door', await g.ev(() => { const d = window.__roadster.foot.view.doors; return [d.angle, !!d.cur, d.cur?.door.map(m => m.visible)] }))
@@ -82,7 +82,7 @@ if (which === 'doors' || which === 'all') {
     const seated = await until(() => window.__roadster.player.mode === 'car', 6)
     log(name, 'seated', seated)
     await g.run(0.5)
-    await g.press('KeyE', 0)
+    await g.press('KeyF', 0)
     await until(() => { const a = window.__roadster.foot.action; return a && a.dir === 'out' && a.phase === 'out' && a.t > 0.35 }, 5)
     await aim(va + 0.1, vp, vd + 0.5)
     await g.shot(`door-${name}-out.png`)
@@ -108,7 +108,7 @@ const victim = (dist = 1.6) => g.ev(d => {
 
 if (which === 'fists' || which === 'all') {
   if (await g.ev(() => window.__roadster.player.mode !== 'foot')) {
-    await g.press('KeyE', 0)
+    await g.press('KeyF', 0)
     await until(() => window.__roadster.player.mode === 'foot' && !window.__roadster.foot.action, 8)
     await g.run(0.6)
   }
@@ -118,7 +118,7 @@ if (which === 'fists' || which === 'all') {
   await g.run(0.1)
   // the combo: each press made as the last punch lands (chained), a shot just after each hit
   const swing = async (name, at) => {
-    await g.press('KeyF', 0)
+    await g.press('KeyR', 0)
     await until(m => { const c = window.__roadster.foot.fight.melee.cur; return c && c.t >= c.move.hit + m }, 2, at)
     await aimFoot(1.2)
     if (name) await g.shot(name)
@@ -174,7 +174,7 @@ if (which === 'runover' || which === 'all') {
   const up = await until(() => window.__roadster.game.wanted.stars > 0, 20)
   log('runover: wanted', up, await stars())
   // out, and a look back at them lying there, the stars up
-  await g.press('KeyE', 0)
+  await g.press('KeyF', 0)
   await until(() => window.__roadster.player.mode === 'foot' && !window.__roadster.foot.action, 8)
   await g.run(0.3)
   log('runover: body', await g.ev(() => {

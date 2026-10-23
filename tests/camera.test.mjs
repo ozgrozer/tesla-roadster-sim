@@ -92,13 +92,13 @@ test('Z held looks behind the car at once, and let go, straight back', () => {
   v = d.frames(1)
   assert.ok(v.x < -4 && v.lx > 0.9, 'let go, behind it again at once')
 
-  // Z is the key, and a gamepad's right stick pressed in presses it; it doesn't take the wheel
+  // C is the key (GTA V's), and a gamepad's right stick pressed in presses it; it doesn't take the wheel
   const driven = []
   const input = new Input({ onDrive: c => driven.push(c), onCommand () {} })
-  on.keydown({ code: 'KeyZ', repeat: false, preventDefault () {} })
-  assert.ok(input.lookBack(), 'Z held')
-  on.keyup({ code: 'KeyZ' })
-  assert.ok(!input.lookBack(), 'Z let go')
+  on.keydown({ code: 'KeyC', repeat: false, preventDefault () {} })
+  assert.ok(input.lookBack(), 'C held')
+  on.keyup({ code: 'KeyC' })
+  assert.ok(!input.lookBack(), 'C let go')
   assert.deepEqual(driven, [], 'not a drive key: Autopilot keeps the wheel')
   const pad = {
     index: 0,

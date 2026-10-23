@@ -219,9 +219,11 @@ export class Radio {
     return b
   }
 
-  // B: the next station, or off after the last; returns the station (null: off)
-  tune () {
-    this.on = this.on + 1 >= STATIONS.length ? -1 : this.on + 1
+  // . (d 1): the next station, or off after the last; , (d -1) the one before (off before the first);
+  // returns the station (null: off)
+  tune (d = 1) {
+    const n = STATIONS.length + 1 // (the stations and off, round in a ring: off is -1)
+    this.on = ((this.on + 1 + (d < 0 ? -1 : 1) + n) % n) - 1
     this.song = null
     if (this.cur) this.drop(this.cur)
     this.cur = null

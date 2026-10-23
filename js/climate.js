@@ -76,7 +76,7 @@ export class Climate {
   skipTime () {
     if (this.app.world !== 'city')
       return this.hud.popup(
-        'The clock runs in the city · <b>C</b> to go there',
+        'The clock runs in the city',
         1800,
         'hint'
       )
@@ -92,7 +92,7 @@ export class Climate {
     const hud = this.hud
     if (this.app.world !== 'city')
       return hud.popup(
-        'The weather is in the city · <b>C</b> to go there',
+        'The weather is in the city',
         1800,
         'hint'
       )
@@ -130,8 +130,10 @@ export class Climate {
     this.wetPaint(ENV.wet)
     app.night = ENV.night > 0.5
     // the Roadster's headlights come on with everyone else's (a little later, a little earlier off)
+    // (H: forced on or off, as GTA's headlights key, else as the light has them)
     const on = RS.headlights.visible
-    if (on ? ENV.headlights < 0.35 : ENV.headlights > 0.6)
+    if (app.lamps === 'on' || app.lamps === 'off') RS.headlights.visible = app.lamps === 'on'
+    else if (on ? ENV.headlights < 0.35 : ENV.headlights > 0.6)
       RS.headlights.visible = !on
     // the light, from the clock and the weather (render/daylight.js)
     this.cityView.light(dt, clock)

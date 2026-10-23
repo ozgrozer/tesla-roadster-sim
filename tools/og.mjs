@@ -34,7 +34,7 @@ const SHOT = `(() => {
   const cam = r.rig.camera
   cam.fov = 38
   cam.updateProjectionMatrix()
-  key('KeyF', true)
+  key('KeyG', true)
   ;(function tick () {
     if (window.ogDone) return
     requestAnimationFrame(tick)
@@ -143,7 +143,7 @@ try {
     deviceScaleFactor: 2,
     mobile: false
   })
-  await send('Page.navigate', { url: `file://${join(ROOT, 'index.html')}` })
+  await send('Page.navigate', { url: `file://${join(ROOT, 'index.html')}?debug=1` })
   for (let i = 0; i < 100 && !(await run('!!window.__roadster')); i++)
     await sleep(100)
   await sleep(1500) // the city builds and the first frames settle

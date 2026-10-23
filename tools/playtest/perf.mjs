@@ -4,9 +4,9 @@
 // drawing calls), the physics' cost (ms for a game second of advance()), and the JS heap and the
 // counts of things (traffic, people, scene objects) over the run, for growth.
 export async function profile (g, { minutes = 4, every = 10 } = {}) {
-  await g.ev(() => { window.__roadster.intro.finish(true); document.getElementById('help').hidden = true })
+  await g.ev(() => { window.__roadster.intro.finish(true); const h = document.getElementById('help'); if (h) h.hidden = true })
   await g.run(1)
-  await g.press('KeyP', 0.5) // Autopilot
+  await g.press('KeyI', 0.5) // Autopilot
   const samples = []
   const t0 = Date.now()
   for (let t = 0; t < minutes * 60; t += every) {

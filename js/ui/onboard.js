@@ -13,13 +13,13 @@ export const HINTS = [
     id: 'foot',
     when: s => s.city && s.mode === 'foot' && s.t > 4,
     text: () =>
-      `On foot · ${k('KeyW')}${k('KeyA')}${k('KeyS')}${k('KeyD')} jog · ${k('ShiftLeft')} sprint · ` +
-      `${k('KeyF')} punch · ${k('Space')} jump · ${k('KeyE')} by a car gets in (or steals it)`
+      `On foot · ${k('KeyW')}${k('KeyA')}${k('KeyS')}${k('KeyD')} move · ${k('ShiftLeft')} sprint · ` +
+      `${k('Space')} jump · <b>Click</b> or ${k('KeyR')} punch · ${k('KeyF')} by a car gets in (or steals it)`
   },
   {
     id: 'car',
     when: s => s.city && s.mode === 'car' && s.other,
-    text: () => `Driving · ${k('Space')} handbrake · ${k('KeyH')} horn · ${k('KeyE')} gets out · ` +
+    text: () => `Driving · ${k('Space')} handbrake · ${k('KeyE')} horn · ${k('KeyF')} gets out · ` +
       'a waypoint on the map (Esc) sets the GPS'
   },
   {
@@ -36,7 +36,7 @@ export const HINTS = [
   {
     id: 'pause',
     when: s => s.city && s.t > 40,
-    text: () => '<b>Esc</b> pauses: the map, settings, key bindings and stats'
+    text: () => '<b>Esc</b> or <b>P</b> pauses: the map, settings, controls and stats'
   }
 ]
 const GAP = 9 // s between one hint and the next

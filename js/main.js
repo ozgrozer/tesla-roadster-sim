@@ -40,6 +40,8 @@ import { player } from './sim/player.js'
 import { vehicles } from './sim/vehicles.js'
 import { GAME_EVENTS, tickGame } from './sim/gameEvents.js'
 import { Polish } from './polish.js'
+import { gtaCommands, wheelRadio } from './keys.js'
+import { DEBUG, stuntKeys } from './ui/debug.js'
 
 // ---------- world ----------
 buildWall()
@@ -184,12 +186,8 @@ function enterCity () {
   setCam('follow')
   intro.start(() => {
     traffic.walker = null
-    hud.popup('Welcome to the city · <b>C</b> for the test site', 3200, 'hint')
-    hud.popup(
-      'Gridlock on the avenue ahead · hold <b>F</b> to jump it',
-      4200,
-      'hint'
-    )
+    hud.popup('Welcome to Los Angeles · <b>F</b> to get out · <b>Esc</b> for the map, settings and controls', 4500, 'hint')
+    if (stuntKeys()) hud.popup('Gridlock on the avenue ahead · hold <b>G</b> to fly over it', 4200, 'hint')
   })
 }
 function toggleWorld () {
@@ -224,73 +222,52 @@ function setHorn (on) {
 function tryFlip (axis) {
   if (app.auto) setAuto(false)
   if (sim.mode !== 'air') {
-    hud.popup('Get airborne first · hold <b>F</b> to fly', 1600, 'hint')
+    hud.popup('Get airborne first · hold <b>G</b> to fly', 1600, 'hint')
     return
   }
   if (!sim.man) sim.startManeuver(axis, axis === 'z' ? TAU : -TAU)
 }
 
 // ---------- input ----------
-const COMMANDS = {
-  KeyP: startAutopilot,
-  KeyC: toggleWorld,
-  KeyM: () => {
-    if (app.auto) setAuto(false)
-  },
-  KeyR: () =>
-    app.auto && app.world === 'site' ? startDemo() : resetTo(app.lastSpot),
-  Digit1: () => resetTo('start'),
-  Digit2: () => {
-    resetTo('top')
-    hud.popup('Hanging at 170° · hold <b>Shift</b> to fire the main thrusters', 2300, 'hint')
-  },
-  Digit3: () => {
-    resetTo('lineup')
-    hud.popup('Build speed, then <b>F</b> to lift and <b>K</b> to kickflip', 2300, 'hint')
-  },
-  KeyV: () => polish.cycleCam(setCam), // (in a car or on foot: polish.js)
-  KeyT: toggleSlow,
-  KeyL: () => climate.skipTime(),
-  KeyO: () => climate.nextWeather(),
-  KeyI: () => hud.toggleHelp(),
-  KeyU: () => hud.toggleUnits(), // the speedometer in km/h or mph (remembered: hud.js)
-  KeyH: () => setHorn(true),
-  KeyN: toggleSound,
-  KeyG: () => {
-    if (app.auto) setAuto(false)
-    app.fanMode =
-      app.fanMode === 'auto' ? 'on' : app.fanMode === 'on' ? 'off' : 'auto'
-    hud.fanPopup(app.fanMode)
-  },
-  KeyB: () => hud.radio(sound.tuneRadio()), // the radio's next station (radio.js)
-  KeyX: () => tryFlip('z'),
-  KeyK: () => tryFlip('x')
+// GTA V's keys (keys.js; the bindings: ui/keymap.js)
+const COMMANDS = gtaCommands({
+  ...{ app, hud, sound, climate, minimap, startDemo, resetTo, respawn, setCam, tryFlip, toggleWorld },
+  ...{ toggleSlow, setAuto, startAutopilot, toggleSound, cycleFan },
+  ...{ foot: () => foot, polish: () => polish, menu: () => menu }
+})
+function cycleFan () {
+  if (app.auto) setAuto(false)
+  app.fanMode = app.fanMode === 'auto' ? 'on' : app.fanMode === 'on' ? 'off' : 'auto'
+  hud.fanPopup(app.fanMode)
 }
-// the top bar's buttons (each does what its key does) and the pause menu (Esc): ui/menu.js
+// the pause menu (Esc, P): ui/menu.js
 // (before the input, so that while the menu is open it hears every key first and keeps it)
-const menu = new Menu(COMMANDS, { app, hud, sound, rig, cityPilot, setCam })
+const menu = new Menu(COMMANDS, { app, hud, sound, rig, cityPilot, setCam, toggleSound })
 app.onQuality = q => climate.quality(q) // (the menu's graphics quality)
 const input = new Input({
   onDrive: (code, first) => {
     if (intro.active) intro.finish()
-    // E: in or out of a car (onFoot.js); on foot, Space jumps
-    if (code === 'KeyE' && first && foot.interact()) return input.handoff()
-    if (foot.onFoot()) return foot.fight.press(code, first) // (Space jumps, F punches: footFight.js)
+    // F: in or out of a vehicle; E: a door or a shop on foot, the horn in a car (onFoot.js)
+    if (code === 'KeyF' && first && foot.interact('vehicle')) return input.handoff()
+    if (code === 'KeyE' && first && foot.interact('context')) return
+    if (code === 'KeyE' && !foot.onFoot() && foot.driven()?.mode !== 'air') return first && setHorn(true)
+    if (foot.onFoot()) return foot.fight.press(code, first) // (Space jumps: footFight.js)
     if (code === 'Space' && first) sound.ratchet()
     if (app.auto) setAuto(false)
   },
   onCommand: code => foot.fight.command(code) || COMMANDS[code]?.(),
   onRelease: code => {
-    if (code === 'KeyH') setHorn(false)
+    if (code === 'KeyE') setHorn(false)
   },
   onPad: () =>
     hud.popup(
-      'Gamepad ready · <b>RT</b> drive · <b>LT</b> brake · <b>A</b> e-brake · ' +
-        '<b>RB</b> boost · <b>LB</b> fly · <b>Y</b> get in / out',
+      'Gamepad ready · <b>RT</b> accelerate · <b>LT</b> brake · <b>RB</b> handbrake · ' +
+        '<b>A</b> boost, sprint · <b>Y</b> enter, exit · <b>B</b> melee',
       4000,
       'hint'
     )
 })
+wheelRadio(canvas, () => !foot.onFoot() && app.world === 'city', d => hud.radio(sound.tuneRadio(d)))
 Object.assign(rig, { traffic, input }) // (camera.js: clear of the cars, Z to look back)
 // the player on foot, and in and out of any car (onFoot.js)
 const foot = new OnFoot({ app, sim, RS, rig, camera, canvas, input, hud, sound, traffic, peds, intro, setCam, cityView })
@@ -299,7 +276,7 @@ const game = new Game({ sim, foot, traffic, peds, hud, minimap, app, damage, res
 menu.game = game // (the stats tab, the hints: ui/ux.js)
 // browsers only allow audio after a gesture: the first click or key turns sound on
 function unlockSound (e) {
-  if (e.code === 'KeyN' || e.target?.closest?.('#btnSound')) return
+  if (e.code === 'KeyN') return
   if (!sound.ctx && !sound.userMuted) {
     sound.setEnabled(true)
     app.soundOn = sound.enabled
@@ -475,7 +452,7 @@ function frame (now) {
   }
 }
 // the city unless the address asks for the test site (#site)
-if (location.hash !== '#site') enterCity()
+if (location.hash !== '#site' || !DEBUG.on) enterCity()
 // (in a frame, as on a shared page, the keys only reach the game once it has been clicked)
 if (window.top !== window && !document.hasFocus())
   hud.popup('Click the picture, then drive with <b>W A S D</b>', 6000, 'hint')
