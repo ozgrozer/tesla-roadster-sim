@@ -65522,7 +65522,7 @@ __define(57, function (__exports) {
 // The world's settings as the pause menu shows and changes them (settings.js): the time of day
 // (ENV.hour), how fast the clock runs (ENV.rate: stopped, real time, GTA's minute every two
 // seconds, or faster) and the weather (one of WEATHERS, or Auto: it moves on by itself), all in
-// sim/env.js, and the graphics quality (app.quality: low, medium or high, for the renderer, which
+// sim/env.js, and the graphics quality (app.quality: auto, low, medium or high, for the renderer, which
 // is told of a change through app.onQuality). The menu only calls these, so what is behind them can
 // change; main.js may hand the menu its own. The clock's speed and the quality are remembered
 // between visits (prefs.js) and put back as the game starts; the time of day and the weather start
@@ -65531,13 +65531,13 @@ const { recall, remember } = __require(7)
 const { ENV, setHour, setWeather } = __require(3)
 
 const RATES = [0, 1, 30, 120]
-const QUALITIES = ['low', 'medium', 'high']
+const QUALITIES = ['auto', 'low', 'medium', 'high']
 
 function worldSettings (app) {
   const rate = recall('timeRate')
   if (rate !== '' && RATES.includes(Number(rate))) ENV.rate = Number(rate)
-  const quality = recall('quality', 'high')
-  app.quality = QUALITIES.includes(quality) ? quality : 'high'
+  const quality = recall('quality', 'auto')
+  app.quality = QUALITIES.includes(quality) ? quality : 'auto'
   return {
     hour: () => ENV.hour,
     setHour,
@@ -92639,9 +92639,10 @@ class Post {
     // trunks and the rooflines smooth instead of crawling. 4 samples, 2 on a high-density screen
     // (its pixels already small), none once the adaptive resolution has had to step well down
     // (resolution.js: the GPU is short of time) or with ?msaa=0
-    this.maxSamples = /[?&]msaa=0/.test(location.search)
+    this.hwSamples = /[?&]msaa=0/.test(location.search)
       ? 0
       : Math.min(4, renderer.capabilities.maxSamples || 0)
+    this.maxSamples = this.hwSamples // (and the quality's cap: setMaxSamples)
     this.top = Math.min(window.devicePixelRatio || 1, 2)
     this.samples = samplesFor(this.top, this.top, this.maxSamples)
     const target = new THREE.WebGLRenderTarget(1, 1, {
@@ -92690,6 +92691,11 @@ class Post {
     this.renderer.setPixelRatio(r)
     this.composer.setPixelRatio(r)
     this.resize()
+  }
+  // the graphics quality's most MSAA samples (0: none, the targets single-sampled)
+  setMaxSamples (n) {
+    this.maxSamples = Math.min(this.hwSamples, n)
+    this.setSamples(samplesFor(this.renderer.getPixelRatio(), this.top, this.maxSamples))
   }
   // the frame's MSAA samples (the targets made again at their next use)
   setSamples (n) {
@@ -94867,7 +94873,9 @@ __define(200, function (__exports) {
 // pops. The street lights' pools on the ground are worked out in its shaders (lampLight.js), so the
 // first LAMP_POOL lights (the street lights') are skipped there and light only what the ground's
 // shaders don't (walls, poles, trees, the props); the shops' light falls on everything near them,
-// the cars and the people going by included.
+// the cars and the people going by included. By day they are hidden, not just put out (a hidden
+// light costs the shaders nothing; warm.js compiles both), and the graphics quality keeps fewer
+// of them (render/quality.js: setCount).
 const THREE = __require(0)
 const { LAMPS } = __require(35)
 const { LAMP_POOL, lampUp } = __require(193)
@@ -94885,15 +94893,43 @@ class NightLights {
       const k = i < LAMP_POOL ? LAMP : SHOP
       const l = new THREE.PointLight(k.colour, 0, k.reach, 2)
       l.userData = { spot: -1, next: -1, level: 0, power: k.power }
+      l.visible = false
       scene.add(l)
       this.lights.push(l)
     }
     this.t = 0
+    this.lit = false // shown (at night)
+    this.nLamp = LAMP_POOL // how many of each the quality keeps
+    this.nShop = SHOPS
+  }
+
+  // how many street lights' and shops' lights are kept (the rest hidden)
+  setCount (lamps, shops) {
+    this.nLamp = Math.max(0, Math.min(LAMP_POOL, lamps))
+    this.nShop = Math.max(0, Math.min(SHOPS, shops))
+    this.out()
+    this.show(this.lit)
+  }
+
+  // the kept lights shown (on) or hidden
+  show (on) {
+    this.lights.forEach((l, i) => {
+      l.visible = on && (i < LAMP_POOL ? i < this.nLamp : i - LAMP_POOL < this.nShop)
+    })
+  }
+
+  // every light put out and taken off its spot
+  out () {
+    for (const l of this.lights) {
+      l.intensity = 0
+      Object.assign(l.userData, { level: 0, spot: -1, next: -1 })
+    }
   }
 
   // the n spots nearest (x, z) that are lit (ok), as indices
   static nearest (spots, x, z, n, ok) {
     const best = []
+    if (n <= 0) return best
     for (let i = 0; i < spots.length; i++) {
       const s = spots[i],
         d = (s.x - x) ** 2 + (s.z - z) ** 2
@@ -94909,12 +94945,11 @@ class NightLights {
   update (dt, camera, dark, on) {
     const ls = this.lights
     if (!on || dark < 0.02) {
-      for (const l of ls) {
-        l.intensity = 0
-        Object.assign(l.userData, { level: 0, spot: -1, next: -1 })
-      }
+      if (this.lit) this.show((this.lit = false))
+      this.out()
       return
     }
+    if (!this.lit) this.show((this.lit = true))
     this.t -= dt
     if (this.t <= 0) {
       this.t = 0.2
@@ -94922,8 +94957,13 @@ class NightLights {
       const len = Math.hypot(_f.x, _f.z) || 1,
         x = camera.position.x + (_f.x / len) * 10,
         z = camera.position.z + (_f.z / len) * 10
-      this.assign(ls.slice(0, LAMP_POOL), NightLights.nearest(LAMPS, x, z, LAMP_POOL, lampUp))
-      this.assign(ls.slice(LAMP_POOL), NightLights.nearest(SHOP_SPOTS, x, z, SHOPS, () => true))
+      const nl = this.nLamp,
+        ns = this.nShop
+      this.assign(ls.slice(0, nl), NightLights.nearest(LAMPS, x, z, nl, lampUp))
+      this.assign(
+        ls.slice(LAMP_POOL, LAMP_POOL + ns),
+        NightLights.nearest(SHOP_SPOTS, x, z, ns, () => true)
+      )
     }
     for (let i = 0; i < ls.length; i++) {
       const u = ls[i].userData,
@@ -113864,8 +113904,100 @@ class Beams {
 __export(__exports, { "Beams": () => Beams })
 })
 
-// ---- js/climate.js
+// ---- js/render/quality.js
 __define(281, function (__exports) {
+// Graphics presets and the Auto one. Each preset is what the frame is allowed: the pixels to a
+// point (px, the adaptive resolution steps down from there), the MSAA samples, the car's sun shadow
+// map, the real point lights kept at night (nightLights.js), the street's reflection in the wet
+// (mirror: its share of the frame's size, 0 for none: it isn't drawn at all) and the share of the
+// rain's drops. What a preset turns off is skipped, not just made invisible: no mirror pass, no
+// multisampled targets, no hidden lights in the shaders' loops.
+//
+// Auto starts from a guess at the graphics card (its WebGL renderer string: software ones Low,
+// laptop and phone chips Medium, the rest High) and then goes by the frame times it measures: frames
+// slower than it can keep up with for a few seconds, once the adaptive resolution has already
+// stepped down, take it a preset down (never below Low); frames with plenty of time to spare for
+// long enough take it back up, once (so it doesn't swing back and forth).
+const PRESETS = {
+  high: { px: 2, msaa: 4, shadow: 3072, lamps: 6, shops: 4, mirror: 0.5, rain: 1 },
+  medium: { px: 1.5, msaa: 2, shadow: 2048, lamps: 4, shops: 0, mirror: 0, rain: 0.65 },
+  low: { px: 1, msaa: 0, shadow: 1024, lamps: 0, shops: 0, mirror: 0, rain: 0.35 }
+}
+const TIERS = ['low', 'medium', 'high']
+
+// a first guess at the preset from the WebGL renderer's name (and the screen)
+function guessTier (name = '', mobile = false) {
+  if (/swiftshader|llvmpipe|softpipe|software|basic render/i.test(name)) return 'low'
+  if (mobile || /intel|mali|adreno|powervr|videocore|apple gpu|uhd|iris/i.test(name))
+    return 'medium'
+  return 'high'
+}
+
+// the graphics card's name, where the browser gives it ('' where not)
+function gpuName (renderer) {
+  try {
+    const gl = renderer.getContext(),
+      ext = gl.getExtension('WEBGL_debug_renderer_info')
+    return String(gl.getParameter(ext ? ext.UNMASKED_RENDERER_WEBGL : gl.RENDERER) || '')
+  } catch (e) {
+    return ''
+  }
+}
+
+const SLOW_MS = 24 // frames slower than this (under ~42 fps) ...
+const SLOW_S = 3 // ... for this long take Auto a preset down
+const FAST_MS = 10.5 // frames this quick (with no browser pace) ...
+const FAST_S = 20 // ... for this long take it back up, once
+const SETTLE_S = 5 // after a change (shaders compiled, targets made, the resolution settled)
+
+const median = a => {
+  const s = a.slice().sort((x, y) => x - y)
+  return s.length ? s[s.length >> 1] : 0
+}
+
+class AutoQuality {
+  constructor (tier) {
+    this.tier = tier
+    this.top = tier // the highest it may go back up to
+    this.wait = SETTLE_S + 3 // (the first seconds: the shaders still compiling)
+    this.slow = 0
+    this.fast = 0
+    this.ups = 0
+    this.downs = 0
+  }
+
+  // once a frame, dt real s; res: the adaptive resolution (its frame times, pace and ratio).
+  // Returns the preset to switch to, or null.
+  update (dt, res) {
+    if ((this.wait -= dt) > 0 || res.frames.length < 45) return null
+    const ms = median(res.frames.slice(-45)),
+      pace = res.pace || 0,
+      i = TIERS.indexOf(this.tier)
+    // slow: slower than the bar, and than any pace the browser keeps (a 30 Hz cap isn't the GPU)
+    // (the resolution steps down first; frames it can't help, the CPU's, wait twice as long)
+    const slow = ms > Math.max(SLOW_MS, pace * 1.2)
+    this.slow = slow ? this.slow + dt * (res.ratio < res.max * 0.9 ? 1 : 0.5) : 0
+    this.fast = !pace && ms < FAST_MS && res.ratio >= res.max - 1e-3 ? this.fast + dt : 0
+    let to = null
+    if (this.slow > SLOW_S && i > 0) {
+      to = TIERS[i - 1]
+      this.downs++
+    } else if (this.fast > FAST_S && this.ups < 1 && this.downs < 2 && i < 2) {
+      to = TIERS[i + 1]
+      this.ups++
+    }
+    if (!to) return null
+    this.tier = to
+    this.slow = this.fast = 0
+    this.wait = SETTLE_S
+    return to
+  }
+}
+__export(__exports, { "PRESETS": () => PRESETS, "TIERS": () => TIERS, "guessTier": () => guessTier, "gpuName": () => gpuName, "AutoQuality": () => AutoQuality })
+})
+
+// ---- js/climate.js
+__define(282, function (__exports) {
 // The clock and the weather in the city, run once a frame from the main loop (main.js): the clock
 // and the weather moving on (sim/env.js), L running the clock on fast to the next time of day and O
 // bringing in the next weather, the light following them (render/daylight.js, through the city
@@ -113876,12 +114008,13 @@ __define(281, function (__exports) {
 // frame's pixels), remembered.
 const THREE = __require(0)
 const { Rain } = __require(279)
-const { hemi, renderer, scene, camera } = __require(83)
+const { hemi, key, renderer, scene, camera } = __require(83)
 const { Beams } = __require(280)
 const { Mirror } = __require(117)
 const { lampLit } = __require(193)
 const { WET } = __require(113)
 const { recall, remember } = __require(7)
+const { PRESETS, AutoQuality, guessTier, gpuName } = __require(281)
 const { OPTS } = __require(64)
 const { ENV, stepEnv, setHour, setWeather, WEATHERS } = __require(3)
 
@@ -113896,20 +114029,18 @@ const TIMES = [
 const LAPSE_S = 3
 // O: the weathers it brings in, in turn (and after the last, the weather as it comes)
 const WEATHER_ORDER = ['clear', 'cloudy', 'overcast', 'rain', 'storm', 'fog']
-// Graphics quality: high has everything; medium a smaller reflection in the wet, fewer drops and at
-// most one and a half pixels to a point; low no reflection, a third of the drops and one pixel to a
-// point (and the adaptive resolution steps down from there if it must)
-const QUALITY = {
-  high: { mirror: 0.5, rain: 1, px: 2 },
-  medium: { mirror: 0.35, rain: 0.65, px: 1.5 },
-  low: { mirror: 0, rain: 0.35, px: 1 }
-}
+// Graphics quality: the presets (render/quality.js: the pixels, MSAA, the shadow map, the real
+// lights, the reflection and the drops), or Auto, which picks one and steps down from it when the
+// frames are slow (and the adaptive resolution steps down within it first)
+const QUALITY = PRESETS
 
 class Climate {
   // app (its world, night and quality), hud (for the hints), RS (the Roadster), the city view (for
-  // the light) and the adaptive resolution (for the quality)
-  constructor ({ app, hud, RS, cityView, resolution }) {
-    Object.assign(this, { app, hud, RS, cityView, camera, resolution })
+  // the light and its lights), the adaptive resolution and the post-processing (for the quality)
+  constructor ({ app, hud, RS, cityView, resolution, post }) {
+    Object.assign(this, { app, hud, RS, cityView, camera, resolution, post })
+    this.auto = null // Auto's frame-time watch (render/quality.js), while the quality is Auto
+    this.preset = null // the preset in use
     this.mirror = new Mirror(renderer, scene, camera) // the street's reflection in the wet
     this.rain = new Rain(scene) // the rain and its splashes
     this.beams = new Beams(RS.body) // the headlights' beams in the rain and the fog
@@ -113924,21 +114055,58 @@ class Climate {
       for (const m of [].concat(o.material || []))
         if (m.isMeshStandardMaterial && !lit.has(m)) lit.add(lampLit(m, true))
     })
-    this.quality(recall('quality', 'high'))
+    this.quality(recall('quality', 'auto'))
   }
-  // the graphics quality ('high', 'medium' or 'low'), remembered
+  // the graphics quality ('auto', 'high', 'medium' or 'low'), remembered
   quality (q) {
-    const name = QUALITY[q] ? q : 'high',
-      s = QUALITY[name],
+    const auto = !PRESETS[q]
+    if (!auto) this.auto = null
+    else if (!this.auto) {
+      const mobile = navigator.maxTouchPoints > 0 && Math.min(window.screen.width, window.screen.height) < 900
+      this.auto = new AutoQuality(guessTier(gpuName(renderer), mobile))
+    }
+    this.app.quality = auto ? 'auto' : q
+    this.usePreset(auto ? this.auto.tier : q)
+    remember('quality', this.app.quality)
+  }
+  // a preset's settings put in (what it turns off is skipped, not hidden: render/quality.js)
+  usePreset (name) {
+    const s = PRESETS[name],
       r = this.resolution
-    this.app.quality = name
+    this.preset = name
     this.mirror.scale = s.mirror
     this.rain.share = s.rain
     // (the player's own resolution, if not Auto: options.js)
     r.max = OPTS.px === 'auto' ? Math.min(window.devicePixelRatio || 1, s.px) : OPTS.px
     r.min = Math.min(r.max, 0.6)
     if (r.ratio > r.max) r.set(r.max, 2)
-    remember('quality', name)
+    this.post?.setMaxSamples(s.msaa)
+    const px = Math.min(s.shadow, renderer.capabilities.maxTextureSize >= 4096 ? 3072 : 2048)
+    if (key.shadow.mapSize.x !== px) {
+      key.shadow.mapSize.set(px, px)
+      key.shadow.map?.dispose()
+      key.shadow.map = null // (made again at the next frame, at the new size)
+    }
+    this.syncLamps()
+  }
+  // the city's real lights kept to the preset's number (the city is built later, at times)
+  syncLamps () {
+    const l = this.cityView.daylight?.lamps,
+      s = PRESETS[this.preset]
+    if (!l || l.preset === this.preset) return
+    l.setCount(s.lamps, s.shops)
+    l.preset = this.preset
+  }
+  // what the quality is now (for the checks and the stats)
+  qualityState () {
+    return {
+      quality: this.app.quality,
+      preset: this.preset,
+      samples: this.post?.samples,
+      shadow: key.shadow.mapSize.x,
+      lights: this.cityView.daylight?.lamps.lights.filter(l => l.visible).length,
+      mirror: this.mirror.scale
+    }
   }
   // L: the clock runs on fast (a few seconds) to the next time of day
   skipTime () {
@@ -113982,6 +114150,9 @@ class Climate {
   // start; city: whether the car is in the city (the clock and the weather only run there)
   update (dt, world, clock, city) {
     const { RS, app, rain, beams } = this
+    const to = this.auto?.update(dt, this.resolution)
+    if (to) this.usePreset(to)
+    this.syncLamps()
     if (!city) {
       rain.update(0)
       beams.update(false)
@@ -114060,7 +114231,7 @@ __export(__exports, { "QUALITY": () => QUALITY, "Climate": () => Climate })
 })
 
 // ---- js/render/resolution.js
-__define(282, function (__exports) {
+__define(283, function (__exports) {
 // Adaptive resolution: the frame is drawn at the screen's full pixel density (up to 2, on a Retina
 // screen) while the GPU keeps up, and at less when it doesn't, a step at a time until it does, and
 // back up once it has room again; so a slower GPU (a laptop's built-in graphics driving a sharp
@@ -114241,7 +114412,7 @@ __export(__exports, { "Resolution": () => Resolution })
 })
 
 // ---- js/render/warm.js
-__define(283, function (__exports) {
+__define(284, function (__exports) {
 // Shader warm-up. three.js compiles a material's program the first time it draws it, and again for
 // each set of lights it is drawn under, and a program takes from a few milliseconds to a tenth of a
 // second to compile (longest on Windows), so the game used to stall at each first: the first
@@ -114347,7 +114518,11 @@ function as (cityView, RS, look, fn) {
   if (cityView.on !== look.city) cityView.show(look.city)
   if (look.city && cityView.night !== look.night) cityView.setNight(look.night)
   RS.headlights.visible = !!(look.city && look.night)
+  // (the real lights shown at night only: the shaders have a version with them and one without)
+  const lamps = cityView.daylight?.lamps
+  lamps?.show(!!(look.city && look.night))
   const out = fn()
+  lamps?.show(lamps.lit)
   if (cityView.dark !== was.dark) cityView.setDark(was.dark)
   if (cityView.cars) cityView.cars.night = was.cars
   if (cityView.on !== was.city) cityView.show(was.city)
@@ -114384,7 +114559,7 @@ __export(__exports, { "warmUp": () => warmUp })
 })
 
 // ---- js/render/damage.js
-__define(284, function (__exports) {
+__define(285, function (__exports) {
 // Body damage, GTA-style: a knock dents the Roadster's panels where it landed, deeper and wider the
 // harder the hit, the metal crumpling (each dent a little uneven, its facets catching the light)
 // rather than sinking in smooth; dents add up, to a limit, and a reset puts the car back as new.
@@ -114755,7 +114930,7 @@ __export(__exports, { "Damage": () => Damage })
 })
 
 // ---- js/sim/wanted.js
-__define(285, function (__exports) {
+__define(286, function (__exports) {
 // The wanted level, GTA's way: 0 to 5 stars. A crime ('crime' game events: { type, pos, severity })
 // only counts if someone saw it: people on the pavement, drivers, or the police (witness.js looks,
 // along the city's sight lines); the police seeing it themselves count double. What is reported adds
@@ -114965,7 +115140,7 @@ __export(__exports, { "STAR_HEAT": () => STAR_HEAT, "CRIMES": () => CRIMES, "POL
 })
 
 // ---- js/sim/aiDriver.js
-__define(286, function (__exports) {
+__define(287, function (__exports) {
 // A driver at the wheel of a drivable body (vehicleSim.js) for the game's own cars: the police on a
 // chase (police.js) and the cars in the street events (ambient.js). It follows the lane graph to a
 // goal (route.js: the plan worked out once for every lane, so it reads the way on from wherever it
@@ -115151,7 +115326,7 @@ __export(__exports, { "bearing": () => bearing, "Planner": () => Planner, "steer
 })
 
 // ---- js/sim/policeUnit.js
-__define(287, function (__exports) {
+__define(288, function (__exports) {
 // One police car's mind (police.js keeps the force): a traffic car of the police type taken over
 // (handover.js takeOver, tag 'police'), driven by a 'police' handling-class body (vehicleSim.js)
 // through aiDriver.js. On a chase it routes along the lane graph to where the player is (or was
@@ -115160,7 +115335,7 @@ __define(287, function (__exports) {
 // sight, it searches the circle round the last known position; with the stars cleared it switches
 // its lights off and drives away. Pure: no DOM.
 const { clamp } = __require(2)
-const { steerTo, blocker, unstick, cornerV, Follower } = __require(286)
+const { steerTo, blocker, unstick, cornerV, Follower } = __require(287)
 const { makeVehicleInput } = __require(154)
 const { bodyFromTraffic } = __require(155)
 
@@ -115403,7 +115578,7 @@ __export(__exports, { "CHASE_V": () => CHASE_V, "SEARCH_V": () => SEARCH_V, "DIR
 })
 
 // ---- js/sim/policeAir.js
-__define(288, function (__exports) {
+__define(289, function (__exports) {
 // The police from above and ahead (police.js): the helicopter at four stars and up, flying to where
 // the player is (or was last seen), its spotlight on them while it can see them and sweeping the
 // search circle when it can't; and where a roadblock goes: across the road the player is driving,
@@ -115546,7 +115721,7 @@ __export(__exports, { "HELI_Y": () => HELI_Y, "HELI_V": () => HELI_V, "HELI_SEE"
 })
 
 // ---- js/sim/police.js
-__define(289, function (__exports) {
+__define(290, function (__exports) {
 // The police force on the city's streets (the wanted level is wanted.js; each car's mind is
 // policeUnit.js): as many units as the stars call for (UNITS), each put on a lane of the road
 // network off-screen (out of the camera's view or behind a building, between SPAWN_MIN and
@@ -115561,10 +115736,10 @@ const { stepVehicle } = __require(154)
 const { writeToTraffic } = __require(155)
 const { collideTraffic, rectOf } = __require(149)
 const { rectRect, impulse, playerRect, loadBody, storeBody, nudge, BODY } = __require(40)
-const { Planner } = __require(286)
+const { Planner } = __require(287)
 const { clear, policeSight } = __require(143)
-const { makeUnit, think } = __require(287)
-const { Heli, roadblockSpot, inView: seenBy } = __require(288)
+const { makeUnit, think } = __require(288)
+const { Heli, roadblockSpot, inView: seenBy } = __require(289)
 
 const UNITS = [0, 2, 3, 4, 5, 6] // pursuing units for 0 to 5 stars
 const SPAWN_MIN = 110
@@ -115859,7 +116034,7 @@ __export(__exports, { "UNITS": () => UNITS, "SPAWN_MIN": () => SPAWN_MIN, "SPAWN
 })
 
 // ---- js/sim/ambient.js
-__define(290, function (__exports) {
+__define(291, function (__exports) {
 // Street events near the player now and then (GTA's random events): a crash scene (two wrecked cars
 // in the road, hazards on, a police car parked by them, its lights going, people stopping to look),
 // the police chasing someone (a traffic car taken over and driven off fast along the lane graph, a
@@ -115874,8 +116049,8 @@ const { loosen } = __require(104)
 const { stepVehicle, makeVehicleInput } = __require(154)
 const { bodyFromTraffic, writeToTraffic } = __require(155)
 const { collideTraffic } = __require(149)
-const { Planner, Follower, steerTo, blocker, unstick, cornerV } = __require(286)
-const { spawnPoint, inView } = __require(289)
+const { Planner, Follower, steerTo, blocker, unstick, cornerV } = __require(287)
+const { spawnPoint, inView } = __require(290)
 const { bounds } = __require(125)
 const { weatherGrip } = __require(3)
 
@@ -116134,7 +116309,7 @@ __export(__exports, { "KINDS": () => KINDS, "GAP": () => GAP, "Ambient": () => A
 })
 
 // ---- js/sim/wantedReports.js
-__define(291, function (__exports) {
+__define(292, function (__exports) {
 // Crimes reported to the police (wanted.js), as the people who saw them get round to it: the police
 // seeing it themselves, at once; otherwise someone has to ring it in. A person on foot who saw it
 // (peds' witnessCrime, living/pedLife.js) gets on the phone a few seconds once safe, and the report
@@ -116199,7 +116374,7 @@ __export(__exports, { "DRIVER_CALL": () => DRIVER_CALL, "GIVE_UP": () => GIVE_UP
 })
 
 // ---- js/sim/missions/objectives.js
-__define(292, function (__exports) {
+__define(293, function (__exports) {
 // What each kind of mission objective asks, and how it is judged (manager.js runs them): each a
 // { text, start, check } over the objective's data (o), its live state (st) and the mission's
 // context (ctx: { player (playerView), wanted, events (this step's game events), dt }).
@@ -116332,7 +116507,7 @@ __export(__exports, { "place": () => place, "OBJECTIVES": () => OBJECTIVES })
 })
 
 // ---- js/sim/missions/manager.js
-__define(293, function (__exports) {
+__define(294, function (__exports) {
 // The missions' state machine. Idle, every mission on offer has a marker in the world (its start:
 // spots.js); drive (or walk) into one, slowly enough, and it starts (never forced). Running, its
 // objectives (objectives.js) come one after another, each with the place it points at (for the
@@ -116342,7 +116517,7 @@ __define(293, function (__exports) {
 // steal, the GPS) are the game's (game.js) through the hooks: on.start(def), on.end(def, passed),
 // on.objective(def, o, st). Pure: no DOM.
 const { MISSIONS } = __require(78)
-const { OBJECTIVES } = __require(292)
+const { OBJECTIVES } = __require(293)
 const { spot } = __require(125)
 
 const START_R = 6 // m: in the marker
@@ -116492,7 +116667,7 @@ __export(__exports, { "START_R": () => START_R, "START_V": () => START_V, "LEAVE
 })
 
 // ---- js/sim/playerView.js
-__define(294, function (__exports) {
+__define(295, function (__exports) {
 // What the game's systems (the wanted level, the police, the missions, the street events) know of
 // the player, read through one small adapter so that they never depend on where the player lives.
 // The foot workstream's player.js is bound (game.js: bindPlayer(player, { health, driven })): the
@@ -116612,7 +116787,7 @@ __export(__exports, { "playerView": () => playerView, "bindSim": () => bindSim, 
 })
 
 // ---- js/render/crimeView.js
-__define(295, function (__exports) {
+__define(296, function (__exports) {
 // What the game's systems put in the world to see (game.js updates it each frame): the missions'
 // markers, GTA's glowing cylinders with a ring on the ground (a mission's start, the place an
 // objective points at, the next checkpoint dimmer), and the police helicopter overhead, rotor
@@ -116789,7 +116964,7 @@ __export(__exports, { "MARKER_FAR": () => MARKER_FAR, "CrimeView": () => CrimeVi
 })
 
 // ---- js/ui/crimeHud.js
-__define(296, function (__exports) {
+__define(297, function (__exports) {
 // The game's own HUD, GTA's way (game.js drives it): the cash and the wanted stars top right (the
 // stars only while wanted, flashing while the police search), the mission's objective along the
 // bottom and its clock top middle, the big titles (a mission's name as it starts, MISSION PASSED
@@ -116941,7 +117116,7 @@ __export(__exports, { "CrimeHud": () => CrimeHud })
 })
 
 // ---- js/ui/crimeMap.js
-__define(297, function (__exports) {
+__define(298, function (__exports) {
 // The game's marks on the radar (minimap.js's overlay hook) and the pause menu's map (mapDraw.js's):
 // the police as red and blue blips flashing by turns, the helicopter, the search circle round the
 // last known position (red and blue, pulsing, while the stars flash), the missions' blips in their
@@ -117081,7 +117256,7 @@ __export(__exports, { "searchOf": () => searchOf, "radarOverlay": () => radarOve
 })
 
 // ---- js/carName.js
-__define(298, function (__exports) {
+__define(299, function (__exports) {
 // The car's name bottom right (ui/place.js, said by ui/carHud.js as the player gets in) taken down
 // at once: busted or wasted (game.js), or out of the car (onFoot.js). A street's name up is left.
 function dropCarName (hud) {
@@ -117092,7 +117267,7 @@ __export(__exports, { "dropCarName": () => dropCarName })
 })
 
 // ---- js/game.js
-__define(299, function (__exports) {
+__define(300, function (__exports) {
 // The game on top of the drive: the wanted level and the police (sim/wanted.js, police.js), the
 // missions (sim/missions/) and the street events (sim/ambient.js), their marks in the world
 // (render/crimeView.js), on the HUD (ui/crimeHud.js) and on the maps (ui/crimeMap.js), and busted
@@ -117105,22 +117280,22 @@ const { ENV } = __require(3)
 const { roadGrip } = __require(43)
 const { IDX } = __require(59)
 const { STALLS, rng } = __require(35)
-const { Wanted } = __require(285)
-const { Police, Arrest } = __require(289)
-const { Ambient } = __require(290)
+const { Wanted } = __require(286)
+const { Police, Arrest } = __require(290)
+const { Ambient } = __require(291)
 const { witnesses } = __require(143)
-const { Reports } = __require(291)
-const { MissionManager } = __require(293)
+const { Reports } = __require(292)
+const { MissionManager } = __require(294)
 const { spot, nearestKerb, HOSPITALS, STATIONS } = __require(125)
 const { emitGame, onGame } = __require(69)
-const { playerView, bindPlayer, updatePlayerView, setWanted } = __require(294)
+const { playerView, bindPlayer, updatePlayerView, setWanted } = __require(295)
 const { player } = __require(80)
-const { CrimeView } = __require(295)
-const { CrimeHud } = __require(296)
-const { radarOverlay, mapOverlay } = __require(297)
+const { CrimeView } = __require(296)
+const { CrimeHud } = __require(297)
+const { radarOverlay, mapOverlay } = __require(298)
 const { gps } = __require(51)
 const { recall, remember } = __require(7)
-const { dropCarName } = __require(298)
+const { dropCarName } = __require(299)
 
 // where the player is put back: the nearest hospital (wasted) or police station (busted), as
 // fractions of the map: HOSPITALS, STATIONS in missions/spots.js
@@ -117407,7 +117582,7 @@ __export(__exports, { "PENALTY": () => PENALTY, "Game": () => Game })
 })
 
 // ---- js/sim/vehicles.js
-__define(300, function (__exports) {
+__define(301, function (__exports) {
 // Every car the player can get into, in one registry: the Roadster, the traffic's cars on the road
 // and the cars parked in the lots (and the jammed street's). Pure (no DOM), so it is tested in Node.
 // Each entry is stable for as long as its car exists (a WeakMap keeps it), so what is learnt about a
@@ -117642,7 +117817,7 @@ __export(__exports, { "DOORS": () => DOORS, "DOOR_SIDE": () => DOOR_SIDE, "layou
 })
 
 // ---- js/sim/drivable.js
-__define(301, function (__exports) {
+__define(302, function (__exports) {
 // Any car the player drives that isn't the Roadster, on the drive workstream's stack: the traffic
 // car is taken off its driver (traffic.takeOver: handover.js), given a body of its handling class
 // (vehicleLink.js bodyFromTraffic, vehicleSim.js stepVehicle, handling.js), knocks the city and the
@@ -117769,7 +117944,7 @@ __export(__exports, { "PLAYER_TOUGH": () => PLAYER_TOUGH, "carInput": () => carI
 })
 
 // ---- js/sim/carsMeet.js
-__define(302, function (__exports) {
+__define(303, function (__exports) {
 // Two of the player's sims meeting: the car the player drives (drivable.js: a, its spec sp)
 // against the Roadster left in the street (b). Pushed apart by mass, momentum traded, a 'bump' for
 // each (heard, and the Roadster dented). Pure, for the Node tests.
@@ -117841,7 +118016,7 @@ __export(__exports, { "carsMeet": () => carsMeet })
 })
 
 // ---- js/sim/footRescue.js
-__define(303, function (__exports) {
+__define(304, function (__exports) {
 // Keeping the player on foot out of trouble (player.js's walker): stuck in something (a wall's
 // corner, a car parked up against them, a gap they were pushed into) or out of the world (fallen
 // through it, off the map, or a position gone bad), they are put back somewhere safe: stuck, the
@@ -117963,7 +118138,7 @@ __export(__exports, { "RESCUE": () => RESCUE, "nearFree": () => nearFree, "neare
 })
 
 // ---- js/sim/boarding.js
-__define(304, function (__exports) {
+__define(305, function (__exports) {
 // Getting into a car and out of it, as timed phases (pure: the render poses the body and the door
 // from them, onFoot.js runs them). Into a car: walk round to the driver's door (the car's other
 // side, its nose or tail in the way, walked round), then
@@ -117978,8 +118153,8 @@ __define(304, function (__exports) {
 // side, the far side, either end, then anywhere free a few metres round), or up onto its roof if
 // it is boxed in on every side.
 const { stepFoot, freeSpot, blockedAt, floorAt, FOOT } = __require(80)
-const { nearFree } = __require(303)
-const { vehicles } = __require(300)
+const { nearFree } = __require(304)
+const { vehicles } = __require(301)
 const { wrapPi } = __require(2)
 
 const BOARD = {
@@ -118260,11 +118435,11 @@ __export(__exports, { "BOARD": () => BOARD, "howToEnter": () => howToEnter, "sid
 })
 
 // ---- js/ui/prompt.js
-__define(305, function (__exports) {
+__define(306, function (__exports) {
 // The prompt by a car the player can get into, GTA's: the key, what it does and the car ("E Break
 // in · Sedan"), and what is happening while they get in (onFoot.js shows it in #prompt).
-const { vehicles } = __require(300)
-const { howToEnter } = __require(304)
+const { vehicles } = __require(301)
+const { howToEnter } = __require(305)
 
 const PROMPT_R = 2.4 // m from a car's body that it offers to be got into
 const TITLE = {
@@ -118310,7 +118485,7 @@ __export(__exports, { "PROMPT_R": () => PROMPT_R, "TITLE": () => TITLE, "VERB": 
 })
 
 // ---- js/sim/melee.js
-__define(306, function (__exports) {
+__define(307, function (__exports) {
 // The player's fists on foot, GTA's way: a press (F, or the left mouse button) throws a punch, and
 // presses in time chain a combo of three: a jab, a cross and a heavy hook that knocks people down.
 // Each punch soft-locks on to the nearest person in front (within LOCK m, turning to face them and
@@ -118469,7 +118644,7 @@ __export(__exports, { "COMBO": () => COMBO, "STOMP": () => STOMP, "MELEE": () =>
 })
 
 // ---- js/audio/fists.js
-__define(307, function (__exports) {
+__define(308, function (__exports) {
 // Fists and bodies: a punch thrown (the air it moves), one landing (a dull smack), a person hit by
 // a car (the thump on the bonnet, heavier the faster), and someone landing on the road after it.
 function swingSound (sound, heavy = false) {
@@ -118491,17 +118666,17 @@ __export(__exports, { "swingSound": () => swingSound, "punchSound": () => punchS
 })
 
 // ---- js/footFight.js
-__define(308, function (__exports) {
+__define(309, function (__exports) {
 // The player's fists on foot (sim/melee.js) and what comes of them: the keys (F or the left mouse
 // button to punch, presses in time for the combo; Caps Lock between a walk and the jog), the blows
 // landing on people (sim/brawl.js: staggered, knocked down, killed; the crimes it is), the punches
 // of anyone fighting back landing on the player (a shove, health off: game.js 'player-hit'), and
 // the sounds. onFoot.js makes one and runs it each step on foot.
-const { Melee } = __require(306)
+const { Melee } = __require(307)
 const { emitGame, onGame } = __require(69)
 const { player } = __require(80)
 const { panOf } = __require(120)
-const { swingSound, punchSound, bodySound } = __require(307)
+const { swingSound, punchSound, bodySound } = __require(308)
 
 const STILL = { x: 0, z: 0, mag: 0, run: false, walk: false, jump: false }
 
@@ -118575,7 +118750,7 @@ __export(__exports, { "FootFight": () => FootFight })
 })
 
 // ---- js/footHits.js
-__define(309, function (__exports) {
+__define(310, function (__exports) {
 // The player on foot hit by a moving car (onFoot.js steps it): knocked over, heard, and told.
 const { player, knockDown } = __require(80)
 const { placeOf } = __require(120)
@@ -118605,7 +118780,7 @@ __export(__exports, { "hitByCars": () => hitByCars })
 })
 
 // ---- js/sim/interiors/modshop.js
-__define(310, function (__exports) {
+__define(311, function (__exports) {
 // The body shop's service (Redline Body & Paint): a car stopped in the bay out front, for the
 // price, comes back out repaired and in a new colour. Pure: the price, and the next colour from
 // the shop's list (render/interiors/glue.js puts them on the car).
@@ -118636,7 +118811,7 @@ __export(__exports, { "PRICE": () => PRICE, "COLOURS": () => COLOURS, "nextColou
 })
 
 // ---- js/render/interiors/hunt.js
-__define(311, function (__exports) {
+__define(312, function (__exports) {
 // The hunt for the thirty hidden tokens (sim/tokens.js), run from the interiors' step (glue.js): on
 // foot or at the wheel, within reach of one it is taken, "Hidden token 7/30 · +$100" pops up, the
 // game hears 'token-collected' { id, n, total, where, pos } (the HUD's counter), the find is
@@ -118697,7 +118872,7 @@ __export(__exports, { "REWARD": () => REWARD, "BONUS": () => BONUS, "TokenHunt":
 })
 
 // ---- js/render/interiors/glue.js
-__define(312, function (__exports) {
+__define(313, function (__exports) {
 // The interiors in the game: what onFoot.js asks of them through four calls (the step, the prompt,
 // E, and the wallet handed over by game.js). By a door on foot the prompt offers "E Enter · Night
 // Owl Mart"; E fades the screen to black, puts the player inside (the room's own world for the
@@ -118711,9 +118886,9 @@ const { emitGame } = __require(69)
 const { remember } = __require(7)
 const { MAT } = __require(83)
 const { INTERIOR, inside, busy, offerAt, begin, stepTransition, swapIn, swapOut, clearInterior, strayed, roomWorld } = __require(119)
-const { PRICE, canPay, nextColour, repaintKey } = __require(310)
+const { PRICE, canPay, nextColour, repaintKey } = __require(311)
 const { SITES } = __require(99)
-const { TokenHunt } = __require(311)
+const { TokenHunt } = __require(312)
 
 class InteriorGlue {
   constructor (foot) {
@@ -118916,7 +119091,7 @@ __export(__exports, { "InteriorGlue": () => InteriorGlue })
 })
 
 // ---- js/render/optimusGait.js
-__define(313, function (__exports) {
+__define(314, function (__exports) {
 // Optimus's gaits on foot, over poseOptimus's walk cycle (optimus.js): a walk, a jog and a sprint,
 // each with its own stride so the planted foot moves back at the pace the body goes forward (no
 // sliding): the walk cycle swings each leg 0.36 rad a side per unit of `walk`, so a leg 0.85 m long
@@ -118968,7 +119143,7 @@ __export(__exports, { "STRIDE_PER_AMP": () => STRIDE_PER_AMP, "ampFor": () => am
 })
 
 // ---- js/render/optimusFists.js
-__define(314, function (__exports) {
+__define(315, function (__exports) {
 // Optimus fighting (sim/melee.js): fists up in guard by the face, a jab and a cross thrown straight
 // out from the shoulder with the body leaning into them, a hook swung round from the side, and a
 // stamp on someone down. The hands and a foot reached for by poseOptimus's limbs (optimus.js), the
@@ -119030,7 +119205,7 @@ __export(__exports, { "poseFists": () => poseFists })
 })
 
 // ---- js/render/carDoor.js
-__define(315, function (__exports) {
+__define(316, function (__exports) {
 // The driver's door of a city car, opened and shut as the player gets in or out (sim/boarding.js):
 // its own skin, cut from the car's body between the door's shut lines (sim/vehicles.js DOORS, the
 // shut lines carSpecs.js draws) and from the sill up to the beltline, its window up to the glass's
@@ -119259,7 +119434,7 @@ __export(__exports, { "SWING": () => SWING, "easeDoor": () => easeDoor, "swingOf
 })
 
 // ---- js/render/boardPose.js
-__define(316, function (__exports) {
+__define(317, function (__exports) {
 // Optimus getting into a city car and out of it (sim/boarding.js's phases), GTA's way: stood just
 // behind the door's back edge, a hand on the handle pulling it open (the hand riding the handle as
 // the door swings, then letting go), a step forward into the opening turning to face ahead, ducking
@@ -119269,8 +119444,8 @@ __define(316, function (__exports) {
 // out. A carjacking reaches in after the driver; a break-in works at the lock or the window. The
 // door itself is carDoor.js's (pointOn: where its handle is as it swings).
 const { poseOptimus, HIP_STAND, ANKLE_UP } = __require(131)
-const { doorOf, seatShare, sideOf, BOARD } = __require(304)
-const { vehicles } = __require(300)
+const { doorOf, seatShare, sideOf, BOARD } = __require(305)
+const { vehicles } = __require(301)
 const { clamp, wrapPi } = __require(2)
 
 const ease = t => t * t * (3 - 2 * t)
@@ -119431,7 +119606,7 @@ __export(__exports, { "wayIn": () => wayIn, "poseBoard": () => poseBoard, "pushH
 })
 
 // ---- js/render/footView.js
-__define(317, function (__exports) {
+__define(318, function (__exports) {
 // The player on foot, drawn: Optimus (optimus.js), out of the Roadster and walking the city, its
 // legs and arms swinging with its pace (a longer, quicker stride and a lean running), legs tucked in
 // a jump, flat on its back knocked over; and getting into a car and out of it (boarding.js): at the
@@ -119441,13 +119616,13 @@ __define(317, function (__exports) {
 // that swings open on its front hinge.
 const THREE = __require(0)
 const { buildOptimus, poseOptimus, HIP_STAND } = __require(131)
-const { poseGait, ampFor, strideFor } = __require(313)
-const { poseFists } = __require(314)
-const { punchPose } = __require(306)
+const { poseGait, ampFor, strideFor } = __require(314)
+const { poseFists } = __require(315)
+const { punchPose } = __require(307)
 const { boardRoadster, BOARD_T } = __require(133)
-const { CarDoors } = __require(315)
-const { poseBoard, pushHands } = __require(316)
-const { doorOf, sideOf, BOARD } = __require(304)
+const { CarDoors } = __require(316)
+const { poseBoard, pushHands } = __require(317)
+const { doorOf, sideOf, BOARD } = __require(305)
 const { clamp } = __require(2)
 
 const ease = t => t * t * (3 - 2 * t)
@@ -119567,7 +119742,7 @@ __export(__exports, { "FootView": () => FootView })
 })
 
 // ---- js/render/footCam.js
-__define(318, function (__exports) {
+__define(319, function (__exports) {
 // The camera on foot: GTA's third-person orbit over the player's shoulder. The mouse (the pointer
 // locked to the picture: a click) or a gamepad's right stick swings it round and up and down; the
 // wheel brings it in or lets it out. It follows the player smoothly, keeps out of buildings
@@ -119708,7 +119883,7 @@ __export(__exports, { "clipShare": () => clipShare, "FootCam": () => FootCam })
 })
 
 // ---- js/audio/steps.js
-__define(319, function (__exports) {
+__define(320, function (__exports) {
 // The player's footsteps on foot (onFoot.js): Optimus's tread from the sample bank (buffers.js), its
 // colour by what is underfoot (a hard heel on the road and the pavement, a hollow knock on the
 // pier's planks, a soft swish through grass, a crunch in the sand, a ring off a roof's metal), heavier
@@ -119777,7 +119952,7 @@ __export(__exports, { "footstep": () => footstep, "landing": () => landing, "sma
 })
 
 // ---- js/onFoot.js
-__define(320, function (__exports) {
+__define(321, function (__exports) {
 // The player out of the car: getting out (E), walking the city as Optimus (WASD, Shift to run,
 // Space to jump, the mouse or the right stick looking round), getting into the Roadster or any other
 // car (E by it: in at once if it is open, broken into if it is parked and locked, taken from its
@@ -119790,28 +119965,28 @@ __define(320, function (__exports) {
 const { look } = __require(64)
 const THREE = __require(0)
 const { emitGame } = __require(69)
-const { dropCarName } = __require(298)
+const { dropCarName } = __require(299)
 const { footProxy } = __require(155)
-const { vehicles } = __require(300)
-const { Drivable } = __require(301)
+const { vehicles } = __require(301)
+const { Drivable } = __require(302)
 const { collidePlayer } = __require(104)
-const { carsMeet } = __require(302)
-const { FootRescue } = __require(303)
+const { carsMeet } = __require(303)
+const { FootRescue } = __require(304)
 const { makeControls } = __require(2)
 const { player, setMode, placePlayer, stepFoot, moveDir, CITY_WORLD } = __require(80)
-const { startEnter, startExit, stepBoard, cancellable, hurry, BOARD } = __require(304)
-const { offerFor } = __require(305)
-const { FootFight } = __require(308)
-const { hitByCars } = __require(309)
-const { InteriorGlue } = __require(312)
-const { FootView } = __require(317)
+const { startEnter, startExit, stepBoard, cancellable, hurry, BOARD } = __require(305)
+const { offerFor } = __require(306)
+const { FootFight } = __require(309)
+const { hitByCars } = __require(310)
+const { InteriorGlue } = __require(313)
+const { FootView } = __require(318)
 const { boardRoadster, BOARD_T } = __require(133)
-const { FootCam } = __require(318)
+const { FootCam } = __require(319)
 const { clipCamera } = __require(271)
 const { scene } = __require(83)
 const { raiseAlarm } = __require(86)
 const { hearing, panOf } = __require(120)
-const { footstep, landing, smashWindow, forceLock, doorSound } = __require(319)
+const { footstep, landing, smashWindow, forceLock, doorSound } = __require(320)
 
 const HOLD = { ...makeControls(), brake: 1, fan: false }
 // what the radar, the GPS and the place name follow while the player walks: the feet, as a car
@@ -120263,7 +120438,7 @@ __export(__exports, { "OnFoot": () => OnFoot })
 })
 
 // ---- js/render/playerCar.js
-__define(321, function (__exports) {
+__define(322, function (__exports) {
 // The car the player drives when it isn't the Roadster (drivable.js): the traffic renderer keeps
 // drawing it as itself (traffic.js: its body type, paint, glass, lamps and dents), but posed here
 // from its physics body (vehicleSim.js) rather than from the traffic's own springs: the body's
@@ -120372,7 +120547,7 @@ __export(__exports, { "PlayerCar": () => PlayerCar })
 })
 
 // ---- js/audio/engine.js
-__define(322, function (__exports) {
+__define(323, function (__exports) {
 // The engine of whatever the player drives that isn't the Roadster, synthesised: its firing
 // frequency from the rpm and gear vehicleSim.js keeps (rpm / 60 x cylinders / 2), a sawtooth and a
 // half-order rumble through a low-pass that opens with the throttle and the revs, a burble of
@@ -120516,7 +120691,7 @@ __export(__exports, { "EngineVoice": () => EngineVoice })
 })
 
 // ---- js/ui/carHud.js
-__define(323, function (__exports) {
+__define(324, function (__exports) {
 // The HUD kept to whatever the player drives, or to them on foot (hud.js calls update after its
 // own): the car's name bottom right as they get in (GTA's: the class small and gold over the name,
 // 'Stolen' when it was), the speedometer's selector swapped for the gear (1 to 6, R, N) and its
@@ -120528,7 +120703,7 @@ __define(323, function (__exports) {
 //   new CarHud(hud, foot, game)  .entered(entry), .exited(), .update(dt, app)
 //   (foot: onFoot.js; game: () => the Game, game.js, made after the HUD)
 const { $, put } = __require(1)
-const { TITLE } = __require(305)
+const { TITLE } = __require(306)
 
 // the class over the name, for each traffic type
 const CLASS = {
@@ -120613,14 +120788,14 @@ __export(__exports, { "CAR_SLOT": () => CAR_SLOT, "CarHud": () => CarHud })
 })
 
 // ---- js/ui/testDrive.js
-__define(324, function (__exports) {
+__define(325, function (__exports) {
 // A developer's harness for the polish work (not a game mode): put the player straight into a city
 // car of a given traffic type (sedan, sports, suv, pickup, truck, van, bus, police, ...) a few
 // metres ahead of where they are (on the nearest lane), seated as if they had walked up and got in (onFoot.js seated),
 // so the camera, the HUD, the sounds and the effects all follow it. Used by automated smoke tests
 // through window.__roadster.seatIn(type), and by ?drive=<kind>&seat=1.
 const { IDX } = __require(59)
-const { vehicles } = __require(300)
+const { vehicles } = __require(301)
 const { player } = __require(80)
 const { nearestLane } = __require(35)
 
@@ -120652,7 +120827,7 @@ __export(__exports, { "seatIn": () => seatIn })
 })
 
 // ---- js/polish.js
-__define(325, function (__exports) {
+__define(326, function (__exports) {
 // The polish over whatever the player drives, kept out of main.js: each frame, the car that isn't
 // the Roadster posed from its body with its skids and smoke (render/playerCar.js), the camera told
 // what it is following (render/carCam.js), its engine, tyres and horn heard (audio/engine.js) and
@@ -120661,11 +120836,11 @@ __define(325, function (__exports) {
 //   new Polish({ foot, rig, sound, hud, cityView, RS, app, game })
 //   (game: () => the Game, game.js: the player's health on foot)
 //   .frame(dt)  after the physics steps: returns the RS-like stand-in for skids.js and effects.js
-const { PlayerCar } = __require(321)
+const { PlayerCar } = __require(322)
 const { armScale, armRise } = __require(60)
-const { EngineVoice } = __require(322)
-const { CarHud } = __require(323)
-const { seatIn } = __require(324)
+const { EngineVoice } = __require(323)
+const { CarHud } = __require(324)
+const { seatIn } = __require(325)
 
 // V on foot: the camera over the shoulder close, middling or far (footCam.js dist)
 const FOOT_CAMS = [
@@ -120717,7 +120892,7 @@ __export(__exports, { "Polish": () => Polish })
 })
 
 // ---- js/main.js
-__define(326, function (__exports) {
+__define(327, function (__exports) {
 // Tesla Roadster Sim: boot, game state, sim events and the main loop.
 const THREE = __require(0)
 const { Hud } = __require(16)
@@ -120746,20 +120921,20 @@ const { DEG, TAU, makeControls } = __require(2)
 const { LED_MAT, buildWall, buildTruss } = __require(273)
 const { buildRoadster, updateRoadster } = __require(278)
 const { Post } = __require(191)
-const { Climate } = __require(281)
-const { Resolution } = __require(282)
-const { warmUp } = __require(283)
-const { Damage } = __require(284)
+const { Climate } = __require(282)
+const { Resolution } = __require(283)
+const { warmUp } = __require(284)
+const { Damage } = __require(285)
 const { MAT, scene, camera, canvas } = __require(83)
 const { renderer, followKeyLight } = __require(83)
 const { fallFx, ALL_PARTICLES, updateNozzles, emitThrusters, emitTireSmoke, attachDiamonds } = __require(175)
 const { emitTrafficSpray } = __require(115)
-const { Game } = __require(299)
-const { OnFoot } = __require(320)
+const { Game } = __require(300)
+const { OnFoot } = __require(321)
 const { player } = __require(80)
-const { vehicles } = __require(300)
+const { vehicles } = __require(301)
 const { GAME_EVENTS, tickGame } = __require(69)
-const { Polish } = __require(325)
+const { Polish } = __require(326)
 
 // ---------- world ----------
 buildWall()
@@ -120806,11 +120981,11 @@ const app = {
   wheelAudio: 0,
   lastBump: 0,
   pilotHorn: false,
-  quality: 'high', // graphics quality (climate.js)
+  quality: 'auto', // graphics quality (climate.js)
   night: false // the city at night (ENV.night: sim/env.js)
 }
 // the clock and the weather, the rain, the wet street and the graphics quality (climate.js)
-const climate = new Climate({ app, hud, RS, cityView, resolution })
+const climate = new Climate({ app, hud, RS, cityView, resolution, post })
 
 function setAuto (on) {
   app.auto = on
@@ -121219,5 +121394,5 @@ window.__roadster = {
 }
 __export(__exports, {  })
 })
-__require(326)
+__require(327)
 })()
