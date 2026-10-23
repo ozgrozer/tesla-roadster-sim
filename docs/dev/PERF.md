@@ -162,3 +162,43 @@ DETAIL_FAR, MARKER_FAR, streamAll/streamBack, drawnOnly). No new counts were tak
 ran 3x career + roam playtests and the q1shots tour throughout, and the 2-Chrome contention there
 (K20) would make the numbers meaningless. Re-run `tools/playtest/spawn.mjs` on a quiet box to
 record the integrated numbers against the P3 table above.
+
+## v4: gta-v4-visuals (slop-newyork ports, blocks A-D)
+
+Measured with `/workspace/slopshot/v4perf.mjs`: headless Chromium on SwiftShader (software GL) at
+1280x720, downtown spawn `nearestLane(48,-432)`. The clock was stepped 1/60 s per rAF frame. The
+figures are medians over 8 frames of `renderer.info` (autoReset off). "Shadow" counts the
+`renderBufferDirect` calls with no scene, i.e. shadow-map draws. Wall time is per rAF frame. On
+SwiftShader it is fill-bound, so read it relative only.
+
+| view | build | calls | shadow calls | triangles | wall ms |
+| --- | --- | --- | --- | --- | --- |
+| drive-golden (17:36, 2.5 s of W) | origin/main | 438 | 106 | 1.91 M | 1578 |
+| | pre-D (after block C, 71d9513) | 439 | 104 | 1.89 M | 2923 |
+| | post-D (74c25a6) | 437 | 101 | **1.70 M** | 2941 |
+| | post-D `?msaa=0` | 434 | 102 | 1.70 M | 1703 |
+| aerial-high-golden (free cam ~500 m out) | origin/main | 471 | 110 | 2.55 M | 1516 |
+| | pre-D | 466 | 105 | 2.59 M | 3331 |
+| | post-D | 464 | 103 | **2.34 M** | 3564 |
+| | post-D `?msaa=0` | 460 | 100 | 2.34 M | 1653 |
+| foot-night (23:00) | origin/main | 398 | 137 | 1.41 M | 1068 |
+| | pre-D | 617 | 142 | 2.24 M | 1518 |
+| | post-D | 602 | 129 | **1.98 M** | 1650 |
+| | post-D `?msaa=0` | 604 | 129 | 1.99 M | 1445 |
+
+- **Block D saves 10-12% of triangles in every view.** Draw calls drop 0.5-2.5% (shadow-pass
+  calls 3-13 fewer).
+  - The triangle cut comes from the key-shadow stand-ins (`render/shadowProxy.js`). Its static
+    casters, 222 of them, are regrouped into 1501 block-square (96 m) shadow-only meshes, so the
+    72 m key-shadow box draws only the blocks it sees. At noon on the downtown street the key
+    pass falls from 2.00 M to 1.71 M triangles, with identical shadows.
+  - The rest comes from `chunks.js sizeFar`: instanced details are culled at 1100x their typical
+    size (min 300 m, unlimited past 2000 m, 3x for unlit glow).
+- **The wall time vs main is the 4x MSAA composer target (block A).** With `?msaa=0`, golden views
+  are back to within ~8% of main. On real GPUs MSAA 4x at DPR <= 1.5 is cheap, and post.js drops
+  to 2x/0 when resolution.js lowers the DPR. SwiftShader resolves it in software.
+- **Night: +200 calls and +0.6 M triangles vs main.** This is the planar mirror. Block A's
+  night/dawn damp (uDamp > 0.45) turns the road reflection pass on in dry weather (climate.js
+  reflect). The pooled point lights add no calls, but they make every lit material's fragment
+  shader heavier.
+- Data: `/workspace/shots/v4/perf/{main,preD,postD,postD-msaa0}.json`.
