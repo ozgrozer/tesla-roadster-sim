@@ -173,10 +173,11 @@ export class OnFoot {
     this.nearCars()
     const a = this.action
     if (a && !(a.dir === 'out' && player.mode === 'foot')) {
-      // (a move key: a walk up or a break-in called off, the rest of getting in or out skipped)
+      // (a move key: a walk up called off, the rest of getting in or out skipped; a break-in, once
+      // begun, goes on, and a move key held through it skips what's left once the door is open)
       const go = this.moveKeys().mag > 0.3
       let ev
-      if (a.dir === 'in' && (cancellable(a) || a.phase === 'jimmy') && go) {
+      if (a.dir === 'in' && cancellable(a) && go) {
         this.action = null
         setMode('foot', null)
       } else if (go && (ev = hurry(a)).length) return this.events(a, ev)
