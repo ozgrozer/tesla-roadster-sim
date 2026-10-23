@@ -94,8 +94,11 @@ export class Climate {
     const l = this.cityView.daylight?.lamps,
       s = PRESETS[this.preset]
     if (!l || l.preset === this.preset) return
+    const was = l.preset && l.nLamp + ',' + l.nShop
     l.setCount(s.lamps, s.shops)
     l.preset = this.preset
+    // (another number of lights: other programs for every material, compiled ahead, main.js)
+    if (was && was !== l.nLamp + ',' + l.nShop) this.onLights?.()
   }
   // what the quality is now (for the checks and the stats)
   qualityState () {

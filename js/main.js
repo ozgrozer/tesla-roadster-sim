@@ -93,6 +93,8 @@ const app = {
 }
 // the clock and the weather, the rain, the wet street and the graphics quality (climate.js)
 const climate = new Climate({ app, hud, RS, cityView, resolution, post })
+// (a quality with another number of the city's lights: their programs compiled again, warm.js)
+climate.onLights = () => post.warmed && (post.warmed = post.warmed.then(() => warmUp(cityView, RS, post, false)))
 
 function setAuto (on) {
   app.auto = on

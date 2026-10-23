@@ -43,17 +43,27 @@ function showEmpty (o) {
 
 // cityView, RS: the city and the Roadster (main.js); post: post.js's Post. Returns a promise that
 // settles once everything is compiled.
-export async function warmUp (cityView, RS, post) {
+// (site: false, the city's looks only: again after the graphics quality changes the number of the
+// city's lights, climate.js)
+export async function warmUp (cityView, RS, post, site = true) {
   try {
-    await warm(cityView, RS, post)
+    await warm(cityView, RS, post, site)
   } catch (e) {
     // (a warm-up that fails leaves the compiling to the first use, as before)
   }
 }
-async function warm (cityView, RS, post) {
-  const looks = [{ city: false }]
+async function warm (cityView, RS, post, withSite) {
+  const looks = withSite ? [{ city: false }] : []
+  // (the city's lights each way round: the street lights come on at dusk a while before the
+  // drivers' headlights, the headlights go on by day in the rain or the fog or with H, and each
+  // set of lights is a program of its own for every material, five or six dozen of them)
   if (cityView.group)
-    looks.unshift({ city: true, night: false }, { city: true, night: true })
+    looks.unshift(
+      { city: true, night: false },
+      { city: true, night: true },
+      { city: true, night: true, head: false },
+      { city: true, night: false, head: true }
+    )
   // the speed blur's shader, with the tone mapping the plain one has by now
   const { plain, blurred } = post.final
   blurred.defines = { ...plain.defines }
@@ -102,7 +112,7 @@ function as (cityView, RS, look, fn) {
   }
   if (cityView.on !== look.city) cityView.show(look.city)
   if (look.city && cityView.night !== look.night) cityView.setNight(look.night)
-  RS.headlights.visible = !!(look.city && look.night)
+  RS.headlights.visible = !!(look.city && (look.head ?? look.night))
   // (the real lights shown at night only: the shaders have a version with them and one without)
   const lamps = cityView.daylight?.lamps
   lamps?.show(!!(look.city && look.night))
