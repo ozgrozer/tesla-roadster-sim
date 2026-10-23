@@ -140,7 +140,7 @@ export function roadMaterial (opts) {
             gDamp = smoothstep(lvl - 0.09, lvl - 0.015, fld) * (1.0 - uWet);
             gPool = smoothstep(lvl, lvl + 0.022, fld) * smoothstep(0.1, 0.22, uDamp) * (1.0 - uWet);
             gFilm = smoothstep(0.2, 0.8, uDamp) * (1.0 - uWet);
-            diffuseColor.rgb *= mix(mix(1.0, 0.72, gDamp), 0.6, gPool) * mix(1.0, 0.86, gFilm);
+            diffuseColor.rgb *= mix(mix(1.0, 0.8, gDamp), 0.62, gPool) * mix(1.0, 0.88, gFilm);
           }
         }`
       )

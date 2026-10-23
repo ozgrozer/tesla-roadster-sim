@@ -94079,7 +94079,7 @@ const BALANCE = K(
 )
 // how damp the streets are in dry weather (wet.js, roadSurface.js): the night's dew and the
 // sprinklers' run-off, mostly gone by the middle of the day
-const DAMP = K([-12, 0.62], [-6, 0.58], [-2, 0.5], [2, 0.34], [7, 0.28], [14, 0.24], [25, 0.1], [40, 0.06])
+const DAMP = K([-12, 0.58], [-6, 0.55], [-2, 0.46], [2, 0.3], [7, 0.2], [14, 0.16], [25, 0.06], [40, 0.03])
 const DULL = [0.86, 0.1, -0.006, 0.002, 0.012, 0.0, 0.0, 0.004, 0.28] // under cloud and rain
 
 // the row of values at height a (degrees), between the keyframes either side, into out
@@ -105422,7 +105422,7 @@ function roadMaterial (opts) {
             gDamp = smoothstep(lvl - 0.09, lvl - 0.015, fld) * (1.0 - uWet);
             gPool = smoothstep(lvl, lvl + 0.022, fld) * smoothstep(0.1, 0.22, uDamp) * (1.0 - uWet);
             gFilm = smoothstep(0.2, 0.8, uDamp) * (1.0 - uWet);
-            diffuseColor.rgb *= mix(mix(1.0, 0.72, gDamp), 0.6, gPool) * mix(1.0, 0.86, gFilm);
+            diffuseColor.rgb *= mix(mix(1.0, 0.8, gDamp), 0.62, gPool) * mix(1.0, 0.88, gFilm);
           }
         }`
       )

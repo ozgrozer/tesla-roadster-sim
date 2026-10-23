@@ -179,7 +179,7 @@ const BALANCE = K(
 )
 // how damp the streets are in dry weather (wet.js, roadSurface.js): the night's dew and the
 // sprinklers' run-off, mostly gone by the middle of the day
-const DAMP = K([-12, 0.62], [-6, 0.58], [-2, 0.5], [2, 0.34], [7, 0.28], [14, 0.24], [25, 0.1], [40, 0.06])
+const DAMP = K([-12, 0.58], [-6, 0.55], [-2, 0.46], [2, 0.3], [7, 0.2], [14, 0.16], [25, 0.06], [40, 0.03])
 const DULL = [0.86, 0.1, -0.006, 0.002, 0.012, 0.0, 0.0, 0.004, 0.28] // under cloud and rain
 
 // the row of values at height a (degrees), between the keyframes either side, into out
