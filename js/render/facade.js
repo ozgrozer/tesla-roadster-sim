@@ -9,8 +9,9 @@
 // and a dark desk or cabinet, lit by its lamp or only by the dusk outside. The glass itself is smooth
 // and reflects the sky at a glancing angle, as glass does, however rough the wall round it. Far off,
 // where a window is only a few pixels across, the reveal and the room go (nobody could see them)
-// and each window is simply its glass with the room's average light behind it. (The wall between
-// the windows skips all of it.)
+// and each window is simply its glass with the room's average light behind it, its edges box-filtered
+// over the pixel so the grid of them doesn't shimmer (the filtered pulse after mrdoob/slop-newyork's
+// facade windows, MIT, (c) 2026 Mr.doob). (The wall between the windows skips all of it.)
 import * as THREE from 'three'
 
 const BAY = 3 // m: a texture cell is a bay wide (cityBuildings.js) ...
@@ -60,6 +61,11 @@ export function facadeMaterial (
         `#include <common>
         uniform float uNight;
         float cellHash (vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+        // (how much of a pixel w cells wide at x is inside [a, b] of every cell: a box filter)
+        float pulseInt (float a, float b, float x) { return floor(x) * (b - a) + clamp(fract(x) - a, 0.0, b - a); }
+        float fPulse (float a, float b, float x, float w) {
+          return clamp((pulseInt(a, b, x + 0.5 * w) - pulseInt(a, b, x - 0.5 * w)) / w, 0.0, 1.0);
+        }
         float gBlind = 0.0, gWin = 0.0;
         vec2 gCell = vec2(0.0);
         vec3 gRoom = vec3(0.0);`
@@ -74,7 +80,12 @@ export function facadeMaterial (
           gCell = floor(cu);
           vec2 f = fract(cu);
           float x0 = ${wx}, x1 = ${wx} + ${ww}, top = 1.0 - ${wy}, bot = top - ${wh};
-          gWin = step(x0, f.x) * step(f.x, x1) * step(bot, f.y) * step(f.y, top);
+          // (far off: windows a few pixels across, cells per pixel past a quarter)
+          bool far = max(length(du), length(dv)) * ${C} > 0.25;
+          vec2 fwc = max(fwidth(cu), vec2(1e-4));
+          float cov = fPulse(x0, x1, cu.x, fwc.x) * fPulse(bot, top, cu.y, fwc.y);
+          vec3 wallRgb = diffuseColor.rgb;
+          gWin = far ? step(0.002, cov) : step(x0, f.x) * step(f.x, x1) * step(bot, f.y) * step(f.y, top);
           ${blank}
           float pane = 0.0;
           // (the wall between the windows has nothing more to work out)
@@ -87,11 +98,9 @@ export function facadeMaterial (
           vec3 rd = normalize(-vViewPosition);
           vec3 r = vec3(dot(rd, ta) / ${f(BAY)}, dot(rd, up) / ${f(STOREY)},
             min(dot(rd, n), -0.03) / ${f(ROOM)});
-          // (far off: windows a few pixels across, cells per pixel past a quarter)
-          bool far = max(length(du), length(dv)) * ${C} > 0.25;
           // where it meets the glass, set back from the wall face; short of it, the reveal
           vec2 g = far ? f : f + r.xy * (${f(inset / ROOM)} / -r.z);
-          pane = step(x0, g.x) * step(g.x, x1) * step(bot, g.y) * step(g.y, top);
+          pane = far ? 1.0 : step(x0, g.x) * step(g.x, x1) * step(bot, g.y) * step(g.y, top);
           if (pane < 0.5) {
             // the reveal: the wall's own colour, the sill catching the light, the head in shadow
             vec3 wall = textureLod(map, (gCell + vec2(0.03, 0.03)) / ${C}, 3.0).rgb;
@@ -137,6 +146,10 @@ export function facadeMaterial (
           }
           }
           gWin = pane;
+          if (far && pane > 0.5) {
+            diffuseColor.rgb = mix(wallRgb, diffuseColor.rgb, cov);
+            gWin *= cov;
+          }
         }
         #endif`
       )
@@ -157,7 +170,7 @@ export function facadeMaterial (
       )
       .replace(
         '#include <emissivemap_fragment>',
-        `if (gWin < 0.5) totalEmissiveRadiance = vec3(0.0);
+        `if (gWin <= 0.0) totalEmissiveRadiance = vec3(0.0);
         else {
           float h1 = cellHash(gCell), h2 = cellHash(gCell + 17.3), h3 = cellHash(gCell + 41.1);
           float on = step(h1, mix(${lit.toFixed(3)}, ${litNight.toFixed(3)}, uNight));
@@ -165,11 +178,11 @@ export function facadeMaterial (
           vec3 light = mix(warm, vec3(0.72, 0.84, 1.0), step(0.8, h3)) * (0.35 + 0.65 * h2);
           // a lit room, or a dark one with only the dusk in it
           vec3 dark = vec3(0.07, 0.065, 0.075) * (1.0 - 0.8 * uNight);
-          totalEmissiveRadiance *= gRoom * mix(dark, light, on);
+          totalEmissiveRadiance *= gRoom * mix(dark, light, on) * gWin;
         }`
       )
   }
   m.customProgramCacheKey = () =>
-    `facade ${win} ${lit} ${litNight} ${blinds} ${tilt} ${inset} ${glassMetal} ${fill}`
+    `facade aa ${win} ${lit} ${litNight} ${blinds} ${tilt} ${inset} ${glassMetal} ${fill}`
   return m
 }
