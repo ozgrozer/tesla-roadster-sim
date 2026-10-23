@@ -19,6 +19,7 @@ const GPU_SLOW = 13 // ms of GPU a frame that counts as the GPU holding things u
 const GPU_ROOM = 10 // ms of GPU a frame, at the next step up, that is room enough to take it
 const BUSY = 0.6 // share of a slow frame the page's own work may take for the GPU to be to blame
 const HELD = 3 // s a step up must hold before the next is tried at once
+const CEIL = 30 // s a ratio that didn't hold isn't tried again for (doubled each time it fails)
 const DOWN = 0.85,
   UP = 1.12
 
@@ -51,6 +52,21 @@ export class Resolution {
     this.paceTrust = 20
     this.tries = 0 // steps back up without a timer that failed in a row
     this.retry = 0 // s until the next such try
+    // (each change resizes the frame's targets, a hitch of its own: a ratio that failed, or had to
+    // be stepped down from soon after it was taken, is a ceiling for a while, so the resolution
+    // settles instead of going up and down every few seconds)
+    this.clock = 0
+    this.ceil = Infinity // no step up to this ratio or over it
+    this.ceilFor = 0 // s it holds for
+    this.ceilFails = 0 // times in a row it was found
+    this.ceilWas = 0
+    this.upAt = -1e9 // this.clock at the last step up
+  }
+  // the ratio r found too high: a ceiling for a while, longer each time it is found again
+  tooHigh (r) {
+    this.ceilFails = Math.abs(r - this.ceilWas) < 0.02 ? this.ceilFails + 1 : 0
+    this.ceil = this.ceilWas = r
+    this.ceilFor = Math.min(600, CEIL * 2 ** this.ceilFails)
   }
   // a new ratio takes effect at the start of a frame (main.js), before anything is sized or drawn
   apply () {
@@ -80,11 +96,13 @@ export class Resolution {
       this.pending.push(this.active)
       this.active = null
     }
-    // (answers come a frame or two later; a disjoint one, the GPU interrupted, is dropped)
-    const disjoint = this.pending.length && gl.getParameter(ext.GPU_DISJOINT_EXT)
+    // (answers come a frame or two later; a disjoint one, the GPU interrupted, is dropped. The
+    // disjoint flag is asked for once an answer is in, not every frame)
+    let disjoint = null
     while (this.pending.length) {
       const q = this.pending[0]
       if (!gl.getQueryParameter(q, gl.QUERY_RESULT_AVAILABLE)) break
+      if (disjoint === null) disjoint = gl.getParameter(ext.GPU_DISJOINT_EXT)
       if (!disjoint) this.gpu.push(gl.getQueryParameter(q, gl.QUERY_RESULT) / 1e6)
       gl.deleteQuery(q)
       this.pending.shift()
@@ -101,6 +119,8 @@ export class Resolution {
     if (this.frames.length > 90) this.frames.shift()
     this.wait -= dt
     this.retry -= dt
+    this.clock += dt
+    if (this.ceil < Infinity && (this.ceilFor -= dt) < 0) this.ceil = Infinity
     if (this.trial) this.trial.t += dt
     if (this.pace && (this.paceFor -= dt) < 0) this.pace = 0
     if (this.wait > 0 || this.frames.length < 45) return
@@ -122,17 +142,19 @@ export class Resolution {
       // twice as long as they should be halve the pixels at once)
       const k = Math.min(DOWN, Math.max(0.7, Math.sqrt((this.pace || 16.7) / frame)))
       if (this.ratio > this.min) {
+        if (this.clock - this.upAt < CEIL) this.tooHigh(this.ratio)
         this.trial = gpu === null ? { up: false, from: this.ratio, frame, t: 0 } : null
         this.set(Math.max(this.min, this.ratio * k), 1.5)
       }
     } else if (this.ratio < this.max && !slow) {
+      if (next >= this.ceil - 1e-3) return
       if (gpu !== null) {
         // room at the next step up?
-        if (gpu * (next / this.ratio) ** 2 < GPU_ROOM) this.set(next, 2)
+        if (gpu * (next / this.ratio) ** 2 < GPU_ROOM) this.up(next)
       } else if (fast && this.tries < 6 && this.retry <= 0) {
         // (no timer: try a step up, and see whether it holds)
         this.trial = { up: true, from: this.ratio, frame, t: 0 }
-        this.set(next, 2)
+        this.up(next)
       }
     }
   }
@@ -155,6 +177,7 @@ export class Resolution {
       // (back to where it was, and the next try later, later still each time)
       this.trial = null
       this.retry = 8 * 1.5 ** this.tries++
+      this.tooHigh(this.ratio)
       this.set(t.from, 2)
       return true
     }
@@ -164,6 +187,10 @@ export class Resolution {
       this.retry = 0
     }
     return false
+  }
+  up (ratio) {
+    this.upAt = this.clock
+    this.set(ratio, 2)
   }
   set (ratio, wait) {
     this.ratio = ratio
