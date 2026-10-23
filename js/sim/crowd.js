@@ -1,10 +1,11 @@
 // How people on foot behave beyond getting about (peds.js), mixed into Peds: some walk in pairs,
 // some stand about (on the phone, chatting, waiting), a few jog; heads turn to follow the Roadster
-// when it goes by loud and fast; and when it drives along the pavement, crashes, comes down from the
-// air or hits something hard close by, the people round about flee along the pavement away from it
-// (screaming: peds.panic counts them, peds.scream those who have just started), and calm down a few
-// seconds later. Now and then someone jaywalks, straight over the street from the pavement, once
-// they have looked and the traffic is far enough off to stop for them (it does: traffic.peds).
+// when it goes by loud and fast; and when it drives along the pavement (those it has passed),
+// crashes, comes down from the air or hits something hard close by, the people round about flee
+// along the pavement away from it (screaming: peds.panic counts them, peds.scream those who have
+// just started), and calm down a few seconds later. Now and then someone jaywalks, straight over
+// the street from the pavement, once they have looked and the traffic is far enough off to stop
+// for them (it does: traffic.peds).
 import { atJam } from './jam.js'
 import { clamp, wrapPi } from './constants.js'
 import { kerbDist } from './street.js'
@@ -147,8 +148,9 @@ export const CROWD = {
     const mode = sim.mode
     if (me) {
       const onWalk = kerbDist(me.x, me.z) < -0.6
+      // (those it has just gone by: nobody runs from it before it gets to them, pedReact.js)
       if (mode === 'ground' && Math.abs(sim.speed) > 4 && onWalk)
-        this.scare(me.x, me.z, 16)
+        this.scare(me.x - Math.cos(sim.yaw) * 4, me.z + Math.sin(sim.yaw) * 4, 5.5)
       // (down in the street, not on a roof)
       if (this.wasAir && mode === 'ground' && me.y < 1) this.scare(me.x, me.z, 28)
     }
@@ -163,7 +165,7 @@ export const CROWD = {
       e.peds = true
       if (e.type === 'bump' && e.impact > 5 && me) this.scare(me.x, me.z, 22)
       else if (e.type === 'clash' || e.type === 'knock')
-        this.scare(e.x, e.z, 20)
+        this.scare(e.x, e.z, e.kind === 'prop' || e.kind === 'lamp' ? 8 : 20) // (a bin, a light: those by it)
     }
     const heard = traffic.heard
     for (let i = 0; i < heard.length; i++)

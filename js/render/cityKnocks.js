@@ -35,11 +35,11 @@ const SHAPE = {
 }
 // the hydrant's geyser: a column of water puffs, and the spray they make of the air round it
 const JET = {
-  col: [0.82, 0.88, 0.94],
+  col: [0.93, 0.97, 1],
   life: [1.3, 1.9],
-  s0: 0.22,
-  s1: [0.9, 1.7],
-  alpha: 0.5,
+  s0: 0.18,
+  s1: [0.6, 1.3],
+  alpha: 0.62,
   drag: 0.25,
   buoy: -GRAVITY,
   tau: 1000,
@@ -285,7 +285,7 @@ export function buildKnocks (group) {
       geyser.t[g] -= dt
       const left = geyser.t[g],
         k = Math.min(1, left / 4) // (dying down at the end)
-      geyser.acc[g] += 80 * k * dt
+      geyser.acc[g] += 100 * k * dt
       while (geyser.acc[g] >= 1) {
         geyser.acc[g] -= 1
         const x = geyser.x[g],
@@ -326,7 +326,8 @@ export function buildKnocks (group) {
       }
       down.length = 0
     },
-    // (for the probes: how many looks and instances it draws)
+    // (for the probes: the knockables, how many looks and instances it draws)
+    list: KNOCKS,
     looks: list.length,
     count: KNOCKS.length
   }

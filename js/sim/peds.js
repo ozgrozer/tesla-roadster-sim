@@ -25,15 +25,7 @@ import { PEDSTEER } from './pedSteer.js'
 import { warm } from './traffic.js'
 import { CAR, clamp } from './constants.js'
 import { rng, BLOCKS } from './city.js'
-import {
-  LINES,
-  ringOf,
-  ringAt,
-  walkOn,
-  crossings,
-  nearestOn,
-  standBack
-} from './pavement.js'
+import { LINES, ringOf, ringAt, walkOn, crossings, nearestOn, standBack } from './pavement.js'
 
 export { ringAt, walkOn, ENV }
 let WARM = false
@@ -131,6 +123,7 @@ export class Peds {
       side: 0,
       idleT: 0,
       fleeT: 0,
+      rk: 0, rkT: 0, // (a car seen coming: what they do about it, and when: pedReact.js)
       hurry: 0,
       jay: false,
       gone: false,

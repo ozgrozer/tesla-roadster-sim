@@ -13,6 +13,7 @@ import { kerbDist } from './street.js'
 import { emitGame } from './gameEvents.js'
 import { LINES, nearestOn, blockNear } from './pavement.js'
 import { BRAWL_MIXIN } from './brawl.js'
+import { PED_REACT } from './pedReact.js'
 
 export const STATES = ['walk', 'kerb', 'wait', 'cross', 'idle', 'linger', 'flee', 'dodge', 'back', 'down', 'brawl']
 export const ACT = { look: 0, phone: 1, talk: 2 }
@@ -29,6 +30,7 @@ const near = []
 
 export const PEDBRAIN = {
   ...BRAWL_MIXIN, // (fists: brawl.js)
+  ...PED_REACT, // (a car coming: pedReact.js)
   // A threat at (x, z) for ttl s: level 1, people within r look at it and keep their distance;
   // level 2 or more (a weapon, a fight, gunfire), they run from it. Returns the threat.
   threat (x, z, r = 12, level = 2, ttl = 0.5) {
@@ -45,6 +47,7 @@ export const PEDBRAIN = {
   // once a step, before anyone moves: the threats raised, the horn, the player on foot, a jacked
   // driver's flight, and the road
   think (dt, sim, traffic, me) {
+    this.now = (this.now || 0) + dt // (the people's own clock: pedReact.js)
     const ext = this.ext
     // (the fights first: the staggered, those fighting back, the dead taken away: brawl.js)
     this.brawlStep(dt, sim.mode === 'foot' ? sim.pos : null, sim.pos)
@@ -123,7 +126,7 @@ export const PEDBRAIN = {
     this.scream++
   },
   // Out of the way of whatever is coming (th): a car on top of them faster than HIT_V knocks them
-  // down; otherwise they dive clear once they have seen it (their alertness), as crowd.js does.
+  // down; coming at them, most freeze or react too late and only some dive clear (pedReact.js).
   dodge (p, th) {
     if (p.state === 'down') return
     const dx = p.x - th.x,
@@ -134,11 +137,10 @@ export const PEDBRAIN = {
     const sp = Math.sqrt(th.vx * th.vx + th.vz * th.vz)
     if (Math.abs(along) < th.hl + 0.3 && Math.abs(side) < th.hw + 0.3 && sp > HIT_V)
       return this.knockDown(p, th, sp)
-    if (sp > 1.5 && p.state !== 'dodge') {
-      const a = (dx * th.vx + dz * th.vz) / sp
-      if ((a - th.hl) / sp > this.alertOf(p)) return // (not seen it yet)
-    }
-    CROWD.dodge.call(this, p, th)
+    // (at a crawl they step out of its way, as crowd.js has them; faster, each as they take it:
+    // pedReact.js)
+    if (sp <= HIT_V) return CROWD.dodge.call(this, p, th)
+    this.carComing(p, th, sp, dx, dz, this.now || 0)
   },
   // knocked down by th at sp m/s: thrown along with it, down a while (or for good, hit hard)
   knockDown (p, th, sp) {
