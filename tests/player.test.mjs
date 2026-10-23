@@ -178,7 +178,7 @@ test('a break-in walks round to the door, takes its time and ends seated', () =>
     t += H
   }
   assert.ok(a.done, 'finished')
-  assert.deepEqual(seen, ['arrived', 'smash', 'alarm', 'seated'])
+  assert.deepEqual(seen, ['arrived', 'smash', 'alarm', 'seated', 'shut'])
   assert.ok(t > B.BOARD.jimmy + B.BOARD.open, `took ${t.toFixed(1)} s`)
   const out = B.startExit(e, flat({ solids: () => [] }))
   const ev = []

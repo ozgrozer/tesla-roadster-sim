@@ -117983,23 +117983,24 @@ const { vehicles } = __require(300)
 const { wrapPi } = __require(2)
 
 const BOARD = {
-  walkV: 2.6, // m/s walking up to the door
+  walkV: 3.4, // m/s walking up to the door (a brisk GTA trot)
   near: 0.18, // m from a point on the way that counts as there
-  stuck: 3, // s without getting closer before it gives up walking and steps to the door
-  jimmy: 2.2, // s breaking into a parked car
-  smashAt: 0.7, // (and when, into that, a window goes)
+  stuck: 2, // s without getting closer before it gives up walking and steps to the door
+  jimmy: 0.9, // s breaking into a parked car
+  smashAt: 0.4, // (and when, into that, a window goes)
   smash: 0.5, // the share of break-ins through the window rather than the lock
   alarm: 0.45, // the share that set the alarm off
-  open: 0.6, // s for the door to open (eased in and out: render/carDoor.js)
-  pull: 1.3, // s pulling a driver out (out at pullAt)
-  pullAt: 0.55,
-  slide: 1.15, // s stepping into the opening, sitting and swinging the legs in
-  close: 0.45, // s for the door to shut
-  outSlide: 1.0, // s out of the seat: legs out, up and out of the opening
-  roadIn: 3.2, // s of the Roadster's own way in (its keys, sped up: intro.js)
-  roadOut: 2.6, // and out
+  open: 0.3, // s for the door to open (eased in and out: render/carDoor.js)
+  pull: 0.8, // s pulling a driver out (out at pullAt)
+  pullAt: 0.35,
+  slide: 0.5, // s stepping into the opening, sitting and swinging the legs in
+  close: 0.3, // s for the door to shut: sat in and driving from its start (it shuts as the car goes)
+  outSlide: 0.4, // s out of the seat: legs out, up and out of the opening
+  roadIn: 1.1, // s of the Roadster's own way in (its keys, sped up: intro.js)
+  roadOut: 0.8, // and out
+  roadClose: 0.3, // s for its door to come down behind the player
   jackV: 3, // m/s: a car slower than this can be taken from its driver
-  exitV: 6 // m/s: the most the car may still be rolling to get out
+  exitV: 6 // m/s: the most the car may still be rolling to get out (faster, E brakes it first)
 }
 
 // How the player gets into entry e: 'roadster', 'open' (unlocked, empty), 'theft' (parked, locked)
@@ -118142,7 +118143,7 @@ const LEN = a => {
     case 'out':
       return BOARD.outSlide
     case 'close':
-      return a.how === 'roadster' ? 0.6 : BOARD.close
+      return a.how === 'roadster' ? BOARD.roadClose : BOARD.close
     case 'roadster':
       return a.dir === 'in' ? BOARD.roadIn : BOARD.roadOut
   }
@@ -118153,7 +118154,8 @@ const _ctl = { x: 0, z: 0, mag: 0, run: false, jump: false },
   _w = { x: 0, z: 0 }
 // One step of it: p the player (moved along on the walk, stood still otherwise), world the feet's
 // (player.js). Returns what happened this step, in order: 'arrived', 'smash', 'alarm', 'pulled',
-// 'seated' (in: the end), 'out' (out of the seat: the feet on the ground), 'closed' (out: the end).
+// 'seated' (in: sat in, driving, the door still shutting), 'shut' (in: the end), 'out' (out of the
+// seat: the feet on the ground), 'closed' (out: the end).
 function stepBoard (a, dt, p, world) {
   const ev = []
   const e = a.entry
@@ -118213,21 +118215,48 @@ function stepBoard (a, dt, p, world) {
     if (a.phase === 'jimmy' && a.alarm) ev.push('alarm')
     if (a.dir === 'out' && (a.phase === 'out' || a.phase === 'roadster'))
       ev.push('out')
+    // (in: sat in as the door starts to shut, or at the end of the Roadster's own way in)
+    if (a.dir === 'in' && (list[i + 1] === 'close' || (a.phase === 'roadster' && i + 1 === list.length)))
+      ev.push('seated')
     if (i + 1 < list.length) {
       a.phase = list[i + 1]
       a.t = 0
     } else {
       a.done = true
-      ev.push(a.dir === 'in' ? 'seated' : 'closed')
+      ev.push(a.dir === 'in' ? 'shut' : 'closed')
     }
   }
+  return ev
+}
+
+// A move key (or the throttle) pressed while getting in or out: the rest of it skipped, GTA-quick,
+// straight to sat in (in) or the feet on the ground (out), the door left to shut behind. Returns the
+// events skipped over, as stepBoard's ('pulled' first if a driver was still to be hauled out); none
+// if it can't be hurried here (walking up, breaking in, the Roadster's own way, done already).
+function hurry (a) {
+  if (a.done || a.phase === 'close' || a.how === 'roadster') return []
+  if (a.dir === 'out') {
+    if (a.phase !== 'open' && a.phase !== 'out') return []
+    a.phase = 'close'
+    a.t = 0
+    a.hurried = true
+    return ['out']
+  }
+  if (a.phase !== 'open' && a.phase !== 'pull' && a.phase !== 'in') return []
+  const ev = []
+  if (a.how === 'jack' && (a.phase === 'open' || (a.phase === 'pull' && a.t < BOARD.pullAt)))
+    ev.push('pulled')
+  a.phase = 'close'
+  a.t = 0
+  a.hurried = true
+  ev.push('seated')
   return ev
 }
 
 // may this walk up be called off (a move key)? Not once a driver is being taken from their car.
 const cancellable = a =>
   a.dir === 'in' && a.phase === 'walk' && a.how !== 'jack'
-__export(__exports, { "BOARD": () => BOARD, "howToEnter": () => howToEnter, "sideOf": () => sideOf, "startEnter": () => startEnter, "startExit": () => startExit, "doorOf": () => doorOf, "seatShare": () => seatShare, "stepBoard": () => stepBoard, "cancellable": () => cancellable })
+__export(__exports, { "BOARD": () => BOARD, "howToEnter": () => howToEnter, "sideOf": () => sideOf, "startEnter": () => startEnter, "startExit": () => startExit, "doorOf": () => doorOf, "seatShare": () => seatShare, "stepBoard": () => stepBoard, "hurry": () => hurry, "cancellable": () => cancellable })
 })
 
 // ---- js/ui/prompt.js
