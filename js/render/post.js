@@ -143,9 +143,10 @@ export class Post {
     // trunks and the rooflines smooth instead of crawling. 4 samples, 2 on a high-density screen
     // (its pixels already small), none once the adaptive resolution has had to step well down
     // (resolution.js: the GPU is short of time) or with ?msaa=0
-    this.maxSamples = /[?&]msaa=0/.test(location.search)
+    this.hwSamples = /[?&]msaa=0/.test(location.search)
       ? 0
       : Math.min(4, renderer.capabilities.maxSamples || 0)
+    this.maxSamples = this.hwSamples // (and the quality's cap: setMaxSamples)
     this.top = Math.min(window.devicePixelRatio || 1, 2)
     this.samples = samplesFor(this.top, this.top, this.maxSamples)
     const target = new THREE.WebGLRenderTarget(1, 1, {
@@ -194,6 +195,11 @@ export class Post {
     this.renderer.setPixelRatio(r)
     this.composer.setPixelRatio(r)
     this.resize()
+  }
+  // the graphics quality's most MSAA samples (0: none, the targets single-sampled)
+  setMaxSamples (n) {
+    this.maxSamples = Math.min(this.hwSamples, n)
+    this.setSamples(samplesFor(this.renderer.getPixelRatio(), this.top, this.maxSamples))
   }
   // the frame's MSAA samples (the targets made again at their next use)
   setSamples (n) {

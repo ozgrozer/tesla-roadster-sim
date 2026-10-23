@@ -5,7 +5,9 @@
 // pops. The street lights' pools on the ground are worked out in its shaders (lampLight.js), so the
 // first LAMP_POOL lights (the street lights') are skipped there and light only what the ground's
 // shaders don't (walls, poles, trees, the props); the shops' light falls on everything near them,
-// the cars and the people going by included.
+// the cars and the people going by included. By day they are hidden, not just put out (a hidden
+// light costs the shaders nothing; warm.js compiles both), and the graphics quality keeps fewer
+// of them (render/quality.js: setCount).
 import * as THREE from 'three'
 import { LAMPS } from '../sim/city.js'
 import { LAMP_POOL, lampUp } from './lampLight.js'
@@ -23,15 +25,43 @@ export class NightLights {
       const k = i < LAMP_POOL ? LAMP : SHOP
       const l = new THREE.PointLight(k.colour, 0, k.reach, 2)
       l.userData = { spot: -1, next: -1, level: 0, power: k.power }
+      l.visible = false
       scene.add(l)
       this.lights.push(l)
     }
     this.t = 0
+    this.lit = false // shown (at night)
+    this.nLamp = LAMP_POOL // how many of each the quality keeps
+    this.nShop = SHOPS
+  }
+
+  // how many street lights' and shops' lights are kept (the rest hidden)
+  setCount (lamps, shops) {
+    this.nLamp = Math.max(0, Math.min(LAMP_POOL, lamps))
+    this.nShop = Math.max(0, Math.min(SHOPS, shops))
+    this.out()
+    this.show(this.lit)
+  }
+
+  // the kept lights shown (on) or hidden
+  show (on) {
+    this.lights.forEach((l, i) => {
+      l.visible = on && (i < LAMP_POOL ? i < this.nLamp : i - LAMP_POOL < this.nShop)
+    })
+  }
+
+  // every light put out and taken off its spot
+  out () {
+    for (const l of this.lights) {
+      l.intensity = 0
+      Object.assign(l.userData, { level: 0, spot: -1, next: -1 })
+    }
   }
 
   // the n spots nearest (x, z) that are lit (ok), as indices
   static nearest (spots, x, z, n, ok) {
     const best = []
+    if (n <= 0) return best
     for (let i = 0; i < spots.length; i++) {
       const s = spots[i],
         d = (s.x - x) ** 2 + (s.z - z) ** 2
@@ -47,12 +77,11 @@ export class NightLights {
   update (dt, camera, dark, on) {
     const ls = this.lights
     if (!on || dark < 0.02) {
-      for (const l of ls) {
-        l.intensity = 0
-        Object.assign(l.userData, { level: 0, spot: -1, next: -1 })
-      }
+      if (this.lit) this.show((this.lit = false))
+      this.out()
       return
     }
+    if (!this.lit) this.show((this.lit = true))
     this.t -= dt
     if (this.t <= 0) {
       this.t = 0.2
@@ -60,8 +89,13 @@ export class NightLights {
       const len = Math.hypot(_f.x, _f.z) || 1,
         x = camera.position.x + (_f.x / len) * 10,
         z = camera.position.z + (_f.z / len) * 10
-      this.assign(ls.slice(0, LAMP_POOL), NightLights.nearest(LAMPS, x, z, LAMP_POOL, lampUp))
-      this.assign(ls.slice(LAMP_POOL), NightLights.nearest(SHOP_SPOTS, x, z, SHOPS, () => true))
+      const nl = this.nLamp,
+        ns = this.nShop
+      this.assign(ls.slice(0, nl), NightLights.nearest(LAMPS, x, z, nl, lampUp))
+      this.assign(
+        ls.slice(LAMP_POOL, LAMP_POOL + ns),
+        NightLights.nearest(SHOP_SPOTS, x, z, ns, () => true)
+      )
     }
     for (let i = 0; i < ls.length; i++) {
       const u = ls[i].userData,

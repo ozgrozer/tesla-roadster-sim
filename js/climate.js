@@ -8,12 +8,13 @@
 // frame's pixels), remembered.
 import * as THREE from 'three'
 import { Rain } from './render/rain.js'
-import { hemi, renderer, scene, camera } from './render/scene.js'
+import { hemi, key, renderer, scene, camera } from './render/scene.js'
 import { Beams } from './render/beams.js'
 import { Mirror } from './render/mirror.js'
 import { lampLit } from './render/lampLight.js'
 import { WET } from './render/wet.js'
 import { recall, remember } from './ui/prefs.js'
+import { PRESETS, AutoQuality, guessTier, gpuName } from './render/quality.js'
 import { OPTS } from './ui/options.js'
 import { ENV, stepEnv, setHour, setWeather, WEATHERS } from './sim/env.js'
 
@@ -28,20 +29,18 @@ const TIMES = [
 const LAPSE_S = 3
 // O: the weathers it brings in, in turn (and after the last, the weather as it comes)
 const WEATHER_ORDER = ['clear', 'cloudy', 'overcast', 'rain', 'storm', 'fog']
-// Graphics quality: high has everything; medium a smaller reflection in the wet, fewer drops and at
-// most one and a half pixels to a point; low no reflection, a third of the drops and one pixel to a
-// point (and the adaptive resolution steps down from there if it must)
-export const QUALITY = {
-  high: { mirror: 0.5, rain: 1, px: 2 },
-  medium: { mirror: 0.35, rain: 0.65, px: 1.5 },
-  low: { mirror: 0, rain: 0.35, px: 1 }
-}
+// Graphics quality: the presets (render/quality.js: the pixels, MSAA, the shadow map, the real
+// lights, the reflection and the drops), or Auto, which picks one and steps down from it when the
+// frames are slow (and the adaptive resolution steps down within it first)
+export const QUALITY = PRESETS
 
 export class Climate {
   // app (its world, night and quality), hud (for the hints), RS (the Roadster), the city view (for
-  // the light) and the adaptive resolution (for the quality)
-  constructor ({ app, hud, RS, cityView, resolution }) {
-    Object.assign(this, { app, hud, RS, cityView, camera, resolution })
+  // the light and its lights), the adaptive resolution and the post-processing (for the quality)
+  constructor ({ app, hud, RS, cityView, resolution, post }) {
+    Object.assign(this, { app, hud, RS, cityView, camera, resolution, post })
+    this.auto = null // Auto's frame-time watch (render/quality.js), while the quality is Auto
+    this.preset = null // the preset in use
     this.mirror = new Mirror(renderer, scene, camera) // the street's reflection in the wet
     this.rain = new Rain(scene) // the rain and its splashes
     this.beams = new Beams(RS.body) // the headlights' beams in the rain and the fog
@@ -56,21 +55,58 @@ export class Climate {
       for (const m of [].concat(o.material || []))
         if (m.isMeshStandardMaterial && !lit.has(m)) lit.add(lampLit(m, true))
     })
-    this.quality(recall('quality', 'high'))
+    this.quality(recall('quality', 'auto'))
   }
-  // the graphics quality ('high', 'medium' or 'low'), remembered
+  // the graphics quality ('auto', 'high', 'medium' or 'low'), remembered
   quality (q) {
-    const name = QUALITY[q] ? q : 'high',
-      s = QUALITY[name],
+    const auto = !PRESETS[q]
+    if (!auto) this.auto = null
+    else if (!this.auto) {
+      const mobile = navigator.maxTouchPoints > 0 && Math.min(window.screen.width, window.screen.height) < 900
+      this.auto = new AutoQuality(guessTier(gpuName(renderer), mobile))
+    }
+    this.app.quality = auto ? 'auto' : q
+    this.usePreset(auto ? this.auto.tier : q)
+    remember('quality', this.app.quality)
+  }
+  // a preset's settings put in (what it turns off is skipped, not hidden: render/quality.js)
+  usePreset (name) {
+    const s = PRESETS[name],
       r = this.resolution
-    this.app.quality = name
+    this.preset = name
     this.mirror.scale = s.mirror
     this.rain.share = s.rain
     // (the player's own resolution, if not Auto: options.js)
     r.max = OPTS.px === 'auto' ? Math.min(window.devicePixelRatio || 1, s.px) : OPTS.px
     r.min = Math.min(r.max, 0.6)
     if (r.ratio > r.max) r.set(r.max, 2)
-    remember('quality', name)
+    this.post?.setMaxSamples(s.msaa)
+    const px = Math.min(s.shadow, renderer.capabilities.maxTextureSize >= 4096 ? 3072 : 2048)
+    if (key.shadow.mapSize.x !== px) {
+      key.shadow.mapSize.set(px, px)
+      key.shadow.map?.dispose()
+      key.shadow.map = null // (made again at the next frame, at the new size)
+    }
+    this.syncLamps()
+  }
+  // the city's real lights kept to the preset's number (the city is built later, at times)
+  syncLamps () {
+    const l = this.cityView.daylight?.lamps,
+      s = PRESETS[this.preset]
+    if (!l || l.preset === this.preset) return
+    l.setCount(s.lamps, s.shops)
+    l.preset = this.preset
+  }
+  // what the quality is now (for the checks and the stats)
+  qualityState () {
+    return {
+      quality: this.app.quality,
+      preset: this.preset,
+      samples: this.post?.samples,
+      shadow: key.shadow.mapSize.x,
+      lights: this.cityView.daylight?.lamps.lights.filter(l => l.visible).length,
+      mirror: this.mirror.scale
+    }
   }
   // L: the clock runs on fast (a few seconds) to the next time of day
   skipTime () {
@@ -114,6 +150,9 @@ export class Climate {
   // start; city: whether the car is in the city (the clock and the weather only run there)
   update (dt, world, clock, city) {
     const { RS, app, rain, beams } = this
+    const to = this.auto?.update(dt, this.resolution)
+    if (to) this.usePreset(to)
+    this.syncLamps()
     if (!city) {
       rain.update(0)
       beams.update(false)

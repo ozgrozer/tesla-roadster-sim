@@ -103,7 +103,11 @@ function as (cityView, RS, look, fn) {
   if (cityView.on !== look.city) cityView.show(look.city)
   if (look.city && cityView.night !== look.night) cityView.setNight(look.night)
   RS.headlights.visible = !!(look.city && look.night)
+  // (the real lights shown at night only: the shaders have a version with them and one without)
+  const lamps = cityView.daylight?.lamps
+  lamps?.show(!!(look.city && look.night))
   const out = fn()
+  lamps?.show(lamps.lit)
   if (cityView.dark !== was.dark) cityView.setDark(was.dark)
   if (cityView.cars) cityView.cars.night = was.cars
   if (cityView.on !== was.city) cityView.show(was.city)

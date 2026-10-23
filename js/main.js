@@ -86,11 +86,11 @@ const app = {
   wheelAudio: 0,
   lastBump: 0,
   pilotHorn: false,
-  quality: 'high', // graphics quality (climate.js)
+  quality: 'auto', // graphics quality (climate.js)
   night: false // the city at night (ENV.night: sim/env.js)
 }
 // the clock and the weather, the rain, the wet street and the graphics quality (climate.js)
-const climate = new Climate({ app, hud, RS, cityView, resolution })
+const climate = new Climate({ app, hud, RS, cityView, resolution, post })
 
 function setAuto (on) {
   app.auto = on
