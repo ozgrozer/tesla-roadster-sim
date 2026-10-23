@@ -114,6 +114,10 @@ async function firstUse () {
   }
 }
 const NOTHING = new THREE.Object3D() // (compiling it only sets up the lights)
+const EXTRAS = []
+// f() returns meshes (in the scene, hidden) to be compiled with the city's looks: the meshes of
+// something made on its first use (a city car's door, carDoor.js), made for the warm-up instead
+export const alsoWarm = f => EXTRAS.push(f)
 
 // run fn with the scene switched to a look ({ city, night }) and back; returns what fn returns.
 // (Showing the city asks for its sun shadow to be drawn again; nothing in it has moved, so that is
@@ -132,7 +136,17 @@ function as (cityView, RS, look, fn) {
   // (the real lights shown at night only: the shaders have a version with them and one without)
   const lamps = cityView.daylight?.lamps
   lamps?.show(!!(look.city && look.night))
+  // (the walker, hidden while driving: compiling skips what is hidden, so its programs were linked
+  // the first time the player got out, and again the first time at night)
+  // (and what is only made and shown the first time it is needed: alsoWarm)
+  const walker = RS.optimus?.root,
+    walking = walker?.visible
+  if (walker) walker.visible = true
+  const extra = look.city ? EXTRAS.flatMap(f => f()).filter(m => !m.visible) : []
+  for (const m of extra) m.visible = true
   const out = fn()
+  for (const m of extra) m.visible = false
+  if (walker) walker.visible = walking
   lamps?.show(lamps.lit)
   if (cityView.dark !== was.dark) cityView.setDark(was.dark)
   if (cityView.cars) cityView.cars.night = was.cars

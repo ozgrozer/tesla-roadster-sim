@@ -115254,6 +115254,10 @@ async function firstUse () {
   }
 }
 const NOTHING = new THREE.Object3D() // (compiling it only sets up the lights)
+const EXTRAS = []
+// f() returns meshes (in the scene, hidden) to be compiled with the city's looks: the meshes of
+// something made on its first use (a city car's door, carDoor.js), made for the warm-up instead
+const alsoWarm = f => EXTRAS.push(f)
 
 // run fn with the scene switched to a look ({ city, night }) and back; returns what fn returns.
 // (Showing the city asks for its sun shadow to be drawn again; nothing in it has moved, so that is
@@ -115272,7 +115276,17 @@ function as (cityView, RS, look, fn) {
   // (the real lights shown at night only: the shaders have a version with them and one without)
   const lamps = cityView.daylight?.lamps
   lamps?.show(!!(look.city && look.night))
+  // (the walker, hidden while driving: compiling skips what is hidden, so its programs were linked
+  // the first time the player got out, and again the first time at night)
+  // (and what is only made and shown the first time it is needed: alsoWarm)
+  const walker = RS.optimus?.root,
+    walking = walker?.visible
+  if (walker) walker.visible = true
+  const extra = look.city ? EXTRAS.flatMap(f => f()).filter(m => !m.visible) : []
+  for (const m of extra) m.visible = true
   const out = fn()
+  for (const m of extra) m.visible = false
+  if (walker) walker.visible = walking
   lamps?.show(lamps.lit)
   if (cityView.dark !== was.dark) cityView.setDark(was.dark)
   if (cityView.cars) cityView.cars.night = was.cars
@@ -115306,7 +115320,7 @@ function shadows () {
     cam[k] = was[k]
   cam.updateProjectionMatrix()
 }
-__export(__exports, { "warmUp": () => warmUp })
+__export(__exports, { "warmUp": () => warmUp, "alsoWarm": () => alsoWarm })
 })
 
 // ---- js/render/damage.js
@@ -120075,6 +120089,15 @@ class CarDoors {
     this.angle = 0
     this.mat = new THREE.Matrix4() // the car's body, as drawn
   }
+  // a door's meshes, hidden, for the warm-up to compile (warm.js alsoWarm): the first door opened
+  // linked five programs mid-play, and the first at night six more. One car's door has them all
+  // (every type's paint is one program); made apart from the cache, its span only a stand-in's
+  warmable () {
+    if (this.warm || !this.cars?.types?.length) return this.warm?.all || []
+    this.warm = this.parts(0, -1, { doorSpan: [-0.66, 0.44] })
+    this.cache.delete(0)
+    return this.warm.all
+  }
   // the meshes for type k on side sd (made once each)
   parts (k, sd, e) {
     const key = k * 2 + (sd > 0 ? 1 : 0)
@@ -121766,7 +121789,7 @@ const { buildRoadster, updateRoadster } = __require(282)
 const { Post } = __require(195)
 const { Climate } = __require(286)
 const { Resolution } = __require(287)
-const { warmUp } = __require(288)
+const { warmUp, alsoWarm } = __require(288)
 const { Damage } = __require(289)
 const { MAT, scene, camera, canvas } = __require(84)
 const { renderer, followKeyLight } = __require(84)
@@ -122188,6 +122211,7 @@ function frame (now) {
   if (firstFrame) {
     firstFrame = false
     hud.hideLoading()
+    alsoWarm(() => foot.view.doors.warmable()) // (a city car's door, made on its first opening)
     post.warmed = warmUp(cityView, RS, post) // every shader compiled up front (warm.js)
   }
 }

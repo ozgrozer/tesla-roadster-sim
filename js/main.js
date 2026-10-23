@@ -28,7 +28,7 @@ import { buildRoadster, updateRoadster } from './render/roadster.js'
 import { Post } from './render/post.js'
 import { Climate } from './climate.js'
 import { Resolution } from './render/resolution.js'
-import { warmUp } from './render/warm.js'
+import { warmUp, alsoWarm } from './render/warm.js'
 import { Damage } from './render/damage.js'
 import { MAT, scene, camera, canvas } from './render/scene.js'
 import { renderer, followKeyLight } from './render/scene.js'
@@ -450,6 +450,7 @@ function frame (now) {
   if (firstFrame) {
     firstFrame = false
     hud.hideLoading()
+    alsoWarm(() => foot.view.doors.warmable()) // (a city car's door, made on its first opening)
     post.warmed = warmUp(cityView, RS, post) // every shader compiled up front (warm.js)
   }
 }

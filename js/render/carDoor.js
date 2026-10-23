@@ -113,6 +113,15 @@ export class CarDoors {
     this.angle = 0
     this.mat = new THREE.Matrix4() // the car's body, as drawn
   }
+  // a door's meshes, hidden, for the warm-up to compile (warm.js alsoWarm): the first door opened
+  // linked five programs mid-play, and the first at night six more. One car's door has them all
+  // (every type's paint is one program); made apart from the cache, its span only a stand-in's
+  warmable () {
+    if (this.warm || !this.cars?.types?.length) return this.warm?.all || []
+    this.warm = this.parts(0, -1, { doorSpan: [-0.66, 0.44] })
+    this.cache.delete(0)
+    return this.warm.all
+  }
   // the meshes for type k on side sd (made once each)
   parts (k, sd, e) {
     const key = k * 2 + (sd > 0 ? 1 : 0)
