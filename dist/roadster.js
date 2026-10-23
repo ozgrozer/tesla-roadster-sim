@@ -114613,6 +114613,9 @@ const TIERS = ['low', 'medium', 'high']
 // a first guess at the preset from the WebGL renderer's name (and the screen)
 function guessTier (name = '', mobile = false) {
   if (/swiftshader|llvmpipe|softpipe|software|basic render/i.test(name)) return 'low'
+  // (Apple silicon by name in Chrome, 'ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Max, ...)':
+  // High, every M chip; Safari's masked 'Apple GPU' could be a phone's: Medium)
+  if (/apple m\d/i.test(name)) return 'high'
   if (mobile || /intel|mali|adreno|powervr|videocore|apple gpu|uhd|iris/i.test(name))
     return 'medium'
   return 'high'
@@ -114661,7 +114664,10 @@ class AutoQuality {
     // slow: slower than the bar, and than any pace the browser keeps (a 30 Hz cap isn't the GPU)
     // (the resolution steps down first; frames it can't help, the CPU's, wait twice as long)
     const slow = ms > Math.max(SLOW_MS, pace * 1.2)
-    this.slow = slow ? this.slow + dt * (res.ratio < res.max * 0.9 ? 1 : 0.5) : 0
+    // (and frames the page's own work fills, the CPU's, a quarter as fast: a busy street, the
+    // traffic or the people, isn't the graphics; a preset down still sheds draw calls, the mirror's)
+    const rate = res.cpuBound ? 0.25 : res.ratio < res.max * 0.9 ? 1 : 0.5
+    this.slow = slow ? this.slow + dt * rate : 0
     this.fast = !pace && ms < FAST_MS && res.ratio >= res.max - 1e-3 ? this.fast + dt : 0
     let to = null
     if (this.slow > SLOW_S && i > 0) {
@@ -114985,6 +114991,7 @@ class Resolution {
     this.ceilFails = 0 // times in a row it was found
     this.ceilWas = 0
     this.upAt = -1e9 // this.clock at the last step up
+    this.cpuBound = false // the last look: frames slow with the page's own work filling them
   }
   // the ratio r found too high: a ceiling for a while, longer each time it is found again
   tooHigh (r) {
@@ -115058,6 +115065,7 @@ class Resolution {
       fast = frame < (this.pace ? this.pace * 1.05 : FAST)
     // without a timer, a slow frame is the GPU's doing unless the page's own work filled it
     const gpuSlow = gpu === null ? busy < BUSY * frame : gpu > GPU_SLOW
+    this.cpuBound = slow && !gpuSlow // (for Auto, quality.js: fewer pixels or effects wouldn't help)
     if (this.trial && this.check(frame, slow && gpuSlow)) return
     if (this.trial) return // (a step up still being checked)
     const next = Math.min(this.max, this.ratio * UP)

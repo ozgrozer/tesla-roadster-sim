@@ -21,6 +21,9 @@ test('guess: software GL low, laptop chips medium, the rest high', () => {
   assert.equal(guessTier('ANGLE (Intel, Intel(R) UHD Graphics 620 Direct3D11)'), 'medium')
   assert.equal(guessTier('ANGLE (NVIDIA, NVIDIA GeForce RTX 3060)'), 'high')
   assert.equal(guessTier('Apple M2'), 'high')
+  assert.equal(guessTier('ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Max, Unspecified Version)'), 'high')
+  assert.equal(guessTier('ANGLE (Apple, ANGLE Metal Renderer: Apple M1, Unspecified Version)'), 'high')
+  assert.equal(guessTier('Apple GPU'), 'medium')
   assert.equal(guessTier('Adreno (TM) 740'), 'medium')
   assert.equal(guessTier('', true), 'medium')
 })
@@ -62,4 +65,17 @@ test('auto: frames the resolution cannot help (it is still at the top) wait twic
     return s
   }
   assert.ok(t(res(40, { ratio: 2 })) > 1.8 * t(res(40, { ratio: 1 })))
+})
+
+test('auto: slow frames the CPU fills (cpuBound) take four times as long to take it down', () => {
+  const t = cpuBound => {
+    const b = new AutoQuality('high')
+    b.wait = 0
+    const r = res(30, { ratio: 1, max: 2, cpuBound })
+    let s = 0
+    while (!b.update(1 / 60, r) && s < 60) s += 1 / 60
+    return s
+  }
+  assert.ok(Math.abs(t(false) - 3) < 0.1, String(t(false)))
+  assert.ok(Math.abs(t(true) - 12) < 0.2, String(t(true)))
 })

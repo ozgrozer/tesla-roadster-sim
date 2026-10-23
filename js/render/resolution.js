@@ -61,6 +61,7 @@ export class Resolution {
     this.ceilFails = 0 // times in a row it was found
     this.ceilWas = 0
     this.upAt = -1e9 // this.clock at the last step up
+    this.cpuBound = false // the last look: frames slow with the page's own work filling them
   }
   // the ratio r found too high: a ceiling for a while, longer each time it is found again
   tooHigh (r) {
@@ -134,6 +135,7 @@ export class Resolution {
       fast = frame < (this.pace ? this.pace * 1.05 : FAST)
     // without a timer, a slow frame is the GPU's doing unless the page's own work filled it
     const gpuSlow = gpu === null ? busy < BUSY * frame : gpu > GPU_SLOW
+    this.cpuBound = slow && !gpuSlow // (for Auto, quality.js: fewer pixels or effects wouldn't help)
     if (this.trial && this.check(frame, slow && gpuSlow)) return
     if (this.trial) return // (a step up still being checked)
     const next = Math.min(this.max, this.ratio * UP)
