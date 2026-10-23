@@ -336,7 +336,9 @@ export class Daylight {
     GRADE.uShadow.value.set(_g[2], _g[3], _g[4])
     GRADE.uHigh.value.set(_g[5], _g[6], _g[7])
     GRADE.uVignette.value = _g[8]
-    set(GRADE.uBalance.value, BALANCE, a).lerp(_c.setRGB(1, 1, 1), LOOK.on ? dull : 1)
+    at(BALANCE, a, _v)
+    const keep = LOOK.on ? 1 - dull : 0
+    GRADE.uBalance.value.set(1 + (_v[0] - 1) * keep, 1 + (_v[1] - 1) * keep, 1 + (_v[2] - 1) * keep)
     // ---- the ground in the rain (wet.js)
     WET.uWet.value = e.wet
     WET.uPool.value = e.pool
