@@ -369,3 +369,15 @@ W3, explorables (72150f3, 8dd285f, aab6f35):
 - npm test 349/349. The career, roam and bughunt playtests are clean: 0 issues, 0 console errors.
 - Shots: /workspace/shots/v5/int/01..06 (drive, Settings, Controls, getting in with F, walkers,
   night on Medium); the playtest runs are in qa/.
+
+## v6: camera start, everything on the pavement breakable, peds you can hit
+
+- First frame: the intro was placed off the car before RS.car was synced (882 m away); the follow
+  camera now starts on the car at spawn (also after respawn and ?spawn=). tools/playtest/firstFrame.mjs.
+- Street furniture (sim/knockables.js, render/cityKnocks.js): hydrants (a geyser), benches, bins,
+  wheelie bins, crates, meters, news boxes, mailboxes, scopes, bus shelters are knockable, instanced,
+  pooled movers; tools/sim/propAudit.mjs: pavement types breakable 6/17 (78.2% of 14492) -> 17/17 (100%).
+- Peds (sim/pedReact.js): no sensing past ~18 m / 1.7 s; most freeze, stumble or react late, ~1 in 5
+  dive after 0.4-0.8 s at <= 3.6 m/s; pavement/prop-knock scares now local. K22's speed loss was
+  solid kerb-side furniture (news boxes, meters, hydrants), not the kerb. tools/sim/pedHits.mjs aimed
+  hit rate: 58% -> 97% (40 km/h 53% -> 100%, 70 km/h 63% -> 94%); unaimed 88%.
