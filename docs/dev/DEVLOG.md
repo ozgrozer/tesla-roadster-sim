@@ -351,3 +351,21 @@ W3, explorables (72150f3, 8dd285f, aab6f35):
   has begun. NightLights.nearest no longer crashes when it has 0 lights. 0 console errors and 0
   stuck states across 17 abuse steps. npm test 346/346, and the career and roam playtests are clean.
 - Shots and data: /workspace/shots/v5/core/ (perf/, qa/, bughunt.json).
+
+## v5 integration (gta-v5 = gta-v5-core + gta-v5-ux; pushed as gta-v5-open-world)
+
+- Merged with no code conflicts. KNOWN_ISSUES numbers: K30-31 are ux's, the core's Auto note is
+  K32, and dist was rebuilt.
+- The Settings tab's Quality row now offers Auto · Low · Medium · High, with Auto as the default.
+  The car and on-foot hints already show the keymap's key (F to get in and out).
+- bughunt.mjs uses GTA V's keys (F, and Y, L and O with ?debug=1). The new
+  tools/playtest/v5int.mjs checks:
+  - F gets out of and back into all 14 car kinds;
+  - steering through real keys (Roadster at about 85 km/h: +25/-26 degrees per second; a sedan at
+    about 32 km/h: +71 degrees, and its right turn hit a wall);
+  - the punch on R and on the left button (with pointer lock);
+  - the pause menu: Settings with Quality, Controls, and Debug, which has Camera, Sound,
+    Autopilot, Slow and Test site, the old top bar's controls.
+- npm test 349/349. The career, roam and bughunt playtests are clean: 0 issues, 0 console errors.
+- Shots: /workspace/shots/v5/int/01..06 (drive, Settings, Controls, getting in with F, walkers,
+  night on Medium); the playtest runs are in qa/.
