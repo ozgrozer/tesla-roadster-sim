@@ -16,6 +16,9 @@ import * as THREE from 'three'
 import { LAYER } from './geo.js'
 import { rng } from '../sim/city.js'
 import { scene, pmrem, renderer, hemi, key, keyOffset } from './scene.js'
+import { aerialFog } from './aerialFog.js'
+
+aerialFog() // (the haze thinning with height: before any material is compiled)
 
 const v3 = () => ({ value: new THREE.Vector3() })
 const c3 = () => ({ value: new THREE.Color() })
