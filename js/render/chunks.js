@@ -41,7 +41,38 @@ export const DETAIL_FAR = {
   'date palms': 900,
   'fan palms': 1150 // (the skyline's palms: their crowns still read at a kilometre)
 }
+// and every other instanced detail by its own size (after mrdoob/slop-newyork js/scene-culling.js,
+// MIT, (c) 2026 Mr.doob): left out once a typical instance of it (the 90th percentile of their
+// middle and largest sides, s m) would be under a few pixels, past s * PER_M m; never nearer than
+// MIN_FAR, and kept however far once that is past MAX_FAR. Lit-up things (unlit materials: lamp
+// heads, lenses) are seen three times as far.
+const PER_M = 1100,
+  MIN_FAR = 300,
+  MAX_FAR = 2000
 const _c = new THREE.Vector3()
+const _s = new THREE.Vector3()
+export function sizeFar (m) {
+  if (!m.isInstancedMesh || !m.count) return Infinity
+  const g = m.geometry
+  if (!g.boundingBox) g.computeBoundingBox()
+  g.boundingBox.getSize(_s)
+  const e = m.instanceMatrix.array,
+    step = Math.max(1, Math.floor(m.count / 256)),
+    sizes = []
+  for (let i = 0; i < m.count; i += step) {
+    const o = i * 16,
+      d = [
+        Math.hypot(e[o], e[o + 1], e[o + 2]) * _s.x,
+        Math.hypot(e[o + 4], e[o + 5], e[o + 6]) * _s.y,
+        Math.hypot(e[o + 8], e[o + 9], e[o + 10]) * _s.z
+      ].sort((p, q) => p - q)
+    sizes.push(Math.sqrt(d[1] * d[2]))
+  }
+  sizes.sort((p, q) => p - q)
+  const glow = m.material?.isMeshBasicMaterial ? 3 : 1,
+    far = Math.max(MIN_FAR, (sizes[Math.floor(sizes.length * 0.9)] || 0) * PER_M * glow)
+  return far > MAX_FAR ? Infinity : far
+}
 // stream mesh m: left out past far m (Infinity: only once the fog has it); bounds fitted if not yet
 export function streamed (m, far = Infinity) {
   if (m.userData.streamed) return
@@ -58,7 +89,7 @@ export function stream (camera, density = 0) {
     // (each detail's own distance taken the first time: names are given after the mesh is made)
     if (!e.named) {
       e.named = true
-      e.far = Math.min(e.far, DETAIL_FAR[e.m.name] ?? Infinity)
+      e.far = Math.min(e.far, DETAIL_FAR[e.m.name] ?? sizeFar(e.m))
     }
     const { m, far } = e
     const b = m.isInstancedMesh ? m.boundingSphere : m.geometry.boundingSphere

@@ -14,6 +14,7 @@ import { LAYER } from './geo.js'
 import { buildEdges } from './cityEdges.js'
 import { scene, site, renderer } from './scene.js'
 import { CityShadow } from './sunShadow.js'
+import { ShadowProxies, statics } from './shadowProxy.js'
 import { raycast, BUILDINGS, OUTER } from '../sim/city.js'
 import { PedView } from './peds.js'
 import { TrafficView } from './traffic.js'
@@ -115,6 +116,7 @@ export class CityView {
     this.stopSigns = buildStopSigns(g) // (the all-way stops' signs and legends: cityStopSigns.js)
     this.tokens = buildTokens(g) // (the hidden tokens, turning: cityTokens.js)
     streamCity(g)
+    const still = statics(g) // (the casters the key light's stand-ins are made of: shadowProxy.js)
     this.interiors = new InteriorView(g) // (the rooms under the city, the doors: interiors/)
     VIEW.interiors = this.interiors
     const top = Math.max(...BUILDINGS.map(b => b.h)) + 30 // (and the masts on top)
@@ -145,6 +147,7 @@ export class CityView {
     this.people = new PedView(g)
     depthMaterials(g)
     groundLayer(g)
+    this.proxies = new ShadowProxies(g, still, renderer, () => renderer.getRenderTarget() === this.shadow.target)
     g.visible = false
     scene.add(g)
     this.group = g
