@@ -171,7 +171,8 @@ test('the Roadster on the pavement sends people running, and they calm down afte
   let most = 0,
     screams = 0,
     under0 = 0
-  for (let i = 0; i < 20 / H; i++) {
+  // (24 s: anyone it knocked down gets up, back to the pavement and runs off before calming down)
+  for (let i = 0; i < 24 / H; i++) {
     const c = makeControls()
     if (tr.t < 2) c.throttle = 0.12
     else c.brake = 1

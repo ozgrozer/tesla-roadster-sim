@@ -414,7 +414,7 @@ export class Peds {
       // hurrying back to the pavement
       p.gait += (1.4 - p.gait) * Math.min(1, dt * 3)
       ringAt(p.backRing, p.backS, P)
-      if (this.toward(p, P.x, P.z, 2.6, dt)) {
+      if (this.toward(p, P.x, P.z, 2.6, dt) || (p.t > 3 && this.pickBack(p))) {
         p.ring = p.backRing
         p.s = p.backS
         p.state = 'walk'

@@ -11,7 +11,7 @@ import { CROWD } from './crowd.js'
 import { query } from './city.js'
 import { kerbDist } from './street.js'
 import { emitGame } from './gameEvents.js'
-import { LINES, nearestOn, blockNear } from './pavement.js'
+import { LINES, nearestOn, blockNear, ringAt } from './pavement.js'
 import { BRAWL_MIXIN } from './brawl.js'
 import { PED_REACT } from './pedReact.js'
 
@@ -110,7 +110,23 @@ export const PEDBRAIN = {
     p.backRing = g
     p.backS = nearestOn(g, p.x, p.z)
     p.roadT = 0
+    p.t = 0
     p.cross = p.aside = null
+  },
+  // held off the way back (a car stopped over it): round it, to the pavement a few metres along
+  pickBack (p) {
+    const P = this.P,
+      R = p.backRing
+    ringAt(R, p.backS, P)
+    const ox = P.x,
+      oz = P.z,
+      s = nearestOn(R, p.x, p.z)
+    ringAt(R, s + 4, P)
+    const far = Math.hypot(P.x - ox, P.z - oz)
+    ringAt(R, s - 4, P)
+    p.backS = Math.hypot(P.x - ox, P.z - oz) > far ? s - 4 : s + 4
+    p.t = 0
+    return false
   },
   // someone running off from (x, z) along their pavement
   run (p, x, z) {

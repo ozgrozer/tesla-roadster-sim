@@ -82157,7 +82157,7 @@ const { CROWD } = __require(137)
 const { query } = __require(38)
 const { kerbDist } = __require(48)
 const { emitGame } = __require(70)
-const { LINES, nearestOn, blockNear } = __require(97)
+const { LINES, nearestOn, blockNear, ringAt } = __require(97)
 const { BRAWL_MIXIN } = __require(140)
 const { PED_REACT } = __require(142)
 
@@ -82256,7 +82256,23 @@ const PEDBRAIN = {
     p.backRing = g
     p.backS = nearestOn(g, p.x, p.z)
     p.roadT = 0
+    p.t = 0
     p.cross = p.aside = null
+  },
+  // held off the way back (a car stopped over it): round it, to the pavement a few metres along
+  pickBack (p) {
+    const P = this.P,
+      R = p.backRing
+    ringAt(R, p.backS, P)
+    const ox = P.x,
+      oz = P.z,
+      s = nearestOn(R, p.x, p.z)
+    ringAt(R, s + 4, P)
+    const far = Math.hypot(P.x - ox, P.z - oz)
+    ringAt(R, s - 4, P)
+    p.backS = Math.hypot(P.x - ox, P.z - oz) > far ? s - 4 : s + 4
+    p.t = 0
+    return false
   },
   // someone running off from (x, z) along their pavement
   run (p, x, z) {
@@ -84309,7 +84325,7 @@ class Peds {
       // hurrying back to the pavement
       p.gait += (1.4 - p.gait) * Math.min(1, dt * 3)
       ringAt(p.backRing, p.backS, P)
-      if (this.toward(p, P.x, P.z, 2.6, dt)) {
+      if (this.toward(p, P.x, P.z, 2.6, dt) || (p.t > 3 && this.pickBack(p))) {
         p.ring = p.backRing
         p.s = p.backS
         p.state = 'walk'
