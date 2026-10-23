@@ -11,6 +11,7 @@ import * as THREE from 'three'
 
 export const WET = {
   uWet: { value: 0 },
+  uDamp: { value: 0 }, // dry weather's dampness by the hour (daylight.js; roadSurface.js)
   uPool: { value: 0 },
   uRain: { value: 0 },
   uRainT: { value: 0 },
@@ -56,7 +57,7 @@ export function puddleAt (x, z, pool) {
 }
 
 export const PUDDLE_GLSL = `
-  uniform float uWet, uPool, uRain, uRainT, uReflOn;
+  uniform float uWet, uDamp, uPool, uRain, uRainT, uReflOn;
   uniform sampler2D tReflect;
   float wHash (int ix, int iz, int k) {
     uint h = uint(ix ^ 0x27d4eb2d) * 0x9e3779b1u;

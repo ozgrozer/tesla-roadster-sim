@@ -12,6 +12,7 @@ import { hemi, renderer, scene, camera } from './render/scene.js'
 import { Beams } from './render/beams.js'
 import { Mirror } from './render/mirror.js'
 import { lampLit } from './render/lampLight.js'
+import { WET } from './render/wet.js'
 import { recall, remember } from './ui/prefs.js'
 import { OPTS } from './ui/options.js'
 import { ENV, stepEnv, setHour, setWeather, WEATHERS } from './sim/env.js'
@@ -164,9 +165,10 @@ export class Climate {
     if (w !== 'city') this.wetPaint(0)
   }
   // just before the frame is drawn: the street's reflection, while it is wet (off the city, and
-  // dry, nothing)
+  // dry, nothing), or damp enough at night for its pools to hold the lights (on high only)
   reflect (city) {
-    this.mirror.render(city ? ENV.wet : 0)
+    const damp = this.mirror.scale >= 0.5 && WET.uDamp.value > 0.45 ? WET.uDamp.value : 0
+    this.mirror.render(city ? Math.max(ENV.wet, damp) : 0)
   }
   // The Roadster's paint glossier in the wet: its clear coat (every material on it that has one)
   // thicker and smoother as the rain soaks it, and back as it dries (the test site is dry: 0)

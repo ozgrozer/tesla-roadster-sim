@@ -4,7 +4,10 @@
 // across it, and a concrete gutter along every kerb that follows the kerb round the corners. All of
 // it worked out in the shader from where on the grid a point is, so it lines up with the lanes. In
 // the rain (wet.js) it soaks dark and smooth and mirrors the street, puddles fill its dips and run
-// along its gutters, and the rain rings the water in them.
+// along its gutters, and the rain rings the water in them. And it is seldom bone dry even without
+// the rain (WET.uDamp, by the hour: damp patches, a glossy film and a few shallow pools, most at
+// night; the masks adapted from mrdoob/slop-newyork js/tsl-materials.js roadWetMasks, MIT, (c) 2026
+// Mr.doob).
 import * as THREE from 'three'
 import { WET, PUDDLE_GLSL } from './wet.js'
 import {
@@ -55,7 +58,7 @@ export function roadMaterial (opts) {
           return mix(mix(rHash(i), rHash(i + vec2(1.0, 0.0)), u.x),
             mix(rHash(i + vec2(0.0, 1.0)), rHash(i + vec2(1.0, 1.0)), u.x), u.y);
         }
-        float gTrack = 0.0, gGutter = 0.0, gTar = 0.0;`
+        float gTrack = 0.0, gGutter = 0.0, gTar = 0.0, gDamp = 0.0, gPool = 0.0, gFilm = 0.0;`
       )
       .replace(
         '#include <map_fragment>',
@@ -128,6 +131,17 @@ export function roadMaterial (opts) {
             gSlope = (vec2(rNoise(p * 11.0), rNoise(p * 11.0 + 9.1)) - 0.5) * 0.03 * (1.0 - gWater);
             if (uRain > 0.01 && gWater > 0.01) gSlope += ripples(p, uRainT) * uRain * gWater;
           }
+          // dry weather's damp: the low spots of a field of noise darken first, then hold a film of
+          // water, the field's level falling as the damp rises so the pools grow and merge
+          if (uDamp > 0.0) {
+            float fld = 0.52 * rNoise(p * vec2(0.095, 0.075)) + 0.34 * rNoise(p * vec2(0.25, 0.22) + vec2(19.4, 11.8))
+              + 0.14 * rNoise(p * 0.68 + vec2(-7.3, 29.1));
+            float lvl = mix(0.86, 0.56, clamp((uDamp - 0.1) / 0.55, 0.0, 1.0));
+            gDamp = smoothstep(lvl - 0.09, lvl - 0.015, fld) * (1.0 - uWet);
+            gPool = smoothstep(lvl, lvl + 0.022, fld) * smoothstep(0.1, 0.22, uDamp) * (1.0 - uWet);
+            gFilm = smoothstep(0.2, 0.8, uDamp) * (1.0 - uWet);
+            diffuseColor.rgb *= mix(mix(1.0, 0.72, gDamp), 0.6, gPool) * mix(1.0, 0.86, gFilm);
+          }
         }`
       )
       .replace(
@@ -135,7 +149,9 @@ export function roadMaterial (opts) {
         `#include <roughnessmap_fragment>
         roughnessFactor = clamp(roughnessFactor - 0.2 * gTrack - 0.45 * gTar + 0.05 * gGutter, 0.3, 1.0);
         roughnessFactor = mix(roughnessFactor, 0.26 - 0.1 * gTrack, uWet * 0.92);
-        roughnessFactor = mix(roughnessFactor, 0.03, gWater);`
+        roughnessFactor = mix(roughnessFactor, 0.03, gWater);
+        roughnessFactor = mix(roughnessFactor, 0.4, max(gFilm * 0.5, gDamp * 0.8));
+        roughnessFactor = mix(roughnessFactor, 0.08, gPool);`
       )
       .replace(
         '#include <normal_fragment_maps>',
@@ -149,7 +165,8 @@ export function roadMaterial (opts) {
         #if defined( RE_IndirectSpecular )
         // the street mirrored in the wet: the reflection from below the road (mirror.js) in place
         // of the sky's, drawn out along the view the rougher the surface, rippled where it is water
-        if (uReflOn > 0.5 && uWet > 0.01) {
+        float wM = max(uWet, max(gPool, gFilm * gDamp * 0.6));
+        if (uReflOn > 0.5 && wM > 0.01) {
           vec2 ruv = vRefl.xy / vRefl.w + gSlope * 0.06;
           // (blurred by the target's mipmaps the rougher it is, and drawn out along the view)
           float lod = clamp((material.roughness - 0.05) * 15.0, 0.0, 4.5);
@@ -157,11 +174,11 @@ export function roadMaterial (opts) {
           vec3 rf = textureLod(tReflect, ruv, lod).rgb * 0.4;
           rf += textureLod(tReflect, ruv + vec2(0.0, spread), lod).rgb * 0.3;
           rf += textureLod(tReflect, ruv - vec2(0.0, spread), lod).rgb * 0.3;
-          radiance = mix(radiance, rf, smoothstep(0.02, 0.35, uWet));
+          radiance = mix(radiance, rf, smoothstep(0.02, 0.35, wM));
         }
         #endif`
       )
   }
-  m.customProgramCacheKey = () => `road wet ${N} ${PITCH}`
+  m.customProgramCacheKey = () => `road wet damp ${N} ${PITCH}`
   return m
 }
