@@ -424,7 +424,7 @@ function frame (now) {
   tween.apply(Math.min(1, acc / H), city)
   const walking = foot.frame(dt, Math.min(1, acc / H), clock)
   updateRoadster(RS, sim, foot.inRoadster() ? app.lastCtl : HOLD, dt)
-  followKeyLight(app.focus ? app.focus.pos : app.sim.pos)
+  followKeyLight(app.focus ? app.focus.pos : app.sim.pos, camera)
   const fx = polish.frame(dt) // (the car the player drives: playerCar.js, polish.js)
   updateSkids(fx, foot.seen())
   updateNozzles(RS, sim)

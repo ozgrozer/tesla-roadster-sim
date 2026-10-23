@@ -245,12 +245,14 @@ export const hemi = new THREE.HemisphereLight(0x8394b8, 0x0b0b0d, 0.28)
 scene.add(hemi)
 export const key = new THREE.DirectionalLight(0xe4ebff, 1.15)
 key.castShadow = true
-key.shadow.mapSize.set(2048, 2048)
+// (3072 texels over 72 m where the card allows: a texel 2.3 cm, and the box set ahead of the camera)
+const SHADOW_PX = renderer.capabilities.maxTextureSize >= 4096 ? 3072 : 2048
+key.shadow.mapSize.set(SHADOW_PX, SHADOW_PX)
 Object.assign(key.shadow.camera, {
-  left: -30,
-  right: 30,
-  top: 30,
-  bottom: -30,
+  left: -36,
+  right: 36,
+  top: 36,
+  bottom: -36,
   near: 1,
   far: 140
 })
@@ -370,7 +372,18 @@ const _sr = new THREE.Vector3(),
   _sf = new THREE.Vector3(),
   _sp = new THREE.Vector3(),
   _up = new THREE.Vector3(0, 1, 0)
-export function followKeyLight (pos) {
+// The box is centred a little ahead of where the camera looks (view: the camera), so more of what is
+// in view is in it, with the car or the player (pos) still well inside (camera-centred, after
+// mrdoob/slop-newyork's sun shadow is, MIT, (c) 2026 Mr.doob).
+const _cf = new THREE.Vector3(),
+  _cp = new THREE.Vector3()
+const AHEAD = 14 // m
+export function followKeyLight (pos, view) {
+  if (view) {
+    view.getWorldDirection(_cf)
+    const l = Math.hypot(_cf.x, _cf.z)
+    if (l > 1e-3) pos = _cp.copy(pos).add(_cf.set(_cf.x / l, 0, _cf.z / l).multiplyScalar(AHEAD))
+  }
   const cam = key.shadow.camera,
     texel = (cam.right - cam.left) / key.shadow.mapSize.x
   _sf.copy(keyOffset).normalize()
