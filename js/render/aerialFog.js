@@ -7,8 +7,8 @@
 // world position worked out from the view matrix, which every non-raw shader has).
 import * as THREE from 'three'
 
-export const FOG_H = 320 // m: the height over which the haze thins by e
-const FLOOR = 0.4 // (never thinner than this: the streaming still hides what the fog would)
+export const FOG_H = 400 // m: the height over which the haze thins by e
+const FLOOR = 0.55 // (never thinner than this: the streaming still hides what the fog would)
 let done = false
 export function aerialFog () {
   if (done) return
