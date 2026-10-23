@@ -220,15 +220,16 @@ export class OnFoot {
     }
   }
   // ---------- getting in and out ----------
-  // E (or the pad's Y): in or out. true when it was taken (in the air it yaws the Roadster instead)
-  interact () {
+  // GTA V's keys: F (the pad's Y) in or out of a vehicle (kind 'vehicle'), E the doors, the shops
+  // and the body shop (kind 'context'). true when it was taken (in the air E yaws the Roadster)
+  interact (kind = 'vehicle') {
     if (this.app.world !== 'city') {
-      if (player.mode === 'car')
-        this.hud.popup('You can get out in the city · <b>C</b> to go there', 2200, 'hint')
-      return player.mode === 'car' ? false : true
+      if (player.mode === 'car' && kind === 'vehicle')
+        this.hud.popup('You can get out in the city', 2200, 'hint')
+      return player.mode === 'car' ? false : kind === 'vehicle'
     }
     if (this.app.intro || this.app.auto || this.down) return false
-    if (this.interiors.interact()) return true
+    if (kind === 'context') return this.interiors.interact()
     if (player.mode === 'car') {
       const s = this.driven()
       if (s.mode !== 'ground' && s.mode !== 'crash') return false

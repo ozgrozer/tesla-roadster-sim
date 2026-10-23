@@ -10,12 +10,14 @@ globalThis.window = { addEventListener: (type, fn) => (on[type] = fn) }
 globalThis.document = { querySelectorAll: () => [] }
 const { Input } = await import('../js/ui/input.js')
 const { Sim } = await import('../js/sim/sim.js')
+const { setOption, resetOptions } = await import('../js/ui/options.js')
 
 const H = 1 / 120
 const down = code => on.keydown({ code, repeat: false, preventDefault () {} })
 const up = code => on.keyup({ code })
 
 test('W held through a lift-off only pitches once it is pressed again', () => {
+  setOption('stunts', true) // (G flies with the stunt keys on, or ?debug=1)
   const input = new Input({ onDrive () {}, onCommand () {} })
   const sim = new Sim()
   sim.reset('lineup')
@@ -26,7 +28,7 @@ test('W held through a lift-off only pitches once it is pressed again', () => {
   let c
   while (sim.speed < 50) sim.step(H, (c = input.controls(sim, 'auto')))
   assert.equal(c.throttle, 1, 'W is the throttle on the ground')
-  down('KeyF')
+  down('KeyG')
   while (sim.mode !== 'air') sim.step(H, input.controls(sim, 'auto'))
   for (let i = 0; i < 60; i++) {
     c = input.controls(sim, 'auto')
@@ -44,13 +46,18 @@ test('W held through a lift-off only pitches once it is pressed again', () => {
     -1,
     'pressed again: nose down'
   )
+  up('KeyW')
+  up('KeyG')
+  up('ShiftLeft')
+  resetOptions()
 })
 
-test('Space is the e-brake, F the lift thrusters and H the horn', () => {
+test('GTA V keys: Space the handbrake, G flies only with the stunt keys, F/E/H are commands', () => {
   const pressed = [],
-    released = []
+    released = [],
+    driven = []
   const input = new Input({
-    onDrive () {},
+    onDrive: code => driven.push(code),
     onCommand: code => pressed.push(code),
     onRelease: code => released.push(code)
   })
@@ -58,16 +65,26 @@ test('Space is the e-brake, F the lift thrusters and H the horn', () => {
   sim.reset('lineup')
   down('Space')
   let c = input.controls(sim, 'auto')
-  assert.equal(c.ebrake, true, 'Space holds the e-brake')
+  assert.equal(c.ebrake, true, 'Space holds the handbrake')
   assert.equal(c.lift, 0, 'and no longer fires the lift thrusters')
   up('Space')
-  down('KeyF')
+  down('KeyG')
+  assert.equal(input.controls(sim, 'auto').lift, 0, 'G does nothing without the stunt keys')
+  up('KeyG')
+  setOption('stunts', true)
+  down('KeyG')
   c = input.controls(sim, 'auto')
-  assert.equal(c.lift, 1, 'F fires the lift thrusters')
+  assert.equal(c.lift, 1, 'G fires the lift thrusters with them on')
   assert.equal(c.ebrake, false)
-  up('KeyF')
+  up('KeyG')
+  resetOptions()
+  for (const k of ['KeyF', 'KeyE']) {
+    down(k)
+    up(k)
+  }
+  assert.ok(driven.includes('KeyF') && driven.includes('KeyE'), 'F (enter, exit) and E (horn, interact) reach onDrive')
   down('KeyH')
-  assert.deepEqual(pressed, ['KeyH'], 'H is a command, not a drive key')
+  assert.ok(pressed.includes('KeyH'), 'H (headlights) is a command, not a drive key')
   up('KeyH')
   assert.ok(released.includes('KeyH'), 'and letting go of it is reported')
 })
@@ -98,10 +115,10 @@ test('a gamepad is analog, and a stick held through a lift-off waits', () => {
   assert.ok(c.steer < -0.99, 'the stick right over steers right')
   assert.ok(driven.includes('Pad'), 'and touching them takes the wheel')
   pad.axes[0] = 0
-  pad.buttons[0].pressed = true
+  pad.buttons[5].pressed = true
   input.poll()
-  assert.equal(input.controls(sim, 'auto').ebrake, true, 'A holds the e-brake')
-  pad.buttons[0].pressed = false
+  assert.equal(input.controls(sim, 'auto').ebrake, true, 'RB holds the handbrake (GTA V)')
+  pad.buttons[5].pressed = false
   pad.buttons[7].value = 0
   pad.buttons[6].value = 0.7
   input.poll()
@@ -110,12 +127,13 @@ test('a gamepad is analog, and a stick held through a lift-off waits', () => {
   // full throttle and boost to take-off speed, the stick held over to the left, then lift off
   pad.buttons[6].value = 0
   pad.buttons[7].value = 1
-  pad.buttons[5].pressed = true
+  pad.buttons[0].pressed = true // A: boost
   pad.axes[0] = -0.8
   input.poll()
   while (sim.speed < 40) sim.step(H, input.controls(sim, 'auto'))
   assert.equal(input.controls(sim, 'auto').brake, 0)
-  pad.buttons[4].pressed = true // LB: lift
+  setOption('stunts', true)
+  pad.buttons[12].pressed = true // D-pad up: lift (a stunt key)
   input.poll()
   while (sim.mode !== 'air') sim.step(H, input.controls(sim, 'auto'))
   for (let i = 0; i < 30; i++) {
@@ -132,6 +150,7 @@ test('a gamepad is analog, and a stick held through a lift-off waits', () => {
     input.controls(sim, 'auto').roll > 0.99,
     'back through the middle, it rolls'
   )
+  resetOptions()
   navigator.getGamepads = undefined
 })
 
@@ -321,7 +340,7 @@ test("a gamepad in use buzzes with the tyres sliding or spinning, not cruising, 
       sim.events.length = 0
     }
     pad.axes[0] = 0
-    pad.buttons[0].pressed = pad.buttons[6].value = pad.buttons[7].value = 0
+    pad.buttons[5].pressed = pad.buttons[6].value = pad.buttons[7].value = 0
     input.poll()
     return {
       strong: Math.max(0, ...felt.map(e => e.strongMagnitude)),
@@ -334,7 +353,7 @@ test("a gamepad in use buzzes with the tyres sliding or spinning, not cruising, 
   // the e-brake (A) with the stick over: the rears slide, and it buzzes
   const turn = run(60, 1.5, t => {
     pad.axes[0] = -1
-    pad.buttons[0].pressed = t < 0.6
+    pad.buttons[5].pressed = t < 0.6
   })
   assert.ok(turn.weak > 0.2, `a handbrake turn: ${turn.weak.toFixed(2)}`)
   // a burnout (both triggers at a crawl): the rears spinning rumble

@@ -102,7 +102,7 @@ export const CAREER2 = [
     await ensureCar(g, 1)
     await g.ev(stopCar)
     await g.run(0.5)
-    await g.press('KeyE', 0)
+    await g.press('KeyF', 0)
     g.expect(await g.until(() => window.__roadster.player.mode === 'foot', 6), 'could not get out of the stolen car')
     await g.ev(events)
     let ok = false
@@ -112,7 +112,7 @@ export const CAREER2 = [
       await g.ev(i => { const c = window.__roadster.traffic.cars[i]; c.v = 0 }, i)
       await g.ev(toDoor, i)
       await g.run(0.1, 0.1, 0)
-      await g.press('KeyE', 0)
+      await g.press('KeyF', 0)
       ok = await g.until(() => window.__roadster.player.mode === 'car', 8)
     }
     const ev = await g.ev(events)
@@ -123,7 +123,7 @@ export const CAREER2 = [
   ['busted-on-foot', async g => {
     await g.ev(stopCar)
     await g.run(0.5)
-    if ((await g.ev(st)).mode !== 'foot') await g.press('KeyE', 0)
+    if ((await g.ev(st)).mode !== 'foot') await g.press('KeyF', 0)
     await g.until(() => window.__roadster.player.mode === 'foot', 6)
     await g.ev(() => { const R = window.__roadster; R.game.wanted.set(2, R.player.pos) })
     const ok = await g.until(() => window.__roadster.game.down?.kind === 'busted', 180, null, 1)
@@ -139,7 +139,7 @@ export const CAREER2 = [
   }],
   ['wasted', async g => {
     // (the knocks on foot run the health out: game.js footHealth)
-    if ((await g.ev(st)).mode !== 'foot') await g.press('KeyE', 0)
+    if ((await g.ev(st)).mode !== 'foot') await g.press('KeyF', 0)
     await g.until(() => window.__roadster.player.mode === 'foot', 6)
     await g.ev(() => { window.__roadster.game.footHealth = 0 })
     const ok = await g.until(() => window.__roadster.game.down?.kind === 'wasted', 5)
@@ -154,10 +154,10 @@ export const CAREER2 = [
   }],
   ['roadster-boost-fly', async g => {
     if ((await g.ev(st)).kind !== 'roadster') {
-      if ((await g.ev(st)).mode !== 'foot') await g.press('KeyE', 1)
+      if ((await g.ev(st)).mode !== 'foot') await g.press('KeyF', 1)
       await g.ev(toRoadster)
       await g.run(0.5)
-      await g.press('KeyE', 0)
+      await g.press('KeyF', 0)
     }
     const ok = await g.until(() => window.__roadster.player.mode === 'car' && window.__roadster.player.vehicle?.kind === 'roadster', 10)
     if (!g.expect(ok, 'could not get back into the Roadster', await g.ev(st))) return
@@ -176,8 +176,8 @@ export const CAREER2 = [
     const v1 = await g.ev(() => window.__roadster.sim.speed)
     g.expect(boost > 0 && v1 > v0, 'Shift boost did nothing', { v0, v1, boost })
     let top = 0
-    await g.hold('KeyF', async () => { for (let i = 0; i < 8; i++) { await g.run(0.25); top = Math.max(top, await g.ev(() => window.__roadster.sim.pos.y)) } })
-    g.expect(top > 2, 'F did not lift the Roadster off', top)
+    await g.hold('KeyG', async () => { for (let i = 0; i < 8; i++) { await g.run(0.25); top = Math.max(top, await g.ev(() => window.__roadster.sim.pos.y)) } })
+    g.expect(top > 2, 'G did not lift the Roadster off', top)
     await g.shot('12-roadster-flight.png')
     await g.until(() => window.__roadster.sim.mode === 'ground' || window.__roadster.sim.mode === 'crash', 30, null, 0.5)
     const s = await g.ev(() => ({ mode: window.__roadster.sim.mode, y: window.__roadster.sim.pos.y }))
@@ -187,16 +187,16 @@ export const CAREER2 = [
     g.expect(near, 'the camera stayed out wide after landing')
   }],
   ['test-site-and-back', async g => {
-    await g.press('KeyC', 0)
+    await g.press('KeyY', 0)
     let ok = await g.untilReal(() => window.__roadster.app.world === 'site', 8000)
     await g.wait(1500)
-    g.expect(ok, 'C did not go to the test site')
+    g.expect(ok, 'Y (debug) did not go to the test site')
     await g.run(2)
     await g.shot('13-test-site.png')
-    await g.press('KeyC', 0)
+    await g.press('KeyY', 0)
     ok = await g.untilReal(() => window.__roadster.app.world === 'city', 8000)
     await g.wait(1500)
-    g.expect(ok, 'C did not come back to the city')
+    g.expect(ok, 'Y (debug) did not come back to the city')
     await g.ev(() => window.__roadster.intro.finish(true))
     await g.run(2)
     await g.wait(1000)

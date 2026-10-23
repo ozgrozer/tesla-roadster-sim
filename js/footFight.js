@@ -1,5 +1,6 @@
-// The player's fists on foot (sim/melee.js) and what comes of them: the keys (F or the left mouse
-// button to punch, presses in time for the combo; Caps Lock between a walk and the jog), the blows
+// The player's fists on foot (sim/melee.js) and what comes of them: the keys (GTA V's: the left mouse
+// button or R to punch, presses in time for the combo; Left Alt or Caps Lock between a walk and the
+// jog), the blows
 // landing on people (sim/brawl.js: staggered, knocked down, killed; the crimes it is), the punches
 // of anyone fighting back landing on the player (a shove, health off: game.js 'player-hit'), and
 // the sounds. onFoot.js makes one and runs it each step on foot.
@@ -24,20 +25,20 @@ export class FootFight {
       if (e.how === 'car' && e.by === 'player') bodySound(this.foot.sound, e.speed || 0)
     })
   }
-  // a drive key pressed on foot (main.js): Space jumps, F punches (and H: a gamepad's X, the horn in
-  // a car, punches on foot, as in GTA). True if it was taken
+  // a drive key pressed on foot (main.js): Space jumps. True if it was taken
   press (code, first) {
     if (!first) return false
     if (code === 'Space') return (this.foot.jumpQ = true)
-    if (code === 'KeyF' || code === 'KeyH') return this.punch()
     return false
   }
-  // any other key on foot: Caps Lock toggles walking
+  // any other key on foot: R (a gamepad's B) punches, Left Alt or Caps Lock toggles walking
   command (code) {
-    if (code !== 'CapsLock' || !this.foot.onFoot()) return false
+    if (!this.foot.onFoot()) return false
+    if (code === 'KeyR') return this.punch()
+    if (code !== 'CapsLock' && code !== 'AltLeft') return false
     const f = this.foot
     f.walkOn = !f.walkOn
-    f.hud?.popup?.(f.walkOn ? 'Walking · <b>Caps Lock</b> to jog' : 'Jogging · <b>Shift</b> to sprint', 1400, 'hint')
+    f.hud?.popup?.(f.walkOn ? 'Walking · <b>Alt</b> to jog' : 'Jogging · <b>Shift</b> to sprint', 1400, 'hint')
     return true
   }
   punch () {

@@ -99,7 +99,7 @@ export const sample = () => new Promise(resolve => {
 })
 
 export async function spawnProfile (g, seconds = 30) {
-  await g.ev(() => { window.__roadster.intro.finish(true); document.getElementById('help').hidden = true })
+  await g.ev(() => { window.__roadster.intro.finish(true); const h = document.getElementById('help'); if (h) h.hidden = true })
   await g.ev(instrument)
   const out = []
   for (let t = 0; t <= seconds; t++) {

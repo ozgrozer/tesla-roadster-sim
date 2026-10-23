@@ -47,14 +47,14 @@ g.step = 'q1'
 const out = {}
 await g.ev(() => {
   window.__roadster.intro.finish(true)
-  document.getElementById('help').hidden = true
+  const h = document.getElementById('help'); if (h) h.hidden = true
 })
 await g.run(2)
 
 // 1) on foot, by the Roadster
 g.step = 'on-foot'
 await hour(g, 15)
-await g.press('KeyE', 2)
+await g.press('KeyF', 2)
 await g.hold('KeyW', 1)
 out.foot = await state(g)
 g.expect(out.foot.mode === 'foot', 'not on foot', out.foot)
@@ -108,7 +108,7 @@ await g.ev(
   { out: site.out }
 )
 await g.run(0.6)
-await g.press('KeyE', 0)
+await g.press('KeyF', 0)
 await g.untilReal(() => window.__roadster.player.pos.y < -20, 6000)
 await g.run(1)
 out.interior = await g.ev(() => ({
@@ -143,7 +143,7 @@ await g.ev(
   { inner: site.inner }
 )
 await g.run(0.3)
-await g.press('KeyE', 0)
+await g.press('KeyF', 0)
 await g.untilReal(() => window.__roadster.player.pos.y > -5, 6000)
 
 // 4) an all-way stop: the Roadster at the line of one of them

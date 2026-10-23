@@ -91,8 +91,8 @@
           steer into it to go deeper.
         </p>
         <p style="--i: 1">
-          <b>Tip</b>Hold F to lift off on the thrusters. In the air, X is a
-          backflip and K a kickflip.
+          <b>Tip</b>F gets you in and out of any car, as in GTA V: walk up to
+          a parked one to break in, or to a driver to pull them out.
         </p>
         <p style="--i: 2">
           <b>Tip</b>Flash past a car close enough to touch for a near miss:
@@ -103,70 +103,26 @@
           it.
         </p>
         <p style="--i: 4">
-          <b>Tip</b>Press P for Autopilot: it drives to the gridlock, leans on
-          the horn and flies over it.
+          <b>Tip</b>Esc or P pauses: the map (set a waypoint for the GPS), the
+          settings and every key.
         </p>
         <p style="--i: 5">
           <b>Tip</b>W and S together at a crawl is a burnout. Turn the wheel for
           donuts.
         </p>
         <p style="--i: 6">
-          <b>Tip</b>L runs the clock on to the next time of day, O brings in the
-          next weather: drive the wet streets at night.
+          <b>Tip</b>Z expands the radar, C looks behind, V cycles the camera
+          and . and , change the radio station.
         </p>
         <p style="--i: 7">
-          <b>Tip</b>C takes you to the McGregor test site, where the Roadster
-          rode the 170° wall.
+          <b>Tip</b>E sounds the horn in a car; on foot it opens the doors of the
+          shops. Left click or R throws a punch.
         </p>
       </div>
       <div class="ld-spin"><i></i>Loading</div>
     </div>
 
     <div class="hud" id="hud">
-      <div class="top">
-        <div class="brand">
-          <h1>Tesla Roadster Sim</h1>
-          <p id="brandSub">
-            170° inverted wall · 10 cold-gas thrusters · McGregor test site
-          </p>
-        </div>
-        <div class="controls-top">
-          <button
-            class="btn btn-world"
-            id="btnWorld"
-            type="button"
-            aria-label="Drive in the city"
-          >
-            <svg viewBox="0 0 16 16" aria-hidden="true">
-              <path d="M1 15V8h3V4h3v3h2V1h4v14M11 4h0M11 7h0M11 10h0" />
-            </svg>
-            <span id="worldLabel">City</span>
-          </button>
-          <button class="btn mode-pill" id="btnMode" type="button">
-            <span class="dot"></span><span id="modeLabel">Autopilot</span>
-          </button>
-          <button class="btn" id="btnCam" type="button">
-            Cam: <span id="camLabel">Director</span>
-          </button>
-          <button class="btn" id="btnSound" type="button" aria-pressed="false">
-            Sound: off
-          </button>
-          <button class="btn" id="btnSlow" type="button" aria-pressed="false">
-            Slow-mo
-          </button>
-          <button class="btn" id="btnHelp" type="button" aria-pressed="true">
-            Keys
-          </button>
-          <button class="btn btn-menu" id="btnMenu" type="button">
-            <i class="burger" aria-hidden="true"></i>Menu
-          </button>
-        </div>
-      </div>
-      <div class="credit">
-        Fan-made simulation built from press coverage of the Oct 15, 2026
-        Roadster reveal. Not affiliated with Tesla or SpaceX.
-      </div>
-
       <!-- GTA's help box: one hint at a time, top left -->
       <div class="helpbox" id="helpbox" role="status" aria-live="polite">
         <p id="helpText"></p>
@@ -174,166 +130,6 @@
 
       <!-- by a car the player can take: the key and what it does (onFoot.js) -->
       <div class="prompt" id="prompt" aria-live="polite"></div>
-
-      <!-- the keys, as a pause-menu card: shown on the first visit, then on I -->
-      <aside class="help" id="help" aria-label="Controls">
-        <header class="help-head">
-          <h2>Controls</h2>
-          <span><kbd>I</kbd> hide</span>
-        </header>
-        <div class="help-cols">
-          <section>
-            <h3>Drive</h3>
-            <ul>
-              <li>
-                <span class="k"><kbd>W</kbd><kbd>S</kbd></span
-                >throttle · brake, reverse
-              </li>
-              <li>
-                <span class="k"><kbd>W</kbd>+<kbd>S</kbd></span
-                >burnout · donut (steer)
-              </li>
-              <li>
-                <span class="k"><kbd>A</kbd><kbd>D</kbd></span
-                >steer · roll a wreck over
-              </li>
-              <li>
-                <span class="k"><kbd>Space</kbd></span
-                >e-brake · drift (then W)
-              </li>
-              <li>
-                <span class="k"><kbd>Shift</kbd></span
-                >boost (main thrusters)
-              </li>
-              <li>
-                <span class="k"><kbd>F</kbd></span
-                >fly (lift thrusters)
-              </li>
-              <li>
-                <span class="k"><kbd>H</kbd></span
-                >horn
-              </li>
-              <li>
-                <span class="k"><kbd>Z</kbd></span
-                >look behind (hold)
-              </li>
-              <li>
-                <span class="k"><kbd>V</kbd></span
-                >camera: follow, far, cockpit (hood in other cars), chase
-              </li>
-              <li class="site-only">
-                <span class="k"><kbd>G</kbd></span
-                >suction fan: auto, on, off
-              </li>
-            </ul>
-            <h3>Fly</h3>
-            <ul>
-              <li>
-                <span class="k"><kbd>W</kbd><kbd>S</kbd></span
-                >pitch
-              </li>
-              <li>
-                <span class="k"><kbd>A</kbd><kbd>D</kbd></span
-                >roll
-              </li>
-              <li>
-                <span class="k"><kbd>Q</kbd><kbd>E</kbd></span
-                >yaw
-              </li>
-              <li>
-                <span class="k"><kbd>X</kbd><kbd>K</kbd></span
-                >backflip · kickflip
-              </li>
-            </ul>
-          </section>
-          <section>
-            <h3 class="city-only">On foot</h3>
-            <ul class="city-only">
-              <li>
-                <span class="k"><kbd>E</kbd></span
-                >get out · get in, steal, carjack
-              </li>
-              <li>
-                <span class="k"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span
-                >jog (the way the camera faces)
-              </li>
-              <li>
-                <span class="k"><kbd>Shift</kbd><kbd>Caps</kbd><kbd>Space</kbd></span
-                >sprint · walk · jump
-              </li>
-              <li>
-                <span class="k"><kbd>F</kbd><kbd>Click</kbd></span
-                >punch (press again: combo)
-              </li>
-              <li>
-                <span class="k"><kbd>Mouse</kbd></span
-                >look round (click the picture)
-              </li>
-              <li class="city-only">
-                <span class="k"><kbd>V</kbd></span
-                >camera near, mid, far
-              </li>
-            </ul>
-            <h3>Game</h3>
-            <ul>
-              <li>
-                <span class="k"><kbd>Esc</kbd></span
-                >pause: map, settings
-              </li>
-              <li class="site-only">
-                <span class="k"><kbd>P</kbd><kbd>M</kbd></span
-                >autopilot demo · manual
-              </li>
-              <li class="site-only">
-                <span class="k"><kbd>R</kbd></span
-                >reset
-              </li>
-              <li class="site-only">
-                <span class="k"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd></span
-                >start · wall top · lineup
-              </li>
-              <li class="city-only">
-                <span class="k"><kbd>P</kbd></span
-                >Autopilot
-              </li>
-              <li class="city-only">
-                <span class="k"><kbd>R</kbd></span
-                >back to the start
-              </li>
-              <li class="city-only">
-                <span class="k"><kbd>L</kbd><kbd>O</kbd></span
-                >time of day · weather
-              </li>
-              <li>
-                <span class="k"><kbd>V</kbd><kbd>T</kbd><kbd>N</kbd></span
-                >camera · slow-mo · sound
-              </li>
-              <li>
-                <span class="k"><kbd>U</kbd></span
-                >km/h · mph
-              </li>
-              <li>
-                <span class="k"><kbd>B</kbd></span
-                >radio: next station · off
-              </li>
-              <li>
-                <span class="k"><kbd>C</kbd></span
-                >city · test site
-              </li>
-              <li>
-                <span class="k"><kbd>I</kbd></span
-                >hide this card
-              </li>
-            </ul>
-            <p class="note city-only">
-              <i class="blip"></i>Radar: the gold blip is the gridlock, the
-              green bar the car's condition, the blue its thruster air
-            </p>
-            <p class="note">Any drive key takes the wheel back</p>
-            <p class="note">Gamepad: RT drive · LT brake · A e-brake / jump · Y get in / out · B camera</p>
-          </section>
-        </div>
-      </aside>
 
       <div class="score" id="scoreBox" aria-label="Stunt score">
         <span class="v" id="score">0</span>
@@ -466,44 +262,24 @@
           <div class="pl-big" id="plBig"></div>
         </div>
 
-        <a
-          class="promo"
-          href="https://grape.cool"
-          target="_blank"
-          rel="noopener"
-          ><svg viewBox="0 0 16 16" aria-hidden="true">
-            <path
-              class="leaf"
-              d="M8 4.2V2M8 3.2c1-1.5 2.9-1.9 4.4-1-1 1.4-2.8 1.8-4.4 1z"
-            />
-            <circle cx="4.6" cy="6.6" r="1.9" />
-            <circle cx="8" cy="6.6" r="1.9" />
-            <circle cx="11.4" cy="6.6" r="1.9" />
-            <circle cx="6.3" cy="9.8" r="1.9" />
-            <circle cx="9.7" cy="9.8" r="1.9" />
-            <circle cx="8" cy="13" r="1.9" /></svg
-          >grape.cool</a
-        >
       </div>
-
-      <div class="context-hint" id="hint"></div>
 
       <div class="touch" id="touch">
         <div class="cluster">
-          <button class="tb" data-key="KeyH" type="button">HORN</button
+          <button class="tb" data-key="KeyE" type="button">HORN</button
           ><button class="tb" data-key="KeyW" type="button">▲</button
-          ><span></span>
+          ><button class="tb" data-key="KeyF" type="button">EXIT</button>
           <button class="tb" data-key="KeyA" type="button">◀</button
           ><button class="tb" data-key="KeyS" type="button">▼</button
           ><button class="tb" data-key="KeyD" type="button">▶</button>
         </div>
         <div class="cluster">
-          <button class="tb" data-key="KeyX" type="button">FLIP</button
-          ><button class="tb" data-key="KeyK" type="button">KICK</button
-          ><button class="tb" data-key="Space" type="button">E-BRK</button>
+          <button class="tb" data-key="PadStart" type="button">MENU</button
+          ><button class="tb" data-key="KeyV" type="button">CAM</button
+          ><button class="tb" data-key="Space" type="button">BRAKE</button>
           <button class="tb" data-key="ShiftLeft" type="button">BOOST</button
-          ><button class="tb" data-key="KeyF" type="button">LIFT</button
-          ><button class="tb" data-key="KeyG" type="button">FAN</button>
+          ><button class="tb" data-key="KeyR" type="button">PUNCH</button
+          ><button class="tb" data-key="KeyG" type="button">LIFT</button>
         </div>
       </div>
     </div>

@@ -51,7 +51,7 @@ const lane = () => g.ev(() => {
 })
 try {
   await g.goto('')
-  await g.ev(() => { window.__roadster.intro.finish(true); document.getElementById('help').hidden = true })
+  await g.ev(() => { window.__roadster.intro.finish(true); const h = document.getElementById('help'); if (h) h.hidden = true })
   await g.run(1)
   if (want('sports')) {
     await g.ev(() => window.__roadster.seatIn('sports'))
@@ -95,7 +95,7 @@ try {
     await shot('p1-sedan-crashed.png')
     // and out, hard by the wall
     await g.ev(() => window.__roadster.game.wanted.clear())
-    await g.press('KeyE', 0)
+    await g.press('KeyF', 0)
     await g.run(2.5)
     await shot('p2-out-by-the-wall.png')
     // the foot camera swung round along the wall
@@ -131,7 +131,7 @@ try {
     log.dentsCar = car
     console.log('dents car', JSON.stringify(car))
     await g.ev(() => window.__roadster.game.wanted.clear())
-    await g.press('KeyE', 0)
+    await g.press('KeyF', 0)
     await g.run(2.5)
     await g.ev(c => {
       const R = window.__roadster, p = R.player, cam = R.foot.cam
@@ -193,7 +193,7 @@ try {
     })
     await g.run(0.5)
     log.tightBefore = await state()
-    await g.press('KeyE', 0)
+    await g.press('KeyF', 0)
     await g.run(2.5)
     log.tightExit = await g.ev(() => {
       const R = window.__roadster, p = R.player.pos

@@ -373,11 +373,11 @@ export class SoundEngine {
     this.radio.update(st.inside)
     this.gateLanes()
   }
-  // B: the radio tuned to its next station, or off after the last; the station (null: off), or
+  // . and , (the wheel in a car): the radio tuned to its next station (d -1: the one before), or off after the last; the station (null: off), or
   // undefined with the sound off
-  tuneRadio () {
+  tuneRadio (d = 1) {
     if (!this.enabled || !this.ensure()) return undefined
-    return this.radio.tune()
+    return this.radio.tune(d)
   }
 }
 // a disc horn's spectrum: every harmonic, falling off slowly, the diaphragm slapping its stop

@@ -19,7 +19,8 @@ export const DEFAULTS = {
   subtitles: true,
   bigText: false,
   palette: 'standard', // 'standard' | 'deutan' (red/green safe) | 'tritan' (blue/yellow safe)
-  motion: 'full' // 'full' | 'reduced'
+  motion: 'full', // 'full' | 'reduced'
+  stunts: false // the Roadster's stunt keys (G fly, X backflip, K kickflip: debug.js)
 }
 // what each may be (the menu steps through these)
 export const CHOICES = {
@@ -34,7 +35,8 @@ export const CHOICES = {
   subtitles: [true, false],
   bigText: [false, true],
   palette: ['standard', 'deutan', 'tritan'],
-  motion: ['full', 'reduced']
+  motion: ['full', 'reduced'],
+  stunts: [false, true]
 }
 // how far each draw distance lets you see: the least fog density (scene.fog, FogExp2) it keeps
 export const DRAW_FOG = { near: 0.0042, mid: 0.0024, far: 0 }

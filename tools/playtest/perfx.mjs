@@ -104,11 +104,11 @@ export function topFunctions (profile, n = 30) {
 }
 
 export async function perfx (g, { seconds = 120, play = 'auto', cpu = null } = {}) {
-  await g.ev(() => { window.__roadster.intro.finish(true); document.getElementById('help').hidden = true })
+  await g.ev(() => { window.__roadster.intro.finish(true); const h = document.getElementById('help'); if (h) h.hidden = true })
   await g.ev(instrument)
   await g.run(1)
-  if (play === 'auto') await g.press('KeyP', 0.5)
-  else if (play === 'foot') await g.press('KeyE', 2)
+  if (play === 'auto') await g.press('KeyI', 0.5)
+  else if (play === 'foot') await g.press('KeyF', 2)
   else if (play === 'car') await g.ev(() => window.__roadster.seatIn('sedan'))
   await g.ev(wrapSystems)
   if (cpu) {
@@ -140,7 +140,7 @@ export async function perfx (g, { seconds = 120, play = 'auto', cpu = null } = {
 }
 
 if (process.argv[1] && process.argv[1].endsWith('perfx.mjs')) {
-  const g = await Game.open({ query: arg('query', ''), width: 480, height: 270 })
+  const g = await Game.open({ query: arg('query', '?debug=1'), width: 480, height: 270 })
   g.step = 'perfx'
   const seconds = Number(arg('seconds', 120))
   const cpu = arg('cpu', '') && (await g.page.context().newCDPSession(g.page))

@@ -4,23 +4,28 @@
 // they do everything the keys do. It rumbles for knocks, kerbs, landings and crashes, and buzzes
 // with the tyres near their grip and past it, the rears spinning and the ground rough (input.js).
 //
-//   RT throttle   LT brake, reverse   A e-brake   RB boost (main thrusters)   LB fly (lift thrusters)
-//   X horn   Y get in / out (E)   B camera   D-pad up / down backflip / kickflip   View reset
-//   Menu Autopilot   the right stick pressed in: look behind, held (as in GTA)
-// On foot (onFoot.js): the left stick walks, the right stick looks, A jumps, RB sprints, X (or LB)
-// punches, Y gets in.
-const BUTTONS = {
-  0: 'Space',
-  1: 'KeyV',
-  2: 'KeyH',
-  3: 'KeyE',
-  4: 'KeyF',
-  5: 'ShiftLeft',
-  8: 'KeyR',
-  9: 'KeyP',
-  11: 'KeyZ',
-  12: 'KeyX',
-  13: 'KeyK'
+// GTA V's Xbox layout (the same buttons on a PlayStation pad: A cross, B circle, X square, Y triangle):
+//   in a vehicle: RT accelerate · LT brake, reverse · RB handbrake · A Roadster boost · Y exit
+//     L3 (left stick in) horn · R3 look behind (held) · LB radio next · D-pad left radio previous
+//     D-pad right headlights · D-pad down expanded radar · View camera · Menu pause
+//   on foot: left stick move · right stick look · A sprint · X jump · B melee · Y enter a vehicle
+//     L3 interact · View camera · Menu pause
+// (D-pad up is the Roadster's fly, with the stunt keys on: debug.js)
+export const BUTTONS = {
+  0: 'ShiftLeft', // A: sprint · boost
+  1: 'KeyR', // B: melee · reset a wreck
+  2: 'Space', // X: jump (and the handbrake)
+  3: 'KeyF', // Y: enter, exit
+  4: 'Period', // LB: the radio's next station
+  5: 'Space', // RB: handbrake
+  8: 'KeyV', // View: camera
+  9: 'PadStart', // Menu: pause (main.js COMMANDS)
+  10: 'KeyE', // L3: horn · interact
+  11: 'KeyC', // R3: look behind
+  12: 'KeyG', // D-pad up: fly (stunt keys)
+  13: 'KeyZ', // D-pad down: expanded radar
+  14: 'Comma', // D-pad left: the radio's previous station
+  15: 'KeyH' // D-pad right: headlights
 }
 const DEAD = 0.12
 const FEEL_MS = 150 // the tyres' and the road's buzz lasts this long each time it is set
@@ -85,17 +90,24 @@ export class Pad {
     if (on && !this.active) this.press('Pad')
     this.active = on
     if (on) this.usedAt = performance.now()
+    // (X and RB both press Space: the key is up once neither is held)
+    const want = this.want || (this.want = new Set())
+    want.clear()
     for (const [i, code] of Object.entries(BUTTONS)) {
-      const held = !!b[i]?.pressed
-      if (held) this.usedAt = performance.now()
-      if (held && !this.down.has(code)) {
+      if (!b[i]?.pressed) continue
+      this.usedAt = performance.now()
+      want.add(code)
+    }
+    for (const code of want)
+      if (!this.down.has(code)) {
         this.down.add(code)
         this.press(code)
-      } else if (!held && this.down.has(code)) {
+      }
+    for (const code of this.down)
+      if (!want.has(code)) {
         this.down.delete(code)
         this.release(code)
       }
-    }
   }
   // strong: the big low motor, weak: the small fast one (0..1), for ms (a knock, a kerb, a crash)
   rumble (strong, weak, ms = 120) {

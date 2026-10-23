@@ -428,3 +428,10 @@ body.other-car #instruments,
 body.other-car #condBox {
   display: none;
 }
+/* Z: GTA's expanded radar, bigger and further out */
+.radarbox.big {
+  width: clamp(300px, 36vw, 560px);
+}
+.radarbox.big .radar {
+  aspect-ratio: 1.25;
+}

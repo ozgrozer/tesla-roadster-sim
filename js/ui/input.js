@@ -5,6 +5,7 @@ import { TRACK } from '../sim/track.js'
 import { BURN_V } from '../sim/drift.js'
 import { smooth } from '../sim/tyres.js'
 import { G, CAR, clamp, makeControls } from '../sim/constants.js'
+import { stuntKeys } from './debug.js'
 
 // The steering keys ease the wheel over rather than throwing it to full lock: full in KEY_T s at a
 // standstill and KEY_T_V s more per m/s (up to KEY_V_TOP m/s: past it the wheel turns no slower, as
@@ -46,9 +47,9 @@ export function easeKey (k, want, up, down, dt) {
   return k > 0 ? Math.max(0, k - down * dt) : Math.min(0, k + down * dt)
 }
 
-// Held, Z looks behind the car, as GTA's does (camera.js; a gamepad's right stick pressed in
+// Held, C looks behind the car, as GTA V's does (camera.js; a gamepad's right stick pressed in
 // presses it: gamepad.js). Not a drive key: it doesn't take the wheel from Autopilot.
-export const LOOK_BACK = 'KeyZ'
+export const LOOK_BACK = 'KeyC'
 
 export const DRIVE_KEYS = new Set([
   'KeyW',
@@ -58,6 +59,7 @@ export const DRIVE_KEYS = new Set([
   'KeyQ',
   'KeyE',
   'KeyF',
+  'KeyG',
   'ArrowUp',
   'ArrowDown',
   'ArrowLeft',
@@ -90,7 +92,9 @@ export class Input {
       } else onCommand(code)
     }
     window.addEventListener('keydown', e => {
-      if (e.metaKey || e.ctrlKey || e.altKey) return
+      // (Left Alt on its own is GTA's walk toggle: kept from the browser's menu bar)
+      if (e.code === 'AltLeft' && !e.metaKey && !e.ctrlKey) e.preventDefault()
+      else if (e.metaKey || e.ctrlKey || e.altKey) return
       if (DRIVE_KEYS.has(e.code)) e.preventDefault()
       if (!e.repeat) press(e.code)
     })
@@ -187,10 +191,11 @@ export class Input {
     c.fan =
       fanMode === 'on' ||
       (fanMode === 'auto' && (sim.mode === 'ramp' || nearWall))
-    // Space is the handbrake, as in GTA; F (fly) fires the lift thrusters
+    // Space is the handbrake, as in GTA; G (fly, with the stunt keys on: debug.js) fires the lift
+    // thrusters
     c.ebrake = this.has('Space')
     c.main = this.held('ShiftLeft', 'ShiftRight') ? 1 : 0
-    c.lift = this.has('KeyF') ? 1 : 0
+    c.lift = this.has('KeyG') && stuntKeys() ? 1 : 0
     // a key wins over the stick; the stick and triggers are analog
     const or = (key, analog) => key || analog
     if (air) {

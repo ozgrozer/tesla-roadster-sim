@@ -1,7 +1,8 @@
-// The prompt by a car the player can get into, GTA's: the key, what it does and the car ("E Break
+// The prompt by a car the player can get into, GTA's: the key, what it does and the car ("F Break
 // in · Sedan"), and what is happening while they get in (onFoot.js shows it in #prompt).
 import { vehicles } from '../sim/vehicles.js'
 import { howToEnter } from '../sim/boarding.js'
+import { keyOf } from './keymap.js'
 
 export const PROMPT_R = 2.4 // m from a car's body that it offers to be got into
 export const TITLE = {
@@ -33,7 +34,7 @@ let target = null,
       how = howToEnter(e)
       if (how) {
         target = e
-        text = `<kbd>E</kbd> ${VERB[how]} · ${TITLE[e.type] || e.type}`
+        text = `<kbd>${keyOf('KeyF')}</kbd> ${VERB[how]} · ${TITLE[e.type] || e.type}`
       } else if (e.occupant === 'npc') text = `${TITLE[e.type] || e.type} · moving`
     }
   } else if (a?.dir === 'in') {

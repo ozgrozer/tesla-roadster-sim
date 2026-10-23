@@ -16,13 +16,13 @@ export const CAREER = [
     await g.ev(logEvents)
     g.expect(await g.ev(() => window.__roadster.app.world === 'city'), 'not in the city at the start')
     // skip the intro (Optimus walking up and getting in) as a player would: any key... its own skip
-    await g.ev(() => { window.__roadster.intro.finish(true); document.getElementById('help').hidden = true })
+    await g.ev(() => { window.__roadster.intro.finish(true); const h = document.getElementById('help'); if (h) h.hidden = true })
     await g.run(1)
     g.expect((await g.ev(mode)) === 'car', 'not in the car after the intro', await g.ev(mode))
     await g.shot('01-start.png')
   }],
   ['exit-roadster', async g => {
-    await g.press('KeyE', 0)
+    await g.press('KeyF', 0)
     g.expect(await g.until(() => window.__roadster.player.mode === 'foot', 6), 'did not get out of the Roadster', await g.ev(mode))
     await g.run(0.5)
     await g.shot('02-on-foot.png')
@@ -61,9 +61,9 @@ export const CAREER = [
       const car = await g.ev(toDoor, i)
       await g.run(0.5)
       const prompt = await g.ev(() => document.getElementById('prompt').textContent)
-      g.expect(/E/.test(prompt), 'no prompt by a parked car', prompt)
+      g.expect(/F/.test(prompt), 'no prompt by a parked car', prompt)
       events && (await g.ev(events))
-      await g.press('KeyE', 0)
+      await g.press('KeyF', 0)
       const seated = await g.until(() => window.__roadster.player.mode === 'car', 10)
       const ev = await g.ev(events)
       if (!seated) {
@@ -76,7 +76,7 @@ export const CAREER = [
       if (ok) g.expect(has(ev, 'car-stolen', e => e.alarm), 'an alarm but no car-stolen event with it', ev)
       if (!ok && k < 9) {
         // out again, for the next one
-        await g.press('KeyE', 0)
+        await g.press('KeyF', 0)
         await g.until(() => window.__roadster.player.mode === 'foot', 6)
         await g.run(0.5)
       } else g.car = car

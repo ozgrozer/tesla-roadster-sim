@@ -58,7 +58,7 @@ export const LINGER = {
     const Q = this.Q,
       rain = p.wet > 0.5 && !p.brolly
     p.whimT = rain ? 4 + 10 * Q() : 10 + 35 * Q()
-    if (p.lead || p.jog || (p.mate && p.mate.lead === p && !p.mate.gone)) return
+    if (p.lead || p.jog || p.shaken > 0 || (p.mate && p.mate.lead === p && !p.mate.gone)) return
     const sp = p.spot
     if (p.wet > 0.5) {
       if (rain && p.ring.d > 2 && Q() < 0.6)

@@ -10,6 +10,7 @@
 //   (foot: onFoot.js; game: () => the Game, game.js, made after the HUD)
 import { $, put } from './dom.js'
 import { TITLE } from './prompt.js'
+import { keyOf } from './keymap.js'
 
 // the class over the name, for each traffic type
 const CLASS = {
@@ -53,7 +54,11 @@ export class CarHud {
     if (e.kind === 'roadster') place.say('Tesla', 'Roadster', 3.2, true)
     else place.say(e.stolen ? `Stolen · ${CLASS[e.type] || ''}` : CLASS[e.type] || '', TITLE[e.type] || e.type, 3.2, true)
     if (e.kind !== 'roadster')
-      this.hud.helpbox.push('<b>E</b> get out · <b>H</b> horn · <b>V</b> camera', 2600, CAR_SLOT)
+      this.hud.helpbox.push(
+        `<b>${keyOf('KeyF')}</b> get out · <b>${keyOf('KeyE')}</b> horn · <b>${keyOf('KeyV')}</b> camera`,
+        2600,
+        CAR_SLOT
+      )
   }
   // out of it: the car's hints still waiting are dropped
   exited () {

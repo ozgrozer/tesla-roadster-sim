@@ -13,9 +13,9 @@ const BACK = 0.15 // m in 50 ms against the facing
 const shots = process.argv.includes('--shots')
 
 export async function jackTrace (g) {
-  await g.ev(() => { window.__roadster.intro.finish(true); document.getElementById('help').hidden = true })
+  await g.ev(() => { window.__roadster.intro.finish(true); const h = document.getElementById('help'); if (h) h.hidden = true })
   await g.run(1)
-  await g.press('KeyE', 0)
+  await g.press('KeyF', 0)
   await g.until(() => window.__roadster.player.mode === 'foot', 6)
   await g.run(0.5)
   let i = -1
@@ -29,7 +29,7 @@ export async function jackTrace (g) {
   await g.run(0.1, 0.1, 0)
   const before = await g.ev(() => new Set(window.__roadster.peds.list.map(p => p.id ?? p)).size)
   await g.ev(() => { window.__jk = new Set(window.__roadster.peds.list) })
-  await g.press('KeyE', 0)
+  await g.press('KeyF', 0)
   // (the whole trace in one call in the page: the frame loop runs in real time between calls, and
   // would put its own steps in between the samples)
   const trace = await g.ev(() => {
@@ -67,7 +67,7 @@ export async function jackTrace (g) {
 export async function jackShots (g, at = [1.0, 1.15, 1.35, 1.7, 2.1, 3.0], tag = 'jack') {
   await g.ev(() => { const R = window.__roadster; if (R.player.mode === 'car') R.foot.alt.body && Object.assign(R.foot.alt.body, { u: 0, vx: 0, vz: 0 }) })
   if (await g.ev(() => window.__roadster.player.mode === 'car')) {
-    await g.press('KeyE', 0)
+    await g.press('KeyF', 0)
     await g.until(() => window.__roadster.player.mode === 'foot', 6)
   }
   const i = await g.ev(findCar, { kind: 'driven', r: 600 })
@@ -76,7 +76,7 @@ export async function jackShots (g, at = [1.0, 1.15, 1.35, 1.7, 2.1, 3.0], tag =
   await g.ev(toDoor, i)
   await g.run(0.1, 0.1, 0)
   // (the camera turned to look at the door from behind the player's shoulder, side on)
-  await g.press('KeyE', 0)
+  await g.press('KeyF', 0)
   const out = []
   let t = 0
   for (const [k, s] of at.entries()) {

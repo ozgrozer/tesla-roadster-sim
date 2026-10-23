@@ -5,39 +5,56 @@
 // listener that does the translating is remap.js's, the tests load this.
 import { recall, remember } from './prefs.js'
 
-// [default code, what it does, group]: the keys that may be remapped (the arrows, Esc and the
-// number keys stay as they are)
+// GTA V's PC keys (keymap v2). [default code, what it does, group, debug]: the keys that may be
+// remapped (the arrows, Esc, P, Left Alt, Caps Lock and the mouse stay as they are: FIXED). The game
+// listens for these codes (main.js COMMANDS, input.js, footFight.js), so the default is the key.
+// Debug rows only work with ?debug=1 (debug.js); the Roadster's stunts only with the stunt keys
+// setting on (or debug).
 export const ACTIONS = [
-  ['KeyW', 'Throttle · walk forward', 'Drive · on foot'],
-  ['KeyS', 'Brake, reverse · walk back', 'Drive · on foot'],
-  ['KeyA', 'Steer left · walk left', 'Drive · on foot'],
-  ['KeyD', 'Steer right · walk right', 'Drive · on foot'],
-  ['Space', 'Handbrake · jump', 'Drive · on foot'],
-  ['ShiftLeft', 'Boost · sprint', 'Drive · on foot'],
-  ['KeyE', 'Get in, out · steal', 'Drive · on foot'],
-  ['KeyF', 'Fly (lift thrusters) · punch', 'Drive · on foot'],
-  ['KeyH', 'Horn · punch', 'Drive · on foot'],
-  ['KeyZ', 'Look behind', 'Drive'],
-  ['KeyQ', 'Yaw left (flying)', 'Fly'],
-  ['KeyX', 'Backflip', 'Fly'],
-  ['KeyK', 'Kickflip', 'Fly'],
-  ['KeyV', 'Camera', 'Game'],
-  ['KeyB', 'Radio station', 'Game'],
-  ['KeyP', 'Autopilot', 'Game'],
-  ['KeyR', 'Reset', 'Game'],
-  ['KeyL', 'Time of day', 'Game'],
-  ['KeyO', 'Weather', 'Game'],
-  ['KeyT', 'Slow motion', 'Game'],
-  ['KeyN', 'Sound on, off', 'Game'],
-  ['KeyU', 'Speed units', 'Game'],
-  ['KeyC', 'City · test site', 'Game'],
-  ['KeyM', 'Manual', 'Game'],
-  ['KeyI', 'Keys card', 'Game']
+  ['KeyW', 'Accelerate · move forward', 'On foot · in a vehicle'],
+  ['KeyS', 'Brake, reverse · move back', 'On foot · in a vehicle'],
+  ['KeyA', 'Steer left · move left', 'On foot · in a vehicle'],
+  ['KeyD', 'Steer right · move right', 'On foot · in a vehicle'],
+  ['ShiftLeft', 'Sprint · Roadster boost', 'On foot · in a vehicle'],
+  ['Space', 'Jump · handbrake', 'On foot · in a vehicle'],
+  ['KeyF', 'Enter, exit vehicle · steal, carjack', 'On foot · in a vehicle'],
+  ['KeyE', 'Interact (doors, shops) · horn', 'On foot · in a vehicle'],
+  ['KeyR', 'Melee attack · reset a wrecked car', 'On foot · in a vehicle'],
+  ['KeyH', 'Headlights: auto, on, off', 'On foot · in a vehicle'],
+  ['KeyV', 'Cycle camera', 'Camera · HUD'],
+  ['KeyC', 'Look behind (hold)', 'Camera · HUD'],
+  ['KeyZ', 'Expanded radar', 'Camera · HUD'],
+  ['KeyM', 'Map (the pause menu)', 'Camera · HUD'],
+  ['Period', 'Radio: next station', 'Camera · HUD'],
+  ['Comma', 'Radio: previous station', 'Camera · HUD'],
+  ['KeyG', 'Fly: lift thrusters (hold)', 'Roadster stunts'],
+  ['KeyQ', 'Yaw left in the air (E: right)', 'Roadster stunts'],
+  ['KeyX', 'Backflip (in the air)', 'Roadster stunts'],
+  ['KeyK', 'Kickflip (in the air)', 'Roadster stunts'],
+  ['KeyY', 'City · test site', 'Debug', true],
+  ['KeyT', 'Slow motion', 'Debug', true],
+  ['KeyI', 'Autopilot · manual', 'Debug', true],
+  ['KeyL', 'Time of day', 'Debug', true],
+  ['KeyO', 'Weather', 'Debug', true],
+  ['KeyB', 'Suction fan (test site)', 'Debug', true],
+  ['KeyN', 'Sound on, off', 'Debug', true],
+  ['KeyU', 'Speed units', 'Debug', true]
+]
+// the keys that can't be remapped, as the CONTROLS card lists them
+export const FIXED = [
+  ['Esc · P', 'Pause menu'],
+  ['Left Alt · Caps', 'Walk (toggle)'],
+  ['Mouse', 'Look round (click the picture first); in a car it recentres'],
+  ['Left click', 'Melee attack (press again: combo)'],
+  ['Wheel', 'Camera distance on foot · radio station in a vehicle'],
+  ['Arrows', 'Drive and move, as W A S D']
 ]
 export const DEFAULT_CODES = ACTIONS.map(a => a[0])
 // keys that can't be given to an action (the menu's, the arrows' second set of driving keys)
 export const RESERVED = new Set([
   'Escape',
+  'KeyP',
+  'CapsLock',
   'ArrowUp',
   'ArrowDown',
   'ArrowLeft',
@@ -50,7 +67,11 @@ export const RESERVED = new Set([
   'AltLeft',
   'AltRight'
 ])
+// the stored map's version: a map saved under another (the old non-GTA keys) is dropped
+export const KEYMAP_VERSION = 2
 
+// set when a saved map from an older version was dropped (the menu says so once)
+export const MIGRATED = { from: 0 }
 // action (its default code) -> the key bound to it
 export const BINDS = {}
 // key pressed -> the code the game hears (null: swallowed, it is no one's now)
@@ -69,7 +90,13 @@ function rebuild () {
 export function loadKeys () {
   let saved = {}
   try {
-    saved = JSON.parse(recall('keys', '{}')) || {}
+    const raw = JSON.parse(recall('keys', '{}')) || {}
+    // (v1 maps were plain { action: key } over the old keys: they meant other actions, so they go)
+    if (raw.v === KEYMAP_VERSION && raw.map) saved = raw.map
+    else if (Object.keys(raw).length) {
+      remember('keys', JSON.stringify({ v: KEYMAP_VERSION, map: {} }))
+      MIGRATED.from = 1
+    }
   } catch {}
   for (const c of DEFAULT_CODES) BINDS[c] = c
   const used = new Set()
@@ -105,11 +132,15 @@ export function resetKeys () {
 function save () {
   const out = {}
   for (const [d, k] of Object.entries(BINDS)) if (d !== k) out[d] = k
-  remember('keys', JSON.stringify(out))
+  remember('keys', JSON.stringify({ v: KEYMAP_VERSION, map: out }))
 }
 // the code the game should hear for a key pressed: itself, another, or null (nothing)
 export function translate (code) {
   return TRANSLATE.has(code) ? TRANSLATE.get(code) : code
+}
+// the key bound to an action, as the HUD says it: keyOf('KeyF') -> 'F' (or what it was moved to)
+export function keyOf (def) {
+  return keyName(BINDS[def] || def)
 }
 // a key's name as the card shows it: KeyW -> W, ShiftLeft -> Shift, Digit1 -> 1
 export function keyName (code) {
@@ -120,6 +151,7 @@ export function keyName (code) {
   const names = {
     Space: 'Space',
     ShiftLeft: 'Shift',
+    AltLeft: 'Alt',
     ShiftRight: 'R Shift',
     Backquote: '`',
     Minus: '-',
