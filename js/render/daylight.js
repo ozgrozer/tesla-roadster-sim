@@ -19,6 +19,7 @@ import { ENV } from '../sim/env.js'
 import { SKY } from './citySky.js'
 import { GRADE } from './post.js'
 import { WET } from './wet.js'
+import { CANYON } from './canyon.js'
 import { WIND } from './treeWind.js'
 import { scene, renderer, hemi, key, keyOffset } from './scene.js'
 
@@ -130,8 +131,8 @@ const SUN_LIGHT = K(
 )
 // the sky's light: its colour and strength, and the ground's bounce
 const SKY_LIGHT = K(
-  [-12, 0.18, 0.22, 0.36, 0.45],
-  [-6, 0.25, 0.3, 0.5, 0.5],
+  [-12, 0.18, 0.22, 0.36, 0.34],
+  [-6, 0.25, 0.3, 0.5, 0.4],
   [-2, 0.45, 0.45, 0.65, 0.6],
   [0, 0.6, 0.6, 0.8, 0.65],
   [7, 0.68, 0.72, 0.92, 0.7],
@@ -148,9 +149,9 @@ const BOUNCE = K(
 )
 // the exposure, the environment map's strength and the fog's density
 const EXPOSURE = K(
-  [-12, 1.2, 0.9, 0.0011],
-  [-6, 1.25, 0.8, 0.0011],
-  [-2, 1.18, 0.65, 0.001],
+  [-12, 1.04, 0.9, 0.0011],
+  [-6, 1.1, 0.8, 0.0011],
+  [-2, 1.14, 0.65, 0.001],
   [0, 1.12, 0.6, 0.0009],
   [7, 1.06, 0.52, 0.00088],
   [14, 1.05, 0.5, 0.00086],
@@ -166,6 +167,19 @@ const GRADING = K(
   [14, 1.1, 0.2, -0.012, 0.004, 0.02, 0.03, 0.012, -0.014, 0.26],
   [30, 1.07, 0.18, -0.008, 0.002, 0.016, 0.018, 0.01, -0.006, 0.24]
 )
+// the white balance, before the tone mapping (so it moves the exposure's colour, not its blacks):
+// cool under the moon, rose in the blue hour, warm through the golden hours, near neutral at noon
+// (the looks from mrdoob/slop-newyork js/post-processing.js, MIT, (c) 2026 Mr.doob)
+const BALANCE = K(
+  [-12, 0.985, 1.0, 1.035],
+  [-4, 1.025, 0.995, 1.015],
+  [2, 1.045, 1.0, 0.955],
+  [14, 1.045, 1.0, 0.955],
+  [30, 1.015, 1.0, 0.985]
+)
+// how damp the streets are in dry weather (wet.js, roadSurface.js): the night's dew and the
+// sprinklers' run-off, mostly gone by the middle of the day
+const DAMP = K([-12, 0.62], [-6, 0.58], [-2, 0.5], [2, 0.34], [7, 0.28], [14, 0.24], [25, 0.1], [40, 0.06])
 const DULL = [0.86, 0.1, -0.006, 0.002, 0.012, 0.0, 0.0, 0.004, 0.28] // under cloud and rain
 
 // the row of values at height a (degrees), between the keyframes either side, into out
@@ -292,6 +306,11 @@ export class Daylight {
     if (flash > 0) hemi.color.lerp(_c.setRGB(0.75, 0.8, 1), flash)
     set(hemi.groundColor, BOUNCE, a).multiplyScalar(1 - 0.35 * o * day)
     SKY.uAmb.value.copy(hemi.color).multiplyScalar(hk)
+    // (the sunlit walls' warm light bounced down into the streets between them: canyon.js)
+    CANYON.uCanyonOn.value = LOOK.on ? 1 : 0
+    CANYON.uBounce.value
+      .copy(key.color)
+      .multiplyScalar(moon ? 0 : 0.05 * key.intensity * day * (1 - 0.8 * o))
     // ---- the fog, the exposure, the reflections' strength
     at(EXPOSURE, a, _v)
     renderer.toneMappingExposure = _v[0] + 0.12 * o * day + 0.08 * fog
@@ -317,11 +336,14 @@ export class Daylight {
     GRADE.uShadow.value.set(_g[2], _g[3], _g[4])
     GRADE.uHigh.value.set(_g[5], _g[6], _g[7])
     GRADE.uVignette.value = _g[8]
+    set(GRADE.uBalance.value, BALANCE, a).lerp(_c.setRGB(1, 1, 1), LOOK.on ? dull : 1)
     // ---- the ground in the rain (wet.js)
     WET.uWet.value = e.wet
     WET.uPool.value = e.pool
     WET.uRain.value = rain
     WET.uRainT.value += dt
+    at(DAMP, a, _v)
+    WET.uDamp.value = LOOK.on ? _v[0] * (1 - 0.5 * fog) : 0
     // ---- how dark it is for the city's own lights
     if (Math.abs(e.dark - this.darkWas) > 0.004) {
       this.darkWas = e.dark
