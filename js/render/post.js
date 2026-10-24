@@ -158,9 +158,9 @@ export class Post {
     composer.addPass(new RenderPass(scene, camera))
     const bloom = new UnrealBloomPass(
       new THREE.Vector2(window.innerWidth, window.innerHeight),
-      0.65,
-      0.45,
-      1.6
+      0.82,
+      0.55,
+      1.45
     )
     bloom.materialHighPassFilter.fragmentShader = KNEE
     bloom.highPassUniforms.smoothWidth.value = 0.7

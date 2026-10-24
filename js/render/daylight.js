@@ -29,9 +29,9 @@ const DEG = 180 / Math.PI
 // punch, and a thin warm haze by day that gives the long avenues their depth; ?look=0 for without
 export const LOOK = {
   on: typeof location === 'undefined' || !/[?&]look=0/.test(location.search),
-  sat: 1.07,
-  contrast: 1.04,
-  haze: 0.00014
+  sat: 1.1,
+  contrast: 1.1,
+  haze: 0.0002
 }
 // keyframes by the sun's height (degrees): [height, value...]
 const K = (...rows) => rows

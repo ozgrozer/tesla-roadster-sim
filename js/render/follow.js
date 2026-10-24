@@ -2,6 +2,7 @@
 // (the speed pull-back's proportional part adapted from mrdoob/slop-newyork js/cameras.js, MIT, (c) 2026 Mr.doob)
 import * as THREE from 'three'
 import { clamp, wrapPi } from '../sim/constants.js'
+import { MOTION } from './motionPref.js'
 
 const lerpK = (k, dt) => 1 - Math.exp(-k * dt)
 const SWING = 3.4 // rad/s: the fastest the follow camera swings round behind the car
@@ -10,18 +11,25 @@ const SWING = 3.4 // rad/s: the fastest the follow camera swings round behind th
 // mouse wheel zooms it), REACH m further per m/s of speed up to REACH_MAX, so speed opens it out a
 // little; tipped up PITCH rad and raised RISE m, aimed AIM m above the car and, at speed, up to AHEAD
 // m down the road, so the faster it goes the more of the road ahead is in view.
-export const ARM = 6.3,
-  REACH = 0.028,
-  REACH_MAX = 1.7,
-  PITCH = 0.17,
-  RISE = 1.15,
-  AIM = 0.85,
-  AHEAD = 2.4
+export const ARM = 5.6,
+  REACH = 0.04,
+  REACH_MAX = 2.6,
+  PITCH = 0.2,
+  RISE = 1.02,
+  AIM = 0.78,
+  AHEAD = 5.4
 // the field of view's widening with speed (degrees, all of it by FOV_AT m/s), and how far the arm
 // falls back pulling away and closes in braking (m per m/s^2): the weight of the car, seen
-const FOV_SPEED = 11,
-  FOV_AT = 55,
-  SURGE = 0.07
+const FOV_SPEED = 18,
+  FOV_AT = 46,
+  SURGE = 0.12
+// how far the horizon leans into a corner (rad per m/s^2 of lateral g, and per rad/s of yaw), and
+// how far the arm steps out to the outside of the bend (m) so the road being turned into stays in view
+const BANK_G = 0.0052,
+  BANK_YAW = 0.014,
+  BANK_MAX = 0.08,
+  SIDE = 0.022,
+  SIDE_MAX = 0.75
 // and the arm let out in proportion to the speed as well (eased over a third of a second or so): PULL
 // of its length per m/s, at most PULL_MAX, so a bus's longer arm goes out further than a car's
 const PULL = 0.0045,
@@ -98,7 +106,7 @@ export function follow (rig, dt, sim, P) {
   f.pace = (f.pace ?? 0) + (speed - (f.pace ?? 0)) * lerpK(3, dt)
   // (looking down the road the way the car is going, not while it backs up)
   const fwdSpeed = sim.mode === 'ground' ? Math.max(0, sim.speed) : 0
-  f.ahead += (Math.min(AHEAD, fwdSpeed * 0.06) - f.ahead) * lerpK(1.2, dt)
+  f.ahead += (Math.min(AHEAD, fwdSpeed * 0.13) - f.ahead) * lerpK(1.4, dt)
   // it falls back as the car launches and closes in under hard braking
   const acc = sim.mode === 'ground' ? clamp(sim.accLong, -14, 16) : 0
   f.surge += (acc * SURGE - f.surge) * lerpK(2.5, dt)
@@ -132,7 +140,7 @@ export function follow (rig, dt, sim, P) {
     along2 = hv > 1 && !rig.behind ? Math.max(0, way / hv) : 0
   const ah = f.ahead * along2 * (1 - Math.min(1, Math.abs(f.yawOff)))
   // and into a turn: the aim led a little to the inside of the bend, the faster the more
-  const leadT = rig.behind ? 0 : clamp((sim.yawRate || 0) * fwdSpeed * 0.045, -1.4, 1.4)
+  const leadT = rig.behind ? 0 : clamp((sim.yawRate || 0) * fwdSpeed * 0.065, -2.4, 2.4)
   f.lead = (f.lead ?? 0) + (leadT - (f.lead ?? 0)) * lerpK(2.5, dt)
   const sh = Math.sin(f.heading),
     ch = Math.cos(f.heading)
@@ -141,11 +149,58 @@ export function follow (rig, dt, sim, P) {
     f.target.y + (AIM + 0.6 * f.up) * f.elev,
     f.target.z - sh * ah - ch * f.lead
   )
-  // wider with speed (GTA's sense of pace: about 9 degrees more by 110 km/h, FOV_SPEED by 200),
+  // out to the outside of the bend (a left turn's yaw is positive, and +z is to the right of a car
+  // facing +x), so the corner opens up beside the car instead of hiding behind it
+  const sideT =
+    sim.mode === 'ground' && !rig.behind
+      ? clamp((sim.yawRate || 0) * Math.min(fwdSpeed, 24) * SIDE, -SIDE_MAX, SIDE_MAX)
+      : 0
+  f.side = (f.side ?? 0) + (sideT - (f.side ?? 0)) * lerpK(2.4, dt)
+  rig.pos.x += sh * f.side
+  rig.pos.z += ch * f.side
+  // the horizon leans into the turn, the way GTA's chase cam does: a left turn (positive yaw and
+  // lateral g) drops the left side of the picture. Less while looking round, and barely at all
+  // with reduced motion
+  const look = 1 - Math.min(1, Math.abs(f.yawOff) * 0.8)
+  const bankT =
+    sim.mode === 'ground' && !rig.behind
+      ? clamp(
+        ((sim.latAcc || 0) * BANK_G + (sim.yawRate || 0) * BANK_YAW) * look * MOTION.shake,
+        -BANK_MAX,
+        BANK_MAX
+      )
+      : 0
+  f.bank = (f.bank ?? 0) + (bankT - (f.bank ?? 0)) * lerpK(5, dt)
+  // wider with speed (GTA's sense of pace: about 14 degrees more by 80 km/h, FOV_SPEED by 165),
   // and a kick wider still while the main thrusters fire
   f.kick += (sim.thrMain - f.kick) * lerpK(4, dt)
   const sp = Math.min(1, speed / FOV_AT)
-  return 55 + FOV_SPEED * sp * (2 - sp) + 7 * f.kick
+  return 50 + FOV_SPEED * sp * (2 - sp) + 8 * f.kick
+}
+
+const _fwd = new THREE.Vector3(),
+  _right = new THREE.Vector3(),
+  _up = new THREE.Vector3(0, 1, 0)
+// Lean the chase camera's horizon by the follow arm's bank, after the walls have pulled the camera
+// in. A positive bank (a left turn) drops the left side of the picture.
+export function applyBank (cam, look, bank) {
+  if (Math.abs(bank) < 0.0008) {
+    cam.up.set(0, 1, 0)
+    return
+  }
+  _fwd.subVectors(look, cam.position)
+  if (_fwd.lengthSq() < 1e-6) {
+    cam.up.set(0, 1, 0)
+    return
+  }
+  _fwd.normalize()
+  _right.crossVectors(_fwd, _up)
+  if (_right.lengthSq() < 1e-8) {
+    cam.up.set(0, 1, 0)
+    return
+  }
+  _right.normalize()
+  cam.up.set(0, Math.cos(bank), 0).addScaledVector(_right, Math.sin(bank))
 }
 
 // The camera kept out of the traffic, as the city's clip keeps it out of the buildings: a car on

@@ -150,13 +150,14 @@ export const softTex = (() => {
 // ---------- materials ----------
 export const hdr = (r, g, b) => new THREE.Color(r, g, b)
 export const MAT = {
-  // Ano White: a satin silver-white with soft, broad highlights
+  // Ano White under a clear coat: a deep gloss that takes the sky, the way the reveal car does
   paint: new THREE.MeshPhysicalMaterial({
-    color: 0xeceef0,
-    roughness: 0.36,
-    metalness: 0.18,
-    clearcoat: 0.35,
-    clearcoatRoughness: 0.28
+    color: 0xf2f4f6,
+    roughness: 0.16,
+    metalness: 0.42,
+    clearcoat: 1,
+    clearcoatRoughness: 0.05,
+    envMapIntensity: 1.25
   }),
   // satin black: sills, diffuser, wing
   trim: new THREE.MeshStandardMaterial({
@@ -180,9 +181,9 @@ export const MAT = {
   }),
   tire: new THREE.MeshStandardMaterial({ color: 0x111214, roughness: 0.92 }),
   rim: new THREE.MeshStandardMaterial({
-    color: 0x2b2e33,
-    roughness: 0.35,
-    metalness: 0.8
+    color: 0xc5c9cf,
+    roughness: 0.16,
+    metalness: 0.92
   }),
   gold: new THREE.MeshStandardMaterial({
     color: 0xd6a84e,

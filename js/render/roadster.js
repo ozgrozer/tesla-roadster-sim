@@ -446,15 +446,15 @@ export function updateRoadster (RS, sim, ctl, dt) {
   // burnout squats the tail. The body's +x is its nose, so a positive pitch lifts it.)
   // (v3 drive: a little more again, about 3 degrees of dive and 5 of roll, so the weight reads)
   const pitchT = onGround
-    ? clamp(sim.accLong * 0.0042, -0.06, 0.06) + (sim.burning ? 0.018 : 0)
+    ? clamp(sim.accLong * 0.0068, -0.085, 0.06) + (sim.burning ? 0.022 : 0)
     : 0
-  const rollT = onGround ? clamp(sim.latAcc * 0.0068, -0.09, 0.09) : 0
+  const rollT = onGround ? clamp(sim.latAcc * 0.011, -0.13, 0.13) : 0
   const L = RS.lean,
     h = Math.min(dt, 1 / 30)
   // (the springs settle with a touch of overshoot: a rock back after a stop, a sway out of a bend)
-  L.pv += (85 * (pitchT - L.p) - 9.5 * L.pv) * h
+  L.pv += (58 * (pitchT - L.p) - 7.6 * L.pv) * h
   L.p += L.pv * h
-  L.rv += (100 * (rollT - L.r) - 10.5 * L.rv) * h
+  L.rv += (64 * (rollT - L.r) - 8 * L.rv) * h
   L.r += L.rv * h
   RS.body.rotation.z = L.p
   RS.body.rotation.x = L.r

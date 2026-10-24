@@ -3,7 +3,7 @@
 // no further than where they grip hardest), the front wheels following a slide on their caster,
 // steering into a slide to hold it or out of it to catch it, unwinding the opposite lock as the car
 // swings back, and the rack turned at the speed of hands. ground.js runs it every step on the road.
-import { CAR, clamp } from './constants.js'
+import { CAR, G, clamp } from './constants.js'
 
 export const smooth = x => (x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x))
 
@@ -96,4 +96,21 @@ export function steer (s, c, u, w, r, beta, FmaxF, FmaxR, track, dt) {
   _out.slide = slide
   _out.push = push
   return _out
+}
+
+// The nose helped round to where the wheel is already pointing, the way GTA's cars rotate into a
+// corner instead of waiting on the tyres to build a slip angle. Only while the turn is held (held,
+// 0 to 1: a tap stays a lane change), only up to the rate the grip can carry, and never once the
+// tail has stepped out or Track Mode has the car. Returns a yaw moment, N m.
+const TURN = 3.2
+export function turnIn (u, r, steerAng, beta, mu, held, track, ebrake) {
+  if (track || ebrake || u < 2.5 || held < 0.05) return 0
+  const want = (u * Math.tan(steerAng)) / CAR.wheelbase
+  const cap = (0.9 * mu * G) / Math.max(u, 4)
+  const tgt = clamp(want, -cap, cap)
+  const err = tgt - r
+  if (err * tgt < 0 && Math.abs(tgt) > 0.05) return 0
+  const k =
+    TURN * held * Math.max(0, 1 - Math.abs(beta) / 0.11) * Math.min(1, (u - 2.5) / 4)
+  return clamp(CAR.Iz * k * err, -12000, 12000)
 }

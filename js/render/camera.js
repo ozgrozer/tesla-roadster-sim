@@ -3,7 +3,7 @@
 import * as THREE from 'three'
 import { clamp } from '../sim/constants.js'
 import { TRACK, LINEUP_FIRST, LINEUP_LAST } from '../sim/track.js'
-import { follow, clipTraffic, ARM } from './follow.js'
+import { follow, clipTraffic, applyBank, ARM } from './follow.js'
 import { hoodSeat, smoothClip } from './carCam.js'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { MOTION } from './motionPref.js'
@@ -433,10 +433,12 @@ export class CameraRig {
       if (this.traffic)
         clipTraffic(this, this.look, cam.position, this.traffic.cars, dt)
     }
-    cam.fov += (fov - cam.fov) * lerpK(shot === 'cockpit' ? 12 : 3, dt)
+    const fovK = shot === 'cockpit' ? 12 : shot === 'follow' ? 6 : 3
+    cam.fov += (fov - cam.fov) * lerpK(fovK, dt)
     cam.updateProjectionMatrix()
-    // (from the driver's seat the horizon tilts with the car; every other shot keeps it level)
+    // the driver's seat tilts with the car; the chase cam leans into the corner (follow.js)
     if (shot === 'cockpit') cam.up.copy(this.camUp)
+    else if (shot === 'follow') applyBank(cam, this.look, this.f.bank || 0)
     else cam.up.set(0, 1, 0)
     cam.lookAt(this.look)
     if (this.shakeAmt > 0.001) {

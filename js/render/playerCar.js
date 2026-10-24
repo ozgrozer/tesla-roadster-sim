@@ -11,9 +11,9 @@
 //   new PlayerCar(cityView)   .frame(drivable, dt): the stand-in for RS (or null), each frame
 import * as THREE from 'three'
 
-const PITCH_K = 1.5, // how much the drawn body exaggerates the body's pitch and roll
-  ROLL_K = 1.35,
-  DIVE_K = 2.1 // (and nose down on the brakes more again: GTA's dive reads from the side)
+const PITCH_K = 2, // how much the drawn body exaggerates the body's pitch and roll
+  ROLL_K = 2.2,
+  DIVE_K = 2.6 // (and nose down on the brakes more again: GTA's dive reads from the side)
 const _p = new THREE.Vector3()
 
 export class PlayerCar {
@@ -51,6 +51,8 @@ export class PlayerCar {
     car.posed = true
     car.pitch = -b.pitch * (b.pitch > 0 ? DIVE_K : PITCH_K) // (the body's pitch is nose down; the drawing's nose up)
     car.roll = b.roll * ROLL_K
+    car.pitch = Math.max(-0.12, Math.min(0.1, car.pitch))
+    car.roll = Math.max(-0.14, Math.min(0.14, car.roll))
     car.lift = Math.max(-0.05, b.heave)
     car.steer = b.steerAng
     // the driven rears turning faster than the road in a burnout or a power slide, or stopped

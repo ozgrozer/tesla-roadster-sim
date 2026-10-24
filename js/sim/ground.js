@@ -1,6 +1,6 @@
 import { roofAt, STEP } from './roofs.js'
 import { TRACK, SOLIDS } from './track.js'
-import { smooth, tyreCurve, steer } from './tyres.js'
+import { smooth, tyreCurve, steer, turnIn } from './tyres.js'
 import { feel, gripOf, dragOf, kerbDist } from './street.js'
 import { G, CAR, LIFT_ACC, clamp, wrapPi } from './constants.js'
 import { collideCity, bumpCars, loadBody, storeBody } from './collide.js'
@@ -322,6 +322,7 @@ export function stepGround (s, dt, c, main, lift) {
   Mz -= b * Fyr
   // the drift's motors, a donut, the handbrake's swing and the spin catch (drift.js)
   Mz += driftMoment(s, c, track, throttle, burn, beta, Fyr, u, w, r, mu, dt)
+  Mz += turnIn(u, r, s.steerAng, beta, mu, s.held, track || burn, c.ebrake)
   s.lastFyf = wantF
   s.lastFyr = wantR
   // stability control: when the car rotates faster than the steering asks for, brake a front wheel to

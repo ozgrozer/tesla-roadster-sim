@@ -45,8 +45,8 @@ export function ride (car, T, S) {
     rollT = clamp(side * 0.012 * kr, -0.08, 0.08)
   } else {
     sp = car.v
-    pitchT = clamp((car.acc || 0) * 0.0052 * kp, -0.06, 0.03)
-    rollT = clamp(sp * (car.yr || 0) * 0.0085 * kr, -0.075, 0.075)
+    pitchT = clamp((car.acc || 0) * 0.007 * kp, -0.08, 0.045)
+    rollT = clamp(sp * (car.yr || 0) * 0.011 * kr, -0.1, 0.1)
   }
   // a lowrider hitting its switches: each pump of the hydraulics throws the front up (or the back,
   // or one side, then the other), and lets it drop
