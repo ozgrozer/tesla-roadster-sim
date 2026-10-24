@@ -68,6 +68,7 @@ test('GTA V keys: Space the handbrake, G flies only with the stunt keys, F/E/H a
   assert.equal(c.ebrake, true, 'Space holds the handbrake')
   assert.equal(c.lift, 0, 'and no longer fires the lift thrusters')
   up('Space')
+  setOption('stunts', false)
   down('KeyG')
   assert.equal(input.controls(sim, 'auto').lift, 0, 'G does nothing without the stunt keys')
   up('KeyG')

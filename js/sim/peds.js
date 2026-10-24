@@ -140,6 +140,11 @@ export class Peds {
       alert: 0,
       roadT: 0,
       fall: 0,
+      air: 0, // thrown clear of the road (m), and how fast that is changing
+      airV: 0,
+      pitch: 0, // how far the body has tumbled (rad), and how fast
+      pitchV: 0,
+      rise: 0, // s left getting up, so a knocked-down person doesn't slide off half standing
       downT: 0,
       dead: false,
       jacked: false,
@@ -251,9 +256,7 @@ export class Peds {
     this.alarms(sim, sim.mode === 'ramp' ? null : pl, traffic)
     if (traffic.exits.length) this.alight(traffic) // (out of their wrecks: alight.js)
     this.think(dt, sim, traffic, me) // (threats, the horn, the road, each other: pedBrain.js)
-    // (loud: fast, or on the horn)
-    const loud =
-      me && (me.vx * me.vx + me.vz * me.vz > 121 || traffic.horn) ? me : null
+    // (heads follow a car that is close, and one moving or on the horn from further off: crowd.js)
     this.onRoad.length = 0
     this.frame++
     for (const p of this.list) {
@@ -265,7 +268,7 @@ export class Peds {
       }
       this.move(p, t)
       p.lodT = 0
-      this.watch(p, dt, loud)
+      this.watch(p, dt, me)
       for (const th of threats) this.dodge(p, th)
       p.inRoad = p.state !== 'walk' && kerbDist(p.x, p.z) > -0.2
       if (p.inRoad) {
@@ -411,10 +414,14 @@ export class Peds {
       this.unwall(p) // (a dive into a wall stops at its face)
       if (p.t > 0.7) this.goBack(p)
     } else if (p.state === 'back') {
-      // hurrying back to the pavement
-      p.gait += (1.4 - p.gait) * Math.min(1, dt * 3)
+      // hurrying back; held up, they pause, then step along the pavement
       ringAt(p.backRing, p.backS, P)
-      if (this.toward(p, P.x, P.z, 2.6, dt) || (p.t > 3 && this.pickBack(p))) {
+      const d = Math.hypot(P.x - p.x, P.z - p.z)
+      if (d < p.near - 0.15) p.near = d, p.stall = 0
+      else p.stall += dt
+      const pace = p.stall > 0.12 ? 0.15 : 1.4
+      p.gait += (pace - p.gait) * Math.min(1, dt * 8)
+      if (this.toward(p, P.x, P.z, 2.6, dt) || (p.stall > 2.5 && this.pickBack(p))) {
         p.ring = p.backRing
         p.s = p.backS
         p.state = 'walk'
@@ -442,7 +449,7 @@ export class Peds {
     // (sitting, the clock stops: no gestures, and no steps to be heard)
     p.phase += speed
       ? (dt * speed * Math.PI * 2) / stride
-      : p.sit > 0
+      : p.sit > 0 || p.state === 'down'
       ? 0
       : dt * 2
   }

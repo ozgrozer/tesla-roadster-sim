@@ -10,7 +10,7 @@ function __require (id) {
   if (!__cache[id]) { __cache[id] = {}; __defs[id](__cache[id]) }
   return __cache[id]
 }
-// ---- vendor/three/three.module.js
+// ---- vendor\three\three.module.js
 __define(0, function (__exports) {
 /**
  * @license
@@ -54584,7 +54584,7 @@ if ( typeof window !== 'undefined' ) {
 __export(__exports, { "ACESFilmicToneMapping": () => ACESFilmicToneMapping, "AddEquation": () => AddEquation, "AddOperation": () => AddOperation, "AdditiveAnimationBlendMode": () => AdditiveAnimationBlendMode, "AdditiveBlending": () => AdditiveBlending, "AgXToneMapping": () => AgXToneMapping, "AlphaFormat": () => AlphaFormat, "AlwaysCompare": () => AlwaysCompare, "AlwaysDepth": () => AlwaysDepth, "AlwaysStencilFunc": () => AlwaysStencilFunc, "AmbientLight": () => AmbientLight, "AnimationAction": () => AnimationAction, "AnimationClip": () => AnimationClip, "AnimationLoader": () => AnimationLoader, "AnimationMixer": () => AnimationMixer, "AnimationObjectGroup": () => AnimationObjectGroup, "AnimationUtils": () => AnimationUtils, "ArcCurve": () => ArcCurve, "ArrayCamera": () => ArrayCamera, "ArrowHelper": () => ArrowHelper, "AttachedBindMode": () => AttachedBindMode, "Audio": () => Audio, "AudioAnalyser": () => AudioAnalyser, "AudioContext": () => AudioContext, "AudioListener": () => AudioListener, "AudioLoader": () => AudioLoader, "AxesHelper": () => AxesHelper, "BackSide": () => BackSide, "BasicDepthPacking": () => BasicDepthPacking, "BasicShadowMap": () => BasicShadowMap, "BatchedMesh": () => BatchedMesh, "Bone": () => Bone, "BooleanKeyframeTrack": () => BooleanKeyframeTrack, "Box2": () => Box2, "Box3": () => Box3, "Box3Helper": () => Box3Helper, "BoxGeometry": () => BoxGeometry, "BoxHelper": () => BoxHelper, "BufferAttribute": () => BufferAttribute, "BufferGeometry": () => BufferGeometry, "BufferGeometryLoader": () => BufferGeometryLoader, "ByteType": () => ByteType, "Cache": () => Cache, "Camera": () => Camera, "CameraHelper": () => CameraHelper, "CanvasTexture": () => CanvasTexture, "CapsuleGeometry": () => CapsuleGeometry, "CatmullRomCurve3": () => CatmullRomCurve3, "CineonToneMapping": () => CineonToneMapping, "CircleGeometry": () => CircleGeometry, "ClampToEdgeWrapping": () => ClampToEdgeWrapping, "Clock": () => Clock, "Color": () => Color, "ColorKeyframeTrack": () => ColorKeyframeTrack, "ColorManagement": () => ColorManagement, "CompressedArrayTexture": () => CompressedArrayTexture, "CompressedCubeTexture": () => CompressedCubeTexture, "CompressedTexture": () => CompressedTexture, "CompressedTextureLoader": () => CompressedTextureLoader, "ConeGeometry": () => ConeGeometry, "ConstantAlphaFactor": () => ConstantAlphaFactor, "ConstantColorFactor": () => ConstantColorFactor, "Controls": () => Controls, "CubeCamera": () => CubeCamera, "CubeReflectionMapping": () => CubeReflectionMapping, "CubeRefractionMapping": () => CubeRefractionMapping, "CubeTexture": () => CubeTexture, "CubeTextureLoader": () => CubeTextureLoader, "CubeUVReflectionMapping": () => CubeUVReflectionMapping, "CubicBezierCurve": () => CubicBezierCurve, "CubicBezierCurve3": () => CubicBezierCurve3, "CubicInterpolant": () => CubicInterpolant, "CullFaceBack": () => CullFaceBack, "CullFaceFront": () => CullFaceFront, "CullFaceFrontBack": () => CullFaceFrontBack, "CullFaceNone": () => CullFaceNone, "Curve": () => Curve, "CurvePath": () => CurvePath, "CustomBlending": () => CustomBlending, "CustomToneMapping": () => CustomToneMapping, "CylinderGeometry": () => CylinderGeometry, "Cylindrical": () => Cylindrical, "Data3DTexture": () => Data3DTexture, "DataArrayTexture": () => DataArrayTexture, "DataTexture": () => DataTexture, "DataTextureLoader": () => DataTextureLoader, "DataUtils": () => DataUtils, "DecrementStencilOp": () => DecrementStencilOp, "DecrementWrapStencilOp": () => DecrementWrapStencilOp, "DefaultLoadingManager": () => DefaultLoadingManager, "DepthFormat": () => DepthFormat, "DepthStencilFormat": () => DepthStencilFormat, "DepthTexture": () => DepthTexture, "DetachedBindMode": () => DetachedBindMode, "DirectionalLight": () => DirectionalLight, "DirectionalLightHelper": () => DirectionalLightHelper, "DiscreteInterpolant": () => DiscreteInterpolant, "DodecahedronGeometry": () => DodecahedronGeometry, "DoubleSide": () => DoubleSide, "DstAlphaFactor": () => DstAlphaFactor, "DstColorFactor": () => DstColorFactor, "DynamicCopyUsage": () => DynamicCopyUsage, "DynamicDrawUsage": () => DynamicDrawUsage, "DynamicReadUsage": () => DynamicReadUsage, "EdgesGeometry": () => EdgesGeometry, "EllipseCurve": () => EllipseCurve, "EqualCompare": () => EqualCompare, "EqualDepth": () => EqualDepth, "EqualStencilFunc": () => EqualStencilFunc, "EquirectangularReflectionMapping": () => EquirectangularReflectionMapping, "EquirectangularRefractionMapping": () => EquirectangularRefractionMapping, "Euler": () => Euler, "EventDispatcher": () => EventDispatcher, "ExtrudeGeometry": () => ExtrudeGeometry, "FileLoader": () => FileLoader, "Float16BufferAttribute": () => Float16BufferAttribute, "Float32BufferAttribute": () => Float32BufferAttribute, "FloatType": () => FloatType, "Fog": () => Fog, "FogExp2": () => FogExp2, "FramebufferTexture": () => FramebufferTexture, "FrontSide": () => FrontSide, "Frustum": () => Frustum, "GLBufferAttribute": () => GLBufferAttribute, "GLSL1": () => GLSL1, "GLSL3": () => GLSL3, "GreaterCompare": () => GreaterCompare, "GreaterDepth": () => GreaterDepth, "GreaterEqualCompare": () => GreaterEqualCompare, "GreaterEqualDepth": () => GreaterEqualDepth, "GreaterEqualStencilFunc": () => GreaterEqualStencilFunc, "GreaterStencilFunc": () => GreaterStencilFunc, "GridHelper": () => GridHelper, "Group": () => Group, "HalfFloatType": () => HalfFloatType, "HemisphereLight": () => HemisphereLight, "HemisphereLightHelper": () => HemisphereLightHelper, "IcosahedronGeometry": () => IcosahedronGeometry, "ImageBitmapLoader": () => ImageBitmapLoader, "ImageLoader": () => ImageLoader, "ImageUtils": () => ImageUtils, "IncrementStencilOp": () => IncrementStencilOp, "IncrementWrapStencilOp": () => IncrementWrapStencilOp, "InstancedBufferAttribute": () => InstancedBufferAttribute, "InstancedBufferGeometry": () => InstancedBufferGeometry, "InstancedInterleavedBuffer": () => InstancedInterleavedBuffer, "InstancedMesh": () => InstancedMesh, "Int16BufferAttribute": () => Int16BufferAttribute, "Int32BufferAttribute": () => Int32BufferAttribute, "Int8BufferAttribute": () => Int8BufferAttribute, "IntType": () => IntType, "InterleavedBuffer": () => InterleavedBuffer, "InterleavedBufferAttribute": () => InterleavedBufferAttribute, "Interpolant": () => Interpolant, "InterpolateDiscrete": () => InterpolateDiscrete, "InterpolateLinear": () => InterpolateLinear, "InterpolateSmooth": () => InterpolateSmooth, "InvertStencilOp": () => InvertStencilOp, "KeepStencilOp": () => KeepStencilOp, "KeyframeTrack": () => KeyframeTrack, "LOD": () => LOD, "LatheGeometry": () => LatheGeometry, "Layers": () => Layers, "LessCompare": () => LessCompare, "LessDepth": () => LessDepth, "LessEqualCompare": () => LessEqualCompare, "LessEqualDepth": () => LessEqualDepth, "LessEqualStencilFunc": () => LessEqualStencilFunc, "LessStencilFunc": () => LessStencilFunc, "Light": () => Light, "LightProbe": () => LightProbe, "Line": () => Line, "Line3": () => Line3, "LineBasicMaterial": () => LineBasicMaterial, "LineCurve": () => LineCurve, "LineCurve3": () => LineCurve3, "LineDashedMaterial": () => LineDashedMaterial, "LineLoop": () => LineLoop, "LineSegments": () => LineSegments, "LinearFilter": () => LinearFilter, "LinearInterpolant": () => LinearInterpolant, "LinearMipMapLinearFilter": () => LinearMipMapLinearFilter, "LinearMipMapNearestFilter": () => LinearMipMapNearestFilter, "LinearMipmapLinearFilter": () => LinearMipmapLinearFilter, "LinearMipmapNearestFilter": () => LinearMipmapNearestFilter, "LinearSRGBColorSpace": () => LinearSRGBColorSpace, "LinearToneMapping": () => LinearToneMapping, "LinearTransfer": () => LinearTransfer, "Loader": () => Loader, "LoaderUtils": () => LoaderUtils, "LoadingManager": () => LoadingManager, "LoopOnce": () => LoopOnce, "LoopPingPong": () => LoopPingPong, "LoopRepeat": () => LoopRepeat, "LuminanceAlphaFormat": () => LuminanceAlphaFormat, "LuminanceFormat": () => LuminanceFormat, "MOUSE": () => MOUSE, "Material": () => Material, "MaterialLoader": () => MaterialLoader, "MathUtils": () => MathUtils, "Matrix2": () => Matrix2, "Matrix3": () => Matrix3, "Matrix4": () => Matrix4, "MaxEquation": () => MaxEquation, "Mesh": () => Mesh, "MeshBasicMaterial": () => MeshBasicMaterial, "MeshDepthMaterial": () => MeshDepthMaterial, "MeshDistanceMaterial": () => MeshDistanceMaterial, "MeshLambertMaterial": () => MeshLambertMaterial, "MeshMatcapMaterial": () => MeshMatcapMaterial, "MeshNormalMaterial": () => MeshNormalMaterial, "MeshPhongMaterial": () => MeshPhongMaterial, "MeshPhysicalMaterial": () => MeshPhysicalMaterial, "MeshStandardMaterial": () => MeshStandardMaterial, "MeshToonMaterial": () => MeshToonMaterial, "MinEquation": () => MinEquation, "MirroredRepeatWrapping": () => MirroredRepeatWrapping, "MixOperation": () => MixOperation, "MultiplyBlending": () => MultiplyBlending, "MultiplyOperation": () => MultiplyOperation, "NearestFilter": () => NearestFilter, "NearestMipMapLinearFilter": () => NearestMipMapLinearFilter, "NearestMipMapNearestFilter": () => NearestMipMapNearestFilter, "NearestMipmapLinearFilter": () => NearestMipmapLinearFilter, "NearestMipmapNearestFilter": () => NearestMipmapNearestFilter, "NeutralToneMapping": () => NeutralToneMapping, "NeverCompare": () => NeverCompare, "NeverDepth": () => NeverDepth, "NeverStencilFunc": () => NeverStencilFunc, "NoBlending": () => NoBlending, "NoColorSpace": () => NoColorSpace, "NoToneMapping": () => NoToneMapping, "NormalAnimationBlendMode": () => NormalAnimationBlendMode, "NormalBlending": () => NormalBlending, "NotEqualCompare": () => NotEqualCompare, "NotEqualDepth": () => NotEqualDepth, "NotEqualStencilFunc": () => NotEqualStencilFunc, "NumberKeyframeTrack": () => NumberKeyframeTrack, "Object3D": () => Object3D, "ObjectLoader": () => ObjectLoader, "ObjectSpaceNormalMap": () => ObjectSpaceNormalMap, "OctahedronGeometry": () => OctahedronGeometry, "OneFactor": () => OneFactor, "OneMinusConstantAlphaFactor": () => OneMinusConstantAlphaFactor, "OneMinusConstantColorFactor": () => OneMinusConstantColorFactor, "OneMinusDstAlphaFactor": () => OneMinusDstAlphaFactor, "OneMinusDstColorFactor": () => OneMinusDstColorFactor, "OneMinusSrcAlphaFactor": () => OneMinusSrcAlphaFactor, "OneMinusSrcColorFactor": () => OneMinusSrcColorFactor, "OrthographicCamera": () => OrthographicCamera, "PCFShadowMap": () => PCFShadowMap, "PCFSoftShadowMap": () => PCFSoftShadowMap, "PMREMGenerator": () => PMREMGenerator, "Path": () => Path, "PerspectiveCamera": () => PerspectiveCamera, "Plane": () => Plane, "PlaneGeometry": () => PlaneGeometry, "PlaneHelper": () => PlaneHelper, "PointLight": () => PointLight, "PointLightHelper": () => PointLightHelper, "Points": () => Points, "PointsMaterial": () => PointsMaterial, "PolarGridHelper": () => PolarGridHelper, "PolyhedronGeometry": () => PolyhedronGeometry, "PositionalAudio": () => PositionalAudio, "PropertyBinding": () => PropertyBinding, "PropertyMixer": () => PropertyMixer, "QuadraticBezierCurve": () => QuadraticBezierCurve, "QuadraticBezierCurve3": () => QuadraticBezierCurve3, "Quaternion": () => Quaternion, "QuaternionKeyframeTrack": () => QuaternionKeyframeTrack, "QuaternionLinearInterpolant": () => QuaternionLinearInterpolant, "RED_GREEN_RGTC2_Format": () => RED_GREEN_RGTC2_Format, "RED_RGTC1_Format": () => RED_RGTC1_Format, "REVISION": () => REVISION, "RGBADepthPacking": () => RGBADepthPacking, "RGBAFormat": () => RGBAFormat, "RGBAIntegerFormat": () => RGBAIntegerFormat, "RGBA_ASTC_10x10_Format": () => RGBA_ASTC_10x10_Format, "RGBA_ASTC_10x5_Format": () => RGBA_ASTC_10x5_Format, "RGBA_ASTC_10x6_Format": () => RGBA_ASTC_10x6_Format, "RGBA_ASTC_10x8_Format": () => RGBA_ASTC_10x8_Format, "RGBA_ASTC_12x10_Format": () => RGBA_ASTC_12x10_Format, "RGBA_ASTC_12x12_Format": () => RGBA_ASTC_12x12_Format, "RGBA_ASTC_4x4_Format": () => RGBA_ASTC_4x4_Format, "RGBA_ASTC_5x4_Format": () => RGBA_ASTC_5x4_Format, "RGBA_ASTC_5x5_Format": () => RGBA_ASTC_5x5_Format, "RGBA_ASTC_6x5_Format": () => RGBA_ASTC_6x5_Format, "RGBA_ASTC_6x6_Format": () => RGBA_ASTC_6x6_Format, "RGBA_ASTC_8x5_Format": () => RGBA_ASTC_8x5_Format, "RGBA_ASTC_8x6_Format": () => RGBA_ASTC_8x6_Format, "RGBA_ASTC_8x8_Format": () => RGBA_ASTC_8x8_Format, "RGBA_BPTC_Format": () => RGBA_BPTC_Format, "RGBA_ETC2_EAC_Format": () => RGBA_ETC2_EAC_Format, "RGBA_PVRTC_2BPPV1_Format": () => RGBA_PVRTC_2BPPV1_Format, "RGBA_PVRTC_4BPPV1_Format": () => RGBA_PVRTC_4BPPV1_Format, "RGBA_S3TC_DXT1_Format": () => RGBA_S3TC_DXT1_Format, "RGBA_S3TC_DXT3_Format": () => RGBA_S3TC_DXT3_Format, "RGBA_S3TC_DXT5_Format": () => RGBA_S3TC_DXT5_Format, "RGBDepthPacking": () => RGBDepthPacking, "RGBFormat": () => RGBFormat, "RGBIntegerFormat": () => RGBIntegerFormat, "RGB_BPTC_SIGNED_Format": () => RGB_BPTC_SIGNED_Format, "RGB_BPTC_UNSIGNED_Format": () => RGB_BPTC_UNSIGNED_Format, "RGB_ETC1_Format": () => RGB_ETC1_Format, "RGB_ETC2_Format": () => RGB_ETC2_Format, "RGB_PVRTC_2BPPV1_Format": () => RGB_PVRTC_2BPPV1_Format, "RGB_PVRTC_4BPPV1_Format": () => RGB_PVRTC_4BPPV1_Format, "RGB_S3TC_DXT1_Format": () => RGB_S3TC_DXT1_Format, "RGDepthPacking": () => RGDepthPacking, "RGFormat": () => RGFormat, "RGIntegerFormat": () => RGIntegerFormat, "RawShaderMaterial": () => RawShaderMaterial, "Ray": () => Ray, "Raycaster": () => Raycaster, "RectAreaLight": () => RectAreaLight, "RedFormat": () => RedFormat, "RedIntegerFormat": () => RedIntegerFormat, "ReinhardToneMapping": () => ReinhardToneMapping, "RenderTarget": () => RenderTarget, "RepeatWrapping": () => RepeatWrapping, "ReplaceStencilOp": () => ReplaceStencilOp, "ReverseSubtractEquation": () => ReverseSubtractEquation, "RingGeometry": () => RingGeometry, "SIGNED_RED_GREEN_RGTC2_Format": () => SIGNED_RED_GREEN_RGTC2_Format, "SIGNED_RED_RGTC1_Format": () => SIGNED_RED_RGTC1_Format, "SRGBColorSpace": () => SRGBColorSpace, "SRGBTransfer": () => SRGBTransfer, "Scene": () => Scene, "ShaderChunk": () => ShaderChunk, "ShaderLib": () => ShaderLib, "ShaderMaterial": () => ShaderMaterial, "ShadowMaterial": () => ShadowMaterial, "Shape": () => Shape, "ShapeGeometry": () => ShapeGeometry, "ShapePath": () => ShapePath, "ShapeUtils": () => ShapeUtils, "ShortType": () => ShortType, "Skeleton": () => Skeleton, "SkeletonHelper": () => SkeletonHelper, "SkinnedMesh": () => SkinnedMesh, "Source": () => Source, "Sphere": () => Sphere, "SphereGeometry": () => SphereGeometry, "Spherical": () => Spherical, "SphericalHarmonics3": () => SphericalHarmonics3, "SplineCurve": () => SplineCurve, "SpotLight": () => SpotLight, "SpotLightHelper": () => SpotLightHelper, "Sprite": () => Sprite, "SpriteMaterial": () => SpriteMaterial, "SrcAlphaFactor": () => SrcAlphaFactor, "SrcAlphaSaturateFactor": () => SrcAlphaSaturateFactor, "SrcColorFactor": () => SrcColorFactor, "StaticCopyUsage": () => StaticCopyUsage, "StaticDrawUsage": () => StaticDrawUsage, "StaticReadUsage": () => StaticReadUsage, "StereoCamera": () => StereoCamera, "StreamCopyUsage": () => StreamCopyUsage, "StreamDrawUsage": () => StreamDrawUsage, "StreamReadUsage": () => StreamReadUsage, "StringKeyframeTrack": () => StringKeyframeTrack, "SubtractEquation": () => SubtractEquation, "SubtractiveBlending": () => SubtractiveBlending, "TOUCH": () => TOUCH, "TangentSpaceNormalMap": () => TangentSpaceNormalMap, "TetrahedronGeometry": () => TetrahedronGeometry, "Texture": () => Texture, "TextureLoader": () => TextureLoader, "TextureUtils": () => TextureUtils, "TorusGeometry": () => TorusGeometry, "TorusKnotGeometry": () => TorusKnotGeometry, "Triangle": () => Triangle, "TriangleFanDrawMode": () => TriangleFanDrawMode, "TriangleStripDrawMode": () => TriangleStripDrawMode, "TrianglesDrawMode": () => TrianglesDrawMode, "TubeGeometry": () => TubeGeometry, "UVMapping": () => UVMapping, "Uint16BufferAttribute": () => Uint16BufferAttribute, "Uint32BufferAttribute": () => Uint32BufferAttribute, "Uint8BufferAttribute": () => Uint8BufferAttribute, "Uint8ClampedBufferAttribute": () => Uint8ClampedBufferAttribute, "Uniform": () => Uniform, "UniformsGroup": () => UniformsGroup, "UniformsLib": () => UniformsLib, "UniformsUtils": () => UniformsUtils, "UnsignedByteType": () => UnsignedByteType, "UnsignedInt248Type": () => UnsignedInt248Type, "UnsignedInt5999Type": () => UnsignedInt5999Type, "UnsignedIntType": () => UnsignedIntType, "UnsignedShort4444Type": () => UnsignedShort4444Type, "UnsignedShort5551Type": () => UnsignedShort5551Type, "UnsignedShortType": () => UnsignedShortType, "VSMShadowMap": () => VSMShadowMap, "Vector2": () => Vector2, "Vector3": () => Vector3, "Vector4": () => Vector4, "VectorKeyframeTrack": () => VectorKeyframeTrack, "VideoTexture": () => VideoTexture, "WebGL3DRenderTarget": () => WebGL3DRenderTarget, "WebGLArrayRenderTarget": () => WebGLArrayRenderTarget, "WebGLCoordinateSystem": () => WebGLCoordinateSystem, "WebGLCubeRenderTarget": () => WebGLCubeRenderTarget, "WebGLMultipleRenderTargets": () => WebGLMultipleRenderTargets, "WebGLRenderTarget": () => WebGLRenderTarget, "WebGLRenderer": () => WebGLRenderer, "WebGLUtils": () => WebGLUtils, "WebGPUCoordinateSystem": () => WebGPUCoordinateSystem, "WireframeGeometry": () => WireframeGeometry, "WrapAroundEnding": () => WrapAroundEnding, "ZeroCurvatureEnding": () => ZeroCurvatureEnding, "ZeroFactor": () => ZeroFactor, "ZeroSlopeEnding": () => ZeroSlopeEnding, "ZeroStencilOp": () => ZeroStencilOp, "createCanvasElement": () => createCanvasElement })
 })
 
-// ---- js/ui/dom.js
+// ---- js\ui\dom.js
 __define(1, function (__exports) {
 // Small DOM helpers the HUD's pieces share. `put` writes a node's text, markup, class, style or
 // attribute only when it changes: even an unchanged write costs the browser a style and layout pass,
@@ -54609,7 +54609,7 @@ function put (node, what, value) {
 __export(__exports, { "$": () => $, "put": () => put })
 })
 
-// ---- js/sim/constants.js
+// ---- js\sim\constants.js
 __define(2, function (__exports) {
 // Physical constants, the car's spec sheet and small math helpers shared by the simulation.
 const THREE = __require(0)
@@ -54694,7 +54694,7 @@ for (const sx of [-1, 1])
 __export(__exports, { "G": () => G, "DEG": () => DEG, "TAU": () => TAU, "clamp": () => clamp, "clamp01": () => clamp01, "wrapPi": () => wrapPi, "AX_X": () => AX_X, "AX_Y": () => AX_Y, "AX_Z": () => AX_Z, "CAR": () => CAR, "LIFT_ACC": () => LIFT_ACC, "makeControls": () => makeControls, "CORNERS": () => CORNERS })
 })
 
-// ---- js/sim/env.js
+// ---- js\sim\env.js
 __define(3, function (__exports) {
 // The time of day and the weather in the city: one object, ENV, that everything reads. The sim reads
 // how wet the road is (its grip), the drivers and the people how dark it is and how hard it rains,
@@ -55005,7 +55005,7 @@ light()
 __export(__exports, { "WEATHERS": () => WEATHERS, "WEATHER_NAMES": () => WEATHER_NAMES, "DAY_RATE": () => DAY_RATE, "START_HOUR": () => START_HOUR, "ENV": () => ENV, "sunAt": () => sunAt, "stepEnv": () => stepEnv, "setWeather": () => setWeather, "WET_GRIP": () => WET_GRIP, "weatherGrip": () => weatherGrip, "weatherKind": () => weatherKind, "setHour": () => setHour, "envRandom": () => envRandom })
 })
 
-// ---- js/ui/clock.js
+// ---- js\ui\clock.js
 __define(4, function (__exports) {
 // The clock on the HUD, over the radar: the time of day, 24-hour, and a small icon for the weather
 // (the sun, or the moon at night; a cloud with the sun or moon behind it; a cloud; rain; a storm;
@@ -55086,7 +55086,7 @@ class Clock {
 __export(__exports, { "ICONS": () => ICONS, "weatherIcon": () => weatherIcon, "hhmm": () => hhmm, "Clock": () => Clock })
 })
 
-// ---- js/sim/areas.js
+// ---- js\sim\areas.js
 __define(5, function (__exports) {
 // The city's neighbourhoods and street names, laid out the way Los Angeles is: the Pacific to the
 // west, with Santa Monica and its pier at the end of Wilshire and Venice south of it along the
@@ -55311,7 +55311,7 @@ function whereIs (x, z, out = _out) {
 __export(__exports, { "AREAS": () => AREAS, "areaOf": () => areaOf, "COAST": () => COAST, "HILLS": () => HILLS, "STREETS_EW": () => STREETS_EW, "STREETS_NS": () => STREETS_NS, "LANDMARKS": () => LANDMARKS, "whereIs": () => whereIs, "OLD": () => OLD })
 })
 
-// ---- js/ui/place.js
+// ---- js\ui\place.js
 __define(6, function (__exports) {
 // Where the car is, bottom right as in GTA V: the street (and the cross street, at a junction) over
 // the neighbourhood (areas.js), shown when it changes and fading out a few seconds later; the car's
@@ -55405,7 +55405,7 @@ class Place {
 __export(__exports, { "Place": () => Place })
 })
 
-// ---- js/ui/prefs.js
+// ---- js\ui\prefs.js
 __define(7, function (__exports) {
 // Settings remembered between visits (the speed unit, whether the keys card has been seen), in
 // localStorage when the browser allows it: in a private window, with storage blocked or in a
@@ -55429,7 +55429,7 @@ function remember (name, value) {
 __export(__exports, { "recall": () => recall, "remember": () => remember })
 })
 
-// ---- js/ui/speedo.js
+// ---- js\ui\speedo.js
 __define(8, function (__exports) {
 // The speedometer, bottom right over where you are: the speed in big digits (km/h or mph: U, or a
 // click on the unit, switches, and it is remembered), a power meter from its zero (regen in green to
@@ -55542,7 +55542,7 @@ class Speedo {
 __export(__exports, { "Speedo": () => Speedo })
 })
 
-// ---- js/ui/gamepad.js
+// ---- js\ui\gamepad.js
 __define(9, function (__exports) {
 // A gamepad, any with the standard layout (Xbox, PlayStation and most others): the left stick steers
 // (and in the air pitches and rolls), the triggers are an analog throttle and brake, the right stick
@@ -55681,7 +55681,7 @@ class Pad {
 __export(__exports, { "BUTTONS": () => BUTTONS, "Pad": () => Pad })
 })
 
-// ---- js/sim/track.js
+// ---- js\sim\track.js
 __define(10, function (__exports) {
 // The 21 m curved wall, the parked lineup and the solid obstacles around them.
 const { DEG } = __require(2)
@@ -55873,14 +55873,14 @@ const SOLIDS = [
 __export(__exports, { "TRACK": () => TRACK, "LINEUP": () => LINEUP, "LINEUP_FIRST": () => LINEUP_FIRST, "LINEUP_LAST": () => LINEUP_LAST, "SOLIDS": () => SOLIDS })
 })
 
-// ---- js/sim/tyres.js
+// ---- js\sim\tyres.js
 __define(11, function (__exports) {
 // The tyres and the driver's hands on the wheel: a tyre's grip against its slip, how far the keys
 // turn the road wheels at speed, and the steering itself: the feel for the limit (the fronts turned
 // no further than where they grip hardest), the front wheels following a slide on their caster,
 // steering into a slide to hold it or out of it to catch it, unwinding the opposite lock as the car
 // swings back, and the rack turned at the speed of hands. ground.js runs it every step on the road.
-const { CAR, clamp } = __require(2)
+const { CAR, G, clamp } = __require(2)
 
 const smooth = x => (x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x))
 
@@ -55974,10 +55974,27 @@ function steer (s, c, u, w, r, beta, FmaxF, FmaxR, track, dt) {
   _out.push = push
   return _out
 }
-__export(__exports, { "smooth": () => smooth, "PEAK": () => PEAK, "tyreCurve": () => tyreCurve, "steerMax": () => steerMax, "steer": () => steer })
+
+// The nose helped round to where the wheel is already pointing, the way GTA's cars rotate into a
+// corner instead of waiting on the tyres to build a slip angle. Only while the turn is held (held,
+// 0 to 1: a tap stays a lane change), only up to the rate the grip can carry, and never once the
+// tail has stepped out or Track Mode has the car. Returns a yaw moment, N m.
+const TURN = 3.2
+function turnIn (u, r, steerAng, beta, mu, held, track, ebrake) {
+  if (track || ebrake || u < 2.5 || held < 0.05) return 0
+  const want = (u * Math.tan(steerAng)) / CAR.wheelbase
+  const cap = (0.9 * mu * G) / Math.max(u, 4)
+  const tgt = clamp(want, -cap, cap)
+  const err = tgt - r
+  if (err * tgt < 0 && Math.abs(tgt) > 0.05) return 0
+  const k =
+    TURN * held * Math.max(0, 1 - Math.abs(beta) / 0.11) * Math.min(1, (u - 2.5) / 4)
+  return clamp(CAR.Iz * k * err, -12000, 12000)
+}
+__export(__exports, { "smooth": () => smooth, "PEAK": () => PEAK, "tyreCurve": () => tyreCurve, "steerMax": () => steerMax, "steer": () => steer, "turnIn": () => turnIn })
 })
 
-// ---- js/sim/drift.js
+// ---- js\sim\drift.js
 __define(12, function (__exports) {
 // Track Mode and its drifts, and the GTA-style moves on the ground: the handbrake's swing, catching
 // a spin, and the burnout's donut. ground.js asks it each step for the rears' drive and the yaw
@@ -56216,7 +56233,7 @@ function driftMoment (
 __export(__exports, { "BURN_V": () => BURN_V, "BURN_GRIP": () => BURN_GRIP, "trackMode": () => trackMode, "trackDrive": () => trackDrive, "burnCreep": () => burnCreep, "driftMoment": () => driftMoment })
 })
 
-// ---- js/ui/options.js
+// ---- js\ui\options.js
 __define(13, function (__exports) {
 // The player's options, one object (OPTS) that the pause menu's SETTINGS tab changes and the game
 // reads: the sound's three levels (everything, the radio, the rest), the graphics (shadows, the
@@ -56240,7 +56257,7 @@ const DEFAULTS = {
   bigText: false,
   palette: 'standard', // 'standard' | 'deutan' (red/green safe) | 'tritan' (blue/yellow safe)
   motion: 'full', // 'full' | 'reduced'
-  stunts: false // the Roadster's stunt keys (G fly, X backflip, K kickflip: debug.js)
+  stunts: true // the Roadster's stunt keys (G fly, X backflip, K kickflip: debug.js)
 }
 // what each may be (the menu steps through these)
 const CHOICES = {
@@ -56337,12 +56354,13 @@ loadOptions()
 __export(__exports, { "DEFAULTS": () => DEFAULTS, "CHOICES": () => CHOICES, "DRAW_FOG": () => DRAW_FOG, "OPTS": () => OPTS, "loadOptions": () => loadOptions, "setOption": () => setOption, "resetOptions": () => resetOptions, "onOption": () => onOption, "look": () => look, "shakeScale": () => shakeScale, "motionFx": () => motionFx })
 })
 
-// ---- js/ui/debug.js
+// ---- js\ui\debug.js
 __define(14, function (__exports) {
 // The developer's switch: ?debug=1 in the address turns on the keys and the pause menu's DEBUG tab
 // that a player has no use for (the test site, slow motion, Autopilot, the clock and the weather
 // on a key, the suction fan, the test site's start spots). Without it they do nothing, as in GTA.
-// The Roadster's stunt keys (fly, flips) are a setting (options.js stunts), on with debug too.
+// The Roadster's stunt keys (fly, flips) are a setting (options.js stunts), on by default, and on
+// with debug too.
 const { OPTS } = __require(13)
 
 const query = () => {
@@ -56358,7 +56376,7 @@ const stuntKeys = () => DEBUG.on || !!OPTS.stunts
 __export(__exports, { "DEBUG": () => DEBUG, "stuntKeys": () => stuntKeys })
 })
 
-// ---- js/ui/input.js
+// ---- js\ui\input.js
 __define(15, function (__exports) {
 // Keyboard, gamepad and touch input: held drive keys, one-shot command keys, and the manual control
 // mapping (a gamepad's sticks and triggers are analog: gamepad.js).
@@ -56659,7 +56677,7 @@ class Input {
 __export(__exports, { "easeKey": () => easeKey, "LOOK_BACK": () => LOOK_BACK, "DRIVE_KEYS": () => DRIVE_KEYS, "Input": () => Input })
 })
 
-// ---- js/ui/keymap.js
+// ---- js\ui\keymap.js
 __define(16, function (__exports) {
 // The keyboard's bindings, and their remapping. The game listens for its own keys (input.js,
 // main.js's COMMANDS, onFoot.js), so a binding is kept as a translation: the key pressed is passed on
@@ -56837,7 +56855,7 @@ for (const c of DEFAULT_CODES) BINDS[c] = c
 __export(__exports, { "ACTIONS": () => ACTIONS, "FIXED": () => FIXED, "DEFAULT_CODES": () => DEFAULT_CODES, "RESERVED": () => RESERVED, "KEYMAP_VERSION": () => KEYMAP_VERSION, "MIGRATED": () => MIGRATED, "BINDS": () => BINDS, "TRANSLATE": () => TRANSLATE, "loadKeys": () => loadKeys, "bind": () => bind, "resetKeys": () => resetKeys, "translate": () => translate, "keyOf": () => keyOf, "keyName": () => keyName })
 })
 
-// ---- js/ui/instruments.js
+// ---- js\ui\instruments.js
 __define(17, function (__exports) {
 // The engineering instruments, only when they matter (at the test site, in the air, on the wall or
 // while the thrusters fire), tucked away over the speedometer: the car from above with each of its
@@ -56946,7 +56964,7 @@ class Instruments {
 __export(__exports, { "Instruments": () => Instruments })
 })
 
-// ---- js/ui/notify.js
+// ---- js\ui\notify.js
 __define(18, function (__exports) {
 // What the game tells the player, GTA-style: stunt titles that punch in mid-screen and fade (the same
 // stunt again soon after counts on: NEAR MISS ×3), hints in a help box top left that wait their
@@ -57137,7 +57155,7 @@ class Score {
 __export(__exports, { "Notices": () => Notices, "HelpBox": () => HelpBox, "Score": () => Score })
 })
 
-// ---- js/ui/hud.js
+// ---- js\ui\hud.js
 __define(19, function (__exports) {
 // The HUD, GTA V's: nothing on screen but the radar bottom left with the health and the air under
 // it (minimap.js) and the clock over it (clock.js), the stars and the cash top right (crimeHud.js),
@@ -57413,7 +57431,7 @@ class Hud {
 __export(__exports, { "Hud": () => Hud })
 })
 
-// ---- js/sim/signals.js
+// ---- js\sim\signals.js
 __define(20, function (__exports) {
 // The city's traffic lights (city.js re-exports all of it): every junction's cycle, east-west then
 // north-south with an all-red gap between, lights held one way for Autopilot, and how long an amber
@@ -57499,7 +57517,7 @@ function cycle (node, dir, t) {
 __export(__exports, { "RED": () => RED, "YELLOW": () => YELLOW, "GREEN": () => GREEN, "DARK": () => DARK, "SIGNAL": () => SIGNAL, "CYCLE": () => CYCLE, "signal": () => signal, "holdLight": () => holdLight, "releaseLight": () => releaseLight, "amberLeft": () => amberLeft, "redAge": () => redAge })
 })
 
-// ---- js/sim/grid.js
+// ---- js\sim\grid.js
 __define(21, function (__exports) {
 // The street grid's measurements, in metres, and the seeded random numbers the city is laid out
 // with. city.js builds the lane graph on them and passes them on (everything else imports them from
@@ -57603,7 +57621,7 @@ function rng (seed) {
 __export(__exports, { "N": () => N, "PITCH": () => PITCH, "LANE_W": () => LANE_W, "ROAD_HW": () => ROAD_HW, "WALK": () => WALK, "CURB_H": () => CURB_H, "CURB_R": () => CURB_R, "STOP": () => STOP, "HALF": () => HALF, "EDGE": () => EDGE, "OUTER": () => OUTER, "ROADS": () => ROADS, "LANE_OFF": () => LANE_OFF, "DIRS": () => DIRS, "OLD": () => OLD, "WILSHIRE": () => WILSHIRE, "SPAWN": () => SPAWN, "SUPERS": () => SUPERS, "segOpen": () => segOpen, "nodeOpen": () => nodeOpen, "superOf": () => superOf, "closedAt": () => closedAt, "BLVD_EW": () => BLVD_EW, "BLVD_NS": () => BLVD_NS, "MEDIAN_HW": () => MEDIAN_HW, "rng": () => rng })
 })
 
-// ---- js/sim/plots.js
+// ---- js\sim\plots.js
 __define(22, function (__exports) {
 // What stands on the blocks, and the helpers the neighbourhoods are built with (lots.js lays out
 // each block by its neighbourhood: towers.js, shops.js, homes.js). Buildings are boxes stacked in
@@ -57919,7 +57937,7 @@ const sign = (kind, o) => {
 __export(__exports, { "BLOCKS": () => BLOCKS, "BUILDINGS": () => BUILDINGS, "TREES": () => TREES, "PALMS": () => PALMS, "STALLS": () => STALLS, "SOLIDS": () => SOLIDS, "SIGNS": () => SIGNS, "PROPS": () => PROPS, "DECKS": () => DECKS, "RAMPS": () => RAMPS, "deck": () => deck, "ramp": () => ramp, "prop": () => prop, "R": () => R, "range": () => range, "pick": () => pick, "chance": () => chance, "streetOf": () => streetOf, "isMain": () => isMain, "MAIN": () => MAIN, "TINTS": () => TINTS, "frame": () => frame, "sideLen": () => sideLen, "building": () => building, "tier": () => tier, "stack": () => stack, "shaft": () => shaft, "ring": () => ring, "trimmed": () => trimmed, "ground": () => ground, "solid": () => solid, "hedge": () => hedge, "post": () => post, "stalls": () => stalls, "carPark": () => carPark, "parkCars": () => parkCars, "mark": () => mark, "free": () => free, "palm": () => palm, "tree": () => tree, "sign": () => sign, "ROADS": () => ROADS })
 })
 
-// ---- js/sim/towers.js
+// ---- js\sim\towers.js
 __define(23, function (__exports) {
 // The towers: Downtown's skyline and Century City's. Downtown's tallest stand round the middle of
 // it, on Wilshire, and fall away from there: a stepped cylinder with a lit glass crown and a helipad
@@ -58351,7 +58369,7 @@ function centuryCity (blk, lot) {
 __export(__exports, { "cells": () => cells, "faces": () => faces, "tower": () => tower, "roofSign": () => roofSign, "mural": () => mural, "downtown": () => downtown, "centuryCity": () => centuryCity })
 })
 
-// ---- js/sim/shops.js
+// ---- js\sim\shops.js
 __define(24, function (__exports) {
 // The shopping streets. Santa Monica: two to six storeys of stucco, Art Deco and brick over shops
 // along the main streets, apartments on the side streets, courtyards with palms, and Deco hotels
@@ -58613,7 +58631,7 @@ function hollywood (blk, lot) {
 __export(__exports, { "santaMonica": () => santaMonica, "hollywood": () => hollywood })
 })
 
-// ---- js/sim/strip.js
+// ---- js\sim\strip.js
 __define(25, function (__exports) {
 // Mid-City: low and spread out. Strip malls set back behind their car parks (the cars in them are
 // the traffic's parked ones, plots.js stalls), gas stations on the corners of the main streets under
@@ -58914,7 +58932,7 @@ function at (f, u, v) {
 __export(__exports, { "billboard": () => billboard, "midCity": () => midCity })
 })
 
-// ---- js/sim/homes.js
+// ---- js\sim\homes.js
 __define(26, function (__exports) {
 // Where people live in houses. Beverly Hills: big two-storey houses on lawns, back to back down the
 // middle of each block, Spanish revival (white stucco under red clay tile hip roofs, a one-storey
@@ -59155,7 +59173,7 @@ function venice (blk, lot) {
 __export(__exports, { "beverlyHills": () => beverlyHills, "venice": () => venice })
 })
 
-// ---- js/sim/works.js
+// ---- js\sim\works.js
 __define(27, function (__exports) {
 // Where Los Angeles works: the Arts District's and Vernon's warehouses, factories and truck yards
 // east of the river, and the port in the south-west, where the coast turns to quays. A warehouse is a
@@ -59433,7 +59451,7 @@ function port (blk, lot) {
 __export(__exports, { "METAL": () => METAL, "CONCRETE": () => CONCRETE, "fence": () => fence, "trailer": () => trailer, "containers": () => containers, "waterTower": () => waterTower, "industrial": () => industrial, "port": () => port })
 })
 
-// ---- js/sim/suburbs.js
+// ---- js\sim\suburbs.js
 __define(28, function (__exports) {
 // The suburbs south of the freeway: Leimert Park and Inglewood. One-storey houses on lawns, each
 // with a drive up one side to its garage and a car in the drive now and then (a parking space the
@@ -59561,7 +59579,7 @@ function suburb (blk, lot) {
 __export(__exports, { "suburb": () => suburb })
 })
 
-// ---- js/sim/garage.js
+// ---- js\sim\garage.js
 __define(29, function (__exports) {
 // A multi-storey car park (venues.js garage): the ground floor and two decks over it, open sides on
 // columns, driven all the way up. A ramp along the north side climbs east from the ground floor to
@@ -59632,7 +59650,7 @@ function multiStorey (lot) {
 __export(__exports, { "LEVEL": () => LEVEL, "multiStorey": () => multiStorey })
 })
 
-// ---- js/sim/venues.js
+// ---- js\sim\venues.js
 __define(30, function (__exports) {
 // The south's and east's big pieces: the stadium on its superblock (a bowl under a canopy, car parks
 // round it, floodlights), the LA River's concrete channel (a parapet round it; the streets cross it
@@ -59815,7 +59833,7 @@ function garage (blk, lot) {
 __export(__exports, { "stadium": () => stadium, "river": () => river, "corridor": () => corridor, "sportsPark": () => sportsPark, "garage": () => garage })
 })
 
-// ---- js/sim/freeway.js
+// ---- js\sim\freeway.js
 __define(31, function (__exports) {
 // The Santa Monica Freeway on its deck, east-west across the city down the middle of row FWY_ROW's
 // blocks (areas.js 'corridor'): three lanes each way, DECK_Y up, from a slope down to the street at
@@ -59941,7 +59959,7 @@ function parapet (x0, x1, edge, side) {
 __export(__exports, { "FWY_ROW": () => FWY_ROW, "FWY_FROM": () => FWY_FROM, "FWY_TO": () => FWY_TO, "DECK_Y": () => DECK_Y, "DECK_HW": () => DECK_HW, "FWY_Z": () => FWY_Z, "RAMP_AT": () => RAMP_AT, "FWY": () => FWY, "layFreeway": () => layFreeway })
 })
 
-// ---- js/sim/hills.js
+// ---- js\sim\hills.js
 __define(32, function (__exports) {
 // The Hollywood Hills' natural ground north of the wall, before any road is cut into it (hillroad.js
 // carves its road in and gives the final hillHeight): value noise, ridges, the canyons, the pass,
@@ -60038,7 +60056,7 @@ function naturalHill (x, z) {
 __export(__exports, { "WALL": () => WALL, "WALL_H": () => WALL_H, "sstep": () => sstep, "noise": () => noise, "TERRACE": () => TERRACE, "naturalHill": () => naturalHill })
 })
 
-// ---- js/sim/hillroad.js
+// ---- js\sim\hillroad.js
 __define(33, function (__exports) {
 // The hill road: a canyon road climbing from the north ring road at Santa Fe Ave into the
 // Hollywood Hills. Through a gap in the retaining wall it zigzags up the canyon on switchbacks at
@@ -60266,7 +60284,7 @@ function tunnel (p, s) {
 __export(__exports, { "HILL_HW": () => HILL_HW, "HILL_GAP": () => HILL_GAP, "LOOKOUT": () => LOOKOUT, "HILL_ROAD": () => HILL_ROAD, "LANDINGS": () => LANDINGS, "hillRoadNear": () => hillRoadNear, "onHillRoad": () => onHillRoad, "inTunnel": () => inTunnel, "hillHeight": () => hillHeight, "hillNormal": () => hillNormal, "layHillRoad": () => layHillRoad, "TUNNELS": () => TUNNELS })
 })
 
-// ---- js/sim/quay.js
+// ---- js\sim\quay.js
 __define(34, function (__exports) {
 // The port's quay: where the coast turns south of the beach, the sand gives way to a concrete wharf
 // along the container yards, ship-to-shore cranes standing on it on their rails, their booms out
@@ -60342,7 +60360,7 @@ function layQuay () {
 __export(__exports, { "QUAY": () => QUAY, "CRANES": () => CRANES, "SHIP": () => SHIP, "onQuay": () => onQuay, "layQuay": () => layQuay })
 })
 
-// ---- js/sim/lots.js
+// ---- js\sim\lots.js
 __define(35, function (__exports) {
 // What is built on each block, by its neighbourhood (areas.js): Downtown's skyline and Century City's
 // towers (towers.js), Santa Monica's and Hollywood's shops (shops.js), Mid-City's strip malls and
@@ -60490,7 +60508,7 @@ parkCars(267)
 __export(__exports, { "GARAGES": () => GARAGES, "BLOCKS": () => BLOCKS, "BUILDINGS": () => BUILDINGS, "TREES": () => TREES, "PALMS": () => PALMS, "STALLS": () => STALLS, "SOLIDS": () => SOLIDS, "SIGNS": () => SIGNS, "PROPS": () => PROPS, "DECKS": () => DECKS, "RAMPS": () => RAMPS })
 })
 
-// ---- js/sim/kerbside.js
+// ---- js\sim\kerbside.js
 __define(36, function (__exports) {
 // What stands along the pavements, by the neighbourhood behind them. A street light every 24 m on
 // both sides (a cobra head on a steel pole; on Mid-City's and Venice's side streets, on one side, on
@@ -60659,7 +60677,7 @@ function lay (c, a, b, side, alongZ, area, main, wood) {
 __export(__exports, { "LAMPS": () => LAMPS, "WIRES": () => WIRES, "DECOR": () => DECOR, "TREES": () => TREES, "PALMS": () => PALMS })
 })
 
-// ---- js/sim/highway.js
+// ---- js\sim\highway.js
 __define(37, function (__exports) {
 // The freeway and the hill road in the traffic's lane graph (city.js lays the streets; this lays
 // these on top, with the same edges). The edges here are marked hw: their cars stand on whatever
@@ -61121,7 +61139,7 @@ function layHighways (line, nodeAt) {
 __export(__exports, { "HW": () => HW, "EXITS": () => EXITS, "curveAt": () => curveAt, "layHighways": () => layHighways })
 })
 
-// ---- js/sim/city.js
+// ---- js\sim\city.js
 __define(38, function (__exports) {
 // The city: a grid of two-lane-each-way roads around its blocks, the lane graph its traffic drives
 // on, the signal plan at every intersection and the solid footprints the Roadster can hit (what is
@@ -61444,7 +61462,7 @@ function onRoad (x, z) {
 __export(__exports, { "NODES": () => NODES, "EDGES": () => EDGES, "LANES": () => LANES, "nodeAt": () => nodeAt, "pointAt": () => pointAt, "POLES": () => POLES, "COLLIDERS": () => COLLIDERS, "addCollider": () => addCollider, "PROMENADE": () => PROMENADE, "standUp": () => standUp, "query": () => query, "raycast": () => raycast, "nearestLane": () => nearestLane, "onRoad": () => onRoad, "RED": () => RED, "YELLOW": () => YELLOW, "GREEN": () => GREEN, "SIGNAL": () => SIGNAL, "CYCLE": () => CYCLE, "signal": () => signal, "holdLight": () => holdLight, "releaseLight": () => releaseLight, "amberLeft": () => amberLeft, "redAge": () => redAge, "N": () => N, "PITCH": () => PITCH, "LANE_W": () => LANE_W, "ROAD_HW": () => ROAD_HW, "WALK": () => WALK, "CURB_H": () => CURB_H, "CURB_R": () => CURB_R, "STOP": () => STOP, "HALF": () => HALF, "EDGE": () => EDGE, "OUTER": () => OUTER, "ROADS": () => ROADS, "LANE_OFF": () => LANE_OFF, "DIRS": () => DIRS, "SPAWN": () => SPAWN, "OLD": () => OLD, "WILSHIRE": () => WILSHIRE, "SUPERS": () => SUPERS, "BLVD_EW": () => BLVD_EW, "BLVD_NS": () => BLVD_NS, "MEDIAN_HW": () => MEDIAN_HW, "segOpen": () => segOpen, "nodeOpen": () => nodeOpen, "superOf": () => superOf, "closedAt": () => closedAt, "rng": () => rng, "BLOCKS": () => BLOCKS, "BUILDINGS": () => BUILDINGS, "TREES": () => TREES, "PALMS": () => PALMS, "STALLS": () => STALLS, "SOLIDS": () => SOLIDS, "SIGNS": () => SIGNS, "LAMPS": () => LAMPS, "WIRES": () => WIRES, "DECOR": () => DECOR })
 })
 
-// ---- js/sim/roofs.js
+// ---- js\sim\roofs.js
 __define(39, function (__exports) {
 // Roofs: the flat top of every building tier is somewhere to land and drive, with plant on the top
 // tier (a stair and lift housing, air-handling units and sometimes a mast) to steer round. The edge is
@@ -61561,7 +61579,7 @@ function roofAt (x, z, y) {
 __export(__exports, { "LIP": () => LIP, "LIP_H": () => LIP_H, "STEP": () => STEP, "roofAt": () => roofAt })
 })
 
-// ---- js/sim/breakables.js
+// ---- js\sim\breakables.js
 __define(40, function (__exports) {
 // Street furniture that snaps off at the base when it is hit hard enough: street lights, signal
 // masts, park trees and palms. Each is a post collider with breakAt, the closing speed (m/s) it takes
@@ -61633,7 +61651,7 @@ function snap (body, c, nx, nz, m) {
 __export(__exports, { "snap": () => snap })
 })
 
-// ---- js/sim/edge.js
+// ---- js\sim\edge.js
 __define(41, function (__exports) {
 // The edges of the map, past the ring road's outer pavement (the promenade): to the west the beach
 // and the sea, with Santa Monica's pier running out from the end of Wilshire; to the north the
@@ -61861,7 +61879,7 @@ function hillside (s, bottom) {
 __export(__exports, { "SHORE": () => SHORE, "PIER": () => PIER, "GROYNE": () => GROYNE, "onDeck": () => onDeck, "RAILS": () => RAILS, "RAIL_H": () => RAIL_H, "WHEEL": () => WHEEL, "ARCH": () => ARCH, "COASTER": () => COASTER, "PIER_HOUSES": () => PIER_HOUSES, "keepIn": () => keepIn, "hillside": () => hillside, "WALL": () => WALL, "WALL_H": () => WALL_H, "noise": () => noise, "TERRACE": () => TERRACE, "hillHeight": () => hillHeight, "hillNormal": () => hillNormal })
 })
 
-// ---- js/sim/carDamage.js
+// ---- js\sim\carDamage.js
 __define(42, function (__exports) {
 // Damage, GTA-style, for the traffic's cars and the Roadster's lamps and glass. Each hit lands
 // somewhere on a car's footprint (in its own frame: +x its nose, +z its right) at some closing
@@ -62243,7 +62261,7 @@ class Wear {
 __export(__exports, { "MIN_HIT": () => MIN_HIT, "DENT_MAX": () => DENT_MAX, "BROKE": () => BROKE, "LAMPS": () => LAMPS, "PANE": () => PANE, "ZONES": () => ZONES, "LANDED": () => LANDED, "landed": () => landed, "share": () => share, "hurt": () => hurt, "breakage": () => breakage, "paneOf": () => paneOf, "mend": () => mend, "Wear": () => Wear })
 })
 
-// ---- js/sim/collide.js
+// ---- js\sim\collide.js
 __define(43, function (__exports) {
 // Contacts in the ground plane: oriented boxes (cars, building footprints) and posts (lamps, palms,
 // signal masts), resolved with impulses (restitution, friction, spin) so cars bounce off each other
@@ -62650,7 +62668,7 @@ function bounceCity (s) {
 __export(__exports, { "rectRect": () => rectRect, "rectPost": () => rectPost, "boxRect": () => boxRect, "carRect": () => carRect, "impulse": () => impulse, "BODY": () => BODY, "playerRect": () => playerRect, "loadBody": () => loadBody, "storeBody": () => storeBody, "nudge": () => nudge, "CONTACT_Y": () => CONTACT_Y, "carFrame": () => carFrame, "bump": () => bump, "collideCity": () => collideCity, "knock": () => knock, "collideAir": () => collideAir, "bumpCars": () => bumpCars, "pushOut": () => pushOut, "bounceCity": () => bounceCity })
 })
 
-// ---- js/sim/ramp.js
+// ---- js\sim\ramp.js
 __define(44, function (__exports) {
 // The wall ride at the test site: the car on the curved wall, held on by its tyres and the suction
 // fan (with the 2 G fan it hangs upside down at the top), driven, braked and backed down it, and
@@ -62762,7 +62780,7 @@ function leaveRamp (s) {
 __export(__exports, { "stepRamp": () => stepRamp })
 })
 
-// ---- js/sim/flight.js
+// ---- js\sim\flight.js
 __define(45, function (__exports) {
 // Free flight: gravity, cold-gas thrust, attitude control (manoeuvres + stability assist) and contacts.
 const THREE = __require(0)
@@ -62982,7 +63000,7 @@ function checkRampContact (s) {
 __export(__exports, { "stepAir": () => stepAir, "checkRampContact": () => checkRampContact })
 })
 
-// ---- js/sim/roadGrip.js
+// ---- js\sim\roadGrip.js
 __define(46, function (__exports) {
 // The road's grip for the cars the player drives (vehicleSim.js world.grip), wet or dry: from the
 // city's weather (env.js ENV: how wet the road is and how hard it rains, as game.js gives the
@@ -63014,7 +63032,7 @@ function surfaceGrip (f) {
 __export(__exports, { "GRIP": () => GRIP, "roadGrip": () => roadGrip, "setGripScale": () => setGripScale, "wetness": () => wetness, "surfaceGrip": () => surfaceGrip })
 })
 
-// ---- js/sim/botts.js
+// ---- js\sim\botts.js
 __define(47, function (__exports) {
 // Botts' dots: the raised markers that stand in for painted lane lines on Los Angeles' streets, and
 // on this city's low-rise neighbourhoods' (the strip, Venice, the beach's Santa Monica and Beverly
@@ -63127,7 +63145,7 @@ const dotsRunOver = (px, pz, x, z) =>
 __export(__exports, { "DOT_AREAS": () => DOT_AREAS, "DOT_FROM": () => DOT_FROM, "dotted": () => dotted, "eachMarker": () => eachMarker, "dotsRunOver": () => dotsRunOver })
 })
 
-// ---- js/sim/street.js
+// ---- js\sim\street.js
 __define(48, function (__exports) {
 // What is underfoot in the city: the kerb's line (straight down each street, round each corner, and
 // along the promenade), the surface a point is on (asphalt, pavement, a park's grass, the verge's
@@ -63355,11 +63373,11 @@ const dragOf = s => (s.world === 'city' && s.rollDrag) || 0
 __export(__exports, { "kerbDist": () => kerbDist, "SURFACES": () => SURFACES, "surfaceAt": () => surfaceAt, "MANHOLE_R": () => MANHOLE_R, "MANHOLES": () => MANHOLES, "DRAINS": () => DRAINS, "manholesNear": () => manholesNear, "feel": () => feel, "gripOf": () => gripOf, "dragOf": () => dragOf })
 })
 
-// ---- js/sim/ground.js
+// ---- js\sim\ground.js
 __define(49, function (__exports) {
 const { roofAt, STEP } = __require(39)
 const { TRACK, SOLIDS } = __require(10)
-const { smooth, tyreCurve, steer } = __require(11)
+const { smooth, tyreCurve, steer, turnIn } = __require(11)
 const { feel, gripOf, dragOf, kerbDist } = __require(48)
 const { G, CAR, LIFT_ACC, clamp, wrapPi } = __require(2)
 const { collideCity, bumpCars, loadBody, storeBody } = __require(43)
@@ -63674,6 +63692,7 @@ function stepGround (s, dt, c, main, lift) {
   Mz -= b * Fyr
   // the drift's motors, a donut, the handbrake's swing and the spin catch (drift.js)
   Mz += driftMoment(s, c, track, throttle, burn, beta, Fyr, u, w, r, mu, dt)
+  Mz += turnIn(u, r, s.steerAng, beta, mu, s.held, track || burn, c.ebrake)
   s.lastFyf = wantF
   s.lastFyr = wantR
   // stability control: when the car rotates faster than the steering asks for, brake a front wheel to
@@ -63839,7 +63858,7 @@ function stepGround (s, dt, c, main, lift) {
 __export(__exports, { "stepGround": () => stepGround })
 })
 
-// ---- js/sim/stunts.js
+// ---- js\sim\stunts.js
 __define(50, function (__exports) {
 // Street stunts, scored alongside the flips and landings (sim.js): a drift, the car held well
 // sideways at speed, scored once it straightens up by how long it lasted and how far sideways it
@@ -63952,7 +63971,7 @@ function nearMisses (tr, sim) {
 __export(__exports, { "donuts": () => donuts, "drift": () => drift, "nearMisses": () => nearMisses })
 })
 
-// ---- js/sim/crash.js
+// ---- js\sim\crash.js
 __define(51, function (__exports) {
 // Crashes: a rigid box tumbling on the ground with impulse-based contact and friction, and getting
 // back on the road afterwards, GTA-style.
@@ -64173,7 +64192,7 @@ function recover (s, moving = false) {
 __export(__exports, { "enterCrash": () => enterCrash, "stepCrash": () => stepCrash })
 })
 
-// ---- js/sim/sim.js
+// ---- js\sim\sim.js
 __define(52, function (__exports) {
 // The vehicle simulation: state, mode switching (ground / ramp / air / crash), the wall ride and scoring.
 // Uses only THREE math types, so it runs headless in Node for tests.
@@ -64575,7 +64594,7 @@ class Sim {
 __export(__exports, { "Sim": () => Sim })
 })
 
-// ---- js/sim/route.js
+// ---- js\sim\route.js
 __define(53, function (__exports) {
 // The GPS's routes on the city's lane graph (city.js). A waypoint is snapped to the nearest street
 // open to traffic, and can be reached on any of that street's four lanes, either way. From it the
@@ -64836,7 +64855,7 @@ class Heap {
 __export(__exports, { "REACH": () => REACH, "snap": () => snap, "routeTo": () => routeTo, "pathFrom": () => pathFrom, "lengthOf": () => lengthOf, "lanePoint": () => lanePoint, "routeLine": () => routeLine, "laneOf": () => laneOf })
 })
 
-// ---- js/ui/gps.js
+// ---- js\ui\gps.js
 __define(54, function (__exports) {
 // The GPS: the waypoint set on the pause menu's map (map.js) and the route to it along the lanes
 // (sim/route.js), kept up from wherever the car is: the plan to the waypoint covers every lane, so
@@ -64917,7 +64936,7 @@ const gps = new Gps()
 __export(__exports, { "gps": () => gps })
 })
 
-// ---- js/ui/blips.js
+// ---- js\ui\blips.js
 __define(55, function (__exports) {
 // The marks the radar (minimap.js) and the pause menu's map (mapDraw.js) share: GTA's round blips
 // with a glyph for each place (the gridlock, the pier, the sign, the observatory, the waypoint), the
@@ -65031,7 +65050,7 @@ function routeLine (g, line, w) {
 __export(__exports, { "COLOR": () => COLOR, "GLYPHS": () => GLYPHS, "blip": () => blip, "arrow": () => arrow, "routeLine": () => routeLine })
 })
 
-// ---- js/sim/jam.js
+// ---- js\sim\jam.js
 __define(56, function (__exports) {
 // The jammed street: one block of the central avenue, straight ahead of the city's spawn point,
 // stands gridlocked both ways, nose to tail, for the Roadster to jump. Its lanes are closed:
@@ -65051,7 +65070,7 @@ const atJam = (x, z) =>
 __export(__exports, { "JAM": () => JAM, "JAM_AT": () => JAM_AT, "atJam": () => atJam })
 })
 
-// ---- js/ui/radarMap.js
+// ---- js\ui\radarMap.js
 __define(57, function (__exports) {
 // The radar's map (minimap.js), and the pause menu's (mapDraw.js). The city inside the ring road is
 // a few shapes made once (drawCity): the streets, the blocks, parks and car parks, the buildings
@@ -65307,7 +65326,7 @@ function pier (g) {
 __export(__exports, { "MAP": () => MAP, "drawCity": () => drawCity, "cityMap": () => cityMap, "drawSurroundings": () => drawSurroundings })
 })
 
-// ---- js/ui/mapDraw.js
+// ---- js\ui\mapDraw.js
 __define(58, function (__exports) {
 // The pause menu's map, drawn (map.js says when, and from where): the whole city north up, at any
 // zoom, with the radar's own drawing (radarMap.js) of the blocks and the streets, the beach and the
@@ -65511,7 +65530,7 @@ function crosshair (g, x, y) {
 __export(__exports, { "drawMap": () => drawMap })
 })
 
-// ---- js/ui/map.js
+// ---- js\ui\map.js
 __define(59, function (__exports) {
 // The pause menu's MAP tab: the whole city (mapDraw.js draws it), dragged to pan, zoomed with the
 // wheel, a pinch or the buttons, and a click or a tap on a street sets the waypoint there (gps.js:
@@ -65834,7 +65853,7 @@ class MapView {
 __export(__exports, { "MapView": () => MapView })
 })
 
-// ---- js/ui/world.js
+// ---- js\ui\world.js
 __define(60, function (__exports) {
 // The world's settings as the pause menu shows and changes them (settings.js): the time of day
 // (ENV.hour), how fast the clock runs (ENV.rate: stopped, real time, GTA's minute every two
@@ -65879,12 +65898,45 @@ function worldSettings (app) {
 __export(__exports, { "RATES": () => RATES, "QUALITIES": () => QUALITIES, "worldSettings": () => worldSettings })
 })
 
-// ---- js/render/follow.js
+// ---- js\render\motionPref.js
 __define(61, function (__exports) {
+// Reduced motion, for the camera's shakes and trembles (camera.js): off by default, on if the
+// browser asks for it (prefers-reduced-motion) or the player has turned it on (the settings,
+// remembered as 'reducedMotion': ui/prefs.js). MOTION.shake scales every camera shake (0.25 with
+// reduced motion: a knock is still felt, barely). The settings menu (the UX workstream) calls
+// setReducedMotion(on) and it sticks.
+const { recall, remember } = __require(7)
+
+const MOTION = { reduced: false, shake: 1 }
+function apply (on) {
+  MOTION.reduced = !!on
+  MOTION.shake = on ? 0.25 : 1
+}
+function setReducedMotion (on, keep = true) {
+  apply(on)
+  if (keep) remember('reducedMotion', on ? '1' : '0')
+}
+// (at load: the remembered choice, else the browser's)
+function initial () {
+  const r = recall('reducedMotion', '')
+  if (r) return r === '1'
+  try {
+    return !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+  } catch {
+    return false
+  }
+}
+apply(typeof window === 'undefined' ? false : initial())
+__export(__exports, { "MOTION": () => MOTION, "setReducedMotion": () => setReducedMotion })
+})
+
+// ---- js\render\follow.js
+__define(62, function (__exports) {
 // The follow camera, GTA-style: a spring arm close behind the car's heading (camera.js runs it).
 // (the speed pull-back's proportional part adapted from mrdoob/slop-newyork js/cameras.js, MIT, (c) 2026 Mr.doob)
 const THREE = __require(0)
 const { clamp, wrapPi } = __require(2)
+const { MOTION } = __require(61)
 
 const lerpK = (k, dt) => 1 - Math.exp(-k * dt)
 const SWING = 3.4 // rad/s: the fastest the follow camera swings round behind the car
@@ -65893,18 +65945,25 @@ const SWING = 3.4 // rad/s: the fastest the follow camera swings round behind th
 // mouse wheel zooms it), REACH m further per m/s of speed up to REACH_MAX, so speed opens it out a
 // little; tipped up PITCH rad and raised RISE m, aimed AIM m above the car and, at speed, up to AHEAD
 // m down the road, so the faster it goes the more of the road ahead is in view.
-const ARM = 6.3,
-  REACH = 0.028,
-  REACH_MAX = 1.7,
-  PITCH = 0.17,
-  RISE = 1.15,
-  AIM = 0.85,
-  AHEAD = 2.4
+const ARM = 5.6,
+  REACH = 0.04,
+  REACH_MAX = 2.6,
+  PITCH = 0.2,
+  RISE = 1.02,
+  AIM = 0.78,
+  AHEAD = 5.4
 // the field of view's widening with speed (degrees, all of it by FOV_AT m/s), and how far the arm
 // falls back pulling away and closes in braking (m per m/s^2): the weight of the car, seen
-const FOV_SPEED = 11,
-  FOV_AT = 55,
-  SURGE = 0.07
+const FOV_SPEED = 18,
+  FOV_AT = 46,
+  SURGE = 0.12
+// how far the horizon leans into a corner (rad per m/s^2 of lateral g, and per rad/s of yaw), and
+// how far the arm steps out to the outside of the bend (m) so the road being turned into stays in view
+const BANK_G = 0.0052,
+  BANK_YAW = 0.014,
+  BANK_MAX = 0.08,
+  SIDE = 0.022,
+  SIDE_MAX = 0.75
 // and the arm let out in proportion to the speed as well (eased over a third of a second or so): PULL
 // of its length per m/s, at most PULL_MAX, so a bus's longer arm goes out further than a car's
 const PULL = 0.0045,
@@ -65981,7 +66040,7 @@ function follow (rig, dt, sim, P) {
   f.pace = (f.pace ?? 0) + (speed - (f.pace ?? 0)) * lerpK(3, dt)
   // (looking down the road the way the car is going, not while it backs up)
   const fwdSpeed = sim.mode === 'ground' ? Math.max(0, sim.speed) : 0
-  f.ahead += (Math.min(AHEAD, fwdSpeed * 0.06) - f.ahead) * lerpK(1.2, dt)
+  f.ahead += (Math.min(AHEAD, fwdSpeed * 0.13) - f.ahead) * lerpK(1.4, dt)
   // it falls back as the car launches and closes in under hard braking
   const acc = sim.mode === 'ground' ? clamp(sim.accLong, -14, 16) : 0
   f.surge += (acc * SURGE - f.surge) * lerpK(2.5, dt)
@@ -66015,7 +66074,7 @@ function follow (rig, dt, sim, P) {
     along2 = hv > 1 && !rig.behind ? Math.max(0, way / hv) : 0
   const ah = f.ahead * along2 * (1 - Math.min(1, Math.abs(f.yawOff)))
   // and into a turn: the aim led a little to the inside of the bend, the faster the more
-  const leadT = rig.behind ? 0 : clamp((sim.yawRate || 0) * fwdSpeed * 0.045, -1.4, 1.4)
+  const leadT = rig.behind ? 0 : clamp((sim.yawRate || 0) * fwdSpeed * 0.065, -2.4, 2.4)
   f.lead = (f.lead ?? 0) + (leadT - (f.lead ?? 0)) * lerpK(2.5, dt)
   const sh = Math.sin(f.heading),
     ch = Math.cos(f.heading)
@@ -66024,11 +66083,58 @@ function follow (rig, dt, sim, P) {
     f.target.y + (AIM + 0.6 * f.up) * f.elev,
     f.target.z - sh * ah - ch * f.lead
   )
-  // wider with speed (GTA's sense of pace: about 9 degrees more by 110 km/h, FOV_SPEED by 200),
+  // out to the outside of the bend (a left turn's yaw is positive, and +z is to the right of a car
+  // facing +x), so the corner opens up beside the car instead of hiding behind it
+  const sideT =
+    sim.mode === 'ground' && !rig.behind
+      ? clamp((sim.yawRate || 0) * Math.min(fwdSpeed, 24) * SIDE, -SIDE_MAX, SIDE_MAX)
+      : 0
+  f.side = (f.side ?? 0) + (sideT - (f.side ?? 0)) * lerpK(2.4, dt)
+  rig.pos.x += sh * f.side
+  rig.pos.z += ch * f.side
+  // the horizon leans into the turn, the way GTA's chase cam does: a left turn (positive yaw and
+  // lateral g) drops the left side of the picture. Less while looking round, and barely at all
+  // with reduced motion
+  const look = 1 - Math.min(1, Math.abs(f.yawOff) * 0.8)
+  const bankT =
+    sim.mode === 'ground' && !rig.behind
+      ? clamp(
+        ((sim.latAcc || 0) * BANK_G + (sim.yawRate || 0) * BANK_YAW) * look * MOTION.shake,
+        -BANK_MAX,
+        BANK_MAX
+      )
+      : 0
+  f.bank = (f.bank ?? 0) + (bankT - (f.bank ?? 0)) * lerpK(5, dt)
+  // wider with speed (GTA's sense of pace: about 14 degrees more by 80 km/h, FOV_SPEED by 165),
   // and a kick wider still while the main thrusters fire
   f.kick += (sim.thrMain - f.kick) * lerpK(4, dt)
   const sp = Math.min(1, speed / FOV_AT)
-  return 55 + FOV_SPEED * sp * (2 - sp) + 7 * f.kick
+  return 50 + FOV_SPEED * sp * (2 - sp) + 8 * f.kick
+}
+
+const _fwd = new THREE.Vector3(),
+  _right = new THREE.Vector3(),
+  _up = new THREE.Vector3(0, 1, 0)
+// Lean the chase camera's horizon by the follow arm's bank, after the walls have pulled the camera
+// in. A positive bank (a left turn) drops the left side of the picture.
+function applyBank (cam, look, bank) {
+  if (Math.abs(bank) < 0.0008) {
+    cam.up.set(0, 1, 0)
+    return
+  }
+  _fwd.subVectors(look, cam.position)
+  if (_fwd.lengthSq() < 1e-6) {
+    cam.up.set(0, 1, 0)
+    return
+  }
+  _fwd.normalize()
+  _right.crossVectors(_fwd, _up)
+  if (_right.lengthSq() < 1e-8) {
+    cam.up.set(0, 1, 0)
+    return
+  }
+  _right.normalize()
+  cam.up.set(0, Math.cos(bank), 0).addScaledVector(_right, Math.sin(bank))
 }
 
 // The camera kept out of the traffic, as the city's clip keeps it out of the buildings: a car on
@@ -66090,11 +66196,11 @@ function clipTraffic (rig, aim, pos, cars, dt) {
   if (rig.reach > len - 0.01) rig.reach = Infinity
   else pos.lerpVectors(aim, pos, rig.reach / len)
 }
-__export(__exports, { "ARM": () => ARM, "follow": () => follow, "clipTraffic": () => clipTraffic })
+__export(__exports, { "ARM": () => ARM, "follow": () => follow, "applyBank": () => applyBank, "clipTraffic": () => clipTraffic })
 })
 
-// ---- js/sim/carTypes.js
-__define(62, function (__exports) {
+// ---- js\sim\carTypes.js
+__define(63, function (__exports) {
 // The traffic's vehicle types (traffic.js): the nine of every day, each turning up in its share,
 // and the city's own five, which only calls.js (an ambulance, a fire engine) and fleet.js (a box
 // truck, a lowrider, a limousine) put on the road.
@@ -66125,8 +66231,8 @@ const IDX = Object.fromEntries(TYPES.map((t, i) => [t.name, i]))
 __export(__exports, { "TYPES": () => TYPES, "IDX": () => IDX })
 })
 
-// ---- js/render/carCam.js
-__define(63, function (__exports) {
+// ---- js\render\carCam.js
+__define(64, function (__exports) {
 // The camera's side of the cars the player drives that aren't the Roadster (camera.js, follow.js):
 // how big the car is, so the follow arm sits back and up far enough to see over a van or a bus
 // (armScale, armRise), the Hood camera (the Cockpit's place in V's cycle for a car without a
@@ -66134,7 +66240,7 @@ __define(63, function (__exports) {
 // cab-forward van, bus or truck, riding the body's pitch and roll), and the walls' clip eased back
 // out rather than snapping (smoothClip: in at once, out over a moment, as the traffic's is).
 const THREE = __require(0)
-const { TYPES } = __require(62)
+const { TYPES } = __require(63)
 const { clamp } = __require(2)
 
 const lerpK = (k, dt) => 1 - Math.exp(-k * dt)
@@ -66224,8 +66330,8 @@ function smoothClip (rig, clip, aim, pos, dt) {
 __export(__exports, { "armScale": () => armScale, "armRise": () => armRise, "hoodSeat": () => hoodSeat, "smoothClip": () => smoothClip })
 })
 
-// ---- vendor/three/addons/controls/OrbitControls.js
-__define(64, function (__exports) {
+// ---- vendor\three\addons\controls\OrbitControls.js
+__define(65, function (__exports) {
 const { Controls, MOUSE, Quaternion, Spherical, TOUCH, Vector2, Vector3, Plane, Ray, MathUtils } = __require(0)
 
 // OrbitControls performs orbiting, dollying (zooming), and panning.
@@ -67739,49 +67845,17 @@ function interceptControlUp( event ) {
 __export(__exports, { "OrbitControls": () => OrbitControls })
 })
 
-// ---- js/render/motionPref.js
-__define(65, function (__exports) {
-// Reduced motion, for the camera's shakes and trembles (camera.js): off by default, on if the
-// browser asks for it (prefers-reduced-motion) or the player has turned it on (the settings,
-// remembered as 'reducedMotion': ui/prefs.js). MOTION.shake scales every camera shake (0.25 with
-// reduced motion: a knock is still felt, barely). The settings menu (the UX workstream) calls
-// setReducedMotion(on) and it sticks.
-const { recall, remember } = __require(7)
-
-const MOTION = { reduced: false, shake: 1 }
-function apply (on) {
-  MOTION.reduced = !!on
-  MOTION.shake = on ? 0.25 : 1
-}
-function setReducedMotion (on, keep = true) {
-  apply(on)
-  if (keep) remember('reducedMotion', on ? '1' : '0')
-}
-// (at load: the remembered choice, else the browser's)
-function initial () {
-  const r = recall('reducedMotion', '')
-  if (r) return r === '1'
-  try {
-    return !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-  } catch {
-    return false
-  }
-}
-apply(typeof window === 'undefined' ? false : initial())
-__export(__exports, { "MOTION": () => MOTION, "setReducedMotion": () => setReducedMotion })
-})
-
-// ---- js/render/camera.js
+// ---- js\render\camera.js
 __define(66, function (__exports) {
 // Cameras: the autopilot's director shots, a GTA-style follow camera, chase, the driver's seat, side
 // and free orbit; and, held, the look behind (follow.js), as GTA's.
 const THREE = __require(0)
 const { clamp } = __require(2)
 const { TRACK, LINEUP_FIRST, LINEUP_LAST } = __require(10)
-const { follow, clipTraffic, ARM } = __require(61)
-const { hoodSeat, smoothClip } = __require(63)
-const { OrbitControls } = __require(64)
-const { MOTION } = __require(65)
+const { follow, clipTraffic, applyBank, ARM } = __require(62)
+const { hoodSeat, smoothClip } = __require(64)
+const { OrbitControls } = __require(65)
+const { MOTION } = __require(61)
 
 const CAM_MODES = [
   'director',
@@ -68208,10 +68282,12 @@ class CameraRig {
       if (this.traffic)
         clipTraffic(this, this.look, cam.position, this.traffic.cars, dt)
     }
-    cam.fov += (fov - cam.fov) * lerpK(shot === 'cockpit' ? 12 : 3, dt)
+    const fovK = shot === 'cockpit' ? 12 : shot === 'follow' ? 6 : 3
+    cam.fov += (fov - cam.fov) * lerpK(fovK, dt)
     cam.updateProjectionMatrix()
-    // (from the driver's seat the horizon tilts with the car; every other shot keeps it level)
+    // the driver's seat tilts with the car; the chase cam leans into the corner (follow.js)
     if (shot === 'cockpit') cam.up.copy(this.camUp)
+    else if (shot === 'follow') applyBank(cam, this.look, this.f.bank || 0)
     else cam.up.set(0, 1, 0)
     cam.lookAt(this.look)
     if (this.shakeAmt > 0.001) {
@@ -68241,7 +68317,7 @@ class CameraRig {
 __export(__exports, { "CAM_MODES": () => CAM_MODES, "CAM_NAMES": () => CAM_NAMES, "RIDING": () => RIDING, "CameraRig": () => CameraRig })
 })
 
-// ---- js/ui/settingsRows.js
+// ---- js\ui\settingsRows.js
 __define(67, function (__exports) {
 // The SETTINGS tab's rows, under their headings: { id, name, hint, opts: [[value, label], ...] }, a
 // slider, or (opt) one of the player's options (options.js), whose values are its CHOICES.
@@ -68346,7 +68422,7 @@ const ROWS = [
   {
     opt: 'stunts',
     name: 'Roadster stunt keys',
-    hint: 'G flies the Roadster on its thrusters, X and K flip it in the air (on with ?debug=1)',
+    hint: 'G flies the Roadster on its thrusters, X and K flip it in the air',
     opts: CHOICES.stunts.map(v => [v, v ? 'On' : 'Off'])
   },
   { head: 'World' },
@@ -68397,7 +68473,7 @@ const ROWS = [
 __export(__exports, { "ROWS": () => ROWS })
 })
 
-// ---- js/ui/settings.js
+// ---- js\ui\settings.js
 __define(68, function (__exports) {
 // The pause menu's SETTINGS tab, GTA V's list: a row for each setting, its value between arrows
 // that step through what it can be (the left and right keys do too, as does a click on the row),
@@ -68540,7 +68616,7 @@ function make (tag, className, text = '') {
 __export(__exports, { "Settings": () => Settings })
 })
 
-// ---- js/ui/remap.js
+// ---- js\ui\remap.js
 __define(69, function (__exports) {
 // The key remapping, live: a listener ahead of every other (installed before the menu's and the
 // game's) that passes each key pressed on as the key the game knows (keymap.js), and the CONTROLS
@@ -68670,7 +68746,7 @@ class KeyCard {
 __export(__exports, { "installRemap": () => installRemap, "PAD": () => PAD, "KeyCard": () => KeyCard })
 })
 
-// ---- js/sim/gameEvents.js
+// ---- js\sim\gameEvents.js
 __define(70, function (__exports) {
 // The game's own events, for the workstreams to talk through (the brief's shared interface): plain
 // named events with a small payload, queued for whoever drains them each frame and passed at once
@@ -68717,7 +68793,7 @@ function resetGame () {
 __export(__exports, { "GAME_EVENTS": () => GAME_EVENTS, "emitGame": () => emitGame, "onGame": () => onGame, "drainGame": () => drainGame, "tickGame": () => tickGame, "resetGame": () => resetGame })
 })
 
-// ---- js/sim/missions/drive.js
+// ---- js\sim\missions\drive.js
 __define(71, function (__exports) {
 // Mission: a drive across town to a meeting (the simplest: get there, stop in the marker)
 const DRIVE = {
@@ -68733,7 +68809,7 @@ const DRIVE = {
 __export(__exports, { "DRIVE": () => DRIVE })
 })
 
-// ---- js/sim/missions/race.js
+// ---- js\sim\missions\race.js
 __define(72, function (__exports) {
 // Mission: a timed checkpoint race round the middle of town, each checkpoint buying a little time
 const RACE = {
@@ -68756,7 +68832,7 @@ const RACE = {
 __export(__exports, { "RACE": () => RACE })
 })
 
-// ---- js/sim/missions/escape.js
+// ---- js\sim\missions\escape.js
 __define(73, function (__exports) {
 // Mission: stir up the police until three stars, then shake them off
 const ESCAPE = {
@@ -68776,7 +68852,7 @@ const ESCAPE = {
 __export(__exports, { "ESCAPE": () => ESCAPE })
 })
 
-// ---- js/sim/missions/deliver.js
+// ---- js\sim\missions\deliver.js
 __define(74, function (__exports) {
 // Mission: steal a particular car (a sports car, parked in a lot across town) and bring it to the
 // garage, unscratched enough to sell
@@ -68797,7 +68873,7 @@ const DELIVER = {
 __export(__exports, { "DELIVER": () => DELIVER })
 })
 
-// ---- js/sim/missions/taxi.js
+// ---- js\sim\missions\taxi.js
 __define(75, function (__exports) {
 // Mission: a taxi fare: pick someone up, take them across town quickly; the fare grows with time
 // to spare
@@ -68817,7 +68893,7 @@ const TAXI = {
 __export(__exports, { "TAXI": () => TAXI })
 })
 
-// ---- js/sim/missions/getaway.js
+// ---- js\sim\missions\getaway.js
 __define(76, function (__exports) {
 // Mission: a getaway: the alarm is already ringing (two stars), get to the safehouse garage before
 // the clock runs out, then lie low there until the heat dies down
@@ -68837,7 +68913,7 @@ const GETAWAY = {
 __export(__exports, { "GETAWAY": () => GETAWAY })
 })
 
-// ---- js/sim/missions/valet.js
+// ---- js\sim\missions\valet.js
 __define(77, function (__exports) {
 // Mission: a valet run: collect a client from the car park, then get them to their dinner in
 // Beverly Hills on time; the tip grows with the time to spare
@@ -68857,7 +68933,7 @@ const VALET = {
 __export(__exports, { "VALET": () => VALET })
 })
 
-// ---- js/sim/missions/trial.js
+// ---- js\sim\missions\trial.js
 __define(78, function (__exports) {
 // Mission: a time trial round the edge of town (the coast road, the hills' edge, downtown and
 // back): no time back for the checkpoints, just the clock; the hill road (the world workstream's)
@@ -68881,7 +68957,7 @@ const TRIAL = {
 __export(__exports, { "TRIAL": () => TRIAL })
 })
 
-// ---- js/sim/missions/index.js
+// ---- js\sim\missions\index.js
 __define(79, function (__exports) {
 // The missions on offer (each a data file of its own: drive, race, escape, deliver, taxi,
 // getaway, valet, trial), for the
@@ -68902,7 +68978,7 @@ const missionById = id => MISSIONS.find(m => m.id === id) || null
 __export(__exports, { "MISSIONS": () => MISSIONS, "missionById": () => missionById })
 })
 
-// ---- js/ui/stats.js
+// ---- js\ui\stats.js
 __define(80, function (__exports) {
 // The pause menu's STATS tab: the missions (each one's name, its pay, passed or not) and the
 // player's record, kept between visits: time in the city, how far driven and walked, cars stolen,
@@ -68991,7 +69067,7 @@ class Stats {
 __export(__exports, { "Stats": () => Stats })
 })
 
-// ---- js/sim/player.js
+// ---- js\sim\player.js
 __define(81, function (__exports) {
 // The player: one state for whoever the game is following, on foot or at the wheel, and the
 // third-person on-foot movement (walk, run, jump, collision with buildings, posts, cars and kerbs).
@@ -69423,7 +69499,7 @@ function freeSpot (spots, world = CITY_WORLD) {
 __export(__exports, { "FOOT": () => FOOT, "player": () => player, "isOnFoot": () => isOnFoot, "isDriving": () => isDriving, "isBoarding": () => isBoarding, "setMode": () => setMode, "placePlayer": () => placePlayer, "groundBase": () => groundBase, "moveDir": () => moveDir, "CITY_WORLD": () => CITY_WORLD, "floorAt": () => floorAt, "blockedAt": () => blockedAt, "paceOf": () => paceOf, "gaitOf": () => gaitOf, "stepFoot": () => stepFoot, "knockDown": () => knockDown, "freeSpot": () => freeSpot })
 })
 
-// ---- js/audio/buffers.js
+// ---- js\audio\buffers.js
 __define(82, function (__exports) {
 // Sample buffers synthesised once at start-up (nothing to download): loopable noise in three
 // colours, slow and fast random modulators (gusts, a tyre's stick-slip, the rhythm of speech), and
@@ -69907,7 +69983,7 @@ function wave (ctx, amps) {
 __export(__exports, { "rng": () => rng, "noises": () => noises, "bandNoise": () => bandNoise, "wobble": () => wobble, "later": () => later, "bank": () => bank, "wave": () => wave })
 })
 
-// ---- vendor/three/addons/environments/RoomEnvironment.js
+// ---- vendor\three\addons\environments\RoomEnvironment.js
 __define(83, function (__exports) {
 /**
  * https://github.com/google/model-viewer/blob/master/packages/model-viewer/src/three-components/EnvironmentScene.ts
@@ -70046,7 +70122,7 @@ function createAreaLightMaterial( intensity ) {
 __export(__exports, { "RoomEnvironment": () => RoomEnvironment })
 })
 
-// ---- js/render/scene.js
+// ---- js\render\scene.js
 __define(84, function (__exports) {
 // Renderer, scene, procedural textures, shared materials, lights and the test-site surroundings.
 // Everything that belongs to the test site hangs off `site`, so it can be hidden for the city.
@@ -70200,13 +70276,14 @@ const softTex = (() => {
 // ---------- materials ----------
 const hdr = (r, g, b) => new THREE.Color(r, g, b)
 const MAT = {
-  // Ano White: a satin silver-white with soft, broad highlights
+  // Ano White under a clear coat: a deep gloss that takes the sky, the way the reveal car does
   paint: new THREE.MeshPhysicalMaterial({
-    color: 0xeceef0,
-    roughness: 0.36,
-    metalness: 0.18,
-    clearcoat: 0.35,
-    clearcoatRoughness: 0.28
+    color: 0xf2f4f6,
+    roughness: 0.16,
+    metalness: 0.42,
+    clearcoat: 1,
+    clearcoatRoughness: 0.05,
+    envMapIntensity: 1.25
   }),
   // satin black: sills, diffuser, wing
   trim: new THREE.MeshStandardMaterial({
@@ -70230,9 +70307,9 @@ const MAT = {
   }),
   tire: new THREE.MeshStandardMaterial({ color: 0x111214, roughness: 0.92 }),
   rim: new THREE.MeshStandardMaterial({
-    color: 0x2b2e33,
-    roughness: 0.35,
-    metalness: 0.8
+    color: 0xc5c9cf,
+    roughness: 0.16,
+    metalness: 0.92
   }),
   gold: new THREE.MeshStandardMaterial({
     color: 0xd6a84e,
@@ -70451,7 +70528,7 @@ function followKeyLight (pos, view) {
 __export(__exports, { "canvas": () => canvas, "renderer": () => renderer, "scene": () => scene, "pmrem": () => pmrem, "site": () => site, "camera": () => camera, "canvasTex": () => canvasTex, "speckle": () => speckle, "softTex": () => softTex, "hdr": () => hdr, "MAT": () => MAT, "hemi": () => hemi, "key": () => key, "beacons": () => beacons, "keyOffset": () => keyOffset, "followKeyLight": () => followKeyLight })
 })
 
-// ---- js/audio/ears.js
+// ---- js\audio\ears.js
 __define(85, function (__exports) {
 // How something in the world sounds from where the camera is: how loud, how far left or right,
 // whether a building stands in the way, and how dull the distance and the walls make it.
@@ -70522,7 +70599,7 @@ function placeOf (x, z) {
 __export(__exports, { "hearing": () => hearing, "panOf": () => panOf, "ray": () => ray, "blocked": () => blocked, "dullness": () => dullness, "placeOf": () => placeOf })
 })
 
-// ---- js/audio/siren.js
+// ---- js\audio\siren.js
 __define(86, function (__exports) {
 // The siren of the car on a call (sim/calls.js), heard where the car is. A police car's: a horn
 // speaker's harsh tone swept by its electronic driver, the wail (a slow rise and a slower fall,
@@ -70782,7 +70859,7 @@ function whoop (s, v, d) {
 __export(__exports, { "SIREN": () => SIREN, "hearSiren": () => hearSiren, "sirenVoice": () => sirenVoice })
 })
 
-// ---- js/audio/watch.js
+// ---- js\audio\watch.js
 __define(87, function (__exports) {
 // What happens round the camera that the sound engine hears as one-shots, watched each frame from
 // the sim's state: things rushing past the Roadster, brakes squealing and buses' air brakes, parked
@@ -70976,7 +71053,7 @@ function watch (sound, app, traffic) {
 __export(__exports, { "ALARM": () => ALARM, "raiseAlarm": () => raiseAlarm, "forget": () => forget, "watch": () => watch })
 })
 
-// ---- js/sim/manners.js
+// ---- js\sim\manners.js
 __define(88, function (__exports) {
 // Traffic drivers' manners: indicators for lane changes and turns (on before the car moves over),
 // hazards on a car knocked loose (wrecks.js), honking at a Roadster that holds them up or cuts them
@@ -71055,7 +71132,7 @@ function honk (tr, car, long) {
 __export(__exports, { "temper": () => temper, "honk": () => honk })
 })
 
-// ---- js/sim/react.js
+// ---- js\sim\react.js
 __define(89, function (__exports) {
 // How traffic reacts to the Roadster, mixed into Traffic (traffic.js), the way GTA's drivers do: one
 // coming at a car, or cutting in hard in front of it, has its driver stamp on the brakes and swerve
@@ -71380,7 +71457,7 @@ const REACT = {
 __export(__exports, { "REACT": () => REACT })
 })
 
-// ---- js/sim/sight.js
+// ---- js\sim\sight.js
 __define(90, function (__exports) {
 // What a traffic driver sees, mixed into Traffic (traffic.js): the car ahead in its path, the
 // Roadster or a knocked or crossing car in the way, the oncoming traffic a left turn would cut, and
@@ -71761,7 +71838,7 @@ const SIGHT = {
 __export(__exports, { "LOOK": () => LOOK, "STOP_DECEL": () => STOP_DECEL, "OB": () => OB, "put": () => put, "SIGHT": () => SIGHT })
 })
 
-// ---- js/sim/makeway.js
+// ---- js\sim\makeway.js
 __define(91, function (__exports) {
 // Making way for the car on a call (calls.js), mixed into Traffic (traffic.js). A driver ahead of
 // it on its road, in its lane or the one beside, notices it coming (each at their own distance,
@@ -71947,7 +72024,7 @@ const MAKEWAY = {
 __export(__exports, { "MAKEWAY": () => MAKEWAY })
 })
 
-// ---- js/sim/responder.js
+// ---- js\sim\responder.js
 __define(92, function (__exports) {
 // How the car on a call drives (calls.js), mixed into Traffic (traffic.js), on top of the driving
 // every car does (drivers.js): fast, a police car up to about 75 km/h in town, an ambulance a
@@ -72340,7 +72417,7 @@ const RESPOND = {
 __export(__exports, { "KINDS": () => KINDS, "RUNS": () => RUNS, "RESPOND": () => RESPOND })
 })
 
-// ---- js/sim/calls.js
+// ---- js\sim\calls.js
 __define(93, function (__exports) {
 // Emergency runs, as in GTA V's living city, mixed into Traffic (traffic.js): now and then (every
 // two to four minutes or so, never in the city's first minute) a police car, an ambulance or a fire
@@ -72658,7 +72735,7 @@ const CALLS = {
 __export(__exports, { "newCall": () => newCall, "CALLS": () => CALLS })
 })
 
-// ---- js/sim/conditions.js
+// ---- js\sim\conditions.js
 __define(94, function (__exports) {
 // The weather and the hour as the traffic feels them (sim/env.js), mixed into Traffic (traffic.js).
 // In the rain and on a wet road drivers go slower (about 15% under their usual pace when it is wet
@@ -72796,7 +72873,7 @@ const CONDITIONS = {
 __export(__exports, { "busy": () => busy, "CONDITIONS": () => CONDITIONS })
 })
 
-// ---- js/sim/fleet.js
+// ---- js\sim\fleet.js
 __define(95, function (__exports) {
 // The city's own vehicles among the ordinary traffic, mixed into Traffic (traffic.js). In place of
 // about two vans in five, a delivery box truck (delivery.js: its stops); of the sedans, now and
@@ -72807,7 +72884,7 @@ __define(95, function (__exports) {
 const { N, PITCH } = __require(21)
 const { areaOf } = __require(5)
 const { rng } = __require(38)
-const { TYPES } = __require(62)
+const { TYPES } = __require(63)
 
 const TRUCKS = 0.4 // of the vans, the share that are box trucks
 // of the sedans, the share that are lowriders, and limousines, by neighbourhood (areas.js)
@@ -72865,7 +72942,7 @@ const FLEET = {
 __export(__exports, { "streams": () => streams, "FLEET": () => FLEET })
 })
 
-// ---- js/sim/delivery.js
+// ---- js\sim\delivery.js
 __define(96, function (__exports) {
 // Deliveries, mixed into Traffic (traffic.js): a box truck (fleet.js) coming into a block in the
 // kerb lane now and then makes a stop on it, double-parked, as LA's delivery drivers do. It
@@ -72997,7 +73074,7 @@ const DELIVERY = {
 __export(__exports, { "DELIVERY": () => DELIVERY })
 })
 
-// ---- js/sim/pavement.js
+// ---- js\sim\pavement.js
 __define(97, function (__exports) {
 // The pavements people walk (peds.js): each block's ring of pavement at a given distance in from
 // the kerb, the point and heading at any distance round it, the crossings from each corner, and
@@ -73190,7 +73267,7 @@ function crossings (b, k) {
 __export(__exports, { "LINES": () => LINES, "ringOf": () => ringOf, "sameOn": () => sameOn, "ring": () => ring, "ringAt": () => ringAt, "nearestOn": () => nearestOn, "blockNear": () => blockNear, "walkOn": () => walkOn, "standBack": () => standBack, "crossings": () => crossings })
 })
 
-// ---- js/sim/variety.js
+// ---- js\sim\variety.js
 __define(98, function (__exports) {
 // What breaks up the city's sameness, laid out after everything else on its own random numbers
 // (rng 20261020, so the layout, the parked cars and the traffic's dealing stay as they were): on the
@@ -73348,7 +73425,7 @@ for (const b of BUILDINGS) {
 __export(__exports, { "ROOFTOPS": () => ROOFTOPS, "LANDMARKS_V2": () => LANDMARKS_V2 })
 })
 
-// ---- js/sim/interiors/rooms.js
+// ---- js\sim\interiors\rooms.js
 __define(99, function (__exports) {
 // The interiors' templates: each room a box w wide (x, across the door's wall: -w/2 to w/2) by d
 // deep (z, in from the door's wall: 0 to d) by h high, its door at x = door on the wall z = 0, and
@@ -73610,7 +73687,7 @@ const ROOMS = { store: store(), diner: diner(), workshop: workshop(), lobby: lob
 __export(__exports, { "ROOMS": () => ROOMS })
 })
 
-// ---- js/sim/interiors/sites.js
+// ---- js\sim\interiors\sites.js
 __define(100, function (__exports) {
 // Where the interiors are: each on a building the city already has (lots.js, found by its
 // footprint, so nothing in the layout or its random numbers moves), its door on one of the
@@ -73734,7 +73811,7 @@ const siteById = id => SITES.find(s => s.id === id) || null
 __export(__exports, { "POCKET": () => POCKET, "WALL_T": () => WALL_T, "toWorld": () => toWorld, "SITES": () => SITES, "siteById": () => siteById })
 })
 
-// ---- js/sim/extras.js
+// ---- js\sim\extras.js
 __define(101, function (__exports) {
 // What there is to find off the streets, laid out after everything else on its own random numbers
 // (rng 20261022: the layout, the parked cars and the traffic's dealing stay as they were): the
@@ -74128,7 +74205,7 @@ for (const l of LAMPS) {
 __export(__exports, { "ALLEYS": () => ALLEYS, "EXTRAS": () => EXTRAS })
 })
 
-// ---- js/sim/trafficStop.js
+// ---- js\sim\trafficStop.js
 __define(102, function (__exports) {
 // All-way stops at the quiet junctions, mixed into Traffic (traffic.js). Where two minor streets
 // cross in the suburbs, the estates or Venice (neither of them a boulevard, nor the ring road),
@@ -74229,7 +74306,7 @@ markStops(NODES)
 __export(__exports, { "STOPS": () => STOPS, "markStops": () => markStops, "STOP_SIGN": () => STOP_SIGN })
 })
 
-// ---- js/sim/stopSigns.js
+// ---- js\sim\stopSigns.js
 __define(103, function (__exports) {
 // The all-way stops' signs (the junctions trafficStop.js marks): an octagonal STOP sign on its post
 // at the near-right corner of every approach, a metre and a half before the stop line and just in
@@ -74299,7 +74376,7 @@ const nodeCount = STOPS.length
 __export(__exports, { "SIGN": () => SIGN, "SIGNS": () => SIGNS, "LEGENDS": () => LEGENDS, "nodeCount": () => nodeCount })
 })
 
-// ---- js/sim/world.js
+// ---- js\sim\world.js
 __define(104, function (__exports) {
 // The world's queries, in one place for the other workstreams (the player on foot, traffic, people,
 // missions): the ground's height and slope anywhere (the street, the hills and the hill road cut
@@ -74492,7 +74569,7 @@ function inBuilding (x, z) {
 __export(__exports, { "rampHeight": () => rampHeight, "groundHeight": () => groundHeight, "groundNormal": () => groundNormal, "districtAt": () => districtAt, "parkingNear": () => parkingNear, "pavementNear": () => pavementNear, "pavementGraph": () => pavementGraph, "spawnPoints": () => spawnPoints, "onRoad": () => onRoad, "roofAt": () => roofAt, "FWY": () => FWY, "HILL_ROAD": () => HILL_ROAD, "LOOKOUT": () => LOOKOUT, "onHillRoad": () => onHillRoad, "inTunnel": () => inTunnel, "ROOFTOPS": () => ROOFTOPS, "LANDMARKS_V2": () => LANDMARKS_V2, "ALLEYS": () => ALLEYS, "EXTRAS": () => EXTRAS, "SIGN": () => SIGN, "SIGNS": () => SIGNS, "LEGENDS": () => LEGENDS })
 })
 
-// ---- js/sim/wrecks.js
+// ---- js\sim\wrecks.js
 __define(105, function (__exports) {
 // Traffic knocked out of its lane: the Roadster's hits on cars, the slide to a stop on locked-up
 // tyres (off walls and posts, through a post it hits hard enough to snap, and into other cars, which
@@ -74862,7 +74939,7 @@ function clashBody (tr, sim, me, bottom, mass, car, o) {
 __export(__exports, { "TOW": () => TOW, "loosen": () => loosen, "slide": () => slide, "restore": () => restore, "gone": () => gone, "bumpLoose": () => bumpLoose, "collidePlayer": () => collidePlayer })
 })
 
-// ---- js/sim/drivers.js
+// ---- js\sim\drivers.js
 __define(106, function (__exports) {
 // The people at the wheel of the traffic, mixed into Traffic (traffic.js). Each driver is their own:
 // how fast they like to go (a few dawdle, most keep to about the limit, a fifth press on), how close
@@ -75331,7 +75408,7 @@ const DRIVE = {
 __export(__exports, { "temperament": () => temperament, "DRIVE": () => DRIVE })
 })
 
-// ---- js/sim/laneChange.js
+// ---- js\sim\laneChange.js
 __define(107, function (__exports) {
 // Changing lanes, mixed into Traffic (traffic.js) with the drivers (drivers.js): moving over for a
 // turn from the other lane, to get round something stopped in this one, when the Roadster honks
@@ -75462,7 +75539,7 @@ const LANE_CHANGE = {
 __export(__exports, { "LANE_CHANGE": () => LANE_CHANGE })
 })
 
-// ---- js/sim/laneChangeFwy.js
+// ---- js\sim\laneChangeFwy.js
 __define(108, function (__exports) {
 // Lane changes on the freeway, mixed into Traffic (traffic.js) beside laneChange.js. The deck's
 // lanes are separate edges (highway.js: the through lane, the inner lane beside it and the outer
@@ -75734,7 +75811,7 @@ const FWY_LANES = {
 __export(__exports, { "SIDES": () => SIDES, "RANK": () => RANK, "laySides": () => laySides, "FWY_LANES": () => FWY_LANES })
 })
 
-// ---- js/sim/trafficStuck.js
+// ---- js\sim\trafficStuck.js
 __define(109, function (__exports) {
 // The watchdog for cars that have stopped going anywhere, mixed into Traffic (traffic.js), on top
 // of the standoffs react.js sorts out and the last-resort gridlock rule (handover.js). Called for
@@ -75780,7 +75857,7 @@ const TRAFFIC_STUCK = {
 __export(__exports, { "STUCK_LINE": () => STUCK_LINE, "STUCK_BOX": () => STUCK_BOX, "STUCK_DROP": () => STUCK_DROP, "TRAFFIC_STUCK": () => TRAFFIC_STUCK })
 })
 
-// ---- js/sim/handover.js
+// ---- js\sim\handover.js
 __define(110, function (__exports) {
 // The traffic's cars as entities others can take over, mixed into Traffic (traffic.js). Every car
 // keeps a stable id for as long as it is on the map (car.id); the player's workstream finds one by
@@ -75790,7 +75867,7 @@ __define(110, function (__exports) {
 // done (handBack: left parked where it stands, or given a driver who takes it back into traffic).
 // Also the drivers' moods (an angry driver after a knock presses on, close behind, on the horn),
 // their driving style, the last-resort gridlock watchdog and how busy each district is.
-const { TYPES } = __require(62)
+const { TYPES } = __require(63)
 const { LANES, PITCH, N } = __require(38)
 const { AREAS, areaOf } = __require(5)
 const { temperament } = __require(106)
@@ -75969,7 +76046,7 @@ const styleOf = car =>
 __export(__exports, { "DISTRICT": () => DISTRICT, "STYLE": () => STYLE, "HANDOVER": () => HANDOVER, "styleOf": () => styleOf })
 })
 
-// ---- js/sim/parkNear.js
+// ---- js\sim\parkNear.js
 __define(111, function (__exports) {
 // The car parks and driveways round the player filled as full as each asks (STALLS' fill): the
 // suburbs' driveways, the industrial staff lots, the strip malls' and the freeway corridor's car
@@ -76056,7 +76133,7 @@ const PARKNEAR = {
 __export(__exports, { "PARKNEAR": () => PARKNEAR })
 })
 
-// ---- js/sim/hwDrive.js
+// ---- js\sim\hwDrive.js
 __define(112, function (__exports) {
 // The traffic on the freeway and the hill road (highway.js lays their lanes), mixed into Traffic
 // (traffic.js): which way on (a street lane's way off taken now and then, by numbers of its own so
@@ -76168,7 +76245,7 @@ const HWDRIVE = {
 __export(__exports, { "HWDRIVE": () => HWDRIVE })
 })
 
-// ---- js/sim/traffic.js
+// ---- js\sim\traffic.js
 __define(113, function (__exports) {
 // City traffic: each driver their own (drivers.js), following the lane graph, keeping their
 // distance (intelligent driver model, eased on the pedals), stopping for red lights, slowing for
@@ -76198,7 +76275,7 @@ const { FWY_LANES } = __require(108)
 const { STOP_SIGN } = __require(102)
 const { TRAFFIC_STUCK } = __require(109)
 const { rng, NODES, EDGES, LANES, STALLS, pointAt } = __require(38)
-const { TYPES, IDX } = __require(62)
+const { TYPES, IDX } = __require(63)
 const { HANDOVER, styleOf } = __require(110)
 const { PARKNEAR } = __require(111)
 const { HWDRIVE } = __require(112)
@@ -76671,7 +76748,7 @@ Object.assign(Traffic.prototype, FWY_LANES, STOP_SIGN, TRAFFIC_STUCK)
 __export(__exports, { "warm": () => warm, "Traffic": () => Traffic, "TYPES": () => TYPES })
 })
 
-// ---- js/render/wet.js
+// ---- js\render\wet.js
 __define(114, function (__exports) {
 // The city's ground in the rain. As the road soaks (ENV.wet) the asphalt goes dark and smooth, its
 // polished wheel tracks smoothest of all, and it mirrors the street: the buildings, the signs, the
@@ -76807,7 +76884,7 @@ function wetGround (m, dark = 0.6, gloss = 0.3) {
 __export(__exports, { "WET": () => WET, "puddleAt": () => puddleAt, "PUDDLE_GLSL": () => PUDDLE_GLSL, "wetGround": () => wetGround })
 })
 
-// ---- js/render/smoke.js
+// ---- js\render\smoke.js
 __define(115, function (__exports) {
 // Smoke, vapor and dust. Each puff is carried by the air rather than flung: it relaxes towards the air
 // around it, which is a light breeze, a swirl that changes from place to place (so a cloud billows and
@@ -77290,7 +77367,7 @@ const smoke = new Smoke()
 __export(__exports, { "VAPOR": () => VAPOR, "TYRE": () => TYRE, "DUST": () => DUST, "smoke": () => smoke })
 })
 
-// ---- js/render/spray.js
+// ---- js\render\spray.js
 __define(116, function (__exports) {
 // Spray off a wet road (ENV.wet, sim/env.js): each of the Roadster's tyres throws up a fine mist on
 // a wet road, more the faster it turns, and a sheet of water through a puddle (wet.js's puddleAt,
@@ -77393,7 +77470,7 @@ function emitTrafficSpray (traffic, camera, dt) {
 __export(__exports, { "WATER": () => WATER, "emitSpray": () => emitSpray, "emitTrafficSpray": () => emitTrafficSpray })
 })
 
-// ---- js/render/geo.js
+// ---- js\render\geo.js
 __define(117, function (__exports) {
 // Geometry helpers for the city: merging thousands of small pieces into a handful of buffers (so a
 // whole district draws in a few calls), vertex tints, and instanced flat marks for road paint.
@@ -77478,7 +77555,7 @@ function marks (list, mat, y) {
 __export(__exports, { "LAYER": () => LAYER, "merge": () => merge, "tint": () => tint, "box": () => box, "marks": () => marks })
 })
 
-// ---- js/render/mirror.js
+// ---- js\render\mirror.js
 __define(118, function (__exports) {
 // The street's reflection in the wet. While the road is wet the scene is drawn a second time, before
 // the frame, from a camera mirrored below the road, into a target half the frame's size: what a
@@ -77600,7 +77677,7 @@ class Mirror {
 __export(__exports, { "GROUND": () => GROUND, "Mirror": () => Mirror })
 })
 
-// ---- js/render/aircraft.js
+// ---- js\render\aircraft.js
 __define(119, function (__exports) {
 // What flies over the city: an airliner every minute or two, high up on its way down to LAX (to
 // the south-west), its wingtips' red and green and its white strobes blinking at night; and a
@@ -77970,7 +78047,7 @@ class Aircraft {
 __export(__exports, { "AIR": () => AIR, "Aircraft": () => Aircraft })
 })
 
-// ---- js/sim/interiors/state.js
+// ---- js\sim\interiors\state.js
 __define(120, function (__exports) {
 // Going in and out of the interiors, as a little state machine with no DOM in it (the tests drive
 // it in Node; render/interiors/glue.js drives it in the game): the door on offer to the player, the
@@ -78116,7 +78193,7 @@ function roomWorld (s) {
 __export(__exports, { "FADE": () => FADE, "HOLD": () => HOLD, "DOOR_R": () => DOOR_R, "SERVICE_V": () => SERVICE_V, "INTERIOR": () => INTERIOR, "inside": () => inside, "busy": () => busy, "offerAt": () => offerAt, "begin": () => begin, "stepTransition": () => stepTransition, "swapIn": () => swapIn, "swapOut": () => swapOut, "clearInterior": () => clearInterior, "strayed": () => strayed, "roomWorld": () => roomWorld })
 })
 
-// ---- js/audio/mix.js
+// ---- js\audio\mix.js
 __define(121, function (__exports) {
 // What the sound engine hears each frame, from where the camera is: the Roadster's drive state (the
 // motors' force, worked out from the power the sim reports, its wheels and tyres), where the car is
@@ -78545,7 +78622,7 @@ function setVolumes (sound, { master = 1, music = 1, sfx = 1 }) {
 __export(__exports, { "mixSound": () => mixSound, "setVolumes": () => setVolumes, "hearing": () => hearing, "panOf": () => panOf, "dullness": () => dullness, "placeOf": () => placeOf })
 })
 
-// ---- js/ui/onboard.js
+// ---- js\ui\onboard.js
 __define(122, function (__exports) {
 // A new player's first steps: a short hint the first time they are on foot in the city, the first
 // time they drive a car that isn't the Roadster, the first time they have stars, the first time
@@ -78623,7 +78700,7 @@ class Onboard {
 __export(__exports, { "HINTS": () => HINTS, "Onboard": () => Onboard })
 })
 
-// ---- js/ui/captions.js
+// ---- js\ui\captions.js
 __define(123, function (__exports) {
 // Subtitles for the sounds that matter, for players who can't hear them (options.js subtitles):
 // thunder (a strike: ENV.strikes), the rain coming on, sirens closing in (a police unit within
@@ -78669,7 +78746,7 @@ class Captions {
 __export(__exports, { "Captions": () => Captions })
 })
 
-// ---- js/ui/tokens.js
+// ---- js\ui\tokens.js
 __define(124, function (__exports) {
 // The hidden tokens' counter (the world's hunt: render/interiors/hunt.js says 'token-collected'
 // { id, n, total, where, pos } and, at the last, 'tokens-complete'): a small "◆ 7/30" by the radar
@@ -78743,7 +78820,7 @@ class TokenCounter {
 __export(__exports, { "SHOW_S": () => SHOW_S, "DONE_S": () => DONE_S, "DEFAULT_TOTAL": () => DEFAULT_TOTAL, "TokenCounter": () => TokenCounter })
 })
 
-// ---- js/ui/ux.js
+// ---- js\ui\ux.js
 __define(125, function (__exports) {
 // The menu's work each frame (menu.frame, from main.js's loop): the player's options applied where
 // a frame is needed for it (the sound's levels once its context exists), a new player's hints
@@ -78758,7 +78835,7 @@ const { OPTS, loadOptions, onOption } = __require(13)
 const { Onboard } = __require(122)
 const { Captions } = __require(123)
 const { TokenCounter } = __require(124)
-const { setReducedMotion } = __require(65)
+const { setReducedMotion } = __require(61)
 
 const CAPTION_S = 2.6 // s a caption stays up
 
@@ -78842,7 +78919,7 @@ class UxFrame {
 __export(__exports, { "UxFrame": () => UxFrame })
 })
 
-// ---- js/sim/missions/spots.js
+// ---- js\sim\missions\spots.js
 __define(126, function (__exports) {
 // Places for the missions, given as fractions of the street grid's extent (0, 0 its north-west
 // corner, 1, 1 its south-east) rather than coordinates, so they keep their meaning on a bigger map
@@ -78927,7 +79004,7 @@ const STATIONS = [[0.52, 0.45], [0.12, 0.7], [0.86, 0.82]]
 __export(__exports, { "lotSpot": () => lotSpot, "bounds": () => bounds, "spot": () => spot, "nearestKerb": () => nearestKerb, "spots": () => spots, "HOSPITALS": () => HOSPITALS, "STATIONS": () => STATIONS })
 })
 
-// ---- js/sim/poi.js
+// ---- js\sim\poi.js
 __define(127, function (__exports) {
 // The places the maps mark with an icon (ui/poiMap.js): the gas stations (their canopies: strip.js),
 // the multi-storey car parks (lots.js GARAGES), the hospitals and police stations the player is put
@@ -78992,7 +79069,7 @@ function pois () {
 __export(__exports, { "POI_KINDS": () => POI_KINDS, "addPoi": () => addPoi, "removePoi": () => removePoi, "pois": () => pois })
 })
 
-// ---- js/ui/poiMap.js
+// ---- js\ui\poiMap.js
 __define(128, function (__exports) {
 // The places of pois.js on the maps: a small rounded square in the place's colour with its glyph (a
 // pump, P, a cross, a star, a bag, a door), so they read apart from the missions' round blips. On the
@@ -79075,7 +79152,7 @@ function poiIcon (kind) {
 __export(__exports, { "drawPois": () => drawPois, "poiIcon": () => poiIcon })
 })
 
-// ---- js/ui/debugTab.js
+// ---- js\ui\debugTab.js
 __define(129, function (__exports) {
 // The pause menu's DEBUG tab (only with ?debug=1: debug.js): what the old top bar's buttons did,
 // the test site, slow motion, Autopilot, and the clock, the weather and the fan, each a button that
@@ -79123,7 +79200,7 @@ function wireDebug (root, keys, menu) {
 __export(__exports, { "CREDIT": () => CREDIT, "debugPanel": () => debugPanel, "debugTabButton": () => debugTabButton, "wireDebug": () => wireDebug })
 })
 
-// ---- js/ui/menu.js
+// ---- js\ui\menu.js
 __define(130, function (__exports) {
 // The pause menu, GTA V's. Esc or P (a pad's Menu, the MENU button on a touch screen), stops
 // the game where it is (main.js steps nothing while it is open: the sim, the traffic and the people
@@ -79533,7 +79610,7 @@ class Menu {
 __export(__exports, { "Menu": () => Menu })
 })
 
-// ---- js/ui/minimap.js
+// ---- js\ui\minimap.js
 __define(131, function (__exports) {
 // GTA V-style radar for the city: a rounded rectangle, the map turning under the car's arrow
 // (heading-up, with the camera), zooming out with speed and with height; traffic as dots, wrecks in
@@ -79720,7 +79797,7 @@ class Minimap {
 __export(__exports, { "Minimap": () => Minimap })
 })
 
-// ---- js/render/loft.js
+// ---- js\render\loft.js
 __define(132, function (__exports) {
 // Lofted bodies: a half section swept through stations along x and mirrored to both sides, with
 // normals smoothed across gentle bends and kept sharp at creases, so a body reads as smooth panels
@@ -79905,7 +79982,7 @@ function seam (stations, x, k0, k1, mat, w = 0.008, lift = 0.0025) {
 __export(__exports, { "loftGeos": () => loftGeos, "loft": () => loft, "creaseNormals": () => creaseNormals, "withStations": () => withStations, "at": () => at, "seam": () => seam })
 })
 
-// ---- js/render/optimus.js
+// ---- js\render\optimus.js
 __define(133, function (__exports) {
 // Optimus, the Roadster's driver, after the Gen 2 robot: satin white shells over black actuators, a
 // gloss black egg of a head ringed in cyan, a black yoke across the shoulders, a boxy chest over a
@@ -80485,7 +80562,7 @@ function poseOptimus (
 __export(__exports, { "HIP_STAND": () => HIP_STAND, "buildOptimus": () => buildOptimus, "ANKLE_UP": () => ANKLE_UP, "poseOptimus": () => poseOptimus })
 })
 
-// ---- js/render/roadsterCabin.js
+// ---- js\render\roadsterCabin.js
 __define(134, function (__exports) {
 // The Roadster's cabin, seen through the glass and the open doors and from the driver's seat (the
 // Cockpit camera): a black tub with two bucket seats, the console between them, dark linings behind
@@ -80705,7 +80782,7 @@ function updateCabin (C, O, sim, seated, dt) {
 __export(__exports, { "YOKE": () => YOKE, "DRIVER": () => DRIVER, "buildCabin": () => buildCabin, "updateCabin": () => updateCabin })
 })
 
-// ---- js/render/intro.js
+// ---- js\render\intro.js
 __define(135, function (__exports) {
 // The city's opening scene: Optimus walks up to the parked Roadster from behind (the camera low at
 // its heels, like the reveal's photo) as the driver's door swings up, and gets in the way a person
@@ -81003,7 +81080,7 @@ function boardRoadster (RS, t) {
 __export(__exports, { "Intro": () => Intro, "BOARD_T": () => BOARD_T, "DOOR_SPOT": () => DOOR_SPOT, "boardRoadster": () => boardRoadster })
 })
 
-// ---- js/render/tween.js
+// ---- js\render\tween.js
 __define(136, function (__exports) {
 // Drawing between physics steps. The sim runs at a fixed 120 Hz and the screen at whatever rate it
 // likes (60, 120, 144 Hz, never quite even), so a frame lands part of the way through a step. Drawn
@@ -81101,7 +81178,7 @@ class Tween {
 __export(__exports, { "Tween": () => Tween })
 })
 
-// ---- js/sim/crowd.js
+// ---- js\sim\crowd.js
 __define(137, function (__exports) {
 // How people on foot behave beyond getting about (peds.js), mixed into Peds: some walk in pairs,
 // some stand about (on the phone, chatting, waiting), a few jog; heads turn to follow the Roadster
@@ -81199,17 +81276,25 @@ const CROWD = {
     return true
   },
 
-  // the Roadster close by and loud (fast, or on the horn): heads turn to follow it
+  // the Roadster nearby: heads turn to it (further off when it is moving or on the horn), a
+  // flinch as it blows past, and anyone in the crossing hurries
   watch (p, dt, me) {
     let want = 0
-    if (me && p.state !== 'dodge' && p.state !== 'flee') {
+    if (me && p.state !== 'dodge' && p.state !== 'flee' && p.state !== 'down') {
       const dx = me.x - p.x,
-        dz = me.z - p.z
-      if (dx * dx + dz * dz < 900)
+        dz = me.z - p.z,
+        d2 = dx * dx + dz * dz,
+        sp = Math.hypot(me.vx, me.vz)
+      if (d2 < (sp > 4 || this.traffic?.horn ? 900 : 196))
         want = clamp(wrapPi(Math.atan2(-dz, dx) - p.yaw), -1.3, 1.3)
       // (standing, they turn to it)
       if (want && p.state === 'idle' && Math.abs(want) > 0.9)
         p.yaw += Math.sign(want) * Math.min(Math.abs(want) - 0.9, dt * 1.5)
+      // a car going past close: shoulders up, a hop back, not a dive
+      if (sp > 7 && d2 < 64 && d2 > 2.5 && p.state !== 'brawl') {
+        p.fright = Math.max(p.fright, 0.75)
+        p.hop = Math.max(p.hop, 0.16)
+      }
     }
     p.headT = want || p.glance // (or a look round: pedSteer.js)
     p.head += (p.headT - p.head) * Math.min(1, dt * 5)
@@ -81444,7 +81529,7 @@ const CROWD = {
 __export(__exports, { "CROWD": () => CROWD })
 })
 
-// ---- js/sim/dogs.js
+// ---- js\sim\dogs.js
 __define(138, function (__exports) {
 // Dogs walked on a lead (mixed into Peds, which keeps them in peds.dogs; render/dogs.js draws
 // them). A few people out walking on their own have one. It trots beside them on the side away
@@ -81641,7 +81726,7 @@ const DOGS = {
 __export(__exports, { "DOGS": () => DOGS })
 })
 
-// ---- js/sim/alight.js
+// ---- js\sim\alight.js
 __define(139, function (__exports) {
 // Drivers getting out of their wrecks, mixed into Peds (peds.js). A wreck that has come to rest
 // puts its driver on traffic.exits (wrecks.js): here each one becomes someone on foot, stood at the
@@ -81726,7 +81811,7 @@ function haul (p, e) {
 __export(__exports, { "ALIGHT": () => ALIGHT, "HAUL": () => HAUL, "haul": () => haul })
 })
 
-// ---- js/sim/brawl.js
+// ---- js\sim\brawl.js
 __define(140, function (__exports) {
 // People taking a beating (the player's fists: melee.js), mixed into Peds through pedBrain.js. A
 // blow staggers them back (a shove and a lean, a moment with no say in it); enough of them, or the
@@ -81961,7 +82046,7 @@ const BRAWL_MIXIN = {
 __export(__exports, { "FIGHT_BACK": () => FIGHT_BACK, "BRAWL": () => BRAWL, "BRAWL_MIXIN": () => BRAWL_MIXIN })
 })
 
-// ---- js/sim/living/pedProfile.js
+// ---- js\sim\living\pedProfile.js
 __define(141, function (__exports) {
 // Who each person on foot is (peds.js), by the neighbourhood and the hour: a commuter (brisk, on
 // the phone now and then, impatient at the kerb), a jogger, a tourist (slow, stops to look about,
@@ -82054,7 +82139,7 @@ const PED_PROFILE = {
 __export(__exports, { "PROFILES": () => PROFILES, "PROF": () => PROF, "TRAITS": () => TRAITS, "mixAt": () => mixAt, "drawOf": () => drawOf, "pick": () => pick, "PED_PROFILE": () => PED_PROFILE })
 })
 
-// ---- js/sim/pedReact.js
+// ---- js\sim\pedReact.js
 __define(142, function (__exports) {
 // How someone on foot takes a car bearing down on them (pedBrain.js dodge), GTA V-style: most are
 // too slow. Nobody senses a car from afar: they notice it only once it is close in their path (no
@@ -82154,7 +82239,7 @@ const PED_REACT = {
 __export(__exports, { "FREEZE": () => FREEZE, "PED_REACT": () => PED_REACT })
 })
 
-// ---- js/sim/pedBrain.js
+// ---- js\sim\pedBrain.js
 __define(143, function (__exports) {
 // What the people on foot (peds.js) think, beyond walking the pavements' graph and crossing on the
 // walk: their states, as a machine (walk, kerb: to the crossing, wait: for the walk, cross,
@@ -82267,8 +82352,8 @@ const PEDBRAIN = {
     const g = this.lineFor(p, p.back, Math.floor(this.R() * LINES.length))
     p.backRing = g
     p.backS = nearestOn(g, p.x, p.z)
-    p.roadT = 0
-    p.t = 0
+    p.roadT = p.t = p.stall = 0
+    p.near = Infinity
     p.cross = p.aside = null
   },
   // held off the way back (a car stopped over it): round it, to the pavement a few metres along
@@ -82283,7 +82368,8 @@ const PEDBRAIN = {
     const far = Math.hypot(P.x - ox, P.z - oz)
     ringAt(R, s - 4, P)
     p.backS = Math.hypot(P.x - ox, P.z - oz) > far ? s - 4 : s + 4
-    p.t = 0
+    p.t = p.stall = 0
+    p.near = Infinity
     return false
   },
   // someone running off from (x, z) along their pavement
@@ -82316,23 +82402,30 @@ const PEDBRAIN = {
     if (sp <= HIT_V) return CROWD.dodge.call(this, p, th)
     this.carComing(p, th, sp, dx, dz, this.now || 0)
   },
-  // knocked down by th at sp m/s: thrown along with it, down a while (or for good, hit hard)
+  // knocked down by th at sp m/s: thrown with it, tumbling the way they go, down a while (or
+  // for good, hit hard). A clip at walking pace is a short hop and a fall; faster, they go up
+  // over the bonnet and turn over in the air.
   knockDown (p, th, sp) {
     const by = th === this.me ? 'player' : 'traffic'
     if (p.state === 'linger') this.leave(p, true)
     const side = (p.z - th.z) * th.hx - (p.x - th.x) * th.hz >= 0 ? 1 : -1
+    const kick = Math.min(2.6, 0.07 * sp + 0.45)
     p.state = 'down'
     p.t = 0
-    p.vx = th.vx * 0.85 - th.hz * side * 1.5
-    p.vz = th.vz * 0.85 + th.hx * side * 1.5
-    // (thrown up over the bonnet the faster it was, turning over in the air: lie() flies them)
-    p.air = 0.05
-    p.airV = sp > 5 ? Math.min(7.5, 0.36 * sp) : 0.8
-    p.spin = 0
-    p.hop = Math.min(1, sp / 12)
-    p.fright = 1
+    p.rise = 0
+    p.vx = th.vx * 0.9 - th.hz * side * kick
+    p.vz = th.vz * 0.9 + th.hx * side * kick
+    p.air = 0.02
+    p.airV = sp < 4.5 ? 1.15 : Math.min(9, 0.3 * sp)
+    p.pitch = 0.2
+    p.pitchV = -(sp < 4.5 ? 3.6 : Math.min(13, 0.5 * sp))
+    p.hop = 0
+    p.fright = 2
     p.gait = 0
     p.fall = 0
+    p.umb = 0
+    p.yaw = Math.atan2(-p.vz, p.vx)
+    p.phase = p.pitch
     p.cross = p.aside = p.lead = null
     p.act = 0
     // (each their own luck between MAYBE_V and KILL_V: no draw from the people's random numbers)
@@ -82347,38 +82440,66 @@ const PEDBRAIN = {
     if (p.dead) this.killed = (this.killed || 0) + 1
     this.scare(p.x, p.z, 18)
   },
-  // down: sliding to a stop, lying there, then up and away to the pavement (and running)
+  // down: tumbling with the throw, a bounce, sliding to a stop, lying there, then up (a moment
+  // to get the feet under them) and away to the pavement
   lie (p, dt) {
+    if (p.rise > 0) {
+      p.rise -= dt
+      p.vx = p.vz = p.air = p.airV = 0
+      p.pitch += (0 - p.pitch) * Math.min(1, dt * 4)
+      p.fall = Math.max(0, p.rise / 0.45)
+      p.fright = 2
+      p.gait = 0
+      p.hop = 1
+      p.phase = 0
+      if (p.rise > 0) return
+      p.fall = p.pitch = p.fright = p.hop = 0
+      p.jacked = true // (once back on the pavement: running off)
+      p.fromX = p.x
+      p.fromZ = p.z
+      this.goBack(p)
+      return
+    }
     p.x += p.vx * dt
     p.z += p.vz * dt
-    // in the air (thrown by a car), tumbling, a bounce on landing; then sliding to a stop
     const up = p.air > 0
     if (up) {
       p.air += p.airV * dt
       p.airV -= GRAVITY * dt
-      p.spin += dt * Math.min(9, Math.hypot(p.vx, p.vz) * 0.7)
       if (p.air <= 0) {
         p.air = 0
-        if (p.airV < -3.5) {
+        if (p.airV < -3.2) {
           p.air = 1e-3
-          p.airV = -p.airV * 0.28
-          p.vx *= 0.6
-          p.vz *= 0.6
+          p.airV = -p.airV * 0.22
+          p.vx *= 0.55
+          p.vz *= 0.55
+          p.pitchV *= 0.45
         }
       }
     }
-    const k = Math.exp(-dt * (up ? 0.25 : 4))
+    p.pitch += p.pitchV * dt
+    const spd = Math.hypot(p.vx, p.vz)
+    if (spd > 1.4) p.yaw = Math.atan2(-p.vz, p.vx)
+    if (!up) {
+      p.pitchV = 0
+      const lie = Math.PI / 2
+      let d = p.pitch - lie
+      d -= Math.PI * 2 * Math.round(d / (Math.PI * 2))
+      p.pitch = lie + d * Math.exp(-dt * 5)
+    }
+    const drag = up ? 0.3 : spd > 8 ? 1.4 : 3.4
+    const k = Math.exp(-dt * drag)
     p.vx *= k
     p.vz *= k
-    p.fall = Math.min(1, p.fall + dt * 5)
+    p.fall = Math.min(1, p.fall + dt * 6)
     p.gait = 0
+    p.fright = 2
+    p.hop = up ? 0 : 1
+    p.umb = 0
+    p.phase = p.pitch
     this.unwall(p)
     if (p.dead || p.t < p.downT) return
-    p.fall = 0
-    p.jacked = true // (once back on the pavement: running off)
-    p.fromX = p.x
-    p.fromZ = p.z
-    this.goBack(p)
+    p.rise = 0.45
   },
   // never inside a building: out by its nearest face
   unwall (p) {
@@ -82449,7 +82570,7 @@ const inRoad = (x, z) => kerbDist(x, z) > -0.2
 __export(__exports, { "STATES": () => STATES, "ACT": () => ACT, "HIT_V": () => HIT_V, "KILL_V": () => KILL_V, "MAYBE_V": () => MAYBE_V, "GRAVITY": () => GRAVITY, "PEDBRAIN": () => PEDBRAIN, "inRoad": () => inRoad })
 })
 
-// ---- js/sim/linger.js
+// ---- js\sim\linger.js
 __define(144, function (__exports) {
 // People lingering on the pavement (mixed into Peds, as crowd.js is): some sit a while on the bus
 // benches, some stop to look in a shop window for a few seconds, some stand under a shop's canopy
@@ -82670,7 +82791,7 @@ const LINGER = {
 __export(__exports, { "LINGER": () => LINGER })
 })
 
-// ---- js/sim/shelter.js
+// ---- js\sim\shelter.js
 __define(145, function (__exports) {
 // People in the rain (mixed into Peds, as crowd.js is). Each minds the rain at their own point:
 // some at the first drops, some only once it pours. Past it, most put up an umbrella (it opens over
@@ -82786,7 +82907,7 @@ const SHELTER = {
 __export(__exports, { "SHELTER": () => SHELTER })
 })
 
-// ---- js/sim/footfall.js
+// ---- js\sim\footfall.js
 __define(146, function (__exports) {
 // How many people are out, by the hour, the weather and the neighbourhood (mixed into Peds, which
 // keeps that many round the player). By day, as many as ever. Late at night far fewer: from about
@@ -82884,7 +83005,7 @@ const FOOTFALL = {
 __export(__exports, { "hourShare": () => hourShare, "evening": () => evening, "rainShare": () => rainShare, "lively": () => lively, "FOOTFALL": () => FOOTFALL })
 })
 
-// ---- js/sim/witness.js
+// ---- js\sim\witness.js
 __define(147, function (__exports) {
 // Who saw it: the people on the pavement, the drivers about and the police, each within their own
 // reach and with a clear sight line to the place (city.js raycast against the buildings), for the
@@ -82938,7 +83059,7 @@ function witnesses (pos, { peds = [], cars = [], police = [], stars = 0, los = c
 __export(__exports, { "PED_SEE": () => PED_SEE, "CAR_SEE": () => CAR_SEE, "policeSight": () => policeSight, "clear": () => clear, "witnesses": () => witnesses })
 })
 
-// ---- js/sim/living/pedPoi.js
+// ---- js\sim\living\pedPoi.js
 __define(148, function (__exports) {
 // Where people gather (peds.js, pedLife.js): a street performer on a busy pavement (the
 // boulevards, the beach, Venice, downtown, the parks and the stadium's), and a few passers-by who
@@ -83046,7 +83167,7 @@ const sOn = (g, x, z) => nearestOn(g, x, z)
 __export(__exports, { "SLOTS": () => SLOTS, "SHOW": () => SHOW, "SERVE": () => SERVE, "REST": () => REST, "WATCH_R": () => WATCH_R, "free": () => free, "POIS": () => POIS, "layPois": () => layPois, "slotsAt": () => slotsAt, "slotFor": () => slotFor, "watching": () => watching, "tick": () => tick, "sOn": () => sOn })
 })
 
-// ---- js/sim/living/pedLife.js
+// ---- js\sim\living\pedLife.js
 __define(149, function (__exports) {
 // The people on foot's lives beyond the walk (peds.js): who they are (pedProfile.js), gathering to
 // watch a street performer (pedPoi.js), what they do when they see a crime (witnessCrime: some run,
@@ -83370,7 +83491,7 @@ const PED_LIFE = {
 __export(__exports, { "SEVERE": () => SEVERE, "COWER_R": () => COWER_R, "CALL": () => CALL, "SCARE_OFF": () => SCARE_OFF, "STUCK": () => STUCK, "MIN_CROWD": () => MIN_CROWD, "PED_LIFE": () => PED_LIFE })
 })
 
-// ---- js/sim/pedCheck.js
+// ---- js\sim\pedCheck.js
 __define(150, function (__exports) {
 // A sanity checker for the people on foot (peds.js), run in Node (tests/pedCheck.test.mjs and
 // tools/sim/pedCheck.mjs) or in the page (window.__roadster.peds): sampled every so often, it
@@ -83642,7 +83763,7 @@ class PedCheck {
 __export(__exports, { "CHECK": () => CHECK, "KINDS": () => KINDS, "insideSolid": () => insideSolid, "PedCheck": () => PedCheck, "COLLIDERS": () => COLLIDERS })
 })
 
-// ---- js/sim/pedSteer.js
+// ---- js\sim\pedSteer.js
 __define(151, function (__exports) {
 // How the people on foot get round each other and what they make of things, beyond the walk
 // itself (peds.js) and the states (pedBrain.js); mixed into Peds and run once a step (think):
@@ -83919,7 +84040,7 @@ const PEDSTEER = {
 __export(__exports, { "PEDSTEER": () => PEDSTEER })
 })
 
-// ---- js/sim/peds.js
+// ---- js\sim\peds.js
 __define(152, function (__exports) {
 // People on foot: they walk the pavements round the blocks, keeping to a line a metre or three in
 // from the kerb, each at their own pace (and a few jogging), some in pairs, some standing about, and
@@ -84063,6 +84184,11 @@ class Peds {
       alert: 0,
       roadT: 0,
       fall: 0,
+      air: 0, // thrown clear of the road (m), and how fast that is changing
+      airV: 0,
+      pitch: 0, // how far the body has tumbled (rad), and how fast
+      pitchV: 0,
+      rise: 0, // s left getting up, so a knocked-down person doesn't slide off half standing
       downT: 0,
       dead: false,
       jacked: false,
@@ -84174,9 +84300,7 @@ class Peds {
     this.alarms(sim, sim.mode === 'ramp' ? null : pl, traffic)
     if (traffic.exits.length) this.alight(traffic) // (out of their wrecks: alight.js)
     this.think(dt, sim, traffic, me) // (threats, the horn, the road, each other: pedBrain.js)
-    // (loud: fast, or on the horn)
-    const loud =
-      me && (me.vx * me.vx + me.vz * me.vz > 121 || traffic.horn) ? me : null
+    // (heads follow a car that is close, and one moving or on the horn from further off: crowd.js)
     this.onRoad.length = 0
     this.frame++
     for (const p of this.list) {
@@ -84188,7 +84312,7 @@ class Peds {
       }
       this.move(p, t)
       p.lodT = 0
-      this.watch(p, dt, loud)
+      this.watch(p, dt, me)
       for (const th of threats) this.dodge(p, th)
       p.inRoad = p.state !== 'walk' && kerbDist(p.x, p.z) > -0.2
       if (p.inRoad) {
@@ -84334,10 +84458,14 @@ class Peds {
       this.unwall(p) // (a dive into a wall stops at its face)
       if (p.t > 0.7) this.goBack(p)
     } else if (p.state === 'back') {
-      // hurrying back to the pavement
-      p.gait += (1.4 - p.gait) * Math.min(1, dt * 3)
+      // hurrying back; held up, they pause, then step along the pavement
       ringAt(p.backRing, p.backS, P)
-      if (this.toward(p, P.x, P.z, 2.6, dt) || (p.t > 3 && this.pickBack(p))) {
+      const d = Math.hypot(P.x - p.x, P.z - p.z)
+      if (d < p.near - 0.15) p.near = d, p.stall = 0
+      else p.stall += dt
+      const pace = p.stall > 0.12 ? 0.15 : 1.4
+      p.gait += (pace - p.gait) * Math.min(1, dt * 8)
+      if (this.toward(p, P.x, P.z, 2.6, dt) || (p.stall > 2.5 && this.pickBack(p))) {
         p.ring = p.backRing
         p.s = p.backS
         p.state = 'walk'
@@ -84365,7 +84493,7 @@ class Peds {
     // (sitting, the clock stops: no gestures, and no steps to be heard)
     p.phase += speed
       ? (dt * speed * Math.PI * 2) / stride
-      : p.sit > 0
+      : p.sit > 0 || p.state === 'down'
       ? 0
       : dt * 2
   }
@@ -84416,7 +84544,7 @@ Object.assign(Peds.prototype, CROWD, SHELTER, LINGER, DOGS, FOOTFALL, ALIGHT, PE
 __export(__exports, { "Peds": () => Peds, "ringAt": () => ringAt, "walkOn": () => walkOn, "ENV": () => ENV })
 })
 
-// ---- js/sim/handling.js
+// ---- js\sim\handling.js
 __define(153, function (__exports) {
 // Handling classes, as data: how each kind of car in the city drives when someone is at its wheel
 // (vehicleSim.js steps them; the traffic's own drivers keep to carTypes.js). Each class: its mass
@@ -84592,7 +84720,7 @@ function gearFor (h, u) {
 __export(__exports, { "HANDLING": () => HANDLING, "KINDS": () => KINDS, "TYPE_KIND": () => TYPE_KIND, "kindOfType": () => kindOfType, "handlingFor": () => handlingFor, "torqueAt": () => torqueAt, "rpmAt": () => rpmAt, "lockAt": () => lockAt, "yawInertia": () => yawInertia, "gearFor": () => gearFor })
 })
 
-// ---- js/sim/vehicleHit.js
+// ---- js\sim\vehicleHit.js
 __define(154, function (__exports) {
 // A drivable car's contacts with the city (vehicleSim.js bodies): buildings and walls stop it and
 // bounce it off with its mass and its turning inertia (collide.js's impulse), street lights,
@@ -84860,7 +84988,7 @@ function collideTraffic (b, tr, skip = null) {
 __export(__exports, { "CRASH_AT": () => CRASH_AT, "rectOf": () => rectOf, "collideWorld": () => collideWorld, "kerbs": () => kerbs, "collideTraffic": () => collideTraffic })
 })
 
-// ---- js/sim/bodyGround.js
+// ---- js\sim\bodyGround.js
 __define(155, function (__exports) {
 // A drivable body (vehicleSim.js) on the ground under it (world.js groundHeight): up the ramps and
 // along the freeway's deck, up the hill road, through its tunnel and over its bridge; off an edge
@@ -84914,7 +85042,7 @@ function settle (b, dt) {
 __export(__exports, { "settle": () => settle })
 })
 
-// ---- js/sim/vehicleBody.js
+// ---- js\sim\vehicleBody.js
 __define(156, function (__exports) {
 // A drivable body's springs (vehicleSim.js): the body pitching under braking and pulling away,
 // rolling in a corner and bouncing over kerbs, each a damped spring at the class's bounce
@@ -84972,7 +85100,7 @@ function slopeForce (b, out) {
 __export(__exports, { "springs": () => springs, "slopeForce": () => slopeForce })
 })
 
-// ---- js/sim/vehicleMake.js
+// ---- js\sim\vehicleMake.js
 __define(157, function (__exports) {
 // A new body for a car of a handling class (vehicleSim.js steps it), and the controls it is driven
 // by. Split out of vehicleSim.js (kept under 500 lines); vehicleSim.js exports both as before.
@@ -85054,7 +85182,7 @@ function makeVehicleInput () {
 __export(__exports, { "createVehicleBody": () => createVehicleBody, "makeVehicleInput": () => makeVehicleInput })
 })
 
-// ---- js/sim/arcadeGrip.js
+// ---- js\sim\arcadeGrip.js
 __define(158, function (__exports) {
 // GTA-style grip for every car on vehicleSim.js's stack (the player's, the police's, the street
 // events'): the tyres hold more across the road than along it (lat: arcade cornering, ~1.2-1.4 g in
@@ -85104,7 +85232,7 @@ function yawAssist (b, S, u, r, grip, beta) {
 __export(__exports, { "ARCADE": () => ARCADE, "latLeft": () => latLeft, "steerDrive": () => steerDrive, "yawAssist": () => yawAssist })
 })
 
-// ---- js/sim/vehicleSim.js
+// ---- js\sim\vehicleSim.js
 __define(159, function (__exports) {
 // One physics step for any car in the city with someone at its wheel: createVehicleBody(kind) and
 // stepVehicle(body, input, dt, world), for the player's drivable adapter (drivable.js) to call for
@@ -85539,14 +85667,14 @@ const speedOf = b => Math.hypot(b.vx, b.vz)
 __export(__exports, { "stepVehicle": () => stepVehicle, "speedOf": () => speedOf, "createVehicleBody": () => createVehicleBody, "makeVehicleInput": () => makeVehicleInput })
 })
 
-// ---- js/sim/vehicleLink.js
+// ---- js\sim\vehicleLink.js
 __define(160, function (__exports) {
 // Between a drivable body (vehicleSim.js) and the rest of the city: a traffic car taken over
 // (handover.js) driven by a body and drawn where the body is (the traffic renderer keeps drawing it,
 // paint, damage, brake lights and all), and a stand-in for the player that the traffic and the
 // people (traffic.js, peds.js, wrecks.js) read as they read the Roadster: in a car (vehicleProxy),
 // or on foot (footProxy).
-const { TYPES } = __require(62)
+const { TYPES } = __require(63)
 const { kindOfType } = __require(153)
 const { createVehicleBody } = __require(159)
 
@@ -85689,7 +85817,7 @@ function footProxy (pos, yaw = 0) {
 __export(__exports, { "bodyFromTraffic": () => bodyFromTraffic, "writeToTraffic": () => writeToTraffic, "vehicleProxy": () => vehicleProxy, "syncProxy": () => syncProxy, "pullProxy": () => pullProxy, "footProxy": () => footProxy })
 })
 
-// ---- js/ui/driveDemo.js
+// ---- js\ui\driveDemo.js
 __define(161, function (__exports) {
 // A developer's harness for the drivable cars (not a game mode: the player's workstream does the
 // real handoff in drivable.js): with ?drive=<kind> in the address (sedan, sports, suv, pickup,
@@ -85699,7 +85827,7 @@ __define(161, function (__exports) {
 // ?drive=<kind>&auto=1 drives it by itself (pulls away, a handbrake flick, on again), for
 // screenshots and smoke tests.
 const { HANDLING, TYPE_KIND } = __require(153)
-const { IDX } = __require(62)
+const { IDX } = __require(63)
 const { stepVehicle, makeVehicleInput } = __require(159)
 const { bodyFromTraffic, writeToTraffic } = __require(160)
 const { collideTraffic } = __require(154)
@@ -85757,7 +85885,7 @@ function driveDemo (sim, traffic) {
 __export(__exports, { "driveDemo": () => driveDemo })
 })
 
-// ---- js/audio/zones.js
+// ---- js\audio\zones.js
 __define(162, function (__exports) {
 // The districts' own sound, mixed into the SoundEngine (sound.js) over the city's bed (street.js):
 // where the camera is (sim/areas.js whereIs), each district's character fades in and the last one's
@@ -85876,7 +86004,7 @@ const ZONES = {
 __export(__exports, { "character": () => character, "ZONES": () => ZONES })
 })
 
-// ---- js/audio/cars.js
+// ---- js\audio\cars.js
 __define(163, function (__exports) {
 // The traffic round the camera, mixed into the SoundEngine (sound.js): six voices for the nearest
 // cars, each handed to a car and kept on it while it stays near (a voice let go fades out before it
@@ -86243,7 +86371,7 @@ const CARS = {
 __export(__exports, { "CARS": () => CARS })
 })
 
-// ---- js/audio/space.js
+// ---- js\audio\space.js
 __define(164, function (__exports) {
 // Where the sound is heard, mixed into the SoundEngine (sound.js): the Roadster's own sound placed
 // where the car is from the camera (late by the time the sound takes to get there, so a car racing
@@ -86499,7 +86627,7 @@ const SPACE = {
 __export(__exports, { "SPACE": () => SPACE })
 })
 
-// ---- js/audio/motor.js
+// ---- js\audio\motor.js
 __define(165, function (__exports) {
 // The Roadster's drive units, mixed into the SoundEngine (sound.js). Three motors: one on the front
 // axle and a pair on the rear, one per wheel, each through a two-stage reduction gearbox. What a
@@ -86756,7 +86884,7 @@ const DRIVE = {
 __export(__exports, { "DRIVE": () => DRIVE })
 })
 
-// ---- js/audio/tyres.js
+// ---- js\audio\tyres.js
 __define(166, function (__exports) {
 // The Roadster's tyres and the air round it, mixed into the SoundEngine (sound.js). Rolling: the
 // roar of tread on asphalt (broad, peaking round 1 kHz, rising about 11 dB for each doubling of
@@ -87124,7 +87252,7 @@ const TYRES = {
 __export(__exports, { "TYRES": () => TYRES })
 })
 
-// ---- js/audio/radioSynth.js
+// ---- js\audio\radioSynth.js
 __define(167, function (__exports) {
 // The radio's instruments, synthesised note by note: an 808-style kick and a snare, claps and hats
 // from noise, a sawtooth bass with its filter swept by each note, a pad of detuned sawtooths, a
@@ -87326,7 +87454,7 @@ function stab (ctx, out, t, notes, vel) {
 __export(__exports, { "kick": () => kick, "snare": () => snare, "clap": () => clap, "hat": () => hat, "bass": () => bass, "pad": () => pad, "pluck": () => pluck, "lead": () => lead, "epiano": () => epiano, "stab": () => stab })
 })
 
-// ---- js/audio/radio.js
+// ---- js\audio\radio.js
 __define(168, function (__exports) {
 // The car's radio, GTA-style: B tunes through the stations and off. Every song is written on the
 // spot (no recordings): a key, a tempo and a chord progression drawn by chance, the chords voiced
@@ -87736,7 +87864,7 @@ class Radio {
 __export(__exports, { "STATIONS": () => STATIONS, "BARS": () => BARS, "writeSong": () => writeSong, "Radio": () => Radio })
 })
 
-// ---- js/audio/street.js
+// ---- js\audio\street.js
 __define(169, function (__exports) {
 // The city's bed of sound, mixed into the SoundEngine (sound.js): the wash of traffic a few streets
 // away (a low roar on each side, as loud as the traffic over there is busy, swelling as cars come
@@ -87925,7 +88053,7 @@ const STREET = {
 __export(__exports, { "STREET": () => STREET })
 })
 
-// ---- js/audio/impacts.js
+// ---- js\audio\impacts.js
 __define(170, function (__exports) {
 // Knocks, crashes and breakages, mixed into the SoundEngine (sound.js): layers from the sample bank
 // (buffers.js), picked and scaled by how hard the hit was and what was hit. A light touch is a dull
@@ -88148,7 +88276,7 @@ const IMPACTS = {
 __export(__exports, { "IMPACTS": () => IMPACTS })
 })
 
-// ---- js/audio/shots.js
+// ---- js\audio\shots.js
 __define(171, function (__exports) {
 // One-shot sounds, mixed into the SoundEngine (sound.js): each can sit anywhere left to right
 // (pan), dulled by distance or a building in the way (lp), and send some of itself into the reverb
@@ -88469,7 +88597,7 @@ const ONE_SHOTS = {
 __export(__exports, { "HORNS": () => HORNS, "AIR_HORN": () => AIR_HORN, "ONE_SHOTS": () => ONE_SHOTS })
 })
 
-// ---- js/audio/ambience.js
+// ---- js\audio\ambience.js
 __define(172, function (__exports) {
 // Life in the city round the car, mixed into the SoundEngine (sound.js): now and then a bird by
 // day, a horn a few streets away (once drivers honk at all), a siren wailing or yelping somewhere
@@ -88865,7 +88993,7 @@ const AMBIENCE = {
 __export(__exports, { "AMBIENCE": () => AMBIENCE })
 })
 
-// ---- js/audio/rain.js
+// ---- js\audio\rain.js
 __define(173, function (__exports) {
 // The weather's sound, mixed into the SoundEngine (sound.js): the rain, as the hiss of countless
 // drops landing all round and the patter of the nearer ones (two loops of drops synthesised at
@@ -89101,7 +89229,7 @@ const WEATHER_SOUND = {
 __export(__exports, { "WEATHER_SOUND": () => WEATHER_SOUND })
 })
 
-// ---- js/audio/air.js
+// ---- js\audio\air.js
 __define(174, function (__exports) {
 // What flies over the city, heard, mixed into the SoundEngine (sound.js): the helicopter's rotor,
 // the deep whop-whop of its blades (each one slapping the air as it passes, about twenty times a
@@ -89180,7 +89308,7 @@ const AIRCRAFT_SOUND = {
 __export(__exports, { "AIRCRAFT_SOUND": () => AIRCRAFT_SOUND })
 })
 
-// ---- js/audio/sound.js
+// ---- js\audio\sound.js
 __define(175, function (__exports) {
 // Sound, synthesised with Web Audio (nothing to download). This is the engine: the context, the
 // buses and the master chain, the thrusters, fan and horn; the rest is mixed in from its own
@@ -89590,7 +89718,7 @@ Object.assign(
 __export(__exports, { "SoundEngine": () => SoundEngine })
 })
 
-// ---- js/sim/autopilot.js
+// ---- js\sim\autopilot.js
 __define(176, function (__exports) {
 // Autopilot: flies the reveal-night sequence through the same controls a player uses.
 //  Stunt 1: from the foot of the wall, climb and hang inverted, reverse back to the start, then a
@@ -89930,7 +90058,7 @@ class Autopilot {
 __export(__exports, { "CAPS": () => CAPS, "Autopilot": () => Autopilot })
 })
 
-// ---- js/sim/cityHop.js
+// ---- js\sim\cityHop.js
 __define(177, function (__exports) {
 // Autopilot's way out of a traffic jam: the route to the gridlock, a clear spot on the road beyond
 // whatever holds the car up, and the hop there: straight up on the lift thrusters until it clears the
@@ -90111,7 +90239,7 @@ class Hop {
 __export(__exports, { "routeToJam": () => routeToJam, "landingSpot": () => landingSpot, "Hop": () => Hop })
 })
 
-// ---- js/sim/cityPilot.js
+// ---- js\sim\cityPilot.js
 __define(178, function (__exports) {
 // Autopilot in the city: drives the Roadster round the streets through the normal controls, on
 // the same lane graph as the traffic. It steers by pure pursuit along its lane, keeps its distance
@@ -90605,7 +90733,7 @@ class CityPilot {
 __export(__exports, { "CityPilot": () => CityPilot })
 })
 
-// ---- js/render/lineup.js
+// ---- js\render\lineup.js
 __define(179, function (__exports) {
 // The parked Tesla lineup for stunt 2: extruded low-poly profiles, parked broadside to the jump.
 const THREE = __require(0)
@@ -90798,7 +90926,7 @@ function buildLineup () {
 __export(__exports, { "buildLineup": () => buildLineup })
 })
 
-// ---- js/render/effects.js
+// ---- js\render\effects.js
 __define(180, function (__exports) {
 // Particles (jet cores, sparks, leaves, chips, glass), supersonic shock-diamond jets, and what
 // the car throws up: vapor, tyre smoke, dust, sand (smoke.js; spray: spray.js) and debris.
@@ -91302,7 +91430,7 @@ function fallFx (x, z, kind) {
 __export(__exports, { "ALL_PARTICLES": () => ALL_PARTICLES, "attachDiamonds": () => attachDiamonds, "updateNozzles": () => updateNozzles, "emitThrusters": () => emitThrusters, "emitTireSmoke": () => emitTireSmoke, "burst": () => burst, "debrisBurst": () => debrisBurst, "sparkBurst": () => sparkBurst, "knockFx": () => knockFx, "fallFx": () => fallFx })
 })
 
-// ---- js/events.js
+// ---- js\events.js
 __define(181, function (__exports) {
 // What the sim reports (scores, landings, drifts, near misses, knocks, kerbs, honks, crashes),
 // turned into GTA-style stunt titles and hints (hud.js), sounds, camera shake, a gamepad's rumble
@@ -91521,7 +91649,7 @@ function handleEvents (g) {
 __export(__exports, { "handleEvents": () => handleEvents })
 })
 
-// ---- js/render/aerialFog.js
+// ---- js\render\aerialFog.js
 __define(182, function (__exports) {
 // Height fog (adapted from mrdoob/slop-newyork js/sky.js createAerialFogNode, MIT, (c) 2026
 // Mr.doob): the haze is thickest down in the streets and thins with height, so from the street it
@@ -91580,7 +91708,7 @@ function aerialFog () {
 __export(__exports, { "FOG_H": () => FOG_H, "aerialFog": () => aerialFog })
 })
 
-// ---- js/render/citySky.js
+// ---- js\render\citySky.js
 __define(183, function (__exports) {
 // The city's sky, through the day and the weather (daylight.js works out its colours from the
 // clock and the weather each frame and hands them over in SKY, the uniforms everything that draws
@@ -91923,9 +92051,9 @@ class Sky {
 __export(__exports, { "SKY": () => SKY, "SKY_GLSL": () => SKY_GLSL, "Sky": () => Sky })
 })
 
-// ---- js/render/speedBlur.js
+// ---- js\render\speedBlur.js
 __define(184, function (__exports) {
-// Speed blur: past about 150 km/h, and whenever the main thrusters fire, the edges of the picture
+// Speed blur: past about 70 km/h, and whenever the main thrusters fire, the edges of the picture
 // streak in towards the middle, more the faster the car goes, while the middle, where the car is,
 // stays sharp. Only from the cameras that ride along with the car (Follow, Chase, Cockpit); a fixed
 // camera watching it go by has no reason to blur. It is drawn in the frame's last pass (post.js),
@@ -91938,10 +92066,15 @@ const SPEED_BLUR = `
   uniform float uAmount;
   vec4 speedBlur (vec2 uv) {
     vec2 d = uv - vec2(0.5, 0.55);
-    float k = uAmount * smoothstep(0.1, 0.65, length(d)) * 0.09;
+    float k = uAmount * smoothstep(0.08, 0.62, length(d)) * 0.1;
     vec4 c = vec4(0.0);
     for (int i = 0; i < 8; i++) c += frame(uv - d * k * float(i) / 7.0);
-    return c / 8.0;
+    c /= 8.0;
+    // a thin colour split at the edges, the way a lens fringes once the street is really moving
+    vec2 o = d * uAmount * 0.004;
+    c.r = mix(c.r, frame(uv + o).r, 0.55);
+    c.b = mix(c.b, frame(uv - o).b, 0.55);
+    return c;
   }`
 
 // blur: { amount }, eased towards what the speed asks for; returns the shader's uAmount (none at all
@@ -91950,7 +92083,7 @@ function updateSpeedBlur (blur, sim, shot, dt) {
   const riding = RIDING.has(shot)
   const v = sim.mode === 'ground' ? sim.groundSpeed() : sim.vel.length()
   const want = riding
-    ? clamp((v - 40) / 60, 0, 1) * 0.85 +
+    ? clamp((v - 18) / 55, 0, 1) * 0.8 +
       0.45 * sim.thrMain * clamp(v / 30, 0, 1)
     : 0
   const k = want > blur.amount ? 3 : 6 // (in quickly, out quicker)
@@ -91960,7 +92093,7 @@ function updateSpeedBlur (blur, sim, shot, dt) {
 __export(__exports, { "SPEED_BLUR": () => SPEED_BLUR, "updateSpeedBlur": () => updateSpeedBlur })
 })
 
-// ---- js/render/paintAA.js
+// ---- js\render\paintAA.js
 __define(185, function (__exports) {
 // Road paint that holds still in the distance (the idea from mrdoob/slop-newyork's lane markings'
 // widen(), MIT, (c) 2026 Mr.doob): a line or a dash narrower on screen than a pixel and a half
@@ -92022,7 +92155,7 @@ function paintAA (m) {
 __export(__exports, { "PAINT_PX": () => PAINT_PX, "paintAA": () => paintAA })
 })
 
-// ---- vendor/three/addons/postprocessing/Pass.js
+// ---- vendor\three\addons\postprocessing\Pass.js
 __define(186, function (__exports) {
 const { BufferGeometry, Float32BufferAttribute, OrthographicCamera, Mesh } = __require(0)
 
@@ -92115,7 +92248,7 @@ class FullScreenQuad {
 __export(__exports, { "Pass": () => Pass, "FullScreenQuad": () => FullScreenQuad })
 })
 
-// ---- vendor/three/addons/shaders/OutputShader.js
+// ---- vendor\three\addons\shaders\OutputShader.js
 __define(187, function (__exports) {
 const OutputShader = {
 
@@ -92203,7 +92336,7 @@ const OutputShader = {
 __export(__exports, { "OutputShader": () => OutputShader })
 })
 
-// ---- vendor/three/addons/postprocessing/OutputPass.js
+// ---- vendor\three\addons\postprocessing\OutputPass.js
 __define(188, function (__exports) {
 const { ColorManagement, RawShaderMaterial, UniformsUtils, LinearToneMapping, ReinhardToneMapping, CineonToneMapping, AgXToneMapping, ACESFilmicToneMapping, NeutralToneMapping, SRGBTransfer } = __require(0)
 const { Pass, FullScreenQuad } = __require(186)
@@ -92292,7 +92425,7 @@ class OutputPass extends Pass {
 __export(__exports, { "OutputPass": () => OutputPass })
 })
 
-// ---- vendor/three/addons/postprocessing/RenderPass.js
+// ---- vendor\three\addons\postprocessing\RenderPass.js
 __define(189, function (__exports) {
 const { Color } = __require(0)
 const { Pass } = __require(186)
@@ -92392,7 +92525,7 @@ class RenderPass extends Pass {
 __export(__exports, { "RenderPass": () => RenderPass })
 })
 
-// ---- vendor/three/addons/shaders/CopyShader.js
+// ---- vendor\three\addons\shaders\CopyShader.js
 __define(190, function (__exports) {
 /**
  * Full-screen textured quad shader
@@ -92440,7 +92573,7 @@ const CopyShader = {
 __export(__exports, { "CopyShader": () => CopyShader })
 })
 
-// ---- vendor/three/addons/postprocessing/ShaderPass.js
+// ---- vendor\three\addons\postprocessing\ShaderPass.js
 __define(191, function (__exports) {
 const { ShaderMaterial, UniformsUtils } = __require(0)
 const { Pass, FullScreenQuad } = __require(186)
@@ -92517,7 +92650,7 @@ class ShaderPass extends Pass {
 __export(__exports, { "ShaderPass": () => ShaderPass })
 })
 
-// ---- vendor/three/addons/postprocessing/MaskPass.js
+// ---- vendor\three\addons\postprocessing\MaskPass.js
 __define(192, function (__exports) {
 const { Pass } = __require(186)
 
@@ -92624,7 +92757,7 @@ class ClearMaskPass extends Pass {
 __export(__exports, { "MaskPass": () => MaskPass, "ClearMaskPass": () => ClearMaskPass })
 })
 
-// ---- vendor/three/addons/postprocessing/EffectComposer.js
+// ---- vendor\three\addons\postprocessing\EffectComposer.js
 __define(193, function (__exports) {
 const { Clock, HalfFloatType, NoBlending, Vector2, WebGLRenderTarget } = __require(0)
 const { CopyShader } = __require(190)
@@ -92852,7 +92985,7 @@ class EffectComposer {
 __export(__exports, { "EffectComposer": () => EffectComposer })
 })
 
-// ---- vendor/three/addons/shaders/LuminosityHighPassShader.js
+// ---- vendor\three\addons\shaders\LuminosityHighPassShader.js
 __define(194, function (__exports) {
 const { Color } = __require(0)
 
@@ -92917,7 +93050,7 @@ const LuminosityHighPassShader = {
 __export(__exports, { "LuminosityHighPassShader": () => LuminosityHighPassShader })
 })
 
-// ---- vendor/three/addons/postprocessing/UnrealBloomPass.js
+// ---- vendor\three\addons\postprocessing\UnrealBloomPass.js
 __define(195, function (__exports) {
 const { AdditiveBlending, Color, HalfFloatType, MeshBasicMaterial, ShaderMaterial, UniformsUtils, Vector2, Vector3, WebGLRenderTarget } = __require(0)
 const { Pass, FullScreenQuad } = __require(186)
@@ -93325,7 +93458,7 @@ UnrealBloomPass.BlurDirectionY = new Vector2( 0.0, 1.0 );
 __export(__exports, { "UnrealBloomPass": () => UnrealBloomPass })
 })
 
-// ---- js/render/post.js
+// ---- js\render\post.js
 __define(196, function (__exports) {
 // What happens to each frame after it is drawn: bloom on everything bright (lamps, thrusters, the
 // low sun's glints), the speed blur (speedBlur.js), then tone mapping, the grade and colour out; and
@@ -93487,9 +93620,9 @@ class Post {
     composer.addPass(new RenderPass(scene, camera))
     const bloom = new UnrealBloomPass(
       new THREE.Vector2(window.innerWidth, window.innerHeight),
-      0.65,
-      0.45,
-      1.6
+      0.82,
+      0.55,
+      1.45
     )
     bloom.materialHighPassFilter.fragmentShader = KNEE
     bloom.highPassUniforms.smoothWidth.value = 0.7
@@ -93549,7 +93682,7 @@ class Post {
 __export(__exports, { "GRADE": () => GRADE, "plainGrade": () => plainGrade, "samplesFor": () => samplesFor, "Post": () => Post })
 })
 
-// ---- js/render/canyon.js
+// ---- js\render\canyon.js
 __define(197, function (__exports) {
 // Street-level canyon light (technique adapted from mrdoob/slop-newyork js/tsl-materials.js
 // canyonSkyAONode, MIT, (c) 2026 Mr.doob): down between tall buildings less of the sky reaches the
@@ -93672,7 +93805,7 @@ function canyonLit (m) {
 __export(__exports, { "CANYON": () => CANYON, "canyonHeights": () => canyonHeights, "canyonLight": () => canyonLight, "canyonLit": () => canyonLit })
 })
 
-// ---- js/render/lampLight.js
+// ---- js\render\lampLight.js
 __define(198, function (__exports) {
 // The street lights' light on the ground at night. Every street has its lights at the same places
 // (sim/kerbside.js: three a side along each block, 18, 42 and 66 m from its corner, their heads
@@ -93858,7 +93991,7 @@ function lampLit (m, facing = false) {
 __export(__exports, { "LAMP": () => LAMP, "lampOut": () => lampOut, "lampUp": () => lampUp, "lampsBack": () => lampsBack, "LAMP_FIELD_GLSL": () => LAMP_FIELD_GLSL, "LAMP_POOL": () => LAMP_POOL, "lampLit": () => lampLit })
 })
 
-// ---- js/render/signArt.js
+// ---- js\render\signArt.js
 __define(199, function (__exports) {
 // The artwork for the signs' atlas (signTex.js): drawing helpers (lettering that fits its space,
 // gradients, a border of bulbs, a palm's silhouette), the billboards' eight designs, the made-up
@@ -94184,7 +94317,7 @@ function mural (g, x, y, w, h, k) {
 __export(__exports, { "SANS": () => SANS, "SERIF": () => SERIF, "text": () => text, "grad": () => grad, "bulbs": () => bulbs, "BILLBOARDS": () => BILLBOARDS, "HOTELS": () => HOTELS, "FILMS": () => FILMS, "BLADES": () => BLADES, "NEON": () => NEON, "FOODS": () => FOODS, "BRANDS": () => BRANDS, "mural": () => mural })
 })
 
-// ---- js/render/shopTex.js
+// ---- js\render\shopTex.js
 __define(200, function (__exports) {
 // The shops' signs, drawn into one atlas at startup: a name board for each kind of shop (cafés and
 // restaurants, clothes shops, convenience stores and pharmacies, salons and barbers, bars), and the
@@ -94391,7 +94524,7 @@ function shopSigns () {
 __export(__exports, { "KINDS": () => KINDS, "W": () => W, "H": () => H, "BOARD": () => BOARD, "DECAL": () => DECAL, "DECAL_Y": () => DECAL_Y, "BOARDS": () => BOARDS, "BY_KIND": () => BY_KIND, "DECALS": () => DECALS, "boardAt": () => boardAt, "shopSigns": () => shopSigns })
 })
 
-// ---- js/render/facade.js
+// ---- js\render\facade.js
 __define(201, function (__exports) {
 // Facades where every window is its own, and has depth. The facade textures repeat every 8 bays and 8
 // storeys, so whatever varies window to window is picked in the shader from the window's place on the
@@ -94584,7 +94717,7 @@ function facadeMaterial (
 __export(__exports, { "NIGHT": () => NIGHT, "facadeMaterial": () => facadeMaterial })
 })
 
-// ---- js/render/shopRooms.js
+// ---- js\render\shopRooms.js
 __define(202, function (__exports) {
 // The insides of the shops, traced in the shader (shopShader.js) the way facade.js traces the rooms
 // behind the windows above: the view ray goes on through the glass into a box a few metres deep (its
@@ -94986,7 +95119,7 @@ const ROOMS_GLSL = `
 __export(__exports, { "ROOMS_GLSL": () => ROOMS_GLSL })
 })
 
-// ---- js/render/shopShader.js
+// ---- js\render\shopShader.js
 __define(203, function (__exports) {
 // The shopfronts' shader. Each shop is one flat quad on its building's ground floor (shopfronts.js),
 // and everything on it is worked out per pixel from where the pixel is on the shop (x along it from
@@ -95388,7 +95521,7 @@ function poolMaterial () {
 __export(__exports, { "shopMaterial": () => shopMaterial, "poolMaterial": () => poolMaterial })
 })
 
-// ---- js/render/shopfronts.js
+// ---- js\render\shopfronts.js
 __define(204, function (__exports) {
 // The storefronts round the ground floor of every building with shops (the sim's b.shop): each wall
 // split into shops a few metres wide (narrower on Hollywood's strip, wider in the strip malls), each
@@ -95697,7 +95830,7 @@ function shopfronts () {
 __export(__exports, { "SHOP_SPOTS": () => SHOP_SPOTS, "shopfronts": () => shopfronts })
 })
 
-// ---- js/render/nightLights.js
+// ---- js\render\nightLights.js
 __define(205, function (__exports) {
 // Real lights at night where the camera is (the pooled lights after mrdoob/slop-newyork's
 // js/street-lights.js, MIT, (c) 2026 Mr.doob): a fixed handful of point lights, never more or fewer
@@ -95833,7 +95966,7 @@ class NightLights {
 __export(__exports, { "NightLights": () => NightLights })
 })
 
-// ---- js/render/treeTex.js
+// ---- js\render\treeTex.js
 __define(206, function (__exports) {
 // The palms' and trees' leaves, drawn once at start-up on one sheet: everything cut out of a
 // picture (a fan palm's leaf, a dead one hanging, the skirt of dead fronds under its crown, a date
@@ -96237,7 +96370,7 @@ function foliageSheet () {
 __export(__exports, { "SIZE": () => SIZE, "SHEET": () => SHEET, "FAN_AT": () => FAN_AT, "FAN_R": () => FAN_R, "foliageSheet": () => foliageSheet })
 })
 
-// ---- js/render/treeShapes.js
+// ---- js\render\treeShapes.js
 __define(207, function (__exports) {
 // The street trees' shapes (cityTrees.js plants them, treeWind.js moves them), each in two: the
 // full one for those near the camera and a cheap one for the rest, alike in outline and colour so
@@ -96516,7 +96649,7 @@ function broadleaf (near) {
 __export(__exports, { "PART": () => PART, "KINDS": () => KINDS, "FORK": () => FORK, "CROWN": () => CROWN, "add": () => add, "sub": () => sub, "scale": () => scale, "dot": () => dot, "cross": () => cross, "norm": () => norm, "Shape": () => Shape, "tube": () => tube, "barkUV": () => barkUV, "card": () => card, "broadleaf": () => broadleaf })
 })
 
-// ---- js/render/palmShapes.js
+// ---- js\render\palmShapes.js
 __define(208, function (__exports) {
 // The palms' shapes (cityTrees.js plants them, treeWind.js moves them), each in two: the full one
 // for those near the camera and a cheap one for the rest, alike in outline and colour so that one
@@ -96845,7 +96978,7 @@ function datePalm (near) {
 __export(__exports, { "FAN_H": () => FAN_H, "DATE_H": () => DATE_H, "SKIRT_Y": () => SKIRT_Y, "fanPalm": () => fanPalm, "datePalm": () => datePalm })
 })
 
-// ---- js/render/treeWind.js
+// ---- js\render\treeWind.js
 __define(209, function (__exports) {
 // The palms and trees in the wind, and each in two shapes by its distance from the camera
 // (grove.js): their shader, added to three.js's standard material and to the depth material their
@@ -97117,7 +97250,7 @@ function treeMaterials (sheet, bark, kind, tall, bend, leaf) {
 __export(__exports, { "WIND": () => WIND, "EYE": () => EYE, "LOD": () => LOD, "treeMaterials": () => treeMaterials })
 })
 
-// ---- js/render/daylight.js
+// ---- js\render\daylight.js
 __define(210, function (__exports) {
 // The city's light through the day and the weather: each frame the clock and the weather (ENV,
 // sim/env.js) are turned into the sky's colours (citySky.js), the sun's or the moon's light and
@@ -97150,9 +97283,9 @@ const DEG = 180 / Math.PI
 // punch, and a thin warm haze by day that gives the long avenues their depth; ?look=0 for without
 const LOOK = {
   on: typeof location === 'undefined' || !/[?&]look=0/.test(location.search),
-  sat: 1.07,
-  contrast: 1.04,
-  haze: 0.00014
+  sat: 1.1,
+  contrast: 1.1,
+  haze: 0.0002
 }
 // keyframes by the sun's height (degrees): [height, value...]
 const K = (...rows) => rows
@@ -97516,7 +97649,7 @@ class Daylight {
 __export(__exports, { "LOOK": () => LOOK, "Daylight": () => Daylight })
 })
 
-// ---- js/render/citySea.js
+// ---- js\render\citySea.js
 __define(211, function (__exports) {
 // The Pacific, west of the city: past the promenade a broad beach runs north and south along the coast
 // and drops down its steeper face into the water, which goes out to the horizon under the setting
@@ -97809,7 +97942,7 @@ function buildSea (group) {
 __export(__exports, { "buildSea": () => buildSea })
 })
 
-// ---- js/render/cityGlow.js
+// ---- js\render\cityGlow.js
 __define(212, function (__exports) {
 // Lights seen from afar at night: the hills' windows, the city's street lights running off to the
 // horizon, the freeway's head and tail lights, the pier's lamps and the Ferris wheel's rim. Each is
@@ -97878,7 +98011,7 @@ function glowPoints (list, mat) {
 __export(__exports, { "GLOW_SCALE": () => GLOW_SCALE, "glowMaterial": () => glowMaterial, "glowPoints": () => glowPoints })
 })
 
-// ---- js/render/cityKit.js
+// ---- js\render\cityKit.js
 __define(213, function (__exports) {
 // What the scenery round the city is made of, shared by the verges, the hills and the sprawl: tall
 // skinny palms (LA's Mexican fan palms, a skirt of dead fronds under a small crown), round-headed
@@ -98176,7 +98309,7 @@ function wallTexture (kind) {
 __export(__exports, { "PLANT": () => PLANT, "palmTrunk": () => palmTrunk, "palmCrown": () => palmCrown, "roundTree": () => roundTree, "scatter": () => scatter, "pose": () => pose, "bake": () => bake, "palmAt": () => palmAt, "palmsAt": () => palmsAt, "lump": () => lump, "grassTexture": () => grassTexture, "wallTexture": () => wallTexture })
 })
 
-// ---- js/render/cityWalls.js
+// ---- js\render\cityWalls.js
 __define(214, function (__exports) {
 // The verges and walls round the city on three sides: past the promenade's edge a strip of dry grass,
 // palms and the odd round-headed tree along it, then at the foot of the hills (north) a concrete
@@ -98323,7 +98456,7 @@ function buildWalls (group) {
 __export(__exports, { "buildWalls": () => buildWalls })
 })
 
-// ---- js/render/citySprawl.js
+// ---- js\render\citySprawl.js
 __define(215, function (__exports) {
 // The city going on, east and south past the freeway, to the horizon: the street grid carried on
 // from the city's own (a street every 96 m, an avenue every fourth), low stucco boxes of one to three
@@ -98595,7 +98728,7 @@ function buildSprawl (group) {
 __export(__exports, { "buildSprawl": () => buildSprawl })
 })
 
-// ---- js/render/cityFreeway.js
+// ---- js\render\cityFreeway.js
 __define(216, function (__exports) {
 // The freeways behind the sound walls, east and south (LANDMARKS.freeways): concrete decks on
 // hammerhead columns ten metres up, three lanes each way between jersey barriers, the southern one
@@ -99028,7 +99161,7 @@ function buildFreeway (group) {
 __export(__exports, { "deckHeight": () => deckHeight, "buildFreeway": () => buildFreeway })
 })
 
-// ---- js/render/citySign.js
+// ---- js\render\citySign.js
 __define(217, function (__exports) {
 // The sign on the hills above Hollywood: LOS ANGELES in white sheet-metal letters twelve metres tall,
 // standing in a line across the face of the slope at the head of La Brea (LANDMARKS.sign), each a
@@ -99292,7 +99425,7 @@ function buildSign (group) {
 __export(__exports, { "buildSign": () => buildSign })
 })
 
-// ---- js/render/cityHills.js
+// ---- js\render\cityHills.js
 __define(218, function (__exports) {
 // The Hollywood Hills, north of the city behind the retaining wall: steep faces of chaparral, dark
 // green scrub in clumps on dry gold grass and pale dirt, greener down the canyons and on the slopes
@@ -99711,7 +99844,7 @@ function buildHills (group) {
 __export(__exports, { "buildHills": () => buildHills })
 })
 
-// ---- js/render/cityRides.js
+// ---- js\render\cityRides.js
 __define(219, function (__exports) {
 // The pier's amusement park: the Ferris wheel, white steel turning slowly on its A-frames with its
 // gondolas hanging level, its rim and spokes lit at night in colours that chase round it; and the
@@ -99987,7 +100120,7 @@ function buildRides (group) {
 __export(__exports, { "buildRides": () => buildRides })
 })
 
-// ---- js/render/cityPier.js
+// ---- js\render\cityPier.js
 __define(220, function (__exports) {
 // Santa Monica's pier, out into the Pacific from the end of Wilshire (LANDMARKS.pier): a broad deck
 // of weathered planks level with the promenade, standing on rows of timber piles once it is out over
@@ -100390,7 +100523,7 @@ function house (b, out) {
 __export(__exports, { "buildPier": () => buildPier })
 })
 
-// ---- js/render/cityEdges.js
+// ---- js\render\cityEdges.js
 __define(221, function (__exports) {
 // Everything past the ring road's outer pavement, which makes the city Los Angeles: the Pacific and
 // Santa Monica's pier to the west, the hills with their sign to the north, and the city going on to
@@ -100438,7 +100571,7 @@ function buildEdges (group) {
 __export(__exports, { "buildEdges": () => buildEdges })
 })
 
-// ---- js/render/sunShadow.js
+// ---- js\render\sunShadow.js
 __define(222, function (__exports) {
 // Long shadows across the whole city at golden hour. The sun light that rides along with the car
 // (scene.js) only shadows a box sixty metres across round it: crisp, and it moves with the traffic,
@@ -100592,7 +100725,7 @@ class CityShadow {
 __export(__exports, { "CityShadow": () => CityShadow })
 })
 
-// ---- js/render/shadowProxy.js
+// ---- js\render\shadowProxy.js
 __define(223, function (__exports) {
 // The key light's shadow casters, regrouped by where they stand (an idea from mrdoob/slop-newyork
 // js/scene-culling.js, its shadow proxies; MIT, (c) 2026 Mr.doob). The city's meshes are one a
@@ -100836,7 +100969,7 @@ class ShadowProxies {
 __export(__exports, { "statics": () => statics, "ShadowProxies": () => ShadowProxies })
 })
 
-// ---- js/render/carSlope.js
+// ---- js\render\carSlope.js
 __define(224, function (__exports) {
 // A car's turn on the road (yaw about y) and its lie on a slope (gp, its nose up the slope, about
 // its z; gr, its right side down, about its x): into quaternion q, field by field (no allocation).
@@ -100863,7 +100996,7 @@ function slopeTo (q, yaw, gp = 0, gr = 0) {
 __export(__exports, { "slopeTo": () => slopeTo })
 })
 
-// ---- js/render/carRide.js
+// ---- js\render\carRide.js
 __define(225, function (__exports) {
 // A traffic car's body on its springs (render/traffic.js): a damped spring each for pitch and roll,
 // tuned per type (a car's body bobs at about 1.5 Hz, a van's or pickup's slower, a bus's under 1 Hz
@@ -100912,8 +101045,8 @@ function ride (car, T, S) {
     rollT = clamp(side * 0.012 * kr, -0.08, 0.08)
   } else {
     sp = car.v
-    pitchT = clamp((car.acc || 0) * 0.0052 * kp, -0.06, 0.03)
-    rollT = clamp(sp * (car.yr || 0) * 0.0085 * kr, -0.075, 0.075)
+    pitchT = clamp((car.acc || 0) * 0.007 * kp, -0.08, 0.045)
+    rollT = clamp(sp * (car.yr || 0) * 0.011 * kr, -0.1, 0.1)
   }
   // a lowrider hitting its switches: each pump of the hydraulics throws the front up (or the back,
   // or one side, then the other), and lets it drop
@@ -100962,7 +101095,7 @@ function ride (car, T, S) {
 __export(__exports, { "RIDE_DT": () => RIDE_DT, "ride": () => ride })
 })
 
-// ---- js/render/wreckSmoke.js
+// ---- js\render\wreckSmoke.js
 __define(226, function (__exports) {
 // Smoke off the traffic's damaged cars (sim/carDamage.js: dmg.smoke): white steam from under the
 // bonnet of one whose engine is hurt, thin and quick to go, trailing behind it as it limps on, and
@@ -101050,7 +101183,7 @@ function wreckSmoke (traffic, dt, p, types) {
 __export(__exports, { "STEAM": () => STEAM, "WRECK_SMOKE": () => WRECK_SMOKE, "wreckSmoke": () => wreckSmoke })
 })
 
-// ---- js/render/drawnOnly.js
+// ---- js\render\drawnOnly.js
 __define(227, function (__exports) {
 // Only what is there is drawn. An instanced mesh with no instances left in it still costs a draw
 // call (three.js sets up its program and uniforms and asks the GPU for no instances), in the frame
@@ -101076,7 +101209,7 @@ function dirty (a, count) {
 __export(__exports, { "shown": () => shown, "dirty": () => dirty })
 })
 
-// ---- js/render/carSpecs.js
+// ---- js\render\carSpecs.js
 __define(228, function (__exports) {
 // What each traffic type looks like, as the lines of its body (carBody.js) and the pieces on it:
 // today's cars, the kind on Los Angeles' streets. A midsize sedan with a long raked windscreen and
@@ -101246,7 +101379,7 @@ const SPECS = {
 __export(__exports, { "SPECS": () => SPECS })
 })
 
-// ---- js/render/carBody.js
+// ---- js\render\carBody.js
 __define(229, function (__exports) {
 // The traffic's car bodies, lofted like the Roadster's (loft.js) but from lines drawn along the car
 // the way a designer draws one (each type's are in carSpecs.js): the centre line over the top
@@ -101610,7 +101743,7 @@ function sideAt (st, x, y, j0 = 1, j1 = P.belt) {
 __export(__exports, { "lerp": () => lerp, "line": () => line, "P": () => P, "bodyLines": () => bodyLines, "plan": () => plan, "sectionAt": () => sectionAt, "stationsOf": () => stationsOf, "pieceOf": () => pieceOf, "loftIx": () => loftIx, "mergeIx": () => mergeIx, "sideAt": () => sideAt })
 })
 
-// ---- js/render/carParts.js
+// ---- js\render\carParts.js
 __define(230, function (__exports) {
 // What the traffic's trim and lamps (carTrim.js, carExtras.js, carRigs.js, carClassics.js,
 // carLamps.js) are made of: pieces in vertex colours, each vertex tagged with what it is (aLamp: a
@@ -101909,7 +102042,7 @@ function onTop (B, xa, xb, w, lift, color, lamp) {
 __export(__exports, { "LAMP": () => LAMP, "LENS": () => LENS, "BLACK": () => BLACK, "GLOSS": () => GLOSS, "CHROME": () => CHROME, "SATIN": () => SATIN, "paint": () => paint, "box": () => box, "quad": () => quad, "disc": () => disc, "rounded": () => rounded, "piece": () => piece, "band": () => band, "across": () => across, "wrap": () => wrap, "onTop": () => onTop })
 })
 
-// ---- js/render/carLamps.js
+// ---- js\render\carLamps.js
 __define(231, function (__exports) {
 // The traffic's lamps, part of each type's trim (carShapes.js), the way today's cars have them:
 // slim headlight units that wrap round the corners of the nose, a dark housing behind a clear lens
@@ -102226,7 +102359,7 @@ function lampMaterial (base) {
 __export(__exports, { "lampsFor": () => lampsFor, "BARS": () => BARS, "LAMP_T": () => LAMP_T, "LAMP_DARK": () => LAMP_DARK, "lampMaterial": () => lampMaterial, "LAMP": () => LAMP, "LENS": () => LENS })
 })
 
-// ---- js/render/carRigs.js
+// ---- js\render\carRigs.js
 __define(232, function (__exports) {
 // The working trucks' own pieces, on top of their trim (carExtras.js calls them): an ambulance's
 // warning lamps (red at the box's corners, white and amber between, red in the grille), its doors
@@ -102484,7 +102617,7 @@ function truck (B, put) {
 __export(__exports, { "rigs": () => rigs })
 })
 
-// ---- js/render/carClassics.js
+// ---- js\render\carClassics.js
 __define(233, function (__exports) {
 // The lowrider's and the limousine's own pieces, on top of their trim (carExtras.js calls them; the
 // window surrounds are chrome on both, carTrim.js, and the lowrider's lamps are round,
@@ -102525,7 +102658,7 @@ function limo (B, st, put) {
 __export(__exports, { "classics": () => classics })
 })
 
-// ---- js/render/carExtras.js
+// ---- js\render\carExtras.js
 __define(234, function (__exports) {
 // What makes each traffic type itself, on top of its trim (carTrim.js): an SUV's roof rails, a shark
 // fin aerial on the cars, a pickup's open bed, chrome bumpers and step, a van's and a bus's black
@@ -102754,7 +102887,7 @@ function police (B, st, put) {
 __export(__exports, { "extras": () => extras })
 })
 
-// ---- js/render/carTrim.js
+// ---- js\render\carTrim.js
 __define(235, function (__exports) {
 // The trim on the traffic's bodies (carShapes.js), in vertex colours (carParts.js): the black round
 // the glass (the window surrounds, chrome on the old and the stately, the pillars, the frit at the
@@ -103009,7 +103142,7 @@ function faces (T, B, st, put, out) {
 __export(__exports, { "trimFor": () => trimFor })
 })
 
-// ---- js/render/carShapes.js
+// ---- js\render\carShapes.js
 __define(236, function (__exports) {
 // The traffic's car shapes, one per type: the body lofted from its lines (carBody.js, the lines in
 // carSpecs.js), its glass, and its trim and lamps (carTrim.js, carLamps.js), as three geometries
@@ -103196,7 +103329,7 @@ function bodyMaterial (base, A) {
 __export(__exports, { "carShape": () => carShape, "bodyMaterial": () => bodyMaterial, "SPECS": () => SPECS })
 })
 
-// ---- js/render/carDents.js
+// ---- js\render\carDents.js
 __define(237, function (__exports) {
 // The traffic's damage as it is seen (sim/carDamage.js keeps it): each car's body crumpled in
 // where it was hit, bent in the vertex shader of every one of its type's instanced meshes (paint,
@@ -103566,7 +103699,7 @@ function headlightsLeft (car) {
 __export(__exports, { "CRACKS": () => CRACKS, "dented": () => dented, "dentsFor": () => dentsFor, "putDents": () => putDents, "headlightsLeft": () => headlightsLeft })
 })
 
-// ---- js/render/carWheels.js
+// ---- js\render\carWheels.js
 __define(238, function (__exports) {
 // The traffic's wheels: a low-profile tyre with rounded shoulders, and a rim whose face is set in a
 // shallow dish, standing just proud of the tyre's bead. All the rims are one instanced mesh: their
@@ -103887,7 +104020,7 @@ function rimMaterial () {
 __export(__exports, { "RIM_FINISH": () => RIM_FINISH, "ALLOY": () => ALLOY, "tyreGeometry": () => tyreGeometry, "farWheelGeometry": () => farWheelGeometry, "rimGeometry": () => rimGeometry, "rimMaterial": () => rimMaterial })
 })
 
-// ---- js/render/carPaint.js
+// ---- js\render\carPaint.js
 __define(239, function (__exports) {
 // How the traffic is painted, and shod: the colours Los Angeles' cars come in (about a quarter
 // white, a fifth black, a third greys and silvers, then dark blues and reds and the odd bright
@@ -104051,7 +104184,7 @@ function beamTexture () {
 __export(__exports, { "paletteFor": () => paletteFor, "blackRoofOf": () => blackRoofOf, "RIMS": () => RIMS, "underTexture": () => underTexture, "glowTexture": () => glowTexture, "beamTexture": () => beamTexture })
 })
 
-// ---- js/render/traffic.js
+// ---- js\render\traffic.js
 __define(240, function (__exports) {
 // Traffic cars: fourteen body types (carShapes.js), instanced per type, painted the way Los
 // Angeles' cars are (carPaint.js), each a solid or a metallic under the clear coat and some with a
@@ -104541,7 +104674,7 @@ class TrafficView {
 __export(__exports, { "NEAR": () => NEAR, "TrafficView": () => TrafficView })
 })
 
-// ---- js/render/dogFigure.js
+// ---- js\render\dogFigure.js
 __define(241, function (__exports) {
 // The figure every dog is drawn from (dogs.js), standing facing +x with its right side to +z, a
 // medium dog half a metre high at the shoulder (each is scaled to its own size): a body lofted
@@ -104720,7 +104853,7 @@ function merge (parts) {
 __export(__exports, { "DOG": () => DOG, "HIPS": () => HIPS, "COLLAR": () => COLLAR, "dogFigure": () => dogFigure })
 })
 
-// ---- js/render/pedLight.js
+// ---- js\render\pedLight.js
 __define(242, function (__exports) {
 // The street lights' light on the people and their dogs at night (peds.js, pedShader.js, dogs.js).
 // A street light lights the ground under it (the ground's own shaders work it out: lampLight.js),
@@ -104817,7 +104950,7 @@ const LAMP_FRAGMENT = {
 __export(__exports, { "lampOn": () => lampOn, "LAMP_VERTEX": () => LAMP_VERTEX, "LAMP_FRAGMENT": () => LAMP_FRAGMENT })
 })
 
-// ---- js/render/dogs.js
+// ---- js\render\dogs.js
 __define(243, function (__exports) {
 // Dogs on a lead (the sim is sim/dogs.js), all in one instanced mesh of the figure in dogFigure.js,
 // posed in the vertex shader as the people are: a trot, each diagonal pair of legs together and the
@@ -105107,7 +105240,7 @@ class DogView {
 __export(__exports, { "DogView": () => DogView })
 })
 
-// ---- js/render/pedGear.js
+// ---- js\render\pedGear.js
 __define(244, function (__exports) {
 // What people put up in the rain, as pieces of the figure everyone is drawn from (pedFigure.js;
 // pedShader.js shows them only on those who have them up, folded away to nothing on the rest): an
@@ -105191,7 +105324,7 @@ function gear (head) {
 __export(__exports, { "UMBRELLA": () => UMBRELLA, "gear": () => gear })
 })
 
-// ---- js/render/pedFigure.js
+// ---- js\render\pedFigure.js
 __define(245, function (__exports) {
 // The figure every person on foot is drawn from (peds.js), standing facing +x with their right side
 // to +z, about 1.75 m tall: a trunk lofted through rings from the hips in at the waist and out to
@@ -105619,7 +105752,7 @@ function mergeParts (parts) {
 __export(__exports, { "PART": () => PART, "HEAD_AT": () => HEAD_AT, "figure": () => figure })
 })
 
-// ---- js/render/pedShader.js
+// ---- js\render\pedShader.js
 __define(246, function (__exports) {
 // How the people on foot (peds.js, the figure in pedFigure.js) are posed and dressed, in the shaders,
 // from a few numbers each: their stride, what they are doing, and their look, a number from 0 to 1
@@ -105737,7 +105870,12 @@ const POSE = `
     if (w > 0.5) p = pedShape(p, part, style);
     float ph = aPose.x, gait = aPose.y, fright = aPose.z;
     float A = 0.42 * gait, run = clamp((gait - 1.2) * 2.5, 0.0, 1.0);
-    float phone = max(aAct.y, 0.0) * (1.0 - fright), talk = aAct.z * (1.0 - fright);
+    // knocked down (fright past 1): limbs loose, flailing while they tumble and slack once they lie.
+    // aPose.w is 0 in the air and 1 on the ground; the walk uses it only while they are up
+    float rag = step(1.5, fright);
+    float fr = min(fright, 1.0);
+    float wild = 1.0 - clamp(aPose.w, 0.0, 1.0);
+    float phone = max(aAct.y, 0.0) * (1.0 - fr), talk = aAct.z * (1.0 - fr);
     // fists up, fighting (aAct.y -1), the right one thrown out (to -2: sim/brawl.js)
     float guard = aAct.y < -0.5 ? 1.0 : 0.0, jab = clamp(-aAct.y - 1.0, 0.0, 1.0);
     // an umbrella (the arm up first, then it opens), hunched with a hoodie's hood up, sat down
@@ -105768,15 +105906,18 @@ const POSE = `
     if (part >= 3 && part <= 6) {
       bool left = part <= 4;
       float q = ph + (left ? 0.0 : 3.14159);
-      float swing = pedLeg(q, A) + fright * (left ? 0.5 : -0.35);
+      float swing = pedLeg(q, A) + fr * (left ? 0.5 : -0.35);
+      if (rag > 0.5)
+        swing = (left ? 0.5 : -0.4) * mix(0.4, 1.0, wild) + 0.55 * sin(ph + (left ? 0.0 : 1.8)) * wild;
       // the knee folds as the leg swings through (more running), and gives a little in the stance;
-      // sat down, the thigh is forward and the shin down
+      // sat down, the thigh is forward and the shin down. Knocked down, the knees buckle
       if (part == 4 || part == 6) {
         float u = mod(q, 6.28318);
         float knee = u < 3.14159
           ? 0.1 * gait * sin(u)
           : sin(u - 3.14159) * (0.45 + 0.9 * A + 0.8 * run);
-        knee += fright * 0.6;
+        knee += fr * 0.6;
+        if (rag > 0.5) knee = mix(0.7, 1.25, wild) + 0.35 * sin(ph * 1.3 + (left ? 0.5 : 2.0)) * wild;
         vec2 k = vec2(0.0, 0.5) * w;
         p.xy = k + pedRot(-mix(knee, 1.45, sit)) * (p.xy - k);
       }
@@ -105787,8 +105928,12 @@ const POSE = `
       bool left = part <= 8;
       // each arm swings with the other side's leg; less, and bent, hunched in the rain; sat down,
       // the hands on the thighs; holding a dog's lead, a little forward and swinging a little
-      float swing = (0.85 * A + 0.25 * run) * cos(ph + (left ? 3.14159 : 0.0)) + fright * 2.5;
+      float swing = (0.85 * A + 0.25 * run) * cos(ph + (left ? 3.14159 : 0.0)) + fr * 2.5;
       float elbow = 0.2 + 0.25 * gait + 1.1 * run + 0.35 * hunch;
+      if (rag > 0.5) {
+        swing = mix(0.9, 2.15, wild) + sin(ph + (left ? 0.3 : 2.1)) * (0.15 + 0.75 * wild);
+        elbow = mix(0.45, 1.05, wild);
+      }
       swing = mix(swing * (1.0 - 0.45 * hunch), 0.3, sit);
       elbow = mix(elbow, 0.75, sit);
       if (aGear.w * (left ? -1.0 : 1.0) > 0.5) {
@@ -105813,11 +105958,16 @@ const POSE = `
       }
       vec2 s = vec2(0.0, 1.45) * w;
       p.xy = s + pedRot(swing) * (p.xy - s);
+      // knocked down, the arms throw out to the sides as well as up
+      if (rag > 0.5) {
+        vec2 sh = vec2(1.45, 0.0) * w;
+        p.yz = sh + pedRot((left ? -1.0 : 1.0) * mix(0.85, 1.3, wild)) * (p.yz - sh);
+      }
     }
     // the head turned (to the Roadster) and bowed (over the phone, or in the rain)
     if (headish) {
       vec2 n = vec2(0.0, 1.53) * w;
-      p.xy = n + pedRot(-0.4 * phone - 0.2 * hunch) * (p.xy - n);
+      p.xy = n + pedRot(-0.4 * phone - 0.2 * hunch - rag * mix(0.35, 0.9, wild)) * (p.xy - n);
       p.xz = pedRot(-aAct.x) * p.xz;
     }
     // the upper body: twisting against the stride, leaning in to a run, or into the rain; sat
@@ -105825,7 +105975,7 @@ const POSE = `
     if (part != ${P.HIPS} && (part < 3 || part > 6) && part != ${P.SKIRT} && part != ${P.BAG}) {
       if (!headish) p.xz = pedRot(0.25 * A * cos(ph)) * p.xz;
       vec2 hip = vec2(0.0, 0.95) * w;
-      float lean = -0.2 * run - 0.05 * gait - 0.13 * hunch + 0.05 * sit;
+      float lean = -0.2 * run - 0.05 * gait - 0.13 * hunch + 0.05 * sit - rag * mix(0.2, 0.6, wild);
       p.xy = hip + pedRot(lean) * (p.xy - hip);
     }
     // sat down: the hips flat on the seat, a skirt over the thighs, and the whole body lowered so
@@ -105839,7 +105989,7 @@ const POSE = `
       p.y -= sit * (0.84 - 0.48 / length(instanceMatrix[1].xyz));
     }
     // up over each step (the most at mid-stance), higher running, and the hop of a dive
-    p.y += w * ((0.026 * gait + 0.03 * run) * -cos(2.0 * ph) + aPose.w);
+    p.y += w * ((0.026 * gait + 0.03 * run) * -cos(2.0 * ph) + aPose.w * (1.0 - rag));
     return p;
   }
 `
@@ -106033,7 +106183,7 @@ function posed (shader, colour) {
 __export(__exports, { "posed": () => posed })
 })
 
-// ---- js/render/peds.js
+// ---- js\render\peds.js
 __define(247, function (__exports) {
 // People on foot (the sim is peds.js and crowd.js), all in one instanced mesh: a figure with a
 // shaped trunk, tapered limbs, hands and trainers, a head with a face, and the pieces only some
@@ -106066,12 +106216,12 @@ const _m = new THREE.Matrix4(),
   _q = new THREE.Quaternion(),
   _fall = new THREE.Quaternion(),
   _side = new THREE.Vector3(0, 0, 1),
+  _hip = new THREE.Vector3(),
   _p = new THREE.Vector3(),
   _s = new THREE.Vector3()
 const LAMP = { x: 0, y: 0, z: 0, w: 0 }
 const TAU = Math.PI * 2
 const TURN = 12 // 1/s: how fast someone drawn turns to the way the sim faces them
-const RISE = 7 // 1/s: and gets up off the ground
 
 class PedView {
   constructor (group, max = 360) {
@@ -106172,30 +106322,35 @@ class PedView {
     // (a turn and a getting up eased over a few frames rather than in one: the sim snaps them, a
     // jacked driver up off the road and away, anyone back from a dive; someone not drawn the frame
     // before is put as they are)
-    if (d.rN !== this.n - 1) {
-      d.ry = d.yaw
-      d.rf = d.fall
-    } else {
+    if (d.rN !== this.n - 1) d.ry = d.yaw
+    else {
       const a = d.yaw - d.ry
       d.ry += (a - Math.round(a / TAU) * TAU) * Math.min(1, this.dt * TURN)
-      d.rf = d.fall >= d.rf ? d.fall : d.rf + (d.fall - d.rf) * Math.min(1, this.dt * RISE)
     }
     d.rN = this.n
-    const fall = d.rf > 0.01 ? d.rf : 0
     // (fields and arrays written directly: no numbers passed to calls)
     _q._x = _q._z = 0
     _q._y = Math.sin(d.ry / 2)
     _q._w = Math.cos(d.ry / 2)
-    // knocked down (sim/pedBrain.js): tipped over backwards onto the road, lying there
-    // (thrown by a car: up in the air and turning over, sim/pedBrain.js lie)
+    // knocked down (sim/pedBrain.js): tumbling about the hips the way they were thrown, then
+    // lying on the road. The feet are the mesh origin, so the hips stay put and the body turns
+    // round them instead of hinging at the ankles
     const air = d.air > 0 ? d.air : 0
-    if (fall > 0 || air > 0) {
-      _fall.setFromAxisAngle(_side, (fall * Math.PI) / 2.1 + (air > 0 ? d.spin : 0))
+    const pitch = d.pitch || 0
+    if (Math.abs(pitch) > 0.02) {
+      _fall.setFromAxisAngle(_side, pitch)
+      _hip.set(0, 0.9, 0).applyQuaternion(_fall)
+      _hip.y -= 0.9
+      _hip.x *= d.tall
+      _hip.y *= d.tall
+      _hip.z *= d.wide
+      _hip.applyQuaternion(_q)
       _q.multiply(_fall)
-    }
-    _p.x = d.x
-    _p.y = h + (fall > 0 ? 0.12 * fall : 0) + air + (air > 0 ? 0.6 : 0)
-    _p.z = d.z
+    } else _hip.set(0, 0, 0)
+    const flat = Math.min(1, Math.abs(Math.sin(pitch)))
+    _p.x = d.x + _hip.x
+    _p.y = h + air + _hip.y + 0.2 * flat
+    _p.z = d.z + _hip.z
     _s.x = _s.y = d.tall
     _s.z = d.wide
     _m.compose(_p, _q, _s)
@@ -106233,7 +106388,7 @@ class PedView {
 __export(__exports, { "PedView": () => PedView })
 })
 
-// ---- js/render/chunks.js
+// ---- js\render\chunks.js
 __define(248, function (__exports) {
 // The city's static meshes split by district. three.js skips any mesh whose bounds lie outside a
 // camera's view, and that includes the sun's shadow camera round the car, but a mesh that spans the
@@ -106424,7 +106579,7 @@ class Instances {
 __export(__exports, { "DISTRICTS": () => DISTRICTS, "district": () => district, "DETAIL_FAR": () => DETAIL_FAR, "sizeFar": () => sizeFar, "streamed": () => streamed, "stream": () => stream, "streamAll": () => streamAll, "streamBack": () => streamBack, "streamCount": () => streamCount, "Instances": () => Instances })
 })
 
-// ---- js/render/fallers.js
+// ---- js\render\fallers.js
 __define(249, function (__exports) {
 // What goes over when the Roadster hits it (the sim decides: breakables.js): the instanced parts of
 // each street light, signal mast, tree and palm, moved as one as it falls. Shared by the street
@@ -106584,7 +106739,7 @@ class Fallers {
 __export(__exports, { "pose": () => pose, "instanced": () => instanced, "one": () => one, "subset": () => subset, "Fallers": () => Fallers })
 })
 
-// ---- js/render/grove.js
+// ---- js\render\grove.js
 __define(250, function (__exports) {
 // One kind of palm or tree in its two shapes (palmShapes.js, treeShapes.js): far off, the cheap
 // shape, all of them in one instanced mesh a district (chunks.js); near the camera, the full shape,
@@ -106688,7 +106843,7 @@ function upload (a, k) {
 __export(__exports, { "Grove": () => Grove })
 })
 
-// ---- js/render/treeBark.js
+// ---- js\render\treeBark.js
 __define(251, function (__exports) {
 // The palms' and trees' bark, drawn once at start-up, each tiled once round its trunk and on up
 // it: the Mexican fan palm's grey-brown, ringed every few centimetres with the scars of old leaves;
@@ -106837,7 +106992,7 @@ function treeBark () {
 __export(__exports, { "fanBark": () => fanBark, "dateBark": () => dateBark, "treeBark": () => treeBark })
 })
 
-// ---- js/render/cityTrees.js
+// ---- js\render\cityTrees.js
 __define(252, function (__exports) {
 // Palms and trees (the sim places them: PALMS, TREES; breakables.js says what snaps them). The
 // palms are Los Angeles' two: the Mexican fan palm, twenty to thirty metres of slender grey-brown
@@ -107002,7 +107157,7 @@ function greenery (group) {
 __export(__exports, { "updateTrees": () => updateTrees, "greenery": () => greenery, "WIND": () => WIND })
 })
 
-// ---- js/render/builder.js
+// ---- js\render\builder.js
 __define(253, function (__exports) {
 // Merged geometry for the city's buildings: quads pushed into flat arrays (position, normal, uv,
 // colour) and made into one buffer per material, so hundreds of buildings draw in a few calls.
@@ -107365,7 +107520,7 @@ function grow (pts, o) {
 __export(__exports, { "Builder": () => Builder, "grow": () => grow })
 })
 
-// ---- js/render/cityKerb.js
+// ---- js\render\cityKerb.js
 __define(254, function (__exports) {
 // Along the kerb (the sim lays it out: kerbside.js): the power lines strung from one wooden pole to
 // the next along Mid-City's and Venice's streets and over their junctions, three on the crossarm and
@@ -107495,7 +107650,7 @@ function buildDecor (group) {
 __export(__exports, { "WIRE_AT": () => WIRE_AT, "Wires": () => Wires, "PIECES": () => PIECES, "buildDecor": () => buildDecor })
 })
 
-// ---- js/render/cityNames.js
+// ---- js\render\cityNames.js
 __define(255, function (__exports) {
 // The lit street-name signs on the signal masts' arms, as at Los Angeles' junctions: the name of
 // the street being crossed (areas.js), white on green, lit from inside at night. All the names are
@@ -107608,7 +107763,7 @@ function nameSigns (poles, place, at) {
 __export(__exports, { "nameSigns": () => nameSigns })
 })
 
-// ---- js/render/cityProps.js
+// ---- js\render\cityProps.js
 __define(256, function (__exports) {
 // Street furniture: street lights and a signal mast on every corner whose red, yellow and green
 // lamps follow the intersection's signal plan; with the palms and trees (cityTrees.js), the power
@@ -107894,7 +108049,7 @@ function buildProps (group) {
 __export(__exports, { "Signals": () => Signals, "buildProps": () => buildProps })
 })
 
-// ---- js/render/cityWorks.js
+// ---- js\render\cityWorks.js
 __define(257, function (__exports) {
 // The new districts' working things (the sim lays them out: PROPS, DECKS, RAMPS and the SOLIDS'
 // looks): the port's container stacks and the yards' trailers, loading docks down the sheds' sides,
@@ -108218,7 +108373,7 @@ function add (group, b, mat, cast, name) {
 __export(__exports, { "shelterAt": () => shelterAt, "buildWorks": () => buildWorks })
 })
 
-// ---- js/render/cityPort.js
+// ---- js\render\cityPort.js
 __define(258, function (__exports) {
 // The port's waterfront (the sim lays it out: quay.js): the concrete wharf over the beach's face,
 // its edge line, bollards and fenders, the ship-to-shore cranes on their rails (legs, portal, boom
@@ -108331,7 +108486,7 @@ function buildPort (group) {
 __export(__exports, { "buildPort": () => buildPort })
 })
 
-// ---- js/render/cityStadium.js
+// ---- js\render\cityStadium.js
 __define(259, function (__exports) {
 // The stadium's bowl (venues.js lays the building out: b.stadium { cx, cz, rx, rz, h }): over its
 // concrete drum, the pitch in mown stripes with its lines, the stands raked up from it in tiers of
@@ -108440,7 +108595,7 @@ function buildStadium (group) {
 __export(__exports, { "buildStadium": () => buildStadium })
 })
 
-// ---- js/render/roadSurface.js
+// ---- js\render\roadSurface.js
 __define(260, function (__exports) {
 // The street's asphalt, worn the way a city's is: two darker, smoother wheel tracks down every lane
 // (polished enough to catch the low sun), a line of oil drips between them, more wear on the
@@ -108621,7 +108776,7 @@ function roadMaterial (opts) {
 __export(__exports, { "roadMaterial": () => roadMaterial })
 })
 
-// ---- js/render/cityGround.js
+// ---- js\render\cityGround.js
 __define(261, function (__exports) {
 // The city's ground: asphalt, kerbed blocks with sidewalks and rounded corners, lane
 // paint, stop lines and zebra crossings, parks, parking lots and the promenade round the ring road;
@@ -109020,7 +109175,7 @@ function buildGround (group) {
 __export(__exports, { "buildGround": () => buildGround })
 })
 
-// ---- js/render/cityStreet.js
+// ---- js\render\cityStreet.js
 __define(262, function (__exports) {
 // The street's details: cast-iron manhole lids out in the lanes, drain grates in the gutters by the
 // corners (both laid out by the sim, street.js, which feels the lids under the wheels), and the
@@ -109251,7 +109406,7 @@ function buildStreet (group) {
 __export(__exports, { "buildStreet": () => buildStreet })
 })
 
-// ---- js/render/signTex.js
+// ---- js\render\signTex.js
 __define(263, function (__exports) {
 // The city's signs and pictures, drawn into one atlas at startup: billboards, old hotels' names for
 // their roofs, theatre marquees and blade signs, a motel's neon, fast-food and strip-mall signs on
@@ -109553,7 +109708,7 @@ const SIGN_COUNTS = Object.fromEntries(
 __export(__exports, { "CELLS": () => CELLS, "signAtlas": () => signAtlas, "SIGN_COUNTS": () => SIGN_COUNTS })
 })
 
-// ---- js/render/citySigns.js
+// ---- js\render\citySigns.js
 __define(264, function (__exports) {
 // The signs (the sim lays them out: SIGNS, and the solid things on the lots: SOLIDS). Billboards on
 // poles and on roofs, two-faced, with a catwalk under each and lamps over it; signs up on poles for
@@ -110046,7 +110201,7 @@ function glow () {
 __export(__exports, { "buildSigns": () => buildSigns })
 })
 
-// ---- js/render/cityYards.js
+// ---- js\render\cityYards.js
 __define(265, function (__exports) {
 // What the houses' yards are closed off with (the sim lays them out, solid: SOLIDS): clipped hedges
 // along Beverly Hills' pavements, some as tall as the garage, in a leafy texture, each a shade of
@@ -110190,7 +110345,7 @@ function add (group, b, mat, cast, name) {
 __export(__exports, { "buildYards": () => buildYards })
 })
 
-// ---- js/render/buildingTex.js
+// ---- js\render\buildingTex.js
 __define(266, function (__exports) {
 // The buildings' textures, drawn at startup: a facade per style (glass curtain wall, office ribbon
 // windows, brick at its real size, stucco with balconies, pale stone or terracotta with tall windows
@@ -110488,7 +110643,7 @@ function crownTex () {
 __export(__exports, { "COL": () => COL, "FLOOR": () => FLOOR, "CELLS": () => CELLS, "SHOP": () => SHOP, "INSET": () => INSET, "WIN": () => WIN, "STYLES": () => STYLES, "facadeMap": () => facadeMap, "roofTex": () => roofTex, "tileTex": () => tileTex, "crownTex": () => crownTex })
 })
 
-// ---- js/render/cityVariety.js
+// ---- js\render\cityVariety.js
 __define(267, function (__exports) {
 // The city's variety, drawn (sim/variety.js lays it out): the districts' own palettes for their
 // walls and awnings, balconies down the apartments' street fronts, and on the roofs the water
@@ -110978,7 +111133,7 @@ function buildVariety (group, { beacons, crowns }) {
 __export(__exports, { "variedTint": () => variedTint, "awningFor": () => awningFor, "buildVariety": () => buildVariety })
 })
 
-// ---- js/render/cityBuildings.js
+// ---- js\render\cityBuildings.js
 __define(268, function (__exports) {
 // City buildings: procedural facades (glass curtain wall, office, brick, stucco, stone and
 // terracotta, a house's wall) with windows lit for the evening, storefronts under canopies along
@@ -111382,7 +111537,7 @@ const beacon = (beacons, x, y, z, r) =>
 __export(__exports, { "BEACON": () => BEACON, "buildBuildings": () => buildBuildings })
 })
 
-// ---- js/render/cityExtras.js
+// ---- js\render\cityExtras.js
 __define(269, function (__exports) {
 // What there is to find off the streets, drawn (sim/extras.js lays it out): the alleys' dumpsters,
 // bins, crates and trash bags, the lamps over their back doors, their fire escapes and the lights
@@ -111811,7 +111966,7 @@ function buildExtras (group) {
 __export(__exports, { "DRAW": () => DRAW, "buildExtras": () => buildExtras })
 })
 
-// ---- js/sim/knockables.js
+// ---- js\sim\knockables.js
 __define(270, function (__exports) {
 // Everything small on the pavements gives when a car hits it, as GTA's street furniture does: the
 // hydrants, bus benches and litter bins along the kerb (kerbside.js DECOR, which had no collider at
@@ -111964,7 +112119,7 @@ function knockCount () {
 __export(__exports, { "KNOCK_KINDS": () => KNOCK_KINDS, "KNOCKS": () => KNOCKS, "layKnocks": () => layKnocks, "knockCount": () => knockCount })
 })
 
-// ---- js/render/cityKnocks.js
+// ---- js\render\cityKnocks.js
 __define(271, function (__exports) {
 // The pavements' street furniture, drawn so a car can knock it flying (sim/knockables.js lays it out
 // and gives each a collider that breaks): the hydrants, bus benches and litter bins along the kerb,
@@ -112304,7 +112459,7 @@ function buildKnocks (group) {
 __export(__exports, { "buildKnocks": () => buildKnocks })
 })
 
-// ---- js/sim/tokens.js
+// ---- js\sim\tokens.js
 __define(272, function (__exports) {
 // Thirty hidden tokens to find round the city, GTA's hidden packages: at the far end of alleys, on
 // the multi-storey car parks' roofs and a few low roofs (the Roadster flies), in the parks, out on
@@ -112509,7 +112664,7 @@ function loadFound (s) {
 __export(__exports, { "TOTAL": () => TOTAL, "PICK_R": () => PICK_R, "TOKENS": () => TOKENS, "FOUND": () => FOUND, "found": () => found, "tokenAt": () => tokenAt, "take": () => take, "saveFound": () => saveFound, "loadFound": () => loadFound })
 })
 
-// ---- js/render/cityTokens.js
+// ---- js\render\cityTokens.js
 __define(273, function (__exports) {
 // The thirty hidden tokens (sim/tokens.js), drawn: gold coins standing on edge, turning and bobbing
 // where they wait, bright enough to catch the eye (the bloom) once you are close, gone once found.
@@ -112573,7 +112728,7 @@ function buildTokens (group) {
 __export(__exports, { "buildTokens": () => buildTokens })
 })
 
-// ---- js/render/cityStopSigns.js
+// ---- js\render\cityStopSigns.js
 __define(274, function (__exports) {
 // The all-way stops' signs and their painted "STOP"s (sim/stopSigns.js): a red octagon with a white
 // border and STOP across it, on a galvanised post with its grey back plate; the lane legend in long
@@ -112741,7 +112896,7 @@ function buildStopSigns (group) {
 __export(__exports, { "buildStopSigns": () => buildStopSigns })
 })
 
-// ---- js/render/interiors/rooms.js
+// ---- js\render\interiors\rooms.js
 __define(275, function (__exports) {
 // The interiors drawn: each room (sim/interiors/rooms.js) as three meshes in its own frame (x
 // across the door's wall, y up, z in from it), placed under the city where its site puts it
@@ -112880,7 +113035,7 @@ function roomMaterials () {
 __export(__exports, { "buildRoom": () => buildRoom, "roomMaterials": () => roomMaterials })
 })
 
-// ---- js/render/interiors/doors.js
+// ---- js\render\interiors\doors.js
 __define(276, function (__exports) {
 // The interiors' doors from the street: a door frame and its lit glass in the building's wall, an
 // awning over it in the place's colour, its name on a sign above, and on the pavement in front the
@@ -113005,7 +113160,7 @@ function buildDoors (group) {
 __export(__exports, { "buildDoors": () => buildDoors })
 })
 
-// ---- js/render/interiors/view.js
+// ---- js\render\interiors\view.js
 __define(277, function (__exports) {
 // The interiors' view (render/city.js keeps one): every room built hidden, the one the player is in
 // shown; the doors outside; the light inside (the scene's lights turned to the room's for the
@@ -113094,7 +113249,7 @@ class InteriorView {
 __export(__exports, { "InteriorView": () => InteriorView })
 })
 
-// ---- js/render/city.js
+// ---- js\render\city.js
 __define(278, function (__exports) {
 // The city view: builds the city's meshes the first time it is visited (so the test site loads as
 // fast as ever), shows it in place of the test site, and keeps the traffic, signals, sky, sea and
@@ -113359,7 +113514,7 @@ function clipCamera (aim, pos) {
 __export(__exports, { "CityView": () => CityView, "clipCamera": () => clipCamera })
 })
 
-// ---- js/render/skids.js
+// ---- js\render\skids.js
 __define(279, function (__exports) {
 // Skid marks: one continuous rubber ribbon per sliding tyre. The ribbon is as wide as the tyre's
 // footprint across its path (full tread width in a straight lock-up, the short contact patch when it
@@ -113558,7 +113713,7 @@ function updateSkids (RS, sim) {
 __export(__exports, { "clearSkids": () => clearSkids, "updateSkids": () => updateSkids })
 })
 
-// ---- js/render/wall.js
+// ---- js\render\wall.js
 __define(280, function (__exports) {
 // The curved wall (slab, LED edges that turn white behind the car, centre line) and its steel truss.
 const THREE = __require(0)
@@ -113814,7 +113969,7 @@ function buildTruss () {
 __export(__exports, { "LED_MAT": () => LED_MAT, "buildWall": () => buildWall, "buildTruss": () => buildTruss })
 })
 
-// ---- js/render/freeze.js
+// ---- js\render\freeze.js
 __define(281, function (__exports) {
 // Fewer draw calls for a model built from many small pieces: every mesh that never moves on its own
 // is baked into one buffer per material (and per shadow setting), in the root's frame, so the
@@ -113908,7 +114063,7 @@ function flip (g) {
 __export(__exports, { "freeze": () => freeze })
 })
 
-// ---- js/render/wheels.js
+// ---- js\render\wheels.js
 __define(282, function (__exports) {
 // Wheels and wheel wells: arch openings cut into the body shell with dark well liners, tyres with
 // rounded sidewalls round the reveal car's wheels (six black twin spokes over white aero inserts),
@@ -114144,7 +114299,7 @@ function updateWheels (RS, sim, dt) {
 __export(__exports, { "ARCH_R": () => ARCH_R, "withWheelArches": () => withWheelArches, "buildWheels": () => buildWheels, "updateWheels": () => updateWheels })
 })
 
-// ---- js/render/roadsterSlope.js
+// ---- js\render\roadsterSlope.js
 __define(283, function (__exports) {
 // The Roadster drawn lying on the slope it drives up (the freeway's ramps, the hill road, the bridge):
 // the sim climbs them as a flight of thin treads (roofs.js, plots.js ramp) and keeps the car level,
@@ -114195,7 +114350,7 @@ function slopeRoadster (car, sim, dt) {
 __export(__exports, { "slopeRoadster": () => slopeRoadster })
 })
 
-// ---- js/render/roadsterRear.js
+// ---- js\render\roadsterRear.js
 __define(284, function (__exports) {
 // The Roadster's tail, as in the rear shot from the reveal: a full-width red light bar in a smoked
 // black band under the ducktail lip, a satin panel with the plate and a camera, and the black lower
@@ -114447,7 +114602,7 @@ function updateWing (W, sim, ctl, dt) {
 __export(__exports, { "fanUnit": () => fanUnit, "buildTail": () => buildTail, "buildWing": () => buildWing, "updateWing": () => updateWing })
 })
 
-// ---- js/render/roadster.js
+// ---- js\render\roadster.js
 __define(285, function (__exports) {
 // The Roadster model, measured off the Oct 15, 2026 reveal photos (a side-on shot at the event sets the
 // proportions, a top-down one the canopy, a rear one the tail): a wedge in satin Ano White, smooth
@@ -114897,15 +115052,15 @@ function updateRoadster (RS, sim, ctl, dt) {
   // burnout squats the tail. The body's +x is its nose, so a positive pitch lifts it.)
   // (v3 drive: a little more again, about 3 degrees of dive and 5 of roll, so the weight reads)
   const pitchT = onGround
-    ? clamp(sim.accLong * 0.0042, -0.06, 0.06) + (sim.burning ? 0.018 : 0)
+    ? clamp(sim.accLong * 0.0068, -0.085, 0.06) + (sim.burning ? 0.022 : 0)
     : 0
-  const rollT = onGround ? clamp(sim.latAcc * 0.0068, -0.09, 0.09) : 0
+  const rollT = onGround ? clamp(sim.latAcc * 0.011, -0.13, 0.13) : 0
   const L = RS.lean,
     h = Math.min(dt, 1 / 30)
   // (the springs settle with a touch of overshoot: a rock back after a stop, a sway out of a bend)
-  L.pv += (85 * (pitchT - L.p) - 9.5 * L.pv) * h
+  L.pv += (58 * (pitchT - L.p) - 7.6 * L.pv) * h
   L.p += L.pv * h
-  L.rv += (100 * (rollT - L.r) - 10.5 * L.rv) * h
+  L.rv += (64 * (rollT - L.r) - 8 * L.rv) * h
   L.r += L.rv * h
   RS.body.rotation.z = L.p
   RS.body.rotation.x = L.r
@@ -114932,7 +115087,7 @@ function updateRoadster (RS, sim, ctl, dt) {
 __export(__exports, { "buildRoadster": () => buildRoadster, "updateRoadster": () => updateRoadster })
 })
 
-// ---- js/render/rain.js
+// ---- js\render\rain.js
 __define(286, function (__exports) {
 // The rain: streaks falling through a box of air round the camera, and splashes where they land.
 // Each drop has its own place in the box and falls through it on the wind, wrapping round, so the
@@ -115170,7 +115325,7 @@ class Rain {
 __export(__exports, { "Rain": () => Rain })
 })
 
-// ---- js/render/beams.js
+// ---- js\render\beams.js
 __define(287, function (__exports) {
 // The Roadster's headlight beams seen in the air: in rain or fog at night the light ahead of the car
 // is caught by the water in the air, two pale cones reaching out down the road from the lamps,
@@ -115241,7 +115396,7 @@ class Beams {
 __export(__exports, { "Beams": () => Beams })
 })
 
-// ---- js/render/quality.js
+// ---- js\render\quality.js
 __define(288, function (__exports) {
 // Graphics presets and the Auto one. Each preset is what the frame is allowed: the pixels to a
 // point (px, the adaptive resolution steps down from there), the MSAA samples, the car's sun shadow
@@ -115339,7 +115494,7 @@ class AutoQuality {
 __export(__exports, { "PRESETS": () => PRESETS, "TIERS": () => TIERS, "guessTier": () => guessTier, "gpuName": () => gpuName, "AutoQuality": () => AutoQuality })
 })
 
-// ---- js/climate.js
+// ---- js\climate.js
 __define(289, function (__exports) {
 // The clock and the weather in the city, run once a frame from the main loop (main.js): the clock
 // and the weather moving on (sim/env.js), L running the clock on fast to the next time of day and O
@@ -115578,7 +115733,7 @@ class Climate {
 __export(__exports, { "QUALITY": () => QUALITY, "Climate": () => Climate })
 })
 
-// ---- js/render/resolution.js
+// ---- js\render\resolution.js
 __define(290, function (__exports) {
 // Adaptive resolution: the frame is drawn at the screen's full pixel density (up to 2, on a Retina
 // screen) while the GPU keeps up, and at less when it doesn't, a step at a time until it does, and
@@ -115788,7 +115943,7 @@ class Resolution {
 __export(__exports, { "Resolution": () => Resolution })
 })
 
-// ---- js/render/warm.js
+// ---- js\render\warm.js
 __define(291, function (__exports) {
 // Shader warm-up. three.js compiles a material's program the first time it draws it, and again for
 // each set of lights it is drawn under, and a program takes from a few milliseconds to a tenth of a
@@ -115975,7 +116130,7 @@ function shadows () {
 __export(__exports, { "warmUp": () => warmUp, "alsoWarm": () => alsoWarm })
 })
 
-// ---- js/render/damage.js
+// ---- js\render\damage.js
 __define(292, function (__exports) {
 // Body damage, GTA-style: a knock dents the Roadster's panels where it landed, deeper and wider the
 // harder the hit, the metal crumpling (each dent a little uneven, its facets catching the light)
@@ -116346,7 +116501,7 @@ const CRAZED = `{
 __export(__exports, { "Damage": () => Damage })
 })
 
-// ---- js/sim/wanted.js
+// ---- js\sim\wanted.js
 __define(293, function (__exports) {
 // The wanted level, GTA's way: 0 to 5 stars. A crime ('crime' game events: { type, pos, severity })
 // only counts if someone saw it: people on the pavement, drivers, or the police (witness.js looks,
@@ -116556,7 +116711,7 @@ class Wanted {
 __export(__exports, { "STAR_HEAT": () => STAR_HEAT, "CRIMES": () => CRIMES, "POLICE_WITNESS": () => POLICE_WITNESS, "GRACE": () => GRACE, "searchRadius": () => searchRadius, "cooldownFor": () => cooldownFor, "IN_CIRCLE": () => IN_CIRCLE, "ESCALATE": () => ESCALATE, "ESCALATE_MAX": () => ESCALATE_MAX, "LOST_SIGHT": () => LOST_SIGHT, "LOST_COOL": () => LOST_COOL, "REACQUIRE": () => REACQUIRE, "SEARCH_EVERY": () => SEARCH_EVERY, "starsFor": () => starsFor, "Wanted": () => Wanted })
 })
 
-// ---- js/sim/aiDriver.js
+// ---- js\sim\aiDriver.js
 __define(294, function (__exports) {
 // A driver at the wheel of a drivable body (vehicleSim.js) for the game's own cars: the police on a
 // chase (police.js) and the cars in the street events (ambient.js). It follows the lane graph to a
@@ -116742,7 +116897,7 @@ function unstick (u, b, inp, dt) {
 __export(__exports, { "bearing": () => bearing, "Planner": () => Planner, "steerTo": () => steerTo, "Follower": () => Follower, "cornerV": () => cornerV, "blocker": () => blocker, "unstick": () => unstick })
 })
 
-// ---- js/sim/policeUnit.js
+// ---- js\sim\policeUnit.js
 __define(295, function (__exports) {
 // One police car's mind (police.js keeps the force): a traffic car of the police type taken over
 // (handover.js takeOver, tag 'police'), driven by a 'police' handling-class body (vehicleSim.js)
@@ -116994,7 +117149,7 @@ function route (u, plan, dt, fx, fz) {
 __export(__exports, { "CHASE_V": () => CHASE_V, "SEARCH_V": () => SEARCH_V, "DIRECT": () => DIRECT, "ROLES": () => ROLES, "makeUnit": () => makeUnit, "roleFor": () => roleFor, "aimAt": () => aimAt, "think": () => think, "WEDGED": () => WEDGED })
 })
 
-// ---- js/sim/policeAir.js
+// ---- js\sim\policeAir.js
 __define(296, function (__exports) {
 // The police from above and ahead (police.js): the helicopter at four stars and up, flying to where
 // the player is (or was last seen), its spotlight on them while it can see them and sweeping the
@@ -117137,7 +117292,7 @@ const FAR_BLOCK = 312 // m ahead: beyond inView's reach
 __export(__exports, { "HELI_Y": () => HELI_Y, "HELI_V": () => HELI_V, "HELI_SEE": () => HELI_SEE, "Heli": () => Heli, "inView": () => inView, "roadblockSpot": () => roadblockSpot })
 })
 
-// ---- js/sim/police.js
+// ---- js\sim\police.js
 __define(297, function (__exports) {
 // The police force on the city's streets (the wanted level is wanted.js; each car's mind is
 // policeUnit.js): as many units as the stars call for (UNITS), each put on a lane of the road
@@ -117450,7 +117605,7 @@ class Arrest {
 __export(__exports, { "UNITS": () => UNITS, "SPAWN_MIN": () => SPAWN_MIN, "SPAWN_MAX": () => SPAWN_MAX, "ROADBLOCK_STARS": () => ROADBLOCK_STARS, "HELI_STARS": () => HELI_STARS, "inView": () => inView, "spawnPoint": () => spawnPoint, "Police": () => Police, "bodies": () => bodies, "BUST_T": () => BUST_T, "BUST_V": () => BUST_V, "Arrest": () => Arrest })
 })
 
-// ---- js/sim/ambient.js
+// ---- js\sim\ambient.js
 __define(298, function (__exports) {
 // Street events near the player now and then (GTA's random events): a crash scene (two wrecked cars
 // in the road, hazards on, a police car parked by them, its lights going, people stopping to look),
@@ -117460,7 +117615,7 @@ __define(298, function (__exports) {
 // while apart, put down out of the camera's sight between NEAR and FAR m off, and cleared away once
 // it is over and out of sight. Pure: no DOM.
 const { rng, LANES } = __require(38)
-const { IDX } = __require(62)
+const { IDX } = __require(63)
 const { hurt } = __require(42)
 const { loosen } = __require(105)
 const { stepVehicle, makeVehicleInput } = __require(159)
@@ -117725,7 +117880,7 @@ class Ambient {
 __export(__exports, { "KINDS": () => KINDS, "GAP": () => GAP, "Ambient": () => Ambient })
 })
 
-// ---- js/sim/wantedReports.js
+// ---- js\sim\wantedReports.js
 __define(299, function (__exports) {
 // Crimes reported to the police (wanted.js), as the people who saw them get round to it: the police
 // seeing it themselves, at once; otherwise someone has to ring it in. A person on foot who saw it
@@ -117790,7 +117945,7 @@ class Reports {
 __export(__exports, { "DRIVER_CALL": () => DRIVER_CALL, "GIVE_UP": () => GIVE_UP, "Reports": () => Reports })
 })
 
-// ---- js/sim/missions/objectives.js
+// ---- js\sim\missions\objectives.js
 __define(300, function (__exports) {
 // What each kind of mission objective asks, and how it is judged (manager.js runs them): each a
 // { text, start, check } over the objective's data (o), its live state (st) and the mission's
@@ -117923,7 +118078,7 @@ const OBJECTIVES = {
 __export(__exports, { "place": () => place, "OBJECTIVES": () => OBJECTIVES })
 })
 
-// ---- js/sim/missions/manager.js
+// ---- js\sim\missions\manager.js
 __define(301, function (__exports) {
 // The missions' state machine. Idle, every mission on offer has a marker in the world (its start:
 // spots.js); drive (or walk) into one, slowly enough, and it starts (never forced). Running, its
@@ -118083,7 +118238,7 @@ class MissionManager {
 __export(__exports, { "START_R": () => START_R, "START_V": () => START_V, "LEAVE_R": () => LEAVE_R, "MissionManager": () => MissionManager })
 })
 
-// ---- js/sim/playerView.js
+// ---- js\sim\playerView.js
 __define(302, function (__exports) {
 // What the game's systems (the wanted level, the police, the missions, the street events) know of
 // the player, read through one small adapter so that they never depend on where the player lives.
@@ -118203,7 +118358,7 @@ function forwardOf (v = playerView) {
 __export(__exports, { "playerView": () => playerView, "bindSim": () => bindSim, "bindPlayer": () => bindPlayer, "updatePlayerView": () => updatePlayerView, "setWanted": () => setWanted, "forwardOf": () => forwardOf })
 })
 
-// ---- js/render/crimeView.js
+// ---- js\render\crimeView.js
 __define(303, function (__exports) {
 // What the game's systems put in the world to see (game.js updates it each frame): the missions'
 // markers, GTA's glowing cylinders with a ring on the ground (a mission's start, the place an
@@ -118380,7 +118535,7 @@ class CrimeView {
 __export(__exports, { "MARKER_FAR": () => MARKER_FAR, "CrimeView": () => CrimeView })
 })
 
-// ---- js/ui/crimeHud.js
+// ---- js\ui\crimeHud.js
 __define(304, function (__exports) {
 // The game's own HUD, GTA's way (game.js drives it): the cash and the wanted stars top right (the
 // stars only while wanted, flashing while the police search), the mission's objective along the
@@ -118532,7 +118687,7 @@ class CrimeHud {
 __export(__exports, { "CrimeHud": () => CrimeHud })
 })
 
-// ---- js/ui/crimeMap.js
+// ---- js\ui\crimeMap.js
 __define(305, function (__exports) {
 // The game's marks on the radar (minimap.js's overlay hook) and the pause menu's map (mapDraw.js's):
 // the police as red and blue blips flashing by turns, the helicopter, the search circle round the
@@ -118672,7 +118827,7 @@ function mapOverlay (g, sx, sy, k, s) {
 __export(__exports, { "searchOf": () => searchOf, "radarOverlay": () => radarOverlay, "mapOverlay": () => mapOverlay })
 })
 
-// ---- js/carName.js
+// ---- js\carName.js
 __define(306, function (__exports) {
 // The car's name bottom right (ui/place.js, said by ui/carHud.js as the player gets in) taken down
 // at once: busted or wasted (game.js), or out of the car (onFoot.js). A street's name up is left.
@@ -118683,7 +118838,7 @@ function dropCarName (hud) {
 __export(__exports, { "dropCarName": () => dropCarName })
 })
 
-// ---- js/game.js
+// ---- js\game.js
 __define(307, function (__exports) {
 // The game on top of the drive: the wanted level and the police (sim/wanted.js, police.js), the
 // missions (sim/missions/) and the street events (sim/ambient.js), their marks in the world
@@ -118695,7 +118850,7 @@ __define(307, function (__exports) {
 // once), ?ambient=chase (that street event soon), ?cash=5000; window.__crime in the console.
 const { ENV } = __require(3)
 const { roadGrip } = __require(46)
-const { IDX } = __require(62)
+const { IDX } = __require(63)
 const { STALLS, rng } = __require(38)
 const { Wanted } = __require(293)
 const { Police, Arrest } = __require(297)
@@ -118998,7 +119153,7 @@ class Game {
 __export(__exports, { "PENALTY": () => PENALTY, "Game": () => Game })
 })
 
-// ---- js/sim/vehicles.js
+// ---- js\sim\vehicles.js
 __define(308, function (__exports) {
 // Every car the player can get into, in one registry: the Roadster, the traffic's cars on the road
 // and the cars parked in the lots (and the jammed street's). Pure (no DOM), so it is tested in Node.
@@ -119017,7 +119172,7 @@ __define(308, function (__exports) {
 // parked, locked, seat { x, y, z } (the driver's hips, car frame), door { x, z } (where to stand to
 // get in, car frame), doorSpan [back, front], doorSide (-1 left), doorLen, len, wid, hgt, car (the traffic car, or null), sim (the Roadster's,
 // or null), stolen, vacant }.
-const { TYPES } = __require(62)
+const { TYPES } = __require(63)
 const { CAR } = __require(2)
 
 // cabs that sit over the front axle (the driver high up behind the windscreen)
@@ -119233,7 +119388,7 @@ const _l = { x: 0, z: 0 }
 __export(__exports, { "DOORS": () => DOORS, "DOOR_SIDE": () => DOOR_SIDE, "layoutFor": () => layoutFor, "vehicles": () => vehicles })
 })
 
-// ---- js/sim/drivable.js
+// ---- js\sim\drivable.js
 __define(309, function (__exports) {
 // Any car the player drives that isn't the Roadster, on the drive workstream's stack: the traffic
 // car is taken off its driver (traffic.takeOver: handover.js), given a body of its handling class
@@ -119360,7 +119515,7 @@ class Drivable {
 __export(__exports, { "PLAYER_TOUGH": () => PLAYER_TOUGH, "carInput": () => carInput, "Drivable": () => Drivable })
 })
 
-// ---- js/sim/carsMeet.js
+// ---- js\sim\carsMeet.js
 __define(310, function (__exports) {
 // Two of the player's sims meeting: the car the player drives (drivable.js: a, its spec sp)
 // against the Roadster left in the street (b). Pushed apart by mass, momentum traded, a 'bump' for
@@ -119432,7 +119587,7 @@ function body (s, m, I, out) {
 __export(__exports, { "carsMeet": () => carsMeet })
 })
 
-// ---- js/sim/footRescue.js
+// ---- js\sim\footRescue.js
 __define(311, function (__exports) {
 // Keeping the player on foot out of trouble (player.js's walker): stuck in something (a wall's
 // corner, a car parked up against them, a gap they were pushed into) or out of the world (fallen
@@ -119554,7 +119709,7 @@ class FootRescue {
 __export(__exports, { "RESCUE": () => RESCUE, "nearFree": () => nearFree, "nearestPavement": () => nearestPavement, "outOfWorld": () => outOfWorld, "FootRescue": () => FootRescue })
 })
 
-// ---- js/sim/boarding.js
+// ---- js\sim\boarding.js
 __define(312, function (__exports) {
 // Getting into a car and out of it, as timed phases (pure: the render poses the body and the door
 // from them, onFoot.js runs them). Into a car: walk round to the driver's door (the car's other
@@ -119851,7 +120006,7 @@ const cancellable = a =>
 __export(__exports, { "BOARD": () => BOARD, "howToEnter": () => howToEnter, "sideOf": () => sideOf, "startEnter": () => startEnter, "startExit": () => startExit, "doorOf": () => doorOf, "seatShare": () => seatShare, "stepBoard": () => stepBoard, "hurry": () => hurry, "cancellable": () => cancellable })
 })
 
-// ---- js/ui/prompt.js
+// ---- js\ui\prompt.js
 __define(313, function (__exports) {
 // The prompt by a car the player can get into, GTA's: the key, what it does and the car ("F Break
 // in · Sedan"), and what is happening while they get in (onFoot.js shows it in #prompt).
@@ -119902,7 +120057,7 @@ let target = null,
 __export(__exports, { "PROMPT_R": () => PROMPT_R, "TITLE": () => TITLE, "VERB": () => VERB, "offerFor": () => offerFor })
 })
 
-// ---- js/sim/melee.js
+// ---- js\sim\melee.js
 __define(314, function (__exports) {
 // The player's fists on foot, GTA's way: a press (F, or the left mouse button) throws a punch, and
 // presses in time chain a combo of three: a jab, a cross and a heavy hook that knocks people down.
@@ -120061,7 +120216,7 @@ function punchPose (melee) {
 __export(__exports, { "COMBO": () => COMBO, "STOMP": () => STOMP, "MELEE": () => MELEE, "Melee": () => Melee, "punchPose": () => punchPose })
 })
 
-// ---- js/audio/fists.js
+// ---- js\audio\fists.js
 __define(315, function (__exports) {
 // Fists and bodies: a punch thrown (the air it moves), one landing (a dull smack), a person hit by
 // a car (the thump on the bonnet, heavier the faster), and someone landing on the road after it.
@@ -120083,7 +120238,7 @@ function bodySound (sound, speed, pan = 0) {
 __export(__exports, { "swingSound": () => swingSound, "punchSound": () => punchSound, "bodySound": () => bodySound })
 })
 
-// ---- js/footFight.js
+// ---- js\footFight.js
 __define(316, function (__exports) {
 // The player's fists on foot (sim/melee.js) and what comes of them: the keys (GTA V's: the left mouse
 // button or R to punch, presses in time for the combo; Left Alt or Caps Lock between a walk and the
@@ -120168,7 +120323,7 @@ class FootFight {
 __export(__exports, { "FootFight": () => FootFight })
 })
 
-// ---- js/footHits.js
+// ---- js\footHits.js
 __define(317, function (__exports) {
 // The player on foot hit by a moving car (onFoot.js steps it): knocked over, heard, and told.
 const { player, knockDown } = __require(81)
@@ -120198,7 +120353,7 @@ function hitByCars (foot) {
 __export(__exports, { "hitByCars": () => hitByCars })
 })
 
-// ---- js/sim/interiors/modshop.js
+// ---- js\sim\interiors\modshop.js
 __define(318, function (__exports) {
 // The body shop's service (Redline Body & Paint): a car stopped in the bay out front, for the
 // price, comes back out repaired and in a new colour. Pure: the price, and the next colour from
@@ -120229,7 +120384,7 @@ const repaintKey = (k, i) => (k + 0.37 + 0.11 * i) % 1
 __export(__exports, { "PRICE": () => PRICE, "COLOURS": () => COLOURS, "nextColour": () => nextColour, "canPay": () => canPay, "repaintKey": () => repaintKey })
 })
 
-// ---- js/render/interiors/hunt.js
+// ---- js\render\interiors\hunt.js
 __define(319, function (__exports) {
 // The hunt for the thirty hidden tokens (sim/tokens.js), run from the interiors' step (glue.js): on
 // foot or at the wheel, within reach of one it is taken, "Hidden token 7/30 · +$100" pops up, the
@@ -120290,7 +120445,7 @@ class TokenHunt {
 __export(__exports, { "REWARD": () => REWARD, "BONUS": () => BONUS, "TokenHunt": () => TokenHunt })
 })
 
-// ---- js/render/interiors/glue.js
+// ---- js\render\interiors\glue.js
 __define(320, function (__exports) {
 // The interiors in the game: what onFoot.js asks of them through four calls (the step, the prompt,
 // E, and the wallet handed over by game.js). By a door on foot the prompt offers "E Enter · Night
@@ -120510,7 +120665,7 @@ class InteriorGlue {
 __export(__exports, { "InteriorGlue": () => InteriorGlue })
 })
 
-// ---- js/render/optimusGait.js
+// ---- js\render\optimusGait.js
 __define(321, function (__exports) {
 // Optimus's gaits on foot, over poseOptimus's walk cycle (optimus.js): a walk, a jog and a sprint,
 // each with its own stride so the planted foot moves back at the pace the body goes forward (no
@@ -120562,7 +120717,7 @@ function poseGait (O, amp, phase, run, extra = null) {
 __export(__exports, { "STRIDE_PER_AMP": () => STRIDE_PER_AMP, "ampFor": () => ampFor, "strideFor": () => strideFor, "poseGait": () => poseGait })
 })
 
-// ---- js/render/optimusFists.js
+// ---- js\render\optimusFists.js
 __define(322, function (__exports) {
 // Optimus fighting (sim/melee.js): fists up in guard by the face, a jab and a cross thrown straight
 // out from the shoulder with the body leaning into them, a hook swung round from the side, and a
@@ -120624,7 +120779,7 @@ function poseFists (O, p, pos, pp, amp = 0, phase = 0) {
 __export(__exports, { "poseFists": () => poseFists })
 })
 
-// ---- js/render/carDoor.js
+// ---- js\render\carDoor.js
 __define(323, function (__exports) {
 // The driver's door of a city car, opened and shut as the player gets in or out (sim/boarding.js):
 // its own skin, cut from the car's body between the door's shut lines (sim/vehicles.js DOORS, the
@@ -120862,7 +121017,7 @@ class CarDoors {
 __export(__exports, { "SWING": () => SWING, "easeDoor": () => easeDoor, "swingOf": () => swingOf, "doorShape": () => doorShape, "CarDoors": () => CarDoors })
 })
 
-// ---- js/render/boardPose.js
+// ---- js\render\boardPose.js
 __define(324, function (__exports) {
 // Optimus getting into a city car and out of it (sim/boarding.js's phases), GTA's way: stood just
 // behind the door's back edge, a hand on the handle pulling it open (the hand riding the handle as
@@ -121034,7 +121189,7 @@ function pushHands (a, pos, doors, base = 0) {
 __export(__exports, { "wayIn": () => wayIn, "poseBoard": () => poseBoard, "pushHands": () => pushHands })
 })
 
-// ---- js/render/footView.js
+// ---- js\render\footView.js
 __define(325, function (__exports) {
 // The player on foot, drawn: Optimus (optimus.js), out of the Roadster and walking the city, its
 // legs and arms swinging with its pace (a longer, quicker stride and a lean running), legs tucked in
@@ -121170,7 +121325,7 @@ class FootView {
 __export(__exports, { "FootView": () => FootView })
 })
 
-// ---- js/render/footCam.js
+// ---- js\render\footCam.js
 __define(326, function (__exports) {
 // The camera on foot: GTA's third-person orbit over the player's shoulder. The mouse (the pointer
 // locked to the picture: a click) or a gamepad's right stick swings it round and up and down; the
@@ -121311,7 +121466,7 @@ class FootCam {
 __export(__exports, { "clipShare": () => clipShare, "FootCam": () => FootCam })
 })
 
-// ---- js/audio/steps.js
+// ---- js\audio\steps.js
 __define(327, function (__exports) {
 // The player's footsteps on foot (onFoot.js): Optimus's tread from the sample bank (buffers.js), its
 // colour by what is underfoot (a hard heel on the road and the pavement, a hollow knock on the
@@ -121380,7 +121535,7 @@ function doorSound (sound, shut, pan = 0) {
 __export(__exports, { "footstep": () => footstep, "landing": () => landing, "smashWindow": () => smashWindow, "forceLock": () => forceLock, "doorSound": () => doorSound })
 })
 
-// ---- js/onFoot.js
+// ---- js\onFoot.js
 __define(328, function (__exports) {
 // The player out of the car: getting out (E), walking the city as Optimus (WASD, Shift to run,
 // Space to jump, the mouse or the right stick looking round), getting into the Roadster or any other
@@ -121868,7 +122023,7 @@ class OnFoot {
 __export(__exports, { "OnFoot": () => OnFoot })
 })
 
-// ---- js/render/playerCar.js
+// ---- js\render\playerCar.js
 __define(329, function (__exports) {
 // The car the player drives when it isn't the Roadster (drivable.js): the traffic renderer keeps
 // drawing it as itself (traffic.js: its body type, paint, glass, lamps and dents), but posed here
@@ -121883,9 +122038,9 @@ __define(329, function (__exports) {
 //   new PlayerCar(cityView)   .frame(drivable, dt): the stand-in for RS (or null), each frame
 const THREE = __require(0)
 
-const PITCH_K = 1.5, // how much the drawn body exaggerates the body's pitch and roll
-  ROLL_K = 1.35,
-  DIVE_K = 2.1 // (and nose down on the brakes more again: GTA's dive reads from the side)
+const PITCH_K = 2, // how much the drawn body exaggerates the body's pitch and roll
+  ROLL_K = 2.2,
+  DIVE_K = 2.6 // (and nose down on the brakes more again: GTA's dive reads from the side)
 const _p = new THREE.Vector3()
 
 class PlayerCar {
@@ -121923,6 +122078,8 @@ class PlayerCar {
     car.posed = true
     car.pitch = -b.pitch * (b.pitch > 0 ? DIVE_K : PITCH_K) // (the body's pitch is nose down; the drawing's nose up)
     car.roll = b.roll * ROLL_K
+    car.pitch = Math.max(-0.12, Math.min(0.1, car.pitch))
+    car.roll = Math.max(-0.14, Math.min(0.14, car.roll))
     car.lift = Math.max(-0.05, b.heave)
     car.steer = b.steerAng
     // the driven rears turning faster than the road in a burnout or a power slide, or stopped
@@ -121977,7 +122134,7 @@ class PlayerCar {
 __export(__exports, { "PlayerCar": () => PlayerCar })
 })
 
-// ---- js/audio/engine.js
+// ---- js\audio\engine.js
 __define(330, function (__exports) {
 // The engine of whatever the player drives that isn't the Roadster, synthesised: its firing
 // frequency from the rpm and gear vehicleSim.js keeps (rpm / 60 x cylinders / 2), a sawtooth and a
@@ -122121,7 +122278,7 @@ class EngineVoice {
 __export(__exports, { "EngineVoice": () => EngineVoice })
 })
 
-// ---- js/ui/carHud.js
+// ---- js\ui\carHud.js
 __define(331, function (__exports) {
 // The HUD kept to whatever the player drives, or to them on foot (hud.js calls update after its
 // own): the car's name bottom right as they get in (GTA's: the class small and gold over the name,
@@ -122223,14 +122380,14 @@ class CarHud {
 __export(__exports, { "CAR_SLOT": () => CAR_SLOT, "CarHud": () => CarHud })
 })
 
-// ---- js/ui/testDrive.js
+// ---- js\ui\testDrive.js
 __define(332, function (__exports) {
 // A developer's harness for the polish work (not a game mode): put the player straight into a city
 // car of a given traffic type (sedan, sports, suv, pickup, truck, van, bus, police, ...) a few
 // metres ahead of where they are (on the nearest lane), seated as if they had walked up and got in (onFoot.js seated),
 // so the camera, the HUD, the sounds and the effects all follow it. Used by automated smoke tests
 // through window.__roadster.seatIn(type), and by ?drive=<kind>&seat=1.
-const { IDX } = __require(62)
+const { IDX } = __require(63)
 const { vehicles } = __require(308)
 const { player } = __require(81)
 const { nearestLane } = __require(38)
@@ -122262,7 +122419,7 @@ function seatIn (g, type = 'suv', ahead = 12) {
 __export(__exports, { "seatIn": () => seatIn })
 })
 
-// ---- js/polish.js
+// ---- js\polish.js
 __define(333, function (__exports) {
 // The polish over whatever the player drives, kept out of main.js: each frame, the car that isn't
 // the Roadster posed from its body with its skids and smoke (render/playerCar.js), the camera told
@@ -122273,7 +122430,7 @@ __define(333, function (__exports) {
 //   (game: () => the Game, game.js: the player's health on foot)
 //   .frame(dt)  after the physics steps: returns the RS-like stand-in for skids.js and effects.js
 const { PlayerCar } = __require(329)
-const { armScale, armRise } = __require(63)
+const { armScale, armRise } = __require(64)
 const { EngineVoice } = __require(330)
 const { CarHud } = __require(331)
 const { seatIn } = __require(332)
@@ -122327,7 +122484,7 @@ class Polish {
 __export(__exports, { "Polish": () => Polish })
 })
 
-// ---- js/keys.js
+// ---- js\keys.js
 __define(334, function (__exports) {
 // What each key does (GTA V's PC keys: ui/keymap.js), the commands main.js's input hands on: one
 // press each (the held keys, driving and walking, are input.js's). Keys a player has no use for
@@ -122409,7 +122566,7 @@ function wheelRadio (canvas, inCar, tune) {
 __export(__exports, { "gtaCommands": () => gtaCommands, "wheelRadio": () => wheelRadio })
 })
 
-// ---- js/main.js
+// ---- js\main.js
 __define(335, function (__exports) {
 // Tesla Roadster Sim: boot, game state, sim events and the main loop.
 const THREE = __require(0)

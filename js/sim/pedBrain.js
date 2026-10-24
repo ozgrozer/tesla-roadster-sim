@@ -109,8 +109,8 @@ export const PEDBRAIN = {
     const g = this.lineFor(p, p.back, Math.floor(this.R() * LINES.length))
     p.backRing = g
     p.backS = nearestOn(g, p.x, p.z)
-    p.roadT = 0
-    p.t = 0
+    p.roadT = p.t = p.stall = 0
+    p.near = Infinity
     p.cross = p.aside = null
   },
   // held off the way back (a car stopped over it): round it, to the pavement a few metres along
@@ -125,7 +125,8 @@ export const PEDBRAIN = {
     const far = Math.hypot(P.x - ox, P.z - oz)
     ringAt(R, s - 4, P)
     p.backS = Math.hypot(P.x - ox, P.z - oz) > far ? s - 4 : s + 4
-    p.t = 0
+    p.t = p.stall = 0
+    p.near = Infinity
     return false
   },
   // someone running off from (x, z) along their pavement
@@ -158,23 +159,30 @@ export const PEDBRAIN = {
     if (sp <= HIT_V) return CROWD.dodge.call(this, p, th)
     this.carComing(p, th, sp, dx, dz, this.now || 0)
   },
-  // knocked down by th at sp m/s: thrown along with it, down a while (or for good, hit hard)
+  // knocked down by th at sp m/s: thrown with it, tumbling the way they go, down a while (or
+  // for good, hit hard). A clip at walking pace is a short hop and a fall; faster, they go up
+  // over the bonnet and turn over in the air.
   knockDown (p, th, sp) {
     const by = th === this.me ? 'player' : 'traffic'
     if (p.state === 'linger') this.leave(p, true)
     const side = (p.z - th.z) * th.hx - (p.x - th.x) * th.hz >= 0 ? 1 : -1
+    const kick = Math.min(2.6, 0.07 * sp + 0.45)
     p.state = 'down'
     p.t = 0
-    p.vx = th.vx * 0.85 - th.hz * side * 1.5
-    p.vz = th.vz * 0.85 + th.hx * side * 1.5
-    // (thrown up over the bonnet the faster it was, turning over in the air: lie() flies them)
-    p.air = 0.05
-    p.airV = sp > 5 ? Math.min(7.5, 0.36 * sp) : 0.8
-    p.spin = 0
-    p.hop = Math.min(1, sp / 12)
-    p.fright = 1
+    p.rise = 0
+    p.vx = th.vx * 0.9 - th.hz * side * kick
+    p.vz = th.vz * 0.9 + th.hx * side * kick
+    p.air = 0.02
+    p.airV = sp < 4.5 ? 1.15 : Math.min(9, 0.3 * sp)
+    p.pitch = 0.2
+    p.pitchV = -(sp < 4.5 ? 3.6 : Math.min(13, 0.5 * sp))
+    p.hop = 0
+    p.fright = 2
     p.gait = 0
     p.fall = 0
+    p.umb = 0
+    p.yaw = Math.atan2(-p.vz, p.vx)
+    p.phase = p.pitch
     p.cross = p.aside = p.lead = null
     p.act = 0
     // (each their own luck between MAYBE_V and KILL_V: no draw from the people's random numbers)
@@ -189,38 +197,66 @@ export const PEDBRAIN = {
     if (p.dead) this.killed = (this.killed || 0) + 1
     this.scare(p.x, p.z, 18)
   },
-  // down: sliding to a stop, lying there, then up and away to the pavement (and running)
+  // down: tumbling with the throw, a bounce, sliding to a stop, lying there, then up (a moment
+  // to get the feet under them) and away to the pavement
   lie (p, dt) {
+    if (p.rise > 0) {
+      p.rise -= dt
+      p.vx = p.vz = p.air = p.airV = 0
+      p.pitch += (0 - p.pitch) * Math.min(1, dt * 4)
+      p.fall = Math.max(0, p.rise / 0.45)
+      p.fright = 2
+      p.gait = 0
+      p.hop = 1
+      p.phase = 0
+      if (p.rise > 0) return
+      p.fall = p.pitch = p.fright = p.hop = 0
+      p.jacked = true // (once back on the pavement: running off)
+      p.fromX = p.x
+      p.fromZ = p.z
+      this.goBack(p)
+      return
+    }
     p.x += p.vx * dt
     p.z += p.vz * dt
-    // in the air (thrown by a car), tumbling, a bounce on landing; then sliding to a stop
     const up = p.air > 0
     if (up) {
       p.air += p.airV * dt
       p.airV -= GRAVITY * dt
-      p.spin += dt * Math.min(9, Math.hypot(p.vx, p.vz) * 0.7)
       if (p.air <= 0) {
         p.air = 0
-        if (p.airV < -3.5) {
+        if (p.airV < -3.2) {
           p.air = 1e-3
-          p.airV = -p.airV * 0.28
-          p.vx *= 0.6
-          p.vz *= 0.6
+          p.airV = -p.airV * 0.22
+          p.vx *= 0.55
+          p.vz *= 0.55
+          p.pitchV *= 0.45
         }
       }
     }
-    const k = Math.exp(-dt * (up ? 0.25 : 4))
+    p.pitch += p.pitchV * dt
+    const spd = Math.hypot(p.vx, p.vz)
+    if (spd > 1.4) p.yaw = Math.atan2(-p.vz, p.vx)
+    if (!up) {
+      p.pitchV = 0
+      const lie = Math.PI / 2
+      let d = p.pitch - lie
+      d -= Math.PI * 2 * Math.round(d / (Math.PI * 2))
+      p.pitch = lie + d * Math.exp(-dt * 5)
+    }
+    const drag = up ? 0.3 : spd > 8 ? 1.4 : 3.4
+    const k = Math.exp(-dt * drag)
     p.vx *= k
     p.vz *= k
-    p.fall = Math.min(1, p.fall + dt * 5)
+    p.fall = Math.min(1, p.fall + dt * 6)
     p.gait = 0
+    p.fright = 2
+    p.hop = up ? 0 : 1
+    p.umb = 0
+    p.phase = p.pitch
     this.unwall(p)
     if (p.dead || p.t < p.downT) return
-    p.fall = 0
-    p.jacked = true // (once back on the pavement: running off)
-    p.fromX = p.x
-    p.fromZ = p.z
-    this.goBack(p)
+    p.rise = 0.45
   },
   // never inside a building: out by its nearest face
   unwall (p) {

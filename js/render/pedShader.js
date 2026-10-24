@@ -114,7 +114,12 @@ const POSE = `
     if (w > 0.5) p = pedShape(p, part, style);
     float ph = aPose.x, gait = aPose.y, fright = aPose.z;
     float A = 0.42 * gait, run = clamp((gait - 1.2) * 2.5, 0.0, 1.0);
-    float phone = max(aAct.y, 0.0) * (1.0 - fright), talk = aAct.z * (1.0 - fright);
+    // knocked down (fright past 1): limbs loose, flailing while they tumble and slack once they lie.
+    // aPose.w is 0 in the air and 1 on the ground; the walk uses it only while they are up
+    float rag = step(1.5, fright);
+    float fr = min(fright, 1.0);
+    float wild = 1.0 - clamp(aPose.w, 0.0, 1.0);
+    float phone = max(aAct.y, 0.0) * (1.0 - fr), talk = aAct.z * (1.0 - fr);
     // fists up, fighting (aAct.y -1), the right one thrown out (to -2: sim/brawl.js)
     float guard = aAct.y < -0.5 ? 1.0 : 0.0, jab = clamp(-aAct.y - 1.0, 0.0, 1.0);
     // an umbrella (the arm up first, then it opens), hunched with a hoodie's hood up, sat down
@@ -145,15 +150,18 @@ const POSE = `
     if (part >= 3 && part <= 6) {
       bool left = part <= 4;
       float q = ph + (left ? 0.0 : 3.14159);
-      float swing = pedLeg(q, A) + fright * (left ? 0.5 : -0.35);
+      float swing = pedLeg(q, A) + fr * (left ? 0.5 : -0.35);
+      if (rag > 0.5)
+        swing = (left ? 0.5 : -0.4) * mix(0.4, 1.0, wild) + 0.55 * sin(ph + (left ? 0.0 : 1.8)) * wild;
       // the knee folds as the leg swings through (more running), and gives a little in the stance;
-      // sat down, the thigh is forward and the shin down
+      // sat down, the thigh is forward and the shin down. Knocked down, the knees buckle
       if (part == 4 || part == 6) {
         float u = mod(q, 6.28318);
         float knee = u < 3.14159
           ? 0.1 * gait * sin(u)
           : sin(u - 3.14159) * (0.45 + 0.9 * A + 0.8 * run);
-        knee += fright * 0.6;
+        knee += fr * 0.6;
+        if (rag > 0.5) knee = mix(0.7, 1.25, wild) + 0.35 * sin(ph * 1.3 + (left ? 0.5 : 2.0)) * wild;
         vec2 k = vec2(0.0, 0.5) * w;
         p.xy = k + pedRot(-mix(knee, 1.45, sit)) * (p.xy - k);
       }
@@ -164,8 +172,12 @@ const POSE = `
       bool left = part <= 8;
       // each arm swings with the other side's leg; less, and bent, hunched in the rain; sat down,
       // the hands on the thighs; holding a dog's lead, a little forward and swinging a little
-      float swing = (0.85 * A + 0.25 * run) * cos(ph + (left ? 3.14159 : 0.0)) + fright * 2.5;
+      float swing = (0.85 * A + 0.25 * run) * cos(ph + (left ? 3.14159 : 0.0)) + fr * 2.5;
       float elbow = 0.2 + 0.25 * gait + 1.1 * run + 0.35 * hunch;
+      if (rag > 0.5) {
+        swing = mix(0.9, 2.15, wild) + sin(ph + (left ? 0.3 : 2.1)) * (0.15 + 0.75 * wild);
+        elbow = mix(0.45, 1.05, wild);
+      }
       swing = mix(swing * (1.0 - 0.45 * hunch), 0.3, sit);
       elbow = mix(elbow, 0.75, sit);
       if (aGear.w * (left ? -1.0 : 1.0) > 0.5) {
@@ -190,11 +202,16 @@ const POSE = `
       }
       vec2 s = vec2(0.0, 1.45) * w;
       p.xy = s + pedRot(swing) * (p.xy - s);
+      // knocked down, the arms throw out to the sides as well as up
+      if (rag > 0.5) {
+        vec2 sh = vec2(1.45, 0.0) * w;
+        p.yz = sh + pedRot((left ? -1.0 : 1.0) * mix(0.85, 1.3, wild)) * (p.yz - sh);
+      }
     }
     // the head turned (to the Roadster) and bowed (over the phone, or in the rain)
     if (headish) {
       vec2 n = vec2(0.0, 1.53) * w;
-      p.xy = n + pedRot(-0.4 * phone - 0.2 * hunch) * (p.xy - n);
+      p.xy = n + pedRot(-0.4 * phone - 0.2 * hunch - rag * mix(0.35, 0.9, wild)) * (p.xy - n);
       p.xz = pedRot(-aAct.x) * p.xz;
     }
     // the upper body: twisting against the stride, leaning in to a run, or into the rain; sat
@@ -202,7 +219,7 @@ const POSE = `
     if (part != ${P.HIPS} && (part < 3 || part > 6) && part != ${P.SKIRT} && part != ${P.BAG}) {
       if (!headish) p.xz = pedRot(0.25 * A * cos(ph)) * p.xz;
       vec2 hip = vec2(0.0, 0.95) * w;
-      float lean = -0.2 * run - 0.05 * gait - 0.13 * hunch + 0.05 * sit;
+      float lean = -0.2 * run - 0.05 * gait - 0.13 * hunch + 0.05 * sit - rag * mix(0.2, 0.6, wild);
       p.xy = hip + pedRot(lean) * (p.xy - hip);
     }
     // sat down: the hips flat on the seat, a skirt over the thighs, and the whole body lowered so
@@ -216,7 +233,7 @@ const POSE = `
       p.y -= sit * (0.84 - 0.48 / length(instanceMatrix[1].xyz));
     }
     // up over each step (the most at mid-stance), higher running, and the hop of a dive
-    p.y += w * ((0.026 * gait + 0.03 * run) * -cos(2.0 * ph) + aPose.w);
+    p.y += w * ((0.026 * gait + 0.03 * run) * -cos(2.0 * ph) + aPose.w * (1.0 - rag));
     return p;
   }
 `

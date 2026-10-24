@@ -29,12 +29,12 @@ const _m = new THREE.Matrix4(),
   _q = new THREE.Quaternion(),
   _fall = new THREE.Quaternion(),
   _side = new THREE.Vector3(0, 0, 1),
+  _hip = new THREE.Vector3(),
   _p = new THREE.Vector3(),
   _s = new THREE.Vector3()
 const LAMP = { x: 0, y: 0, z: 0, w: 0 }
 const TAU = Math.PI * 2
 const TURN = 12 // 1/s: how fast someone drawn turns to the way the sim faces them
-const RISE = 7 // 1/s: and gets up off the ground
 
 export class PedView {
   constructor (group, max = 360) {
@@ -135,30 +135,35 @@ export class PedView {
     // (a turn and a getting up eased over a few frames rather than in one: the sim snaps them, a
     // jacked driver up off the road and away, anyone back from a dive; someone not drawn the frame
     // before is put as they are)
-    if (d.rN !== this.n - 1) {
-      d.ry = d.yaw
-      d.rf = d.fall
-    } else {
+    if (d.rN !== this.n - 1) d.ry = d.yaw
+    else {
       const a = d.yaw - d.ry
       d.ry += (a - Math.round(a / TAU) * TAU) * Math.min(1, this.dt * TURN)
-      d.rf = d.fall >= d.rf ? d.fall : d.rf + (d.fall - d.rf) * Math.min(1, this.dt * RISE)
     }
     d.rN = this.n
-    const fall = d.rf > 0.01 ? d.rf : 0
     // (fields and arrays written directly: no numbers passed to calls)
     _q._x = _q._z = 0
     _q._y = Math.sin(d.ry / 2)
     _q._w = Math.cos(d.ry / 2)
-    // knocked down (sim/pedBrain.js): tipped over backwards onto the road, lying there
-    // (thrown by a car: up in the air and turning over, sim/pedBrain.js lie)
+    // knocked down (sim/pedBrain.js): tumbling about the hips the way they were thrown, then
+    // lying on the road. The feet are the mesh origin, so the hips stay put and the body turns
+    // round them instead of hinging at the ankles
     const air = d.air > 0 ? d.air : 0
-    if (fall > 0 || air > 0) {
-      _fall.setFromAxisAngle(_side, (fall * Math.PI) / 2.1 + (air > 0 ? d.spin : 0))
+    const pitch = d.pitch || 0
+    if (Math.abs(pitch) > 0.02) {
+      _fall.setFromAxisAngle(_side, pitch)
+      _hip.set(0, 0.9, 0).applyQuaternion(_fall)
+      _hip.y -= 0.9
+      _hip.x *= d.tall
+      _hip.y *= d.tall
+      _hip.z *= d.wide
+      _hip.applyQuaternion(_q)
       _q.multiply(_fall)
-    }
-    _p.x = d.x
-    _p.y = h + (fall > 0 ? 0.12 * fall : 0) + air + (air > 0 ? 0.6 : 0)
-    _p.z = d.z
+    } else _hip.set(0, 0, 0)
+    const flat = Math.min(1, Math.abs(Math.sin(pitch)))
+    _p.x = d.x + _hip.x
+    _p.y = h + air + _hip.y + 0.2 * flat
+    _p.z = d.z + _hip.z
     _s.x = _s.y = d.tall
     _s.z = d.wide
     _m.compose(_p, _q, _s)

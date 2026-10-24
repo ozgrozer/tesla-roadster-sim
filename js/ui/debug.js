@@ -1,7 +1,8 @@
 // The developer's switch: ?debug=1 in the address turns on the keys and the pause menu's DEBUG tab
 // that a player has no use for (the test site, slow motion, Autopilot, the clock and the weather
 // on a key, the suction fan, the test site's start spots). Without it they do nothing, as in GTA.
-// The Roadster's stunt keys (fly, flips) are a setting (options.js stunts), on with debug too.
+// The Roadster's stunt keys (fly, flips) are a setting (options.js stunts), on by default, and on
+// with debug too.
 import { OPTS } from './options.js'
 
 const query = () => {

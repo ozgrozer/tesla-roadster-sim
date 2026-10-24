@@ -94,17 +94,25 @@ export const CROWD = {
     return true
   },
 
-  // the Roadster close by and loud (fast, or on the horn): heads turn to follow it
+  // the Roadster nearby: heads turn to it (further off when it is moving or on the horn), a
+  // flinch as it blows past, and anyone in the crossing hurries
   watch (p, dt, me) {
     let want = 0
-    if (me && p.state !== 'dodge' && p.state !== 'flee') {
+    if (me && p.state !== 'dodge' && p.state !== 'flee' && p.state !== 'down') {
       const dx = me.x - p.x,
-        dz = me.z - p.z
-      if (dx * dx + dz * dz < 900)
+        dz = me.z - p.z,
+        d2 = dx * dx + dz * dz,
+        sp = Math.hypot(me.vx, me.vz)
+      if (d2 < (sp > 4 || this.traffic?.horn ? 900 : 196))
         want = clamp(wrapPi(Math.atan2(-dz, dx) - p.yaw), -1.3, 1.3)
       // (standing, they turn to it)
       if (want && p.state === 'idle' && Math.abs(want) > 0.9)
         p.yaw += Math.sign(want) * Math.min(Math.abs(want) - 0.9, dt * 1.5)
+      // a car going past close: shoulders up, a hop back, not a dive
+      if (sp > 7 && d2 < 64 && d2 > 2.5 && p.state !== 'brawl') {
+        p.fright = Math.max(p.fright, 0.75)
+        p.hop = Math.max(p.hop, 0.16)
+      }
     }
     p.headT = want || p.glance // (or a look round: pedSteer.js)
     p.head += (p.headT - p.head) * Math.min(1, dt * 5)

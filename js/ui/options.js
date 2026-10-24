@@ -20,7 +20,7 @@ export const DEFAULTS = {
   bigText: false,
   palette: 'standard', // 'standard' | 'deutan' (red/green safe) | 'tritan' (blue/yellow safe)
   motion: 'full', // 'full' | 'reduced'
-  stunts: false // the Roadster's stunt keys (G fly, X backflip, K kickflip: debug.js)
+  stunts: true // the Roadster's stunt keys (G fly, X backflip, K kickflip: debug.js)
 }
 // what each may be (the menu steps through these)
 export const CHOICES = {

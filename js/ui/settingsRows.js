@@ -101,7 +101,7 @@ export const ROWS = [
   {
     opt: 'stunts',
     name: 'Roadster stunt keys',
-    hint: 'G flies the Roadster on its thrusters, X and K flip it in the air (on with ?debug=1)',
+    hint: 'G flies the Roadster on its thrusters, X and K flip it in the air',
     opts: CHOICES.stunts.map(v => [v, v ? 'On' : 'Off'])
   },
   { head: 'World' },
